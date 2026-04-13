@@ -36,7 +36,7 @@ const HomePiece = ({ color }: { color: string }) => (
   </div>
 );
 
-function LudoGameContent() {
+export function LudoGameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomId = searchParams.get('roomId') || 'global_room';
@@ -64,7 +64,7 @@ function LudoGameContent() {
   const isMyTurn = gameState?.turn === currentUser?.uid;
 
   return (
-    <div className="h-screen w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden font-headline">
+    <div className="h-full w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden font-headline pb-20">
       {/* Status Bar / Top Overlay */}
       <CompactRoomView />
 

@@ -46,52 +46,21 @@ export function GameModal({ isOpen, onClose, children, title, className }: GameM
 
   return (
     <div className="fixed inset-0 z-[999] flex items-end justify-center p-4 pointer-events-none">
-      {/* Backdrop with enhanced room visibility (Lower blur, lower opacity) */}
+      {/* Backdrop - 100% CLEAR Room visibility */}
       <div 
-        className="absolute inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-auto"
+        className="absolute inset-0 bg-transparent pointer-events-auto"
         onClick={onClose}
       />
       
       {/* Game Modal - Pushed up to leave footer visible */}
       <div 
         className={cn(
-          "relative bg-black rounded-3xl shadow-2xl border border-white/10 overflow-hidden transition-all duration-300 mb-[80px] pointer-events-auto",
+          "relative bg-[#0c0c14] rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.8)] border-t border-white/10 overflow-hidden transition-all duration-300 mb-[80px] pointer-events-auto",
           currentSize,
           className
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="relative z-10 bg-gradient-to-b from-black/80 to-transparent p-4 flex items-center justify-between border-b border-white/5">
-          <h2 className="text-lg font-black text-white uppercase italic tracking-tighter">
-            {title}
-          </h2>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsMaximized(!isMaximized)}
-              className="bg-white/10 p-1.5 rounded-full hover:bg-white/20 transition-all"
-              title={isMaximized ? "Minimize" : "Maximize"}
-            >
-              {isMaximized ? <Minimize2 className="h-4 w-4 text-white" /> : <Maximize2 className="h-4 w-4 text-white" />}
-            </button>
-            
-            <button
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="bg-white/10 p-1.5 rounded-full hover:bg-white/20 transition-all"
-              title={isMinimized ? "Expand" : "Minimize"}
-            >
-              <div className="h-4 w-4 border-2 border-white rounded-sm" />
-            </button>
-            
-            <button
-              onClick={onClose}
-              className="bg-red-500/20 p-1.5 rounded-full hover:bg-red-500/40 transition-all"
-            >
-              <X className="h-4 w-4 text-white" />
-            </button>
-          </div>
-        </div>
 
         {/* Game Content */}
         <div className={cn(

@@ -27,7 +27,7 @@ const pieceSVG: Record<string, string> = {
   'kb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bK.svg'
 };
 
-function ChessGameContent() {
+export function ChessGameContent() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const roomId = searchParams.get('roomId') || 'global_room';
@@ -125,7 +125,7 @@ function ChessGameContent() {
    return (
     // Agar AppLayout mein koi background set hai, toh usko transparent pass karna padega (agar prop support karta hai)
     <AppLayout fullScreen>
-     <div className="h-screen w-full bg-transparent flex flex-col justify-end relative overflow-hidden text-white font-sans pointer-events-none">
+      <div className="h-full w-full bg-transparent flex flex-col justify-end relative overflow-hidden text-white font-sans pointer-events-none pb-12">
       
       {/* Header - Now floats over the transparent top half */}
       <header className="absolute top-0 w-full z-50 flex items-center justify-between p-6 pointer-events-auto">

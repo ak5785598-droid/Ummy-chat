@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from 'framer-motion';
  * High-Fidelity Carrom Master.
  * Matches the requested screenshots for loading, lobby, and core gameplay.
  */
-function CarromGameContent() {
+export function CarromGameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const roomId = searchParams.get('roomId') || 'lobby';
@@ -181,7 +181,7 @@ function CarromGameContent() {
 
   return (
     <AppLayout fullScreen>
-      <div className="h-screen w-full bg-[#004D40] flex flex-col relative overflow-hidden font-sans select-none">
+      <div className="h-full w-full bg-[#004D40] flex flex-col relative overflow-hidden font-sans select-none pb-20">
         
         {/* Arena Header */}
         <header className="relative z-50 flex items-center justify-between p-4 pt-32 shrink-0 bg-gradient-to-b from-black/20 to-transparent">

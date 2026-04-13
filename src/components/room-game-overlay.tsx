@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import * as React from 'react';
 import { cn } from '@/lib/utils';
 import FruitPartyGame from './games/fruit-party-game';
 import ForestPartyGame from './games/forest-party-game';
-import { X } from 'lucide-react';
+import { LudoGameContent } from '@/app/games/ludo/page';
+import { CarromGameContent } from '@/app/games/carrom/page';
+import { ChessGameContent } from '@/app/games/chess/page';
+import { X, Volume2, VolumeX, HelpCircle, Trophy } from 'lucide-react';
 
 interface RoomGameOverlayProps {
  activeGame: string | null;
@@ -16,17 +19,35 @@ export function RoomGameOverlay({ activeGame, onClose }: RoomGameOverlayProps) {
 
  return (
   <div className="fixed inset-0 z-[150] flex flex-col pointer-events-none">
-   {/* Click outside to close - Higher room visibility */}
-   <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] pointer-events-auto" onClick={onClose} />
+   {/* Click outside to close - 100% CLEAR Room visibility */}
+   <div className="absolute inset-0 bg-transparent pointer-events-auto" onClick={onClose} />
    
    <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[60vh] mb-[80px]">
-    <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-2xl border-t border-white/20 bg-[#58319d]">
+    <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/10 bg-[#0c0c14]">
      {activeGame === 'fruit-party' && (
       <FruitPartyGame onClose={onClose} />
      )}
 
      {activeGame === 'forest-party' && (
       <ForestPartyGame onBack={onClose} />
+     )}
+
+     {activeGame === 'ludo' && (
+      <div className="h-full bg-[#0a1a4a] overflow-y-auto no-scrollbar pt-2">
+        <LudoGameContent />
+      </div>
+     )}
+
+     {activeGame === 'carrom' && (
+      <div className="h-full bg-[#004D40] overflow-y-auto no-scrollbar pt-2">
+        <CarromGameContent />
+      </div>
+     )}
+
+     {activeGame === 'chess' && (
+      <div className="h-full bg-[#1e293b] overflow-y-auto no-scrollbar pt-2">
+        <ChessGameContent />
+      </div>
      )}
      
      {activeGame !== 'fruit-party' && activeGame !== 'forest-party' && (
