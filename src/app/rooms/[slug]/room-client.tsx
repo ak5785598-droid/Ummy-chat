@@ -1895,7 +1895,6 @@ export function RoomClient({ room }: { room: Room }) {
       if (playPromise !== undefined) {
         playPromise.then(() => {
           // Stream capture for broadcasting is disabled
-          console.log('[Music] Play started (Local only)');
         }).catch(e => {
           console.warn('[Music] Play failed:', e);
           toast({ variant: 'destructive', title: 'Playback Failed', description: 'Please interact with the page to allow audio.' });

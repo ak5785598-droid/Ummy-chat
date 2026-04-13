@@ -9,7 +9,6 @@ import {
  DialogDescription,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Lock, Unlock, Mic, MicOff, LogOut, Gift } from 'lucide-react';
 
@@ -39,8 +38,36 @@ interface RoomSeatMenuDialogProps {
 }
 
 /**
+ * Standard MenuItem for the Seat Dialoag.
+ * Defined outside the main component to prevent event disconnection on re-render.
+ */
+const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { 
+  label: string; 
+  icon: React.ComponentType<{ className?: string }>; 
+  onClick?: () => void; 
+  className?: string; 
+  disabled?: boolean 
+}) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick?.();
+    }}
+    disabled={disabled}
+    className={cn(
+      "flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-50 active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none",
+      className
+    )}
+  >
+    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100/50 shadow-sm">
+      <Icon className="w-5 h-5 text-slate-600" />
+    </div>
+    <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">{label}</span>
+  </button>
+);
+
+/**
  * High-Fidelity Room Seat Menu.
- * Standardizes administrative labels: "Take mic", "Lock mic", "Invite to mic".
  */
 export function RoomSeatMenuDialog({
  open,
@@ -66,25 +93,7 @@ export function RoomSeatMenuDialog({
  onSendGift,
  onOpenAudienceInvite
 }: RoomSeatMenuDialogProps) {
- const { toast } = useToast();
-
  if (seatIndex === null) return null;
-
- const MenuItem = ({ label, icon: Icon, onClick, className, disabled }: { label: string; icon: React.ComponentType<{ className?: string }>; onClick?: () => void; className?: string; disabled?: boolean }) => (
-  <button
-   onClick={onClick}
-   disabled={disabled}
-   className={cn(
-    "flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-gray-50 active:scale-90 transition-all disabled:opacity-40 disabled:pointer-events-none",
-    className
-   )}
-  >
-   <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100/50 shadow-sm">
-    <Icon className="w-5 h-5 text-slate-600" />
-   </div>
-   <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">{label}</span>
-  </button>
- );
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
