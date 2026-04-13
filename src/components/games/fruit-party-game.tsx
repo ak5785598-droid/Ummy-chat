@@ -1,569 +1,493 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { 
- useUser, 
- useFirestore, 
- updateDocumentNonBlocking, 
- useDoc, 
- useMemoFirebase, 
- addDocumentNonBlocking 
-} from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
-import { 
- ChevronLeft, 
- Volume2, 
- VolumeX, 
- HelpCircle, 
- Trophy, 
- Users, 
- X,
- Pointer,
- Loader2,
- Clock
-} from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
+import { doc, increment } from 'firebase/firestore';
+import { X, Trophy, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ANIMALS = [
-  { id: 'panda', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'top', color: 'from-green-400 to-emerald-600', border: 'border-emerald-400', index: 0 },
-  { id: 'rabbit', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top-right', color: 'from-blue-200 to-blue-400', border: 'border-blue-300', index: 1 },
-  { id: 'cow', emoji: '🐮', multiplier: 5, label: 'x5', pos: 'right', color: 'from-slate-100 to-slate-300', border: 'border-white', index: 2 },
-  { id: 'dog', emoji: '🐶', multiplier: 5, label: 'x5', pos: 'bottom-right', color: 'from-orange-300 to-orange-500', border: 'border-orange-300', index: 3 },
-  { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', color: 'from-slate-400 to-slate-600', border: 'border-slate-400', index: 4 },
-  { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', color: 'from-blue-400 to-indigo-600', border: 'border-blue-400', index: 5 },
-  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', color: 'from-orange-400 to-orange-600', border: 'border-orange-400', index: 6 },
-  { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-yellow-400 to-red-600', border: 'border-yellow-400', index: 7 },
+// --- LOADING PAGE COMPONENT ---
+const LoadingPage = () => (
+  <motion.div 
+    initial={{ y: "100%" }} animate={{ y: 0 }}
+    className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
+  >
+    <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
+      <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
+      <h1 className="text-4xl font-black text-gray-800 tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,0.1)]">
+        Ummy
+      </h1>
+    </div>
+  </motion.div>
+);
+
+const Cloud = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#ffffff" />
+        <stop offset="100%" stopColor="#e2e8f0" />
+      </linearGradient>
+      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
+        <feOffset dx="1" dy="2" result="offsetblur" />
+        <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+        <feMerge>
+          <feMergeNode />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <path filter="url(#shadow)" d="M15 40C6.71573 40 0 33.2843 0 25C0 17.0784 6.13601 10.597 13.9213 10.0536C15.8236 4.25686 21.2825 0 27.75 0C33.8643 0 39.055 3.84365 41.229 9.30907C42.433 8.46914 43.9142 8 45.5 8C49.6421 8 53 11.3579 53 15.5C53 16.0337 52.9443 16.5544 52.8385 17.0567C58.5539 18.0645 63 22.9734 63 29C63 35.0751 58.0751 40 52 40H15Z" fill="url(#cloudGrad)" />
+  </svg>
+);
+
+const SOUNDS = {
+  // Coins sound for betting
+  BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
+  TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
+  WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
+  WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3',
+};
+
+const ITEMS = [
+  { id: 'broccoli', icon: '🥦', multiplier: 10 },
+  { id: 'lettuce', icon: '🥬', multiplier: 15 },
+  { id: 'carrot', icon: '🥕', multiplier: 25 },
+  { id: 'corn', icon: '🌽', multiplier: 45 },
+  { id: 'tomato', icon: '🍅', multiplier: 5 },
+  { id: 'coconut', icon: '🥥', multiplier: 5 },
+  { id: 'grapes', icon: '🍇', multiplier: 5 },
+  { id: 'orange', icon: '🍋', multiplier: 5 },
 ];
 
 const CHIPS_DATA = [
- { value: 100, label: '100', color: 'from-blue-400 to-cyan-500' },
- { value: 1000, label: '1K', color: 'from-green-400 to-emerald-500' },
- { value: 5000, label: '5K', color: 'from-yellow-400 to-amber-500' },
- { value: 50000, label: '50K', color: 'from-orange-400 to-red-500' },
- { value: 100000, label: '100K', color: 'from-red-500 to-rose-600' },
- { value: 300000, label: '300K', color: 'from-pink-400 to-fuchsia-500' },
- { value: 1000000, label: '1M', color: 'from-purple-500 to-indigo-600' },
+  { value: 1000, label: '1k', color: 'from-blue-500 to-blue-700' },
+  { value: 5000, label: '5K', color: 'from-green-500 to-green-700' },
+  { value: 50000, label: '50K', color: 'from-purple-500 to-purple-700' },
+  { value: 500000, label: '500K', color: 'from-red-500 to-red-700' },
+  { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
-const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
+export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
+  const { user: currentUser } = useUser();
+  const { userProfile } = useUserProfile(currentUser?.uid);
+  const firestore = useFirestore();
 
-export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
- const { user: currentUser } = useUser();
- const { userProfile } = useUserProfile(currentUser?.uid);
- const firestore = useFirestore();
- const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [selectedChip, setSelectedChip] = useState(100);
+  const [myBets, setMyBets] = useState<Record<string, number>>({});
+  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
+  const [winnerData, setWinnerData] = useState<any>(null);
+  const [localCoins, setLocalCoins] = useState(0);
+  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
+  const [todayWins, setTodayWins] = useState(0); 
+  const [history, setHistory] = useState(['🍎', '🍊', '🍇', '🥦', '🥕']);
+  const [historyData, setHistoryData] = useState<{ icon: string, bet: number, time: string }[]>([]);
+  const [floatingChips, setFloatingChips] = useState<{ id: string, itemId: string, color: string }[]>([]);
+  
+  const [isSoundOn, setIsSoundOn] = useState(true);
+  const [showRules, setShowRules] = useState(false);
+  const [showHistoryPage, setShowHistoryPage] = useState(false);
+  const soundRef = useRef(isSoundOn);
 
- const [isLaunching, setIsLaunching] = useState(true);
- const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
- const [timeLeft, setTimeLeft] = useState(25);
- const [selectedChip, setSelectedChip] = useState(1000);
- const [myBets, setMyBets] = useState<Record<string, number>>({});
- const [lastBets, setLastBets] = useState<Record<string, number>>({});
- const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
- const [history, setHistory] = useState<string[]>(['panda', 'lion', 'fox']);
- const [isMuted, setIsMuted] = useState(false);
- const [winnerData, setWinnerData] = useState<{ emoji: string; win: number } | null>(null);
- const [localCoins, setLocalCoins] = useState(0);
- const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
- const [hintStep, setHintStep] = useState(0);
- const [showRules, setShowRules] = useState(false);
+  useEffect(() => {
+    soundRef.current = isSoundOn;
+  }, [isSoundOn]);
 
- const handleInvite = () => {
-   if (typeof window !== 'undefined') {
-     const shareUrl = window.location.origin + '/games/forest-party';
-     const text = encodeURIComponent(`Join the ultimate Forest Party adventure! 🐼🦁 Let's win together: ${shareUrl}`);
-     window.open(`https://wa.me/?text=${text}`, '_blank');
-     toast({ title: 'Sharing Frequency Activated!', description: 'Invite your tribe to the jungle.' });
-   }
- };
-
- const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
- const { data: gameData } = useDoc(gameDocRef);
-
- const chipAudio = useRef<HTMLAudioElement | null>(null);
- const spinAudio = useRef<HTMLAudioElement | null>(null);
- const tickAudio = useRef<HTMLAudioElement | null>(null);
-
- useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 2000);
-  if (typeof window !== 'undefined') {
-    chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1271/1271-preview.mp3'); 
-    spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3');
-    tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/707/707-preview.mp3');
-  }
-  return () => clearTimeout(timer);
- }, []);
-
- useEffect(() => {
-  if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
- }, [userProfile?.wallet?.coins]);
-
- useEffect(() => {
-  if (gameState !== 'betting') return;
-  const pointerInterval = setInterval(() => {
-   setHintStep(prev => (prev + 1) % SEQUENCE.length);
-  }, 1500); 
-  return () => clearInterval(pointerInterval);
- }, [gameState]);
-
- useEffect(() => {
-  if (isLaunching) return;
-  const interval = setInterval(() => {
-   if (gameState === 'betting') {
-    if (timeLeft > 0) setTimeLeft(prev => prev - 1);
-    else startSpin();
-   }
-  }, 1000);
-  return () => clearInterval(interval);
- }, [gameState, timeLeft, isLaunching]);
-
- const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick') => {
-  if (isMuted) return;
-  if (type === 'bet' && chipAudio.current) {
-   chipAudio.current.currentTime = 0;
-   chipAudio.current.playbackRate = 2;
-   chipAudio.current.play().catch(() => {});
-  }
-  if (type === 'tick' && tickAudio.current) {
-   tickAudio.current.currentTime = 0;
-   tickAudio.current.playbackRate = 3;
-   tickAudio.current.play().catch(() => {});
-  }
-  if (type === 'spin' && spinAudio.current) {
-   spinAudio.current.currentTime = 0;
-   spinAudio.current.play().catch(() => {});
-  }
-  if (type === 'stop' && spinAudio.current) {
-   spinAudio.current.pause();
-   spinAudio.current.currentTime = 0;
-  }
- };
-
- const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
-  if (gameState !== 'betting' || !currentUser) return;
-  if (localCoins < selectedChip) {
-   toast({ title: 'Insufficient Coins', variant: 'destructive' });
-   return;
-  }
-
-  playSound('bet');
-  const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
-  const newChip = {
-   id: Date.now(),
-   itemIdx: animal.index,
-   label: chipInfo?.label || '100',
-   color: chipInfo?.color || 'from-blue-400 to-cyan-500',
-   x: (Math.random() * 30) - 15,
-   y: (Math.random() * 15) - 7
+  const playSound = (url: string, vol = 0.5) => {
+    if (!soundRef.current) return;
+    const audio = new Audio(url);
+    audio.volume = vol;
+    audio.play().catch(e => console.log("Sound play error:", e));
   };
-  setDroppedChips(prev => [...prev, newChip]);
-  setLocalCoins(prev => prev - selectedChip);
-  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
-  setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
- };
 
- const handleRepeat = () => {
-  if (gameState !== 'betting' || !currentUser) return;
-  const totalCost = Object.values(lastBets).reduce((a, b) => a + b, 0);
-  if (totalCost === 0) return;
-  if (localCoins < totalCost) {
-   toast({ title: 'Insufficient Coins', variant: 'destructive' });
-   return;
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
-  playSound('bet');
-  const newChips: any[] = [];
-  Object.entries(lastBets).forEach(([id, amount]) => {
-    if (amount === 0) return;
-    const item = ANIMALS.find(a => a.id === id);
-    if (!item) return;
-    newChips.push({
-      id: Math.random(),
-      itemIdx: item.index,
-      label: '...',
-      color: 'from-yellow-400 to-orange-500',
-      x: 0,
-      y: 0
-    });
-  });
-  setDroppedChips(prev => [...prev, ...newChips]);
-  setLocalCoins(prev => prev - totalCost);
-  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-totalCost) });
-  setMyBets(lastBets);
- };
+  useEffect(() => {
+    const checkAndClearHistory = () => {
+      const now = new Date();
+      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+      if (istTime.getUTCHours() === 0 && istTime.getUTCMinutes() === 0) {
+        setHistoryData([]);
+        setTodayWins(0);
+      }
+    };
+    const interval = setInterval(checkAndClearHistory, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
- const startSpin = async () => {
-  setGameState('spinning');
-  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+  useEffect(() => {
+    if (gameState !== 'betting') { setFloatingChips([]); return; }
+    const interval = setInterval(() => {
+      const randomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      const randomChip = CHIPS_DATA[Math.floor(Math.random() * CHIPS_DATA.length)];
+      setFloatingChips(prev => [...prev, { id: Math.random().toString(), itemId: randomItem.id, color: randomChip.color }]);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [gameState]);
 
-  if (firestore) {
-   try {
-    const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
-    if (oracleSnap.exists() && oracleSnap.data().isActive) {
-     const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) winningId = forced;
-     updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
+  useEffect(() => {
+    if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
+      setLocalCoins(userProfile.wallet.coins);
+      setIsCoinsLoaded(true);
     }
-   } catch (e) {}
-  }
+  }, [userProfile, isCoinsLoaded]);
 
-  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
-  const targetSequenceIdx = SEQUENCE.indexOf(targetIdx);
-  let currentStep = 0;
-  const totalSteps = (SEQUENCE.length * 6) + targetSequenceIdx;
-  let speed = 40;
+  useEffect(() => {
+    if (gameState !== 'betting' || isLoading) return;
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { startSpin(); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [gameState, isLoading]);
 
-  const runChase = () => {
-   const activeIdx = SEQUENCE[currentStep % SEQUENCE.length];
-   setHighlightIdx(activeIdx);
-   
-   if (currentStep < 8) {
-    playSound('tick');
-   } else if (currentStep === 8) {
-    playSound('spin');
-   }
-
-   if (currentStep < totalSteps) {
-    const remaining = totalSteps - currentStep;
-    if (remaining < 12) speed += 40;
-    else if (remaining < 24) speed += 15;
-    currentStep++;
-    setTimeout(runChase, speed);
-   } else {
-    playSound('stop');
-    setTimeout(() => finalizeResult(winningId), 800);
-   }
+  const handlePlaceBet = (id: string) => {
+    if (gameState !== 'betting' || localCoins < selectedChip) return;
+    // Coins sound added for betting
+    playSound(SOUNDS.BET, 0.9);
+    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
+    setLocalCoins(prev => prev - selectedChip);
+    updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
   };
-  runChase();
- };
 
- const finalizeResult = (id: string) => {
-  const winItem = ANIMALS.find(i => i.id === id);
-  const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
-
-  setHistory(prev => [id, ...prev].slice(0, 15));
-  setWinnerData({ emoji: winItem?.emoji || '🏆', win: winAmount });
-  setGameState('result');
-
-  if (winAmount > 0 && currentUser && firestore && userProfile) {
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(winAmount) });
-   addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-    gameId: 'forest-party',
-    userId: currentUser.uid,
-    username: userProfile?.username || 'Guest',
-    avatarUrl: userProfile?.avatarUrl || null,
-    amount: winAmount,
-    timestamp: serverTimestamp()
-   });
-  }
-
-  setTimeout(() => {
-   setWinnerData(null);
-   setLastBets(myBets);
-   setMyBets({});
-   setHighlightIdx(null);
-   setDroppedChips([]);
-   setGameState('betting');
-   setTimeLeft(25);
-  }, 5000);
- };
-
- if (isLaunching) {
-  return (
-   <div className="h-screen w-full bg-[#050A1F] flex flex-col items-center justify-center space-y-8 relative overflow-hidden">
-    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636918-a1d828a2a781?q=80&w=2000')] bg-cover bg-center opacity-40 mix-blend-screen blur-[1px]" />
-    <motion.div 
-     initial={{ scale: 0.8, opacity: 0 }}
-     animate={{ scale: 1, opacity: 1 }}
-     className="relative z-10 flex flex-col items-center gap-4"
-    >
-      <div className="text-9xl filter drop-shadow-[0_0_30px_rgba(255,255,255,0.3)]">🐼</div>
-      <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-blue-300 to-indigo-600 uppercase tracking-tighter italic">Forest Party</h1>
-      <div className="flex items-center gap-3 bg-black/40 px-6 py-2 rounded-full border border-white/10 backdrop-blur-md">
-        <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
-        <span className="text-[10px] font-black uppercase text-blue-400/80 tracking-widest">Entering the Wild...</span>
-      </div>
-    </motion.div>
-   </div>
-  );
- }
-
- return (
-  <div className="h-screen w-full bg-[#050A1F] flex flex-col relative overflow-hidden font-sans text-white">
-   <div className="absolute inset-0 z-0">
-    <div className="absolute inset-0 bg-gradient-to-b from-[#0A1128] via-[#050A1F] to-[#02040A]" />
-    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636918-a1d828a2a781?q=80&w=2000')] bg-cover bg-center opacity-40 mix-blend-screen" />
-   </div>
-
-   <AnimatePresence>
-    {showRules && (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-xl p-6">
-        <div className="bg-[#0B122E] border-2 border-white/20 rounded-[3rem] p-8 max-w-sm w-full relative shadow-2xl">
-          <button onClick={() => setShowRules(false)} className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"><X className="h-6 w-6" /></button>
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="h-16 w-16 bg-white/10 rounded-3xl flex items-center justify-center mb-2"><HelpCircle className="h-8 w-8 text-yellow-500" /></div>
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter">Jungle Wisdom</h2>
-            <div className="space-y-4 text-[13px] font-medium text-blue-100/80 leading-relaxed">
-              <p>1. Select a frequency (chip amount) and choose your animal spirit.</p>
-              <p>2. The forest wheel spins every 25 seconds. If the light stops on your animal, you WIN!</p>
-              <p>3. Different animals have different multipliers (up to x45 for the Lion!).</p>
-            </div>
-            <button onClick={() => setShowRules(false)} className="mt-4 w-full bg-yellow-500 text-black h-12 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all">Got it</button>
-          </div>
-        </div>
-      </motion.div>
-    )}
-   </AnimatePresence>
-
-   <AnimatePresence>
-    {gameState === 'result' && winnerData && (
-     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md">
-      <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="bg-white border-[8px] border-blue-500 rounded-[4rem] p-12 flex flex-col items-center shadow-2xl w-[320px]">
-       <Trophy className="text-yellow-500 w-20 h-20 mb-6 drop-shadow-lg" />
-       <div className="text-9xl mb-6 drop-shadow-2xl">{winnerData.emoji}</div>
-       {winnerData.win > 0 ? (
-        <div className="text-center">
-         <p className="text-blue-600 font-black text-3xl uppercase tracking-tighter">PREMIUM WIN!</p>
-         <p className="text-5xl font-black text-slate-900 tracking-tighter mt-1">+{winnerData.win.toLocaleString()}</p>
-        </div>
-       ) : <p className="text-slate-400 font-black text-2xl uppercase tracking-widest italic">Try Again!</p>}
-      </motion.div>
-     </motion.div>
-    )}
-   </AnimatePresence>
-
-   {/* HEADER */}
-   <header className="relative z-50 flex items-center justify-between px-4 py-3 pt-12 bg-gradient-to-b from-[#0b1338] to-transparent">
-     {/* Left: Coins Pill */}
-     <div className="flex items-center bg-[#070b24]/80 rounded-full border border-white/10 pr-1 h-10 backdrop-blur-md">
-       <div className="h-10 w-10 bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full flex items-center justify-center p-1 -ml-1 border-2 border-[#070b24]">
-          <GoldCoinIcon className="h-full w-full drop-shadow-md" />
-       </div>
-       <span className="text-white font-medium text-[15px] px-3 tracking-wide">{localCoins}</span>
-       <button className="h-8 w-8 rounded-full bg-gradient-to-b from-[#6EE820] to-[#45A80B] flex items-center justify-center shadow-[0_2px_10px_rgba(110,232,32,0.4)] border border-white/30 active:scale-95 transition-all mr-0.5">
-         <span className="text-white text-xl font-black leading-none drop-shadow-md">+</span>
-       </button>
-     </div>
-
-     {/* Right: Buttons */}
-     <div className="flex items-center gap-2">
-       <button className="bg-[#0b122e]/80 h-10 w-10 flex items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-lg active:scale-95 transition-all backdrop-blur-md">
-         <Clock className="h-5 w-5" />
-       </button>
-       <button onClick={() => setIsMuted(!isMuted)} className="bg-[#0b122e]/80 h-10 w-10 flex items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-lg active:scale-95 transition-all backdrop-blur-md">
-         {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-       </button>
-       <button onClick={() => setShowRules(true)} className="bg-[#0b122e]/80 h-10 w-10 flex items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-lg active:scale-95 transition-all backdrop-blur-md">
-         <HelpCircle className="h-5 w-5" />
-       </button>
-       <button onClick={onBack} className="bg-[#0b122e]/80 h-10 w-10 flex items-center justify-center rounded-full border-[1.5px] border-white/40 text-white shadow-lg active:scale-95 transition-all backdrop-blur-md">
-         <X className="h-5 w-5" />
-       </button>
-     </div>
-   </header>
-
-   <div className="relative z-50 px-6 py-2">
-    <div className="bg-black/40 backdrop-blur-2xl rounded-full border border-white/10 p-2 flex items-center gap-3 overflow-x-auto no-scrollbar shadow-2xl">
-     {history.map((id, i) => (
-      <div key={i} className="relative shrink-0">
-        <div className={cn(
-          "h-10 w-10 bg-white/5 rounded-full flex items-center justify-center text-2xl border border-white/5",
-          i === 0 && "bg-white/20 border-white/30"
-        )}>
-         {ANIMALS.find(a => a.id === id)?.emoji}
-        </div>
-        {i === 0 && <div className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-rose-600 text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white/20">NEW</div>}
-      </div>
-     ))}
-    </div>
-   </div>
-
-   {/* WHEEL AREA: -mt-16 to shift up, py-12 for breathing space */}
-   <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 relative -mt-16">
+  const startSpin = () => {
+    setGameState('spinning');
+    // Spinning sound (Whirring) made louder (Volume 1.0)
+    playSound(SOUNDS.WHIRRING, 1.0);
     
-    <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-      
-      {/* SVG LINES: Updated coordinates for wider span */}
-      <svg className="absolute inset-0 w-full h-full z-10 drop-shadow-[0_0_8px_rgba(234,182,118,0.6)]" viewBox="0 0 100 100">
-        <line x1="50" y1="50" x2="50" y2="8" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="82" y2="18" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="92" y2="50" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="82" y2="82" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="50" y2="92" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="18" y2="82" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="8" y2="50" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-        <line x1="50" y1="50" x2="18" y2="18" stroke="#eab676" strokeWidth="4" strokeLinecap="round" opacity="0.6"/>
-      </svg>
+    const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    let currentStep = 0;
+    const totalSteps = 40 + ITEMS.indexOf(winItem);
 
-      {/* CENTER CLOCK */}
-      <div className="relative z-20 w-24 h-24 bg-gradient-to-br from-[#4a2e15] to-[#2d1a0d] rounded-full shadow-[0_10px_25px_rgba(0,0,0,0.8),inset_0_4px_10px_rgba(255,255,255,0.1)] flex flex-col items-center justify-center border-[4px] border-[#eab676] p-2 text-center overflow-hidden">
-        <div className="absolute inset-0 bg-white/5 animate-shine -skew-x-[45deg]" />
-        <p className="text-[7px] font-black uppercase text-yellow-500/80 leading-tight tracking-[0.2em] mb-1 drop-shadow-md">
-         {gameState === 'betting' ? 'Bet Now' : 'Spinning'}
-        </p>
-        <span className={cn(
-         "text-3xl font-black tracking-tight transition-all duration-500",
-         gameState === 'betting' ? "text-white" : "text-yellow-400 scale-125 rotate-12"
-        )}>
-         {gameState === 'betting' ? timeLeft : '🎲'}
-        </span>
-        {gameState === 'betting' && (
-          <div className="mt-1 w-[80%] mx-auto bg-black/40 rounded-full h-1 relative overflow-hidden">
-            <motion.div 
-              initial={{ width: '100%' }}
-              animate={{ width: `${(timeLeft/25)*100}%` }}
-              className="absolute left-0 top-0 h-full bg-[#eab676]"
-            />
-          </div>
-        )}
-      </div>
+    const run = () => {
+      setHighlightIdx(currentStep % ITEMS.length);
+      playSound(SOUNDS.TICK, 0.3);
+      if (currentStep < totalSteps) {
+        currentStep++;
+        setTimeout(run, 50 + (currentStep * 2));
+      } else {
+        setTimeout(() => finalizeResult(winItem), 1000);
+      }
+    };
+    run();
+  };
 
-      {/* ANIMAL CARDS: Adjusted positioning to be further from center */}
-      {ANIMALS.map((item, idx) => {
-       const isActive = highlightIdx === idx;
-       const betOnThis = myBets[item.id] || 0;
-       const isHandPointing = gameState === 'betting' && SEQUENCE[hintStep] === idx;
+  const finalizeResult = (winItem: any) => {
+    const betOnWinner = myBets[winItem.id] || 0;
+    const winAmount = betOnWinner * winItem.multiplier;
+    setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
 
-       return (
-        <motion.div  
-          key={item.id} 
-          className={cn(
-           "absolute transition-all duration-300 z-20",
-           item.pos === 'top' && "top-[1%] left-1/2 -translate-x-1/2",
-           item.pos === 'top-right' && "top-[8%] right-[8%]",
-           item.pos === 'right' && "right-[1%] top-1/2 -translate-y-1/2",
-           item.pos === 'bottom-right' && "bottom-[8%] right-[8%]",
-           item.pos === 'bottom' && "bottom-[1%] left-1/2 -translate-x-1/2",
-           item.pos === 'bottom-left' && "bottom-[8%] left-[8%]",
-           item.pos === 'left' && "left-[1%] top-1/2 -translate-y-1/2",
-           item.pos === 'top-left' && "top-[8%] left-[8%]",
-           isActive && "z-50"
-          )}
-        >
-          <button
-            onClick={() => handlePlaceBet(item)}
-            disabled={gameState !== 'betting'}
-            className={cn(
-              "relative group active:scale-95 transition-all outline-none",
-              gameState === 'spinning' && !isActive && "opacity-40 grayscale-[0.2]"
-            )}
+    Object.entries(myBets).forEach(([itemId, amount]) => {
+      const item = ITEMS.find(i => i.id === itemId);
+      if (item && amount > 0) {
+        setHistoryData(prev => [{
+          icon: item.icon,
+          bet: amount,
+          time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        }, ...prev]);
+      }
+    });
+
+    if (winAmount > 0) {
+      playSound(SOUNDS.WIN, 0.6);
+      setLocalCoins(prev => prev + winAmount);
+      setTodayWins(prev => prev + winAmount);
+      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
+    }
+    
+    setWinnerData({ ...winItem, win: winAmount, myBet: betOnWinner });
+    setGameState('result');
+
+    setTimeout(() => {
+      setGameState('betting');
+      setTimeLeft(30);
+      setMyBets({});
+      setWinnerData(null);
+      setHighlightIdx(null);
+    }, 5000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex flex-col justify-end z-[100]">
+      <div className="flex-1" onClick={onClose} />
+
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <LoadingPage key="loader" />
+        ) : (
+          <motion.div 
+            key="game"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="h-[80vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+            style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
           >
-            <div className={cn(
-             "h-[82px] w-[82px] rounded-full flex flex-col items-center justify-center transition-all border-[4px] relative overflow-hidden shadow-[0_10px_20px_rgba(0,0,0,0.6),inset_0_2px_8px_rgba(255,255,255,0.2)]",
-             isActive ? "border-yellow-400 shadow-[0_0_50px_#fbbf24] scale-110" : "border-[#eab676]",
-             "bg-gradient-to-br from-[#4a2e15] to-[#2d1a0d]"
-            )}>
-              <div className="w-full h-full flex items-center justify-center">
-                 <span className={cn("text-[38px] drop-shadow-xl relative z-10 transition-transform leading-none", isActive && "scale-110")}>
-                  {item.emoji}
-                 </span>
+            
+            {/* HEADER */}
+            <div className="w-full flex flex-col z-20">
+              <div className="w-full p-4 flex justify-between items-center relative">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
+                    <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
+                      <span className="text-xl drop-shadow-md">🪙</span>
+                    </div>
+                    <span className="pl-12 pr-6 text-white font-medium text-sm tracking-wider">{localCoins.toLocaleString()}</span>
+                    <button className="absolute -right-4 w-9 h-9 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a]">
+                      <Plus className="w-5 h-5 font-bold" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 relative">
+                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                     <Cloud className="w-28 h-auto" />
+                  </div>
+                  {[ 
+                    { icon: Clock, action: () => setShowHistoryPage(true) }, 
+                    { icon: isSoundOn ? Volume2 : VolumeX, action: () => setIsSoundOn(!isSoundOn) }, 
+                    { icon: HelpCircle, action: () => setShowRules(true) }, 
+                    { icon: X, action: onClose } 
+                  ].map((btn, i) => (
+                    <button key={i} onClick={btn.action} className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white">
+                      <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none z-20" />
+
+              <div className="px-4 mt-1 relative">
+                <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
+                  <span className="text-base">🏆</span> {todayWins.toLocaleString()}
+                </div>
+                <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                   <Cloud className="w-14 h-auto" />
+                </div>
+              </div>
             </div>
 
-            <div className={cn(
-                "absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 px-3 py-[2px] rounded-full border-2 whitespace-nowrap shadow-lg",
-                "bg-[#3e2723] border-[#eab676]"
-            )}>
-                <span className="text-[8px] font-black text-white tracking-widest drop-shadow-md">
-                    WIN {item.multiplier} TIMES
-                </span>
+            {/* BOARD AREA */}
+            <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
+              <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
+                <defs>
+                  <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#3d1a05" /> 
+                    <stop offset="100%" stopColor="#1a0801" />
+                  </linearGradient>
+                </defs>
+                <g transform="translate(175, 175)">
+                  <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+                  <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
+                  <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+                  <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
+                </g>
+              </svg>
+
+              <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
+                <g transform="translate(175, 175)">
+                  {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                    <line key={angle} x1="0" y1="0" x2={110 * Math.cos((angle-90)*Math.PI/180)} y2={110 * Math.sin((angle-90)*Math.PI/180)} stroke="#fbbf24" strokeWidth="6" strokeLinecap="round" />
+                  ))}
+                </g>
+              </svg>
+              
+              <div className="relative z-50">
+                <div 
+                  style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }}
+                  className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8)]"
+                >
+                  <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40">
+                    <div className="w-full h-1/2 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center border-b-2 border-yellow-500/40">
+                        <span className="text-4xl">🧆</span>
+                    </div>
+                    <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center">
+                      <span className="text-4xl font-black text-white italic">{gameState === 'betting' ? timeLeft : '...'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {ITEMS.map((item, idx) => {
+                const angle = (idx * 45) - 90;
+                const x = Math.cos((angle * Math.PI) / 180) * 135;
+                const y = Math.sin((angle * Math.PI) / 180) * 135;
+                const betAmount = myBets[item.id] || 0;
+
+                return (
+                  <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
+                    <button 
+                      onClick={() => handlePlaceBet(item.id)}
+                      style={{ transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
+                      className={cn(
+                        "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
+                        "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5)]",
+                        highlightIdx === idx ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
+                      )}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-0.5 z-[60] pointer-events-none p-4">
+                        {floatingChips.filter(fc => fc.itemId === item.id).map(fc => (
+                          <motion.div key={fc.id} initial={{ y: -70, opacity: 0, scale: 0 }} animate={{ y: -20, opacity: 1, scale: 1 }} className={cn("w-4 h-4 rounded-full border border-white/50 bg-gradient-to-br shadow-sm", fc.color)} />
+                        ))}
+                      </div>
+
+                      <div className="w-full flex-[1.2] flex items-center justify-center">
+                        <span className="text-4xl drop-shadow-lg z-20">{item.icon}</span>
+                      </div>
+                      <AnimatePresence>
+                        {betAmount > 0 && (
+                          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 z-20">
+                            <span className="text-[10px] font-black text-white">🪙{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20">
+                        <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="absolute inset-0 pointer-events-none">
-              <AnimatePresence>
-                {droppedChips.filter(c => c.itemIdx === item.index).map(chip => (
-                  <motion.div 
-                    key={chip.id} 
-                    initial={{ y: -150, opacity: 0, scale: 0.5 }} 
-                    animate={{ y: 0, opacity: 1, scale: 1 }} 
-                    transition={{ type: 'spring', damping: 15 }} 
-                    className="absolute top-1/2 left-1/2"
-                  >
-                    <div className={cn("w-6 h-6 rounded-full border-2 border-white shadow-2xl flex items-center justify-center bg-gradient-to-br", chip.color)} style={{ marginLeft: chip.x, marginTop: chip.y }}>
-                      <span className="text-[6px] font-black text-white drop-shadow-md">{chip.label}</span>
+            {/* BOTTOM UI */}
+            <div className="w-full px-4 mb-2 z-20 relative">
+               <div className="flex justify-between px-1 mb-1 items-end relative">
+                <div className="absolute -top-16 left-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
+                <span className="text-4xl relative z-20">🥗</span>
+                <div className="absolute -top-16 right-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
+                <span className="text-4xl relative z-20">🍕</span>
+              </div>
+              <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar">
+                 <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
+                 {history.map((icon, i) => (
+                   <div key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg">{icon}</div>
+                 ))}
+              </div>
+            </div>
+
+            <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9]">
+              {CHIPS_DATA.map(chip => (
+                <button 
+                  key={chip.value}
+                  onClick={() => setSelectedChip(chip.value)}
+                  className={cn(
+                    "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
+                    chip.color,
+                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
+                  )}
+                >
+                  <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
+                    <span className="text-white">{chip.label}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* WINNING PAGE */}
+            <AnimatePresence>
+              {gameState === 'result' && winnerData && (
+                <motion.div 
+                  initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[12px] border-[#0284c7] z-[200] flex flex-col items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                >
+                  <div className="absolute -top-10 bg-yellow-400 p-4 rounded-full border-4 border-white shadow-lg">
+                    <Trophy className="w-10 h-10 text-white" />
+                  </div>
+                  <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white w-[75%] py-6 rounded-[2.5rem] shadow-xl flex flex-col items-center gap-2 border-b-8 border-gray-200">
+                    <span className="text-7xl drop-shadow-md">{winnerData.icon}</span>
+                    <div className="flex flex-col items-center mt-2">
+                      <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Your Bet</span>
+                      <span className="text-gray-800 font-black text-xl">🪙 {(winnerData.myBet || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="mt-2 bg-green-100 px-6 py-2 rounded-2xl border-2 border-green-500">
+                      <span className="text-green-600 font-black text-3xl">+{winnerData.win.toLocaleString()}</span>
                     </div>
                   </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-
-            {betOnThis > 0 && (
-             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-3 -right-2 z-40">
-               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 h-8 w-8 rounded-full border-2 border-white shadow-xl flex items-center justify-center">
-                 <span className="text-[8px] font-black text-white">{betOnThis >= 1000 ? (betOnThis/1000).toFixed(0)+'K' : betOnThis}</span>
-               </div>
-             </motion.div>
-            )}
-
-            <AnimatePresence>
-              {isHandPointing && (
-                <motion.div initial={{ scale: 0, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0 }} className="absolute -top-10 left-1/2 -translate-x-1/2 z-40">
-                  <Pointer size={28} className="text-white fill-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] animate-bounce" />
+                  <h2 className="mt-4 text-white font-black text-2xl italic tracking-tighter drop-shadow-md">CONGRATULATIONS!</h2>
                 </motion.div>
               )}
             </AnimatePresence>
-          </button>
-        </motion.div>
-       );
-      })}
+
+            {/* RULES BOTTOM SHEET */}
+            <AnimatePresence>
+              {showRules && (
+                <motion.div 
+                  initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                  className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
+                >
+                  <div className="relative flex items-center justify-center w-full mb-6">
+                    <button onClick={() => setShowRules(false)} className="absolute left-0 p-2.5 bg-white/20 hover:bg-white/30 rounded-full text-white">
+                      <ArrowLeft className="w-6 h-6" strokeWidth={2.5} />
+                    </button>
+                    <h2 className="text-white font-black text-2xl tracking-widest drop-shadow-md">RULES</h2>
+                  </div>
+                  <div className="flex flex-col gap-4 text-white/95 font-semibold text-sm">
+                    <p className="flex items-start gap-2"><span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">1</span>Click on the Chips icon and select Amount</p>
+                    <p className="flex items-start gap-2"><span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">2</span>Then Choose you Fruits, vegetables Ect and put your bet Coins</p>
+                    <p className="flex items-start gap-2"><span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">3</span>If you win you will get ( Bet Amount × multipler )</p>
+                    <p className="flex items-start gap-2"><span className="bg-white/20 rounded-full min-w-[24px] h-6 flex items-center justify-center text-xs">4</span>If You Loss You will not receive any amount</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* GAME HISTORY PAGE */}
+            <AnimatePresence>
+              {showHistoryPage && (
+                <motion.div 
+                  initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                  className="absolute bottom-0 left-0 right-0 h-[60vh] bg-[#0ea5e9] rounded-t-[3.5rem] border-t-[10px] border-[#0284c7] z-[400] flex flex-col shadow-[0_-20px_60px_rgba(0,0,0,0.6)]"
+                >
+                   <div className="p-6 flex items-center justify-between relative">
+                      <div className="w-10" />
+                      <h2 className="text-white font-black text-2xl tracking-tight italic drop-shadow-lg">Game history</h2>
+                      <button onClick={() => setShowHistoryPage(false)} className="p-2 bg-white/20 rounded-full text-white">
+                        <X className="w-6 h-6" strokeWidth={3} />
+                      </button>
+                   </div>
+                   <div className="flex-1 px-6 pb-6 overflow-hidden">
+                      <div className="bg-white w-full h-full rounded-[2.5rem] shadow-inner flex flex-col border-b-8 border-gray-200">
+                         <div className="p-5 border-b-2 border-gray-100">
+                            <h3 className="text-gray-800 font-black text-lg tracking-tighter">Game Record</h3>
+                         </div>
+                         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+                            {historyData.length > 0 ? (
+                              historyData.map((rec, idx) => (
+                                <div key={idx} className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                                   <div className="flex items-center gap-3">
+                                      <span className="text-3xl">{rec.icon}</span>
+                                      <div className="flex flex-col">
+                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Amount</span>
+                                         <span className="text-gray-800 font-black">🪙 {rec.bet.toLocaleString()}</span>
+                                      </div>
+                                   </div>
+                                   <span className="text-[10px] font-black text-gray-400">{rec.time}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="h-full flex flex-col items-center justify-center text-gray-300 gap-2">
+                                <Clock className="w-12 h-12 opacity-20" />
+                                <span className="font-bold italic">No records found</span>
+                              </div>
+                            )}
+                         </div>
+                      </div>
+                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-   </main>
-
-   <footer className="relative z-50 p-6 pb-SAFE_BOTTOM bg-gradient-to-t from-black via-black/80 to-transparent mt-auto">
-     <div className="max-w-md mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 bg-white/10 backdrop-blur-2xl px-6 py-3 rounded-3xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
-         <GoldCoinIcon className="h-6 w-6" />
-         <span className="text-2xl font-black text-yellow-500 tracking-tighter">{(localCoins || 0).toLocaleString()}</span>
-        </div>
-        <button onClick={handleInvite} className="bg-white/10 backdrop-blur-2xl p-3.5 rounded-3xl border border-white/20 text-white shadow-2xl active:scale-90 transition-all">
-         <Users className="h-7 w-7" />
-        </button>
-      </div>
-
-      <div className="bg-[#1a0f0a] p-4 rounded-[2.5rem] border-[5px] border-[#3e2723] shadow-[0_0_60px_rgba(0,0,0,1)] flex items-center justify-between gap-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-white/5 opacity-10 blur-xl translate-y-1/2" />
-        <div className="flex gap-2 flex-1 overflow-x-auto no-scrollbar relative z-10 px-1 py-1">
-         {CHIPS_DATA.map(chip => (
-          <button 
-           key={chip.value} 
-           onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
-           className={cn(
-            "h-14 w-14 rounded-full flex items-center justify-center transition-all border-4 shrink-0 shadow-2xl relative group",
-            selectedChip === chip.value ? "border-white scale-110 z-10 ring-4 ring-yellow-400/30" : "border-black/40 opacity-40 grayscale-[0.3]",
-            `bg-gradient-to-br ${chip.color}`
-           )}
-          >
-            <div className="absolute inset-0 bg-white/20 rounded-full blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="text-[12px] font-black text-white drop-shadow-md drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] relative z-10">{chip.label}</span>
-          </button>
-         ))}
-        </div>
-        <button 
-         onClick={handleRepeat} 
-         disabled={gameState !== 'betting'}
-         className="relative z-10 bg-gradient-to-b from-orange-500 to-red-700 px-10 h-16 rounded-[1.5rem] font-bold uppercase text-[12px] shadow-2xl active:scale-95 transition-all border-2 border-white/30 text-white tracking-[0.1em]"
-        >
-         Repeat
-        </button>
-      </div>
-     </div>
-   </footer>
-
-   <style jsx global>{`
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    @keyframes shine { 
-     0% { transform: translateX(-200%) skewX(-30deg); } 
-     100% { transform: translateX(200%) skewX(-30deg); } 
-    }
-    .animate-shine { animation: shine 3s infinite linear; }
-    .pb-SAFE_BOTTOM { padding-bottom: max(2.5rem, env(safe-area-inset-bottom)); }
-   `}</style>
-  </div>
- );
+  );
 }
