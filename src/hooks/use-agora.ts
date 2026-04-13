@@ -255,9 +255,9 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         try {
           console.log('[Agora] Creating Native Microphone Track...');
           micTrack = await AgoraRTC.createMicrophoneAudioTrack({
-            AEC: true,
-            ANS: true,
-            AGC: true,
+            AEC: false, // AUDIO MODE FIX: KILL AEC/NS TO PREVENT OS HIJACK
+            ANS: false,
+            AGC: false,
             encoderConfig: 'high_quality'
           });
           
@@ -315,10 +315,10 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
   // ROUTING PERSISTENCE (Frequent enforcement to prevent speaker switch)
   useEffect(() => {
     if (!AudioRoute || connectionState !== 'CONNECTED') return;
-    // Lock to earbuds every 1s (more aggressive to fight OS hijacking)
+    // Lock to earbuds every 500ms (EXTREMELY aggressive to fight OS hijacking)
     const interval = setInterval(() => { 
       AudioRoute.forceEarbuds().catch(() => {}); 
-    }, 1000);
+    }, 500);
     return () => clearInterval(interval);
   }, [connectionState]);
 
