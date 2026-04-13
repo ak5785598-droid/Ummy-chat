@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Trophy,
   Megaphone,
+  Repeat,
   Home,
   Heart,
   LogOut,
@@ -44,6 +45,7 @@ import {
   Trophy as TrophyIcon,
   Speaker
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ROOM_TASKS } from '@/constants/room-tasks';
 import { GoldCoinIcon, GameControllerIcon, UmmyLogoIcon } from '@/components/icons';
 import type { Room, RoomParticipant } from '@/lib/types';
@@ -60,7 +62,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
   useUser,
@@ -300,6 +301,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [musicProgress, setMusicProgress] = useState(0);
   const [musicDuration, setMusicDuration] = useState(0);
   const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+  const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
@@ -484,6 +486,13 @@ export function RoomClient({ room }: { room: Room }) {
 
     const handleEnded = () => {
       const isOwner = currentUser?.uid === room?.ownerId;
+      if (isRepeatEnabled) {
+        console.log('[Music] Repeat active, looping track...');
+        audio.currentTime = 0;
+        audio.play().catch(e => console.warn('[Music] Loop failed:', e));
+        return;
+      }
+
       if (isOwner && roomMusicLibrary.length > 1) {
         console.log('[Music] Track ended, auto-playing next...');
         handleNextMusic();
@@ -492,9 +501,28 @@ export function RoomClient({ room }: { room: Room }) {
       }
     };
 
+    const handleTimeUpdate = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setMusicDuration(audio.duration);
+        setMusicCurrentTime(audio.currentTime);
+        setMusicProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      if (audio.duration) setMusicDuration(audio.duration);
+    };
+
     audio.addEventListener('ended', handleEnded);
-    return () => audio.removeEventListener('ended', handleEnded);
-  }, [roomMusicLibrary, room?.id, room?.currentMusicId]);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [roomMusicLibrary, room?.id, room?.currentMusicId, isRepeatEnabled]);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -2243,45 +2271,64 @@ export function RoomClient({ room }: { room: Room }) {
               <div className="flex items-center gap-1">
                  {/* Library Button (Four Squares) */}
                 <button
-                  onClick={() => setIsRoomPlayOpen(true)}
+                  onClick={() => {
+                    setIsRoomPlayOpen(true);
+                    // Force the dialog to open in the music tab directly (handled by state in Dialog if needed)
+                  }}
                   className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white active:scale-90 transition-all border border-white/5"
+                  title="Open Music Library"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </button>
                 
+                {/* Repeat Button */}
+                <button
+                  onClick={() => setIsRepeatEnabled(!isRepeatEnabled)}
+                  className={cn(
+                    "p-2 rounded-xl transition-all",
+                    isRepeatEnabled ? "bg-cyan-500/20 text-cyan-400" : "text-white/40 hover:text-white"
+                  )}
+                  title="Toggle Repeat"
+                >
+                  <Repeat className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Central Audio Control Cluster */}
+              <div className="flex items-center gap-3">
                 {/* Previous Track */}
                 <button
                   onClick={handlePreviousMusic}
                   disabled={!canManageRoom}
-                  className="p-2 text-white/40 hover:text-white disabled:opacity-30"
+                  className="p-2 text-white/40 hover:text-white disabled:opacity-30 active:scale-90 transition-all"
                 >
                   <img src="https://img.icons8.com/ios-filled/50/ffffff/previous.png" className="h-5 w-5" />
                 </button>
-              </div>
 
-              {/* Central Play/Pause */}
-              <button
-                onClick={handleToggleMusic}
-                disabled={!canManageRoom}
-                className="h-12 w-12 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 active:scale-95 transition-all text-white border border-white/20 disabled:grayscale"
-              >
-                {room.isMusicPlaying ? (
-                  <img src="https://img.icons8.com/ios-filled/50/ffffff/pause--v1.png" className="h-6 w-6" />
-                ) : (
-                  <img src="https://img.icons8.com/ios-filled/50/ffffff/play--v1.png" className="h-6 w-6 ml-1" />
-                )}
-              </button>
+                {/* Central Play/Pause */}
+                <button
+                  onClick={handleToggleMusic}
+                  disabled={!canManageRoom}
+                  className="h-12 w-12 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 active:scale-95 transition-all text-white border border-white/20 disabled:grayscale"
+                >
+                  {room.isMusicPlaying ? (
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/pause--v1.png" className="h-6 w-6" />
+                  ) : (
+                    <img src="https://img.icons8.com/ios-filled/50/ffffff/play--v1.png" className="h-6 w-6 ml-1" />
+                  )}
+                </button>
 
-              <div className="flex items-center gap-1">
                 {/* Next Track */}
                 <button
                   onClick={handleNextMusic}
                   disabled={!canManageRoom}
-                  className="p-2 text-white/40 hover:text-white disabled:opacity-30"
+                  className="p-2 text-white/40 hover:text-white disabled:opacity-30 active:scale-90 transition-all"
                 >
                   <img src="https://img.icons8.com/ios-filled/50/ffffff/next.png" className="h-5 w-5" />
                 </button>
+              </div>
 
+              <div className="flex items-center gap-1">
                 {/* Volume - Opens popup */}
                 <button
                   onClick={() => setShowVolumePopup(true)}
@@ -2289,6 +2336,17 @@ export function RoomClient({ room }: { room: Room }) {
                 >
                   <Volume2 className="h-5 w-5" />
                 </button>
+
+                {/* Stop Music */}
+                {canManageRoom && (
+                  <button
+                    onClick={handleStopMusic}
+                    className="p-2 text-red-400/60 hover:text-red-400 active:scale-90 transition-all"
+                    title="Stop & Clear"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

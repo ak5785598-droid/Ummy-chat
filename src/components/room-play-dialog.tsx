@@ -99,6 +99,18 @@ export function RoomPlayDialog({
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
 
+ // Auto-switch to music view when dialog opens and music is the context
+ useEffect(() => {
+  if (open) {
+   if (room?.currentMusicUrl) {
+    setView('music');
+    setMusicTab('device'); // Room Library tab
+   } else {
+    setView('grid');
+   }
+  }
+ }, [open, room?.currentMusicUrl]);
+
  // Load room music library from Firestore
  useEffect(() => {
   if (!firestore || !roomId) return;
@@ -525,14 +537,14 @@ export function RoomPlayDialog({
                     </div>
                     ) : (
                     <div className="space-y-3">
-                        <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-bold uppercase text-sm active:scale-95 transition-all mb-4 disabled:opacity-50"
-                        >
-                        {isUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
-                        {isUploading ? 'Uploading...' : 'Upload to Room Library'}
-                        </button>
+                         <button 
+                         onClick={() => fileInputRef.current?.click()}
+                         disabled={isUploading}
+                         className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-bold uppercase text-xs active:scale-95 transition-all mb-4 disabled:opacity-50 text-white"
+                         >
+                         {isUploading ? <Loader className="h-5 w-5 animate-spin text-white" /> : <Upload className="h-5 w-5 text-white" />}
+                         <span>{isUploading ? 'Uploading...' : 'Upload to Room Library'}</span>
+                         </button>
                         {roomMusicLibrary.length === 0 && (
                         <div className="text-center py-8 text-white/40">
                             <Music className="h-12 w-12 mx-auto mb-3 opacity-30" />
@@ -543,30 +555,31 @@ export function RoomPlayDialog({
                         {roomMusicLibrary.map((track) => (
                           <div 
                             key={track.id} 
-                            className="w-full flex items-center gap-3 p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/10 group shadow-lg"
+                            className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/10 shadow-lg"
                           >
                             <button
                               onClick={() => handleSyncSharedMusic(track)}
-                              className="flex-1 flex items-center gap-4 text-left"
+                              className="flex-1 flex items-center gap-3 text-left"
                             >
-                              <div className="h-12 w-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
-                                <FileAudio className="h-6 w-6" />
+                              <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
+                                <FileAudio className="h-5 w-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold uppercase text-white truncate">{track.name}</p>
-                                <p className="text-[10px] text-white/40 truncate mt-0.5">by {track.uploaderName}</p>
+                                <p className="text-xs font-bold uppercase text-white truncate">{track.name}</p>
+                                <p className="text-[9px] text-white/40 truncate mt-0.5">by {track.uploaderName}</p>
                               </div>
-                              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white/40 group-hover:bg-primary group-hover:text-black transition-all">
-                                <Play className="h-4 w-4 fill-current" />
+                              {/* Small Circular Play Button (always visible) */}
+                              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all">
+                                <Play className="h-3 w-3 fill-current" />
                               </div>
                             </button>
                             
                             {canManage && (
                               <button
                                 onClick={() => handleDeleteTrack(track)}
-                                className="h-10 w-10 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center border border-red-500/10 active:scale-95 transition-all"
+                                className="h-8 w-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center border border-red-500/20 active:scale-90 transition-all"
                               >
-                                <Trash2 className="h-5 w-5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             )}
                           </div>
