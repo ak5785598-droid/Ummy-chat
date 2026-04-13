@@ -5,6 +5,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getDatabase, Database } from 'firebase/database';
 
 /**
  * ABSOLUTE SINGLETON PATTERN - CORE INITIALIZATION.
@@ -15,6 +16,7 @@ let appInstance: FirebaseApp | null = null;
 let firestoreInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
 let storageInstance: FirebaseStorage | null = null;
+let databaseInstance: Database | null = null;
 
 export function initializeFirebase() {
   if (typeof window === 'undefined') {
@@ -25,7 +27,8 @@ export function initializeFirebase() {
       firebaseApp: app,
       auth: getAuth(app),
       firestore: getFirestore(app),
-      storage: getStorage(app)
+      storage: getStorage(app),
+      database: getDatabase(app)
     };
   }
 
@@ -57,11 +60,16 @@ export function initializeFirebase() {
     storageInstance = getStorage(appInstance);
   }
 
+  if (!databaseInstance) {
+    databaseInstance = getDatabase(appInstance);
+  }
+
   return {
     firebaseApp: appInstance,
     auth: authInstance,
     firestore: firestoreInstance,
-    storage: storageInstance
+    storage: storageInstance,
+    database: databaseInstance
   };
 }
 

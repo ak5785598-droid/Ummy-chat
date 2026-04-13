@@ -129,7 +129,7 @@ export function RoomPlayDialog({
   return () => unsubscribe();
  }, [firestore, roomId]);
 
- const handleClearChat = async () => {
+  const handleClearChat = async () => {
   if (!firestore || !roomId || !user) return;
   setIsClearingChat(true);
   
@@ -270,7 +270,7 @@ export function RoomPlayDialog({
   const roomRef = doc(firestore, 'chatRooms', roomId);
   await updateDocumentNonBlocking(roomRef, {
    currentMusicUrl: track.url,
-   currentMusicTitle: track.name,
+   currentMusicTitle: track.name || track.url?.split('/').pop()?.split('?')[0] || 'Unknown Song',
    currentMusicType: track.type || 'upload',
    currentMusicId: track.id,
    isMusicPlaying: true,
@@ -284,7 +284,7 @@ export function RoomPlayDialog({
   // NOTE: Do NOT play locally here. The useEffect sync in room-client.tsx
   // will fire for ALL clients including the owner when Firestore updates.
   setIsMusicEnabled(true);
-  toast({ title: '🎵 Music Broadcasting', description: `${track.name} is now playing for everyone.` });
+  toast({ title: '🎵 Music Broadcasting', description: `${track.name || 'Track'} is now playing for everyone.` });
   onOpenChange(false);
  };
 
@@ -406,7 +406,7 @@ export function RoomPlayDialog({
                 <div className="flex items-center justify-around px-4 shrink-0 pb-2">
                   {toggleOptions.map(opt => (
                     <div key={opt.id} className="flex flex-col items-center gap-2">
-                      <button 
+                       <button 
                         onClick={opt.onClick}
                         className={cn(
                           "h-16 w-16 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 border border-white/10 relative overflow-hidden",

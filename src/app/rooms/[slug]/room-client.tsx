@@ -69,8 +69,10 @@ import {
   useCollection,
   useMemoFirebase,
   useDoc,
-  useStorage
+  useStorage,
+  useDatabase
 } from '@/firebase/provider';
+import { ref as dbRef, onValue } from 'firebase/database';
 import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
@@ -92,7 +94,7 @@ import {
   where,
   writeBatch
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
@@ -358,6 +360,21 @@ export function RoomClient({ room }: { room: Room }) {
     room?.id ? query(collection(firestore, 'chatRooms', room.id, 'music'), orderBy('createdAt', 'desc')) : null
   );
 
+  // SERVER TIME OFFSET SYNC
+  const database = useDatabase();
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
+  
+  useEffect(() => {
+    if (!database) return;
+    const offsetRef = dbRef(database, '.info/serverTimeOffset');
+    const unsubscribe = onValue(offsetRef, (snap) => {
+      const offset = snap.val() || 0;
+      setServerTimeOffset(offset);
+      // console.log('[Sync] Server Time Offset Updated:', offset, 'ms');
+    });
+    return () => unsubscribe();
+  }, [database]);
+
   // AUTO-UNLOCK: Play silent audio on mount to unlock browser audio context
   // This allows subsequent music to auto-play without user interaction
   useEffect(() => {
@@ -447,8 +464,12 @@ export function RoomClient({ room }: { room: Room }) {
       if (!startedAt) return offset;
       const startMs = startedAt?.toMillis?.() ?? (startedAt?.seconds ? startedAt.seconds * 1000 : null);
       if (!startMs) return offset;
-      // Current position = start offset + time elapsed since trigger
-      return offset + (Date.now() - startMs) / 1000;
+      
+      // Use Synchronized Clock: Local time + server-drift compensation
+      const syncedNow = Date.now() + serverTimeOffset;
+      const elapsed = (syncedNow - startMs) / 1000;
+      
+      return offset + elapsed;
     };
 
     // Track changed logic
@@ -1642,8 +1663,8 @@ export function RoomClient({ room }: { room: Room }) {
     try {
       const timestamp = Date.now();
       const storagePath = `rooms/${room.id}/chat/${timestamp}_${file.name}`;
-      const storageRef = ref(storage, storagePath);
-      const result = await uploadBytes(storageRef, file);
+      const sRef = storageRef(storage, storagePath);
+      const result = await uploadBytes(sRef, file);
       const url = await getDownloadURL(result.ref);
       await handleSendMessage(undefined, url);
       setShowInput(false);
@@ -2235,7 +2256,7 @@ export function RoomClient({ room }: { room: Room }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-medium text-white truncate">
-                  {room.currentMusicTitle || 'Unknown Song'}
+                  {room.currentMusicTitle || roomMusicLibrary.find(t => t.url === room.currentMusicUrl)?.name || 'Syncing frequency...'}
                 </p>
                 <p className="text-[9px] text-white/50">
                   {formatTime(musicCurrentTime)} / {formatTime(musicDuration)}

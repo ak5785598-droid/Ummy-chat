@@ -17,7 +17,7 @@ interface FirebaseClientProviderProps {
  */
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   // Directly retrieve stable singleton instances from the core initializer.
-  const { firebaseApp, auth, firestore, storage } = initializeFirebase();
+  const { firebaseApp, auth, firestore, storage, database } = initializeFirebase();
 
   return (
    <FirebaseProvider
@@ -25,6 +25,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     auth={auth || null}
     firestore={firestore || null}
     storage={storage || null}
+    database={database || null}
    >
     {children}
    </FirebaseProvider>
