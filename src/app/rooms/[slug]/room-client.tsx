@@ -132,7 +132,6 @@ import { ThemeColorMeta } from '@/components/theme-color-meta';
 
 import { memo, useCallback } from 'react';
 import { useAgora } from '@/hooks/use-agora';
-import { audioProxy } from '@/hooks/audio-proxy';
 
 // --- DAILY DATE UTILITY ---
 const getTodayString = () => {
@@ -331,7 +330,6 @@ export function RoomClient({ room }: { room: Room }) {
   // Music refs
   const musicAudioRef = useRef<HTMLAudioElement>(null);
   const pendingSeekTime = useRef<number | null>(null);
-  const masterAudioRef = useRef<HTMLAudioElement>(null);
 
   // Throttle ref for message processing
   const messageProcessTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -410,16 +408,6 @@ export function RoomClient({ room }: { room: Room }) {
       return () => clearTimeout(timer);
     }
   }, [isMusicPlaying, hasBluetooth, hasWired, isSpeaker, forceEarbuds]);
-
-  // VOICE PROXY: Register master player
-  useEffect(() => {
-    if (masterAudioRef.current) {
-      console.log('[Room] Registering Master Voice Player with AudioProxy');
-      audioProxy.registerMasterAudio(masterAudioRef.current);
-      registerAudioElement(masterAudioRef.current);
-    }
-    return () => audioProxy.clear();
-  }, [registerAudioElement]);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -1739,15 +1727,6 @@ export function RoomClient({ room }: { room: Room }) {
         onClaim={claimTask}
       />
 
-      {/* MASTER VOICE PLAYER (Single-Stream Bridge) */}
-      <audio 
-        ref={masterAudioRef} 
-        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
-        autoPlay
-        playsInline
-      />
-
-      {/* AI AUDIO SLAVE (Mobile Bluetooth Fix) */}
       <audio 
         ref={aiSilentAudioRef} 
         loop

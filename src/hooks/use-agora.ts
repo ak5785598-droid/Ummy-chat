@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { IAgoraRTCClient, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from 'agora-rtc-sdk-ng';
 import { Capacitor } from '@capacitor/core';
 import { CordovaAudioRoute } from '@/native/audio-route';
-import { audioProxy } from './audio-proxy';
 
 // NATIVE AUDIO ROUTE - For Capacitor/Cordova apps
 const isNativePlatform = Capacitor.isNativePlatform();
@@ -182,16 +181,14 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
         client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
           try {
             await client.subscribe(user, mediaType);
-            if (mediaType === 'audio' && user.audioTrack) {
-              // --- AUDIO PROXY FIX: Play via central mixer instead of directly ---
-              audioProxy.addRemoteTrack(user.uid.toString(), user.audioTrack);
+            if (mediaType === 'audio') {
+              user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
           } catch (e) {}
         });
 
         client.on('user-unpublished', (user: IAgoraRTCRemoteUser) => {
-          audioProxy.removeRemoteTrack(user.uid.toString());
           if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
         });
 
@@ -232,9 +229,15 @@ export function useAgora(roomId: string | undefined, isInSeat: boolean, isMuted:
     };
   }, [roomId, uid]);
 
-  // EFFECT 2: Speaker Management (Legacy logic disabled in favor of AudioProxy)
+  // EFFECT 2: Speaker Management
   useEffect(() => {
-    // Force earbuds when remote users change
+    remoteUsers.forEach(user => {
+      if (user.audioTrack) {
+        user.audioTrack.play();
+      }
+    });
+    
+    // Force earbuds when remote users change (prevent speaker switch)
     if (AudioRoute && remoteUsers.length > 0) {
       AudioRoute.forceEarbuds().catch(() => {});
     }
