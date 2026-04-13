@@ -12,14 +12,11 @@ import {
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { 
- ChevronLeft, 
  Volume2, 
  VolumeX, 
  HelpCircle, 
- Trophy, 
  Users, 
  X,
- Pointer,
  Loader2,
  Plus,
  Clock
@@ -70,7 +67,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const [winnerData, setWinnerData] = useState<{ emoji: string; win: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
  const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
- const [hintStep, setHintStep] = useState(0);
  const [showRules, setShowRules] = useState(false);
 
  const handleInvite = () => {
@@ -78,7 +74,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
      const shareUrl = window.location.origin + '/games/forest-party';
      const text = encodeURIComponent(`Join the ultimate Forest Party adventure! 🐼🦁 Let's win together: ${shareUrl}`);
      window.open(`https://wa.me/?text=${text}`, '_blank');
-     toast({ title: 'Sharing Frequency Activated!', description: 'Invite your tribe to the jungle.' });
+     toast({ title: 'Sharing Activated!', description: 'Invite your tribe to the jungle.' });
    }
  };
 
@@ -102,14 +98,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  useEffect(() => {
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
-
- useEffect(() => {
-  if (gameState !== 'betting') return;
-  const pointerInterval = setInterval(() => {
-   setHintStep(prev => (prev + 1) % SEQUENCE.length);
-  }, 1500); 
-  return () => clearInterval(pointerInterval);
- }, [gameState]);
 
  useEffect(() => {
   if (isLaunching) return;
@@ -296,7 +284,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  return (
   <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35]">
    
-   {/* GLOBAL BACKGROUND TO MATCH HEADER THEME */}
    <div className="absolute inset-0 z-0 pointer-events-none">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f35]/50 to-[#0a0f35]" />
@@ -376,24 +363,21 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </div>
 
-   {/* WHEEL AREA (Height 60vh kardi hai aur mt-auto se upar se space chhodi gayi hai) */}
-   <main className="h-[60vh] w-full flex flex-col items-center justify-center py-4 px-4 relative mt-auto">
-    <div className="relative w-full max-w-[390px] aspect-square flex items-center justify-center">
+   {/* WHEEL AREA - Shifted higher using justify-start and pt-8 */}
+   <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
+    <div className="relative w-full max-w-[370px] aspect-square flex items-center justify-center">
       
-      {/* 8 Connecting Lines */}
       <svg className="absolute inset-0 w-full h-full z-10 opacity-100" viewBox="0 0 100 100">
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="2.5" transform={`rotate(${deg} 50 50)`} />
         ))}
       </svg>
 
-      {/* Countdown Circle */}
       <div className="relative z-20 w-24 h-24 bg-[#4a2511] backdrop-blur-md rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[4px] border-[#eebb99]">
         <p className="text-[8px] font-black uppercase text-[#eebb99] mb-1">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
         <span className="text-3xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '🎲'}</span>
       </div>
 
-      {/* Animals */}
       {ANIMALS.map((item, idx) => (
         <motion.div  
           key={item.id} 
@@ -410,7 +394,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           )}
         >
           <button onClick={() => handlePlaceBet(item)} className="relative active:scale-95 transition-all">
-            {/* Animal Circle Card */}
             <div className={cn(
              "h-24 w-24 rounded-full flex items-center justify-center border-[4px] shadow-lg backdrop-blur-md",
              highlightIdx === idx 
@@ -420,9 +403,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
               <span className="text-5xl">{item.emoji}</span>
             </div>
             
-            {/* Square Strip at the Bottom */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#4a2511] border-[1.5px] border-[#eebb99] px-2 py-1 shadow-[0_2px_4px_rgba(0,0,0,0.4)] rounded-sm min-w-[70%] text-center">
-                <span className="text-[10px] font-bold text-[#eebb99] whitespace-nowrap">Win {item.multiplier} Time</span>
+            {/* Sleekened Strip */}
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-[#4a2511] border-[1px] border-[#eebb99] px-2 py-0.5 shadow-md rounded-sm min-w-[65%] text-center">
+                <span className="text-[9px] font-bold text-[#eebb99] whitespace-nowrap">Win {item.multiplier} Time</span>
             </div>
             
             {myBets[item.id] > 0 && (
@@ -436,10 +419,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </main>
 
-   {/* COMPACT CHIPS FOOTER BAR */}
-   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-[#0a0f35]/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] mt-auto">
+   {/* FOOTER */}
+   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-[#0a0f35]/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
      <div className="max-w-md mx-auto flex flex-col gap-4">
-      
       <div className="flex items-center gap-2">
         <div className="flex-1 bg-[#3b2591]/80 backdrop-blur-md p-1.5 rounded-2xl border-[2px] border-[#5a3ecf] shadow-inner flex items-center gap-1.5 overflow-x-auto no-scrollbar relative z-10">
          {CHIPS_DATA.map(chip => (
@@ -477,7 +459,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
          <Users className="h-6 w-6" />
         </button>
       </div>
-
      </div>
    </footer>
 
