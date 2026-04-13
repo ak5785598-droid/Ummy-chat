@@ -294,26 +294,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  }
 
  return (
-  <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans text-gray-900 bg-white">
-   <div className="absolute inset-0 top-[62px] z-0 bg-gradient-to-b from-white via-[#f8fafc] to-[#e2e8f0]">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-white opacity-60 blur-3xl rounded-full" />
+  <div className="h-screen w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35]">
+   
+   {/* GLOBAL BACKGROUND TO MATCH HEADER THEME */}
+   <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f35]/50 to-[#0a0f35]" />
    </div>
 
    <AnimatePresence>
     {showRules && (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-white/80 backdrop-blur-xl p-6">
-        <div className="bg-white border border-gray-200 rounded-[3rem] p-8 max-w-sm w-full relative shadow-2xl">
-          <button onClick={() => setShowRules(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-800 transition-colors"><X className="h-6 w-6" /></button>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] flex items-center justify-center bg-[#0a0f35]/80 backdrop-blur-xl p-6">
+        <div className="bg-[#181c4c] border border-white/20 rounded-[3rem] p-8 max-w-sm w-full relative shadow-2xl">
+          <button onClick={() => setShowRules(false)} className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"><X className="h-6 w-6" /></button>
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="h-16 w-16 bg-yellow-50 rounded-3xl flex items-center justify-center mb-2 border border-yellow-100"><HelpCircle className="h-8 w-8 text-yellow-500" /></div>
-            <h2 className="text-2xl font-black italic uppercase tracking-tighter text-gray-800">Jungle Wisdom</h2>
-            <div className="space-y-4 text-[13px] font-medium text-gray-600 leading-relaxed">
+            <div className="h-16 w-16 bg-[#0a0f35] rounded-3xl flex items-center justify-center mb-2 border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]"><HelpCircle className="h-8 w-8 text-yellow-400" /></div>
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">Jungle Wisdom</h2>
+            <div className="space-y-4 text-[13px] font-medium text-white/70 leading-relaxed">
               <p>1. Select a chip and choose your animal.</p>
               <p>2. The wheel spins every 25s. Stop on your animal to win!</p>
               <p>3. Lion gives the highest multiplier (x45!).</p>
             </div>
-            <button onClick={() => setShowRules(false)} className="mt-4 w-full bg-gradient-to-b from-yellow-400 to-yellow-500 text-white shadow-md h-12 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all border border-yellow-400">Got it</button>
+            <button onClick={() => setShowRules(false)} className="mt-4 w-full bg-gradient-to-b from-yellow-400 to-yellow-500 text-[#0a0f35] shadow-[0_0_20px_rgba(234,179,8,0.3)] h-12 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all border border-yellow-300">Got it</button>
           </div>
         </div>
       </motion.div>
@@ -321,9 +323,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    </AnimatePresence>
 
    {/* TOP HEADER */}
-   <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-[#0a0f35] overflow-hidden shadow-md shrink-0">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0a0f35]/80 via-transparent to-[#0a0f35]/80" />
+   <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-transparent overflow-hidden shrink-0">
       <div className="relative z-10 flex items-center justify-between w-full">
           <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-full border border-white/20 h-[38px] pl-1 pr-1 shadow-inner">
               <div className="bg-yellow-400 rounded-full p-0.5 shadow-sm">
@@ -353,7 +353,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
    {/* UPDATED History Bar (Based on Image) */}
    <div className="relative z-40 px-4 py-3 shrink-0">
-    <div className="bg-[#41318f] border-[1.5px] border-[#6b58ce] rounded-[24px] p-2 flex items-center overflow-x-auto no-scrollbar shadow-inner">
+    <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-[24px] p-2 flex items-center overflow-x-auto no-scrollbar shadow-[0_0_15px_rgba(107,88,206,0.2)]">
      <span className="text-[#e2e0f9] font-medium text-[15px] px-2 shrink-0">Result</span>
      <div className="w-[1px] h-6 bg-white/20 shrink-0 mx-2"></div>
      <div className="flex items-center gap-3 px-1">
@@ -385,9 +385,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         ))}
       </svg>
 
-      <div className="relative z-20 w-24 h-24 bg-white rounded-full shadow-xl flex flex-col items-center justify-center border-[4px] border-yellow-400">
-        <p className="text-[8px] font-black uppercase text-yellow-600 mb-1">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
-        <span className="text-3xl font-black text-gray-800">{gameState === 'betting' ? timeLeft : '🎲'}</span>
+      <div className="relative z-20 w-24 h-24 bg-[#181c4c]/90 backdrop-blur-md rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-[4px] border-yellow-400">
+        <p className="text-[8px] font-black uppercase text-yellow-400 mb-1">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
+        <span className="text-3xl font-black text-white">{gameState === 'betting' ? timeLeft : '🎲'}</span>
       </div>
 
       {ANIMALS.map((item, idx) => (
@@ -407,16 +407,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         >
           <button onClick={() => handlePlaceBet(item)} className="relative active:scale-95 transition-all">
             <div className={cn(
-             "h-20 w-20 rounded-full flex items-center justify-center border-[4px] bg-white shadow-md",
-             highlightIdx === idx ? "border-yellow-400 scale-110 shadow-yellow-200" : "border-gray-100"
+             "h-20 w-20 rounded-full flex items-center justify-center border-[4px] shadow-lg backdrop-blur-md",
+             highlightIdx === idx 
+               ? "border-yellow-400 bg-[#181c4c] scale-110 shadow-[0_0_20px_rgba(250,204,21,0.4)]" 
+               : "border-white/20 bg-[#181c4c]/60 hover:bg-[#181c4c]/80"
             )}>
               <span className="text-4xl">{item.emoji}</span>
             </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white border border-yellow-400 px-2 py-0.5 rounded-full shadow-sm">
-                <span className="text-[7px] font-bold text-gray-700 whitespace-nowrap">x{item.multiplier}</span>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#0a0f35] border border-yellow-400 px-2 py-0.5 rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                <span className="text-[7px] font-bold text-yellow-400 whitespace-nowrap">x{item.multiplier}</span>
             </div>
             {myBets[item.id] > 0 && (
-             <div className="absolute -top-2 -right-2 bg-yellow-400 text-white text-[9px] font-black h-7 w-7 rounded-full flex items-center justify-center border-2 border-white shadow-md">
+             <div className="absolute -top-2 -right-2 bg-yellow-400 text-[#0a0f35] text-[9px] font-black h-7 w-7 rounded-full flex items-center justify-center border-2 border-[#181c4c] shadow-md">
                {myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}
              </div>
             )}
@@ -427,12 +429,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    </main>
 
    {/* COMPACT CHIPS FOOTER BAR */}
-   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-2xl">
+   <footer className="relative z-50 p-4 pb-SAFE_BOTTOM bg-[#0a0f35]/80 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
      <div className="max-w-md mx-auto flex flex-col gap-4">
       
       {/* Reduced Chip Bar Size */}
       <div className="flex items-center gap-2">
-        <div className="flex-1 bg-[#3b2591] p-1.5 rounded-2xl border-[2px] border-[#5a3ecf] shadow-inner flex items-center gap-1.5 overflow-x-auto no-scrollbar relative z-10">
+        <div className="flex-1 bg-[#3b2591]/80 backdrop-blur-md p-1.5 rounded-2xl border-[2px] border-[#5a3ecf] shadow-inner flex items-center gap-1.5 overflow-x-auto no-scrollbar relative z-10">
          {CHIPS_DATA.map(chip => (
           <button 
            key={chip.value} 
@@ -453,18 +455,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         <button 
          onClick={handleRepeat} 
          disabled={gameState !== 'betting'}
-         className="bg-gradient-to-b from-yellow-400 to-orange-500 px-4 h-[58px] rounded-2xl font-black uppercase text-[11px] shadow-lg active:scale-95 transition-all border-2 border-white text-white tracking-widest shrink-0"
+         className="bg-gradient-to-b from-yellow-400 to-orange-500 px-4 h-[58px] rounded-2xl font-black uppercase text-[11px] shadow-[0_0_15px_rgba(250,204,21,0.3)] active:scale-95 transition-all border-2 border-white/50 text-[#0a0f35] tracking-widest shrink-0"
         >
          Repeat
         </button>
       </div>
 
       <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-3 bg-gray-50 px-5 py-2.5 rounded-2xl border border-gray-200 shadow-sm">
-         <GoldCoinIcon className="h-5 w-5 text-yellow-500" />
-         <span className="text-xl font-black text-gray-800">{(localCoins || 0).toLocaleString()}</span>
+        <div className="flex items-center gap-3 bg-[#181c4c]/80 px-5 py-2.5 rounded-2xl border border-white/20 shadow-inner">
+         <GoldCoinIcon className="h-5 w-5 text-yellow-400" />
+         <span className="text-xl font-black text-white">{(localCoins || 0).toLocaleString()}</span>
         </div>
-        <button onClick={handleInvite} className="bg-white p-3 rounded-2xl border border-gray-200 text-yellow-500 shadow-sm active:scale-90 transition-all">
+        <button onClick={handleInvite} className="bg-[#181c4c]/80 p-3 rounded-2xl border border-white/20 text-yellow-400 shadow-inner active:scale-90 transition-all hover:bg-white/10">
          <Users className="h-6 w-6" />
         </button>
       </div>
