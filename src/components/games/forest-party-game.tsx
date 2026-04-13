@@ -40,7 +40,7 @@ const CHIPS_DATA = [
  { value: 100, label: '100', color: 'from-blue-400 to-blue-600' },
  { value: 1000, label: '1k', color: 'from-orange-300 to-orange-500' },
  { value: 50000, label: '50k', color: 'from-red-400 to-red-600' },
- { value: 500000, label: '500K', color: 'from-purple-400 to-purple-600' },
+ { value: 500000, label: '500k', color: 'from-purple-400 to-purple-600' },
  { value: 5000000, label: '5M', color: 'from-emerald-400 to-emerald-600' },
 ];
 
@@ -93,7 +93,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  useEffect(() => {
   const timer = setTimeout(() => setIsLaunching(false), 3000);
   if (typeof window !== 'undefined') {
-    // UPDATED: Better arcade sound effects
     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
@@ -264,25 +263,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
  if (isLaunching) {
   return (
-   <div className="h-[550px] w-full bg-[#fdf8e7] flex flex-col items-center justify-center p-6 relative overflow-hidden border-[8px] border-orange-500">
+   <div className="h-[550px] w-full bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden border-[8px] border-orange-500">
     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 flex flex-col items-center gap-6">
       <div className="relative flex items-center justify-center">
         <Loader2 className="w-24 h-24 text-orange-500 animate-spin stroke-[3]" />
-        <div className="absolute text-4xl">🐼</div>
       </div>
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 mt-4">
         <h1 className="text-5xl font-black text-orange-600 uppercase tracking-tighter italic drop-shadow-sm">Ummy</h1>
-        <div className="bg-orange-500 px-4 py-1 rounded-full shadow-lg">
-          <span className="text-[12px] font-black uppercase text-white tracking-[0.2em]">Forest Party</span>
-        </div>
       </div>
     </motion.div>
-    <div className="absolute bottom-10 flex flex-col items-center gap-2">
-      <div className="w-48 h-1.5 bg-orange-200 rounded-full overflow-hidden border border-orange-300">
-        <motion.div initial={{ x: "-100%" }} animate={{ x: "0%" }} transition={{ duration: 2.5, ease: "easeInOut" }} className="h-full bg-orange-500" />
-      </div>
-      <span className="text-[10px] font-bold text-orange-600/60 uppercase tracking-widest">Loading Resources...</span>
-    </div>
    </div>
   );
  }
@@ -399,7 +388,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    </header>
 
    {/* MAIN WHEEL AREA */}
-   <main className="flex-1 w-full flex flex-col items-center justify-start pt-12 px-4 relative">
+   <main className="flex-1 w-full flex flex-col items-center justify-start pt-20 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10" viewBox="0 0 100 100">
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
@@ -419,22 +408,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           key={item.id} 
           className={cn(
             "absolute z-20", 
-            item.pos === 'top' && "top-[0%] left-1/2 -translate-x-1/2", 
-            item.pos === 'top-right' && "top-[10%] right-[10%]", 
-            item.pos === 'right' && "right-[0%] top-1/2 -translate-y-1/2", 
-            item.pos === 'bottom-right' && "bottom-[10%] right-[10%]", 
-            item.pos === 'bottom' && "bottom-[0%] left-1/2 -translate-x-1/2", 
-            item.pos === 'bottom-left' && "bottom-[10%] left-[10%]", 
-            item.pos === 'left' && "left-[0%] top-1/2 -translate-y-1/2", 
-            item.pos === 'top-left' && "top-[10%] left-[10%]"
+            item.pos === 'top' && "top-[7%] left-1/2 -translate-x-1/2", 
+            item.pos === 'top-right' && "top-[14%] right-[14%]", 
+            item.pos === 'right' && "right-[7%] top-1/2 -translate-y-1/2", 
+            item.pos === 'bottom-right' && "bottom-[14%] right-[14%]", 
+            item.pos === 'bottom' && "bottom-[7%] left-1/2 -translate-x-1/2", 
+            item.pos === 'bottom-left' && "bottom-[14%] left-[14%]", 
+            item.pos === 'left' && "left-[7%] top-1/2 -translate-y-1/2", 
+            item.pos === 'top-left' && "top-[14%] left-[14%]"
           )}
         >
           <button onClick={() => handlePlaceBet(item)} className="relative active:scale-95 transition-all">
             <div className={cn(
-                "h-20 w-20 rounded-full flex flex-col items-center justify-start pt-2 border-[4px] bg-[#4a2511] border-[#eebb99] transition-all overflow-hidden relative", 
+                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[4px] bg-[#4a2511] border-[#eebb99] transition-all overflow-hidden relative", 
                 highlightIdx === idx && "scale-110 bg-[#6b331a] shadow-[0_0_30px_rgba(238,187,153,0.6)] border-white"
             )}>
-                <span className="text-4xl z-10">{item.emoji}</span>
+                <span className="text-[38px] z-10">{item.emoji}</span>
                 <div className="absolute bottom-0 left-0 right-0 bg-[#4a2511] border-t border-[#eebb99] py-0.5 text-center z-20">
                     <span className="text-[7px] font-bold text-[#eebb99] uppercase tracking-tighter">
                         Win {item.multiplier} Time
@@ -442,7 +431,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
                 </div>
             </div>
 
-            {/* UPDATED: FLOATING CHIPS LAYER EFFECT */}
+            {/* FLOATING CHIPS LAYER EFFECT */}
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div
@@ -474,32 +463,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </main>
 
-   {/* BOTTOM SECTION */}
-   <div className="fixed bottom-[2vh] left-0 right-0 flex flex-col items-center gap-3 px-4 z-40">
+   {/* BOTTOM SECTION (Chips & History) */}
+   <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-40">
       
-      {/* CHIPS SELECTION BAR */}
-      <div className="w-full max-w-[300px] flex items-center justify-center gap-3 bg-purple-600/90 backdrop-blur-sm rounded-full py-1.5 px-4 border-2 border-purple-900 shadow-lg">
-        {CHIPS_DATA.map(chip => (
-          <button 
-            key={chip.value} 
-            onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
-            className={cn(
-              "h-9 w-9 rounded-full flex items-center justify-center transition-all border-2 shrink-0 relative", 
-              selectedChip === chip.value ? "border-yellow-400 scale-110 z-20 shadow-[0_0_15px_rgba(234,179,8,0.6)]" : "border-white/20 opacity-80", 
-              `bg-gradient-to-br ${chip.color}`
-            )}
-          >
-              <div className="absolute inset-[2px] rounded-full border border-white/20 border-dashed" />
-              <span className="text-[9px] font-black text-white relative z-10">{chip.label}</span>
-          </button>
-        ))}
-      </div>
-
       {/* HISTORY BAR */}
-      <div className="w-full max-w-[340px]">
-        <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-lg p-1 flex items-center overflow-x-auto no-scrollbar">
+      <div className="w-full max-w-[340px] px-4 mb-3">
+        <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
           <span className="text-[#e2e0f9] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
-          <div className="w-[1px] h-3 bg-white/20 shrink-0 mx-1" />
+          <div className="w-[1px] h-4 bg-white/20 shrink-0 mx-1" />
           <div className="flex items-center gap-2 px-1">
             {history.map((id, i) => (
             <div key={i} className="relative shrink-0 h-7 w-7 flex items-center justify-center">
@@ -509,6 +480,24 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* 10VH PURPLE BOTTOM SHEET FOR CHIPS */}
+      <div className="w-full h-[10vh] min-h-[70px] bg-purple-600 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[3px] border-purple-500">
+        {CHIPS_DATA.map(chip => (
+          <button 
+            key={chip.value} 
+            onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
+            className={cn(
+              "h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 shrink-0 relative", 
+              selectedChip === chip.value ? "border-yellow-400 scale-110 z-20 shadow-[0_0_15px_rgba(234,179,8,0.6)]" : "border-white/20 opacity-80", 
+              `bg-gradient-to-br ${chip.color}`
+            )}
+          >
+              <div className="absolute inset-[2px] rounded-full border border-white/20 border-dashed" />
+              <span className="text-[10px] font-black text-white relative z-10">{chip.label}</span>
+          </button>
+        ))}
       </div>
 
    </div>
