@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChatRoomCard } from '@/components/chat-room-card';
 import { 
@@ -150,24 +151,26 @@ export default function RoomsExplorer() {
   return bannerConfig.slides;
  }, [bannerConfig, isHydrated]);
 
- const displayRooms = useMemo(() => {
-  if (!roomsData || !isHydrated) return [];
-  
-  let filtered = roomsData.filter(room => {
-   const cat = room.category || 'Chat';
-   const matchesCategory = activeCategory === "All" || cat === activeCategory;
-   const hasUsers = (room.participantCount || 0) > 0;
-   const isPinned = room.isPinned === true;
-   const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
-   return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
-  });
+  const displayRooms = useMemo(() => {
+   if (!roomsData || !isHydrated) return [];
+   
+   // Pre-sort by participant count and pin status once
+   const sorted = [...roomsData].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return (b.participantCount || 0) - (a.participantCount || 0);
+   });
 
-  return [...filtered].sort((a, b) => {
-   if (a.isPinned && !b.isPinned) return -1;
-   if (!a.isPinned && b.isPinned) return 1;
-   return (b.participantCount || 0) - (a.participantCount || 0);
-  });
- }, [roomsData, activeCategory, isHydrated]);
+   return sorted.filter(room => {
+    const cat = room.category || 'Chat';
+    const matchesCategory = activeCategory === "All" || cat === activeCategory;
+    const hasUsers = (room.participantCount || 0) > 0;
+    const isPinned = room.isPinned === true;
+    const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
+    return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
+   });
+  }, [roomsData, activeCategory, isHydrated]);
+
 
   // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;

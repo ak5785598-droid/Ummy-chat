@@ -698,9 +698,12 @@ export function RoomClient({ room }: { room: Room }) {
       clearTimeout(timer);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       try {
-        source?.disconnect();
-        analyser?.disconnect();
-      } catch (e) {}
+        if (analyser) analyser.disconnect();
+        if (source) source.disconnect();
+        musicIntensityRef.current = 0;
+      } catch (e) {
+        console.warn('[Music-Analyzer] Cleanup Error:', e);
+      }
     };
   }, [room.isMusicPlaying, room.id]);
 

@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useStaticUserProfile } from '@/hooks/use-static-user-profile';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useFirebase } from '@/firebase/provider';
@@ -14,14 +14,12 @@ interface ChatRoomCardProps {
 }
 
 /**
- * High-Fidelity Room Card.
- * NUCLEAR FIX: Hooks are ALWAYS called unconditionally.
  * Loading/null state is handled AFTER hooks, not before.
  */
-export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
+export const ChatRoomCard = React.memo(({ room, variant = 'modern' }: ChatRoomCardProps) => {
   // ALL hooks called first, unconditionally - this is the React #310 fix
   const { isHydrated } = useFirebase();
-  const { userProfile: owner } = useUserProfile(room?.ownerId);
+  const { userProfile: owner } = useStaticUserProfile(room?.ownerId);
 
   // Skeleton state AFTER hooks - never before
   if (!isHydrated || !room) {
@@ -96,4 +94,6 @@ export function ChatRoomCard({ room, variant = 'modern' }: ChatRoomCardProps) {
     </div>
    </Link>
   );
-}
+});
+
+ChatRoomCard.displayName = 'ChatRoomCard';
