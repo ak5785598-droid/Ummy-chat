@@ -1213,13 +1213,28 @@ export default function AdminPage() {
     
     setIsDispatching(true);
     try {
+      const amt = parseInt(coinDispatchAmount);
+      const isSeller = currentUserProfile?.tags?.includes("Coin Seller");
+      const isSelfDispatchByCreator = isCreator && targetUserForRewards.id === user.uid;
+
+      // Check Seller Balance
+      if (isSeller) {
+        if (!currentUserProfile?.wallet?.coins || currentUserProfile.wallet.coins < amt) {
+          toast({ 
+            variant: 'destructive', 
+            title: 'Insufficient Balance', 
+            description: `You only have ${currentUserProfile?.wallet?.coins || 0} coins.` 
+          });
+          setIsDispatching(false);
+          return;
+        }
+      }
+
       const uRef = doc(firestore, "users", targetUserForRewards.id);
       const pRef = doc(firestore, "users", targetUserForRewards.id, "profile", targetUserForRewards.id);
-      
-      const amt = parseInt(coinDispatchAmount);
       const batch = writeBatch(firestore);
 
-      // 1. Credit the user (Using set + merge is safer if wallet object doesn't exist)
+      // 1. Credit the target user (Using set + merge is safer)
       batch.set(uRef, { 
         wallet: { coins: increment(amt) }, 
         updatedAt: serverTimestamp() 
@@ -1230,20 +1245,27 @@ export default function AdminPage() {
         updatedAt: serverTimestamp() 
       }, { merge: true });
 
-      // 2. Log ONLY IF not self-dispatch by creator
-      const isSelfDispatchByCreator = isCreator && targetUserForRewards.id === user.uid;
-      
+      // 2. If Seller, decrement their own wallet
+      if (isSeller) {
+        const sellerRef = doc(firestore, "users", user.uid);
+        const sellerProfileRef = doc(firestore, "users", user.uid, "profile", user.uid);
+        batch.set(sellerRef, { wallet: { coins: increment(-amt) } }, { merge: true });
+        batch.set(sellerProfileRef, { wallet: { coins: increment(-amt) } }, { merge: true });
+      }
+
+      // 3. Log ONLY IF not self-dispatch by creator
       if (!isSelfDispatchByCreator) {
         const logRef = doc(collection(firestore, "coin_audit_logs"));
         batch.set(logRef, {
           id: logRef.id,
           adminId: user.uid,
           adminName: currentUserProfile?.username || user.email || "Unknown Admin",
+          adminRole: isCreator ? "Creator" : (isSeller ? "Seller" : "Admin"),
           targetId: targetUserForRewards.id,
           targetName: targetUserForRewards.username || "Unknown User",
           targetAccount: targetUserForRewards.accountNumber || "N/A",
           amount: amt,
-          reason: "Manual Admin Dispatch", // Default since field was removed
+          reason: "Manual Admin Dispatch",
           timestamp: serverTimestamp(),
           type: "manual_dispatch"
         });
@@ -1251,11 +1273,20 @@ export default function AdminPage() {
 
       await batch.commit();
 
-      toast({ title: isSelfDispatchByCreator ? "Wallet Updated" : "Dispatch Recorded", description: `${amt.toLocaleString()} coins processed.` });
+      toast({ 
+        title: isSelfDispatchByCreator ? "Wallet Updated" : "Transaction Successful", 
+        description: `${amt.toLocaleString()} coins processed.` 
+      });
       setCoinDispatchAmount("");
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Dispatch Failed' });
+    } catch (e: any) {
+      console.error("Dispatch Error:", e);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Dispatch Failed', 
+        description: e.message?.includes('permission-denied') 
+          ? "Permission Denied: Ensure firestore.rules are deployed." 
+          : (e.message || "Unknown error occurred")
+      });
     } finally {
       setIsDispatching(false);
     }
@@ -2114,12 +2145,6 @@ export default function AdminPage() {
                   <Monitor className="h-4 w-4" /> Splash Screen
                 </TabsTrigger>
                 <TabsTrigger
-                  value="financial-audit"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-white data-[state=active]:bg-green-600 bg-green-500 shadow-lg"
-                >
-                  <ClipboardList className="h-4 w-4" /> Financial Audit 💰
-                </TabsTrigger>
-                <TabsTrigger
                   value="boutique-hub"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2154,6 +2179,12 @@ export default function AdminPage() {
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
                   <RefreshCcw className="h-4 w-4" /> System Control
+                </TabsTrigger>
+                <TabsTrigger
+                  value="financial-audit"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                >
+                  <ClipboardList className="h-4 w-4" /> Financial Audit 💰
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
