@@ -319,8 +319,8 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
           {!logs || logs.length === 0 ? (
             <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Audit Logs Found</div>
           ) : (
-            <div className="rounded-2xl border overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="rounded-2xl border overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-slate-50 border-b">
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Time</th>
@@ -3302,7 +3302,7 @@ export default function AdminPage() {
                       tribalMembers.map((member) => (
                         <div
                           key={member.id}
-                          className="p-6 flex items-center justify-between hover:bg-slate-100/50 transition-colors"
+                          className="p-4 sm:p-6 flex flex-col xs:flex-row xs:items-center justify-between gap-4 hover:bg-slate-100/50 transition-colors"
                         >
                           <div className="flex items-center gap-4">
                             <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
@@ -3612,7 +3612,7 @@ export default function AdminPage() {
                 </div>
                 {targetUserForCenter && (
                   <div className="mt-10 p-8 border-2 rounded-3xl space-y-10 animate-in slide-in-from-bottom-4 bg-slate-50/20">
-                    <div className="flex items-center justify-between border-b pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 border-2 border-white shadow-xl">
                           <AvatarImage
@@ -3771,7 +3771,7 @@ export default function AdminPage() {
                 </div>
                 {targetUserForBan && (
                   <div className="mt-10 p-8 border-2 rounded-3xl space-y-8 animate-in slide-in-from-bottom-4 bg-slate-50/20">
-                    <div className="flex items-center justify-between border-b pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-6">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 border-2 border-white shadow-xl">
                           <AvatarImage
@@ -4478,7 +4478,7 @@ export default function AdminPage() {
 
                 {targetUserForSovereign && (
                   <div className="mt-10 p-10 border-2 border-indigo-100 rounded-[2.5rem] space-y-10 animate-in slide-in-from-bottom-4 bg-indigo-50/10">
-                    <div className="flex items-center justify-between border-b border-indigo-100 pb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-indigo-100 gap-4 pb-8">
                       <div className="flex items-center gap-5">
                         <Avatar className="h-20 w-20 border-4 border-white shadow-2xl">
                           <AvatarImage
@@ -4621,7 +4621,7 @@ export default function AdminPage() {
           >
             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">
               <CardHeader className="p-8 pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
                       <RefreshCcw className="h-6 w-6" />
@@ -4649,7 +4649,7 @@ export default function AdminPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-8 pt-0">
-                <div className="bg-amber-50 rounded-2xl p-6 border border-amber-100 flex gap-4">
+                <div className="bg-amber-50 rounded-2xl p-4 sm:p-6 border border-amber-100 flex flex-col xs:flex-row gap-4">
                   <ShieldAlert className="h-6 w-6 text-amber-600 shrink-0" />
                   <div className="space-y-1">
                     <p className="text-[11px] font-black uppercase text-amber-900 tracking-tight">
@@ -4667,7 +4667,7 @@ export default function AdminPage() {
 
             <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">
               <CardHeader className="p-8 pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-2xl bg-red-600 flex items-center justify-center text-white shadow-lg">
                       <GoldCoinIcon className="h-6 w-6" />
@@ -4696,7 +4696,7 @@ export default function AdminPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-8 pt-0">
-                <div className="bg-red-50 rounded-2xl p-6 border border-red-100 flex gap-4">
+                <div className="bg-red-50 rounded-2xl p-4 sm:p-6 border border-red-100 flex flex-col xs:flex-row gap-4">
                   <ShieldAlert className="h-6 w-6 text-red-600 shrink-0" />
                   <div className="space-y-1">
                     <p className="text-[11px] font-black uppercase text-red-900 tracking-tight">
