@@ -323,6 +323,7 @@ export function RoomClient({ room }: { room: Room }) {
   const localPlayerRef = useRef<HTMLAudioElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const analysisTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const musicIntensityRef = useRef<number>(0);
   const aiSilentAudioRef = useRef<HTMLAudioElement | null>(null);
   const mediaSourceRef = useRef<any>(null);
@@ -614,21 +615,35 @@ export function RoomClient({ room }: { room: Room }) {
     currentUser?.uid,
     isSpeakerMuted,
     (volumes) => {
-      // Merge Agora volumes with Music intensity
+      // PERF FIX: Batch and threshold volume updates to prevent main thread choking
       const musicId = room?.currentMusicOwnerId ? hashUidToNumber(room.currentMusicOwnerId).toString() : null;
+      let hasSignificantChange = false;
       const updatedVolumes: Record<string, number> = {};
       
       volumes.forEach(v => {
-        updatedVolumes[v.uid] = v.level;
+        const level = Math.floor(v.level);
+        updatedVolumes[v.uid] = level;
+        // Check local user or key speakers for significant change to avoid micro-renders
+        if (Math.abs((speakingVolumes[v.uid] || 0) - level) > 3) {
+          hasSignificantChange = true;
+        }
       });
 
       // If music is playing, inject music intensity into the owner's UID
       if (room?.isMusicPlaying && musicId) {
+        const mLevel = musicIntensityRef.current;
         const existingLevel = updatedVolumes[musicId] || 0;
-        updatedVolumes[musicId] = Math.max(existingLevel, musicIntensityRef.current);
+        updatedVolumes[musicId] = Math.max(existingLevel, mLevel);
+        
+        if (Math.abs((speakingVolumes[musicId] || 0) - mLevel) > 5) {
+          hasSignificantChange = true;
+        }
       }
 
-      setVolumes(updatedVolumes);
+      // Only re-render if volume change is meaningful
+      if (hasSignificantChange || Object.keys(updatedVolumes).length !== Object.keys(speakingVolumes).length) {
+        setVolumes(updatedVolumes);
+      }
     }
   );
 
@@ -636,6 +651,7 @@ export function RoomClient({ room }: { room: Room }) {
 
   // --- MUSIC INTENSITY ANALYZER ---
   useEffect(() => {
+    let isMounted = true;
     if (!room.isMusicPlaying || !musicAudioRef.current || !room.id) {
       musicIntensityRef.current = 0;
       return;
@@ -670,7 +686,8 @@ export function RoomClient({ room }: { room: Room }) {
         const dataArray = new Uint8Array(bufferLength);
 
         const analyze = () => {
-          if (!analyser) return;
+          if (!analyser || !isMounted) return;
+          
           analyser.getByteFrequencyData(dataArray);
           
           // Calculate average volume (RMS-like)
@@ -679,10 +696,11 @@ export function RoomClient({ room }: { room: Room }) {
             sum += dataArray[i];
           }
           const average = sum / bufferLength;
-          // Scale to 0-100 range for the waves
+          
+          // PERF FIX: Scale and update only at 30FPS (33ms) to save CPU
           musicIntensityRef.current = Math.min(100, Math.floor(average * 1.5));
           
-          animationFrameRef.current = requestAnimationFrame(analyze);
+          analysisTimeoutRef.current = setTimeout(analyze, 33);
         };
 
         analyze();
@@ -695,8 +713,9 @@ export function RoomClient({ room }: { room: Room }) {
     const timer = setTimeout(startAnalysis, 1000);
 
     return () => {
+      isMounted = false;
       clearTimeout(timer);
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (analysisTimeoutRef.current) clearTimeout(analysisTimeoutRef.current);
       try {
         if (analyser) analyser.disconnect();
         if (source) source.disconnect();

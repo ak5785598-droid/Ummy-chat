@@ -340,10 +340,10 @@ export function useAgora(
     console.log('[Routing] Proactive Lock Started (Entry Fix)');
     AudioRoute.forceEarbuds().catch(() => {});
 
-    // Lock to earbuds every 500ms (EXTREMELY aggressive to fight OS hijacking)
+    // Lock to earbuds every 2000ms (Reduced frequency to save battery)
     const interval = setInterval(() => { 
       AudioRoute.forceEarbuds().catch(() => {}); 
-    }, 500);
+    }, 2000);
     return () => clearInterval(interval);
   }, []); // Only on mount/unmount
 
