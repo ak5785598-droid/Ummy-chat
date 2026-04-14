@@ -19,10 +19,10 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { useLudoGame } from '@/hooks/use-ludo-game';
+import { useLudoEngine } from '@/hooks/use-ludo-engine';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { AppLayout } from '@/components/app-layout';
+import { AppLayout } from '@/components/layout/app-layout';
 
 // --- UI COMPONENTS ---
 
@@ -111,7 +111,7 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
   const [isLaunching, setIsLaunching] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
 
-  const { gameState, rollDice, joinLobby, isLoading } = useLudoGame(roomId);
+  const { gameState, rollDice, joinLobby, isLoading } = useLudoEngine(roomId, currentUser?.uid || null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLaunching(false), 1500);
@@ -163,7 +163,7 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
     );
   };
 
-  const getPlayerByColor = (color: string) => gameState?.players.find(p => p.color === color);
+  const getPlayerByColor = (color: string) => gameState?.players.find((p: any) => p.color === color);
 
   return (
     <div className={cn(
