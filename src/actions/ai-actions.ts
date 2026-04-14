@@ -20,7 +20,7 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     });
 
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('AI_TIMEOUT')), 15000)
+      setTimeout(() => reject(new Error('AI_TIMEOUT')), 30000)
     );
 
     const response = await Promise.race([responsePromise, timeoutPromise]) as string;
