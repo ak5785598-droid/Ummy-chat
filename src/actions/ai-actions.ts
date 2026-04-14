@@ -26,12 +26,21 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     const response = await Promise.race([responsePromise, timeoutPromise]) as string;
     
     // Diagnostic marker for debugging key transition
+    console.log('[AI-Action] AI Response Success');
     return response || "Maaf kijiyega, mujhe samajh nahi aaya. 💖";
   } catch (error: any) {
+    const fs = require('fs');
     console.error('[AI-Action] Gemini Error:', error?.message || error);
     
     // Check for specific API Key errors
     const errorMessage = error?.message || "";
+    
+    // Log to file for master
+    try {
+      const logMessage = `[${new Date().toISOString()}] ERROR: ${errorMessage}\nSTACK: ${error?.stack}\n\n`;
+      fs.appendFileSync('ai-debug-error.log', logMessage);
+    } catch (e) {}
+
     let userFeedback = "Maaf kijiyega, main abhi connectivity issues ki wajah se thoda slow hoon. Ek baar phir se koshish karein! 💖";
 
     if (errorMessage.includes('AI_TIMEOUT')) {
@@ -40,15 +49,6 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
       userFeedback = "Master, apki [AI API KEY] invalid hai ya expired ho gayi hai. Please use update karein! 🛠️";
     } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
       userFeedback = "Master, AI ki limit khatam ho gayi hai. Thodi der baad koshish karein! ⏳";
-    }
-    
-    // Temporary Debug Logger for Master
-    try {
-      const fs = require('fs');
-      const logMessage = `[${new Date().toISOString()}] ERROR: ${errorMessage}\nSTACK: ${error?.stack}\n\n`;
-      fs.appendFileSync('ai-debug-error.log', logMessage);
-    } catch (e) {
-      console.error('Failed to write to debug log');
     }
     
     return userFeedback;
