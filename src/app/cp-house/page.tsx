@@ -11,27 +11,18 @@ import {
   HelpCircle, 
   Plus, 
   Heart, 
-  Award, 
-  Home, 
-  CreditCard, 
-  Scroll, 
-  Loader, 
+  Shield,
   Gift as GiftIcon,
-  Search,
-  Sparkles,
   TrendingUp,
   History,
-  Shield
+  Loader
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { collection, query, where, limit, doc, increment, serverTimestamp } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { GoldCoinIcon } from '@/components/icons';
-import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { CPProposeDialog } from '@/components/cp-propose-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 
@@ -45,7 +36,7 @@ export default function CpHousePage() {
  const [selectedTarget, setSelectedTarget] = useState<any>(null);
  const [showPropose, setShowPropose] = useState(false);
 
- // 🔗 SYNC CP STATUS: Check for active pairing
+ // SYNC CP STATUS
  const cpQuery = useMemoFirebase(() => {
    if (!firestore || !user?.uid) return null;
    return query(
@@ -58,11 +49,8 @@ export default function CpHousePage() {
  const { data: cpData, isLoading: isCpLoading } = useCollection(cpQuery);
  const activeCp = cpData?.[0];
  
- // Identify partner UID
  const partnerUid = activeCp?.participantIds?.find((id: string) => id !== user?.uid);
  const { userProfile: partnerProfile } = useUserProfile(partnerUid);
-
- const backgroundAsset = PlaceHolderImages.find(img => img.id === 'cp-house-bg');
 
  const handleProposeTarget = (target: any) => {
     setSelectedTarget(target);
@@ -72,129 +60,146 @@ export default function CpHousePage() {
 
  return (
   <AppLayout fullScreen>
-   <div className="h-[100dvh] w-full bg-[#0a0010] flex flex-col relative overflow-hidden font-sans text-white select-none">
+   <div className="h-[100dvh] w-full bg-[#1a050d] flex flex-col relative overflow-hidden font-sans text-white select-none">
     
-    {/* 🎬 DYNAMIC BACKGROUND */}
-    <div className="absolute inset-0 z-0">
-       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-10" />
-       {activeCp ? (
-         <div className="relative h-full w-full">
-            <Image src={backgroundAsset?.imageUrl || ""} alt="CP Background" fill className="object-cover opacity-80 animate-pulse-slow" />
-            <div className="absolute inset-0 backdrop-blur-[2px]" />
-         </div>
-       ) : (
-         <div className="h-full w-full bg-gradient-to-br from-[#1a0a25] via-[#0f0514] to-[#040107]" />
+    {/* 🎨 TOP THEME COVER (40vh) */}
+    <div className="absolute top-0 left-0 w-full h-[40vh] z-0 overflow-hidden">
+       {/* Deep Rose Pink Gradient Base */}
+       <div className="absolute inset-0 bg-gradient-to-b from-rose-600 via-rose-900 to-[#1a050d]" />
+       
+       {/* Heart Pattern Overlay */}
+       <div 
+         className="absolute inset-0 opacity-20" 
+         style={{ 
+           backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 35.52l-1.45-1.32C13.4 29.3 10 26.22 10 22.5 10 19.47 12.38 17.09 15.41 17.09c1.72 0 3.37.8 4.59 2.08 1.22-1.28 2.87-2.08 4.59-2.08 3.03 0 5.41 2.38 5.41 5.41 0 3.72-3.4 6.8-8.55 11.7L20 35.52z' fill='%23ffffff' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+           backgroundSize: '80px 80px'
+         }}
+       />
+
+       {/* Optional Image Background if CP exists */}
+       {activeCp && (
+          <Image 
+            src={PlaceHolderImages.find(img => img.id === 'cp-house-bg')?.imageUrl || ""} 
+            alt="Cover" fill className="object-cover mix-blend-overlay opacity-50" 
+          />
        )}
+       
+       {/* Soft Glow */}
+       <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#1a050d] to-transparent" />
     </div>
 
-    <header className="relative z-50 flex items-center justify-between p-6 pt-12">
-      <button onClick={() => router.back()} className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white ring-1 ring-white/10"><ChevronLeft className="h-6 w-6" /></button>
+    {/* 🏛️ HEADER */}
+    <header className="relative z-50 flex items-center justify-between px-6 pt-12">
+      <button 
+        onClick={() => router.back()} 
+        className="p-2.5 bg-black/20 backdrop-blur-xl rounded-full text-white border border-white/10 hover:bg-black/40 transition-all"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+
       <div className="flex flex-col items-center">
-        <h1 className="text-xl font-black uppercase tracking-[0.2em] italic drop-shadow-md">Love Dimension</h1>
-        <div className="h-0.5 w-12 bg-rose-500 rounded-full mt-1 animate-pulse" />
+        <h1 className="text-xl font-black uppercase tracking-[0.3em] drop-shadow-lg italic">Love House</h1>
+        <div className="h-1 w-8 bg-white rounded-full mt-1 animate-pulse shadow-[0_0_10px_#fff]" />
       </div>
-      <button className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white ring-1 ring-white/10"><HelpCircle className="h-6 w-6" /></button>
+
+      <button className="p-2.5 bg-black/20 backdrop-blur-xl rounded-full text-white border border-white/10 opacity-0 pointer-events-none">
+        <HelpCircle className="h-6 w-6" />
+      </button>
     </header>
 
-    <main className="relative z-20 flex-1 flex flex-col items-center justify-center px-8 pb-20">
+    {/* 💖 MAIN CONTENT */}
+    <main className="relative z-20 flex-1 flex flex-col items-center justify-center px-8 pb-10">
       {isCpLoading ? (
         <div className="flex flex-col items-center gap-4">
-          <Loader className="h-10 w-10 text-rose-500 animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Syncing Heartbeats...</p>
+          <Loader className="h-10 w-10 text-rose-400 animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Opening Doors...</p>
         </div>
       ) : activeCp ? (
-        /* ❤️ ACTIVE CP UI */
-        <div className="w-full space-y-12 animate-in fade-in zoom-in duration-700">
-           <div className="flex items-center justify-center gap-8 relative">
-              {/* Pulsing Bond Line */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-0.5 bg-gradient-to-r from-transparent via-rose-500 to-transparent animate-pulse" />
+        /* ❤️ COUPLE DISPLAY */
+        <div className="w-full space-y-10 animate-in fade-in zoom-in duration-700">
+           <div className="flex items-center justify-center gap-6 relative">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
               
-              <div className="flex flex-col items-center gap-3 group">
-                 <Link href="/profile" className="relative cursor-pointer group-active:scale-95 transition-transform">
-                    <div className="absolute -inset-4 bg-blue-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_40px_rgba(59,130,246,0.3)] relative z-10 transition-transform group-hover:scale-110">
-                      <AvatarImage src={userProfile?.avatarUrl} />
-                      <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                 </Link>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{userProfile?.username}</span>
+              <div className="flex flex-col items-center gap-3">
+                 <Avatar className="h-24 w-24 border-4 border-white/20 shadow-2xl scale-110">
+                    <AvatarImage src={userProfile?.avatarUrl} />
+                    <AvatarFallback>U</AvatarFallback>
+                 </Avatar>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-white/70">{userProfile?.username}</span>
               </div>
 
-              <div className="z-20 bg-white/10 backdrop-blur-xl p-4 rounded-full border border-white/20 shadow-2xl animate-bounce">
-                <Heart className="h-8 w-8 text-rose-500 fill-rose-500" />
+              <div className="z-20 bg-rose-500 p-4 rounded-full shadow-[0_0_30px_rgba(244,63,94,0.6)] animate-bounce">
+                <Heart className="h-8 w-8 text-white fill-white" />
               </div>
 
-              <div className="flex flex-col items-center gap-3 group">
-                 <Link href={`/profile/${partnerUid}`} className="relative cursor-pointer group-active:scale-95 transition-transform">
-                    <div className="absolute -inset-4 bg-rose-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Avatar className="h-24 w-24 border-4 border-white shadow-[0_0_40px_rgba(244,63,94,0.3)] relative z-10 transition-transform group-hover:scale-110">
-                      <AvatarImage src={partnerProfile?.avatarUrl} />
-                      <AvatarFallback>P</AvatarFallback>
-                    </Avatar>
-                 </Link>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-white/60">{partnerProfile?.username || 'Partner'}</span>
+              <div className="flex flex-col items-center gap-3">
+                 <Avatar className="h-24 w-24 border-4 border-white/20 shadow-2xl scale-110">
+                    <AvatarImage src={partnerProfile?.avatarUrl} />
+                    <AvatarFallback>P</AvatarFallback>
+                 </Avatar>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-white/70">{partnerProfile?.username || 'Partner'}</span>
               </div>
            </div>
 
-           <div className="bg-white/5 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/10 space-y-6 shadow-2xl">
-              <div className="flex justify-between items-center px-2">
-                 <div className="flex flex-col">
-                    <span className="text-2xl font-black text-rose-500 tracking-tighter">LV. {activeCp.level || 1}</span>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/30 italic">Bond Journey</span>
+           <div className="bg-black/30 backdrop-blur-2xl rounded-[3rem] p-8 border border-white/10 space-y-8 shadow-2xl">
+              <div className="flex justify-between items-end">
+                 <div className="space-y-1">
+                    <span className="text-3xl font-black text-rose-400 italic">LV. {activeCp.level || 1}</span>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Bond Level</p>
                  </div>
-                 <div className="text-right flex flex-col">
-                    <div className="flex items-center gap-2 justify-end">
-                       <TrendingUp className="h-4 w-4 text-emerald-400" />
-                       <span className="text-xl font-black text-white">{(activeCp.cpValue || 0).toLocaleString()}</span>
+                 <div className="text-right space-y-1">
+                    <div className="flex items-center gap-2 justify-end text-white">
+                       <TrendingUp className="h-5 w-5 text-rose-400" />
+                       <span className="text-2xl font-black">{(activeCp.cpValue || 0).toLocaleString()}</span>
                     </div>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">Love Score</span>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Intimacy Score</p>
                  </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                  {[
-                   { label: 'Tasks', icon: Shield, color: 'bg-indigo-500' },
-                   { label: 'Gifts', icon: GiftIcon, color: 'bg-amber-500' },
-                   { label: 'Moments', icon: History, color: 'bg-emerald-500' }
-                 ].map((mod) => (
-                   <button key={mod.label} className="p-4 rounded-3xl bg-white/5 border border-white/5 flex flex-col items-center gap-2 hover:bg-white/10 transition-all active:scale-95">
-                      <div className={cn("p-2 rounded-xl text-white", mod.color)}>
-                         <mod.icon className="h-4 w-4" />
+                   { label: 'Gifts', icon: GiftIcon, color: 'bg-rose-500' },
+                   { label: 'Tasks', icon: Shield, color: 'bg-rose-700' },
+                   { label: 'Story', icon: History, color: 'bg-rose-900' }
+                 ].map((item) => (
+                   <button key={item.label} className="py-5 rounded-[2rem] bg-white/5 border border-white/5 flex flex-col items-center gap-3 active:scale-95 transition-all">
+                      <div className={cn("p-2.5 rounded-xl", item.color)}>
+                         <item.icon className="h-5 w-5 text-white" />
                       </div>
-                      <span className="text-[8px] font-black uppercase tracking-tighter text-white/50">{mod.label}</span>
+                      <span className="text-[9px] font-black uppercase tracking-tighter text-white/60">{item.label}</span>
                    </button>
                  ))}
               </div>
            </div>
         </div>
       ) : (
-        /* 💔 NO CP UI: Connect Partner Flow */
+        /* 💔 CONNECT FLOW */
         <div className="text-center space-y-8 animate-in slide-in-from-bottom-5 duration-700">
            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-rose-500/30 blur-[60px] rounded-full animate-pulse" />
-              <div className="h-32 w-32 bg-white/5 backdrop-blur-2xl rounded-full border-2 border-dashed border-rose-500/40 flex items-center justify-center relative z-10">
-                 <Plus className="h-12 w-12 text-rose-500 opacity-40" />
+              <div className="absolute inset-0 bg-rose-500/40 blur-[80px] rounded-full animate-pulse" />
+              <div className="h-32 w-32 bg-black/40 backdrop-blur-3xl rounded-full border-2 border-dashed border-white/20 flex items-center justify-center relative z-10">
+                 <Plus className="h-10 w-10 text-white/50" />
               </div>
            </div>
            
-           <div className="space-y-2">
-              <h2 className="text-3xl font-black uppercase tracking-tight italic">Partner frequency</h2>
-              <p className="text-white/40 font-medium text-xs uppercase tracking-[0.2em] max-w-[240px] leading-relaxed mx-auto">
-                Scanning for a soul to merge vibes with in the tribal realm.
+           <div className="space-y-3">
+              <h2 className="text-3xl font-black uppercase tracking-tight italic leading-none">The House is Empty</h2>
+              <p className="text-white/50 font-bold text-[10px] uppercase tracking-[0.25em] max-w-[260px] mx-auto leading-loose">
+                Invite your special person to start your bond journey.
               </p>
            </div>
 
            <Button 
              onClick={() => setShowSearch(true)}
-             className="bg-rose-500 hover:bg-rose-600 rounded-full h-16 px-12 font-black uppercase text-sm shadow-[0_15px_40px_rgba(244,63,94,0.4)] active:scale-95 transition-all ring-2 ring-white/20"
+             className="bg-white text-rose-600 hover:bg-rose-50 rounded-full h-16 px-14 font-black uppercase text-xs shadow-2xl active:scale-95 transition-all"
            >
-              Connect Partner
+              Find Partner
            </Button>
         </div>
       )}
     </main>
 
-    {/* 🔍 SEARCH & PROPOSE DIALOGS */}
+    {/* DIALOGS */}
     <UserSearchDialog 
       isOpen={showSearch} 
       onClose={() => setShowSearch(false)} 
