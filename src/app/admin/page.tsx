@@ -320,14 +320,13 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
             <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Audit Logs Found</div>
           ) : (
             <div className="rounded-2xl border overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+              <table className="w-full text-left border-collapse min-w-[500px]">
                 <thead>
                   <tr className="bg-slate-50 border-b">
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Time</th>
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Admin (Sender)</th>
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Target (Receiver)</th>
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Amount</th>
-                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Reason</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -346,9 +345,6 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
                       </td>
                       <td className="p-4 font-black text-green-600">
                         +{log.amount?.toLocaleString()}
-                      </td>
-                      <td className="p-4 text-xs italic text-slate-600 max-w-[200px] truncate">
-                        "{log.reason}"
                       </td>
                     </tr>
                   ))}
@@ -2031,10 +2027,10 @@ export default function AdminPage() {
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex flex-col md:flex-row gap-10 items-start"
+          className="flex flex-col lg:flex-row gap-10 items-start"
         >
-          <div className="w-full md:w-72 shrink-0 md:sticky md:top-24 h-fit">
-            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+          <div className="w-full lg:w-72 shrink-0 lg:sticky lg:top-24 h-fit">
+            <ScrollArea className="h-fit lg:h-[calc(100vh-200px)] pr-4">
               <TabsList className="flex flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-3xl border border-slate-100 p-3 gap-2 overflow-visible">
                 <TabsTrigger
                   value="recharge-requests"
