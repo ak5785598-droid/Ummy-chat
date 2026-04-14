@@ -22,7 +22,7 @@ export function RoomGameOverlay({ activeGame, roomId, onClose }: RoomGameOverlay
   <div className="fixed inset-0 z-[150] flex flex-col pointer-events-none">
    <div className="absolute inset-0 bg-transparent pointer-events-auto" onClick={onClose} />
    
-   <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[70vh]">
+   <div className="relative mt-auto w-full max-w-lg mx-auto bg-transparent pointer-events-auto animate-in slide-in-from-bottom duration-500 flex flex-col h-[65vh] mb-[80px]">
     <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 shrink-0" />
     
     <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/10 bg-[#0c0c14] relative">
