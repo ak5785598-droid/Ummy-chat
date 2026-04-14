@@ -106,7 +106,7 @@ export function AppLayout(props: {
 
     {/* DESKTOP SIDEBAR (Strictly Client-Side) */}
     {!deterministicAuth && (
-      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white/80 backdrop-blur-xl transition-all">
+      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-slate-50 transition-all">
         <SidebarHeader className="h-16 flex items-center px-4 border-b border-slate-100">
            <div className="flex items-center gap-3">
              <div className="h-8 w-8 bg-primary rounded-xl" />

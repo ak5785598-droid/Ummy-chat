@@ -71,7 +71,7 @@ export function GameModal({ isOpen, onClose, children, title, className }: GameM
         </div>
 
         {/* Room Visibility Indicator */}
-        <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
+        <div className="absolute bottom-4 left-4 bg-black/80 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
           <span className="text-[10px] font-black text-white/60 uppercase">Room Active</span>
         </div>

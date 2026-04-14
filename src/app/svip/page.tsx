@@ -47,7 +47,7 @@ export default function SvipClubPage() {
    <div className="min-h-full bg-[#0a0514] text-white font-sans relative flex flex-col pb-20 overflow-x-hidden animate-in fade-in duration-700">
     
     {/* Cinematic Header */}
-    <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-[#0a0514]/80 backdrop-blur-md z-50">
+    <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-[#0a0514] z-50">
       <button onClick={() => router.back()} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all">
        <ChevronLeft className="h-6 w-6 text-white" />
       </button>

@@ -49,7 +49,7 @@ export function FloatingRoomBar() {
 
  return (
   <div className="fixed bottom-20 left-4 right-4 z-[100] animate-in slide-in-from-bottom-10 duration-500">
-   <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-3xl p-3 shadow-2xl flex items-center justify-between">
+   <div className="bg-black/95 border border-white/10 rounded-3xl p-3 shadow-2xl flex items-center justify-between">
     <div className="flex items-center gap-3 flex-1 min-w-0" onClick={handleMaximize}>
      <Avatar className="h-10 w-10 rounded-xl border border-primary/20">
       <AvatarImage src={activeRoom.coverUrl} />

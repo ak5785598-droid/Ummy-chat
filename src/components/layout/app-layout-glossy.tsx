@@ -94,7 +94,7 @@ export function AppLayoutGlossy(props: {
 
     {/* DESKTOP SIDEBAR */}
     {!deterministicAuth && (
-      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white/80 backdrop-blur-xl transition-all">
+      <Sidebar collapsible="icon" className="border-r border-slate-200 bg-white/95 transition-all">
         <SidebarHeader className="h-16 flex items-center px-4 border-b border-slate-100">
            <div className="flex items-center gap-3">
              <div className="h-8 w-8 bg-primary rounded-xl" />
@@ -173,7 +173,7 @@ export function AppLayoutGlossy(props: {
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden"
         >
-          <div className="flex items-center justify-around bg-white/70 backdrop-blur-2xl h-14 border-t border-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] transition-all">
+          <div className="flex items-center justify-around bg-white/95 h-14 border-t border-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] transition-all">
             <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-slate-400")}>
                {pathname === '/rooms' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
                <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />

@@ -4613,7 +4613,7 @@ export default function AdminPage() {
               value="system"
             className="mt-4 space-y-4 animate-in fade-in slide-in-from-bottom-2"
           >
-            <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">
+            <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/95">
               <CardHeader className="p-8 pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
@@ -4659,7 +4659,7 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/60 backdrop-blur-xl">
+            <Card className="rounded-[2rem] border-none shadow-sm overflow-hidden bg-white/95">
               <CardHeader className="p-8 pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">

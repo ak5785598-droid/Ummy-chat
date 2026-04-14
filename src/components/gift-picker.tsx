@@ -236,7 +236,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </Tabs>
 
      {/* Footer */}
-     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14]/95 backdrop-blur-xl flex items-center justify-between border-t border-white/10 shadow-2xl">
+     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl">
       <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/5">
        <div className="h-4 w-4 rounded-full bg-yellow-500 flex items-center justify-center text-[10px] font-black text-black">C</div>
        <span className="text-sm font-black text-yellow-500">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>

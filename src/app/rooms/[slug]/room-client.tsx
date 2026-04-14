@@ -2554,7 +2554,7 @@ export function RoomClient({ room }: { room: Room }) {
             className="absolute inset-0 bg-black/20 pointer-events-auto"
             onClick={() => setShowVolumePopup(false)}
           />
-          <div className="relative z-10 bg-black/90 backdrop-blur-xl rounded-2xl p-4 mx-4 w-full max-w-sm border border-white/10 shadow-2xl pointer-events-auto">
+          <div className="relative z-10 bg-black/95 rounded-2xl p-4 mx-4 w-full max-w-sm border border-white/10 shadow-2xl pointer-events-auto">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => {
@@ -2628,7 +2628,7 @@ export function RoomClient({ room }: { room: Room }) {
           <button
             onClick={handleInputClick}
             className={cn(
-              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/10 backdrop-blur-md border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium",
+              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/20 border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium",
               isChatMuted && !canManageRoom && "opacity-50 grayscale"
             )}
           >
@@ -2639,7 +2639,7 @@ export function RoomClient({ room }: { room: Room }) {
           <button
             onClick={toggleAIListening}
             className={cn(
-              "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/10 backdrop-blur-md",
+              "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/10 bg-white/20",
               isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-white/10 text-white"
             )}
           >
@@ -2752,7 +2752,7 @@ export function RoomClient({ room }: { room: Room }) {
           </DialogHeader>
           <button
             onClick={() => setPreviewImage(null)}
-            className="absolute top-12 right-6 p-3 bg-white/10 backdrop-blur-md rounded-full text-white z-[410] active:scale-90 transition-transform"
+            className="absolute top-12 right-6 p-3 bg-black/80 rounded-full text-white z-[410] active:scale-90 transition-transform"
           >
             <X className="h-[18px] w-[18px]" />
           </button>
@@ -2761,7 +2761,7 @@ export function RoomClient({ room }: { room: Room }) {
           <div className="absolute bottom-12 flex items-center gap-4 z-[410]">
             <button
               onClick={() => setIsGiftPickerOpen(true)}
-              className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:scale-90 transition-transform"
+              className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white/80 active:scale-90 transition-transform"
             >
               <GiftIcon className="h-5 w-5" />
             </button>
@@ -2770,7 +2770,7 @@ export function RoomClient({ room }: { room: Room }) {
             {currentUserParticipant?.seatIndex !== undefined && (
               <button
                 onClick={() => setShowSoundboard(!showSoundboard)}
-                className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-primary active:scale-90 transition-transform"
+                className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-primary active:scale-90 transition-transform"
               >
                 <Volume2 className="h-5 w-5" />
               </button>
@@ -2784,7 +2784,7 @@ export function RoomClient({ room }: { room: Room }) {
                   const next = themes[(themes.indexOf(activeLiveTheme) + 1) % themes.length];
                   setActiveLiveTheme(next);
                 }}
-                className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white/80 active:scale-90 transition-transform"
+                className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white/80 active:scale-90 transition-transform"
               >
                 <ImageIcon className="h-5 w-5" />
               </button>
