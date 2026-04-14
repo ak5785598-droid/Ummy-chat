@@ -262,11 +262,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    });
  };
 
+ // UPDATED LOADING PAGE: Full Cream, No Border, Centered Loader & Ummy
  if (isLaunching) {
   return (
-   <div className="h-[100dvh] w-full bg-[#fdf8e7] flex flex-col items-center justify-center p-6 relative overflow-hidden border-[8px] border-orange-500">
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 flex flex-col items-center gap-6">
-      <div className="relative flex items-center justify-center">
+   <div className="fixed inset-0 z-[300] bg-[#fdf8e7] flex flex-col items-center justify-center overflow-hidden">
+    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-6">
+      <div className="flex items-center justify-center">
         <Loader2 className="w-24 h-24 text-orange-500 animate-spin stroke-[3]" />
       </div>
       <div className="flex flex-col items-center gap-2 mt-4">
@@ -327,7 +328,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             <h2 className="text-[18px] font-black text-[#4a2511] uppercase tracking-widest">Rules</h2>
             <button onClick={() => setShowRules(false)} className="absolute right-0 text-orange-600 bg-orange-200/50 rounded-full p-1.5"><X size={18} /></button>
           </div>
-          <div className="overflow-y-auto no-scrollbar flex-1 space-y-2.5 text-[#4a2511] font-bold text-[13px] leading-snug">
+          <div className="overflow-y-auto no-scrollbar flex-1 space-y-2.5 text-[#4a2511] font-bold text-[13px] legacy-snug">
             <p>1) Select a Chip and choose your animal.</p>
             <p>2) Choose your Animal to put your bet.</p>
             <p>3) The wheel Spin in every 25Sec.</p>
@@ -373,22 +374,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* TOP HEADER - SQUARE EDGES & REDUCED HEIGHT */}
-   <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
-          <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
+   {/* TOP HEADER - ADJUSTED: Increased margin and padding to move it down */}
+   <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-transparent shrink-0 mt-6">
+      <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-none border border-white/20 h-[32px] pl-1 pr-1">
+          <div className="bg-yellow-400 rounded-none p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
-          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
+          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-none flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><Clock size={16} /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><HelpCircle size={16} /></button>
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><X size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><Clock size={16} /></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><HelpCircle size={16} /></button>
+          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><X size={16} /></button>
       </div>
    </header>
 
-   {/* MAIN WHEEL AREA - PADDING TOP REDUCED (pt-10 instead of pt-20) */}
+   {/* MAIN WHEEL AREA */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10" viewBox="0 0 100 100">
@@ -420,12 +421,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           )}
         >
           <button onClick={() => handlePlaceBet(item)} className="relative active:scale-95 transition-all">
-            {/* 3D ANIMAL CARD EFFECT ADDED HERE */}
             <div className={cn(
                 "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[4px] bg-[#4a2511] border-[#eebb99] transition-all overflow-hidden relative shadow-[0_6px_0_#b57f5e,0_10px_10px_rgba(0,0,0,0.5),inset_0_-5px_10px_rgba(0,0,0,0.5)]", 
                 highlightIdx === idx && "scale-110 bg-[#6b331a] shadow-[0_0_30px_rgba(238,187,153,0.6)] border-white"
             )}>
-                {/* 3D EMOJI ICON EFFECT ADDED HERE */}
                 <span className="text-[38px] z-10 drop-shadow-[0_5px_4px_rgba(0,0,0,0.6)]">{item.emoji}</span>
                 <div className="absolute bottom-0 left-0 right-0 bg-[#4a2511] border-t border-[#eebb99] py-0.5 text-center z-20">
                     <span className="text-[7px] font-bold text-[#eebb99] uppercase tracking-tighter">
@@ -434,7 +433,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
                 </div>
             </div>
 
-            {/* FLOATING CHIPS LAYER EFFECT */}
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div
@@ -466,7 +464,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     </div>
    </main>
 
-   {/* BOTTOM SECTION (Chips & History) */}
+   {/* BOTTOM SECTION */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-40">
       
       {/* HISTORY BAR */}
@@ -485,7 +483,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         </div>
       </div>
 
-      {/* 10VH PURPLE BOTTOM SHEET FOR CHIPS */}
+      {/* BOTTOM SHEET FOR CHIPS */}
       <div className="w-full h-[10vh] min-h-[70px] bg-purple-600 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#3b0764]">
         {CHIPS_DATA.map(chip => (
           <button 
