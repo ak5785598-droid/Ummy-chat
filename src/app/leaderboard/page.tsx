@@ -12,13 +12,41 @@ import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
 
-// --- Daily Countdown Component ---
+// --- MST THEME BACKGROUND (UPDATED: Added More Depth & Beams) ---
+const ThemeBackground = () => (
+  <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-[#05070a]">
+    {/* Dynamic Neon Orbs */}
+    <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-cyan-500/10 blur-[130px] rounded-full animate-pulse" />
+    <div className="absolute bottom-[-10%] right-[-10%] w-[70%] h-[70%] bg-purple-600/10 blur-[130px] rounded-full animate-pulse [animation-delay:3s]" />
+    
+    {/* Vertical Scanning Light Beams (Leaderboard Effect) */}
+    <div className="absolute inset-0 opacity-20">
+      <div className="absolute top-0 left-1/4 w-[1px] h-full bg-gradient-to-b from-transparent via-cyan-500/40 to-transparent" />
+      <div className="absolute top-0 left-3/4 w-[1px] h-full bg-gradient-to-b from-transparent via-purple-500/40 to-transparent" />
+    </div>
+
+    {/* Futuristic Grid Overlay */}
+    <div 
+      className="absolute inset-0 opacity-[0.04]" 
+      style={{ 
+        backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+        backgroundSize: '40px 40px' 
+      }} 
+    />
+
+    {/* Bottom Vignette for better readability of fixed footer */}
+    <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#05070a] to-transparent" />
+  </div>
+);
+
+// --- Daily Countdown Component (UPDATED: With Reset Trigger Logic) ---
 const DailyCountdown = () => {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
+      // IST Offset (5.5 hours)
       const istOffset = 5.5 * 60 * 60 * 1000;
       const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
       
@@ -27,6 +55,11 @@ const DailyCountdown = () => {
       
       const diff = tomorrow.getTime() - istTime.getTime();
       
+      // Reset Logic: Agar time khatam ho jaye toh page refresh kardo data clear dikhane ke liye
+      if (diff <= 0) {
+        window.location.reload();
+      }
+
       const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const m = Math.floor((diff / (1000 * 60)) % 60);
       const s = Math.floor((diff / 1000) % 60);
@@ -37,13 +70,14 @@ const DailyCountdown = () => {
   }, []);
 
   return (
-    <div className="flex items-center justify-center gap-2 py-2 bg-yellow-500/10 border-y border-yellow-500/20 my-4">
+    <div className="flex items-center justify-center gap-2 py-2 bg-yellow-500/10 border-y border-yellow-500/20 my-4 backdrop-blur-md relative z-10">
       <Clock className="h-3 w-3 text-yellow-500" />
       <span className="text-[10px] font-black text-yellow-500 uppercase tracking-tighter">Resets in: {timeLeft}</span>
     </div>
   );
 };
 
+// --- Bakki Saare Components (CircleAvatar, RankingList etc.) same rakhe hain ---
 const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?: string, fallback: string, size?: "sm" | "md" | "lg", glowColor?: string }) => {
   const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
   const glows: Record<string, string> = {
@@ -53,7 +87,7 @@ const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?
   };
 
   return (
-    <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2", sizes[size], glows[glowColor])}>
+    <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2 bg-slate-900", sizes[size], glows[glowColor])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
           <AvatarFallback className="bg-slate-900 text-white font-black rounded-full">{fallback}</AvatarFallback>
@@ -64,7 +98,7 @@ const CircleAvatar = ({ src, fallback, size = "md", glowColor = "cyan" }: { src?
 
 const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: string, isLoading: boolean }) => {
  if (isLoading) return (
-  <div className="flex flex-col items-center py-40 gap-4">
+  <div className="flex flex-col items-center py-40 gap-4 relative z-10">
    <Loader className="animate-spin text-cyan-500 h-10 w-10" />
    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/60 animate-pulse">Syncing Daily Data...</p>
   </div>
@@ -76,11 +110,10 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
   return item.stats?.[`daily${fieldSuffix}`] || 0;
  };
 
- // Filter out players with 0 coins
  const activePlayers = (items || []).filter(item => getValue(item) > 0);
 
  if (activePlayers.length === 0) return (
-  <div className="text-center py-40 opacity-40">
+  <div className="text-center py-40 opacity-40 relative z-10">
    <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/20" />
    <p className="font-bold uppercase text-sm text-white/40">No Daily Legends Yet.</p>
   </div>
@@ -98,7 +131,7 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
  };
 
  return (
-  <div className="space-y-2 animate-in fade-in duration-700 pb-32">
+  <div className="space-y-2 animate-in fade-in duration-700 pb-32 relative z-10">
     <div className="flex items-end justify-center gap-2 pt-10 px-2">
       {top2 && (
         <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
@@ -145,8 +178,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
     <div className="px-4 space-y-3">
       {others.map((item, index) => (
         <Link key={item.id} href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`} 
-          className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl relative overflow-hidden group hover:border-cyan-500/50 transition-all">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-purple-500 opacity-40" />
+          className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl relative overflow-hidden group hover:border-cyan-500/50 transition-all backdrop-blur-md">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-cyan-500 to-purple-500 opacity-40 group-hover:opacity-100 transition-opacity" />
           <span className="text-lg font-black italic text-white/20 w-6">{index + 4}</span>
           <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={(index+4).toString()} size="sm" glowColor="purple" />
           <div className="flex-1">
@@ -222,14 +255,16 @@ function LeaderboardContent() {
  if (!mounted) return null;
 
  return (
-  <div className="min-h-screen bg-[#05070a] text-white relative font-sans flex flex-col">
-    <header className="relative z-50 p-6 pt-safe flex items-center justify-between">
+  <div className="min-h-screen bg-[#05070a] text-white relative font-sans flex flex-col overflow-hidden">
+    <ThemeBackground />
+    
+    <header className="relative z-50 p-6 pt-safe flex items-center justify-between backdrop-blur-md bg-[#05070a]/50">
        <Link href="/rooms"><ChevronLeft className="h-6 w-6 text-cyan-400" /></Link>
-       <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">Hall of Fame</h1>
+       <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-500">Hall of Fame</h1>
        <HelpCircle className="h-5 w-5 text-white/20" />
     </header>
 
-    <div className="flex items-center justify-around border-b border-white/10 pb-2 mb-2">
+    <div className="relative z-50 flex items-center justify-around border-b border-white/10 pb-2 mb-2 bg-[#05070a]/30 backdrop-blur-sm">
        {[
         { id: 'rich', label: 'Honor' },
         { id: 'charm', label: 'Charm' },
@@ -238,10 +273,10 @@ function LeaderboardContent() {
        ].map((tab) => (
         <div key={tab.id} className="flex flex-col items-center">
           <button onClick={() => setRankingMode(tab.id as any)} 
-            className={cn("text-[10px] font-black uppercase tracking-widest transition-all", rankingType === tab.id ? "text-cyan-400" : "text-white/30")}>
+            className={cn("text-[10px] font-black uppercase tracking-widest transition-all py-2", rankingType === tab.id ? "text-cyan-400" : "text-white/30")}>
             {tab.label}
           </button>
-          {rankingType === tab.id && <span className="text-[8px] font-bold text-cyan-500/60 mt-1 animate-pulse">DAILY</span>}
+          {rankingType === tab.id && <span className="text-[8px] font-bold text-cyan-500/60 mt-[-4px] animate-pulse">●</span>}
         </div>
        ))}
      </div>
@@ -250,7 +285,7 @@ function LeaderboardContent() {
        <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} />
     </main>
 
-    <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/95 backdrop-blur-lg border-t border-cyan-500/20 p-4 h-20 flex items-center">
+    <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#0a0c10]/80 backdrop-blur-xl border-t border-cyan-500/20 p-4 h-20 flex items-center">
       <Link href="/profile" className="max-w-4xl mx-auto flex items-center gap-4 w-full active:scale-[0.98] transition-all">
        <span className="text-xs font-black text-cyan-500 italic">ME</span>
        <CircleAvatar src={me?.avatarUrl} fallback="U" size="sm" glowColor="cyan" />
@@ -261,7 +296,7 @@ function LeaderboardContent() {
            <span className="text-sm font-black text-cyan-400">{myValue.toLocaleString()}</span>
         </div>
        </div>
-       <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">
+       <div className="bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.2)]">
          <span className="text-[10px] font-black text-cyan-400">SYNCED</span>
        </div>
       </Link>
