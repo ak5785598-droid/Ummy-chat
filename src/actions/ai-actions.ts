@@ -42,6 +42,15 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
       userFeedback = "Master, AI ki limit khatam ho gayi hai. Thodi der baad koshish karein! ⏳";
     }
     
+    // Temporary Debug Logger for Master
+    try {
+      const fs = require('fs');
+      const logMessage = `[${new Date().toISOString()}] ERROR: ${errorMessage}\nSTACK: ${error?.stack}\n\n`;
+      fs.appendFileSync('ai-debug-error.log', logMessage);
+    } catch (e) {
+      console.error('Failed to write to debug log');
+    }
+    
     return userFeedback;
   }
 }
