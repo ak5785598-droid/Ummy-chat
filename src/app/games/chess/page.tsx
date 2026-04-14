@@ -27,10 +27,10 @@ const pieceSVG: Record<string, string> = {
   'kb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bK.svg'
 };
 
-export function ChessGameContent() {
+export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { roomId?: string, isOverlay?: boolean }) {
    const router = useRouter();
    const searchParams = useSearchParams();
-   const roomId = searchParams.get('roomId') || 'global_room';
+   const roomId = propsRoomId || searchParams.get('roomId') || 'global_room';
    const { user: currentUser } = useUser();
    const { userProfile } = useUserProfile(currentUser?.uid);
    const [isLaunching, setIsLaunching] = useState(true);
@@ -54,6 +54,14 @@ export function ChessGameContent() {
 
    // BOTTOM SHEET LOADING PAGE
    if (isLaunching || isLoading) {
+    if (isOverlay) {
+      return (
+        <div className="h-full w-full bg-[#1e293b] flex flex-col items-center justify-center space-y-6">
+            <div className="h-14 w-14 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin"></div>
+            <h1 className="text-xl font-bold text-white tracking-tight">Preparing Arena</h1>
+        </div>
+      );
+    }
     return (
      <div className="h-screen w-full bg-transparent flex flex-col justify-end overflow-hidden font-sans pointer-events-none">
         {/* Top Half Blurred/Transparent Background */}
@@ -122,12 +130,14 @@ export function ChessGameContent() {
      );
    };
 
-   return (
-    // Agar AppLayout mein koi background set hai, toh usko transparent pass karna padega (agar prop support karta hai)
-    <AppLayout fullScreen>
-      <div className="h-full w-full bg-transparent flex flex-col justify-end relative overflow-hidden text-white font-sans pointer-events-none pb-12">
-      
-      {/* Header - Now floats over the transparent top half */}
+   const Content = (
+    <div className={cn(
+      "h-full w-full flex flex-col relative overflow-hidden text-white font-sans",
+      isOverlay ? "bg-[#1e293b] pointer-events-auto" : "bg-transparent justify-end pointer-events-none pb-12"
+    )}>
+    
+    {/* Header - Now floats over the transparent top half */}
+    {!isOverlay && (
       <header className="absolute top-0 w-full z-50 flex items-center justify-between p-6 pointer-events-auto">
         <button onClick={() => router.back()} className="bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-md shadow-sm"><ChevronLeft /></button>
         <div className="text-center">
@@ -137,12 +147,16 @@ export function ChessGameContent() {
             {isMuted ? <VolumeX /> : <Volume2 />}
         </button>
       </header>
+    )}
 
-      {/* Transparent area for the background to show through */}
-      <div className="flex-1 w-full bg-transparent" />
+    {/* Transparent area for the background to show through */}
+    {!isOverlay && <div className="flex-1 w-full bg-transparent" />}
 
-      {/* Main Bottom Sheet Game Area - 50vh with overflow-y-auto */}
-      <main className="h-[50vh] w-full bg-[#1e293b]/95 backdrop-blur-2xl rounded-t-[48px] border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center p-4 animate-in slide-in-from-bottom duration-500 overflow-y-auto pointer-events-auto pb-6 scrollbar-hide">
+    {/* Main Bottom Sheet Game Area */}
+    <main className={cn(
+      "w-full bg-[#1e293b]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center p-4 duration-500 overflow-y-auto pointer-events-auto pb-6 scrollbar-hide",
+      isOverlay ? "h-full" : "h-[50vh] rounded-t-[48px] animate-in slide-in-from-bottom"
+    )}>
          
          <div className="w-12 h-1.5 bg-white/10 rounded-full mb-4 shrink-0" />
          
@@ -189,7 +203,14 @@ export function ChessGameContent() {
             <p className="text-[10px] text-center font-bold text-white/20 uppercase tracking-[0.4em] pb-2">Powered by UMMY TEAM</p>
          </div>
       </main>
-     </div>
+    </div>
+   );
+
+   if (isOverlay) return Content;
+
+   return (
+    <AppLayout fullScreen>
+      {Content}
     </AppLayout>
    );
 }

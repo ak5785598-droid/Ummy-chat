@@ -26,10 +26,10 @@ import { motion, AnimatePresence } from 'framer-motion';
  * High-Fidelity Carrom Master.
  * Matches the requested screenshots for loading, lobby, and core gameplay.
  */
-export function CarromGameContent() {
+export function CarromGameContent({ roomId: propsRoomId, isOverlay = false }: { roomId?: string, isOverlay?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId') || 'lobby';
+  const roomId = propsRoomId || searchParams.get('roomId') || 'lobby';
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
 
@@ -54,7 +54,10 @@ export function CarromGameContent() {
 
   if (!gameState || gameState.status === 'loading') {
     return (
-      <div className="h-screen w-full bg-[#1A0B2E] flex flex-col items-center justify-center p-8 font-sans overflow-hidden">
+      <div className={cn(
+        "w-full bg-[#1A0B2E] flex flex-col items-center justify-center p-8 font-sans overflow-hidden",
+        isOverlay ? "h-full min-h-[400px]" : "h-screen"
+      )}>
         <motion.div 
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -85,7 +88,10 @@ export function CarromGameContent() {
   // --- MODE SELECTION ---
   if (gameState.status === 'mode_select') {
     return (
-      <div className="h-screen w-full bg-[#00897B] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      <div className={cn(
+        "w-full bg-[#00897B] flex flex-col items-center justify-center p-8 relative overflow-hidden",
+        isOverlay ? "h-full min-h-[400px]" : "h-screen"
+      )}>
         <div className="absolute inset-0 bg-gradient-to-b from-[#004D40]/20 to-[#009688]/80 pointer-events-none" />
         
         <motion.div 
@@ -120,7 +126,10 @@ export function CarromGameContent() {
     const canStart = gameState.players.length >= 2;
 
     return (
-      <div className="h-screen w-full bg-gradient-to-br from-[#006064] to-[#004D40] flex flex-col items-center p-8 font-sans relative overflow-hidden">
+      <div className={cn(
+        "w-full bg-gradient-to-br from-[#006064] to-[#004D40] flex flex-col items-center p-8 font-sans relative overflow-hidden",
+        isOverlay ? "h-full min-h-[400px]" : "h-screen"
+      )}>
         <div className="w-full flex justify-between items-center mb-12 relative z-20">
           <button onClick={() => router.back()} className="p-2 bg-white/10 rounded-full backdrop-blur-md border border-white/10"><X className="h-5 w-5 text-white" /></button>
           <h2 className="text-2xl font-black text-white uppercase tracking-tighter drop-shadow-lg">Carrom Arena</h2>
@@ -179,11 +188,11 @@ export function CarromGameContent() {
   // --- CORE GAMEPLAY ARENA ---
   const isMyTurn = gameState.turn === currentUser?.uid;
 
-  return (
-    <AppLayout fullScreen>
-      <div className="h-full w-full bg-[#004D40] flex flex-col relative overflow-hidden font-sans select-none pb-20">
-        
-        {/* Arena Header */}
+  const Content = (
+    <div className="h-full w-full bg-[#004D40] flex flex-col relative overflow-hidden font-sans select-none pb-20">
+      
+      {/* Arena Header */}
+      {!isOverlay && (
         <header className="relative z-50 flex items-center justify-between p-4 pt-32 shrink-0 bg-gradient-to-b from-black/20 to-transparent">
           <div className="flex gap-2">
             <button className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md"><Maximize2 className="h-4 w-4 text-white" /></button>
@@ -200,6 +209,7 @@ export function CarromGameContent() {
             <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md"><X className="h-4 w-4 text-white" /></button>
           </div>
         </header>
+      )}
 
         {/* The Board */}
         <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -380,7 +390,14 @@ export function CarromGameContent() {
            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
         </div>
-      </div>
+    </div>
+  );
+
+  if (isOverlay) return Content;
+
+  return (
+    <AppLayout fullScreen>
+      {Content}
     </AppLayout>
   );
 }

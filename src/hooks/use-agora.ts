@@ -215,7 +215,7 @@ export function useAgora(
         
         // --- VOLUME DETECTION: Enable real-time volume indicators ---
         client.enableAudioVolumeIndicator(200); 
-        client.on('volume-indicator', (volumes) => {
+        client.on('volume-indicator', (volumes: { uid: string | number; level: number }[]) => {
           if (onVolumeChange) {
             onVolumeChange(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
           }

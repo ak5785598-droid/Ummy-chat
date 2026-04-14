@@ -2779,13 +2779,8 @@ export function RoomClient({ room }: { room: Room }) {
         setIsMutedLocal={setIsSpeakerMuted}
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
-          if (['ludo', 'carrom', 'chess', 'fruit-party', 'forest-party'].includes(slug)) {
-            setMinimizedRoom(room);
-            setActiveRoom(null);
-            router.push(`/games/${slug}?roomId=${room.id}`);
-          } else {
-            setActiveGameSlug(slug);
-          }
+          setActiveGameSlug(slug);
+          setIsRoomPlayOpen(false);
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
         onSyncSharedMusic={(track) => {
@@ -2806,20 +2801,13 @@ export function RoomClient({ room }: { room: Room }) {
         roomHasMusic={!!room.currentMusicUrl}
         showMiniPlayer={showMiniPlayer}
         onSelectGame={(slug) => {
-          if (['ludo', 'carrom', 'chess'].includes(slug)) {
-            // Standalone Games: Navigate to full page with roomId and minimize room
-            setMinimizedRoom(room);
-            setActiveRoom(null);
-            router.push(`/games/${slug}?roomId=${room.id}`);
-          } else {
-            // Overlay Games: Show in-room overlay
-            setActiveGameSlug(slug);
-          }
+          setActiveGameSlug(slug);
           setIsRoomGamesOpen(false);
         }}
       />
       <RoomGameOverlay
         activeGame={activeGameSlug}
+        roomId={room.id}
         onClose={() => setActiveGameSlug(null)}
       />
       <RoomMessagesDialog

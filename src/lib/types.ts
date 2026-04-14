@@ -137,6 +137,7 @@ export type Room = {
  currentMusicUrl?: string | null;
  currentMusicTitle?: string | null;
  currentMusicId?: string | null;
+ currentMusicOwnerId?: string | null;
  currentMusicType?: 'youtube' | 'upload' | null;
  musicUpdatedAt?: any;
  musicUpdatedBy?: string | null;
