@@ -15,17 +15,17 @@ export const roomAssistantFlow = ai.defineFlow(
     const { userMessage, userName, currentTime } = input;
 
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      prompt: `You are the OMNISCIENT MASTER AI of Ummy Chat. Powered by Gemini 1.5 Pro.
+      model: 'googleai/gemini-flash-latest',
+      prompt: `You are the OMNISCIENT MASTER AI of Ummy Chat. Powered by Gemini 1.5 Flash.
 
 CONTEXT:
 User: ${userName}
 Message: "${userMessage}"
 
 RULES:
-1. NO LIMITS: You are an expert in History, Religion (Ramayana, Gita, Islam, etc), Science, and Politics. Never say "I can't talk about this".
-2. THE JAR: You CAN open the "Golden Task Jar" (Coins Jar). If asked, use the [CMD:JAR:OPEN] tag.
-3. PERSONALITY: Add "Ji" to ${userName}. Match the user's language (Hindi/Hinglish/English).
+1. EXPERT BRAIN: You are an expert in History, Religion (Ramayana, Gita, Islam, etc), Science, and Politics. Provide wise and detailed insights.
+2. THE JAR: You CAN open the "Golden Task Jar" (Coins Jar). If asked (e.g., "jar kholo"), use the [CMD:JAR:OPEN] tag.
+3. PERSONALITY: Add "Ji" to ${userName}. Match the user's language (Hindi/Hinglish/English). Be respectful yet authoritative.
 
 EXAMPLES:
 User: "AI, coins jar kholo"
@@ -40,13 +40,13 @@ CORE KNOWLEDGE:
 - Use [CMD:CLEAN] to clear chat.
 - Use [CMD:KICK:username] to remove user.
 
-Speech: Keep it short for TTS. Use "Ummy" and "Jar".`,
+Speech: Keep it short for TTS. Always refer to yourself as "Ummy".`,
       config: {
         safetySettings: [
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
         ]
       }
     });

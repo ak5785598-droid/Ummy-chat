@@ -27,7 +27,7 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     
     // Diagnostic marker for debugging key transition
     console.log('✅ [AI-SUCCESS]: Message generated successfully for', userName);
-    return response || "Maaf kijiyega, mujhe samajh nahi aaya. 💖";
+    return response || "Maaf kijiyega Master, main iska jawab dene mein asamarth hoon. 💖";
   } catch (error: any) {
     const fs = require('fs');
     const errorMessage = error?.message || "Unknown Error";
@@ -35,12 +35,13 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     // MASTER: SEE THIS IN YOUR TERMINAL!
     console.log('\n\n❌❌❌ [GEMINI ERROR DETECTED] ❌❌❌');
     console.error('ERROR MESSAGE:', errorMessage);
+    console.error('MODEL:', 'googleai/gemini-flash-latest');
     console.error('API KEY (First 5):', process.env.GOOGLE_GENAI_API_KEY?.substring(0, 5));
     console.log('---------------------------------------\n\n');
     
     // Log to file for master
     try {
-      const logMessage = `[${new Date().toISOString()}] ERROR: ${errorMessage}\nSTACK: ${error?.stack}\n\n`;
+      const logMessage = `[${new Date().toISOString()}] ERROR: ${errorMessage}\nMODEL: gemini-flash-latest\nSTACK: ${error?.stack}\n\n`;
       fs.appendFileSync('ai-debug-error.log', logMessage);
     } catch (e) {}
 
@@ -52,6 +53,8 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
       userFeedback = "Master, apki [AI API KEY] invalid hai ya expired ho gayi hai. Please use update karein! 🛠️";
     } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
       userFeedback = "Master, AI ki limit khatam ho gayi hai. Thodi der baad koshish karein! ⏳";
+    } else if (errorMessage.includes('404')) {
+      userFeedback = "Master, AI model configuration mein error hai. Please wait karein jab tak main ise theek karta hoon! 🛠️";
     }
     
     return userFeedback;
