@@ -12,7 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[60vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
+    // CHANGED: h-[80vh] to h-[70vh] and removed rounded-t-[3.5rem] to make it square
+    className="h-[70vh] w-full bg-[#020617] border-t-8 border-yellow-500 flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
@@ -45,7 +46,6 @@ const Cloud = ({ className }: { className?: string }) => (
 );
 
 const SOUNDS = {
-  // Coins sound for betting
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
@@ -60,7 +60,7 @@ const ITEMS = [
   { id: 'tomato', icon: '🍅', multiplier: 5 },
   { id: 'coconut', icon: '🥥', multiplier: 5 },
   { id: 'grapes', icon: '🍇', multiplier: 5 },
-  { id: 'orange', icon: '🍋', multiplier: 5 },
+  { id: 'orange', icon: '🍊', multiplier: 5 },
 ];
 
 const CHIPS_DATA = [
@@ -154,7 +154,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || localCoins < selectedChip) return;
-    // Coins sound added for betting
     playSound(SOUNDS.BET, 0.9);
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
@@ -163,7 +162,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   const startSpin = () => {
     setGameState('spinning');
-    // Spinning sound (Whirring) made louder (Volume 1.0)
     playSound(SOUNDS.WHIRRING, 1.0);
     
     const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
@@ -229,13 +227,15 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           <motion.div 
             key="game"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="h-[60vh] w-full bg-[#020617] rounded-t-[3.5rem] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
+            // CHANGED: h-[80vh] to h-[70vh] and removed rounded-t-[3.5rem] to make it square
+            className="h-[70vh] w-full bg-[#020617] border-t-8 border-yellow-500 relative overflow-hidden flex flex-col items-center"
             style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
           >
             
             {/* HEADER */}
             <div className="w-full flex flex-col z-20">
-              <div className="w-full p-4 flex justify-between items-center relative">
+              {/* CHANGED: p-4 to py-2 px-4 to make header smaller */}
+              <div className="w-full py-2 px-4 flex justify-between items-center relative">
                 <div className="flex items-center gap-3">
                   <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
                     <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
@@ -249,7 +249,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 </div>
 
                 <div className="flex items-center gap-2 relative">
-                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                   <div className="absolute top-10 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
                      <Cloud className="w-28 h-auto" />
                   </div>
                   {[ 
@@ -265,11 +265,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 </div>
               </div>
 
-              <div className="px-4 mt-1 relative">
+              {/* CHANGED: mt-1 to mt-0 for compact header */}
+              <div className="px-4 mt-0 relative">
                 <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
                   <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
-                <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
+                <div className="absolute top-8 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
                    <Cloud className="w-14 h-auto" />
                 </div>
               </div>
