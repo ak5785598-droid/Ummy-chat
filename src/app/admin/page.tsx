@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   useFirestore,
   useDoc,
@@ -294,6 +295,74 @@ const SearchToggle = ({
   </div>
 );
 
+const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: boolean }) => {
+  const logsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "coin_audit_logs"), orderBy("timestamp", "desc"), limit(100));
+  }, [firestore, isAuthorized]);
+
+  const { data: logs, isLoading } = useCollection(logsQuery);
+
+  if (isLoading) return <div className="flex justify-center p-20"><Loader className="animate-spin text-green-500" /></div>;
+
+  return (
+    <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+      <CardHeader className="px-0">
+        <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
+          <History className="h-6 w-6" /> Financial Audit Ledger
+        </CardTitle>
+        <CardDescription>
+          Real-time record of all administrative coin movements. These records are permanent.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-0">
+        <div className="space-y-4">
+          {!logs || logs.length === 0 ? (
+            <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Audit Logs Found</div>
+          ) : (
+            <div className="rounded-2xl border overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b">
+                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Time</th>
+                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Admin (Sender)</th>
+                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Target (Receiver)</th>
+                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Amount</th>
+                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {logs.map((log: any) => (
+                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 text-[10px] font-bold whitespace-nowrap">
+                        {log.timestamp?.toDate ? format(log.timestamp.toDate(), "MMM d, HH:mm") : "Pending..."}
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs font-bold uppercase text-slate-900">{log.adminName}</p>
+                        <p className="text-[8px] text-slate-400 truncate w-24 font-mono">{log.adminId}</p>
+                      </td>
+                      <td className="p-4">
+                        <p className="text-xs font-bold uppercase text-blue-600">{log.targetName}</p>
+                        <p className="text-[8px] text-slate-400 font-bold">UID: {log.targetAccount}</p>
+                      </td>
+                      <td className="p-4 font-black text-green-600">
+                        +{log.amount?.toLocaleString()}
+                      </td>
+                      <td className="p-4 text-xs italic text-slate-600 max-w-[200px] truncate">
+                        "{log.reason}"
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 export default function AdminPage() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -449,6 +518,10 @@ export default function AdminPage() {
   const [targetRoomForPin, setTargetRoomForPin] = useState<any>(null);
   const [isSearchingRoomPin, setIsSearchingRoomPin] = useState(false);
   const [isPinningRoom, setIsPinningRoom] = useState(false);
+
+  // Financial Audit State
+  const [auditSearchQuery, setAuditSearchQuery] = useState("");
+  const [isFinancialSyncing, setIsFinancialSyncing] = useState(false);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -1136,23 +1209,50 @@ export default function AdminPage() {
       .finally(() => setIsSendingDm(false));
   };
 
-  const handleDispatchCoins = () => {
-    if (!firestore || !targetUserForRewards || !coinDispatchAmount) return;
+  const handleDispatchCoins = async () => {
+    if (!firestore || !targetUserForRewards || !coinDispatchAmount || !user) return;
+    
     setIsDispatching(true);
-    const uRef = doc(firestore, "users", targetUserForRewards.id);
-    const pRef = doc(
-      firestore,
-      "users",
-      targetUserForRewards.id,
-      "profile",
-      targetUserForRewards.id,
-    );
-    const amt = parseInt(coinDispatchAmount);
-    updateDocumentNonBlocking(uRef, { "wallet.coins": increment(amt) });
-    updateDocumentNonBlocking(pRef, { "wallet.coins": increment(amt) });
-    toast({ title: "Coins Dispatched" });
-    setCoinDispatchAmount("");
-    setIsDispatching(false);
+    try {
+      const uRef = doc(firestore, "users", targetUserForRewards.id);
+      const pRef = doc(firestore, "users", targetUserForRewards.id, "profile", targetUserForRewards.id);
+      
+      const amt = parseInt(coinDispatchAmount);
+      const batch = writeBatch(firestore);
+
+      // 1. Credit the user
+      batch.update(uRef, { "wallet.coins": increment(amt), updatedAt: serverTimestamp() });
+      batch.update(pRef, { "wallet.coins": increment(amt), updatedAt: serverTimestamp() });
+
+      // 2. Log ONLY IF not self-dispatch by creator
+      const isSelfDispatchByCreator = isCreator && targetUserForRewards.id === user.uid;
+      
+      if (!isSelfDispatchByCreator) {
+        const logRef = doc(collection(firestore, "coin_audit_logs"));
+        batch.set(logRef, {
+          id: logRef.id,
+          adminId: user.uid,
+          adminName: currentUserProfile?.username || user.email || "Unknown Admin",
+          targetId: targetUserForRewards.id,
+          targetName: targetUserForRewards.username || "Unknown User",
+          targetAccount: targetUserForRewards.accountNumber || "N/A",
+          amount: amt,
+          reason: "Manual Admin Dispatch", // Default since field was removed
+          timestamp: serverTimestamp(),
+          type: "manual_dispatch"
+        });
+      }
+
+      await batch.commit();
+
+      toast({ title: isSelfDispatchByCreator ? "Wallet Updated" : "Dispatch Recorded", description: `${amt.toLocaleString()} coins processed.` });
+      setCoinDispatchAmount("");
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Dispatch Failed' });
+    } finally {
+      setIsDispatching(false);
+    }
   };
 
   const handleDispatchItem = (
@@ -2008,6 +2108,12 @@ export default function AdminPage() {
                   <Monitor className="h-4 w-4" /> Splash Screen
                 </TabsTrigger>
                 <TabsTrigger
+                  value="financial-audit"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-white data-[state=active]:bg-green-600 bg-green-500 shadow-lg"
+                >
+                  <ClipboardList className="h-4 w-4" /> Financial Audit 💰
+                </TabsTrigger>
+                <TabsTrigger
                   value="boutique-hub"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2048,6 +2154,10 @@ export default function AdminPage() {
           </div>
 
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="financial-audit" className="m-0 space-y-6">
+              <LogViewer firestore={firestore} isAuthorized={isAuthorized} />
+            </TabsContent>
+
             <TabsContent value="recharge-requests" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
                 <CardHeader className="px-0">
@@ -4103,8 +4213,9 @@ export default function AdminPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                       <div className="space-y-4">
                         <h4>Coin Dispatch</h4>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-4">
                           <Input
+                            placeholder="Amount (e.g. 10000)"
                             value={coinDispatchAmount}
                             onChange={(e) =>
                               setCoinDispatchAmount(
@@ -4115,9 +4226,10 @@ export default function AdminPage() {
                           />
                           <Button
                             onClick={handleDispatchCoins}
-                            className="h-14"
+                            disabled={isDispatching}
+                            className="h-14 w-full bg-primary text-black font-black uppercase"
                           >
-                            <Send />
+                            {isDispatching ? <Loader className="animate-spin" /> : <><Send className="mr-2 h-4 w-4" /> Dispatch Coins</>}
                           </Button>
                         </div>
                       </div>

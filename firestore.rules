@@ -209,6 +209,15 @@ service cloud.firestore {
     }
 
     // ============================================
+    // COIN AUDIT LOGS
+    // ============================================
+    match /coin_audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Permanent records
+    }
+
+    // ================= ==========================
     // RECHARGE REQUESTS
     // ============================================
     match /rechargeRequests/{requestId} {
