@@ -2010,7 +2010,7 @@ export default function AdminPage() {
               <Shield className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold uppercase tracking-tight text-slate-900">
+              <h1 className="text-2xl sm:text-4xl font-bold uppercase tracking-tight text-slate-900 break-words">
                 Supreme Command
               </h1>
               <p className="text-muted-foreground">
@@ -2034,8 +2034,7 @@ export default function AdminPage() {
           className="flex flex-col lg:flex-row gap-8 items-start"
         >
           <div className="w-full lg:w-72 shrink-0 lg:sticky lg:top-24 h-fit">
-            <ScrollArea className="h-fit lg:h-[calc(100vh-200px)] lg:pr-4">
-              <TabsList className="flex flex-row lg:flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-3xl border border-slate-100 p-2 gap-2 overflow-x-auto lg:overflow-visible no-scrollbar">
+            <TabsList className="flex flex-row lg:flex-col h-fit w-full lg:w-72 bg-slate-50 shadow-2xl rounded-3xl border border-slate-100 p-2 gap-2 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible no-scrollbar min-w-full lg:min-w-0">
                 <TabsTrigger
                   value="recharge-requests"
                   className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-green-600 data-[state=active]:text-white shadow-lg animate-pulse whitespace-nowrap flex-shrink-0"
@@ -2187,7 +2186,6 @@ export default function AdminPage() {
                   <ClipboardList className="h-4 w-4" /> Financial Audit 💰
                 </TabsTrigger>
               </TabsList>
-            </ScrollArea>
           </div>
 
           <div className="flex-1 w-full min-w-0">
