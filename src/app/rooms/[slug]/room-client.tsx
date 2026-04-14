@@ -421,9 +421,17 @@ export function RoomClient({ room }: { room: Room }) {
 
       // 3. Unblock Speech Synthesis (System-wide)
       if (window.speechSynthesis) {
-        const warmUp = new SpeechSynthesisUtterance("");
+        const warmUp = new SpeechSynthesisUtterance(" ");
         warmUp.volume = 0;
         window.speechSynthesis.speak(warmUp);
+        // FORCE RESUME: Crucial for Android WebView
+        window.speechSynthesis.resume();
+      }
+
+      // 4. Start Persistent Keep-Alive loop for Native
+      if (aiSilentAudioRef.current) {
+        aiSilentAudioRef.current.volume = 0.01;
+        aiSilentAudioRef.current.play().catch(() => {});
       }
 
       console.log('[AutoUnlock] All systems go via user interaction');
@@ -1155,13 +1163,14 @@ export function RoomClient({ room }: { room: Room }) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
       }
       loadVoices();
-    } catch (err) {
-      console.warn("Speech Synthesis unsupported/crashed in this native wrapper", err);
     }
   }, []);
 
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    // Store text for the post-handshake process
+    (window as any)._pendingSpeechText = text;
 
     // AUDIO CONTEXT CHECK: Ensure it's active
     if (audioContextRef.current?.state === 'suspended') {
@@ -1173,12 +1182,28 @@ export function RoomClient({ room }: { room: Room }) {
       aiSilentAudioRef.current.play().catch(() => {});
     }
 
-    // VOICE WARM-UP: Ensure we clear old tasks and RESUME the engine (fixes Chrome/WebView pause bug)
-    window.speechSynthesis.cancel();
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
+    // VOICE WARM-UP: Force intensive handshaking for native wrappers
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
     }
     
+    // Tiny delay after cancel often helps mobile engines recover
+    setTimeout(() => {
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+        processSpeech();
+      } catch (e) {
+        console.error("Speech Resume Failed:", e);
+      }
+    }, 50);
+  };
+
+  const processSpeech = () => {
+    const text = (window as any)._pendingSpeechText || "";
+    if (!text) return;
+
     setIsAISpeaking(true);
 
     const cleanText = text
@@ -1224,10 +1249,21 @@ export function RoomClient({ room }: { room: Room }) {
     utterance.rate = 1.0;
     utterance.volume = 1.0;
 
+    utterance.onerror = (e) => {
+      console.error("Speech Synthesis Error:", e);
+      setIsAISpeaking(false);
+      // Retry once if it was a 'not-allowed' or 'interrupted' error
+      if (e.error === 'not-allowed') {
+        window.speechSynthesis.resume();
+      }
+    };
+
     utterance.onend = () => {
       setIsAISpeaking(false);
-      if (aiSilentAudioRef.current) aiSilentAudioRef.current.pause();
     };
+
+    window.speechSynthesis.speak(utterance);
+  };
     utterance.onerror = (e) => {
       console.warn('[AI-Voice] Utterance Error:', e);
       setIsAISpeaking(false);
