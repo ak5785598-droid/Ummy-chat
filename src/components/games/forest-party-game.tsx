@@ -42,6 +42,7 @@ const CHIPS_DATA = [
  { value: 50000, label: '50k', color: 'from-red-400 to-red-600' },
  { value: 500000, label: '500k', color: 'from-purple-400 to-purple-600' },
  { value: 5000000, label: '5M', color: 'from-emerald-400 to-emerald-600' },
+ { value: 10000000, label: '10M', color: 'from-orange-500 to-orange-600' }, 
 ];
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -268,11 +269,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    });
  };
 
- // RENDER LOADING PAGE
+ // RENDER LOADING PAGE (Fix applied here - squared corners)
  if (isLoading) {
     return (
-        <div className="h-[60vh] w-full flex flex-col items-center justify-center bg-[#fdf8e7] relative overflow-hidden">
-            <div className="flex flex-col items-center gap-4">
+        <div className="h-full min-h-[70vh] w-full flex flex-col items-center justify-center bg-[#fdf8e7] relative overflow-hidden rounded-none">
+            <div className="flex flex-col items-center gap-4 relative z-10">
                 <div className="relative flex items-center justify-center">
                     <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
                     <div className="absolute inset-0 bg-orange-200/20 blur-xl rounded-full" />
@@ -282,8 +283,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
                 </h1>
             </div>
             {/* Background elements to match the vibe */}
-            <div className="absolute top-10 left-10 text-4xl opacity-20">🦁</div>
-            <div className="absolute bottom-10 right-10 text-4xl opacity-20">🐼</div>
+            <div className="absolute top-10 left-10 text-4xl opacity-20 z-0">🦁</div>
+            <div className="absolute bottom-10 right-10 text-4xl opacity-20 z-0">🐼</div>
+            
+            {/* This invisible div ensures the cream color stretches to the very bottom to prevent any transparency */}
+            <div className="absolute -bottom-10 left-0 right-0 h-20 bg-[#fdf8e7] z-0" />
         </div>
     );
  }
