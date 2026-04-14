@@ -1163,6 +1163,8 @@ export function RoomClient({ room }: { room: Room }) {
         window.speechSynthesis.onvoiceschanged = loadVoices;
       }
       loadVoices();
+    } catch (e) {
+      console.warn('SpeechSynthesis initialization failed:', e);
     }
   }, []);
 
@@ -1212,7 +1214,7 @@ export function RoomClient({ room }: { room: Room }) {
       .replace(/COINS/gi, 'Coins') 
       .replace(/JAR/gi, 'Jar') 
       .replace(/TASK/gi, 'Task')
-      .replace(/\s([A-Z])\s/g, (match, p1) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
+      .replace(/\s([A-Z])\s/g, (match: string, p1: string) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
       .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
 
     // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
@@ -1263,17 +1265,6 @@ export function RoomClient({ room }: { room: Room }) {
     };
 
     window.speechSynthesis.speak(utterance);
-  };
-    utterance.onerror = (e) => {
-      console.warn('[AI-Voice] Utterance Error:', e);
-      setIsAISpeaking(false);
-      if (aiSilentAudioRef.current) aiSilentAudioRef.current.pause();
-    };
-
-    // BROWSER HANDSHAKE: Small delay ensures the engine is ready after cancel()
-    setTimeout(() => {
-      window.speechSynthesis.speak(utterance);
-    }, 100);
   };
 
   // AI VOICE INTERACTION (STT)
