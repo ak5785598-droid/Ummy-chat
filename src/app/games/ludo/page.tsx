@@ -10,31 +10,58 @@ import {
   Volume2,
   VolumeX,
   RefreshCw,
-  Trophy,
+  Star,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
   Loader
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { useLudoEngine } from '@/hooks/use-ludo-engine';
 
-// Goti (Piece) UI inside the Home boxes
-const HomePiece = ({ color }: { color: string }) => (
-  <div className="relative group">
+// --- Sub-components ---
+
+// Marker-style piece based on Image 2
+const GamePiece = ({ color }: { color: string }) => (
+  <div className="relative flex items-center justify-center animate-in zoom-in-50 duration-300">
     <div className={cn(
-      "h-8 w-8 md:h-10 md:w-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center",
-      color === 'red' && "bg-red-600",
-      color === 'green' && "bg-green-600",
-      color === 'blue' && "bg-blue-600",
-      color === 'yellow' && "bg-yellow-500"
+      "h-7 w-7 md:h-8 md:w-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center relative",
+      color === 'red' && "bg-red-500",
+      color === 'green' && "bg-emerald-500",
+      color === 'blue' && "bg-blue-500",
+      color === 'yellow' && "bg-yellow-400"
     )}>
-      {/* Inner design to match the pin/location style in 2nd image */}
-      <div className="h-3 w-3 bg-white/40 rounded-full" />
+      {/* The "pin" look */}
+      <div className={cn(
+        "absolute -top-1 h-3 w-3 rotate-45 border-t-2 border-l-2 border-white",
+        color === 'red' && "bg-red-500",
+        color === 'green' && "bg-emerald-500",
+        color === 'blue' && "bg-blue-500",
+        color === 'yellow' && "bg-yellow-400"
+      )} />
+      <div className="h-2 w-2 bg-white/40 rounded-full z-10" />
     </div>
   </div>
 );
+
+const PlayerAvatar = ({ color, pos, img }: { color: string, pos: string, img?: string }) => (
+  <div className={cn("absolute h-10 w-10 md:h-12 md:w-12 rounded-xl flex items-center justify-center p-1 shadow-lg z-20 border-2 border-white/20", pos, 
+    color === 'red' ? "bg-red-600" : 
+    color === 'green' ? "bg-emerald-600" : 
+    color === 'blue' ? "bg-blue-600" : 
+    "bg-yellow-500"
+  )}>
+     <Avatar className="h-full w-full rounded-lg overflow-hidden border border-black/10">
+       <AvatarImage src={img} />
+       <AvatarFallback className="bg-white/20 text-white text-[10px] font-bold">P</AvatarFallback>
+     </Avatar>
+  </div>
+);
+
+// --- Main Content ---
 
 export function LudoGameContent() {
   const router = useRouter();
@@ -45,184 +72,219 @@ export function LudoGameContent() {
   const [isLaunching, setIsLaunching] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
 
-  const { gameState, isLoading, joinLobby, rollDice, movePiece } = useLudoEngine(roomId, currentUser?.uid || null);
+  const { gameState, isLoading, joinLobby, rollDice } = useLudoEngine(roomId, currentUser?.uid || null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 1500);
+    const timer = setTimeout(() => setIsLaunching(false), 800);
     return () => clearTimeout(timer);
   }, []);
 
   if (isLaunching || isLoading) {
     return (
-      <div className="h-screen w-full bg-[#0a1a4a] flex flex-col items-center justify-center space-y-6 font-headline">
-        <Loader className="h-20 w-20 text-yellow-500 animate-spin" />
-        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Synchronizing Arena</h1>
+      <div className="h-screen w-full bg-transparent flex flex-col items-center justify-center space-y-6">
+        <Loader className="h-12 w-12 text-yellow-400 animate-spin" />
       </div>
     );
   }
 
   const isMyTurn = gameState?.turn === currentUser?.uid;
 
+  // Helper function to render path cells with safe spots (Stars)
+  const renderCell = (index: number, type: 'top' | 'left' | 'right' | 'bottom') => {
+    let bgColor = "bg-white";
+    let icon = null;
+
+    // Red Safe / Path
+    if (type === 'left') {
+      if (index === 1) icon = <Star className="h-3 w-3 text-gray-400" />;
+      if ([7, 8, 9, 10, 11].includes(index)) bgColor = "bg-red-500";
+      if (index === 6) icon = <ArrowRight className="h-3 w-3 text-red-500" />;
+    }
+    // Green Safe / Path
+    if (type === 'top') {
+      if (index === 13) icon = <Star className="h-3 w-3 text-gray-400" />;
+      if ([7, 10, 13, 16, 1].includes(index) && index !== 1) { /* Fix for path logic */}
+      if (index === 7 || index === 10 || index === 13 || index === 16) bgColor = "bg-emerald-500";
+      if (index === 1) icon = <ArrowDown className="h-3 w-3 text-emerald-500" />;
+    }
+    // Yellow Safe / Path
+    if (type === 'right') {
+      if (index === 16) icon = <Star className="h-3 w-3 text-gray-400" />;
+      if ([6, 7, 8, 9, 10].includes(index)) bgColor = "bg-yellow-400";
+      if (index === 11) icon = <ArrowLeft className="h-3 w-3 text-yellow-400" />;
+    }
+    // Blue Safe / Path
+    if (type === 'bottom') {
+      if (index === 4) icon = <Star className="h-3 w-3 text-gray-400" />;
+      if ([1, 4, 7, 10, 13].includes(index)) bgColor = "bg-blue-600";
+      if (index === 16) icon = <ArrowUp className="h-3 w-3 text-blue-600" />;
+    }
+
+    return (
+      <div key={index} className={cn("border-[0.5px] border-gray-300 flex items-center justify-center", bgColor)}>
+        {icon}
+      </div>
+    );
+  };
+
   return (
-    <div className="h-full w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden font-headline pb-20">
-      {/* Status Bar / Top Overlay */}
-      <CompactRoomView />
+    <div className="fixed inset-0 w-full h-screen flex flex-col justify-end bg-transparent">
+      
+      {/* 1. TOP AREA: Fully Transparent, no blur */}
+      <div 
+        className="flex-1 w-full bg-transparent cursor-pointer" 
+        onClick={() => router.back()} 
+      />
 
-      <header className="relative z-40 p-3 pt-12 px-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent shrink-0">
-         <div className="flex gap-2">
-            <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button>
-            <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
-         </div>
-         <h1 className="text-xl font-black text-white uppercase italic tracking-tighter drop-shadow-md">Ludo • Multiplayer</h1>
-         <div className="flex gap-2">
-            <button className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><RefreshCw className="h-5 w-5" /></button>
-            <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white backdrop-blur-md"><X className="h-5 w-5" /></button>
-         </div>
-      </header>
+      {/* 2. BOTTOM GAME SHEET */}
+      <div className="h-[68vh] w-full bg-[#0a1a4a] rounded-t-[40px] shadow-[0_-20px_80px_rgba(0,0,0,0.9)] border-t border-white/5 flex flex-col relative animate-in slide-in-from-bottom duration-700">
+        
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/10 rounded-full" />
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative z-10">
-         {/* LUDO BOARD ARENA */}
-         <div className="relative w-full max-w-[450px] aspect-square bg-white rounded-3xl p-1 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-            <div 
-              className="w-full h-full rounded-2xl overflow-hidden relative border-2 border-gray-300"
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(15, 1fr)', 
-                gridTemplateRows: 'repeat(15, 1fr)',
-              }}
-            >
-               {/* RED HOME (Top Left) */}
-               <div className="col-span-6 row-span-6 bg-[#ED1C24] border-r-2 border-b-2 border-black/10 flex items-center justify-center p-4">
-                 <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="red" /> <HomePiece color="red" />
-                    <HomePiece color="red" /> <HomePiece color="red" />
-                 </div>
-               </div>
+        <header className="px-6 pt-8 pb-4 flex items-center justify-between shrink-0">
+           <div className="flex gap-2">
+              <button onClick={() => router.back()} className="bg-white/5 p-2.5 rounded-2xl text-white"><ChevronLeft className="h-5 w-5" /></button>
+              <button onClick={() => setIsMuted(!isMuted)} className="bg-white/5 p-2.5 rounded-2xl text-white">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
+           </div>
+           
+           <div className="text-center">
+             <h1 className="text-base font-black text-white uppercase italic tracking-widest leading-none">Ludo Pro</h1>
+             <span className="text-[10px] text-cyan-400 font-bold uppercase">Multiplayer</span>
+           </div>
 
-               {/* TOP PATH (Green Home Entry) */}
-               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-b-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", i === 7 || i === 10 || i === 13 || i === 16 ? "bg-green-500" : "bg-white")} />
-                  ))}
-               </div>
+           <div className="flex gap-2">
+              <button className="bg-white/5 p-2.5 rounded-2xl text-white"><RefreshCw className="h-5 w-5" /></button>
+              <button onClick={() => router.back()} className="bg-white/5 p-2.5 rounded-2xl text-red-400"><X className="h-5 w-5" /></button>
+           </div>
+        </header>
 
-               {/* GREEN HOME (Top Right) */}
-               <div className="col-span-6 row-span-6 bg-[#00A651] border-l-2 border-b-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="green" /> <HomePiece color="green" />
-                    <HomePiece color="green" /> <HomePiece color="green" />
-                  </div>
-               </div>
-
-               {/* LEFT PATH (Red Home Entry) */}
-               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-r-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [7, 8, 9, 10, 11].includes(i) ? "bg-red-500" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* CENTER FINISH */}
-               <div className="col-span-3 row-span-3 bg-white relative flex items-center justify-center border-2 border-gray-200">
-                  <div 
-                    className="absolute inset-0"
-                    style={{
-                      background: 'conic-gradient(#00A651 0deg 90deg, #F9ED32 90deg 180deg, #2E3192 180deg 270deg, #ED1C24 270deg 360deg)',
-                      clipPath: 'polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0)'
-                    }}
-                  />
-                  <Trophy className="h-8 w-8 text-white absolute z-10 drop-shadow-lg" />
-               </div>
-
-               {/* RIGHT PATH (Yellow Home Entry) */}
-               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 border-l-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [6, 7, 8, 9, 10].includes(i) ? "bg-yellow-400" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* BLUE HOME (Bottom Left) */}
-               <div className="col-span-6 row-span-6 bg-[#2E3192] border-r-2 border-t-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="blue" /> <HomePiece color="blue" />
-                    <HomePiece color="blue" /> <HomePiece color="blue" />
-                  </div>
-               </div>
-
-               {/* BOTTOM PATH (Blue Home Entry) */}
-               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 border-t-2 border-black/10">
-                  {Array.from({ length: 18 }).map((_, i) => (
-                    <div key={i} className={cn("border-[0.5px] border-gray-200", [1, 4, 7, 10, 13].includes(i) ? "bg-blue-600" : "bg-white")} />
-                  ))}
-               </div>
-
-               {/* YELLOW HOME (Bottom Right) */}
-               <div className="col-span-6 row-span-6 bg-[#F9ED32] border-l-2 border-t-2 border-black/10 flex items-center justify-center p-4">
-                  <div className="w-full h-full bg-white rounded-xl grid grid-cols-2 grid-rows-2 p-3 gap-3">
-                    <HomePiece color="yellow" /> <HomePiece color="yellow" />
-                    <HomePiece color="yellow" /> <HomePiece color="yellow" />
-                  </div>
-               </div>
-            </div>
-
-            {/* PLAYER AVATARS - Updated UI Based on 2nd Image */}
-            <PlayerAvatar color="red" pos="-top-4 -left-4 md:-top-6 md:-left-6" img={gameState?.players.find(p => p.color === 'red')?.avatarUrl} />
-            <PlayerAvatar color="green" pos="-top-4 -right-4 md:-top-6 md:-right-6" img={gameState?.players.find(p => p.color === 'green')?.avatarUrl} />
-            <PlayerAvatar color="blue" pos="-bottom-4 -left-4 md:-bottom-6 md:-left-6" img={gameState?.players.find(p => p.color === 'blue')?.avatarUrl} />
-            <PlayerAvatar color="yellow" pos="-bottom-4 -right-4 md:-bottom-6 md:-right-6" img={gameState?.players.find(p => p.color === 'yellow')?.avatarUrl} />
-         </div>
-
-         {/* GAME CONTROLS */}
-         <div className="mt-12 flex flex-col items-center gap-6">
-            {!gameState && (
-              <button 
-                onClick={() => joinLobby(userProfile)}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-4 rounded-full font-black uppercase text-lg shadow-[0_10px_0_#b8860b] active:translate-y-1 active:shadow-none transition-all"
+        <main className="flex-1 flex flex-col items-center p-4">
+           
+           <div className="relative w-full max-w-[350px] aspect-square bg-slate-200 rounded-xl p-1 shadow-2xl">
+              <div 
+                className="w-full h-full rounded-lg overflow-hidden relative"
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(15, 1fr)', 
+                  gridTemplateRows: 'repeat(15, 1fr)',
+                }}
               >
-                 Enter Lobby
-              </button>
-            )}
+                 {/* RED HOME */}
+                 <div className="col-span-6 row-span-6 bg-red-500 p-2">
+                   <div className="w-full h-full bg-white rounded-lg grid grid-cols-2 grid-rows-2 p-3 gap-3">
+                      <GamePiece color="red" /> <GamePiece color="red" />
+                      <GamePiece color="red" /> <GamePiece color="red" />
+                   </div>
+                 </div>
 
-            {gameState && (
-              <div className="flex flex-col items-center gap-4">
-                <div className={cn(
-                  "h-28 w-28 rounded-3xl bg-white shadow-2xl flex items-center justify-center border-8 transition-all duration-300",
-                  isMyTurn ? "border-cyan-400 scale-110" : "border-gray-200 opacity-80"
-                )}>
-                  {isMyTurn && !gameState.diceRolled ? (
-                    <button onClick={rollDice} className="h-full w-full flex items-center justify-center">
-                       <span className="text-xl font-black text-black animate-bounce">TAP</span>
-                    </button>
-                  ) : (
-                    <span className="text-5xl font-black text-black">{gameState.dice || '?'}</span>
-                  )}
-                </div>
-                {isMyTurn && <Badge className="bg-cyan-400 text-black font-black animate-pulse">YOUR TURN</Badge>}
+                 {/* TOP PATH (Green Side) */}
+                 <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 bg-white">
+                    {Array.from({ length: 18 }).map((_, i) => renderCell(i, 'top'))}
+                 </div>
+
+                 {/* GREEN HOME */}
+                 <div className="col-span-6 row-span-6 bg-emerald-500 p-2">
+                    <div className="w-full h-full bg-white rounded-lg grid grid-cols-2 grid-rows-2 p-3 gap-3">
+                      <GamePiece color="green" /> <GamePiece color="green" />
+                      <GamePiece color="green" /> <GamePiece color="green" />
+                    </div>
+                 </div>
+
+                 {/* LEFT PATH (Red Side) */}
+                 <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 bg-white">
+                    {Array.from({ length: 18 }).map((_, i) => renderCell(i, 'left'))}
+                 </div>
+
+                 {/* CENTER FINISH AREA (Triangles) */}
+                 <div className="col-span-3 row-span-3 bg-white relative">
+                    <div className="absolute inset-0" style={{
+                        clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)',
+                        backgroundColor: '#10b981' // Green
+                      }} />
+                    <div className="absolute inset-0" style={{
+                        clipPath: 'polygon(100% 0%, 100% 100%, 50% 50%)',
+                        backgroundColor: '#facc15' // Yellow
+                      }} />
+                    <div className="absolute inset-0" style={{
+                        clipPath: 'polygon(0% 100%, 100% 100%, 50% 50%)',
+                        backgroundColor: '#2563eb' // Blue
+                      }} />
+                    <div className="absolute inset-0" style={{
+                        clipPath: 'polygon(0% 0%, 0% 100%, 50% 50%)',
+                        backgroundColor: '#ef4444' // Red
+                      }} />
+                 </div>
+
+                 {/* RIGHT PATH (Yellow Side) */}
+                 <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 bg-white">
+                    {Array.from({ length: 18 }).map((_, i) => renderCell(i, 'right'))}
+                 </div>
+
+                 {/* BLUE HOME */}
+                 <div className="col-span-6 row-span-6 bg-blue-600 p-2">
+                    <div className="w-full h-full bg-white rounded-lg grid grid-cols-2 grid-rows-2 p-3 gap-3">
+                      <GamePiece color="blue" /> <GamePiece color="blue" />
+                      <GamePiece color="blue" /> <GamePiece color="blue" />
+                    </div>
+                 </div>
+
+                 {/* BOTTOM PATH (Blue Side) */}
+                 <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 bg-white">
+                    {Array.from({ length: 18 }).map((_, i) => renderCell(i, 'bottom'))}
+                 </div>
+
+                 {/* YELLOW HOME */}
+                 <div className="col-span-6 row-span-6 bg-yellow-400 p-2">
+                    <div className="w-full h-full bg-white rounded-lg grid grid-cols-2 grid-rows-2 p-3 gap-3">
+                      <GamePiece color="yellow" /> <GamePiece color="yellow" />
+                      <GamePiece color="yellow" /> <GamePiece color="yellow" />
+                    </div>
+                 </div>
               </div>
-            )}
-         </div>
-      </main>
+
+              {/* Player Avatars */}
+              <PlayerAvatar color="red" pos="-top-3 -left-3" img={gameState?.players.find(p => p.color === 'red')?.avatarUrl} />
+              <PlayerAvatar color="green" pos="-top-3 -right-3" img={gameState?.players.find(p => p.color === 'green')?.avatarUrl} />
+              <PlayerAvatar color="blue" pos="-bottom-3 -left-3" img={gameState?.players.find(p => p.color === 'blue')?.avatarUrl} />
+              <PlayerAvatar color="yellow" pos="-bottom-3 -right-3" img={gameState?.players.find(p => p.color === 'yellow')?.avatarUrl} />
+           </div>
+
+           {/* DICE AREA */}
+           <div className="mt-8 w-full flex flex-col items-center">
+              {gameState ? (
+                <div className="flex flex-col items-center gap-4">
+                  <div className={cn(
+                    "h-24 w-24 rounded-[30px] bg-white shadow-2xl flex items-center justify-center border-4 transition-transform duration-300",
+                    isMyTurn ? "border-cyan-400 scale-110 shadow-cyan-500/50" : "border-slate-800 opacity-50"
+                  )}>
+                    {isMyTurn && !gameState.diceRolled ? (
+                      <button onClick={rollDice} className="w-full h-full flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-black text-slate-400 animate-pulse">ROLL</span>
+                      </button>
+                    ) : (
+                      <span className="text-5xl font-black text-[#0a1a4a]">{gameState.dice || '0'}</span>
+                    )}
+                  </div>
+                  {isMyTurn && <Badge className="bg-cyan-500 text-white font-bold py-1 px-4 animate-bounce">YOUR TURN</Badge>}
+                </div>
+              ) : (
+                <button 
+                  onClick={() => joinLobby(userProfile)}
+                  className="bg-gradient-to-b from-yellow-300 to-orange-500 text-white px-14 py-4 rounded-2xl font-black text-xl shadow-[0_6px_0_#9a3412] active:translate-y-1 active:shadow-none transition-all"
+                >
+                   START MATCH
+                </button>
+              )}
+           </div>
+        </main>
+      </div>
     </div>
   );
 }
 
-// Updated PlayerAvatar component to match the solid box background and positioning
-const PlayerAvatar = ({ color, pos, img }: { color: string, pos: string, img?: string }) => (
-  <div className={cn("absolute h-16 w-16 md:h-[72px] md:w-[72px] rounded-xl flex items-center justify-center p-1.5 shadow-[0_10px_20px_rgba(0,0,0,0.6)] z-20", pos, 
-    color === 'red' ? "bg-[#ED1C24]" : 
-    color === 'green' ? "bg-[#00A651]" : 
-    color === 'blue' ? "bg-[#2E3192]" : 
-    "bg-[#F9ED32]"
-  )}>
-     <Avatar className="h-full w-full rounded-lg bg-gray-200 overflow-hidden">
-       <AvatarImage src={img} />
-       <AvatarFallback className="bg-gray-100 rounded-lg" />
-     </Avatar>
-  </div>
-);
-
 export default function LudoGamePage() {
   return (
-    <Suspense fallback={<div className="h-screen w-full bg-[#0a1a4a] flex items-center justify-center text-white">SYNCING ARENA...</div>}>
+    <Suspense fallback={null}>
       <LudoGameContent />
     </Suspense>
   );
