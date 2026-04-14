@@ -139,7 +139,7 @@ export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className }: 
 
       {config.decorator}
       
-      <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-all overflow-wrap-anywhere" style={{ overflowWrap: 'anywhere' }}>
+      <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-words">
         {children}
       </div>
     </div>
