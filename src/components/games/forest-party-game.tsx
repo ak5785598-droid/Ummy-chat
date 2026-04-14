@@ -16,9 +16,9 @@ import {
  VolumeX, 
  HelpCircle, 
  X,
- Loader2,
  Plus,
- Clock
+ Clock,
+ Loader2
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,6 @@ const CHIPS_DATA = [
  { value: 50000, label: '50k', color: 'from-red-400 to-red-600' },
  { value: 500000, label: '500k', color: 'from-purple-400 to-purple-600' },
  { value: 5000000, label: '5M', color: 'from-emerald-400 to-emerald-600' },
- { value: 10000000,label: '10M', color: 'from-orange-400 to-orange-500' }, 
 ];
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -53,10 +52,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const firestore = useFirestore();
  const { toast } = useToast();
 
- const [isLaunching, setIsLaunching] = useState(true);
+ // LOADING STATE
+ const [isLoading, setIsLoading] = useState(true);
+
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(25);
- const [selectedChip, setSelectedChip] = useState(10);
+ const [selectedChip, setSelectedChip] = useState(100);
  const [myBets, setMyBets] = useState<Record<string, number>>({});
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
  const [history, setHistory] = useState<string[]>(['panda', 'lion', 'fox']);
@@ -76,6 +77,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
 
+ // SIMULATE LOADING
+ useEffect(() => {
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 2500); // 2.5 seconds loading
+    return () => clearTimeout(timer);
+ }, []);
+
  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
@@ -92,13 +101,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  }, [gameRecords]);
 
  useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 3000);
   if (typeof window !== 'undefined') {
     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
   }
-  return () => clearTimeout(timer);
  }, []);
 
  useEffect(() => {
@@ -106,7 +113,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  }, [userProfile?.wallet?.coins]);
 
  useEffect(() => {
-  if (isLaunching) return;
   const interval = setInterval(() => {
    if (gameState === 'betting') {
     if (timeLeft > 0) setTimeLeft(prev => prev - 1);
@@ -114,7 +120,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    }
   }, 1000);
   return () => clearInterval(interval);
- }, [gameState, timeLeft, isLaunching]);
+ }, [gameState, timeLeft]);
 
  const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick') => {
   if (isMuted) return;
@@ -262,24 +268,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    });
  };
 
- if (isLaunching) {
-  return (
-   /* LOADING PAGE: Orange border removed, background solid Cream color */
-   <div className="h-[100dvh] w-full bg-[#fdf8e7] flex flex-col items-center justify-center p-6 relative overflow-hidden">
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 flex flex-col items-center gap-6">
-      <div className="relative flex items-center justify-center">
-        <Loader2 className="w-24 h-24 text-orange-500 animate-spin stroke-[3]" />
-      </div>
-      <div className="flex flex-col items-center gap-2 mt-4">
-        <h1 className="text-5xl font-black text-orange-600 uppercase tracking-tighter italic drop-shadow-sm">Ummy</h1>
-      </div>
-    </motion.div>
-   </div>
-  );
+ // RENDER LOADING PAGE
+ if (isLoading) {
+    return (
+        <div className="h-[60vh] w-full flex flex-col items-center justify-center bg-[#fdf8e7] relative overflow-hidden">
+            <div className="flex flex-col items-center gap-4">
+                <div className="relative flex items-center justify-center">
+                    <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
+                    <div className="absolute inset-0 bg-orange-200/20 blur-xl rounded-full" />
+                </div>
+                <h1 className="text-2xl font-black text-[#4a2511] tracking-widest uppercase animate-pulse">
+                    Ummy
+                </h1>
+            </div>
+            {/* Background elements to match the vibe */}
+            <div className="absolute top-10 left-10 text-4xl opacity-20">🦁</div>
+            <div className="absolute bottom-10 right-10 text-4xl opacity-20">🐼</div>
+        </div>
+    );
  }
 
  return (
-  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35]">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35] rounded-none">
    
    <div className="absolute inset-0 z-0 pointer-events-none">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
@@ -374,18 +384,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* TOP HEADER - UPDATED TO SQUARE EDGES (rounded-none) */}
+   {/* TOP HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-none border border-white/20 h-[32px] pl-1 pr-1">
-          <div className="bg-yellow-400 rounded-none p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
+      <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+          <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
-          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-none flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
+          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><Clock size={16} /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><HelpCircle size={16} /></button>
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-[#181c4c]/60 text-white"><X size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><Clock size={16} /></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><HelpCircle size={16} /></button>
+          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><X size={16} /></button>
       </div>
    </header>
 
@@ -398,13 +408,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         ))}
       </svg>
 
-      {/* CENTER TIMER */}
       <div className="relative z-20 w-20 h-20 bg-[#4a2511] rounded-full flex flex-col items-center justify-center border-[4px] border-[#eebb99] shadow-xl">
         <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : 'Spin'}</p>
         <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '🎲'}</span>
       </div>
 
-      {/* ANIMALS ON THE WHEEL */}
       {ANIMALS.map((item, idx) => (
         <motion.div 
           key={item.id} 
