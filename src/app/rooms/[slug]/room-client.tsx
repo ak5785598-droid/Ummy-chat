@@ -273,6 +273,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
   const [activeGift, setActiveGift] = useState<{giftId: string, senderName: string} | null>(null);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
+  const [portalDefaultView, setPortalDefaultView] = useState<'grid' | 'music'>('grid');
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
   const [isMessagesOpen, setIsMessagesOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
@@ -2417,8 +2418,8 @@ export function RoomClient({ room }: { room: Room }) {
                  {/* Library Button (Four Squares) */}
                 <button
                   onClick={() => {
+                    setPortalDefaultView('music');
                     setIsRoomPlayOpen(true);
-                    // Force the dialog to open in the music tab directly (handled by state in Dialog if needed)
                   }}
                   className="p-2 rounded-xl bg-white/5 text-white/60 hover:text-white active:scale-90 transition-all border border-white/5"
                   title="Open Music Library"
@@ -2646,11 +2647,14 @@ export function RoomClient({ room }: { room: Room }) {
           </button>
 
           <button
-            onClick={() => setIsRoomPlayOpen(true)}
-            className="p-1 px-1 active:scale-90 transition-transform"
-          >
-            <LayoutGrid className="h-6 w-6 text-white/80" />
-          </button>
+             onClick={() => {
+               setPortalDefaultView('grid');
+               setIsRoomPlayOpen(true);
+             }}
+             className="p-1 px-1 active:scale-90 transition-transform"
+           >
+             <LayoutGrid className="h-6 w-6 text-white/80" />
+           </button>
         </div>
       </footer>
 
@@ -2793,6 +2797,7 @@ export function RoomClient({ room }: { room: Room }) {
           }
         }}
         onToggleMiniPlayer={() => setShowMiniPlayer(true)}
+        defaultView={portalDefaultView}
       />
       <RoomGamesDialog
         open={isRoomGamesOpen}

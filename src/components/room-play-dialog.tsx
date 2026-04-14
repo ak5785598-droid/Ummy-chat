@@ -55,6 +55,7 @@ interface RoomPlayDialogProps {
   onClearChat?: () => void;
   onSyncSharedMusic?: (track: any) => void;
   onToggleMiniPlayer?: () => void;
+  defaultView?: 'grid' | 'music';
 }
 
 /**
@@ -74,7 +75,8 @@ export function RoomPlayDialog({
   onPlayLocalMusic,
   onClearChat,
   onSyncSharedMusic,
-  onToggleMiniPlayer
+  onToggleMiniPlayer,
+  defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
  const [view, setView] = useState<'grid' | 'selection' | 'rules' | 'music'>('grid');
@@ -99,12 +101,15 @@ export function RoomPlayDialog({
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
 
-  // Default to grid view when dialog opens
+  // Use the provided defaultView or fallback to 'grid' when dialog opens
   useEffect(() => {
     if (open) {
-      setView('grid');
+      setView(defaultView);
+      if (defaultView === 'music') {
+        setMusicTab('device');
+      }
     }
-  }, [open]);
+  }, [open, defaultView]);
 
  // Load room music library from Firestore
  useEffect(() => {
