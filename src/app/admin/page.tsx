@@ -1219,9 +1219,16 @@ export default function AdminPage() {
       const amt = parseInt(coinDispatchAmount);
       const batch = writeBatch(firestore);
 
-      // 1. Credit the user
-      batch.update(uRef, { "wallet.coins": increment(amt), updatedAt: serverTimestamp() });
-      batch.update(pRef, { "wallet.coins": increment(amt), updatedAt: serverTimestamp() });
+      // 1. Credit the user (Using set + merge is safer if wallet object doesn't exist)
+      batch.set(uRef, { 
+        wallet: { coins: increment(amt) }, 
+        updatedAt: serverTimestamp() 
+      }, { merge: true });
+      
+      batch.set(pRef, { 
+        wallet: { coins: increment(amt) }, 
+        updatedAt: serverTimestamp() 
+      }, { merge: true });
 
       // 2. Log ONLY IF not self-dispatch by creator
       const isSelfDispatchByCreator = isCreator && targetUserForRewards.id === user.uid;
