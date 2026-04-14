@@ -404,16 +404,30 @@ export function RoomClient({ room }: { room: Room }) {
 
     attemptSilentPlay();
 
-    // Also set up interaction listeners as fallback
+    // Also set up interaction listeners as fallback (Critical for Mobile)
     const unlockOnInteraction = async () => {
-      if (!silentAudioRef.current) return;
-      try {
-        await silentAudioRef.current.play();
-        console.log('[AutoUnlock] Audio unlocked via user interaction');
-        setUserInteracted(true);
-      } catch (e) {
-        // Ignore errors
+      // 1. Unblock Audio Context
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       }
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      // 2. Unblock Media Element
+      if (silentAudioRef.current) {
+        silentAudioRef.current.play().catch(() => {});
+      }
+
+      // 3. Unblock Speech Synthesis (System-wide)
+      if (window.speechSynthesis) {
+        const warmUp = new SpeechSynthesisUtterance("");
+        warmUp.volume = 0;
+        window.speechSynthesis.speak(warmUp);
+      }
+
+      console.log('[AutoUnlock] All systems go via user interaction');
+      setUserInteracted(true);
     };
 
     document.addEventListener('click', unlockOnInteraction, { once: true });
@@ -1149,11 +1163,7 @@ export function RoomClient({ room }: { room: Room }) {
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
-    // NATIVE-SYNC WARMUP: Explicitly resume AudioContext for mobile browsers
-    // This helps 'slave' the SpeechSynthesis to the same stream as Agora
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
+    // AUDIO CONTEXT CHECK: Ensure it's active
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     }
@@ -1357,13 +1367,13 @@ export function RoomClient({ room }: { room: Room }) {
               } else if (msg.type === 'lucky-rain') {
                 setIsLuckyRainActive(true);
               } else if (msg.type === 'entrance' && isAIProcessor) {
-                // Defer welcome to not block UI
-                requestIdleCallback?.(() => handleAIWelcome(msg.senderName)) || setTimeout(() => handleAIWelcome(msg.senderName), 0);
+                // High-Priority: Use direct call to avoid idle callback latency
+                handleAIWelcome(msg.senderName);
               } else if (msg.type === 'emoji' && (msg as any).isSfx) {
                 playLocalSfx((msg as any).sfxId);
               } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-                // Defer AI processing to not block UI
-                requestIdleCallback?.(() => handleAIEngine(msg)) || setTimeout(() => handleAIEngine(msg), 0);
+                // High-Priority: Use direct call to avoid idle callback latency
+                handleAIEngine(msg);
               } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
                 // Show invitation dialog to the invited user
                 setMicInviteData({
