@@ -26,14 +26,17 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     const response = await Promise.race([responsePromise, timeoutPromise]) as string;
     
     // Diagnostic marker for debugging key transition
-    console.log('[AI-Action] AI Response Success');
+    console.log('✅ [AI-SUCCESS]: Message generated successfully for', userName);
     return response || "Maaf kijiyega, mujhe samajh nahi aaya. 💖";
   } catch (error: any) {
     const fs = require('fs');
-    console.error('[AI-Action] Gemini Error:', error?.message || error);
+    const errorMessage = error?.message || "Unknown Error";
     
-    // Check for specific API Key errors
-    const errorMessage = error?.message || "";
+    // MASTER: SEE THIS IN YOUR TERMINAL!
+    console.log('\n\n❌❌❌ [GEMINI ERROR DETECTED] ❌❌❌');
+    console.error('ERROR MESSAGE:', errorMessage);
+    console.error('API KEY (First 5):', process.env.GOOGLE_GENAI_API_KEY?.substring(0, 5));
+    console.log('---------------------------------------\n\n');
     
     // Log to file for master
     try {
