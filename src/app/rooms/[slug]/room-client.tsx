@@ -389,6 +389,7 @@ export function RoomClient({ room }: { room: Room }) {
     // Create a silent audio element
     const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAA==');
     silentAudioRef.current = silentAudio;
+    aiSilentAudioRef.current = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAAAAAA==');
 
     // Try to play immediately (will likely fail due to autoplay policy)
     const attemptSilentPlay = async () => {
@@ -1162,8 +1163,12 @@ export function RoomClient({ room }: { room: Room }) {
       aiSilentAudioRef.current.play().catch(() => {});
     }
 
-    // VOICE WARM-UP: Ensure we clear old tasks before speaking
+    // VOICE WARM-UP: Ensure we clear old tasks and RESUME the engine (fixes Chrome/WebView pause bug)
     window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+    
     setIsAISpeaking(true);
 
     const cleanText = text
@@ -1293,9 +1298,15 @@ export function RoomClient({ room }: { room: Room }) {
 
     // BROWSER HANDSHAKE: Prime the engine on first interaction
     if (nextValue) {
+      // Robust Warmup: Trigger silent speech first
       const warmUp = new SpeechSynthesisUtterance("");
+      warmUp.volume = 0;
       window.speechSynthesis.speak(warmUp);
-      speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
+      
+      // Delay slightly to ensure browser registers the gesture before real speech
+      setTimeout(() => {
+        speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
+      }, 150);
     } else {
       window.speechSynthesis.cancel();
       toast({ title: 'AI Voice Disabled' });
