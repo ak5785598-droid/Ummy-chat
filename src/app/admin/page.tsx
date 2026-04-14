@@ -305,7 +305,7 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
   if (isLoading) return <div className="flex justify-center p-20"><Loader className="animate-spin text-green-500" /></div>;
 
   return (
-    <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+    <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
       <CardHeader className="px-0">
         <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
           <History className="h-6 w-6" /> Financial Audit Ledger
@@ -2196,7 +2196,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="recharge-requests" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
                     <Wallet className="h-6 w-6" /> Recharge Requests
@@ -2454,7 +2454,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="loading-screen" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
                     <Loader className="h-6 w-6" /> App Loading Sync
@@ -2465,8 +2465,8 @@ export default function AdminPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 space-y-10">
-                  <div className="p-6 bg-green-50 rounded-3xl border-2 border-green-100 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <div className="p-4 sm:p-6 bg-green-50 rounded-3xl border-2 border-green-100 space-y-6">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                       <div className="flex items-center gap-2">
                         <Wallet className="h-5 w-5 text-green-600" />
                         <span className="font-bold uppercase text-sm text-green-900">
@@ -2474,13 +2474,12 @@ export default function AdminPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-green-100 shadow-sm">
-                        <div className="flex-1">
+                      <div className="flex flex-col xs:flex-row items-center gap-4 bg-white p-3 sm:p-4 rounded-2xl border border-green-100 shadow-sm w-full lg:w-auto">
+                        <div className="flex-1 text-center xs:text-left">
                           <p className="text-[10px] font-bold uppercase text-slate-400">
                             Payment Gateway Status
                           </p>
                           <p className="text-xs font-bold text-slate-900 uppercase">
-                            Current:{" "}
                             {config?.paymentMode === "razorpay"
                               ? "Razorpay (Live)"
                               : config?.paymentMode === "cashfree"
@@ -2488,7 +2487,7 @@ export default function AdminPage() {
                               : "Offline (Manual)"}
                           </p>
                         </div>
-                        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                        <div className="flex flex-wrap items-center justify-center gap-1 bg-slate-100 p-1 rounded-xl">
                           <Button
                             size="sm"
                             variant={
@@ -2500,7 +2499,7 @@ export default function AdminPage() {
                             onClick={() =>
                               updateDoc(configRef!, { paymentMode: "offline" })
                             }
-                            className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                            className="text-[8px] font-bold uppercase px-3 h-8 rounded-lg"
                           >
                             Offline
                           </Button>
@@ -2514,7 +2513,7 @@ export default function AdminPage() {
                             onClick={() =>
                               updateDoc(configRef!, { paymentMode: "razorpay" })
                             }
-                            className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                            className="text-[8px] font-bold uppercase px-3 h-8 rounded-lg"
                           >
                             Razorpay
                           </Button>
@@ -2528,19 +2527,18 @@ export default function AdminPage() {
                             onClick={() =>
                               updateDoc(configRef!, { paymentMode: "cashfree" })
                             }
-                            className="text-[8px] font-bold uppercase px-4 h-8 rounded-lg"
+                            className="text-[8px] font-bold uppercase px-3 h-8 rounded-lg"
                           >
                             Cashfree
                           </Button>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between"></div>
                       {config?.paymentQrUrl && (
                         <Button
-                          variant="ghost"
+                          variant="destructive"
                           size="sm"
-                          className="text-[8px] font-bold uppercase text-red-500"
+                          className="text-[8px] font-bold uppercase h-10 px-6 rounded-xl w-full lg:w-auto"
                           onClick={() =>
                             updateDoc(configRef!, { paymentQrUrl: null })
                           }
@@ -2701,7 +2699,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="boutique-hub" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <ShoppingBag className="h-6 w-6" /> Boutique Sync
@@ -2778,7 +2776,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="pin-control" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-emerald-600">
                     <Pin className="h-6 w-6" /> Sovereign Frequency Pin
@@ -2865,7 +2863,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="visual-identity" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-pink-600">
                     <Palette className="h-6 w-6" /> Theme & Visual Synchronizer
@@ -3191,7 +3189,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="authority" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Zap className="h-6 w-6" /> Authority Hub
@@ -3272,7 +3270,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="member-directory" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
@@ -3336,7 +3334,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="ranking-themes" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-yellow-600">
                     <Trophy className="h-6 w-6" /> Ranking Themes
@@ -3423,7 +3421,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="user-records" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-rose-600">
                     <UserSearch className="h-6 w-6" /> User Ledger
@@ -3558,7 +3556,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="assign-center" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
                     <ShieldCheck className="h-6 w-6 text-indigo-500" /> Center
@@ -3726,7 +3724,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="id-ban" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-red-600">
                     <Gavel className="h-6 w-6" /> ID Ban Protocol
@@ -3840,7 +3838,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="banners" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl uppercase flex items-center gap-2 text-blue-600">
@@ -3933,7 +3931,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="games" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Gamepad2 className="h-6 w-6" /> Game Sync
@@ -3993,7 +3991,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="broadcaster" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
                     <Megaphone className="h-6 w-6" /> Broadcaster
@@ -4025,7 +4023,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="direct-messenger" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-500">
                     <MessageSquareText className="h-6 w-6" /> Direct Messenger
@@ -4103,7 +4101,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="tags" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
                     <BadgeCheck className="h-6 w-6" /> Assign Tags
@@ -4193,7 +4191,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="rewards" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl p-8 bg-white">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
                     <Gift className="h-6 w-6" /> Rewards
@@ -4295,7 +4293,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="splash-screen" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Monitor className="h-6 w-6" /> Splash Screen & Global Logo
@@ -4427,7 +4425,7 @@ export default function AdminPage() {
             </TabsContent>
           </div>
             <TabsContent value="sovereign-ids" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
                     <Crown className="h-6 w-6" /> Sovereign ID Management
