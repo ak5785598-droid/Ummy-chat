@@ -319,31 +319,31 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
           {!logs || logs.length === 0 ? (
             <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Audit Logs Found</div>
           ) : (
-            <div className="rounded-2xl border overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[500px]">
+            <div className="rounded-2xl border overflow-x-auto w-full max-w-full bg-slate-50/30">
+              <table className="w-full text-left border-collapse table-auto">
                 <thead>
                   <tr className="bg-slate-50 border-b">
-                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Time</th>
-                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Admin (Sender)</th>
-                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Target (Receiver)</th>
-                    <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Amount</th>
+                    <th className="px-2 py-3 sm:p-4 text-[9px] sm:text-[10px] font-bold uppercase text-slate-400">Time</th>
+                    <th className="px-2 py-3 sm:p-4 text-[9px] sm:text-[10px] font-bold uppercase text-slate-400">Admin (Sender)</th>
+                    <th className="px-2 py-3 sm:p-4 text-[9px] sm:text-[10px] font-bold uppercase text-slate-400">Target (Receiver)</th>
+                    <th className="px-2 py-3 sm:p-4 text-[9px] sm:text-[10px] font-bold uppercase text-slate-400">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {logs.map((log: any) => (
                     <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 text-[10px] font-bold whitespace-nowrap">
+                      <td className="px-2 py-3 sm:p-4 text-[9px] sm:text-[10px] font-bold whitespace-nowrap text-slate-500">
                         {log.timestamp?.toDate ? format(log.timestamp.toDate(), "MMM d, HH:mm") : "Pending..."}
                       </td>
-                      <td className="p-4">
-                        <p className="text-xs font-bold uppercase text-slate-900">{log.adminName}</p>
+                      <td className="px-2 py-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase text-slate-900 leading-tight">{log.adminName}</p>
                         <p className="text-[8px] text-slate-400 truncate w-24 font-mono">{log.adminId}</p>
                       </td>
-                      <td className="p-4">
-                        <p className="text-xs font-bold uppercase text-blue-600">{log.targetName}</p>
+                      <td className="px-2 py-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase text-blue-600 leading-tight">{log.targetName}</p>
                         <p className="text-[8px] text-slate-400 font-bold">UID: {log.targetAccount}</p>
                       </td>
-                      <td className="p-4 font-black text-green-600">
+                      <td className="px-2 py-3 sm:p-4 font-black text-green-600 text-xs sm:text-sm">
                         +{log.amount?.toLocaleString()}
                       </td>
                     </tr>
