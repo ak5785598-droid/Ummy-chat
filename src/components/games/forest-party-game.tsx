@@ -262,12 +262,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    });
  };
 
- // UPDATED LOADING PAGE: Full Cream, No Border, Centered Loader & Ummy
  if (isLaunching) {
   return (
-   <div className="fixed inset-0 z-[300] bg-[#fdf8e7] flex flex-col items-center justify-center overflow-hidden">
-    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-6">
-      <div className="flex items-center justify-center">
+   /* LOADING PAGE: Orange border removed, background solid Cream color */
+   <div className="h-[100dvh] w-full bg-[#fdf8e7] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative z-10 flex flex-col items-center gap-6">
+      <div className="relative flex items-center justify-center">
         <Loader2 className="w-24 h-24 text-orange-500 animate-spin stroke-[3]" />
       </div>
       <div className="flex flex-col items-center gap-2 mt-4">
@@ -328,7 +328,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
             <h2 className="text-[18px] font-black text-[#4a2511] uppercase tracking-widest">Rules</h2>
             <button onClick={() => setShowRules(false)} className="absolute right-0 text-orange-600 bg-orange-200/50 rounded-full p-1.5"><X size={18} /></button>
           </div>
-          <div className="overflow-y-auto no-scrollbar flex-1 space-y-2.5 text-[#4a2511] font-bold text-[13px] legacy-snug">
+          <div className="overflow-y-auto no-scrollbar flex-1 space-y-2.5 text-[#4a2511] font-bold text-[13px] leading-snug">
             <p>1) Select a Chip and choose your animal.</p>
             <p>2) Choose your Animal to put your bet.</p>
             <p>3) The wheel Spin in every 25Sec.</p>
@@ -374,8 +374,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
     )}
    </AnimatePresence>
 
-   {/* TOP HEADER - ADJUSTED: Increased margin and padding to move it down */}
-   <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-transparent shrink-0 mt-6">
+   {/* TOP HEADER - UPDATED TO SQUARE EDGES (rounded-none) */}
+   <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
       <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-none border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-none p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
@@ -466,8 +466,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
    {/* BOTTOM SECTION */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-40">
-      
-      {/* HISTORY BAR */}
       <div className="w-full max-w-[340px] px-4 mb-3">
         <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
           <span className="text-[#e2e0f9] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
@@ -483,7 +481,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         </div>
       </div>
 
-      {/* BOTTOM SHEET FOR CHIPS */}
       <div className="w-full h-[10vh] min-h-[70px] bg-purple-600 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#3b0764]">
         {CHIPS_DATA.map(chip => (
           <button 
@@ -500,7 +497,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
           </button>
         ))}
       </div>
-
    </div>
 
    <style jsx global>{`
