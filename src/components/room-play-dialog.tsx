@@ -390,7 +390,7 @@ export function RoomPlayDialog({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            transition={{ type: 'tween', duration: 0.2, ease: 'easeInOut' }}
             className="relative w-full max-w-[500px] bg-[#121212] rounded-t-[2rem] border-t border-white/10 shadow-2xl pointer-events-auto overflow-hidden flex flex-col mb-0"
             style={{ 
               height: view === 'grid' ? 'auto' : '75vh',
