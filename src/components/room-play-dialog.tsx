@@ -99,17 +99,12 @@ export function RoomPlayDialog({
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
 
- // Auto-switch to music view when dialog opens and music is the context
- useEffect(() => {
-  if (open) {
-   if (room?.currentMusicUrl) {
-    setView('music');
-    setMusicTab('device'); // Room Library tab
-   } else {
-    setView('grid');
-   }
-  }
- }, [open, room?.currentMusicUrl]);
+  // Default to grid view when dialog opens
+  useEffect(() => {
+    if (open) {
+      setView('grid');
+    }
+  }, [open]);
 
  // Load room music library from Firestore
  useEffect(() => {
