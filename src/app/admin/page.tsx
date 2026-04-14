@@ -114,7 +114,6 @@ import { useGameLogoUpload } from "@/hooks/use-game-logo-upload";
 import { useGameBackgroundUpload } from "@/hooks/use-game-background-upload";
 import { OfficialTag } from "@/components/official-tag";
 import { GoldCoinIcon } from "@/components/icons";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
