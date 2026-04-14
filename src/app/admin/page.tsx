@@ -305,7 +305,7 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
   if (isLoading) return <div className="flex justify-center p-20"><Loader className="animate-spin text-green-500" /></div>;
 
   return (
-    <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+    <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
       <CardHeader className="px-0">
         <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
           <History className="h-6 w-6" /> Financial Audit Ledger
@@ -319,8 +319,8 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
           {!logs || logs.length === 0 ? (
             <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Audit Logs Found</div>
           ) : (
-            <div className="rounded-2xl border overflow-x-auto no-scrollbar shadow-inner bg-slate-50/50">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+            <div className="rounded-2xl border overflow-x-auto shadow-inner bg-slate-50/50 max-w-full">
+              <table className="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
                   <tr className="bg-slate-50 border-b">
                     <th className="p-4 text-[10px] font-bold uppercase text-slate-400">Time</th>
@@ -2038,7 +2038,7 @@ export default function AdminPage() {
               <TabsList className="flex flex-row lg:flex-col h-fit w-full bg-slate-50 shadow-2xl rounded-3xl border border-slate-100 p-2 gap-2 overflow-x-auto lg:overflow-visible no-scrollbar">
                 <TabsTrigger
                   value="recharge-requests"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-green-600 data-[state=active]:text-white shadow-lg animate-pulse"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-green-600 data-[state=active]:text-white shadow-lg animate-pulse whitespace-nowrap flex-shrink-0"
                 >
                   <Wallet className="h-4 w-4" /> Recharge Requests{" "}
                   {pendingRecharges && pendingRecharges.length > 0 && (
@@ -2049,140 +2049,140 @@ export default function AdminPage() {
                 </TabsTrigger>
                 <TabsTrigger
                   value="app-data"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Database className="h-4 w-4" /> App Ledger
                 </TabsTrigger>
                 <TabsTrigger
                   value="app-branding"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Palette className="h-4 w-4" /> App Branding
                 </TabsTrigger>
                 <TabsTrigger
                   value="pin-control"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Pin className="h-4 w-4" /> Pin Control
                 </TabsTrigger>
                 <TabsTrigger
                   value="authority"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Zap className="h-4 w-4" /> Authority Hub
                 </TabsTrigger>
                 <TabsTrigger
                   value="member-directory"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Users className="h-4 w-4" /> Member Directory
                 </TabsTrigger>
                 <TabsTrigger
                   value="ranking-themes"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Trophy className="h-4 w-4" /> Ranking Themes
                 </TabsTrigger>
                 <TabsTrigger
                   value="user-records"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <UserSearch className="h-4 w-4" /> User Ledger
                 </TabsTrigger>
                 <TabsTrigger
                   value="assign-center"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <ShieldCheck className="h-4 w-4" /> Assign Center
                 </TabsTrigger>
                 <TabsTrigger
                   value="id-ban"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Gavel className="h-4 w-4" /> ID Ban Control
                 </TabsTrigger>
                 <TabsTrigger
                   value="banners"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <ImageIcon className="h-4 w-4" /> Banners
                 </TabsTrigger>
                 <TabsTrigger
                   value="games"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Gamepad2 className="h-4 w-4" /> Game Sync
                 </TabsTrigger>
                 <TabsTrigger
                   value="broadcaster"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Megaphone className="h-4 w-4" /> Broadcaster
                 </TabsTrigger>
                 <TabsTrigger
                   value="direct-messenger"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <MessageSquareText className="h-4 w-4" /> Direct Messenger
                 </TabsTrigger>
                 <TabsTrigger
                   value="tags"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <BadgeCheck className="h-4 w-4" /> Assign Tags
                 </TabsTrigger>
 
                 <TabsTrigger
                   value="rewards"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Gift className="h-4 w-4" /> Rewards
                 </TabsTrigger>
                 <TabsTrigger
                   value="splash-screen"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Monitor className="h-4 w-4" /> Splash Screen
                 </TabsTrigger>
                 <TabsTrigger
                   value="boutique-hub"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <ShoppingBag className="h-4 w-4" /> Boutique Hub
                 </TabsTrigger>
                 <TabsTrigger
                   value="loading-screen"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Loader className="h-4 w-4" /> Loading Screen Sync
                 </TabsTrigger>
                 <TabsTrigger
                   value="game-loading"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <Gamepad2 className="h-4 w-4" /> Game Loading Sync
                 </TabsTrigger>
                 <TabsTrigger
                   value="sovereign-ids"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white shadow-lg"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-indigo-600 data-[state=active]:text-white shadow-lg whitespace-nowrap flex-shrink-0"
                 >
                   <Crown className="h-4 w-4" /> Sovereign IDs
                 </TabsTrigger>
                 <TabsTrigger
                   value="visual-identity"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-pink-500 data-[state=active]:text-white shadow-lg"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-pink-500 data-[state=active]:text-white shadow-lg whitespace-nowrap flex-shrink-0"
                 >
                   <Palette className="h-4 w-4" /> Visual Identity 🎨
                 </TabsTrigger>
                 <TabsTrigger
                   value="system"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <RefreshCcw className="h-4 w-4" /> System Control
                 </TabsTrigger>
                 <TabsTrigger
                   value="financial-audit"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                  className="w-auto lg:w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white whitespace-nowrap shadow-md transition-all active:scale-95 flex-shrink-0"
                 >
                   <ClipboardList className="h-4 w-4" /> Financial Audit 💰
                 </TabsTrigger>
@@ -2196,7 +2196,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="recharge-requests" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
                     <Wallet className="h-6 w-6" /> Recharge Requests
@@ -2317,7 +2317,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="app-data" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl uppercase flex items-center gap-2 text-blue-600">
@@ -2384,7 +2384,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="game-loading" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-purple-600">
                     <Gamepad2 className="h-6 w-6" /> Game Loading Sync
@@ -2454,7 +2454,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="loading-screen" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
                     <Loader className="h-6 w-6" /> App Loading Sync
@@ -2701,7 +2701,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="boutique-hub" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <ShoppingBag className="h-6 w-6" /> Boutique Sync
@@ -2865,7 +2865,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="visual-identity" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-pink-600">
                     <Palette className="h-6 w-6" /> Theme & Visual Synchronizer
@@ -3191,7 +3191,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="authority" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Zap className="h-6 w-6" /> Authority Hub
@@ -3272,7 +3272,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="member-directory" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
@@ -3336,7 +3336,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="ranking-themes" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-yellow-600">
                     <Trophy className="h-6 w-6" /> Ranking Themes
@@ -3423,7 +3423,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="user-records" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-rose-600">
                     <UserSearch className="h-6 w-6" /> User Ledger
@@ -3840,7 +3840,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="banners" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0 flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="text-2xl uppercase flex items-center gap-2 text-blue-600">
@@ -3933,7 +3933,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="games" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Gamepad2 className="h-6 w-6" /> Game Sync
@@ -3993,7 +3993,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="broadcaster" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-slate-900">
                     <Megaphone className="h-6 w-6" /> Broadcaster
@@ -4295,7 +4295,7 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="splash-screen" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-primary">
                     <Monitor className="h-6 w-6" /> Splash Screen & Global Logo
@@ -4425,9 +4425,8 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-          </div>
             <TabsContent value="sovereign-ids" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
                     <Crown className="h-6 w-6" /> Sovereign ID Management
@@ -4736,7 +4735,8 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+        </div>
+      </Tabs>
       </div>
     </AppLayout>
   );
