@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
@@ -19,21 +19,22 @@ const BackdropLayer = ({ type, color }: { type?: string, color: string }) => {
     case 'halo':
       return (
         <div className="absolute inset-[-15%] z-0 pointer-events-none">
-           <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+           <div 
             className="w-full h-full border-[2px] border-dashed rounded-full"
-            style={{ borderColor: `${color}88` }}
+            style={{ 
+              borderColor: `${color}88`,
+              animation: 'custom-spin 10s linear infinite'
+            }}
            />
         </div>
       );
     case 'wings':
       return (
         <div className="absolute inset-[-30%] z-[-1] pointer-events-none flex items-center justify-center">
-          <motion.svg viewBox="0 0 200 200" className="w-full h-full opacity-70">
+          <svg viewBox="0 0 200 200" className="w-full h-full opacity-70">
             <path d="M100 100 C 60 40, 20 60, 10 100 C 20 140, 60 160, 100 100 Z" fill={color} />
             <path d="M100 100 C 140 40, 180 60, 190 100 C 180 140, 140 160, 100 100 Z" fill={color} />
-          </motion.svg>
+          </svg>
         </div>
       );
     case 'dragon-body':
@@ -51,12 +52,11 @@ const BackdropLayer = ({ type, color }: { type?: string, color: string }) => {
     case 'sun-rays':
       return (
         <div className="absolute inset-[-40%] z-[-1] pointer-events-none flex items-center justify-center">
-           <motion.div 
-             animate={{ rotate: 360 }}
-             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+           <div 
              className="w-full h-full"
              style={{
-               background: `repeating-conic-gradient(from 0deg, ${color}22 0deg 10deg, transparent 10deg 20deg)`
+               background: `repeating-conic-gradient(from 0deg, ${color}22 0deg 10deg, transparent 10deg 20deg)`,
+               animation: 'custom-spin 20s linear infinite'
              }}
            />
         </div>
@@ -67,30 +67,25 @@ const BackdropLayer = ({ type, color }: { type?: string, color: string }) => {
 
 const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   if (!type || type === 'none') return null;
-  const count = type === 'matrix' ? 10 : 6;
+  // PERFORMANCE: Reduce particle count from 10/6 to 3 per avatar
+  const count = 3; 
   
   return (
     <div className="absolute inset-[-15%] pointer-events-none z-40 overflow-visible">
       {Array.from({ length: count }).map((_, i) => (
-        <motion.div
+        <div
           key={i}
           className="absolute rounded-full"
           style={{ 
             width: type === 'matrix' ? '2px' : '3px', 
             height: type === 'matrix' ? '6px' : '3px',
             backgroundColor: color,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            boxShadow: `0 0 5px ${color}`
-          }}
-          animate={{ 
-            y: [-15, 15],
-            opacity: [0, 1, 0]
-          }}
-          transition={{ 
-            duration: 2 + Math.random() * 2, 
-            repeat: Infinity,
-            delay: Math.random() * 2
+            left: `${10 + (i * 30)}%`,
+            top: `${20 + (i * 20)}%`,
+            boxShadow: `0 0 5px ${color}`,
+            animation: `custom-particle-float ${2 + i}s infinite ease-in-out`,
+            animationDelay: `${i * 0.5}s`,
+            opacity: 0
           }}
         />
       ))}
@@ -120,6 +115,18 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes custom-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes custom-particle-float { 
+          0%, 100% { transform: translateY(0); opacity: 0; }
+          50% { transform: translateY(-10px); opacity: 0.8; }
+        }
+        @keyframes custom-bounce-alt {
+          0%, 100% { transform: translate(-50%, -3px); }
+          50% { transform: translate(-50%, 3px); }
+        }
+      `}} />
+
       {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
@@ -143,9 +150,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           />
         </div>
       ) : (
-        <motion.div
-          animate={animationType === 'rotate' ? { rotate: 360 } : {}}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full z-10 shadow-2xl"
           style={{
             width: `${pixelSize + 22}px`,
@@ -153,6 +158,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             padding: '8.5px',
             background: gradient,
             backgroundSize: '200% 200%',
+            animation: animationType === 'rotate' ? 'custom-spin 10s linear infinite' : 'none',
             boxShadow: `
               0 0 20px ${glowColor},
               inset 0 0 12px rgba(0,0,0,0.6),
@@ -164,7 +170,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
         >
           {/* Shine Highlight */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
-        </motion.div>
+        </div>
       )}
 
       {/* Particles */}
@@ -181,24 +187,19 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           </div>
         </>
       ) : Ornament && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-[110] drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]">
-          <motion.div
-            animate={{ y: [-3, 3, -3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            {typeof Ornament === 'string' ? (
-              <span className="text-4xl">{Ornament}</span>
-            ) : (
-              <Ornament className="w-12 h-12" style={{ color: borderColor, strokeWidth: 1.5 }} />
-            )}
-          </motion.div>
+        <div className="absolute -top-10 left-1/2 z-[110] drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" style={{ animation: 'custom-bounce-alt 2s infinite ease-in-out' }}>
+          {typeof Ornament === 'string' ? (
+            <span className="text-4xl">{Ornament}</span>
+          ) : (
+            <Ornament className="w-12 h-12" style={{ color: borderColor, strokeWidth: 1.5 }} />
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export function AvatarFrame({ frameId, children, className, size = 'md' }: AvatarFrameProps) {
+export const AvatarFrame = memo(({ frameId, children, className, size = 'md' }: AvatarFrameProps) => {
   const sizeMap = {
     sm: 40,
     md: 60,
@@ -244,4 +245,6 @@ export function AvatarFrame({ frameId, children, className, size = 'md' }: Avata
       </div>
     </div>
   );
-}
+});
+
+AvatarFrame.displayName = 'AvatarFrame';

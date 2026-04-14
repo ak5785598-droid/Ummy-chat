@@ -208,7 +208,7 @@ export default function RoomsExplorer() {
                {myRoom ? (
                  <button 
                    onClick={() => router.push(`/rooms/${myRoom.id}`)} 
-                   className="p-1 px-1.5 bg-white/60 backdrop-blur-md rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
+                   className="p-1 px-1.5 bg-white/70 rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
                  >
                    <Home className="h-4 w-4" />
                  </button>
@@ -261,7 +261,7 @@ export default function RoomsExplorer() {
                           {!slide.imageUrl && (
                             <div className="relative z-10 px-2">
                               <div className="flex items-center gap-2 mb-2">
-                                <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                                <div className="bg-white/30 p-1 rounded-lg border border-white/30">
                                   <Icon className="h-5 w-5 text-white animate-pulse" />
                                 </div>
                                 <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
@@ -278,7 +278,7 @@ export default function RoomsExplorer() {
             </div>
 
             <div className="px-3 mb-2">
-              <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 backdrop-blur-3xl rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[72px]">
+            <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[72px]">
                 <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex items-center justify-between mb-1 relative z-10 px-1">
                    <div className="flex items-center gap-1">
@@ -324,7 +324,7 @@ export default function RoomsExplorer() {
               </div>
             </div>
 
-            <div className="px-3 sticky top-0 z-40 bg-white/80 backdrop-blur-md py-2 mb-1 border-b border-slate-100 flex items-center">
+            <div className="px-3 sticky top-0 z-40 bg-white/95 py-2 mb-1 border-b border-slate-100 flex items-center">
               <div className="w-full overflow-x-auto no-scrollbar">
                 <div className="flex gap-1.5 px-0.5">
                   {CATEGORIES.map((cat) => (
@@ -498,7 +498,7 @@ export default function RoomsExplorer() {
                                    unoptimized
                                   />
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md rounded-full px-2 py-0.5 border border-white/30">
+                                  <div className="absolute top-3 right-3 bg-black/40 rounded-full px-2 py-0.5 border border-white/30">
                                      <span className="text-[8px] font-black text-white uppercase">Recently</span>
                                   </div>
                                   <div className="absolute bottom-3 left-3 right-3 text-white">

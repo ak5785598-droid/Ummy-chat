@@ -2241,8 +2241,8 @@ export function RoomClient({ room }: { room: Room }) {
             <button
               onClick={toggleAIVoice}
               className={cn(
-                "relative h-9 w-9 rounded-full backdrop-blur-md border border-white/10 flex items-center justify-center transition-all active:scale-95 shadow-lg",
-                isAIVoiceEnabled ? "bg-[#BC5DFF]/40 text-[#BC5DFF] border-[#BC5DFF]/50 shadow-[#BC5DFF]/20" : "bg-black/60 text-white/80"
+                "relative h-9 w-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center transition-all active:scale-95 shadow-lg",
+                isAIVoiceEnabled ? "bg-[#BC5DFF]/40 text-[#BC5DFF] border-[#BC5DFF]/50 shadow-[#BC5DFF]/20" : "text-white/80"
               )}
             >
               <div className="absolute -top-1 -right-0.5 h-3.5 w-3.5 bg-[#BC5DFF] border border-white/20 rounded-full flex items-center justify-center z-20 shadow-[0_0_8px_rgba(188,93,255,0.4)]">
@@ -2250,19 +2250,19 @@ export function RoomClient({ room }: { room: Room }) {
               </div>
               <Volume2 className={cn("h-3.5 w-3.5", isAIVoiceEnabled && "animate-pulse")} />
             </button>
-            <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center gap-0.5">
+            <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center gap-0.5">
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[9px] font-bold">{onlineCount}</span>
             </button>
             {(isHydrated && canManageRoom) && (
-              <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+              <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
                 <Settings className="h-5 w-5 text-white/80" />
               </button>
             )}
-            <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+            <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
               <Share2 className="h-4 w-4 text-white/80" />
             </button>
-            <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center">
+            <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
               <Power className="h-4 w-4 text-white/80" />
             </button>
           </div>
@@ -2410,7 +2410,7 @@ export function RoomClient({ room }: { room: Room }) {
       {/* MINI MUSIC PLAYER - Wafa Style - Show when music is available and mini player is open */}
       {room.currentMusicUrl && showMiniPlayer && (
         <div className="fixed bottom-[140px] left-0 right-0 z-40 px-4">
-          <div className="bg-black/80 backdrop-blur-xl rounded-2xl p-3 border border-white/10 shadow-2xl">
+          <div className="bg-black/85 rounded-2xl p-3 border border-white/10 shadow-2xl">
             {/* Song Title */}
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">

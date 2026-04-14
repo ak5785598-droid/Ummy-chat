@@ -217,13 +217,13 @@ export function RoomsExplorerGlossy() {
                 </button>
              </div>
               <div className="flex items-center gap-2">
-                <div className="p-1 px-1.5 bg-white/50 backdrop-blur-md rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all">
+                <div className="p-1 px-1.5 bg-white/80 rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all">
                   <UserSearchDialog />
                 </div>
                 {myRoom ? (
                   <button 
                     onClick={() => router.push(`/rooms/${myRoom.id}`)} 
-                    className="p-2 bg-white/50 backdrop-blur-md rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all flex items-center group"
+                    className="p-2 bg-white/80 rounded-2xl shadow-sm border border-white/80 active:scale-95 transition-all flex items-center group"
                   >
                     <Home className="h-5 w-5 text-slate-900" />
                   </button>
@@ -278,7 +278,7 @@ export function RoomsExplorerGlossy() {
                             {!slide.imageUrl && (
                               <div className="relative z-10 px-2">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <div className="bg-white/20 p-1 rounded-lg backdrop-blur-md border border-white/30">
+                                  <div className="bg-white/30 p-1 rounded-lg border border-white/30">
                                     <Icon className="h-5 w-5 text-white animate-pulse" />
                                   </div>
                                   <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
@@ -296,7 +296,7 @@ export function RoomsExplorerGlossy() {
 
               {/* LIVE FREQUENCY SECTION */}
               <div className="px-3 mb-3">
-                <div className="bg-white/60 backdrop-blur-3xl rounded-[2rem] p-3 border border-white shadow-xl overflow-hidden relative group">
+                <div className="bg-white/85 rounded-[2rem] p-3 border border-white shadow-xl overflow-hidden relative group">
                   <div className="flex items-center justify-between mb-3 relative z-10 px-1">
                      <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
@@ -343,7 +343,7 @@ export function RoomsExplorerGlossy() {
               </div>
 
               {/* CATEGORY SELECTOR - STICKY INSIDE SCROLL AREA */}
-              <div className="px-3 sticky top-0 z-40 bg-[#F4F7FE]/80 backdrop-blur-md py-2 border-b border-slate-200/20">
+              <div className="px-3 sticky top-0 z-40 bg-[#F4F7FE]/95 py-2 border-b border-slate-200/20">
                 <div className="w-full overflow-x-auto no-scrollbar">
                   <div className="flex gap-2">
                     {CATEGORIES.map((cat) => (
@@ -522,7 +522,7 @@ export function RoomsExplorerGlossy() {
                                      unoptimized
                                     />
                                     <div className="absolute inset-0 bg-black/20" />
-                                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-full px-2.5 py-1 shadow-sm">
+                                    <div className="absolute top-4 right-4 bg-white/95 rounded-full px-2.5 py-1 shadow-sm">
                                        <span className="text-[8px] font-black text-slate-900 uppercase tracking-tighter">Recent</span>
                                     </div>
                                     <div className="absolute bottom-4 left-4 right-4 text-white">
