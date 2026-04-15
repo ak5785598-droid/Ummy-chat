@@ -1,0 +1,220 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // GLOBAL AUTHORIZATION HELPERS
+    // ============================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
+        request.auth.uid == '1338' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+      );
+    }
+
+    function isNotBanned() {
+      return isAdmin() || 
+             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
+             !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
+             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time);
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+      
+      match /profile/{profileId} {
+        allow read: if isSignedIn();
+        allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+      }
+      
+      match /profileVisitors/{visitorId} {
+        allow read, write: if isSignedIn() && isNotBanned();
+      }
+
+      match /notifications/{notifId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isSignedIn();
+      }
+      
+      match /{allSub=**} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+      }
+    }
+
+    match /{path=**}/profile/{profileId} {
+      allow read: if true;
+    }
+
+    // ============================================
+    // PRIVATE CHATS
+    // ============================================
+    match /privateChats/{chatId} {
+      allow read, write: if isSignedIn() && isNotBanned() && (request.auth.uid in resource.data.participantIds || request.auth.uid in request.resource.data.participantIds);
+      
+      match /messages/{msgId} {
+        allow read, write: if isSignedIn() && isNotBanned() && (chatId.matches(".*" + request.auth.uid + ".*"));
+      }
+    }
+
+    // ============================================
+    // FOLLOWERS
+    // ============================================
+    match /followers/{followId} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow create: if isSignedIn() && isNotBanned() && (request.auth.uid == request.resource.data.followerId || isAdmin());
+      allow update: if isSignedIn() && isNotBanned() && (request.auth.uid == resource.data.followerId || isAdmin());
+      allow delete: if isSignedIn() && (followId.matches("^" + request.auth.uid + "_.*") || isAdmin());
+    }
+
+    // ============================================
+    // CHAT ROOMS - MAIN ROOM LOGIC
+    // ============================================
+    match /chatRooms/{roomId} {
+      // Anyone can read room data
+      allow read: if true;
+      
+      // Anyone can create rooms
+      allow create: if isSignedIn() && isNotBanned();
+      
+      // MUSIC CONTROL: Only Owner or Moderator can update music state
+      allow update: if isSignedIn() && isNotBanned() && (
+        // Check if user is owner
+        resource.data.ownerId == request.auth.uid ||
+        // Check if user is moderator
+        (resource.data.moderatorIds is list && request.auth.uid in resource.data.moderatorIds) ||
+        // Admin override
+        isAdmin()
+      );
+      
+      // ============================================
+      // ROOM SUBCOLLECTIONS
+      // ============================================
+      match /{allSub=**} {
+        allow read, write: if isSignedIn() && isNotBanned();
+      }
+    }
+
+    // ============================================
+    // MUSIC LIBRARY SUBCOLLECTION
+    // ============================================
+    match /chatRooms/{roomId}/music/{musicId} {
+      // Anyone can read music library
+      allow read: if isSignedIn() && isNotBanned();
+      
+      // Anyone can upload music
+      allow create: if isSignedIn() && isNotBanned();
+      
+      // Only uploader or room owner can delete
+      allow delete: if isSignedIn() && isNotBanned() && (
+        resource.data.uploadedBy == request.auth.uid ||
+        get(/databases/$(database)/documents/chatRooms/$(roomId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // ============================================
+    // GAMES
+    // ============================================
+    match /games/{gameId} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // CP PAIRS
+    // ============================================
+    match /cpPairs/{cpId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // FAMILIES
+    // ============================================
+    match /families/{familyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // CONFIG & THEMES
+    // ============================================
+    match /appConfig/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /roomThemes/{themeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // GLOBAL BROADCASTS
+    // ============================================
+    match /globalBroadcasts/{id} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isSignedIn() && isNotBanned();
+    }
+
+    // ============================================
+    // GLOBAL GAME WINS
+    // ============================================
+    match /globalGameWins/{id} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // MOMENTS
+    // ============================================
+    match /moments/{id} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow create: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && (request.auth.uid == request.resource.data.userId || isAdmin());
+    }
+    
+    // ============================================
+    // GLOBAL TASKS
+    // ============================================
+    match /globalTasks/{id} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow write: if isAdmin();
+    }
+    
+    // ============================================
+    // TRANSACTIONS
+    // ============================================
+    match /transactions/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ============================================
+    // RECHARGE REQUESTS
+    // ============================================
+    match /rechargeRequests/{requestId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isNotBanned();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

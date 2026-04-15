@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ummyndiapvtltd.ummyvoice",
+      "sha256_cert_fingerprints": [
+        "61:AE:6B:3E:33:0B:53:E8:5A:5E:55:2D:FA:F8:AD:A4:8E:8C:CB:08:D9:5D:DC:64:68:25:23:55:19:C4:29:58"
+      ]
+    }
+  }
+]

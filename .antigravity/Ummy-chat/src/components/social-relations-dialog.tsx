@@ -1,0 +1,241 @@
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+ Dialog, 
+ DialogContent, 
+ DialogHeader, 
+ DialogTitle,
+ DialogDescription
+} from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader, User as UserIcon, Star, Sparkles, ChevronLeft, Search, Eye } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, getDocs, doc, limit, orderBy } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUserProfile } from '@/hooks/use-user-profile';
+
+interface UserListItemProps {
+ userId: string;
+ onClick: () => void;
+}
+
+/**
+ * High-Fidelity User List Item.
+ * Matches the requested visual: Avatar, Username, Flag, Gender circle, and Dual Level Badges.
+ */
+const UserListItem = ({ userId, onClick }: UserListItemProps) => {
+ const { userProfile: profile, isLoading } = useUserProfile(userId);
+
+ if (isLoading) return (
+  <div className="flex items-center gap-4 p-4 animate-pulse">
+   <div className="h-14 w-14 bg-gray-100 rounded-full" />
+   <div className="flex-1 space-y-2">
+    <div className="h-4 bg-gray-100 rounded w-1/3" />
+    <div className="h-3 bg-gray-100 rounded w-1/2" />
+   </div>
+  </div>
+ );
+
+ if (!profile) return null;
+
+ const firstLetter = (profile.username || 'U').charAt(0);
+
+ return (
+  <div 
+   onClick={onClick}
+   className="flex items-center gap-4 p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0"
+  >
+   <Avatar className="h-16 w-16 border-2 border-white shadow-sm shrink-0">
+    <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
+    <AvatarFallback className="bg-slate-100 text-slate-400 font-bold">{firstLetter}</AvatarFallback>
+   </Avatar>
+
+   <div className="flex-1 min-w-0">
+    <h4 className="font-bold text-[16px] text-gray-900 truncate uppercase tracking-tight mb-1">{profile.username}</h4>
+    
+    <div className="flex items-center gap-2">
+     {/* Flag & Gender Signature */}
+     <span className="text-base leading-none">🇮🇳</span>
+     <div className={cn(
+      "h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm",
+      profile.gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
+     )}>
+      {profile.gender === 'Female' ? '♀' : '♂'}
+     </div>
+
+     {/* Rich Level Badge (Cyan Diamond Style) */}
+     <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2.5 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
+       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+       <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+       <span className="text-[9px] font-bold text-white drop-shadow-sm leading-none">{profile.level?.rich || 1}</span>
+     </div>
+
+     {/* Charm Level Badge (Pink Heart Style) */}
+     <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2.5 py-0.5 rounded-full border border-white/40 shadow-sm relative overflow-hidden">
+       <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+       <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+       <span className="text-[9px] font-bold text-white drop-shadow-sm leading-none">{profile.level?.charm || 1}</span>
+     </div>
+    </div>
+   </div>
+  </div>
+ );
+};
+
+interface SocialRelationsDialogProps {
+ open: boolean;
+ onOpenChange: (open: boolean) => void;
+ userId: string;
+ initialTab?: 'followers' | 'following' | 'friends' | 'visitors';
+ username?: string;
+}
+
+/**
+ * Social Relations Portal - Full-Screen Social Graph.
+ * Re-engineered for immersive social discovery.
+ */
+export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab = 'followers', username }: SocialRelationsDialogProps) {
+ const firestore = useFirestore();
+ const router = useRouter();
+
+ const followersQuery = useMemoFirebase(() => {
+  if (!firestore || !userId) return null;
+  return query(collection(firestore, 'followers'), where('followingId', '==', userId));
+ }, [firestore, userId]);
+
+ const followingQuery = useMemoFirebase(() => {
+  if (!firestore || !userId) return null;
+  return query(collection(firestore, 'followers'), where('followerId', '==', userId));
+ }, [firestore, userId]);
+
+ const visitorsQuery = useMemoFirebase(() => {
+  if (!firestore || !userId) return null;
+  return query(collection(firestore, 'users', userId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
+ }, [firestore, userId]);
+
+ const { data: followers, isLoading: isFollowersLoading } = useCollection(followersQuery);
+ const { data: following, isLoading: isFollowingLoading } = useCollection(followingQuery);
+ const { data: visitors, isLoading: isVisitorsLoading } = useCollection(visitorsQuery);
+
+ const friends = useMemo(() => {
+  if (!followers || !following) return [];
+  const followerIds = new Set(followers.map(f => f.followerId));
+  return following.filter(f => followerIds.has(f.followingId));
+ }, [followers, following]);
+
+ const handleUserClick = (targetId: string) => {
+  onOpenChange(false);
+  router.push(`/profile/${targetId}`);
+ };
+
+ return (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+   <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans animate-in slide-in-from-right duration-500 overflow-hidden">
+    <DialogHeader className="p-6 pt-12 border-b border-gray-50 flex flex-row items-center gap-4 shrink-0 bg-white sticky top-0 z-50">
+      <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+       <ChevronLeft className="h-6 w-6 text-gray-800" />
+      </button>
+      <div className="flex-1">
+       <DialogTitle className="text-xl font-bold uppercase tracking-tight truncate">{username || 'Social Graph'}</DialogTitle>
+       <DialogDescription className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tribal Frequencies</DialogDescription>
+      </div>
+    </DialogHeader>
+
+    <Tabs defaultValue={initialTab} className="flex-1 flex flex-col overflow-hidden">
+     <TabsList className="bg-white border-b border-gray-50 rounded-none p-0 h-14 justify-around gap-0 shrink-0 overflow-x-auto no-scrollbar">
+      <TabsTrigger 
+       value="followers" 
+       className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold uppercase text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
+      >
+       Fans ({followers?.length || 0})
+      </TabsTrigger>
+      <TabsTrigger 
+       value="following" 
+       className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold uppercase text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
+      >
+       Following ({following?.length || 0})
+      </TabsTrigger>
+      <TabsTrigger 
+       value="friends" 
+       className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold uppercase text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
+      >
+       Friend ({friends?.length || 0})
+      </TabsTrigger>
+      <TabsTrigger 
+       value="visitors" 
+       className="flex-1 h-full rounded-none border-b-4 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold uppercase text-[10px] text-gray-400 data-[state=active]:text-gray-900 px-4"
+      >
+       Visitors ({visitors?.length || 0})
+      </TabsTrigger>
+     </TabsList>
+
+     <div className="flex-1 overflow-hidden bg-white">
+      <TabsContent value="followers" className="h-full m-0">
+       <ScrollArea className="h-full">
+        {isFollowersLoading ? (
+         <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /><p className="text-[10px] font-bold uppercase text-gray-300">Syncing Fans...</p></div>
+        ) : followers && followers.length > 0 ? (
+         <div className="flex flex-col">
+          {followers.map(f => <UserListItem key={f.id} userId={f.followerId} onClick={() => handleUserClick(f.followerId)} />)}
+         </div>
+        ) : (
+         <div className="py-20 text-center opacity-20 ">No fans detected in this frequency.</div>
+        )}
+       </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="following" className="h-full m-0">
+       <ScrollArea className="h-full">
+        {isFollowingLoading ? (
+         <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /><p className="text-[10px] font-bold uppercase text-gray-300">Syncing Following...</p></div>
+        ) : following && following.length > 0 ? (
+         <div className="flex flex-col">
+          {following.map(f => <UserListItem key={f.id} userId={f.followingId} onClick={() => handleUserClick(f.followingId)} />)}
+         </div>
+        ) : (
+         <div className="py-20 text-center opacity-20 ">No following detected.</div>
+        )}
+       </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="friends" className="h-full m-0">
+       <ScrollArea className="h-full">
+        {friends.length > 0 ? (
+         <div className="flex flex-col">
+          {friends.map(f => <UserListItem key={f.id} userId={f.followingId} onClick={() => handleUserClick(f.followingId)} />)}
+         </div>
+        ) : (
+         <div className="py-20 text-center space-y-4 opacity-20 ">
+          <UserIcon className="h-12 w-12 mx-auto" />
+          <p className="font-bold text-sm">No mutual friend sync detected.</p>
+         </div>
+        )}
+       </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="visitors" className="h-full m-0">
+       <ScrollArea className="h-full">
+        {isVisitorsLoading ? (
+         <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /><p className="text-[10px] font-bold uppercase text-gray-300">Syncing Visitors...</p></div>
+        ) : visitors && visitors.length > 0 ? (
+         <div className="flex flex-col">
+          {visitors.map(v => <UserListItem key={v.id} userId={v.visitorId || v.id} onClick={() => handleUserClick(v.visitorId || v.id)} />)}
+         </div>
+        ) : (
+         <div className="py-20 text-center opacity-20 space-y-2">
+          <Eye className="h-10 w-10 mx-auto opacity-20" />
+          <p className="font-bold text-sm">No visitors detected in this frequency.</p>
+         </div>
+        )}
+       </ScrollArea>
+      </TabsContent>
+     </div>
+    </Tabs>
+   </DialogContent>
+  </Dialog>
+ );
+}

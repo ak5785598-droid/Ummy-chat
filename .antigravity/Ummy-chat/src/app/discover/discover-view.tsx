@@ -1,0 +1,269 @@
+'use client';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { AppLayout } from '@/components/layout/app-layout';
+import { DESIGN_TOKENS } from '@/lib/design-tokens';
+import { 
+  Compass, 
+  Loader, 
+  Sparkles, 
+  Plus, 
+  Heart, 
+  MessageCircle, 
+  Share2, 
+  MoreHorizontal,
+  Flame,
+  Globe,
+  Crown,
+  History
+} from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, limit, orderBy, where, Timestamp, doc, increment } from 'firebase/firestore';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
+import { PublishMomentDialog } from '@/components/publish-moment-dialog';
+import { MomentCommentsSheet } from '@/components/moment-comments-sheet';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useDoc } from '@/firebase';
+import { DiscoverViewGlossy } from './discover-view-glossy';
+
+import { ThemeColorMeta } from '@/components/theme-color-meta';
+
+/**
+ * Discovery Dimension - Post Of The Day
+ * Featuring a cosmic theme and 24h social feed.
+ */
+export default function DiscoverView() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const [showPublish, setShowPublish] = useState(false);
+  const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
+  const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
+  
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config } = useDoc(configRef);
+  const theme = config?.appTheme || 'CLASSIC';
+
+  // Filter moments from last 24 hours
+  const discoveryQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+    
+    return query(
+      collection(firestore, 'moments'),
+      where('createdAt', '>=', yesterday), // Only show posts from last 24h
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
+  }, [firestore]);
+
+  const { data: moments, isLoading } = useCollection(discoveryQuery);
+
+  if (theme === 'GLOSSY') {
+    return <DiscoverViewGlossy />;
+  }
+
+  return (
+    <AppLayout>
+      <ThemeColorMeta color={DESIGN_TOKENS.appBackground === '#FF91B5' ? '#FF91B5' : '#f8fafc'} />
+      <div className={cn(
+        "h-[100dvh] flex flex-col relative overflow-hidden text-slate-800 font-sans",
+        DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-slate-50"
+      )}>
+        {/* Subtle Background Elements */}
+        <div className="fixed inset-0 z-0">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/20 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-pink-300/30 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
+        </div>
+
+        {/* Discovery Header - Fixed Height & Font */}
+        <header className={cn(
+          "shrink-0 pt-10 pb-6 px-6 z-50 border-b border-black/5",
+          DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-white/80 backdrop-blur-xl"
+        )}>
+          <div className="flex flex-col items-center">
+            <h1 className="text-2xl font-black uppercase tracking-tight text-slate-900">
+              Moment of Day
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="h-[px] w-12 bg-black/10" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500/60 leading-none">Ummy Discovery</p>
+              <div className="h-[px] w-12 bg-black/10" />
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-y-auto no-scrollbar relative z-10 px-4 py-6 space-y-6 max-w-2xl mx-auto pb-40">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+              <div className="relative">
+                <Loader className="h-10 w-10 text-purple-500 animate-spin" />
+                <Sparkles className="absolute -top-2 -right-2 h-4 w-4 text-yellow-400 animate-bounce" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-purple-400/60">Calibrating Frequencies...</p>
+            </div>
+          ) : (
+            <>
+              {moments?.map((moment: any, idx: number) => (
+                <MomentCard 
+                  key={moment.id} 
+                  moment={moment} 
+                  index={idx} 
+                  onOpenComments={(id, username) => {
+                    setSelectedMomentId(id);
+                    setSelectedMomentUser(username);
+                  }}
+                />
+              ))}
+
+              {(!moments || moments.length === 0) && (
+                <div className="py-24 text-center space-y-4 opacity-30 flex flex-col items-center">
+                  <Compass className="h-16 w-16 text-purple-500" />
+                  <div className="space-y-1">
+                    <p className="font-headline font-black uppercase text-lg">Silence in the Galaxy</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Share the first moment of the day</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+
+        {/* Floating Post Button (Flaming Heart) */}
+        <button 
+          onClick={() => setShowPublish(true)}
+          className="fixed bottom-24 right-6 z-[100] h-16 w-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(236,72,153,0.4)] border-2 border-white/20 active:scale-90 transition-all group"
+        >
+          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 rounded-full transition-opacity" />
+          <Flame className="h-8 w-8 text-white fill-white animate-pulse" />
+        </button>
+
+        <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
+
+        <MomentCommentsSheet 
+          momentId={selectedMomentId} 
+          open={!!selectedMomentId} 
+          onOpenChange={(open) => !open && setSelectedMomentId(null)}
+          momentUsername={selectedMomentUser}
+        />
+      </div>
+    </AppLayout>
+  );
+}
+
+function MomentCard({ moment, index, onOpenComments }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void }) {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(moment.likes || 0);
+
+  const handleLike = async () => {
+    if (!firestore || !user) return;
+    setLiked(!liked);
+    setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
+    
+    try {
+      await updateDocumentNonBlocking(doc(firestore, 'moments', moment.id), {
+        likes: increment(liked ? -1 : 1)
+      });
+    } catch (e) {
+      console.error("Like error:", e);
+    }
+  };
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Card className="bg-white border-white shadow-xl rounded-[2.5rem] overflow-hidden">
+        <CardContent className="p-0">
+          {/* Header */}
+          <div className="p-5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Avatar className="h-14 w-14 border-2 border-purple-500/30">
+                  <AvatarImage src={moment.avatarUrl} />
+                  <AvatarFallback>{moment.username?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white text-slate-900 shadow-sm">
+                  Lv.{moment.userLevel || 1}
+                </div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-[14px] text-slate-900 tracking-tight">{moment.username}</span>
+                  <div className="px-2 py-0.5 rounded-lg bg-slate-100 flex items-center gap-1">
+                    <span className="text-[10px]">🇮🇳</span>
+                    <Globe className="h-2 w-2 text-slate-400" />
+                  </div>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+                  {moment.createdAt ? formatDistanceToNow(moment.createdAt.toDate(), { addSuffix: true }) : 'Calculating...'}
+                </p>
+              </div>
+            </div>
+            
+            <button className="h-10 w-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+              <MoreHorizontal className="h-5 w-5 opacity-40" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="px-7 pb-5">
+            <p className="text-slate-600 text-[14px] leading-relaxed font-medium">
+              {moment.content}
+            </p>
+          </div>
+
+          {/* Image */}
+          {moment.imageUrl && (
+            <div className="relative aspect-auto min-h-[300px] w-full bg-black/40">
+              <Image 
+                src={moment.imageUrl} 
+                alt="Moment content"
+                layout="responsive"
+                width={720}
+                height={720}
+                className="object-contain max-h-[600px]"
+              />
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="p-4 px-6 flex items-center justify-between border-t border-white/5 bg-black/20">
+            <div className="flex items-center gap-8">
+              <button 
+                onClick={handleLike}
+                className={cn(
+                  "flex items-center gap-2 transition-all active:scale-125",
+                  liked ? "text-pink-500" : "text-white/40"
+                )}
+              >
+                <Heart className={cn("h-6 w-6", liked && "fill-current")} />
+                <span className="text-xs font-black">{likesCount}</span>
+              </button>
+
+              <button 
+                onClick={() => onOpenComments(moment.id, moment.username)}
+                className="flex items-center gap-2 text-slate-300 hover:text-slate-900 transition-colors active:scale-95"
+              >
+                <MessageCircle className="h-6 w-6" />
+                <span className="text-xs font-black">{moment.commentsCount || 0}</span>
+              </button>
+            </div>
+
+            <button className="text-white/40 hover:text-white transition-colors">
+              <Share2 className="h-5 w-5" />
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}

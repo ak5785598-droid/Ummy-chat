@@ -1,0 +1,98 @@
+'use client';
+import { useFirestore, useDoc, useMemoFirebase, useFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
+export interface UserProfile {
+  id: string;
+  accountNumber: string;
+  isInternalId?: boolean;
+  username: string;
+  avatarUrl: string;
+  bio?: string;
+  email: string;
+  gender?: 'Male' | 'Female' | null;
+  country?: string | null;
+  interests?: string[];
+  wallet?: {
+   coins: number;
+   diamonds: number;
+   totalSpent: number;
+   dailySpent: number;
+   weeklySpent?: number;
+   monthlySpent?: number;
+   dailyGiftsReceived?: number;
+   weeklyGiftsReceived?: number;
+   monthlyGiftsReceived?: number;
+   dailyGifts?: number;
+   weeklyGifts?: number;
+   monthlyGifts?: number;
+   dailyGameWins?: number;
+   weeklyGameWins?: number;
+   monthlyGameWins?: number;
+  };
+  stats?: {
+   followers: number;
+   fans: number;
+   dailyFans: number;
+  };
+  level?: {
+   rich: number;
+   charm: number;
+  };
+  inventory?: {
+   activeFrame?: string;
+   activeWave?: string;
+   activeBubble?: string;
+   activeTheme?: string;
+   ownedItems: string[];
+  };
+  banStatus?: {
+   isBanned: boolean;
+   bannedUntil: any;
+   reason: string;
+  };
+  relationship?: {
+    type: 'CP' | 'BFF' | 'Love' | 'None';
+    partnerUid: string;
+    partnerName: string;
+    partnerAvatar: string;
+    level: number;
+    startDate: any;
+  };
+  tags?: string[];
+  createdAt?: any;
+  updatedAt?: any;
+  lastSignInAt?: any;
+  lastMoneyTreeClaimAt?: any;
+  isAdmin?: boolean;
+  activityPoints?: number;
+  idColor?: 'red' | 'blue' | 'purple' | 'none';
+  isBudgetId?: boolean;
+  isOnline?: boolean;
+  svip?: number;
+  familyId?: string;
+  familyRole?: string;
+  medals?: string[];
+}
+
+/**
+ * Hook to fetch a specific user's profile from Firestore in real-time.
+ * Unified with global isHydrated signal to prevent React 18 hydration crashes.
+ */
+export function useUserProfile(userId: string | undefined, options?: { suppressGlobalError?: boolean }) {
+  const { isHydrated, firestore } = useFirebase();
+
+  // Guard the reference itself.
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !userId || !isHydrated) return null;
+    return doc(firestore, 'users', userId, 'profile', userId);
+  }, [firestore, userId, isHydrated]);
+  
+  const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef, options);
+
+  return { 
+    userProfile: isHydrated ? data : null, 
+    isLoading: !isHydrated || isLoading, 
+    error 
+  };
+}

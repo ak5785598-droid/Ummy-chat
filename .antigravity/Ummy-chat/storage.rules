@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images: Owner only write access
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // ROOM MUSIC & FILES - ANY AUTHENTICATED USER
+    // This allows all users to upload/play music
+    // ============================================
+    match /rooms/{roomId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Chat room images: Authenticated users write access
+    match /chatRooms/{chatRoomId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Moments / Social Graph images: Owner only write access
+    match /moments/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Banner assets: Supreme Creator only
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && (request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1');
+    }
+
+    // Game assets: Any authenticated user
+    match /games/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Global fallback for supreme creator or standard read
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && (request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1');
+    }
+  }
+}

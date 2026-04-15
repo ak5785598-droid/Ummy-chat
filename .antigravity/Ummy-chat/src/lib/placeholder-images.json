@@ -1,0 +1,124 @@
+{
+  "placeholderImages": [
+    {
+      "id": "game-aladdin",
+      "description": "Aladdin theme slot icon",
+      "imageUrl": "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1000",
+      "imageHint": "aladdin magic lamp"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "User avatar 1",
+      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzcyMzYxNTczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "User avatar 2",
+      "imageUrl": "https://images.unsplash.com/photo-1598625873873-52f9aefd7d9d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx3b21hbiUyMHNtaWxpbmd8ZW58MHx8fHwxNzcyNDMzMzMzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman smiling"
+    },
+    {
+      "id": "user-avatar-3",
+      "description": "User avatar 3",
+      "imageUrl": "https://images.unsplash.com/photo-1618077360395-f3068be8e001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw1fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc3MjQwOTgzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man glasses"
+    },
+    {
+      "id": "user-avatar-4",
+      "description": "User avatar 4",
+      "imageUrl": "https://images.unsplash.com/photo-1737642872807-9669a744de5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwb3V0ZG9vcnN8ZW58MHx8fHwxNzcyMzY3NTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person outdoors"
+    },
+    {
+      "id": "user-avatar-5",
+      "description": "User avatar 5",
+      "imageUrl": "https://images.unsplash.com/photo-1493657699097-e2b96d30df56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHjaHw4fHx3b21hbiUyMG5hdHVyZXxlbnwwfHx8fDE3NzI0NjY4NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman nature"
+    },
+    {
+      "id": "room-cover-1",
+      "description": "Chat room cover 1",
+      "imageUrl": "https://images.unsplash.com/photo-1705254613735-1abb457f8a60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHZpYnJhbnR8ZW58MHx8fHwxNzcyNDY2ODUyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract vibrant"
+    },
+    {
+      "id": "room-cover-2",
+      "description": "Chat room cover 2",
+      "imageUrl": "https://images.unsplash.com/photo-1511081692775-05d0f180a065?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwY2FmZXxlbnwwfHx8fDE3NzIzODQ4ODN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cozy cafe"
+    },
+    {
+      "id": "room-cover-3",
+      "description": "Chat room cover 3",
+      "imageUrl": "https://images.unsplash.com/photo-1632064824547-e77c36851495?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z2FtaW5nJTIwc2V0dXB8ZW58MHx8fHwxNzcyMzk1NjIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gaming setup"
+    },
+    {
+      "id": "room-cover-4",
+      "description": "Chat room cover 4",
+      "imageUrl": "https://images.unsplash.com/photo-1728734704163-3d13e0c86f5a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Ym9va3MlMjBsaWJyYXJ5fGVufDB8fHx8MTc3MjQwNDY2MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "books library"
+    },
+    {
+      "id": "room-cover-5",
+      "description": "Chat room cover 5",
+      "imageUrl": "https://images.unsplash.com/photo-1612539473441-dfc1cefd5e1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bW91bnRhaW4lMjBsYW5kc2NhcGV8ZW58MHx8fHwxNzcyNDA5MTM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mountain landscape"
+    },
+    {
+      "id": "ummy-mascot",
+      "description": "Ummy official logo watermark with yellow and pink mascot characters",
+      "imageUrl": "https://picsum.photos/seed/ummy-mascot/400/400",
+      "imageHint": "cute characters"
+    },
+    {
+      "id": "propose-ring",
+      "description": "Luxury diamond proposal ring",
+      "imageUrl": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000",
+      "imageHint": "diamond ring"
+    },
+    {
+      "id": "cp-house-bg",
+      "description": "Romantic pink background for CP house",
+      "imageUrl": "https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=2000",
+      "imageHint": "romantic background"
+    },
+    {
+      "id": "cp-challenge-hero",
+      "description": "Romantic couple illustration for challenge",
+      "imageUrl": "https://images.unsplash.com/photo-1516589174184-c685266e430c?q=80&w=2000",
+      "imageHint": "romantic couple"
+    },
+    {
+      "id": "elite-jet",
+      "description": "Private jet emblem for elite rooms",
+      "imageUrl": "https://images.unsplash.com/photo-1583133269464-b721db5345f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZmlnaHRlciUyMGpldHxlbnwwfHx8fDE3NzI0NTgwODd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fighter jet"
+    },
+    {
+      "id": "winner-crown",
+      "description": "Golden crown for winners",
+      "imageUrl": "https://images.unsplash.com/photo-1646769762753-565020b3bb2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnb2xkZW4lMjBjcm93bnxlbnwwfHx8fDE3NzI0NjY4MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "golden crown"
+    },
+    {
+      "id": "lion-fight-bg",
+      "description": "Shining boxing ring stage for lion fight",
+      "imageUrl": "https://images.unsplash.com/photo-1590556409324-aa1d726e5c3c?q=80&w=2000",
+      "imageHint": "boxing ring stage"
+    },
+    {
+      "id": "lion-fighter",
+      "description": "3D glossy lion character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?q=80&w=1000",
+      "imageHint": "3d lion character"
+    },
+    {
+      "id": "tiger-fighter",
+      "description": "3D glossy tiger character with boxing gloves",
+      "imageUrl": "https://images.unsplash.com/photo-1508817628294-5a453fa6b8fb?q=80&w=1000",
+      "imageHint": "3d tiger character"
+    }
+  ]
+}
