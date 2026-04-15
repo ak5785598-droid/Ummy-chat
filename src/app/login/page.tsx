@@ -95,9 +95,10 @@ export default function LoginPage() {
         gapi.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleOneTapResponse,
-          auto_select: false, 
-          cancel_on_tap_outside: false,
-          itp_support: true
+          auto_select: true, // Enable for true 1-click passwordless experience
+          cancel_on_tap_outside: true,
+          itp_support: true,
+          use_fedcm_for_prompt: true // Use modern FedCM prompt if available
         });
         hasInitializedGoogle.current = true;
       }
@@ -305,8 +306,21 @@ export default function LoginPage() {
       if (forceSelect) {
         provider.setCustomParameters({ prompt: 'select_account' });
       }
-      // Use Redirect for Mobile/WebView compatibility
-      await signInWithRedirect(auth, provider);
+
+      // Optimization: Try Popup for Chrome/Desktop (much smoother)
+      // On small screens/specific browsers, catch and fallback to Redirect
+      try {
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+          return;
+        }
+      } catch (popupErr: any) {
+        console.warn("[Auth] Popup blocked or failed, falling back to Redirect:", popupErr.code);
+        // Fallback to Redirect for problematic environments
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
@@ -448,6 +462,12 @@ export default function LoginPage() {
             >
               Login with another account
             </button>
+          </div>
+
+          <div className="mt-4 p-3 rounded-lg bg-black/20 border border-white/5">
+            <p className="text-[9px] text-white/50 leading-relaxed text-center">
+              <span className="text-white/70 font-bold">Pro Tip:</span> If Google asks for a password, it is because your browser session needs verification. Use the "One Tap" popup for the fastest experience.
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
