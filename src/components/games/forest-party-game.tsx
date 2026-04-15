@@ -302,14 +302,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* RECORD BOTTOM SHEET */}
+   {/* RECORD BOTTOM SHEET - Now 40vh */}
    <AnimatePresence>
     {showRecord && (
         <motion.div 
             initial={{ y: "100%" }} 
             animate={{ y: 0 }} 
             exit={{ y: "100%" }} 
-            className="fixed bottom-0 left-0 right-0 z-[300] h-[20vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
         >
             <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
                 <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
@@ -342,14 +342,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* RULES BOTTOM SHEET */}
+   {/* RULES BOTTOM SHEET - Now 30vh */}
    <AnimatePresence>
     {showRules && (
         <motion.div 
             initial={{ y: "100%" }} 
             animate={{ y: 0 }} 
             exit={{ y: "100%" }} 
-            className="fixed bottom-0 left-0 right-0 z-[300] h-[20vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
         >
             <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
                 <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
@@ -383,14 +383,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><Clock size={16} /></button>
           <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
           <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><HelpCircle size={16} /></button>
-          <button onClick={() => {}} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><X size={16} /></button>
+          {/* Close Game button working properly with onBack */}
+          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><X size={16} /></button>
       </div>
    </header>
 
-   {/* GAME CONTENT */}
-   <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
+   {/* GAME CONTENT - Thoda niche shift kiya pt-24 daal kar */}
+   <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       
+      {/* 3D Skin Color Circle & Lines SVG */}
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
             <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -398,9 +400,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               <stop offset="50%" stopColor="#FFFACD" />
               <stop offset="100%" stopColor="#DAA520" />
             </linearGradient>
+            
+            {/* 3D Skin Color Gradient for Lines and Circle */}
+            <linearGradient id="skin3DGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fef0e6" />
+              <stop offset="30%" stopColor="#eebb99" />
+              <stop offset="70%" stopColor="#c58a66" />
+              <stop offset="100%" stopColor="#8a5538" />
+            </linearGradient>
+
             <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2.5" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            {/* Drop shadow filter to make SVG elements pop out as 3D */}
+            <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodOpacity="0.6"/>
             </filter>
         </defs>
         
@@ -418,21 +434,26 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           transition={{ duration: 1, repeat: Infinity }}
         />
 
-        <circle cx="50" cy="50" r="42" fill="none" stroke="#eebb99" strokeWidth="4" opacity="1" />
+        {/* 3D Skin Color Outer Circle */}
+        <circle cx="50" cy="50" r="41" fill="none" stroke="url(#skin3DGradient)" strokeWidth="6" filter="url(#shadow3D)" opacity="1" />
 
+        {/* 3D Skin Color Connecting Lines */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-          <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="4" transform={`rotate(${deg} 50 50)`} />
+          <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="url(#skin3DGradient)" strokeWidth="5" strokeLinecap="round" filter="url(#shadow3D)" transform={`rotate(${deg} 50 50)`} />
         ))}
       </svg>
 
+      {/* 3D Countdown Circle */}
       <div className={cn(
-        "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center border-[4px] shadow-2xl transition-all duration-300",
-        gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 border-white" : "bg-[#4a2511] border-[#eebb99]"
+        "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300",
+        gameState === 'spinning' 
+          ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[inset_0_4px_10px_rgba(255,255,255,0.5),0_10px_20px_rgba(0,0,0,0.6)] border-[4px] border-[#ffe885]" 
+          : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] shadow-[inset_0_4px_8px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.5),0_10px_25px_rgba(0,0,0,0.8)] border-[4px] border-[#eebb99]"
       )}>
         <p className={cn("text-[7px] font-black uppercase", gameState === 'spinning' ? "text-white" : "text-[#eebb99]")}>
             {gameState === 'betting' ? 'Time' : 'Spinning'}
         </p>
-        <span className={cn("text-2xl font-black", gameState === 'spinning' ? "text-white animate-bounce" : "text-[#eebb99]")}>
+        <span className={cn("text-2xl font-black", gameState === 'spinning' ? "text-white animate-bounce" : "text-[#eebb99] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]")}>
             {gameState === 'betting' ? timeLeft : '🔥'}
         </span>
       </div>
