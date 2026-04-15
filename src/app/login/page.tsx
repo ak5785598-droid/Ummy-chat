@@ -29,6 +29,7 @@ import { BanDialog } from '@/components/ban-dialog';
 import Script from 'next/script';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+const GOOGLE_CLIENT_ID = '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com';
 
 /**
  * Beautiful Ummy Login Portal - Purple Gradient Design
@@ -60,6 +61,59 @@ export default function LoginPage() {
   
   const activeBg = loginBg || splashBg || fallbackBg;
 
+  // Global script ref to prevent multiple initializations
+  const hasInitializedGoogle = useRef(false);
+
+  // Initialize Google One Tap - run ONCE when user is not logged in
+  useEffect(() => {
+    if (isAuthLoading || user || !auth || hasInitializedGoogle.current) return;
+    if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return;
+
+    const handleOneTapResponse = async (response: any) => {
+      setIsSigningIn(true);
+      try {
+        const credential = GoogleAuthProvider.credential(response.credential);
+        const result = await signInWithCredential(auth, credential);
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          router.replace('/rooms');
+        }
+      } catch (error: any) {
+        console.error('One Tap Login Error:', error);
+        toast({ variant: 'destructive', title: 'Sign In Failed', description: 'Native login failed. Please use the button below.' });
+      } finally {
+        setIsSigningIn(false);
+      }
+    };
+
+    const initializeGIS = () => {
+      // @ts-ignore
+      const gapi = window.google?.accounts?.id;
+      if (!gapi) return false;
+      
+      if (!hasInitializedGoogle.current) {
+        gapi.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleOneTapResponse,
+          auto_select: false, 
+          cancel_on_tap_outside: false,
+          itp_support: true
+        });
+        hasInitializedGoogle.current = true;
+      }
+      
+      gapi.prompt();
+      return true;
+    };
+
+    const timer = setInterval(() => {
+      if (initializeGIS()) {
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [user, isAuthLoading, auth]);
 
   // Handle Firebase Redirect Result (Fix for Mobile White Screen)
   useEffect(() => {
@@ -73,21 +127,16 @@ export default function LoginPage() {
           setIsSigningIn(true);
           await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
           router.replace('/rooms');
-        } else {
-          // If no result, ensure we aren't stuck in signing in state
-          setIsSigningIn(false);
         }
       } catch (error: any) {
-        console.error("❌ Redirect Login Error:", error.code, error.message);
-        // Reset state on error so user can try again
+        console.error("❌ Redirect Login Error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Login Error',
+          description: 'Failed to complete sign in. Please try again.',
+        });
+      } finally {
         setIsSigningIn(false);
-        if (error.code !== 'auth/popup-closed-by-user') {
-          toast({
-            variant: 'destructive',
-            title: 'Login Error',
-            description: 'Failed to complete sign in. Please try again.',
-          });
-        }
       }
     };
 
@@ -133,93 +182,71 @@ export default function LoginPage() {
     
     try {
       const userSnap = await getDoc(userRef);
-      const profileSnap = await getDoc(profileRef);
-      
-      let existingMainData = userSnap.data();
-      let existingProfileData = profileSnap.data();
-      
-      // IDENTITY LOCK: Once a user has a valid accountNumber, NEVER change it.
-      // We check both documents to ensure we don't miss an existing ID.
-      const currentId = existingMainData?.accountNumber || existingProfileData?.accountNumber;
-      
-      if (currentId && currentId !== 'undefined' && currentId !== 'UNDEFINED') {
-        // Safe check for ban status data presence
-        const banStatus = existingMainData?.banStatus;
-        if (banStatus?.isBanned) {
-          const until = banStatus.bannedUntil?.toDate();
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.banStatus?.isBanned) {
+          const until = userData.banStatus.bannedUntil?.toDate();
           if (!until || until > new Date()) {
-            setBanInfo({ isBanned: true, bannedUntil: banStatus.bannedUntil });
+            setBanInfo({ isBanned: true, bannedUntil: userData.banStatus.bannedUntil });
             setIsSigningIn(false);
             return;
           }
         }
-        setIsSigningIn(false); // Reset loading state on success
-        return; 
-      }
-
-      // Special Case: Creator ID is always 0000
-      let accountNumber = '';
-      if (uid === CREATOR_ID) {
-        accountNumber = '0000';
       } else {
-        // GENERATE UNIQUE ID VIA TRANSACTION
-        try {
-          accountNumber = await runTransaction(firestore, async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-            let nextUserId = 1000; // Start normal users above 1000 to save low IDs for special cases
-            
+        const accountNumber = await runTransaction(firestore, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          let nextUserId = 0;
+          
+          if (uid === CREATOR_ID) {
+            if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
+              const lastId = counterDoc.data().lastUserId;
+              if (lastId > 1000) {
+                nextUserId = 0; 
+              } else {
+                nextUserId = lastId + 1;
+              }
+            } else {
+              nextUserId = 0;
+            }
+          } else {
             if (counterDoc.exists()) {
               const data = counterDoc.data();
               const lastId = data?.lastUserId;
-              // DANGER FIX: If lastId is missing, we FAIL rather than resetting to 1.
-              if (lastId === undefined) {
-                 throw new Error("Counter synchronization failure");
+              if (lastId === undefined || lastId > 100000) {
+                nextUserId = 1; 
+              } else {
+                nextUserId = lastId + 1;
               }
-              nextUserId = lastId + 1;
+            } else {
+              nextUserId = 1;
             }
-            
-            transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
-            return nextUserId.toString().padStart(4, '0');
-          });
-        } catch (txErr) {
-          console.warn("[Identity] Global counter failed, using fallback:", txErr);
-          // FALLBACK: Generate a random 6-digit number IF AND ONLY IF transaction fails.
-          accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
-        }
-      }
-
-      // Ensure accountNumber is NEVER undefined
-      if (!accountNumber || accountNumber === 'undefined') {
-        accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
-      }
-
-      const safeUsername = displayName || `Tribe_${accountNumber.slice(-4)}`;
-
-      const baseData = {
-        id: uid,
-        username: safeUsername,
-        accountNumber,
-        avatarUrl: '',
-        wallet: {
-          coins: 0,
-          diamonds: 0,
-          totalSpent: 0,
-          dailySpent: 0,
-          weeklySpent: 0,
-          monthlySpent: 0
-        },
-        level: { rich: 1, charm: 1 },
-        banStatus: { isBanned: false, bannedUntil: null, reason: '' },
-        isOnline: true,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
-
-      // Set base document
-      await setDoc(userRef, baseData, { merge: true });
-      
-      // Set profile specifically
-      if (!profileSnap.exists()) {
+          }
+          
+          transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
+          return nextUserId.toString().padStart(4, '0');
+        });
+ 
+        const baseData = {
+          id: uid,
+          username: displayName || `Tribe_${accountNumber.slice(-4)}`,
+          accountNumber,
+          avatarUrl: '',
+          wallet: {
+            coins: 0,
+            diamonds: 0,
+            totalSpent: 0,
+            dailySpent: 0,
+            weeklySpent: 0,
+            monthlySpent: 0
+          },
+          level: { rich: 1, charm: 1 },
+          banStatus: { isBanned: false, bannedUntil: null, reason: '' },
+          isOnline: true,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+ 
+        await setDoc(userRef, baseData);
         await setDoc(profileRef, {
           ...baseData,
           email: email || '',
@@ -229,47 +256,34 @@ export default function LoginPage() {
           stats: {
             followers: 0,
             fans: 0,
-            dailyFans: 0,
             totalGifts: 0,
+            dailyFans: 0,
+            dailyGiftsReceived: 0,
+            weeklyGiftsReceived: 0,
+            monthlyGiftsReceived: 0,
+            dailyGameWins: 0,
+            weeklyGameWins: 0,
+            monthlyGameWins: 0,
             friends: 0,
             following: 0
           }
         });
-      } else {
-        // Repair existing profile's ID if needed
-        await setDoc(profileRef, { accountNumber, updatedAt: serverTimestamp() }, { merge: true });
+        console.log(`✅ Profile created with Internal ID: ${accountNumber}`);
       }
-      
-      console.log(`✅ Identity Stabilized: ${accountNumber}`);
     } catch (err) {
-      console.error("[Identity Sync] Critical Failure:", err);
+      console.error("[Identity Sync] Error:", err);
     }
   };
  
-  const handleGoogleSignIn = async (forceSelect = false) => {
+  const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
     
     try {
       const provider = new GoogleAuthProvider();
-      if (forceSelect) {
-        provider.setCustomParameters({ prompt: 'select_account' });
-      }
-
-      // Optimization: Try Popup for Chrome/Desktop (much smoother)
-      // On small screens/specific browsers, catch and fallback to Redirect
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-          router.replace('/rooms');
-          return;
-        }
-      } catch (popupErr: any) {
-        console.warn("[Auth] Popup blocked or failed, falling back to Redirect:", popupErr.code);
-        // Fallback to Redirect for problematic environments
-        await signInWithRedirect(auth, provider);
-      }
+      provider.setCustomParameters({ prompt: 'select_account' });
+      // Use Redirect for Mobile/WebView compatibility
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
@@ -367,6 +381,10 @@ export default function LoginPage() {
         backgroundPosition: 'center'
       }}
     >
+      <Script 
+        src="https://accounts.google.com/gsi/client" 
+        strategy="afterInteractive"
+      />
       <div className="absolute inset-0 bg-black/40" />
       <div id="recaptcha-container" />
 
@@ -383,7 +401,7 @@ export default function LoginPage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => handleFacebookSignIn()}
+              onClick={handleFacebookSignIn}
               disabled={isSigningIn}
               className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
             >
@@ -392,16 +410,14 @@ export default function LoginPage() {
             </button>
  
             <button
-              onClick={() => handleGoogleSignIn(false)}
+              onClick={handleGoogleSignIn}
               disabled={isSigningIn}
               className="w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
               Sign in with Google
             </button>
-            
           </div>
-
 
           <div className="flex items-center gap-2">
             <span className="h-px flex-1 bg-white/30" />
@@ -417,9 +433,6 @@ export default function LoginPage() {
           </button>
 
           <p className="text-[11px] text-white/70 leading-snug">
-            <span className="block mb-2 text-white/40 font-bold uppercase tracking-widest">
-              SECURE GLOBAL AUTHENTICATION
-            </span>
             By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
           </p>
         </div>
