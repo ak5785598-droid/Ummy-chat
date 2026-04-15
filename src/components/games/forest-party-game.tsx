@@ -26,10 +26,10 @@ import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ANIMALS = [
-  { id: 'panda', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
-  { id: 'rabbit', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
-  { id: 'cow', emoji: '🐨', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
-  { id: 'dog', emoji: '🐻‍❄️', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
+  { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
+  { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
+  { id: 'cow', emoji: '🦝', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
+  { id: 'dog', emoji: '🦄', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
   { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', index: 4 },
   { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', index: 5 },
   { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', index: 6 },
@@ -71,22 +71,45 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
+ // Audio Refs - Music aur Effects ke liye
+ const bgMusic = useRef<HTMLAudioElement | null>(null);
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
+ const winAudio = useRef<HTMLAudioElement | null>(null);
 
- // Handle Local Storage for Records
  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
      if (saved) {
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
      }
+
+     // Audio Assets Load Kar Rhe Hain
+     bgMusic.current = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); // Upbeat Forest Theme
+     bgMusic.current.loop = true;
+     bgMusic.current.volume = 0.4;
+
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+     spinAudio.current = new Audio('https://www.soundjay.com/misc/sounds/wheel-fortune-1.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
+     winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); // Win sound
    }
+
+   // Cleanup jab game band ho
+   return () => {
+     bgMusic.current?.pause();
+   };
  }, []);
+
+ // Handle Music Play/Pause based on Mute state
+ useEffect(() => {
+    if (isMuted) {
+        bgMusic.current?.pause();
+    } else {
+        bgMusic.current?.play().catch(() => console.log("User interaction needed for audio"));
+    }
+ }, [isMuted]);
 
  useEffect(() => {
    if (typeof window !== 'undefined') {
@@ -109,26 +132,27 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   return () => clearInterval(interval);
  }, [gameState, timeLeft]);
 
- const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick') => {
+ const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
     if (type === 'bet' && chipAudio.current) {
         chipAudio.current.currentTime = 0;
-        chipAudio.current.playbackRate = 1.5;
         chipAudio.current.play().catch(() => {});
        }
        if (type === 'tick' && tickAudio.current) {
         tickAudio.current.currentTime = 0;
-        tickAudio.current.playbackRate = 2.5; 
         tickAudio.current.play().catch(() => {});
        }
        if (type === 'spin' && spinAudio.current) {
         spinAudio.current.currentTime = 0;
         spinAudio.current.play().catch(() => {});
        }
-       if (type === 'stop' && spinAudio.current) {
-        spinAudio.current.pause();
-        spinAudio.current.currentTime = 0;
+       if (type === 'win' && winAudio.current) {
+        winAudio.current.currentTime = 0;
+        winAudio.current.play().catch(() => {});
+       }
+       if (type === 'stop') {
+        spinAudio.current?.pause();
        }
   } catch (error) {}
  };
@@ -158,6 +182,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  const startSpin = async () => {
   setGameState('spinning');
+  playSound('spin'); // Spin music start
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
   if (firestore) {
@@ -182,7 +207,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setHighlightIdx(activeIdx);
    
    if (currentStep % 2 === 0) playSound('tick'); 
-   if (currentStep === 8) playSound('spin');
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
@@ -204,6 +228,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   const winItem = ANIMALS.find(i => i.id === id);
   const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
+
+  if (winAmount > 0) playSound('win'); // Win hone par music
 
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
@@ -264,7 +290,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </div>
 
-   {/* OVERLAYS */}
+   {/* WINNER OVERLAY */}
    <AnimatePresence>
     {winnerData && (
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -362,7 +388,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </filter>
         </defs>
         
-        {/* Support Legs */}
+        {/* Support Legs - Gaming Machine look */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
             <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" filter="url(#shadow3D)" />
