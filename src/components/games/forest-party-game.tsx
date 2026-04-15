@@ -71,8 +71,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Fresh Audio Assets
- const bgMusic = useRef<HTMLAudioElement | null>(null);
+ // Sfx Assets Only (Bg Music removed)
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
@@ -85,36 +84,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
      }
 
-     // BG: High Energy Tech Beat (No "su-su" sound)
-     bgMusic.current = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); 
-     bgMusic.current.loop = true;
-     bgMusic.current.volume = 0.3;
-
-     // Chip: Digital Pop
+     // Digital Pop
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-     
-     // Spin: Sci-fi Ramping Up Sound
+     // Sci-fi Ramping Up (Fast)
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-     
-     // Tick: Clean Mechanical Click
+     // Mechanical Click
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
-     
-     // Win: Coin Shower / Jackpot
+     // Jackpot
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
    }
-
-   return () => {
-     bgMusic.current?.pause();
-   };
  }, []);
-
- useEffect(() => {
-    if (isMuted) {
-        bgMusic.current?.pause();
-    } else {
-        bgMusic.current?.play().catch(() => {});
-    }
- }, [isMuted]);
 
  useEffect(() => {
    if (typeof window !== 'undefined') {
@@ -198,9 +177,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 5; 
+  const spins = 4; // Reduced spins for faster speed
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 40; 
+  let speed = 20; // Faster initial speed
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
@@ -210,15 +189,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    if (remaining < 8) speed += 60;
-    else if (remaining < 15) speed += 25;
-    else if (remaining < 25) speed += 10;
+    // Smoother speed transition
+    if (remaining < 5) speed += 100;
+    else if (remaining < 12) speed += 40;
+    else if (remaining < 20) speed += 15;
     
     currentStep++;
     setTimeout(runChase, speed);
    } else {
     playSound('stop');
-    setTimeout(() => finalizeResult(winningId), 600);
+    setTimeout(() => finalizeResult(winningId), 500);
    }
   };
   runChase();
