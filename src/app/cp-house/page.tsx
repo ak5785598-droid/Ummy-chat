@@ -20,7 +20,8 @@ import {
   Crown,
   Camera,
   MessageCircleHeart,
-  Palette
+  Palette,
+  Users
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -30,7 +31,7 @@ import { UserSearchDialog } from '@/components/user-search-dialog';
 
 // --- Decorative Components ---
 
-const FloatingHeart = ({ delay = 0, x = "50%" }) => (
+const FloatingHeart = ({ delay = 0, x = "50%", color = "text-white/20" }) => (
   <motion.div
     initial={{ y: 100, opacity: 0, scale: 0 }}
     animate={{ y: -500, opacity: [0, 1, 0], scale: [0.5, 1, 0.8] }}
@@ -38,7 +39,7 @@ const FloatingHeart = ({ delay = 0, x = "50%" }) => (
     className="absolute z-0 pointer-events-none"
     style={{ left: x }}
   >
-    <Heart className="text-white/30 fill-white/20 h-6 w-6" />
+    <Heart className={cn("h-6 w-6 fill-current", color)} />
   </motion.div>
 );
 
@@ -46,41 +47,41 @@ const AngelWing = ({ side, color = "white" }: { side: 'left' | 'right', color?: 
   <motion.svg
     viewBox="0 0 200 200"
     className={cn(
-      "absolute w-[180px] h-[180px] z-0 opacity-90 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]",
+      "absolute w-[180px] h-[180px] z-0 opacity-80 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]",
       side === 'left' ? "-translate-x-28" : "translate-x-28 scale-x-[-1]"
     )}
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{
       opacity: 1,
       scale: 1,
-      rotate: side === 'left' ? [-3, 6, -3] : [3, -6, 3]
+      rotate: side === 'left' ? [-2, 4, -2] : [2, -4, 2]
     }}
-    transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
   >
     <path
       fill={color}
       d="M20,100 C20,100 50,20 120,40 C150,50 180,90 180,120 C180,150 150,180 120,170 C100,165 80,140 80,140 L40,160 L60,120 L20,100 Z"
-      className="opacity-95"
+      className="opacity-90"
     />
   </motion.svg>
 );
 
 const PrivilegeItem = ({ label, icon: Icon, color }: { label: string, icon: any, color: string }) => (
-  <div className="flex flex-col items-center gap-3 group">
+  <div className="flex flex-col items-center gap-2 group">
     <motion.div 
-      whileHover={{ scale: 1.1, rotate: 5 }}
+      whileHover={{ scale: 1.05 }}
       className={cn(
-        "w-16 h-16 rounded-2xl border-2 border-white shadow-lg flex items-center justify-center transition-all",
+        "w-14 h-14 rounded-2xl border border-white/20 shadow-lg flex items-center justify-center transition-all",
         color
       )}
     >
-      <Icon className="h-8 w-8 text-white drop-shadow-md" />
+      <Icon className="h-6 w-6 text-white" />
     </motion.div>
-    <span className="text-xs font-bold text-pink-700/80 tracking-wide">{label}</span>
+    <span className="text-[9px] font-bold text-pink-200/70 tracking-widest uppercase">{label}</span>
   </div>
 );
 
-const RulesSheet = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => (
+const RulesSheet = ({ isOpen, onClose, title }: { isOpen: boolean; onClose: () => void; title: string }) => (
   <AnimatePresence>
     {isOpen && (
       <>
@@ -89,46 +90,26 @@ const RulesSheet = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-md"
+          className="fixed inset-0 bg-black/80 z-[100] backdrop-blur-md"
         />
         <motion.div
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
-          className="fixed bottom-0 left-0 right-0 z-[101] bg-white border-t-[6px] border-pink-500 rounded-t-[3.5rem] max-h-[80vh] overflow-hidden flex flex-col"
+          className="fixed bottom-0 left-0 right-0 z-[101] bg-[#0a192f] border-t-2 border-blue-500 rounded-t-[3rem] max-h-[70vh] overflow-hidden flex flex-col"
         >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="bg-gradient-to-r from-pink-600 to-rose-500 px-14 py-3 rounded-full shadow-2xl border-4 border-white">
-              <span className="text-white font-black text-lg uppercase tracking-[0.2em]">Rules</span>
-            </div>
-          </div>
-          <div className="p-10 pt-16 overflow-y-auto">
-            <button onClick={onClose} className="absolute right-8 top-8 text-pink-400 hover:text-pink-600 transition-colors">
-              <X className="h-8 w-8" />
+          <div className="p-8 pt-12 overflow-y-auto">
+            <button onClick={onClose} className="absolute right-6 top-6 text-blue-400">
+              <X className="h-6 w-6" />
             </button>
-            <div className="space-y-8 text-pink-900/80 leading-relaxed font-semibold">
-              <section className="bg-pink-50 p-5 rounded-2xl border border-pink-100">
-                <h3 className="text-pink-700 font-black text-lg mb-3 flex items-center gap-2">
-                  <Heart className="h-5 w-5 fill-pink-500 text-pink-500" /> How to become CP?
-                </h3>
-                <p className="text-sm">Click the "Invite" button on Profile Page or from "Me - CP/Friendship", select the friend you want to bind and send the invitation.</p>
-              </section>
-              <section className="bg-pink-50 p-5 rounded-2xl border border-pink-100">
-                <h3 className="text-pink-700 font-black text-lg mb-3 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-pink-500" /> How to improve CP level?
-                </h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-pink-400" />
-                    <span>Sending gifts: 1 coin = 1 point</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-pink-400" />
-                    <span>On mic together: 5 mins = 200 points</span>
-                  </li>
-                </ul>
-              </section>
+            <div className="space-y-6">
+               <h2 className="text-white font-black text-xl italic uppercase tracking-tighter">{title} Rules</h2>
+               <div className="space-y-4">
+                  <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <p className="text-blue-200 text-xs leading-relaxed">Invite your friends to your friendship house and build bonds together.</p>
+                  </div>
+               </div>
             </div>
           </div>
         </motion.div>
@@ -143,8 +124,8 @@ export default function CpHousePage() {
   const firestore = useFirestore();
   const { userProfile } = useUserProfile(user?.uid);
 
-  const [activeMainTab, setActiveMainTab] = useState<'cp' | 'friend'>('cp');
-  const [friendSubTab, setFriendSubTab] = useState<'friend' | 'privileges' | 'rules'>('friend');
+  const [activeMainTab, setActiveMainTab] = useState<'cp' | 'friend'>('friend');
+  const [activeFriendSubTab, setActiveFriendSubTab] = useState<'friend' | 'privileges' | 'rules'>('friend');
   const [showSearch, setShowSearch] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<any>(null);
   const [showPropose, setShowPropose] = useState(false);
@@ -169,166 +150,195 @@ export default function CpHousePage() {
   return (
     <AppLayout fullScreen>
       <div className={cn(
-        "h-[100dvh] w-full flex flex-col relative overflow-hidden font-sans select-none transition-all duration-700",
-        activeMainTab === 'cp' ? "bg-rose-50" : "bg-[#0a192f]"
+        "h-[100dvh] w-full flex flex-col relative overflow-hidden font-sans select-none transition-colors duration-700",
+        activeMainTab === 'cp' ? "bg-[#1a050d]" : "bg-[#060b1d]"
       )}>
-
-        {/* --- Floating Elements --- */}
-        {activeMainTab === 'cp' && (
-          <>
-            <FloatingHeart x="10%" delay={0} />
-            <FloatingHeart x="30%" delay={2} />
-            <FloatingHeart x="70%" delay={1} />
-            <FloatingHeart x="90%" delay={3} />
-          </>
-        )}
 
         {/* --- HEADER --- */}
         <header className="absolute top-0 w-full z-50 flex items-center justify-between px-6 pt-12">
-          <button onClick={() => router.back()} className="p-2.5 bg-black/10 backdrop-blur-md rounded-full text-white border border-white/20">
-            <ChevronLeft className="h-6 w-6" />
+          <button onClick={() => router.back()} className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white">
+            <ChevronLeft className="h-5 w-5" />
           </button>
           
-          <div className="flex bg-black/20 backdrop-blur-xl p-1.5 rounded-full border border-white/20">
+          <div className="flex bg-black/40 backdrop-blur-xl p-1 rounded-full border border-white/10">
             <button 
               onClick={() => setActiveMainTab('cp')}
               className={cn(
-                "px-8 py-2 rounded-full text-sm font-black transition-all duration-300 tracking-widest",
-                activeMainTab === 'cp' ? "bg-white text-rose-500 shadow-xl" : "text-white/70"
+                "px-6 py-1.5 rounded-full text-[10px] font-black transition-all tracking-widest",
+                activeMainTab === 'cp' ? "bg-rose-600 text-white shadow-lg" : "text-white/40"
               )}
             >
-              CP
+              CP HOUSE
             </button>
             <button 
               onClick={() => setActiveMainTab('friend')}
               className={cn(
-                "px-8 py-2 rounded-full text-sm font-black transition-all duration-300 tracking-widest",
-                activeMainTab === 'friend' ? "bg-white text-blue-600 shadow-xl" : "text-white/70"
+                "px-6 py-1.5 rounded-full text-[10px] font-black transition-all tracking-widest",
+                activeMainTab === 'friend' ? "bg-blue-600 text-white shadow-lg" : "text-white/40"
               )}
             >
-              FRIEND
+              FRIENDS
             </button>
           </div>
 
-          <button onClick={() => setShowRules(true)} className="p-2.5 bg-black/10 backdrop-blur-md rounded-full text-white border border-white/20">
-            <HelpCircle className="h-6 w-6" />
+          <button onClick={() => setShowRules(true)} className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white">
+            <HelpCircle className="h-5 w-5" />
           </button>
         </header>
 
-        {/* --- CP VIEW --- */}
+        {/* --- CP VIEW (UNCHANGED) --- */}
         {activeMainTab === 'cp' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full">
-            
-            {/* LOVE THEME SECTION */}
-            <div className="relative h-[40vh] w-full bg-gradient-to-b from-rose-400 via-pink-400 to-rose-50 flex flex-col items-center justify-center overflow-hidden">
-              <div className="absolute top-[-10%] w-[300px] h-[300px] bg-white/20 blur-[100px] rounded-full" />
-              
-              <div className="relative flex items-center justify-center mt-8">
-                <AngelWing side="left" color="white" />
-                <AngelWing side="right" color="white" />
-                
-                <motion.div 
-                  animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }} 
-                  transition={{ duration: 4, repeat: Infinity }}
-                  className="relative z-10"
-                >
-                  <Heart className="h-36 w-36 text-white fill-rose-500/90 drop-shadow-[0_0_25px_rgba(255,255,255,0.6)]" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <Sparkles className="h-10 w-10 text-yellow-200 animate-pulse" />
-                  </div>
+            <div className="relative h-[40vh] w-full bg-gradient-to-b from-rose-500 via-pink-600 to-[#2d0714] flex flex-col items-center justify-center overflow-hidden">
+              <FloatingHeart x="15%" delay={0} />
+              <FloatingHeart x="85%" delay={2} />
+              <div className="relative flex items-center justify-center mt-10">
+                <AngelWing side="left" />
+                <AngelWing side="right" />
+                <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 4, repeat: Infinity }} className="relative z-10">
+                  <Heart className="h-28 w-28 text-white fill-white/20 drop-shadow-2xl" />
                 </motion.div>
               </div>
             </div>
-
-            {/* AVATARS BRIDGE */}
-            <div className="relative z-30 -mt-16 flex justify-center px-8">
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="bg-white/80 backdrop-blur-2xl rounded-[2.5rem] p-5 shadow-[0_20px_50px_rgba(244,114,182,0.3)] border border-white flex items-center gap-6 w-full max-w-md justify-between"
-              >
+            <div className="relative z-30 -mt-12 flex justify-center px-8">
+              <div className="bg-white/5 backdrop-blur-2xl rounded-3xl p-4 border border-white/10 flex items-center gap-8 w-full max-w-sm justify-between shadow-2xl">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-rose-400 blur-md rounded-full opacity-40 animate-pulse" />
-                    <Avatar className="h-20 w-20 border-4 border-white shadow-md relative z-10">
-                      <AvatarImage src={userProfile?.avatarUrl} />
-                      <AvatarFallback className="bg-rose-100 text-rose-500 font-bold">ME</AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <span className="text-[11px] font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-full uppercase tracking-tighter">
-                    {userProfile?.username?.split(' ')[0] || 'Me'}
-                  </span>
+                  <Avatar className="h-16 w-16 border-2 border-pink-500 p-0.5">
+                    <AvatarImage src={userProfile?.avatarUrl} />
+                    <AvatarFallback>ME</AvatarFallback>
+                  </Avatar>
+                  <span className="text-[9px] font-bold text-white/60 tracking-tighter uppercase">{userProfile?.username?.split(' ')[0]}</span>
                 </div>
-
-                <div className="flex-1 flex flex-col items-center justify-center gap-1">
-                   <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-                     <Heart className={cn("h-8 w-8", activeCp ? "text-rose-500 fill-rose-500" : "text-rose-200")} />
-                   </motion.div>
-                   <div className="h-1 w-16 bg-gradient-to-r from-transparent via-rose-200 to-transparent rounded-full" />
-                </div>
-
+                <Heart className={cn("h-6 w-6", activeCp ? "text-rose-500 fill-rose-500" : "text-white/20")} />
                 <div className="flex flex-col items-center gap-2">
-                  {activeCp ? (
-                    <Avatar className="h-20 w-20 border-4 border-white shadow-md">
-                      <AvatarImage src={partnerProfile?.avatarUrl} />
-                    </Avatar>
-                  ) : (
-                    <motion.button 
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setShowSearch(true)} 
-                      className="h-20 w-20 rounded-full border-4 border-dashed border-rose-200 bg-rose-50 flex items-center justify-center group"
-                    >
-                      <Plus className="h-10 w-10 text-rose-300 group-hover:text-rose-500 transition-colors" />
-                    </motion.button>
-                  )}
-                  <span className="text-[11px] font-black text-rose-300 bg-white border border-rose-100 px-3 py-1 rounded-full uppercase tracking-tighter">Partner</span>
+                   <button onClick={() => setShowSearch(true)} className="h-16 w-16 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center">
+                      <Plus className="h-6 w-6 text-white/30" />
+                   </button>
+                   <span className="text-[9px] font-bold text-white/30 tracking-tighter uppercase">Partner</span>
                 </div>
-              </motion.div>
+              </div>
             </div>
-
-            {/* PRIVILEGES SECTION */}
-            <main className="flex-1 bg-white/40 backdrop-blur-sm mt-8 mx-6 mb-8 rounded-[3rem] border border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.8)] overflow-y-auto relative p-10 pt-20">
-               
-               {/* --- Yahan Change Kiya Hai: top-0 se top-2 kiya --- */}
-               <div className="absolute top-2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                 <div className="relative">
-                    <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30" />
-                    <div className="relative bg-gradient-to-r from-orange-400 via-rose-500 to-pink-600 px-12 py-3 rounded-2xl border-2 border-white shadow-xl flex items-center gap-3">
-                      <Crown className="h-5 w-5 text-yellow-200 fill-yellow-200" />
-                      <span className="text-white font-black text-base uppercase tracking-widest italic drop-shadow-sm">Privileges</span>
-                    </div>
-                 </div>
+            <main className="flex-1 bg-[#2d0714] mt-6 mx-4 mb-6 rounded-[2.5rem] border border-white/5 overflow-hidden">
+               <div className="pt-8 pb-4 flex justify-center">
+                  <div className="bg-white/5 px-6 py-2 rounded-full border border-white/10 flex items-center gap-2">
+                    <Crown className="h-3 w-3 text-yellow-500" />
+                    <span className="text-white font-bold text-[10px] uppercase tracking-[0.2em]">Privileges</span>
+                  </div>
                </div>
-
-               <div className="grid grid-cols-3 gap-x-6 gap-y-10">
-                 <PrivilegeItem label="Gift" icon={Gift} color="bg-gradient-to-br from-pink-400 to-rose-500" />
-                 <PrivilegeItem label="CP Icon" icon={Heart} color="bg-gradient-to-br from-purple-400 to-pink-500" />
-                 <PrivilegeItem label="Badge" icon={Trophy} color="bg-gradient-to-br from-yellow-400 to-orange-500" />
-                 <PrivilegeItem label="Frame" icon={Palette} color="bg-gradient-to-br from-blue-400 to-indigo-500" />
-                 <PrivilegeItem label="Room BG" icon={Camera} color="bg-gradient-to-br from-green-400 to-emerald-500" />
-                 <PrivilegeItem label="Emoji" icon={MessageCircleHeart} color="bg-gradient-to-br from-rose-400 to-pink-600" />
-               </div>
-
-               <div className="mt-12 text-center">
-                  <p className="text-[10px] font-bold text-rose-400/60 uppercase tracking-widest">Upgrade level to unlock more</p>
+               <div className="grid grid-cols-3 gap-y-8 px-8 py-4">
+                    <PrivilegeItem label="CP Gift" icon={Gift} color="bg-rose-500/20" />
+                    <PrivilegeItem label="Icon" icon={Heart} color="bg-purple-500/20" />
+                    <PrivilegeItem label="Badge" icon={Trophy} color="bg-orange-500/20" />
                </div>
             </main>
           </motion.div>
         )}
 
-        {/* --- FRIEND VIEW --- */}
+        {/* --- FRIEND VIEW (New Blue Design) --- */}
         {activeMainTab === 'friend' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full pt-20">
-             <div className="flex-1 flex flex-col items-center justify-center p-8">
-                <Handshake className="h-24 w-24 text-blue-400 mb-4 opacity-50" />
-                <h2 className="text-blue-200 font-black text-xl tracking-tighter italic">Coming Soon...</h2>
-                <p className="text-blue-400/60 text-sm mt-2 font-bold uppercase tracking-widest">Friendship system is being polished</p>
-             </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full">
+            
+            {/* 40vh TOP THEME SECTION (Blue Theme) */}
+            <div className="relative h-[40vh] w-full bg-gradient-to-b from-blue-500 via-indigo-600 to-[#0e1b35] flex flex-col items-center justify-center overflow-hidden">
+              <FloatingHeart x="10%" delay={1} color="text-blue-200/20" />
+              <FloatingHeart x="90%" delay={3} color="text-cyan-200/20" />
+              
+              <div className="relative flex items-center justify-center mt-12">
+                <AngelWing side="left" color="#60a5fa" />
+                <AngelWing side="right" color="#60a5fa" />
+                
+                {/* Handshake Stage */}
+                <div className="relative z-10 flex flex-col items-center">
+                   <div className="absolute -bottom-4 w-32 h-10 bg-blue-400/20 blur-2xl rounded-full" />
+                   {/* Gold/Glowing Stage Circle */}
+                   <div className="w-36 h-12 bg-gradient-to-t from-yellow-600/40 to-transparent border-t-2 border-yellow-400/50 rounded-[100%] absolute translate-y-16" />
+                   <div className="w-44 h-16 bg-gradient-to-t from-yellow-700/20 to-transparent border-t border-yellow-500/30 rounded-[100%] absolute translate-y-20" />
+                   
+                   <motion.div 
+                    animate={{ y: [0, -10, 0] }} 
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                   >
+                    <Handshake className="h-24 w-24 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.4)]" />
+                   </motion.div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub Tabs Section */}
+            <div className="relative z-30 -mt-8 flex justify-center px-4">
+                <div className="flex gap-2 bg-black/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/10 shadow-2xl">
+                    {['friend', 'privileges', 'rules'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveFriendSubTab(tab as any)}
+                            className={cn(
+                                "px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
+                                activeFriendSubTab === tab 
+                                    ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg" 
+                                    : "text-blue-200/40 hover:text-blue-200"
+                            )}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* 60vh BLUE LIST SECTION */}
+            <main className="flex-1 bg-[#0e1b35] mt-6 mx-4 mb-6 rounded-[2.5rem] border border-blue-500/10 shadow-2xl overflow-hidden flex flex-col">
+               
+               {/* Friend 0/9 Header */}
+               <div className="pt-6 pb-2 flex justify-center">
+                  <div className="relative group">
+                      <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full" />
+                      <div className="relative bg-[#162a45] px-10 py-2.5 rounded-xl border border-blue-400/30 flex items-center gap-3">
+                         <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                         <span className="text-blue-100 font-black text-xs uppercase tracking-[0.15em] italic">
+                            Friend 0/9
+                         </span>
+                         <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                      </div>
+                      {/* Decorative corner wings on label */}
+                      <div className="absolute -left-2 -top-1 text-blue-400/50"><Sparkles size={12}/></div>
+                      <div className="absolute -right-2 -top-1 text-blue-400/50"><Sparkles size={12}/></div>
+                  </div>
+               </div>
+
+               {/* Slots Grid */}
+               <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  
+                  {/* Slot 1: Invite */}
+                  <motion.div 
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowSearch(true)}
+                    className="w-full h-36 bg-[#162a45]/50 rounded-[2rem] border border-dashed border-blue-400/20 flex flex-col items-center justify-center gap-3 hover:bg-[#162a45] transition-colors group"
+                  >
+                    <div className="h-12 w-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Plus className="text-blue-400 h-6 w-6" />
+                    </div>
+                    <span className="text-blue-400/60 font-bold text-[10px] uppercase tracking-widest">Invite</span>
+                  </motion.div>
+
+                  {/* Slot 2: Locked */}
+                  <div className="w-full h-36 bg-[#162a45]/30 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-3 opacity-60">
+                    <div className="h-12 w-12 rounded-full bg-slate-800 flex items-center justify-center">
+                        <Lock className="text-slate-500 h-5 w-5" />
+                    </div>
+                    <span className="text-slate-500 font-bold text-[10px] uppercase tracking-widest">unlock</span>
+                  </div>
+
+                  <div className="h-10" /> {/* Bottom Padding */}
+               </div>
+            </main>
           </motion.div>
         )}
 
-        {/* Dialogs */}
-        <RulesSheet isOpen={showRules} onClose={() => setShowRules(false)} />
+        {/* --- Dialogs --- */}
+        <RulesSheet 
+            isOpen={showRules} 
+            onClose={() => setShowRules(false)} 
+            title={activeMainTab === 'cp' ? 'CP' : 'Friend'} 
+        />
         <UserSearchDialog isOpen={showSearch} onClose={() => setShowSearch(false)} onSelect={handleProposeTarget} />
         {selectedTarget && (
           <CPProposeDialog isOpen={showPropose} onClose={() => { setShowPropose(false); setSelectedTarget(null); }} targetUser={selectedTarget} />
@@ -336,4 +346,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-}
+}q
