@@ -279,28 +279,41 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      
-      // Use Popup for desktop, Redirect for mobile
-      if (Capacitor.isNativePlatform() || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user) {
-          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-          router.replace('/rooms');
-        }
+      // Force popup mode to avoid redirect white screen
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+        router.replace('/rooms');
       }
     } catch (error: any) {
       console.error("Google Login Error:", error.code, error.message);
-      toast({
-        variant: 'destructive',
-        title: 'Sign In Failed',
-        description: error.message || 'Could not sign in with Google. Please try again.',
-      });
-      setIsSigningIn(false);
+      
+      // Fallback to redirect if popup fails
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        try {
+          const provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+          await signInWithRedirect(auth, provider);
+        } catch (redirectError: any) {
+          toast({
+            variant: 'destructive',
+            title: 'Sign In Failed',
+            description: redirectError.message || 'Could not sign in with Google. Please try again.',
+          });
+          setIsSigningIn(false);
+        }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Sign In Failed',
+          description: error.message || 'Could not sign in with Google. Please try again.',
+        });
+        setIsSigningIn(false);
+      }
     }
   };
  
