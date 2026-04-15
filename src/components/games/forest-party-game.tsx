@@ -179,7 +179,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 4; // Reduced spins for faster speed
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 20; // Faster initial speed
+  let speed = 5; // Faster initial speed
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
