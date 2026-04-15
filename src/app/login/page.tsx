@@ -29,7 +29,6 @@ import { BanDialog } from '@/components/ban-dialog';
 import Script from 'next/script';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-const GOOGLE_CLIENT_ID = '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com';
 
 /**
  * Beautiful Ummy Login Portal - Purple Gradient Design
@@ -61,60 +60,6 @@ export default function LoginPage() {
   
   const activeBg = loginBg || splashBg || fallbackBg;
 
-  // Global script ref to prevent multiple initializations
-  const hasInitializedGoogle = useRef(false);
-
-  // Initialize Google One Tap - run ONCE when user is not logged in
-  useEffect(() => {
-    if (isAuthLoading || user || !auth || hasInitializedGoogle.current) return;
-    if (typeof window === 'undefined' || Capacitor.isNativePlatform()) return;
-
-    const handleOneTapResponse = async (response: any) => {
-      setIsSigningIn(true);
-      try {
-        const credential = GoogleAuthProvider.credential(response.credential);
-        const result = await signInWithCredential(auth, credential);
-        if (result.user) {
-          await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
-          router.replace('/rooms');
-        }
-      } catch (error: any) {
-        console.error('One Tap Login Error:', error);
-        toast({ variant: 'destructive', title: 'Sign In Failed', description: 'Native login failed. Please use the button below.' });
-      } finally {
-        setIsSigningIn(false);
-      }
-    };
-
-    const initializeGIS = () => {
-      // @ts-ignore
-      const gapi = window.google?.accounts?.id;
-      if (!gapi) return false;
-      
-      if (!hasInitializedGoogle.current) {
-        gapi.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleOneTapResponse,
-          auto_select: true, // Enable for true 1-click passwordless experience
-          cancel_on_tap_outside: true,
-          itp_support: true,
-          use_fedcm_for_prompt: true // Use modern FedCM prompt if available
-        });
-        hasInitializedGoogle.current = true;
-      }
-      
-      gapi.prompt();
-      return true;
-    };
-
-    const timer = setInterval(() => {
-      if (initializeGIS()) {
-        clearInterval(timer);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [user, isAuthLoading, auth]);
 
   // Handle Firebase Redirect Result (Fix for Mobile White Screen)
   useEffect(() => {
@@ -422,10 +367,6 @@ export default function LoginPage() {
         backgroundPosition: 'center'
       }}
     >
-      <Script 
-        src="https://accounts.google.com/gsi/client" 
-        strategy="afterInteractive"
-      />
       <div className="absolute inset-0 bg-black/40" />
       <div id="recaptcha-container" />
 
@@ -459,13 +400,6 @@ export default function LoginPage() {
               Sign in with Google
             </button>
             
-            <button
-              onClick={() => handleGoogleSignIn(true)}
-              disabled={isSigningIn}
-              className="text-[10px] text-white/40 hover:text-white/60 font-bold uppercase tracking-widest mt-1 transition-colors disabled:opacity-0"
-            >
-              Login with another account
-            </button>
           </div>
 
 
