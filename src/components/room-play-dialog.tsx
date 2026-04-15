@@ -538,12 +538,12 @@ export function RoomPlayDialog({
                     ) : (
                     <div className="space-y-3">
                          <button 
-                         onClick={() => fileInputRef.current?.click()}
-                         disabled={isUploading}
-                         className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border-2 border-white/10 shadow-xl flex items-center justify-center gap-3 font-bold uppercase text-xs active:scale-95 transition-all mb-4 disabled:opacity-50 text-white"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 border border-white/20 shadow-lg flex items-center justify-center gap-3 font-bold uppercase text-[11px] active:scale-95 transition-all mb-4 disabled:opacity-50 text-white shrink-0"
                          >
-                         {isUploading ? <Loader className="h-5 w-5 animate-spin text-white" /> : <Upload className="h-5 w-5 text-white" />}
-                         <span>{isUploading ? 'Uploading...' : 'Upload to Room Library'}</span>
+                          {isUploading ? <Loader className="h-4 w-4 animate-spin text-white" /> : <Upload className="h-4 w-4 text-white" />}
+                          <span className="tracking-wide">{isUploading ? 'Uploading...' : 'Upload to Library'}</span>
                          </button>
                         {roomMusicLibrary.length === 0 && (
                         <div className="text-center py-8 text-white/40">
@@ -555,21 +555,21 @@ export function RoomPlayDialog({
                         {roomMusicLibrary.map((track) => (
                           <div 
                             key={track.id} 
-                            className="w-full flex items-center gap-3 p-3 bg-white/5 rounded-2xl border border-white/10 shadow-lg"
+                            className="w-full flex items-center justify-between gap-3 p-2.5 bg-white/5 rounded-xl border border-white/10"
                           >
                             <button
                               onClick={() => handleSyncSharedMusic(track)}
-                              className="flex-1 flex items-center gap-3 text-left"
+                              className="flex-1 flex items-center gap-3 text-left min-w-0"
                             >
-                              <div className="h-10 w-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
+                              <div className="h-10 w-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
                                 <FileAudio className="h-5 w-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold uppercase text-white truncate">{track.name}</p>
-                                <p className="text-[9px] text-white/40 truncate mt-0.5">by {track.uploaderName}</p>
+                                <p className="text-[11px] font-bold uppercase text-white truncate pr-1">{track.name}</p>
+                                <p className="text-[9px] text-white/40 truncate">by {track.uploaderName}</p>
                               </div>
-                              {/* Small Circular Play Button (always visible) */}
-                              <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all">
+                              {/* Small Circular Play Button */}
+                              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/5 active:scale-90 transition-all shrink-0">
                                 <Play className="h-3 w-3 fill-current" />
                               </div>
                             </button>
@@ -577,7 +577,7 @@ export function RoomPlayDialog({
                             {canManage && (
                               <button
                                 onClick={() => handleDeleteTrack(track)}
-                                className="h-8 w-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center border border-red-500/20 active:scale-90 transition-all"
+                                className="h-8 w-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10 active:scale-90 transition-all shrink-0"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
