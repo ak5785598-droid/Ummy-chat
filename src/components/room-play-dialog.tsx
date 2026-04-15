@@ -88,7 +88,10 @@ export function RoomPlayDialog({
  const [musicSearch, setMusicSearch] = useState('');
  const [isSearchingMusic, setIsSearchingMusic] = useState(false);
  const [musicResults, setMusicResults] = useState<any[]>([]);
+ const [trackToDelete, setTrackToDelete] = useState<any | null>(null);
  const fileInputRef = useRef<HTMLInputElement>(null);
+ const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+ const wasLongPressRef = useRef(false);
 
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid || undefined);
@@ -324,6 +327,35 @@ export function RoomPlayDialog({
   }
  };
 
+ // --- LONG PRESS GESTURE LOGIC ---
+ const handlePressStart = (track: any) => {
+   if (!canManage) return;
+   wasLongPressRef.current = false;
+   longPressTimerRef.current = setTimeout(() => {
+     wasLongPressRef.current = true;
+     setTrackToDelete(track);
+     if (typeof navigator !== 'undefined' && navigator.vibrate) {
+       navigator.vibrate(50);
+     }
+   }, 1500); // 1.5 seconds for premium feel
+ };
+
+ const handlePressEnd = () => {
+   if (longPressTimerRef.current) {
+     clearTimeout(longPressTimerRef.current);
+     longPressTimerRef.current = null;
+   }
+ };
+
+ const handleTrackClick = (track: any) => {
+   // If a long press was JUST triggered, don't perform the click action
+   if (wasLongPressRef.current) {
+     wasLongPressRef.current = false;
+     return;
+   }
+   handleSyncSharedMusic(track);
+ };
+
  const handlePlayDeviceTrack = (file: File) => {
    setIsMusicEnabled(true);
    if (onPlayLocalMusic) {
@@ -557,10 +589,13 @@ export function RoomPlayDialog({
                         {roomMusicLibrary.map((track) => (
                           <div 
                             key={track.id} 
-                            className="w-full flex items-center justify-between gap-3 py-3.5 border-b border-white/5 group active:bg-white/5 transition-colors px-1"
+                            onPointerDown={() => handlePressStart(track)}
+                            onPointerUp={handlePressEnd}
+                            onPointerLeave={handlePressEnd}
+                            className="w-full flex items-center justify-between gap-3 py-3.5 border-b border-white/5 group active:bg-white/5 transition-colors px-1 select-none"
                           >
                             <button
-                              onClick={() => handleSyncSharedMusic(track)}
+                              onClick={() => handleTrackClick(track)}
                               className="flex-1 flex flex-col items-start gap-0.5 text-left min-w-0"
                             >
                               <p className="text-sm font-medium text-white/90 truncate w-full">{track.name}</p>
@@ -569,20 +604,11 @@ export function RoomPlayDialog({
                             
                             <div className="flex items-center gap-2 shrink-0 pr-1">
                               <button 
-                                onClick={() => handleSyncSharedMusic(track)}
+                                onClick={() => handleTrackClick(track)}
                                 className="h-9 w-9 flex items-center justify-center text-white hover:text-cyan-400 transition-colors active:scale-90"
                               >
                                 <Play className="h-5 w-5 fill-current" />
                               </button>
-
-                              {canManage && (
-                                <button
-                                  onClick={() => handleDeleteTrack(track)}
-                                  className="h-9 w-9 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-500 flex items-center justify-center transition-all active:scale-90"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -591,6 +617,36 @@ export function RoomPlayDialog({
                 </ScrollArea>
               </div>
             )}
+            
+            {/* Wafa-style Delete Confirmation Popup */}
+            <Dialog open={!!trackToDelete} onOpenChange={(open) => !open && setTrackToDelete(null)}>
+              <DialogContent className="max-w-[300px] w-[85%] rounded-[2rem] bg-white border-none p-0 overflow-hidden text-black shadow-2xl flex flex-col items-center justify-center">
+                <div className="p-8 text-center space-y-6 w-full">
+                  <p className="text-base font-semibold text-slate-800 leading-relaxed px-2">
+                    Are you sure to delete this song?
+                  </p>
+                  
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="light" 
+                      onClick={() => setTrackToDelete(null)}
+                      className="flex-1 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold uppercase text-xs transition-all"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        handleDeleteTrack(trackToDelete);
+                        setTrackToDelete(null);
+                      }}
+                      className="flex-1 h-12 rounded-full bg-cyan-400 hover:bg-cyan-500 text-white font-bold uppercase text-xs shadow-lg shadow-cyan-400/20 active:scale-95 transition-all"
+                    >
+                      Confirm
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </motion.div>
         </div>
       )}
