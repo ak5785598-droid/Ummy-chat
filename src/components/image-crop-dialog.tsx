@@ -104,7 +104,7 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
 
  return (
   <Dialog open={open} onOpenChange={(val) => !isProcessing && onOpenChange(val)}>
-   <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-t-[2.5rem] md:rounded-3xl bg-white text-black border-none shadow-2xl font-sans">
+   <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-t-[2.5rem] md:rounded-3xl bg-white text-black border-none shadow-2xl font-sans z-[10001]">
     <DialogHeader className="p-6 border-b border-gray-50">
      <DialogTitle className="text-2xl font-bold uppercase tracking-tight text-center">Adjust Visual Vibe</DialogTitle>
     </DialogHeader>

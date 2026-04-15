@@ -198,16 +198,18 @@ export default function LoginPage() {
       const currentId = existingMainData?.accountNumber || existingProfileData?.accountNumber;
       
       if (currentId && currentId !== 'undefined' && currentId !== 'UNDEFINED') {
-        // User is healthy, just check for ban.
-        if (existingMainData?.banStatus?.isBanned) {
-          const until = existingMainData.banStatus.bannedUntil?.toDate();
+        // Safe check for ban status data presence
+        const banStatus = existingMainData?.banStatus;
+        if (banStatus?.isBanned) {
+          const until = banStatus.bannedUntil?.toDate();
           if (!until || until > new Date()) {
-            setBanInfo({ isBanned: true, bannedUntil: existingMainData.banStatus.bannedUntil });
+            setBanInfo({ isBanned: true, bannedUntil: banStatus.bannedUntil });
             setIsSigningIn(false);
             return;
           }
         }
-        return; // All good. Exit early to avoid reallocation.
+        setIsSigningIn(false); // Reset loading state on success
+        return; 
       }
 
       // Special Case: Creator ID is always 0000
@@ -466,11 +468,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-4 p-3 rounded-lg bg-black/20 border border-white/5">
-            <p className="text-[9px] text-white/50 leading-relaxed text-center">
-              <span className="text-white/70 font-bold">Pro Tip:</span> If Google asks for a password, it is because your browser session needs verification. Use the "One Tap" popup for the fastest experience.
-            </p>
-          </div>
 
           <div className="flex items-center gap-2">
             <span className="h-px flex-1 bg-white/30" />
@@ -486,8 +483,8 @@ export default function LoginPage() {
           </button>
 
           <p className="text-[11px] text-white/70 leading-snug">
-            <span className="block mb-2 text-yellow-500/80 font-bold uppercase tracking-wider">
-              No password needed. Just use your Google account.
+            <span className="block mb-2 text-white/40 font-bold uppercase tracking-widest">
+              SECURE GLOBAL AUTHENTICATION
             </span>
             By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
           </p>
