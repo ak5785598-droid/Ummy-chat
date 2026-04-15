@@ -47,7 +47,7 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
+export default function ForestPartyGame() {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -86,7 +86,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  useEffect(() => {
    if (typeof window !== 'undefined') {
-     localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords));
+     localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); // Keep last 20
    }
  }, [gameRecords]);
 
@@ -122,7 +122,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        }
        if (type === 'tick' && tickAudio.current) {
         tickAudio.current.currentTime = 0;
-        tickAudio.current.playbackRate = 2.5; // Faster ticks
+        tickAudio.current.playbackRate = 2.5; 
         tickAudio.current.play().catch(() => {});
        }
        if (type === 'spin' && spinAudio.current) {
@@ -176,21 +176,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 5; // Rounds
+  const spins = 5; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 40; // Initial fast speed
+  let speed = 40; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
-   if (currentStep % 2 === 0) playSound('tick'); // Fast sound feedback
+   if (currentStep % 2 === 0) playSound('tick'); 
    if (currentStep === 8) playSound('spin');
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
     
-    // Smooth deceleration logic
     if (remaining < 8) speed += 45;
     else if (remaining < 15) speed += 15;
     else if (remaining < 25) speed += 5;
@@ -249,23 +248,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 5000);
  };
 
- const getValidRecords = () => {
-   const IST_OFFSET = 5.5 * 60 * 60 * 1000;
-   return gameRecords.filter(record => {
-       const now = new Date();
-       const currentIst = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + IST_OFFSET);
-       const resetTimeIst = new Date(currentIst);
-       resetTimeIst.setHours(5, 30, 0, 0); 
-       if (currentIst < resetTimeIst) resetTimeIst.setDate(resetTimeIst.getDate() - 1);
-       const recordIst = new Date(record.timestamp + (new Date(record.timestamp).getTimezoneOffset() * 60000) + IST_OFFSET);
-       return recordIst >= resetTimeIst;
-   });
- };
-
  return (
   <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#2D1B4E] rounded-none">
    
-   {/* 3D DESERT SUNSET BACKGROUND */}
+   {/* BACKGROUND LAYER */}
    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[#2D1B4E] via-[#FF6B6B] to-[#FFD93D]" />
       <motion.div 
@@ -282,7 +268,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </div>
 
-   {/* WINNING RESULT OVERLAY */}
+   {/* WINNER OVERLAY */}
    <AnimatePresence>
     {winnerData && (
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -316,9 +302,77 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* RECORDS & RULES MODALS REMOVED FOR BREVITY - SAME AS ORIGINAL */}
+   {/* RECORD BOTTOM SHEET */}
+   <AnimatePresence>
+    {showRecord && (
+        <motion.div 
+            initial={{ y: "100%" }} 
+            animate={{ y: 0 }} 
+            exit={{ y: "100%" }} 
+            className="fixed bottom-0 left-0 right-0 z-[300] h-[20vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+        >
+            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
+                <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                {gameRecords.length === 0 ? (
+                    <p className="text-[#4a2511]/40 text-center text-xs italic mt-4">No records found yet...</p>
+                ) : (
+                    gameRecords.map((rec) => (
+                        <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">{rec.emoji}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-orange-500 font-bold uppercase">Bet Amount</span>
+                                    <span className="text-xs font-black text-[#4a2511]">{rec.bet}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
+                                <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>
+                                    {rec.win > 0 ? `+${rec.win}` : '0'}
+                                </span>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </motion.div>
+    )}
+   </AnimatePresence>
 
-   {/* TOP HEADER */}
+   {/* RULES BOTTOM SHEET */}
+   <AnimatePresence>
+    {showRules && (
+        <motion.div 
+            initial={{ y: "100%" }} 
+            animate={{ y: 0 }} 
+            exit={{ y: "100%" }} 
+            className="fixed bottom-0 left-0 right-0 z-[300] h-[20vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col"
+        >
+            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
+                <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            </div>
+            <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
+                {[
+                    "Select a Chip and Choose your animal",
+                    "If you win you will get Coins amount (Bet × multiplier)",
+                    "45× gives you the highest Coins Amount",
+                    "If you lose you will not receive any coins amount"
+                ].map((rule, i) => (
+                    <div key={i} className="flex gap-3 items-start">
+                        <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0">{i+1}</span>
+                        <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    )}
+   </AnimatePresence>
+
+   {/* HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
       <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
@@ -326,18 +380,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><Clock size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><Clock size={16} /></button>
           <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><HelpCircle size={16} /></button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><HelpCircle size={16} /></button>
           <button onClick={() => {}} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><X size={16} /></button>
       </div>
    </header>
 
-   {/* MAIN WHEEL AREA */}
+   {/* GAME CONTENT */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       
-      {/* GOLDEN GLOW BOARDER SVG */}
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
             <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -351,7 +404,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </filter>
         </defs>
         
-        {/* Main Golden Boarder - Lights up when spinning */}
         <motion.circle 
           cx="50" cy="50" r="44" 
           fill="none" 
@@ -366,15 +418,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           transition={{ duration: 1, repeat: Infinity }}
         />
 
-        {/* Inner static border */}
-        <circle cx="50" cy="50" r="42" fill="none" stroke="#eebb99" strokeWidth="1" opacity="0.5" />
+        <circle cx="50" cy="50" r="42" fill="none" stroke="#eebb99" strokeWidth="4" opacity="1" />
 
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-          <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="1.5" strokeOpacity="0.4" transform={`rotate(${deg} 50 50)`} />
+          <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="4" transform={`rotate(${deg} 50 50)`} />
         ))}
       </svg>
 
-      {/* CENTER TIMER DISPLAY */}
       <div className={cn(
         "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center border-[4px] shadow-2xl transition-all duration-300",
         gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 border-white" : "bg-[#4a2511] border-[#eebb99]"
@@ -387,7 +437,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </span>
       </div>
 
-      {/* ANIMAL CARDS */}
       {ANIMALS.map((item, idx) => (
         <motion.div 
           key={item.id} 
@@ -425,7 +474,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 </div>
             </div>
 
-            {/* CHIPS ON CARDS */}
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div
@@ -454,7 +502,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
    </main>
 
-   {/* BOTTOM SECTION */}
+   {/* FOOTER & CHIPS */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
         <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
