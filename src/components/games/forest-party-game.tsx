@@ -47,7 +47,7 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-export default function ForestPartyGame() {
+export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
