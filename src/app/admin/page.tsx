@@ -1620,6 +1620,61 @@ export default function AdminPage() {
     }
   };
 
+  const handleUploadGift = async (f: File) => {
+    if (!giftName || !giftPrice) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Gift name and price are required.",
+      });
+      return;
+    }
+    setIsUploadingGift(true);
+    try {
+      const sRef = ref(storage, `gifts/${Date.now()}_${f.name}`);
+      const uploadResult = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(uploadResult.ref);
+
+      await addDocumentNonBlocking(collection(firestore, "giftList"), {
+        name: giftName,
+        price: parseInt(giftPrice),
+        category: giftCategory,
+        imageUrl: url,
+        createdAt: serverTimestamp(),
+      });
+
+      setGiftName("");
+      setGiftPrice("");
+      toast({
+        title: "Gift Uploaded",
+        description: `${giftName} has been added to the tribe boutique.`,
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsUploadingGift(false);
+    }
+  };
+
+  const handleDeleteGift = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this gift?")) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "giftList", id));
+      toast({ title: "Gift Removed Successfully" });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Deletion Failed",
+        description: err.message,
+      });
+    }
+  };
+
   const handleBannerImageUpload = async (index: number, f: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);
@@ -2204,7 +2259,7 @@ export default function AdminPage() {
               </TabsList>
             </ScrollArea>
           </div>
-
+          <div className="flex-1 w-full min-w-0">
             <TabsContent value="gift-management" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
                 <CardHeader className="px-0">
@@ -4542,7 +4597,6 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-          </div>
             <TabsContent value="sovereign-ids" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
                 <CardHeader className="px-0">
@@ -4852,7 +4906,8 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </AppLayout>

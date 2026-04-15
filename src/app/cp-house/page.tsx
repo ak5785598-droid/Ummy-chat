@@ -21,6 +21,7 @@ import {
   Camera,
   MessageCircleHeart,
   Palette,
+  Users,
   LucideIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
