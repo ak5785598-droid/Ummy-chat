@@ -30,6 +30,113 @@ function hashUidToNumber(uid: string): number {
   return (hash >>> 0);
 }
 
+/**
+ * Detect if earbuds/headphones/bluetooth audio device is connected.
+ * Works on Web (navigator.mediaDevices) and Native (AudioRoute plugin).
+ */
+async function detectEarbudsConnected(): Promise<boolean> {
+  // NATIVE: Check via AudioRoute plugin
+  if (AudioRoute?.isAvailable()) {
+    try {
+      const route = await AudioRoute.getCurrentRoute();
+      const isEarbuds = route.toLowerCase().includes('headset') ||
+        route.toLowerCase().includes('headphone') ||
+        route.toLowerCase().includes('bluetooth') ||
+        route.toLowerCase().includes('earpiece') ||
+        route.toLowerCase().includes('wired');
+      console.log('[Audio] Native route detected:', route, '→ earbuds:', isEarbuds);
+      return isEarbuds;
+    } catch (e) {
+      console.warn('[Audio] Native route detection failed:', e);
+    }
+  }
+
+  // WEB FALLBACK: Check via navigator.mediaDevices
+  if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+      const hasEarbuds = audioOutputs.some(d =>
+        d.label.toLowerCase().includes('bluetooth') ||
+        d.label.toLowerCase().includes('airpods') ||
+        d.label.toLowerCase().includes('buds') ||
+        d.label.toLowerCase().includes('headphone') ||
+        d.label.toLowerCase().includes('headset') ||
+        d.label.toLowerCase().includes('earphone') ||
+        d.label.toLowerCase().includes('neckband')
+      );
+      console.log('[Audio] Web devices:', audioOutputs.map(d => d.label).join(', '), '→ earbuds:', hasEarbuds);
+      return hasEarbuds;
+    } catch (e) {
+      console.warn('[Audio] Web device detection failed:', e);
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Apply the correct audio routing based on connected devices.
+ * Earbuds connected → route to earbuds
+ * No earbuds → leave on speaker (default)
+ */
+async function applyCorrectAudioRoute(): Promise<void> {
+  const hasEarbuds = await detectEarbudsConnected();
+
+  if (hasEarbuds) {
+    // NATIVE: Force earbuds
+    if (AudioRoute?.isAvailable()) {
+      try {
+        await AudioRoute.forceEarbuds();
+        console.log('[Audio] ✅ Routed to EARBUDS (native)');
+        return;
+      } catch (e) {
+        console.warn('[Audio] Native force earbuds failed:', e);
+      }
+    }
+
+    // WEB: Set sink ID to earbuds device
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.enumerateDevices) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const earbudDevice = devices.find(d =>
+          d.kind === 'audiooutput' && (
+            d.label.toLowerCase().includes('bluetooth') ||
+            d.label.toLowerCase().includes('airpods') ||
+            d.label.toLowerCase().includes('buds') ||
+            d.label.toLowerCase().includes('headphone') ||
+            d.label.toLowerCase().includes('headset') ||
+            d.label.toLowerCase().includes('earphone') ||
+            d.label.toLowerCase().includes('neckband')
+          )
+        );
+        if (earbudDevice) {
+          if (AgoraRTC?.setAudioOutputDevice) {
+            await AgoraRTC.setAudioOutputDevice(earbudDevice.deviceId);
+          } else {
+            const audioElements = document.querySelectorAll('audio');
+            for (const audio of audioElements) {
+              // @ts-ignore
+              if (audio.setSinkId) await audio.setSinkId(earbudDevice.deviceId);
+            }
+          }
+          console.log('[Audio] ✅ Routed to EARBUDS (web):', earbudDevice.label);
+        }
+      } catch (e) {
+        console.warn('[Audio] Web earbuds routing failed:', e);
+      }
+    }
+  } else {
+    console.log('[Audio] ✅ No earbuds detected → staying on SPEAKER');
+    // If native, make sure we're on speaker (not earpiece)
+    if (AudioRoute?.isAvailable()) {
+      try {
+        await AudioRoute.resetAudio();
+      } catch (e) {}
+    }
+  }
+}
+
 export function useAgora(
   roomId: string | undefined, 
   isInSeat: boolean, 
@@ -45,18 +152,16 @@ export function useAgora(
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
+  const hasDetectedRouteRef = useRef(false);
 
   // Set audio output device for all remote users
   const setAudioOutputDevice = useCallback(async (deviceId: string) => {
     try {
-      // Agora doesn't have direct setSinkId on remote tracks
-      // We need to use the Web Audio API on the <audio> elements Agora creates
       if (AgoraRTC && AgoraRTC.setAudioOutputDevice) {
         await AgoraRTC.setAudioOutputDevice(deviceId);
         setCurrentOutputDevice(deviceId);
         console.log('[Agora] Output device set to:', deviceId);
       } else {
-        // Fallback: try to set on all existing audio elements
         const audioElements = document.querySelectorAll('audio');
         for (const audio of audioElements) {
           // @ts-ignore
@@ -99,7 +204,6 @@ export function useAgora(
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
 
-      // Find earbud/headphone device
       const earbudDevice = audioOutputs.find(d => 
         d.label.toLowerCase().includes('bluetooth') || 
         d.label.toLowerCase().includes('airpods') ||
@@ -181,6 +285,11 @@ export function useAgora(
           } catch (e) {}
         }
 
+        // ★ STEP 1: Detect and apply correct audio route BEFORE creating any audio
+        console.log('[Audio] 🔍 Detecting audio devices before connection...');
+        await applyCorrectAudioRoute();
+        hasDetectedRouteRef.current = true;
+
         const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
         clientRef.current = client;
         if (isMounted) setConnectionState('CONNECTING');
@@ -189,10 +298,10 @@ export function useAgora(
           try {
             await client.subscribe(user, mediaType);
             if (mediaType === 'audio') {
-              // --- TIMING FIX: Force earbuds BEFORE playing remote track to prevent leak ---
-              if (AudioRoute) {
-                AudioRoute.forceEarbuds().catch(() => {});
-              }
+              // ★ STEP 2: Re-apply audio route BEFORE playing any remote track
+              await applyCorrectAudioRoute();
+              // Small delay to let OS routing settle before audio plays
+              await new Promise(r => setTimeout(r, 100));
               user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
@@ -223,6 +332,9 @@ export function useAgora(
 
         await client.join(APP_ID, roomId, null, numericUid);
         
+        // ★ STEP 3: Re-apply route after join (joining can reset audio session)
+        await applyCorrectAudioRoute();
+        
         if (isMounted) {
             setConnectionState('CONNECTED');
             console.log('[Agora] Engine Connected:', numericUid);
@@ -249,7 +361,7 @@ export function useAgora(
     };
   }, [roomId, uid]);
 
-  // EFFECT 2: Speaker Management
+  // EFFECT 2: Speaker Management - Play remote tracks and maintain routing
   useEffect(() => {
     remoteUsers.forEach(user => {
       if (user.audioTrack) {
@@ -257,9 +369,9 @@ export function useAgora(
       }
     });
     
-    // Force earbuds when remote users change (prevent speaker switch)
-    if (AudioRoute && remoteUsers.length > 0) {
-      AudioRoute.forceEarbuds().catch(() => {});
+    // Re-apply correct routing when remote users change
+    if (remoteUsers.length > 0) {
+      applyCorrectAudioRoute();
     }
   }, [remoteUsers]);
 
@@ -287,13 +399,11 @@ export function useAgora(
           }
           console.log('[Agora] Vocal Track Published');
 
-          // Force Speakerphone or Earbuds via routing AFTER mic is published
-          // This ensures audio routing is maintained after mic access
-          if (AudioRoute) {
-            AudioRoute.forceEarbuds().catch(() => {});
-            // Force again after a delay to ensure it sticks
-            setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
-          }
+          // ★ STEP 4: Re-apply routing AFTER mic creation (mic creation resets OS audio session)
+          await applyCorrectAudioRoute();
+          // Force again after delays to ensure it sticks (OS can be slow)
+          setTimeout(() => applyCorrectAudioRoute(), 300);
+          setTimeout(() => applyCorrectAudioRoute(), 800);
 
           // Handle initial mute state
           if (isMuted && micTrack) {
@@ -332,20 +442,18 @@ export function useAgora(
     }
   }, [isMuted, localAudioTrack]);
 
-  // ROUTING PERSISTENCE (Frequent enforcement to prevent speaker switch)
+  // ROUTING PERSISTENCE: Smart detection-based (not blind forcing)
   useEffect(() => {
-    // --- TIMING FIX: Start locking IMMEDIATELY on mount, don't wait for connection ---
-    if (!AudioRoute) return;
+    if (!hasDetectedRouteRef.current) return;
     
-    console.log('[Routing] Proactive Lock Started (Entry Fix)');
-    AudioRoute.forceEarbuds().catch(() => {});
-
-    // Lock to earbuds every 2000ms (Reduced frequency to save battery)
+    // Re-check and apply correct routing every 3 seconds
+    // This handles cases where earbuds are connected/disconnected mid-session
     const interval = setInterval(() => { 
-      AudioRoute.forceEarbuds().catch(() => {}); 
-    }, 2000);
+      applyCorrectAudioRoute(); 
+    }, 3000);
+    
     return () => clearInterval(interval);
-  }, []); // Only on mount/unmount
+  }, []);
 
   // Removed Effect 5: Music Track Publishing logic
 
