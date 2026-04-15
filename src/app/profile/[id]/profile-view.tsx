@@ -424,22 +424,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return { fans, following, friends, visitors };
  }, [fansData, followingData, visitorsData]);
 
- // Identity Repair Mechanism
- useEffect(() => {
-  if (isOwnProfile && profile && (!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED')) {
-   const repairIdentity = async () => {
-    try {
-     const fallbackId = (Math.floor(Math.random() * 900000) + 100000).toString();
-     const userRef = doc(firestore, 'users', profileId);
-     const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-     await setDocumentNonBlocking(userRef, { accountNumber: fallbackId, updatedAt: serverTimestamp() }, { merge: true });
-     await setDocumentNonBlocking(pRef, { accountNumber: fallbackId, updatedAt: serverTimestamp() }, { merge: true });
-    } catch (e) { console.error("[Identity] Repair failed:", e); }
-   };
-   repairIdentity();
-  }
- }, [isOwnProfile, profile, profileId, firestore]);
-
  // Record a visit if it's someone else's profile
  useEffect(() => {
   if (!firestore || !currentUser || !profileId || isOwnProfile) return;

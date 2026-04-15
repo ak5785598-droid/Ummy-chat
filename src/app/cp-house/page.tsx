@@ -196,13 +196,14 @@ export default function CpHousePage() {
           <div className="relative z-30 -mt-20 flex justify-center px-6">
             <div className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] p-6 border border-pink-100 flex items-center gap-12 w-full max-w-sm justify-between shadow-2xl relative">
               
-              {/* ME SLOT */}
+              {/* HISTORY SLOT */}
               <div className="flex flex-col items-center gap-2">
-                <Avatar className="h-20 w-20 border-4 border-pink-200">
-                  <AvatarImage src={userProfile?.avatarUrl} className="object-cover" />
-                  <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">ME</AvatarFallback>
-                </Avatar>
-                <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">{userProfile?.username?.split(' ')[0] || 'Me'}</span>
+                <div className="h-20 w-20 rounded-[1.5rem] bg-gradient-to-br from-pink-400 to-rose-400 p-0.5 shadow-lg active:scale-95 transition-transform cursor-pointer overflow-hidden border-2 border-white">
+                  <div className="w-full h-full bg-white/10 backdrop-blur-md flex flex-col items-center justify-center gap-1 group">
+                    <History className="h-8 w-8 text-white group-hover:rotate-12 transition-transform" />
+                  </div>
+                </div>
+                <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">History</span>
               </div>
 
               {/* CENTER HEART / LINK */}
@@ -258,12 +259,42 @@ export default function CpHousePage() {
                   exit={{ opacity: 0, y: -10 }}
                   className="grid grid-cols-3 gap-y-10 gap-x-4"
                 >
-                  <PrivilegeCard label="Frame" icon={Palette} imageUrl={config?.cpFrameIcon} />
-                  <PrivilegeCard label="Room BG" icon={Camera} imageUrl={config?.cpRoomBgIcon} />
-                  <PrivilegeCard label="Emoji" icon={Handshake} imageUrl={config?.cpEmojiIcon} />
-                  <PrivilegeCard label="Gift" icon={Gift} isLocked />
-                  <PrivilegeCard label="Badge" icon={Trophy} isLocked />
-                  <PrivilegeCard label="Card" icon={Crown} isLocked />
+                  <PrivilegeCard 
+                    label="Frame" 
+                    icon={Palette} 
+                    imageUrl={activeCp?.rewards?.frame || config?.cpFrameIcon} 
+                    isLocked={!activeCp?.rewards?.frame && !config?.cpFrameIcon}
+                  />
+                  <PrivilegeCard 
+                    label="Room BG" 
+                    icon={Camera} 
+                    imageUrl={activeCp?.rewards?.roomBg || config?.cpRoomBgIcon} 
+                    isLocked={!activeCp?.rewards?.roomBg && !config?.cpRoomBgIcon}
+                  />
+                  <PrivilegeCard 
+                    label="Emoji" 
+                    icon={Handshake} 
+                    imageUrl={activeCp?.rewards?.emoji || config?.cpEmojiIcon} 
+                    isLocked={!activeCp?.rewards?.emoji && !config?.cpEmojiIcon}
+                  />
+                  <PrivilegeCard 
+                    label="Gift" 
+                    icon={Gift} 
+                    imageUrl={activeCp?.rewards?.gift}
+                    isLocked={!activeCp?.rewards?.gift} 
+                  />
+                  <PrivilegeCard 
+                    label="Badge" 
+                    icon={Trophy} 
+                    imageUrl={activeCp?.rewards?.badge}
+                    isLocked={!activeCp?.rewards?.badge} 
+                  />
+                  <PrivilegeCard 
+                    label="Card" 
+                    icon={Crown} 
+                    imageUrl={activeCp?.rewards?.card}
+                    isLocked={!activeCp?.rewards?.card} 
+                  />
                 </motion.div>
               )}
 

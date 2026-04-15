@@ -90,7 +90,7 @@ export function useRoomImageUpload(roomId: string) {
    const result = await uploadBytes(storageRef, compressedBlob, metadata);
    const downloadURL = await getDownloadURL(result.ref);
 
-   // 3. Firestore Global Sync (Atomic Merge Protocol)
+   // 3. Firestore Global Sync (Atomic Update Protocol)
    const roomRef = doc(firestore, 'chatRooms', roomId);
    
    const updateData = { 
@@ -98,8 +98,8 @@ export function useRoomImageUpload(roomId: string) {
     updatedAt: serverTimestamp()
    };
 
-   console.log('[Visual Sync] Dispatching new cover identifier to tribal graph');
-   setDocumentNonBlocking(roomRef, updateData, { merge: true });
+   console.log('[Visual Sync] Dispatching new cover identifier to tribal graph:', downloadURL);
+   await updateDoc(roomRef, updateData);
 
    toast({
     title: 'Frequency Updated',

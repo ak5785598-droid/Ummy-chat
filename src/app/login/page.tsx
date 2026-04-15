@@ -188,54 +188,57 @@ export default function LoginPage() {
     
     try {
       const userSnap = await getDoc(userRef);
-      let existingData = userSnap.data();
+      const profileSnap = await getDoc(profileRef);
       
-      // IDENTITY HEALING: If user exists but ID is missing or "undefined", we REPAIR it.
-      const isMissingId = !existingData || !existingData.accountNumber || existingData.accountNumber === 'undefined';
+      let existingMainData = userSnap.data();
+      let existingProfileData = profileSnap.data();
       
-      if (!isMissingId) {
+      // IDENTITY LOCK: Once a user has a valid accountNumber, NEVER change it.
+      // We check both documents to ensure we don't miss an existing ID.
+      const currentId = existingMainData?.accountNumber || existingProfileData?.accountNumber;
+      
+      if (currentId && currentId !== 'undefined' && currentId !== 'UNDEFINED') {
         // User is healthy, just check for ban.
-        if (existingData?.banStatus?.isBanned) {
-          const until = existingData.banStatus.bannedUntil?.toDate();
+        if (existingMainData?.banStatus?.isBanned) {
+          const until = existingMainData.banStatus.bannedUntil?.toDate();
           if (!until || until > new Date()) {
-            setBanInfo({ isBanned: true, bannedUntil: existingData.banStatus.bannedUntil });
+            setBanInfo({ isBanned: true, bannedUntil: existingMainData.banStatus.bannedUntil });
             setIsSigningIn(false);
             return;
           }
         }
-        return; // All good.
+        return; // All good. Exit early to avoid reallocation.
       }
 
-      // GENERATE UNIQUE ID
+      // Special Case: Creator ID is always 0000
       let accountNumber = '';
-      try {
-        accountNumber = await runTransaction(firestore, async (transaction) => {
-          const counterDoc = await transaction.get(counterRef);
-          let nextUserId = 0;
-          
-          if (uid === CREATOR_ID) {
-            if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
-              const lastId = counterDoc.data().lastUserId;
-              nextUserId = (lastId > 1000) ? 0 : lastId + 1;
-            }
-          } else {
+      if (uid === CREATOR_ID) {
+        accountNumber = '0000';
+      } else {
+        // GENERATE UNIQUE ID VIA TRANSACTION
+        try {
+          accountNumber = await runTransaction(firestore, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            let nextUserId = 1000; // Start normal users above 1000 to save low IDs for special cases
+            
             if (counterDoc.exists()) {
               const data = counterDoc.data();
               const lastId = data?.lastUserId;
-              nextUserId = (lastId === undefined || lastId > 100000) ? 1 : lastId + 1;
-            } else {
-              nextUserId = 1;
+              // DANGER FIX: If lastId is missing, we FAIL rather than resetting to 1.
+              if (lastId === undefined) {
+                 throw new Error("Counter synchronization failure");
+              }
+              nextUserId = lastId + 1;
             }
-          }
-          
-          transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
-          return nextUserId.toString().padStart(4, '0');
-        });
-      } catch (txErr) {
-        console.warn("[Identity] Global counter failed, using fallback:", txErr);
-        // FALLBACK: Generate a random 6-digit number if global counter fails.
-        // This prevents the "UNDEFINED" bug while keeping the account functional.
-        accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
+            
+            transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
+            return nextUserId.toString().padStart(4, '0');
+          });
+        } catch (txErr) {
+          console.warn("[Identity] Global counter failed, using fallback:", txErr);
+          // FALLBACK: Generate a random 6-digit number IF AND ONLY IF transaction fails.
+          accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
+        }
       }
 
       // Ensure accountNumber is NEVER undefined
