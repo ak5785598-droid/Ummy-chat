@@ -71,7 +71,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Audio Refs - Music aur Effects ke liye
+ // Fresh Audio Assets
  const bgMusic = useRef<HTMLAudioElement | null>(null);
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
@@ -85,29 +85,34 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
      }
 
-     // Audio Assets Load Kar Rhe Hain
-     bgMusic.current = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); // Upbeat Forest Theme
+     // BG: High Energy Tech Beat (No "su-su" sound)
+     bgMusic.current = new Audio('https://assets.mixkit.co/active_storage/sfx/123/123-preview.mp3'); 
      bgMusic.current.loop = true;
-     bgMusic.current.volume = 0.4;
+     bgMusic.current.volume = 0.3;
 
+     // Chip: Digital Pop
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-     spinAudio.current = new Audio('https://www.soundjay.com/misc/sounds/wheel-fortune-1.mp3');
-     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
-     winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); // Win sound
+     
+     // Spin: Sci-fi Ramping Up Sound
+     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+     
+     // Tick: Clean Mechanical Click
+     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
+     
+     // Win: Coin Shower / Jackpot
+     winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
    }
 
-   // Cleanup jab game band ho
    return () => {
      bgMusic.current?.pause();
    };
  }, []);
 
- // Handle Music Play/Pause based on Mute state
  useEffect(() => {
     if (isMuted) {
         bgMusic.current?.pause();
     } else {
-        bgMusic.current?.play().catch(() => console.log("User interaction needed for audio"));
+        bgMusic.current?.play().catch(() => {});
     }
  }, [isMuted]);
 
@@ -135,32 +140,27 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
-    if (type === 'bet' && chipAudio.current) {
-        chipAudio.current.currentTime = 0;
-        chipAudio.current.play().catch(() => {});
-       }
-       if (type === 'tick' && tickAudio.current) {
-        tickAudio.current.currentTime = 0;
-        tickAudio.current.play().catch(() => {});
-       }
-       if (type === 'spin' && spinAudio.current) {
-        spinAudio.current.currentTime = 0;
-        spinAudio.current.play().catch(() => {});
-       }
-       if (type === 'win' && winAudio.current) {
-        winAudio.current.currentTime = 0;
-        winAudio.current.play().catch(() => {});
-       }
-       if (type === 'stop') {
+    const audios = {
+        bet: chipAudio.current,
+        tick: tickAudio.current,
+        spin: spinAudio.current,
+        win: winAudio.current,
+    };
+    const audio = audios[type as keyof typeof audios];
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+    }
+    if (type === 'stop') {
         spinAudio.current?.pause();
-       }
+    }
   } catch (error) {}
  };
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameState !== 'betting' || !currentUser) return;
   if (localCoins < selectedChip) {
-   toast({ title: 'Insufficient Coins', variant: 'destructive' });
+   toast({ title: 'Coins Kam Hain!', variant: 'destructive' });
    return;
   }
 
@@ -182,7 +182,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  const startSpin = async () => {
   setGameState('spinning');
-  playSound('spin'); // Spin music start
+  playSound('spin'); 
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
   if (firestore) {
@@ -210,9 +210,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    if (remaining < 8) speed += 45;
-    else if (remaining < 15) speed += 15;
-    else if (remaining < 25) speed += 5;
+    if (remaining < 8) speed += 60;
+    else if (remaining < 15) speed += 25;
+    else if (remaining < 25) speed += 10;
     
     currentStep++;
     setTimeout(runChase, speed);
@@ -229,7 +229,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
-  if (winAmount > 0) playSound('win'); // Win hone par music
+  if (winAmount > 0) playSound('win'); 
 
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
@@ -368,7 +368,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   {/* MAIN GAME BOARD */}
+   {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       
@@ -388,7 +388,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </filter>
         </defs>
         
-        {/* Support Legs - Gaming Machine look */}
+        {/* Support Legs */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
             <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" filter="url(#shadow3D)" />
@@ -402,8 +402,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </svg>
 
       <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
-        <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : 'Spinning'}</p>
-        <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '🔥'}</span>
+        <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : '🔥'}</p>
+        <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '!!!'}</span>
       </div>
 
       {ANIMALS.map((item, idx) => (
@@ -416,7 +416,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 </div>
             </div>
             
-            {/* Bet Chip Visuals */}
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[22px] w-[22px] rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg z-40 pointer-events-none", `bg-gradient-to-br ${chip.color}`)}>
@@ -425,7 +424,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 ))}
             </AnimatePresence>
             
-            {/* My Bet Indicator */}
             {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
           </button>
         </motion.div>
@@ -433,7 +431,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
    </main>
 
-   {/* FOOTER & CHIPS */}
+   {/* FOOTER */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
         <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
@@ -458,7 +456,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </div>
 
-   {/* RULES MODAL */}
    <AnimatePresence>
     {showRules && (
         <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
