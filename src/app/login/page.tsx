@@ -272,7 +272,6 @@ export default function LoginPage() {
       await setDoc(userRef, baseData, { merge: true });
       
       // Set profile specifically
-      const profileSnap = await getDoc(profileRef);
       if (!profileSnap.exists()) {
         await setDoc(profileRef, {
           ...baseData,
