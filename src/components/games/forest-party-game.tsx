@@ -17,7 +17,8 @@ import {
  HelpCircle, 
  X,
  Plus,
- Clock
+ Clock,
+ Cloud
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -258,18 +259,29 @@ export default function ForestPartyGame() {
  };
 
  return (
-  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0d2b1d] rounded-none">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#87CEEB] rounded-none">
    
-   {/* GREEN FOREST BACKGROUND */}
+   {/* DESERT & SKY BACKGROUND */}
    <div className="absolute inset-0 z-0 pointer-events-none">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2000')] bg-cover bg-center opacity-40 mix-blend-screen" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d2b1d]/60 to-[#0d2b1d]" />
+      {/* Sky Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#4fa4d8] via-[#87CEEB] to-[#fde0c5]" />
+      
+      {/* Registan (Sand Floor) */}
+      <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-[#d2b48c] shadow-[inset_0_20px_40px_rgba(0,0,0,0.1)]">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/sandpaper.png')]" />
+        {/* Sand Dunes logic via CSS */}
+        <div className="absolute -top-10 left-0 right-0 h-20 bg-[#d2b48c] rounded-[100%] scale-x-150 translate-y-5" />
+      </div>
+
+      {/* Floating Clouds */}
+      <motion.div animate={{ x: [0, 20, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[15%] left-[10%] opacity-60"><Cloud size={40} fill="white" color="white" /></motion.div>
+      <motion.div animate={{ x: [0, -30, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} className="absolute top-[25%] right-[15%] opacity-40"><Cloud size={60} fill="white" color="white" /></motion.div>
    </div>
 
    {/* WINNING RESULT OVERLAY */}
    <AnimatePresence>
     {winnerData && (
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-t-[2.5rem] p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
           <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-2 shrink-0" />
           <div className="flex-1 flex flex-col items-center justify-center w-full gap-4">
              <div className="flex items-center gap-6">
@@ -303,7 +315,7 @@ export default function ForestPartyGame() {
    {/* RULES MODAL */}
    <AnimatePresence>
     {showRules && (
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[150] h-[30vh] bg-[#fdf8e7] border-t-[4px] border-orange-500 rounded-t-[2rem] p-5 flex flex-col shadow-2xl">
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[150] h-[30vh] bg-[#fdf8e7] border-t-[4px] border-orange-500 rounded-none p-5 flex flex-col shadow-2xl">
           <div className="relative flex justify-center items-center mb-4">
             <h2 className="text-[18px] font-black text-[#4a2511] uppercase tracking-widest">Rules</h2>
             <button onClick={() => setShowRules(false)} className="absolute right-0 text-orange-600 bg-orange-200/50 rounded-full p-1.5"><X size={18} /></button>
@@ -322,7 +334,7 @@ export default function ForestPartyGame() {
    {/* RECORDS MODAL */}
    <AnimatePresence>
     {showRecord && (
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[150] h-[40vh] bg-[#fdf8e7] border-t-[4px] border-orange-500 rounded-t-[2rem] p-5 flex flex-col shadow-2xl">
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[150] h-[40vh] bg-[#fdf8e7] border-t-[4px] border-orange-500 rounded-none p-5 flex flex-col shadow-2xl">
           <div className="relative flex justify-center items-center mb-4">
             <h2 className="text-[18px] font-black text-[#4a2511] uppercase tracking-widest">Game Record</h2>
             <button onClick={() => setShowRecord(false)} className="absolute right-0 text-orange-600 bg-orange-200/50 rounded-full p-1.5"><X size={18} /></button>
@@ -356,15 +368,16 @@ export default function ForestPartyGame() {
 
    {/* TOP HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-[#0d2b1d]/80 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+      <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
           <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white"><Clock size={16} /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white"><HelpCircle size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><Clock size={16} /></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+          <button onClick={() => {}} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><X size={16} /></button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><HelpCircle size={16} /></button>
       </div>
    </header>
 
@@ -458,7 +471,8 @@ export default function ForestPartyGame() {
    {/* BOTTOM SECTION */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-40">
       <div className="w-full max-w-[340px] px-4 mb-3">
-        <div className="bg-[#1b4332]/80 backdrop-blur-md border-[1.5px] border-[#2d6a4f] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
+        {/* Updated History Bar Color to match Chip Bar */}
+        <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
           <span className="text-[#e2e0f9] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
           <div className="w-[1px] h-4 bg-white/20 shrink-0 mx-1" />
           <div className="flex items-center gap-2 px-1">
@@ -472,7 +486,7 @@ export default function ForestPartyGame() {
         </div>
       </div>
 
-      <div className="w-full h-[10vh] min-h-[70px] bg-green-700 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#081c15]">
+      <div className="w-full h-[10vh] min-h-[70px] bg-[#3a1c0d] rounded-none flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#241108]">
         {CHIPS_DATA.map(chip => (
           <button 
             key={chip.value} 
