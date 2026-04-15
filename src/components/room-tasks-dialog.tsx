@@ -59,7 +59,10 @@ export function RoomTasksDialog({
 }: RoomTasksDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[440px] bg-gradient-to-b from-[#3D0B04] via-[#2A0502] to-[#1A0502] border-[#C19A5B]/30 text-white rounded-[2.5rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border-2">
+      <DialogContent 
+        hideClose={true}
+        className="max-w-[440px] bg-gradient-to-b from-[#3D0B04] via-[#2A0502] to-[#1A0502] border-[#C19A5B]/30 text-white rounded-[2.5rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border-2"
+      >
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
         
         {/* Header with Title and Gold Accents */}

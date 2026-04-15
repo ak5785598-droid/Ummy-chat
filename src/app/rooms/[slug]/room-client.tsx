@@ -2108,6 +2108,12 @@ export function RoomClient({ room }: { room: Room }) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
+  const isAnyDialogShowing = isEmojiPickerOpen || isGiftPickerOpen || isRocketOpen || 
+    isRoomTasksOpen || isUserProfileCardOpen || isRoomSettingsOpen || 
+    isRoomInfoOpen || isUserListOpen || isShareOpen || isSeatMenuOpen || 
+    isRoomPlayOpen || isRoomGamesOpen || isMessagesOpen || isFollowersOpen || 
+    isAudienceInviteOpen || showExitDialog || showMicInviteDialog || showSoundboard;
+
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
       <ThemeColorMeta color={currentTheme.accentColor || "#1a0b2e"} />
@@ -2610,12 +2616,14 @@ export function RoomClient({ room }: { room: Room }) {
 
 
       {/* ROCKET PROGRESS BAR - Floating at bottom right */}
-      <RoomRocketBar
-        progress={room.rocket?.progress || 0}
-        target={(room.rocket as any)?.target || 10000}
-        countdownUntil={(room.rocket as any)?.countdownUntil || null}
-        onOpenRocket={() => setIsRocketOpen(true)}
-      />
+      {!isAnyDialogShowing && (
+        <RoomRocketBar
+          progress={room.rocket?.progress || 0}
+          target={(room.rocket as any)?.target || 10000}
+          countdownUntil={(room.rocket as any)?.countdownUntil || null}
+          onOpenRocket={() => setIsRocketOpen(true)}
+        />
+      )}
 
 
       <footer className="relative z-50 px-4 pb-6 flex items-center justify-between pt-2 h-20">

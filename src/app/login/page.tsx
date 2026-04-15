@@ -127,16 +127,21 @@ export default function LoginPage() {
           setIsSigningIn(true);
           await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
           router.replace('/rooms');
+        } else {
+          // If no result, ensure we aren't stuck in signing in state
+          setIsSigningIn(false);
         }
       } catch (error: any) {
-        console.error("❌ Redirect Login Error:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Login Error',
-          description: 'Failed to complete sign in. Please try again.',
-        });
-      } finally {
+        console.error("❌ Redirect Login Error:", error.code, error.message);
+        // Reset state on error so user can try again
         setIsSigningIn(false);
+        if (error.code !== 'auth/popup-closed-by-user') {
+          toast({
+            variant: 'destructive',
+            title: 'Login Error',
+            description: 'Failed to complete sign in. Please try again.',
+          });
+        }
       }
     };
 
@@ -281,7 +286,7 @@ export default function LoginPage() {
     
     try {
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      // Optimization: Removed 'select_account' prompt to allow 1-click login for already signed-in users
       // Use Redirect for Mobile/WebView compatibility
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
@@ -433,6 +438,9 @@ export default function LoginPage() {
           </button>
 
           <p className="text-[11px] text-white/70 leading-snug">
+            <span className="block mb-2 text-yellow-500/80 font-bold uppercase tracking-wider">
+              No password needed. Just use your Google account.
+            </span>
             By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
           </p>
         </div>
