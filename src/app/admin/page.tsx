@@ -518,6 +518,19 @@ export default function AdminPage() {
   const [auditSearchQuery, setAuditSearchQuery] = useState("");
   const [isFinancialSyncing, setIsFinancialSyncing] = useState(false);
 
+  // GIFT MANAGEMENT STATE
+  const [giftName, setGiftName] = useState("");
+  const [giftPrice, setGiftPrice] = useState("");
+  const [giftCategory, setGiftCategory] = useState("Hot");
+  const [isUploadingGift, setIsUploadingGift] = useState(false);
+  const giftFileInputRef = useRef<HTMLInputElement>(null);
+
+  const giftsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "giftList"), orderBy("createdAt", "desc"));
+  }, [firestore, isAuthorized]);
+  const { data: dbGifts, isLoading: isLoadingGifts } = useCollection(giftsQuery);
+
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
     return query(collection(firestore, "games"));
@@ -2147,6 +2160,12 @@ export default function AdminPage() {
                   <ShoppingBag className="h-4 w-4" /> Boutique Hub
                 </TabsTrigger>
                 <TabsTrigger
+                  value="gift-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-orange-500 data-[state=active]:text-white shadow-lg"
+                >
+                  <Gift className="h-4 w-4" /> Gift Management
+                </TabsTrigger>
+                <TabsTrigger
                   value="loading-screen"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2186,7 +2205,111 @@ export default function AdminPage() {
             </ScrollArea>
           </div>
 
-          <div className="flex-1 w-full min-w-0">
+            <TabsContent value="gift-management" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-orange-600">
+                    <Gift className="h-6 w-6" /> Gift Management
+                  </CardTitle>
+                  <CardDescription>
+                    Upload and manage the tribe's gift inventory.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-8">
+                  {/* UPLOADER SECTION */}
+                  <div className="p-6 bg-orange-50 rounded-3xl border-2 border-orange-100 flex flex-col gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-orange-400">Gift Name</Label>
+                        <Input 
+                          value={giftName} 
+                          onChange={e => setGiftName(e.target.value)} 
+                          placeholder="e.g. Diamond Ring" 
+                          className="rounded-xl border-orange-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-orange-400">Price (Coins)</Label>
+                        <Input 
+                          type="number"
+                          value={giftPrice} 
+                          onChange={e => setGiftPrice(e.target.value)} 
+                          placeholder="999" 
+                          className="rounded-xl border-orange-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-orange-400">Category</Label>
+                        <Select value={giftCategory} onValueChange={setGiftCategory}>
+                          <SelectTrigger className="rounded-xl border-orange-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Hot">Hot</SelectItem>
+                            <SelectItem value="Luxury">Luxury</SelectItem>
+                            <SelectItem value="Event">Event</SelectItem>
+                            <SelectItem value="Lucky">Lucky</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div 
+                      onClick={() => giftFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-orange-200 rounded-2xl p-8 flex flex-col items-center gap-3 bg-white/50 hover:bg-orange-100/50 cursor-pointer transition-colors"
+                    >
+                      <input 
+                        type="file" 
+                        ref={giftFileInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUploadGift(file);
+                        }}
+                      />
+                      {isUploadingGift ? (
+                        <Loader className="h-10 w-10 text-orange-400 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="h-10 w-10 text-orange-200" />
+                          <div className="text-center text-sm font-bold text-orange-400 uppercase">Click to Select Gift Image</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* INVENTORY SECTION */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold uppercase text-slate-400">Current Inventory</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+                      {isLoadingGifts ? (
+                        <div className="col-span-full py-10 flex justify-center"><Loader className="animate-spin text-orange-500" /></div>
+                      ) : dbGifts?.map((gift: any) => (
+                        <div key={gift.id} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-3 relative group">
+                          <button 
+                            onClick={() => handleDeleteGift(gift.id)}
+                            className="absolute top-2 right-2 p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-4">
+                            <img src={gift.imageUrl} alt={gift.name} className="max-h-full object-contain" />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-bold uppercase text-xs truncate">{gift.name}</p>
+                            <div className="flex items-center justify-center gap-1 text-orange-500 font-black text-sm">
+                              <GoldCoinIcon className="h-3 w-3" /> {gift.price}
+                            </div>
+                            <Badge className="mt-1 bg-slate-200 text-slate-600 text-[8px] font-bold uppercase">{gift.category}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
             <TabsContent value="financial-audit" className="m-0 space-y-6">
               <LogViewer firestore={firestore} isAuthorized={isAuthorized} />
             </TabsContent>

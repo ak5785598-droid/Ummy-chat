@@ -155,7 +155,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   };
   setDroppedChips(prev => [...prev, newChip]);
   setLocalCoins(prev => prev - selectedChip);
-  updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(-selectedChip) });
+  
+  // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
+  const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+  updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+  
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
 
@@ -229,7 +233,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), { 'wallet.coins': increment(winAmount) });
+   // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
+   const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
+   
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'forest-party',
     userId: currentUser.uid,

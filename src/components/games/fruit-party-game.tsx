@@ -157,7 +157,12 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     playSound(SOUNDS.BET, 0.9);
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(-selectedChip) });
+    
+    // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
+    const userProfileRef = doc(firestore, currentUser!.uid, "profile", currentUser!.uid);
+    // Note: The doc ref above is actually from 'users' collection in firestore structure
+    const fullRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
+    updateDocumentNonBlocking(fullRef, { 'wallet.coins': increment(-selectedChip) });
   };
 
   const startSpin = () => {
@@ -201,7 +206,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       playSound(SOUNDS.WIN, 0.6);
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
-      updateDocumentNonBlocking(doc(firestore, 'users', currentUser!.uid), { 'wallet.coins': increment(winAmount) });
+      
+      // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
+      const userProfileRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
+      updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
     }
     
     setWinnerData({ ...winItem, win: winAmount, myBet: betOnWinner });
