@@ -731,7 +731,8 @@ export function RoomClient({ room }: { room: Room }) {
           const average = sum / bufferLength;
           
           // PERF FIX: Scale and update only at 30FPS (33ms) to save CPU
-          musicIntensityRef.current = Math.min(100, Math.floor(average * 1.5));
+          // Boosted factor (2.5 instead of 1.5) for more vibrant waves
+          musicIntensityRef.current = Math.min(100, Math.floor(average * 2.5));
           
           analysisTimeoutRef.current = setTimeout(analyze, 33);
         };
@@ -810,6 +811,7 @@ export function RoomClient({ room }: { room: Room }) {
     try {
       await updateDocumentNonBlocking(roomRef, {
         isMusicPlaying: newPlayingState,
+        musicUpdatedBy: currentUser?.uid || '',
         // When resuming, reset the start timestamp to 'Now' but keep the offset
         musicStartedAt: newPlayingState ? serverTimestamp() : null,
         updatedAt: serverTimestamp()
@@ -832,6 +834,7 @@ export function RoomClient({ room }: { room: Room }) {
         isMusicPlaying: false,
         musicStartedAt: null,
         musicStartOffset: 0,
+        musicUpdatedBy: '',
         updatedAt: serverTimestamp()
       });
       toast({ title: '⏹️ Music Stopped' });
@@ -870,6 +873,7 @@ export function RoomClient({ room }: { room: Room }) {
         isMusicPlaying: true,
         musicStartedAt: serverTimestamp(),
         musicStartOffset: 0,
+        musicUpdatedBy: currentUser?.uid || '',
         updatedAt: serverTimestamp()
       });
     }
@@ -899,6 +903,7 @@ export function RoomClient({ room }: { room: Room }) {
         isMusicPlaying: true,
         musicStartedAt: serverTimestamp(),
         musicStartOffset: 0,
+        musicUpdatedBy: currentUser?.uid || '',
         updatedAt: serverTimestamp()
       });
     }
@@ -965,8 +970,10 @@ export function RoomClient({ room }: { room: Room }) {
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       updateDocumentNonBlocking(pRef, {
         lastSeen: serverTimestamp(),
-        name: userProfile?.username || currentUser.displayName || 'User',
+        name: userProfile?.username || currentUser.displayName || 'Member',
         avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
+        accountNumber: userProfile?.accountNumber || '',
+        gender: userProfile?.gender || 'male',
       });
     };
 
@@ -1981,8 +1988,10 @@ export function RoomClient({ room }: { room: Room }) {
     setDocumentNonBlocking(participantRef, {
       seatIndex: seatIndex,
       isMuted: isSeatMuted, // Auto-mute if seat is muted
-      name: userProfile?.username || currentUser.displayName || 'Tribe Member',
+      name: userProfile?.username || currentUser.displayName || 'Member',
       avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || null,
+      accountNumber: userProfile?.accountNumber || '',
+      gender: userProfile?.gender || 'male',
       uid: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });

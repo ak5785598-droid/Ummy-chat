@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { 
  Dialog, 
  DialogContent, 
@@ -39,14 +39,19 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
 
  const { data: rawParticipants, isLoading } = useCollection(participantsQuery);
 
- // Use prop participants if provided, otherwise use fetched data
- const participants = useMemo(() => {
-  // If parent provides participants, use those
-  if (propParticipants) return propParticipants;
-  // Otherwise use fetched data without aggressive filtering
-  if (!rawParticipants) return [];
-  return rawParticipants;
- }, [rawParticipants, propParticipants]);
+  // Use prop participants if provided, otherwise use fetched data
+  const participants = useMemo(() => {
+   const baseList = propParticipants || rawParticipants || [];
+   
+   // FILTER: Only show users active in the last 10 minutes (prevents Incognito/Ghost users)
+   const tenMinsAgo = Date.now() - 10 * 60 * 1000;
+   
+   return baseList.filter((p: any) => {
+     if (!p.lastSeen) return true; // Keep newly joined users
+     const lastSeenMillis = p.lastSeen instanceof Timestamp ? p.lastSeen.toMillis() : p.lastSeen?.seconds ? p.lastSeen.seconds * 1000 : 0;
+     return lastSeenMillis > tenMinsAgo;
+   });
+  }, [rawParticipants, propParticipants]);
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,7 +95,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
             <div className="relative">
               <Avatar className="h-14 w-14 border-2 border-white shadow-sm">
                 <AvatarImage src={p.avatarUrl || undefined} />
-                <AvatarFallback className="bg-slate-200">{(p.name || 'U').charAt(0)}</AvatarFallback>
+                <AvatarFallback className="bg-slate-200">{(p.name || 'M').charAt(0)}</AvatarFallback>
               </Avatar>
               {p.seatIndex !== undefined && p.seatIndex > 0 && (
                 <div className="absolute -bottom-1 -right-1 bg-green-500 h-4 w-4 rounded-full border-2 border-white" />
@@ -98,7 +103,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
             </div>
             
             <div className="space-y-1">
-              <p className="font-bold text-sm text-gray-900 leading-none">{p.name || 'Incognito User'}</p>
+               <p className="font-bold text-sm text-gray-900 leading-none">{p.name || 'Member'}</p>
               
               <div className="flex items-center gap-2">
                 {/* ROLE BADGE */}
@@ -126,7 +131,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
            </div>
            
            <div className="flex items-center gap-2">
-              <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || p.uid?.slice(0, 6)}</p>
+               <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || (p.uid ? p.uid.slice(-6).toUpperCase() : '----')}</p>
               <ChevronRight className="h-4 w-4 text-gray-200" />
            </div>
          </div>
