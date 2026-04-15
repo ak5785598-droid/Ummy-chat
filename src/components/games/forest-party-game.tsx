@@ -260,40 +260,45 @@ export default function ForestPartyGame() {
  };
 
  return (
-  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#87CEEB] rounded-none">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#1a0b2e] rounded-none">
    
-   {/* RAGISTAN (DESERT) BACKGROUND */}
-   <div className="absolute inset-0 z-0 pointer-events-none">
-      {/* Sky Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3ea6e9] via-[#87CEEB] to-[#fde0c5]" />
+   {/* ENHANCED 3D DESSERT SUNSET THEME BACKGROUND */}
+   <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+      {/* 3D Sunset Sky Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2d1b4e] via-[#ff7e5f] to-[#feb47b]" />
       
-      {/* Sun (Suraj) */}
+      {/* 3D Sun (Glowing Suraj) */}
       <motion.div 
-        animate={{ scale: [1, 1.1, 1] }} 
-        transition={{ duration: 4, repeat: Infinity }}
-        className="absolute top-8 right-10 text-yellow-300 drop-shadow-[0_0_20px_rgba(253,224,197,0.8)]"
-      >
-        <Sun size={54} fill="currentColor" />
-      </motion.div>
+        animate={{ 
+            scale: [1, 1.05, 1],
+            opacity: [0.8, 1, 0.8]
+        }} 
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-10 right-12 w-20 h-20 bg-gradient-to-tr from-yellow-300 to-orange-500 rounded-full blur-[2px] shadow-[0_0_60px_rgba(251,191,36,0.8)]"
+      />
 
-      {/* Cactus (Lamba wala) */}
-      <div className="absolute top-[40%] left-[5%] text-5xl opacity-90 select-none">
-         🌵
-         <div className="text-4xl -mt-4 ml-2">🌵</div>
-      </div>
+      {/* Floating 3D Clouds */}
+      <motion.div animate={{ x: [-100, 450] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[8%] left-0 opacity-40"><Cloud size={60} fill="white" color="white" /></motion.div>
+      <motion.div animate={{ x: [450, -100] }} transition={{ duration: 55, repeat: Infinity, ease: "linear" }} className="absolute top-[18%] right-0 opacity-20"><Cloud size={40} fill="white" color="white" /></motion.div>
 
-      {/* Ragistan Mountains (Sand Dunes) */}
-      <div className="absolute bottom-0 left-0 right-0 h-[45%] z-10">
-        {/* Mountain 1 */}
-        <div className="absolute bottom-[20%] -left-10 w-[120%] h-40 bg-[#c2a378] rounded-[100%] scale-x-125 translate-y-10 shadow-2xl" />
-        {/* Main Sand Floor */}
-        <div className="absolute bottom-0 left-0 right-0 h-full bg-gradient-to-t from-[#b59469] to-[#d2b48c] shadow-[inset_0_20px_40px_rgba(0,0,0,0.1)]">
-           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/sandpaper.png')]" />
+      {/* Layered 3D Sand Dunes (Mountains) */}
+      <div className="absolute bottom-0 left-0 right-0 h-[50%] z-10">
+        {/* Back Dune */}
+        <div className="absolute bottom-[25%] -left-[10%] w-[120%] h-48 bg-[#a67c52] rounded-[100%] rotate-[-2deg] shadow-2xl opacity-80" />
+        
+        {/* Mid Dune with 3D shadow */}
+        <div className="absolute bottom-[10%] -right-[15%] w-[130%] h-56 bg-[#c29362] rounded-[100%] rotate-[3deg] shadow-[0_-10px_30px_rgba(0,0,0,0.2)]" />
+
+        {/* Foreground Sand Floor */}
+        <div className="absolute bottom-0 left-0 right-0 h-[35%] bg-gradient-to-t from-[#8d6235] to-[#d2a679] shadow-[inset_0_20px_40px_rgba(0,0,0,0.2)]">
+           <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/sandpaper.png')]" />
         </div>
-      </div>
 
-      {/* Floating Clouds */}
-      <motion.div animate={{ x: [0, 40, 0] }} transition={{ duration: 20, repeat: Infinity }} className="absolute top-[12%] left-[15%] opacity-40"><Cloud size={45} fill="white" color="white" /></motion.div>
+        {/* 3D Cactuses */}
+        <div className="absolute bottom-[28%] left-[10%] text-6xl drop-shadow-2xl filter brightness-75 select-none rotate-[-5deg]">🌵</div>
+        <div className="absolute bottom-[22%] right-[15%] text-5xl drop-shadow-2xl filter brightness-90 select-none rotate-[8deg]">🌵</div>
+        <div className="absolute bottom-[15%] left-[40%] text-3xl drop-shadow-xl filter brightness-50 select-none">🌵</div>
+      </div>
    </div>
 
    {/* WINNING RESULT OVERLAY */}
@@ -384,19 +389,18 @@ export default function ForestPartyGame() {
     )}
    </AnimatePresence>
 
-   {/* TOP HEADER - Swapped Icons & Removed Redundant Cross */}
-   <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
-          <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
+   {/* TOP HEADER - SQUARED */}
+   <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-black/10 backdrop-blur-sm shrink-0 rounded-none">
+      <div className="flex items-center bg-black/20 backdrop-blur-md rounded-none border border-white/20 h-[32px] pl-1 pr-1">
+          <div className="bg-yellow-400 rounded-none p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
-          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
+          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-none flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><Clock size={16} /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-transform active:scale-90">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          {/* Swapped Position: Help icon now comes before X */}
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><HelpCircle size={16} /></button>
-          <button onClick={() => {}} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><X size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><Clock size={16} /></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-black/30 text-white transition-transform active:scale-90">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><HelpCircle size={16} /></button>
+          <button onClick={() => {}} className="h-8 w-8 flex items-center justify-center rounded-none border border-white/30 bg-black/30 text-white transition-transform active:scale-90"><X size={16} /></button>
       </div>
    </header>
 
@@ -486,16 +490,16 @@ export default function ForestPartyGame() {
     </div>
    </main>
 
-   {/* BOTTOM SECTION - Behind Dunes Overlay */}
+   {/* BOTTOM SECTION - Squared Bottom Bar */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
-        <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
-          <span className="text-[#e2e0f9] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
-          <div className="w-[1px] h-4 bg-white/20 shrink-0 mx-1" />
+        <div className="bg-[#2d160a] border-[1.5px] border-[#1a0b05] rounded-none p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
+          <span className="text-[#fde0c5] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
+          <div className="w-[1px] h-4 bg-white/10 shrink-0 mx-1" />
           <div className="flex items-center gap-2 px-1">
             {history.map((id, i) => (
             <div key={i} className="relative shrink-0 h-7 w-7 flex items-center justify-center">
-              {i === 0 && <div className="absolute -top-1 -right-2 z-10 bg-gradient-to-b from-[#ffcf54] to-[#ff8c00] text-white text-[7px] font-black px-1 rounded shadow-sm">New</div>}
+              {i === 0 && <div className="absolute -top-1 -right-2 z-10 bg-gradient-to-b from-[#ffcf54] to-[#ff8c00] text-white text-[7px] font-black px-1 rounded-none shadow-sm">New</div>}
               <span className="text-[20px]">{ANIMALS.find(a => a.id === id)?.emoji}</span>
             </div>
             ))}
@@ -503,7 +507,7 @@ export default function ForestPartyGame() {
         </div>
       </div>
 
-      <div className="w-full h-[10vh] min-h-[70px] bg-[#3a1c0d] rounded-none flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#241108]">
+      <div className="w-full h-[10vh] min-h-[70px] bg-[#3a1c0d] rounded-none flex items-center justify-center gap-4 px-4 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] border-t-[4px] border-[#241108]">
         {CHIPS_DATA.map(chip => (
           <button 
             key={chip.value} 
