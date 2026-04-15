@@ -459,11 +459,8 @@ export function RoomClient({ room }: { room: Room }) {
 
   useEffect(() => {
     if (isMusicPlaying && (hasBluetooth || hasWired) && isSpeaker) {
-      // Small delay to ensure audio element is ready
-      const timer = setTimeout(() => {
-        forceEarbuds(musicAudioRef.current);
-      }, 500);
-      return () => clearTimeout(timer);
+      // PROACTIVE ROUTING: No delay to minimize speaker leak
+      forceEarbuds(musicAudioRef.current);
     }
   }, [isMusicPlaying, hasBluetooth, hasWired, isSpeaker, forceEarbuds]);
 
@@ -536,7 +533,6 @@ export function RoomClient({ room }: { room: Room }) {
     if (!audio) return;
 
     const handleEnded = () => {
-      const isOwner = currentUser?.uid === room?.ownerId;
       if (isRepeatEnabled) {
         console.log('[Music] Repeat active, looping track...');
         audio.currentTime = 0;
@@ -544,9 +540,21 @@ export function RoomClient({ room }: { room: Room }) {
         return;
       }
 
-      if (isOwner && roomMusicLibrary.length > 1) {
-        console.log('[Music] Track ended, auto-playing next...');
+      // LEADERSHIP SYNC: Only the owner or designated leader triggers auto-play
+      const sortedParts = [...(participantsData || [])]
+        .filter(p => p && p.uid)
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+      let electedLeaderUid = sortedParts[0]?.uid;
+      if (ownerOnline) electedLeaderUid = room.ownerId;
+      
+      const isLeader = currentUser?.uid === electedLeaderUid;
+
+      if (isLeader && roomMusicLibrary.length > 0) {
+        console.log('[Music] Track ended, auto-playing next track as leader...');
         handleNextMusic();
+      } else if (!isLeader && roomMusicLibrary.length > 0) {
+        console.log('[Music] Track ended, waiting for leader to sync next song.');
       } else {
         setIsMusicPlaying(false);
       }
@@ -831,14 +839,20 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleNextMusic = async () => {
-    if (!canManageRoom || !firestore || !room.id || roomMusicLibrary.length === 0) return;
+    if (!firestore || !room.id) return;
+    
+    if (roomMusicLibrary.length === 0) {
+      toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
+      return;
+    }
     
     // Find current index
     const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
-    const nextIdx = (curIdx + 1) % roomMusicLibrary.length;
+    const nextIdx = (curIdx === -1) ? 0 : (curIdx + 1) % roomMusicLibrary.length;
     const nextTrack = roomMusicLibrary[nextIdx];
     
     if (nextTrack) {
+      console.log('[Music] Switching to next track:', nextTrack.name);
       const roomRef = doc(firestore, 'chatRooms', room.id);
       await updateDocumentNonBlocking(roomRef, {
         currentMusicUrl: nextTrack.url,
@@ -853,14 +867,20 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handlePreviousMusic = async () => {
-    if (!canManageRoom || !firestore || !room.id || roomMusicLibrary.length === 0) return;
+    if (!firestore || !room.id) return;
+
+    if (roomMusicLibrary.length === 0) {
+      toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
+      return;
+    }
     
     const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
-    let prevIdx = curIdx - 1;
+    let prevIdx = curIdx === -1 ? roomMusicLibrary.length - 1 : curIdx - 1;
     if (prevIdx < 0) prevIdx = roomMusicLibrary.length - 1;
     const prevTrack = roomMusicLibrary[prevIdx];
     
     if (prevTrack) {
+      console.log('[Music] Switching to previous track:', prevTrack.name);
       const roomRef = doc(firestore, 'chatRooms', room.id);
       await updateDocumentNonBlocking(roomRef, {
         currentMusicUrl: prevTrack.url,

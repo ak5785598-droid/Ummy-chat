@@ -300,8 +300,7 @@ export function useAgora(
             if (mediaType === 'audio') {
               // ★ STEP 2: Re-apply audio route BEFORE playing any remote track
               await applyCorrectAudioRoute();
-              // Small delay to let OS routing settle before audio plays
-              await new Promise(r => setTimeout(r, 100));
+              // NO DELAY for earbuds, play immediately to eliminate latency
               user.audioTrack?.play();
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
@@ -446,11 +445,10 @@ export function useAgora(
   useEffect(() => {
     if (!hasDetectedRouteRef.current) return;
     
-    // Re-check and apply correct routing every 3 seconds
-    // This handles cases where earbuds are connected/disconnected mid-session
+    // Re-check and apply correct routing every 1.5 seconds (Faster recovery)
     const interval = setInterval(() => { 
       applyCorrectAudioRoute(); 
-    }, 3000);
+    }, 1500);
     
     return () => clearInterval(interval);
   }, []);
