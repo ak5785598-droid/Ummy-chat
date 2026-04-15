@@ -848,11 +848,16 @@ export function RoomClient({ room }: { room: Room }) {
     }
     
     // Find current index
-    const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
-    console.log('[Music] Current index:', curIdx, 'Current ID:', room?.currentMusicId);
+    const currentId = room?.currentMusicId;
+    const curIdx = roomMusicLibrary.findIndex(t => t.id === currentId);
+    console.log('[Music] Next Command - Current Index:', curIdx, 'Current ID:', currentId);
     
-    // If not found, start from 0
-    const nextIdx = (curIdx === -1) ? 0 : (curIdx + 1) % roomMusicLibrary.length;
+    // Robust navigation: If not found, always start from 0. Otherwise step through.
+    let nextIdx = 0;
+    if (curIdx !== -1) {
+      nextIdx = (curIdx + 1) % roomMusicLibrary.length;
+    }
+    
     const nextTrack = roomMusicLibrary[nextIdx];
     
     if (nextTrack) {

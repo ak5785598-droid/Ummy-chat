@@ -567,10 +567,10 @@ export function RoomPlayDialog({
                               <p className="text-[11px] text-white/40 truncate w-full">{track.uploaderName} • {track.type === 'upload' ? 'Local Frequency' : 'External Sync'}</p>
                             </button>
                             
-                            <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0 pr-1">
                               <button 
                                 onClick={() => handleSyncSharedMusic(track)}
-                                className="h-9 w-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+                                className="h-9 w-9 flex items-center justify-center text-white hover:text-cyan-400 transition-colors active:scale-90"
                               >
                                 <Play className="h-5 w-5 fill-current" />
                               </button>
@@ -578,7 +578,7 @@ export function RoomPlayDialog({
                               {canManage && (
                                 <button
                                   onClick={() => handleDeleteTrack(track)}
-                                  className="h-9 w-9 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-500 flex items-center justify-center transition-all"
+                                  className="h-9 w-9 rounded-full hover:bg-red-500/10 text-white/60 hover:text-red-500 flex items-center justify-center transition-all active:scale-90"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
