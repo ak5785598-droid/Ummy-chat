@@ -196,7 +196,7 @@ const Seat = memo(({
   // Agora uses numeric hash for remote users and '0' for local user in volume detection
   const numericUid = occupant ? hashUidToNumber(occupant.uid).toString() : null;
   const intensity = (numericUid && speakingVolumes[numericUid]) || (isMe && speakingVolumes["0"]) || 0;
-  const seatIsSpeaking = intensity > 5;
+  const seatIsSpeaking = intensity > 20; // Increased threshold for softer detection
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
@@ -839,6 +839,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleNextMusic = async () => {
+    console.log('[Music] handleNextMusic called, library size:', roomMusicLibrary.length);
     if (!firestore || !room.id) return;
     
     if (roomMusicLibrary.length === 0) {
@@ -848,11 +849,14 @@ export function RoomClient({ room }: { room: Room }) {
     
     // Find current index
     const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
+    console.log('[Music] Current index:', curIdx, 'Current ID:', room?.currentMusicId);
+    
+    // If not found, start from 0
     const nextIdx = (curIdx === -1) ? 0 : (curIdx + 1) % roomMusicLibrary.length;
     const nextTrack = roomMusicLibrary[nextIdx];
     
     if (nextTrack) {
-      console.log('[Music] Switching to next track:', nextTrack.name);
+      console.log('[Music] Switching to:', nextTrack.name);
       const roomRef = doc(firestore, 'chatRooms', room.id);
       await updateDocumentNonBlocking(roomRef, {
         currentMusicUrl: nextTrack.url,
@@ -867,6 +871,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handlePreviousMusic = async () => {
+    console.log('[Music] handlePreviousMusic called, library size:', roomMusicLibrary.length);
     if (!firestore || !room.id) return;
 
     if (roomMusicLibrary.length === 0) {
@@ -880,7 +885,7 @@ export function RoomClient({ room }: { room: Room }) {
     const prevTrack = roomMusicLibrary[prevIdx];
     
     if (prevTrack) {
-      console.log('[Music] Switching to previous track:', prevTrack.name);
+      console.log('[Music] Switching to:', prevTrack.name);
       const roomRef = doc(firestore, 'chatRooms', room.id);
       await updateDocumentNonBlocking(roomRef, {
         currentMusicUrl: prevTrack.url,

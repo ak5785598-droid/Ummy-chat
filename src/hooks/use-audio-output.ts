@@ -53,14 +53,14 @@ export function useAudioOutput() {
         d.label.toLowerCase().includes('bluetooth') || 
         d.label.toLowerCase().includes('airpods') ||
         d.label.toLowerCase().includes('buds') ||
-        d.label.toLowerCase().includes('wireless')
+        d.label.toLowerCase().includes('wireless') ||
+        d.label.toLowerCase().includes('neckband')
       );
 
       const hasWired = audioOutputs.some(d => 
         d.label.toLowerCase().includes('headphone') || 
-        d.label.toLowerCase().includes('headset') ||
+        d.label.toLowerCase().includes('headset') || 
         d.label.toLowerCase().includes('earphone') ||
-        d.label.toLowerCase().includes('neckband') ||
         d.label.toLowerCase().includes('type-c') ||
         d.label.toLowerCase().includes('usb')
       );
@@ -136,7 +136,9 @@ export function useAudioOutput() {
         d.label.toLowerCase().includes('airpods') ||
         d.label.toLowerCase().includes('buds') ||
         d.label.toLowerCase().includes('headphone') ||
-        d.label.toLowerCase().includes('headset')
+        d.label.toLowerCase().includes('headset') ||
+        d.label.toLowerCase().includes('earphone') ||
+        d.label.toLowerCase().includes('neckband')
       );
 
       if (earbudDevice) {
@@ -175,11 +177,12 @@ export function useAudioOutput() {
     // Try to find any non-speaker device
     const earbudDevice = state.devices.find(d => 
       d.label.toLowerCase().includes('bluetooth') || 
-      d.label.toLowerCase().includes('airpods') ||
+      d.label.toLowerCase().includes('airpods') || 
       d.label.toLowerCase().includes('buds') ||
       d.label.toLowerCase().includes('headphone') ||
       d.label.toLowerCase().includes('headset') ||
       d.label.toLowerCase().includes('earphone') ||
+      d.label.toLowerCase().includes('neckband') ||
       d.deviceId !== 'default'
     );
 
@@ -201,12 +204,8 @@ export function useAudioOutput() {
 
     refreshDevices();
 
-    // PROACTIVE: Refresh every 2s to detect bluetooth/wired connections faster
-    const interval = setInterval(refreshDevices, 2000);
-
     navigator.mediaDevices.addEventListener('devicechange', refreshDevices);
     return () => {
-      clearInterval(interval);
       navigator.mediaDevices.removeEventListener('devicechange', refreshDevices);
     };
   }, [refreshDevices]);
