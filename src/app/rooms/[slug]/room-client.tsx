@@ -100,6 +100,7 @@ import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse } from '@/actions/ai-actions';
 import { RocketDialog } from '@/components/rocket-dialog';
+import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -1037,66 +1038,27 @@ export function RoomClient({ room }: { room: Room }) {
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
   // ============================================================
-  // ROOM LOGIC ENGINE (OWNER/MODERATOR ONLY)
-  // Logic hub for: Rocket progression, Level cycling, Daily resets
+  // ROOM LOGIC ENGINE (OWNER ONLY) - Daily stats reset
+  // Rocket progression is handled by the Wafa/Haza engine below (line ~1441)
   // ============================================================
   useEffect(() => {
     if (!isOwner || !firestore || !room.id) return;
 
     const engineInterval = setInterval(async () => {
       const today = getTodayString();
-      const batch = writeBatch(firestore);
-      let needsUpdate = false;
 
-      // 1. LAZY STATS RESET (Daily wealth cup reset at midnight IST)
+      // LAZY STATS RESET (Daily wealth cup reset at midnight IST)
       if (room.stats?.lastWealthResetDate !== today) {
         console.log('[Room Engine] Resetting daily wealth cup for new day:', today);
-        batch.update(doc(firestore, 'chatRooms', room.id), {
+        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
           'stats.dailyGifts': 0,
           'stats.lastWealthResetDate': today
         });
-        needsUpdate = true;
       }
-
-      // 2. ROCKET PROGRESSION ENGINE
-      const currentLevel = room.rocket?.level || 1;
-      const progress = room.rocket?.progress || 0;
-      const isOpen = room.rocket?.open || false;
-      
-      const ROCKET_LEVEL_TARGETS = [10000, 50000, 100000]; // Multi-level progression
-      const target = ROCKET_LEVEL_TARGETS[currentLevel - 1] || 100000;
-
-      // Check for Auto-Launch
-      if (progress >= target && !isOpen) {
-        console.log(`[Room Engine] AUTO-LAUNCH: Rocket Level ${currentLevel} triggered!`);
-        batch.update(doc(firestore, 'chatRooms', room.id), {
-          'rocket.open': true,
-          'rocket.lastLaunchTime': serverTimestamp()
-        });
-        needsUpdate = true;
-      }
-
-      // Check for Daily Rocket Reset (Reset progress if not launched within 24hr or manual period)
-      if (room.rocket?.lastResetDate !== today) {
-        batch.update(doc(firestore, 'chatRooms', room.id), {
-          'rocket.lastResetDate': today,
-          'rocket.progress': 0,
-          'rocket.open': false // Reset every day regardless
-        });
-        needsUpdate = true;
-      }
-
-      if (needsUpdate) {
-        try {
-          await batch.commit();
-        } catch (e) {
-          console.error('[Room Engine] Batch update failed:', e);
-        }
-      }
-    }, 3000); // Efficient 3-second sync
+    }, 3000);
 
     return () => clearInterval(engineInterval);
-  }, [isOwner, room.id, room.stats?.lastWealthResetDate, room.rocket?.level, room.rocket?.progress, room.rocket?.open, room.rocket?.lastLaunchTime, room.rocket?.lastResetDate, firestore]);
+  }, [isOwner, room.id, room.stats?.lastWealthResetDate, firestore]);
 
   // --- THEME SYNC: Full-Bleed Status Bar & Shell Alignment ---
   const activeRoomTheme = useMemo(() => {
@@ -2608,18 +2570,13 @@ export function RoomClient({ room }: { room: Room }) {
       )}
 
 
-      {/* ROCKET BUTTON - Floating at bottom right */}
-      <button
-        onClick={() => setIsRocketOpen(true)}
-        className={cn(
-          "fixed right-4 bottom-20 z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-green-500/50 animate-pulse",
-          "bg-green-500/20 text-green-400 shadow-green-500/10 hover:bg-green-500/30"
-        )}
-      >
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-500/10 text-xl overflow-hidden">
-          🚀
-        </div>
-      </button>
+      {/* ROCKET PROGRESS BAR - Floating at bottom right */}
+      <RoomRocketBar
+        progress={room.rocket?.progress || 0}
+        target={(room.rocket as any)?.target || 10000}
+        countdownUntil={(room.rocket as any)?.countdownUntil || null}
+        onOpenRocket={() => setIsRocketOpen(true)}
+      />
 
 
       <footer className="relative z-50 px-4 pb-6 flex items-center justify-between pt-2 h-20">
