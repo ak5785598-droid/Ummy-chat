@@ -466,6 +466,16 @@ export function RoomPlayDialog({
                     <button onClick={() => setView('grid')} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="h-6 w-6 text-white/60" /></button>
                     <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Music Sync</h2>
                     </div>
+                    {musicTab === 'device' && (
+                     <Button 
+                       onClick={() => fileInputRef.current?.click()} 
+                       disabled={isUploading}
+                       className="h-8 px-3 rounded-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-[10px] uppercase shadow-lg active:scale-95 transition-all gap-1.5"
+                     >
+                       {isUploading ? <Loader className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                       Add +
+                     </Button>
+                    )}
                 </header>
                 
                 <div className="p-4 px-6 shrink-0 space-y-4">
@@ -536,52 +546,44 @@ export function RoomPlayDialog({
                         ))}
                     </div>
                     ) : (
-                    <div className="space-y-3">
-                         <button 
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading}
-                          className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 border border-white/20 shadow-lg flex items-center justify-center gap-3 font-bold uppercase text-[11px] active:scale-95 transition-all mb-4 disabled:opacity-50 text-white shrink-0"
-                         >
-                          {isUploading ? <Loader className="h-4 w-4 animate-spin text-white" /> : <Upload className="h-4 w-4 text-white" />}
-                          <span className="tracking-wide">{isUploading ? 'Uploading...' : 'Upload to Library'}</span>
-                         </button>
+                     <div className="space-y-1">
                         {roomMusicLibrary.length === 0 && (
-                        <div className="text-center py-8 text-white/40">
-                            <Music className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                            <p className="text-sm">No tracks yet</p>
-                            <p className="text-xs mt-1">Upload songs for everyone to enjoy!</p>
+                        <div className="text-center py-12 text-white/40">
+                            <Music className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p className="text-sm font-medium">No tracks in library</p>
+                            <p className="text-xs mt-1">Add frequencies to the room sync.</p>
                         </div>
                         )}
                         {roomMusicLibrary.map((track) => (
                           <div 
                             key={track.id} 
-                            className="w-full flex items-center justify-between gap-3 p-2.5 bg-white/5 rounded-xl border border-white/10"
+                            className="w-full flex items-center justify-between gap-3 py-3.5 border-b border-white/5 group active:bg-white/5 transition-colors px-1"
                           >
                             <button
                               onClick={() => handleSyncSharedMusic(track)}
-                              className="flex-1 flex items-center gap-3 text-left min-w-0"
+                              className="flex-1 flex flex-col items-start gap-0.5 text-left min-w-0"
                             >
-                              <div className="h-10 w-10 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 border border-indigo-500/20">
-                                <FileAudio className="h-5 w-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-bold uppercase text-white truncate pr-1">{track.name}</p>
-                                <p className="text-[9px] text-white/40 truncate">by {track.uploaderName}</p>
-                              </div>
-                              {/* Small Circular Play Button */}
-                              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/5 active:scale-90 transition-all shrink-0">
-                                <Play className="h-3 w-3 fill-current" />
-                              </div>
+                              <p className="text-sm font-medium text-white/90 truncate w-full">{track.name}</p>
+                              <p className="text-[11px] text-white/40 truncate w-full">{track.uploaderName} • {track.type === 'upload' ? 'Local Frequency' : 'External Sync'}</p>
                             </button>
                             
-                            {canManage && (
-                              <button
-                                onClick={() => handleDeleteTrack(track)}
-                                className="h-8 w-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/10 active:scale-90 transition-all shrink-0"
+                            <div className="flex items-center gap-3 shrink-0">
+                              <button 
+                                onClick={() => handleSyncSharedMusic(track)}
+                                className="h-9 w-9 flex items-center justify-center text-white/60 hover:text-white transition-colors"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Play className="h-5 w-5 fill-current" />
                               </button>
-                            )}
+
+                              {canManage && (
+                                <button
+                                  onClick={() => handleDeleteTrack(track)}
+                                  className="h-9 w-9 rounded-full hover:bg-red-500/10 text-white/20 hover:text-red-500 flex items-center justify-center transition-all"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))}
                     </div>
