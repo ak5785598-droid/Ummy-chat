@@ -187,41 +187,41 @@ export default function LoginPage() {
     
     try {
       const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        if (userData.banStatus?.isBanned) {
-          const until = userData.banStatus.bannedUntil?.toDate();
+      let existingData = userSnap.data();
+      
+      // IDENTITY HEALING: If user exists but ID is missing or "undefined", we REPAIR it.
+      const isMissingId = !existingData || !existingData.accountNumber || existingData.accountNumber === 'undefined';
+      
+      if (!isMissingId) {
+        // User is healthy, just check for ban.
+        if (existingData?.banStatus?.isBanned) {
+          const until = existingData.banStatus.bannedUntil?.toDate();
           if (!until || until > new Date()) {
-            setBanInfo({ isBanned: true, bannedUntil: userData.banStatus.bannedUntil });
+            setBanInfo({ isBanned: true, bannedUntil: existingData.banStatus.bannedUntil });
             setIsSigningIn(false);
             return;
           }
         }
-      } else {
-        const accountNumber = await runTransaction(firestore, async (transaction) => {
+        return; // All good.
+      }
+
+      // GENERATE UNIQUE ID
+      let accountNumber = '';
+      try {
+        accountNumber = await runTransaction(firestore, async (transaction) => {
           const counterDoc = await transaction.get(counterRef);
           let nextUserId = 0;
           
           if (uid === CREATOR_ID) {
             if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
               const lastId = counterDoc.data().lastUserId;
-              if (lastId > 1000) {
-                nextUserId = 0; 
-              } else {
-                nextUserId = lastId + 1;
-              }
-            } else {
-              nextUserId = 0;
+              nextUserId = (lastId > 1000) ? 0 : lastId + 1;
             }
           } else {
             if (counterDoc.exists()) {
               const data = counterDoc.data();
               const lastId = data?.lastUserId;
-              if (lastId === undefined || lastId > 100000) {
-                nextUserId = 1; 
-              } else {
-                nextUserId = lastId + 1;
-              }
+              nextUserId = (lastId === undefined || lastId > 100000) ? 1 : lastId + 1;
             } else {
               nextUserId = 1;
             }
@@ -230,28 +230,46 @@ export default function LoginPage() {
           transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
           return nextUserId.toString().padStart(4, '0');
         });
- 
-        const baseData = {
-          id: uid,
-          username: displayName || `Tribe_${accountNumber.slice(-4)}`,
-          accountNumber,
-          avatarUrl: '',
-          wallet: {
-            coins: 0,
-            diamonds: 0,
-            totalSpent: 0,
-            dailySpent: 0,
-            weeklySpent: 0,
-            monthlySpent: 0
-          },
-          level: { rich: 1, charm: 1 },
-          banStatus: { isBanned: false, bannedUntil: null, reason: '' },
-          isOnline: true,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
- 
-        await setDoc(userRef, baseData);
+      } catch (txErr) {
+        console.warn("[Identity] Global counter failed, using fallback:", txErr);
+        // FALLBACK: Generate a random 6-digit number if global counter fails.
+        // This prevents the "UNDEFINED" bug while keeping the account functional.
+        accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
+      }
+
+      // Ensure accountNumber is NEVER undefined
+      if (!accountNumber || accountNumber === 'undefined') {
+        accountNumber = (Math.floor(Math.random() * 900000) + 100000).toString();
+      }
+
+      const safeUsername = displayName || `Tribe_${accountNumber.slice(-4)}`;
+
+      const baseData = {
+        id: uid,
+        username: safeUsername,
+        accountNumber,
+        avatarUrl: '',
+        wallet: {
+          coins: 0,
+          diamonds: 0,
+          totalSpent: 0,
+          dailySpent: 0,
+          weeklySpent: 0,
+          monthlySpent: 0
+        },
+        level: { rich: 1, charm: 1 },
+        banStatus: { isBanned: false, bannedUntil: null, reason: '' },
+        isOnline: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      // Set base document
+      await setDoc(userRef, baseData, { merge: true });
+      
+      // Set profile specifically
+      const profileSnap = await getDoc(profileRef);
+      if (!profileSnap.exists()) {
         await setDoc(profileRef, {
           ...baseData,
           email: email || '',
@@ -261,32 +279,32 @@ export default function LoginPage() {
           stats: {
             followers: 0,
             fans: 0,
-            totalGifts: 0,
             dailyFans: 0,
-            dailyGiftsReceived: 0,
-            weeklyGiftsReceived: 0,
-            monthlyGiftsReceived: 0,
-            dailyGameWins: 0,
-            weeklyGameWins: 0,
-            monthlyGameWins: 0,
+            totalGifts: 0,
             friends: 0,
             following: 0
           }
         });
-        console.log(`✅ Profile created with Internal ID: ${accountNumber}`);
+      } else {
+        // Repair existing profile's ID if needed
+        await setDoc(profileRef, { accountNumber, updatedAt: serverTimestamp() }, { merge: true });
       }
+      
+      console.log(`✅ Identity Stabilized: ${accountNumber}`);
     } catch (err) {
-      console.error("[Identity Sync] Error:", err);
+      console.error("[Identity Sync] Critical Failure:", err);
     }
   };
  
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (forceSelect = false) => {
     if (!auth) return;
     setIsSigningIn(true);
     
     try {
       const provider = new GoogleAuthProvider();
-      // Optimization: Removed 'select_account' prompt to allow 1-click login for already signed-in users
+      if (forceSelect) {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
       // Use Redirect for Mobile/WebView compatibility
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
@@ -406,7 +424,7 @@ export default function LoginPage() {
 
           <div className="space-y-3">
             <button
-              onClick={handleFacebookSignIn}
+              onClick={() => handleFacebookSignIn()}
               disabled={isSigningIn}
               className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
             >
@@ -415,12 +433,20 @@ export default function LoginPage() {
             </button>
  
             <button
-              onClick={handleGoogleSignIn}
+              onClick={() => handleGoogleSignIn(false)}
               disabled={isSigningIn}
               className="w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
               Sign in with Google
+            </button>
+            
+            <button
+              onClick={() => handleGoogleSignIn(true)}
+              disabled={isSigningIn}
+              className="text-[10px] text-white/40 hover:text-white/60 font-bold uppercase tracking-widest mt-1 transition-colors disabled:opacity-0"
+            >
+              Login with another account
             </button>
           </div>
 

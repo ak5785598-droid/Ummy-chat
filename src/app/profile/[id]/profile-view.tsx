@@ -194,7 +194,7 @@ const PublicProfileView = ({
  const firstLetter = (profile.username || 'U').charAt(0).toUpperCase();
 
  const handleCopyId = () => {
-  const idToCopy = profile.accountNumber || profile.id;
+  const idToCopy = (!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id : profile.accountNumber;
   if (typeof navigator !== 'undefined' && navigator.clipboard) {
    navigator.clipboard.writeText(idToCopy).then(() => {
     toast({ title: 'ID Copied' });
@@ -274,7 +274,7 @@ const PublicProfileView = ({
               <div className="flex flex-col items-start gap-1.5">
                 <BudgetTag 
                   variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
-                  label={`ID: ${profile.accountNumber}`}
+                  label={(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? "ID: Syncing..." : `ID: ${profile.accountNumber}`}
                   size="sm"
                 />
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -424,6 +424,22 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return { fans, following, friends, visitors };
  }, [fansData, followingData, visitorsData]);
 
+ // Identity Repair Mechanism
+ useEffect(() => {
+  if (isOwnProfile && profile && (!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED')) {
+   const repairIdentity = async () => {
+    try {
+     const fallbackId = (Math.floor(Math.random() * 900000) + 100000).toString();
+     const userRef = doc(firestore, 'users', profileId);
+     const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+     await setDocumentNonBlocking(userRef, { accountNumber: fallbackId, updatedAt: serverTimestamp() }, { merge: true });
+     await setDocumentNonBlocking(pRef, { accountNumber: fallbackId, updatedAt: serverTimestamp() }, { merge: true });
+    } catch (e) { console.error("[Identity] Repair failed:", e); }
+   };
+   repairIdentity();
+  }
+ }, [isOwnProfile, profile, profileId, firestore]);
+
  // Record a visit if it's someone else's profile
  useEffect(() => {
   if (!firestore || !currentUser || !profileId || isOwnProfile) return;
@@ -572,7 +588,7 @@ const isCS = profile?.tags?.includes('Customer Service');
               <div className="flex flex-col items-start gap-1.5 pt-0.5">
                 <BudgetTag 
                   variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
-                  label={`ID: ${profile.accountNumber}`}
+                  label={(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? "ID: Syncing..." : `ID: ${profile.accountNumber}`}
                   size="sm"
                 />
                 <div className="flex flex-wrap items-center gap-1.5">
