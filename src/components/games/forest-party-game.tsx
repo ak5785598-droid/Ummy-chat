@@ -17,8 +17,7 @@ import {
  HelpCircle, 
  X,
  Plus,
- Clock,
- Loader2
+ Clock
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -47,14 +46,11 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
+export default function ForestPartyGame() {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
  const { toast } = useToast();
-
- // LOADING STATE
- const [isLoading, setIsLoading] = useState(true);
 
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(25);
@@ -77,14 +73,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
-
- // SIMULATE LOADING
- useEffect(() => {
-    const timer = setTimeout(() => {
-        setIsLoading(false);
-    }, 2500); // 2.5 seconds loading
-    return () => clearTimeout(timer);
- }, []);
 
  useEffect(() => {
    if (typeof window !== 'undefined') {
@@ -269,35 +257,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    });
  };
 
- // RENDER LOADING PAGE (Fix applied here - squared corners)
- if (isLoading) {
-    return (
-        <div className="h-full min-h-[70vh] w-full flex flex-col items-center justify-center bg-[#fdf8e7] relative overflow-hidden rounded-none">
-            <div className="flex flex-col items-center gap-4 relative z-10">
-                <div className="relative flex items-center justify-center">
-                    <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
-                    <div className="absolute inset-0 bg-orange-200/20 blur-xl rounded-full" />
-                </div>
-                <h1 className="text-2xl font-black text-[#4a2511] tracking-widest uppercase animate-pulse">
-                    Ummy
-                </h1>
-            </div>
-            {/* Background elements to match the vibe */}
-            <div className="absolute top-10 left-10 text-4xl opacity-20 z-0">🦁</div>
-            <div className="absolute bottom-10 right-10 text-4xl opacity-20 z-0">🐼</div>
-            
-            {/* This invisible div ensures the cream color stretches to the very bottom to prevent any transparency */}
-            <div className="absolute -bottom-10 left-0 right-0 h-20 bg-[#fdf8e7] z-0" />
-        </div>
-    );
- }
-
  return (
-  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0a0f35] rounded-none">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0d2b1d] rounded-none">
    
+   {/* GREEN FOREST BACKGROUND */}
    <div className="absolute inset-0 z-0 pointer-events-none">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2000')] bg-cover bg-center opacity-70 mix-blend-screen" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f35]/50 to-[#0a0f35]" />
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2000')] bg-cover bg-center opacity-40 mix-blend-screen" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d2b1d]/60 to-[#0d2b1d]" />
    </div>
 
    {/* WINNING RESULT OVERLAY */}
@@ -390,16 +356,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
 
    {/* TOP HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-[#181c4c]/80 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+      <div className="flex items-center bg-[#0d2b1d]/80 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
           <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
           <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><Clock size={16} /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><HelpCircle size={16} /></button>
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#181c4c]/60 text-white"><X size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white"><Clock size={16} /></button>
+          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-[#0d2b1d]/60 text-white"><HelpCircle size={16} /></button>
       </div>
    </header>
 
@@ -407,6 +372,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10" viewBox="0 0 100 100">
+        <defs>
+            <linearGradient id="skin3d" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fde0c5" />
+              <stop offset="50%" stopColor="#eebb99" />
+              <stop offset="100%" stopColor="#b57f5e" />
+            </linearGradient>
+            <filter id="shadow3d" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.6" />
+            </filter>
+        </defs>
+        
+        {/* 3D Skin Color Connecting Ring */}
+        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#skin3d)" strokeWidth="2.5" filter="url(#shadow3d)" />
+
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <line key={deg} x1="50" y1="50" x2="50" y2="10" stroke="#eebb99" strokeWidth="2.5" transform={`rotate(${deg} 50 50)`} />
         ))}
@@ -479,7 +458,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
    {/* BOTTOM SECTION */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-40">
       <div className="w-full max-w-[340px] px-4 mb-3">
-        <div className="bg-[#41318f]/80 backdrop-blur-md border-[1.5px] border-[#6b58ce] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
+        <div className="bg-[#1b4332]/80 backdrop-blur-md border-[1.5px] border-[#2d6a4f] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
           <span className="text-[#e2e0f9] font-bold text-[12px] px-2 shrink-0 italic">Result</span>
           <div className="w-[1px] h-4 bg-white/20 shrink-0 mx-1" />
           <div className="flex items-center gap-2 px-1">
@@ -493,7 +472,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
         </div>
       </div>
 
-      <div className="w-full h-[10vh] min-h-[70px] bg-purple-600 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#3b0764]">
+      <div className="w-full h-[10vh] min-h-[70px] bg-green-700 rounded-t-3xl flex items-center justify-center gap-4 px-4 shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-t-[4px] border-[#081c15]">
         {CHIPS_DATA.map(chip => (
           <button 
             key={chip.value} 
