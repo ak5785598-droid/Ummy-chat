@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
  useUser, 
  useFirestore, 
@@ -47,61 +47,6 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-// --- 3D HAND POINTER COMPONENT ---
-const HandPointer = ({ activeIndex }: { activeIndex: number }) => {
-  // Mapping index to CSS positions matching the animal cards
-  const posMap: Record<number, { top: string, left: string, rotate: string }> = {
-    0: { top: '0%', left: '50%', rotate: '0deg' },         // top
-    1: { top: '8%', left: '85%', rotate: '45deg' },       // top-right
-    2: { top: '50%', left: '92%', rotate: '90deg' },      // right
-    3: { top: '85%', left: '85%', rotate: '135deg' },     // bottom-right
-    4: { top: '92%', left: '50%', rotate: '180deg' },     // bottom
-    5: { top: '85%', left: '15%', rotate: '225deg' },     // bottom-left
-    6: { top: '50%', left: '8%', rotate: '270deg' },      // left
-    7: { top: '8%', left: '15%', rotate: '315deg' },      // top-left
-  };
-
-  const currentPos = posMap[activeIndex];
-
-  return (
-    <motion.div
-      initial={false}
-      animate={{ 
-        top: currentPos.top, 
-        left: currentPos.left, 
-        rotate: currentPos.rotate,
-        scale: [1, 1.1, 1] // Poking animation
-      }}
-      transition={{ 
-        top: { type: "spring", stiffness: 80, damping: 15 },
-        left: { type: "spring", stiffness: 80, damping: 15 },
-        scale: { duration: 1, repeat: Infinity }
-      }}
-      className="absolute z-[100] w-12 h-12 pointer-events-none -translate-x-1/2 -translate-y-1/2"
-    >
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
-        <defs>
-          <linearGradient id="gloveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#d1d5db" />
-          </linearGradient>
-        </defs>
-        {/* 3D Glove Shadow */}
-        <path d="M50 90 Q30 90 25 70 T40 40 L45 10 L55 10 L60 40 T75 70 Q70 90 50 90" fill="rgba(0,0,0,0.2)" transform="translate(4, 4)" />
-        {/* Pointer Finger */}
-        <rect x="42" y="5" width="16" height="40" rx="8" fill="url(#gloveGrad)" stroke="#9ca3af" strokeWidth="1" />
-        {/* Main Palm */}
-        <path d="M30 85 Q20 85 20 65 Q20 45 40 40 L60 40 Q80 45 80 65 Q80 85 70 85 Z" fill="url(#gloveGrad)" stroke="#9ca3af" strokeWidth="1" />
-        {/* Thumb */}
-        <path d="M30 70 Q15 70 15 55 Q15 45 25 45 L35 48" fill="url(#gloveGrad)" stroke="#9ca3af" strokeWidth="1" />
-        {/* Detail Lines on Glove */}
-        <line x1="45" y1="55" x2="45" y2="75" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-        <line x1="55" y1="55" x2="55" y2="75" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
-      </svg>
-    </motion.div>
-  );
-};
-
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
@@ -123,9 +68,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
 
- // Pointer logic state
- const [pointerIdx, setPointerIdx] = useState(0);
-
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
@@ -133,21 +75,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
 
- // --- NEW: Pointer movement effect ---
- useEffect(() => {
-  if (gameState !== 'betting') return;
-  const interval = setInterval(() => {
-    setPointerIdx(prev => (prev + 1) % 8);
-  }, 2000); // 2 seconds per card
-  return () => clearInterval(interval);
- }, [gameState]);
-
+ // Handle Local Storage for Records
  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
      if (saved) {
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
      }
+     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
+     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
+     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
    }
  }, []);
 
@@ -158,17 +95,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  }, [gameRecords]);
 
  useEffect(() => {
-  if (typeof window !== 'undefined') {
-    chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-    spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3');
-    tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
-  }
- }, []);
-
- useEffect(() => {
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
+ // Timer Logic
  useEffect(() => {
   const interval = setInterval(() => {
    if (gameState === 'betting') {
@@ -256,7 +186,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    
     if (remaining < 8) speed += 45;
     else if (remaining < 15) speed += 15;
     else if (remaining < 25) speed += 5;
@@ -335,7 +264,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </div>
 
-   {/* WINNER OVERLAY, RECORDS, RULES... (Same as before) */}
+   {/* OVERLAYS */}
    <AnimatePresence>
     {winnerData && (
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -369,7 +298,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* RECORD BOTTOM SHEET */}
+   {/* RECORD PANEL */}
    <AnimatePresence>
     {showRecord && (
         <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
@@ -398,26 +327,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* RULES BOTTOM SHEET */}
-   <AnimatePresence>
-    {showRules && (
-        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
-            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
-                <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
-            </div>
-            <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
-                {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                        <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0">{i+1}</span>
-                        <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
-                    </div>
-                ))}
-            </div>
-        </motion.div>
-    )}
-   </AnimatePresence>
-
    {/* HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
       <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
@@ -433,15 +342,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   {/* GAME CONTENT */}
+   {/* MAIN GAME BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       
-      {/* 3D HAND POINTER INBETWEEN */}
-      <AnimatePresence>
-        {gameState === 'betting' && <HandPointer activeIndex={pointerIdx} />}
-      </AnimatePresence>
-
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
             <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -458,35 +362,35 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </filter>
         </defs>
         
+        {/* Support Legs */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
             <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" filter="url(#shadow3D)" />
             <line x1="50" y1="50" x2="50" y2="13" stroke="#c58a66" strokeWidth="5" strokeLinecap="round" />
             <line x1="48.5" y1="50" x2="48.5" y2="13" stroke="#fef0e6" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="2" strokeLinecap="round" />
           </g>
         ))}
 
-        <motion.circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldGradient)" strokeWidth={gameState === 'spinning' ? "4" : "2"} filter={gameState === 'spinning' ? "url(#goldGlow)" : ""} initial={false} animate={{ opacity: gameState === 'spinning' ? [0.6, 1, 0.6] : 0.3, scale: gameState === 'spinning' ? [1, 1.02, 1] : 1 }} transition={{ duration: 1, repeat: Infinity }} />
+        <motion.circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldGradient)" strokeWidth={gameState === 'spinning' ? "4" : "2"} filter={gameState === 'spinning' ? "url(#goldGlow)" : ""} animate={{ opacity: gameState === 'spinning' ? [0.6, 1, 0.6] : 0.3 }} transition={{ duration: 1, repeat: Infinity }} />
         <circle cx="50" cy="50" r="41" fill="none" stroke="#c58a66" strokeWidth="6" filter="url(#shadow3D)" />
-        <circle cx="50" cy="50" r="41" fill="none" stroke="#eebb99" strokeWidth="2" />
-        <circle cx="50" cy="50" r="39.5" fill="none" stroke="#fef0e6" strokeWidth="1" opacity="0.6" />
       </svg>
 
-      <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[inset_0_4px_10px_rgba(255,255,255,0.5),0_10px_20px_rgba(0,0,0,0.6)] border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] shadow-[inset_0_4px_8px_rgba(255,255,255,0.2),inset_0_-4px_8px_rgba(0,0,0,0.5),0_10px_25px_rgba(0,0,0,0.8)] border-[4px] border-[#eebb99]")}>
-        <p className={cn("text-[7px] font-black uppercase", gameState === 'spinning' ? "text-white" : "text-[#eebb99]")}>{gameState === 'betting' ? 'Time' : 'Spinning'}</p>
-        <span className={cn("text-2xl font-black", gameState === 'spinning' ? "text-white animate-bounce" : "text-[#eebb99] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]")}>{gameState === 'betting' ? timeLeft : '🔥'}</span>
+      <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
+        <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : 'Spinning'}</p>
+        <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '🔥'}</span>
       </div>
 
       {ANIMALS.map((item, idx) => (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
-            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108,0_10px_10px_rgba(0,0,0,0.5)]", highlightIdx === idx ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 shadow-[0_0_25px_#FFD700,inset_0_0_15px_rgba(255,255,255,0.5)] z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
-                <span className={cn("text-[38px] z-10 transition-transform", highlightIdx === idx ? "scale-125 rotate-6 drop-shadow-xl" : "drop-shadow-[0_5px_4px_rgba(0,0,0,0.6)]")}>{item.emoji}</span>
-                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors", highlightIdx === idx ? "bg-white/20" : "bg-[#4a2511] border-t border-[#eebb99]")}>
-                    <span className={cn("text-[7px] font-bold uppercase tracking-tighter", highlightIdx === idx ? "text-white" : "text-[#eebb99]")}>Win {item.multiplier}x</span>
+            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", highlightIdx === idx ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
+                <span className={cn("text-[38px] z-10", highlightIdx === idx ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
+                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", highlightIdx === idx ? "bg-white/20" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                    <span className="text-[7px] font-bold uppercase tracking-tighter">Win {item.multiplier}x</span>
                 </div>
             </div>
+            
+            {/* Bet Chip Visuals */}
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[22px] w-[22px] rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg z-40 pointer-events-none", `bg-gradient-to-br ${chip.color}`)}>
@@ -494,6 +398,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     </motion.div>
                 ))}
             </AnimatePresence>
+            
+            {/* My Bet Indicator */}
             {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
           </button>
         </motion.div>
@@ -525,6 +431,26 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         ))}
       </div>
    </div>
+
+   {/* RULES MODAL */}
+   <AnimatePresence>
+    {showRules && (
+        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
+            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
+                <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            </div>
+            <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
+                {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
+                    <div key={i} className="flex gap-3 items-start">
+                        <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0">{i+1}</span>
+                        <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    )}
+   </AnimatePresence>
 
    <style jsx global>{`
     .no-scrollbar::-webkit-scrollbar { display: none; }
