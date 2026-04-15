@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useStorage, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 /**
@@ -99,7 +99,7 @@ export function useRoomImageUpload(roomId: string) {
    };
 
    console.log('[Visual Sync] Dispatching new cover identifier to tribal graph:', downloadURL);
-   await updateDoc(roomRef, updateData);
+   await setDoc(roomRef, updateData, { merge: true });
 
    toast({
     title: 'Frequency Updated',
