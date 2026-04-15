@@ -96,7 +96,7 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
 
   return (
    <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="sm:max-w-[425px] rounded-t-[2.5rem] border-none shadow-2xl bg-white text-black p-0 overflow-hidden animate-in slide-in-from-bottom-full duration-500 max-h-[90vh] overflow-y-auto">
+    <DialogContent hideClose={true} className="sm:max-w-[425px] rounded-t-[2.5rem] border-none shadow-2xl bg-white text-black p-0 overflow-hidden animate-in slide-in-from-bottom-full duration-500 max-h-[90vh] overflow-y-auto">
      <DialogHeader className="p-8 pb-4">
       <DialogTitle className="text-center font-headline text-3xl uppercase tracking-tighter">Share Moment</DialogTitle>
       <DialogDescription className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Broadcast Vibe to Social Galaxy</DialogDescription>

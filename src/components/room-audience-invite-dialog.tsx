@@ -79,7 +79,7 @@ export function RoomAudienceInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[320px] bg-white text-black p-0 rounded-t-2xl border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom-full duration-300">
+      <DialogContent hideClose={true} className="sm:max-w-[320px] bg-white text-black p-0 rounded-t-2xl border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom-full duration-300">
         <DialogHeader className="px-4 pt-4 pb-2 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-sm font-semibold text-gray-800">

@@ -152,7 +152,7 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="max-w-full sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden font-sans bottom-0 top-auto fixed translate-y-0 animate-in slide-in-from-bottom duration-500">
+   <DialogContent hideClose={true} className="max-w-full sm:max-w-md bg-white text-black p-0 rounded-t-[2.5rem] border-none shadow-2xl overflow-hidden font-sans bottom-0 top-auto fixed translate-y-0 animate-in slide-in-from-bottom duration-500">
     
     <Tabs defaultValue="profile" className="w-full">
      <div className="relative border-b border-gray-50 flex items-center justify-center pt-8 pb-4">

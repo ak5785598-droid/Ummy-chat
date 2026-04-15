@@ -67,7 +67,7 @@ export function AvatarFramePicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[480px] bg-[#020617] border-slate-800 text-white rounded-t-[3rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border-2">
+      <DialogContent hideClose={true} className="max-w-[480px] bg-[#020617] border-slate-800 text-white rounded-t-[3rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border-2">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 via-transparent to-transparent pointer-events-none" />
         
         {/* Header with Live Preview */}

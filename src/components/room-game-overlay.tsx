@@ -54,12 +54,14 @@ export function RoomGameOverlay({ activeGame, roomId, onClose }: RoomGameOverlay
       </div>
      )}
 
-     <button 
-       onClick={onClose}
-       className="absolute top-6 right-6 p-2 bg-black/40 backdrop-blur-md rounded-full text-white/60 hover:text-white transition-colors z-50 border border-white/10"
-     >
-       <X className="h-5 w-5" />
-     </button>
+     {!['fruit-party', 'forest-party'].includes(activeGame || '') && (
+      <button 
+        onClick={onClose}
+        className="absolute top-6 right-6 p-2 bg-black/40 backdrop-blur-md rounded-full text-white/60 hover:text-white transition-colors z-50 border border-white/10"
+      >
+        <X className="h-5 w-5" />
+      </button>
+     )}
     </div>
    </div>
   </div>
