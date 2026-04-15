@@ -82,6 +82,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     isChatMuted: firestoreRoom.isChatMuted,
     currentMusicUrl: firestoreRoom.currentMusicUrl,
     currentMusicId: firestoreRoom.currentMusicId,
+    musicUpdatedBy: firestoreRoom.musicUpdatedBy,
     isMusicPlaying: firestoreRoom.isMusicPlaying || false,
     musicStartedAt: firestoreRoom.musicStartedAt || null,
     musicStartOffset: firestoreRoom.musicStartOffset || 0,

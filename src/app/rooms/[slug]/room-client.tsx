@@ -649,26 +649,26 @@ export function RoomClient({ room }: { room: Room }) {
     isSpeakerMuted,
     (volumes) => {
       // PERF FIX: Batch and threshold volume updates to prevent main thread choking
-      const musicId = room?.currentMusicOwnerId ? hashUidToNumber(room.currentMusicOwnerId).toString() : null;
+      const musicId = room?.musicUpdatedBy ? hashUidToNumber(room.musicUpdatedBy).toString() : null;
       let hasSignificantChange = false;
       const updatedVolumes: Record<string, number> = {};
       
       volumes.forEach(v => {
         const level = Math.floor(v.level);
         updatedVolumes[v.uid] = level;
-        // Check local user or key speakers for significant change to avoid micro-renders
         if (Math.abs((speakingVolumes[v.uid] || 0) - level) > 3) {
           hasSignificantChange = true;
         }
       });
 
-      // If music is playing, inject music intensity into the owner's UID
+      // If music is playing, inject music intensity into the player's UID
       if (room?.isMusicPlaying && musicId) {
         const mLevel = musicIntensityRef.current;
         const existingLevel = updatedVolumes[musicId] || 0;
+        // Boost music waves so they are clearly visible
         updatedVolumes[musicId] = Math.max(existingLevel, mLevel);
         
-        if (Math.abs((speakingVolumes[musicId] || 0) - mLevel) > 5) {
+        if (Math.abs((speakingVolumes[musicId] || 0) - mLevel) > 3) {
           hasSignificantChange = true;
         }
       }

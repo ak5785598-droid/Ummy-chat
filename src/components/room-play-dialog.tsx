@@ -618,35 +618,53 @@ export function RoomPlayDialog({
               </div>
             )}
             
-            {/* Wafa-style Delete Confirmation Popup */}
-            <Dialog open={!!trackToDelete} onOpenChange={(open) => !open && setTrackToDelete(null)}>
-              <DialogContent className="max-w-[300px] w-[85%] rounded-[2rem] bg-white border-none p-0 overflow-hidden text-black shadow-2xl flex flex-col items-center justify-center">
-                <div className="p-8 text-center space-y-6 w-full">
-                  <p className="text-base font-semibold text-slate-800 leading-relaxed px-2">
-                    Are you sure to delete this song?
-                  </p>
+            {/* Wafa-style Delete Confirmation Popup (Inline to fix Z-index & Background issues) */}
+            <AnimatePresence>
+              {trackToDelete && (
+                <div className="absolute inset-0 z-[110] flex items-center justify-center p-4">
+                  {/* Local Overlay for the sub-modal */}
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setTrackToDelete(null)}
+                    className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+                  />
                   
-                  <div className="flex gap-3 pt-2">
-                    <Button 
-                      variant="light" 
-                      onClick={() => setTrackToDelete(null)}
-                      className="flex-1 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold uppercase text-xs transition-all"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        handleDeleteTrack(trackToDelete);
-                        setTrackToDelete(null);
-                      }}
-                      className="flex-1 h-12 rounded-full bg-cyan-400 hover:bg-cyan-500 text-white font-bold uppercase text-xs shadow-lg shadow-cyan-400/20 active:scale-95 transition-all"
-                    >
-                      Confirm
-                    </Button>
-                  </div>
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="relative max-w-[300px] w-full rounded-[2.5rem] bg-white p-0 overflow-hidden text-black shadow-2xl flex flex-col items-center justify-center"
+                  >
+                    <div className="p-8 text-center space-y-7 w-full">
+                      <p className="text-base font-bold text-slate-800 leading-tight px-2">
+                        Are you sure to delete this song?
+                      </p>
+                      
+                      <div className="flex gap-3 pt-2">
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => setTrackToDelete(null)}
+                          className="flex-1 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider transition-all"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            handleDeleteTrack(trackToDelete);
+                            setTrackToDelete(null);
+                          }}
+                          className="flex-1 h-12 rounded-full bg-cyan-400 hover:bg-cyan-500 text-white font-bold uppercase text-[10px] tracking-wider shadow-lg shadow-cyan-400/20 active:scale-95 transition-all"
+                        >
+                          Confirm
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
                 </div>
-              </DialogContent>
-            </Dialog>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
       )}
