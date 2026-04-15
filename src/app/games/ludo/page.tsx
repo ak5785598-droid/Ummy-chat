@@ -3,278 +3,275 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
-  ChevronLeft, Star, Plus, User, Trophy, Settings, Info
+  ChevronLeft, 
+  Volume2, 
+  VolumeX, 
+  Star, 
+  ArrowRight, 
+  ArrowDown, 
+  ArrowLeft, 
+  ArrowUp, 
+  User,
+  X,
+  Loader
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { useLudoEngine } from '@/hooks/use-ludo-engine'; 
+import { useLudoEngine } from '@/hooks/use-ludo-engine';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { AppLayout } from '@/components/layout/app-layout';
 
-// --- COLORS CONFIGURATION ---
-const THEME = {
-  red: { main: "#B91C1C", light: "#FEE2E2", border: "#7F1D1D", text: "#F87171" },
-  green: { main: "#15803D", light: "#DCFCE7", border: "#064E3B", text: "#4ADE80" },
-  blue: { main: "#1D4ED8", light: "#DBEAFE", border: "#1E3A8A", text: "#60A5FA" },
-  yellow: { main: "#A16207", light: "#FEF9C3", border: "#713F12", text: "#FACC15" },
-  board: "#FDFCF0", // Premium Cream/Off-white
-};
+// --- UI COMPONENTS ---
 
-// --- UI COMPONENTS: GAME PIECE (Goti) ---
-const GamePiece = ({ color, onClick, canMove }: { color: keyof typeof THEME, onClick?: () => void, canMove?: boolean }) => (
-  <div 
-    onClick={onClick}
-    className={cn(
-      "relative flex items-center justify-center transition-all cursor-pointer z-20",
-      canMove && "animate-bounce hover:scale-110"
-    )}
-  >
-    {/* Piece Shadow */}
-    <div className="absolute w-6 h-2 bg-black/20 rounded-full blur-sm bottom-0" />
-    
-    {/* Piece Body */}
-    <div className={cn(
-      "w-7 h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center shadow-lg border-2 border-white/80",
-      "bg-gradient-to-b",
-      color === 'red' && "from-red-500 to-[#7F1D1D]",
-      color === 'green' && "from-green-500 to-[#064E3B]",
-      color === 'blue' && "from-blue-500 to-[#1E3A8A]",
-      color === 'yellow' && "from-yellow-400 to-[#713F12]"
-    )}>
-       <div className="w-3 h-3 rounded-full bg-white/30" />
+const GamePiece = ({ color }: { color: string }) => (
+  <div className="relative flex flex-col items-center justify-center drop-shadow-md transition-transform hover:scale-110 cursor-pointer z-10 scale-90">
+    <div className="w-[18px] h-[18px] md:w-[24px] md:h-[24px] bg-white rounded-full flex items-center justify-center shadow-sm relative z-10 border border-gray-100">
+      <div className={cn(
+        "w-3 h-3 md:w-4 md:h-4 rounded-full shadow-inner",
+        color === 'red' && "bg-[#FF4B4B]",
+        color === 'green' && "bg-[#00E676]",
+        color === 'blue' && "bg-[#2979FF]",
+        color === 'yellow' && "bg-[#FFD500]"
+      )} />
     </div>
+    <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] md:border-l-[9px] md:border-r-[9px] md:border-t-[11px] border-l-transparent border-r-transparent border-t-white absolute -bottom-[6px] md:-bottom-[9px]" />
   </div>
 );
 
-// --- PLAYER CARD COMPONENT ---
-const PlayerCard = ({ color, player, isActive, diceValue, isRolling, onRoll, onJoin }: any) => {
-  const styles = THEME[color as keyof typeof THEME];
+const HomeSocket = ({ color, children }: { color: string, children?: React.ReactNode }) => (
+  <div className={cn(
+    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]",
+    color === 'red' ? "bg-[#FF4B4B] border-[2px] border-[#b71c1c]" :
+    color === 'green' ? "bg-[#00E676] border-[2px] border-[#1b5e20]" :
+    color === 'blue' ? "bg-[#2979FF] border-[2px] border-[#0d47a1]" :
+    "bg-[#FFD500] border-[2px] border-[#f57f17]"
+  )}>
+    {children}
+  </div>
+);
 
-  if (!player) {
-    return (
-      <button 
-        onClick={onJoin}
-        className="flex flex-col items-center justify-center w-24 h-24 rounded-3xl border-4 border-dashed border-white/20 bg-black/10 text-white/40 hover:bg-black/30 transition-all hover:border-white/40"
-      >
-        <Plus size={24} />
-        <span className="text-[10px] font-black mt-1">JOIN</span>
-      </button>
-    );
-  }
+const PlayerCard = ({ color, isActive, diceValue, isRolling, onRoll, profileImg }: any) => {
+  const colorMap: any = {
+    red: "border-[#FF4B4B] bg-[#FF4B4B]/10 text-[#FF4B4B]",
+    green: "border-[#00E676] bg-[#00E676]/10 text-[#00E676]",
+    blue: "border-[#2979FF] bg-[#2979FF]/10 text-[#2979FF]",
+    yellow: "border-[#FFD500] bg-[#FFD500]/10 text-[#FFD500]",
+  };
+
+  const btnColorMap: any = {
+    red: "bg-[#FF4B4B]",
+    green: "bg-[#00E676]",
+    blue: "bg-[#2979FF]",
+    yellow: "bg-[#FFD500]",
+  };
 
   return (
     <div className={cn(
-      "flex flex-col items-center p-2 rounded-3xl transition-all duration-300 relative",
-      isActive ? "scale-105 z-40" : "opacity-70 grayscale-[0.2]"
+      "flex items-center gap-2 p-1.5 rounded-xl border-2 transition-all duration-300",
+      colorMap[color],
+      isActive ? "scale-105 shadow-lg ring-1 ring-white/30" : "opacity-60 grayscale-[0.3]"
     )}>
-      {/* Dice Container */}
-      <div 
-        onClick={isActive && !diceValue ? onRoll : undefined}
+      <Avatar className={cn("h-10 w-10 rounded-lg border-2", colorMap[color])}>
+        <AvatarImage src={profileImg} />
+        <AvatarFallback className="bg-white/5"><User size={18} /></AvatarFallback>
+      </Avatar>
+
+      <button 
+        onClick={onRoll}
+        disabled={!isActive || isRolling}
         className={cn(
-          "mb-2 w-12 h-12 rounded-xl flex items-center justify-center text-xl font-black shadow-2xl transition-transform",
-          isActive ? "cursor-pointer active:scale-90" : "cursor-not-allowed",
-          "bg-white border-b-4 border-gray-300 text-slate-800"
+          "w-10 h-10 rounded-lg shadow-inner flex items-center justify-center transition-transform active:scale-90",
+          btnColorMap[color],
+          isActive && !isRolling ? "animate-pulse cursor-pointer" : "cursor-default"
         )}
       >
-        {isRolling ? "🎲" : (diceValue || "•")}
-      </div>
-
-      {/* Profile Info */}
-      <div className={cn(
-        "flex flex-col items-center w-24 bg-white rounded-2xl p-2 shadow-xl border-t-4",
-        color === 'red' && "border-red-600",
-        color === 'green' && "border-green-600",
-        color === 'blue' && "border-blue-600",
-        color === 'yellow' && "border-yellow-600",
-      )}>
-        <Avatar className="h-10 w-10 border-2 border-gray-100 mb-1">
-          <AvatarImage src={player.avatarUrl} />
-          <AvatarFallback><User size={16} /></AvatarFallback>
-        </Avatar>
-        <span className="text-[10px] font-bold text-gray-800 truncate w-full text-center">
-          {player.name?.split(' ')[0]}
+        <span className={cn("text-lg font-black", (color === 'yellow' || color === 'green') ? "text-black" : "text-white")}>
+          {isActive ? (isRolling ? "?" : diceValue || "?") : ""}
         </span>
-      </div>
-      
-      {isActive && (
-        <div className="absolute -top-1 -right-1">
-           <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-           </span>
-        </div>
-      )}
+      </button>
     </div>
   );
 };
 
-// --- MAIN GAME ---
-export default function LudoGame() {
-  return (
-    <Suspense fallback={<div className="h-screen bg-[#0F172A] flex items-center justify-center">Loading...</div>}>
-      <LudoGameContent />
-    </Suspense>
-  );
-}
+// --- MAIN GAME CONTENT ---
 
-function LudoGameContent() {
+export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { roomId?: string, isOverlay?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const roomId = searchParams.get('roomId') || 'LOBBY_1';
-  
+  const roomId = propsRoomId || searchParams.get('roomId') || 'global_room';
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   
-  const { gameState, rollDice, moveToken, joinLobby, isLoading } = useLudoEngine(roomId, currentUser?.uid);
+  const [isLaunching, setIsLaunching] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
-  const getPlayer = (color: string) => gameState?.players?.find((p: any) => p.color === color);
+  const { gameState, rollDice, joinLobby, isLoading } = useLudoEngine(roomId, currentUser?.uid || null);
 
-  if (isLoading) return <div className="h-screen bg-[#0F172A] flex flex-col items-center justify-center text-white"><div className="animate-spin mb-4 text-blue-500"><Settings /></div>LOADING ARENA...</div>;
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLaunching(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLaunching || isLoading) {
+    return (
+      <div className="h-screen w-full bg-[#0a1a4a] flex flex-col items-center justify-center space-y-4">
+        <Loader className="h-12 w-12 text-yellow-500 animate-spin" />
+        <h1 className="text-xl font-bold text-white uppercase tracking-widest">Loading Arena...</h1>
+      </div>
+    );
+  }
+
+  const isMyTurn = gameState?.turn === currentUser?.uid;
+
+  const renderPath = (type: string, i: number) => {
+    let bg = "bg-white"; 
+    let content = null;
+
+    if (type === 'left') {
+      if (i === 1) { bg = "bg-[#FF4B4B]"; content = <ArrowRight className="h-3 w-3 text-white" />; } 
+      if ([7, 8, 9, 10, 11].includes(i)) bg = "bg-[#FF4B4B]"; 
+      if (i === 14) content = <Star className="h-3 w-3 text-gray-300" />; 
+    } else if (type === 'top') {
+      if (i === 5) { bg = "bg-[#00E676]"; content = <ArrowDown className="h-3 w-3 text-white" />; } 
+      if ([4, 7, 10, 13, 16].includes(i)) bg = "bg-[#00E676]"; 
+      if (i === 6) content = <Star className="h-3 w-3 text-gray-300" />; 
+    } else if (type === 'right') {
+      if (i === 16) { bg = "bg-[#FFD500]"; content = <ArrowLeft className="h-3 w-3 text-white" />; } 
+      if ([6, 7, 8, 9, 10].includes(i)) bg = "bg-[#FFD500]"; 
+      if (i === 3) content = <Star className="h-3 w-3 text-gray-300" />; 
+    } else if (type === 'bottom') {
+      if (i === 12) { bg = "bg-[#2979FF]"; content = <ArrowUp className="h-3 w-3 text-white" />; } 
+      if ([1, 4, 7, 10, 13].includes(i)) bg = "bg-[#2979FF]"; 
+      if (i === 11) content = <Star className="h-3 w-3 text-gray-300" />; 
+    }
+
+    return (
+      <div key={`${type}-${i}`} className={cn("border-[0.5px] border-gray-300 flex items-center justify-center relative", bg)}>
+        {content}
+      </div>
+    );
+  };
+
+  const getPlayerByColor = (color: string) => gameState?.players.find((p: any) => p.color === color);
 
   return (
-    <div className="h-screen w-full bg-[#111827] flex flex-col items-center overflow-hidden font-sans selection:bg-none">
-      
-      {/* TOP NAV */}
-      <header className="w-full p-4 flex justify-between items-center z-50">
-        <button onClick={() => router.back()} className="p-2 hover:bg-white/10 rounded-xl transition-colors">
-          <ChevronLeft className="text-white" />
-        </button>
-        <div className="flex flex-col items-center">
-           <h2 className="text-white font-black italic tracking-tighter text-2xl">LUDO ROYALE</h2>
-           <div className="bg-blue-600/20 px-3 py-0.5 rounded-full border border-blue-500/30">
-              <p className="text-blue-400 text-[10px] font-bold tracking-widest uppercase">Room: {roomId}</p>
-           </div>
-        </div>
-        <button className="p-2 hover:bg-white/10 rounded-xl">
-          <Info className="text-white/50" />
-        </button>
-      </header>
+    <div className="h-full w-full bg-[#0a1a4a] flex flex-col relative overflow-hidden">
+      {/* Header */}
+      {!isOverlay && (
+        <header className="p-4 flex items-center justify-between z-50">
+           <button onClick={() => router.back()} className="bg-white/10 p-2 rounded-full text-white"><ChevronLeft /></button>
+           <h1 className="text-xl font-black text-white italic">LUDO PRO</h1>
+           <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full text-white">
+             {isMuted ? <VolumeX /> : <Volume2 />}
+           </button>
+        </header>
+      )}
 
-      {/* GAME ARENA */}
-      <div className="relative flex-1 w-full max-w-4xl flex items-center justify-center p-4">
-        
-        {/* PLAYERS - LEFT SIDE */}
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-20">
-           <PlayerCard color="red" player={getPlayer('red')} isActive={gameState?.turn === getPlayer('red')?.uid} onRoll={rollDice} onJoin={() => joinLobby('red', userProfile)} />
-           <PlayerCard color="blue" player={getPlayer('blue')} isActive={gameState?.turn === getPlayer('blue')?.uid} onRoll={rollDice} onJoin={() => joinLobby('blue', userProfile)} />
-        </div>
+      <main className="flex-1 flex flex-col items-center justify-center p-2 relative">
+         
+         {/* PLAYER CARDS - Equal alignment */}
+         <div className="absolute top-4 left-4"><PlayerCard color="red" isActive={gameState?.turn === getPlayerByColor('red')?.uid} diceValue={gameState?.dice} onRoll={rollDice} profileImg={getPlayerByColor('red')?.avatarUrl} /></div>
+         <div className="absolute top-4 right-4"><PlayerCard color="green" isActive={gameState?.turn === getPlayerByColor('green')?.uid} diceValue={gameState?.dice} onRoll={rollDice} profileImg={getPlayerByColor('green')?.avatarUrl} /></div>
+         <div className="absolute bottom-4 left-4"><PlayerCard color="blue" isActive={gameState?.turn === getPlayerByColor('blue')?.uid} diceValue={gameState?.dice} onRoll={rollDice} profileImg={getPlayerByColor('blue')?.avatarUrl} /></div>
+         <div className="absolute bottom-4 right-4"><PlayerCard color="yellow" isActive={gameState?.turn === getPlayerByColor('yellow')?.uid} diceValue={gameState?.dice} onRoll={rollDice} profileImg={getPlayerByColor('yellow')?.avatarUrl} /></div>
 
-        {/* PLAYERS - RIGHT SIDE */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-20">
-           <PlayerCard color="green" player={getPlayer('green')} isActive={gameState?.turn === getPlayer('green')?.uid} onRoll={rollDice} onJoin={() => joinLobby('green', userProfile)} />
-           <PlayerCard color="yellow" player={getPlayer('yellow')} isActive={gameState?.turn === getPlayer('yellow')?.uid} onRoll={rollDice} onJoin={() => joinLobby('yellow', userProfile)} />
-        </div>
-
-        {/* THE BOARD */}
-        <div className="relative w-full max-w-[450px] aspect-square shadow-[0_0_100px_rgba(0,0,0,0.6)]">
-          
-          <div className="w-full h-full bg-white grid grid-cols-15 grid-rows-15 p-1 rounded-sm border-[6px] border-slate-900 shadow-inner">
-            
-            {/* RED HOME (Dark Red) */}
-            <div className="col-span-6 row-span-6 bg-red-700 p-6 border-2 border-black/5">
-               <div className="w-full h-full bg-white rounded-2xl grid grid-cols-2 p-2 gap-4 shadow-inner">
-                  {[0,1,2,3].map(i => (
-                    <div key={i} className="rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
-                       {getPlayer('red')?.tokens[i]?.position === -1 && <GamePiece color="red" />}
+         {/* BOARD ARENA - Slightly Smaller (max-w-[380px]) */}
+         <div className="relative w-full max-w-[380px] aspect-square bg-white rounded-lg shadow-2xl border-[6px] border-white/10 overflow-hidden">
+            <div className="w-full h-full grid grid-cols-15 grid-rows-15 border-[1px] border-gray-400">
+               
+               {/* RED HOME (6x6) */}
+               <div className="col-span-6 row-span-6 bg-[#FF4B4B] p-4 border-r border-b border-gray-400">
+                  <div className="w-full h-full bg-white rounded flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-3">
+                       {[1,2,3,4].map(i => <HomeSocket key={i} color="red"><GamePiece color="red" /></HomeSocket>)}
                     </div>
-                  ))}
+                  </div>
                </div>
-            </div>
 
-            {/* TOP PATH (Green Pathway) */}
-            <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 bg-white">
-              {/* Simplify: Just coloring the middle home path */}
-              {[...Array(18)].map((_, i) => (
-                <div key={i} className={cn("border-[0.5px] border-slate-200", i%3===1 && i>0 && "bg-green-100")}></div>
-              ))}
-            </div>
+               {/* TOP PATH (3x6) */}
+               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6">
+                  {Array.from({ length: 18 }).map((_, i) => renderPath('top', i))}
+               </div>
 
-            {/* GREEN HOME (Dark Green) */}
-            <div className="col-span-6 row-span-6 bg-green-800 p-6 border-2 border-black/5">
-              <div className="w-full h-full bg-white rounded-2xl grid grid-cols-2 p-2 gap-4 shadow-inner">
-                  {[0,1,2,3].map(i => (
-                    <div key={i} className="rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
-                       {getPlayer('green')?.tokens[i]?.position === -1 && <GamePiece color="green" />}
+               {/* GREEN HOME (6x6) */}
+               <div className="col-span-6 row-span-6 bg-[#00E676] p-4 border-l border-b border-gray-400">
+                  <div className="w-full h-full bg-white rounded flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-3">
+                       {[1,2,3,4].map(i => <HomeSocket key={i} color="green"><GamePiece color="green" /></HomeSocket>)}
                     </div>
-                  ))}
+                  </div>
                </div>
-            </div>
 
-            {/* LEFT PATH (Red/Blue Pathway) */}
-            <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 bg-white">
-               {[...Array(18)].map((_, i) => (
-                <div key={i} className={cn("border-[0.5px] border-slate-200", i >= 7 && i <= 11 && "bg-red-100")}></div>
-              ))}
-            </div>
+               {/* LEFT PATH (6x3) */}
+               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3">
+                  {Array.from({ length: 18 }).map((_, i) => renderPath('left', i))}
+               </div>
 
-            {/* CENTER FINISH SQUARE */}
-            <div className="col-span-3 row-span-3 relative bg-white border-2 border-slate-900">
-               <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)', backgroundColor: '#15803D' }} />
-               <div className="absolute inset-0" style={{ clipPath: 'polygon(100% 0%, 100% 100%, 50% 50%)', backgroundColor: '#A16207' }} />
-               <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 100%, 100% 100%, 50% 50%)', backgroundColor: '#1D4ED8' }} />
-               <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 0%, 0% 100%, 50% 50%)', backgroundColor: '#B91C1C' }} />
-               <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white rounded-full p-1.5 shadow-2xl border border-gray-200">
-                     <Trophy size={16} className="text-yellow-600 fill-yellow-400" />
+               {/* CENTER FINISH (3x3) */}
+               <div className="col-span-3 row-span-3 relative bg-white border border-gray-400">
+                  <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)', backgroundColor: '#00E676' }} />
+                  <div className="absolute inset-0" style={{ clipPath: 'polygon(100% 0%, 100% 100%, 50% 50%)', backgroundColor: '#FFD500' }} />
+                  <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 100%, 100% 100%, 50% 50%)', backgroundColor: '#2979FF' }} />
+                  <div className="absolute inset-0" style={{ clipPath: 'polygon(0% 0%, 0% 100%, 50% 50%)', backgroundColor: '#FF4B4B' }} />
+               </div>
+
+               {/* RIGHT PATH (6x3) */}
+               <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3">
+                  {Array.from({ length: 18 }).map((_, i) => renderPath('right', i))}
+               </div>
+
+               {/* BLUE HOME (6x6) */}
+               <div className="col-span-6 row-span-6 bg-[#2979FF] p-4 border-r border-t border-gray-400">
+                  <div className="w-full h-full bg-white rounded flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-3">
+                       {[1,2,3,4].map(i => <HomeSocket key={i} color="blue"><GamePiece color="blue" /></HomeSocket>)}
+                    </div>
+                  </div>
+               </div>
+
+               {/* BOTTOM PATH (3x6) */}
+               <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6">
+                  {Array.from({ length: 18 }).map((_, i) => renderPath('bottom', i))}
+               </div>
+
+               {/* YELLOW HOME (6x6) */}
+               <div className="col-span-6 row-span-6 bg-[#FFD500] p-4 border-l border-t border-gray-400">
+                  <div className="w-full h-full bg-white rounded flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-3">
+                       {[1,2,3,4].map(i => <HomeSocket key={i} color="yellow"><GamePiece color="yellow" /></HomeSocket>)}
+                    </div>
                   </div>
                </div>
             </div>
+         </div>
 
-            {/* RIGHT PATH (Yellow Pathway) */}
-            <div className="col-span-6 row-span-3 grid grid-cols-6 grid-rows-3 bg-white">
-               {[...Array(18)].map((_, i) => (
-                <div key={i} className={cn("border-[0.5px] border-slate-200", i >= 6 && i <= 10 && "bg-yellow-100")}></div>
-              ))}
-            </div>
+         {!gameState && (
+           <button 
+             onClick={() => joinLobby(userProfile)}
+             className="mt-8 bg-yellow-500 hover:bg-yellow-400 text-black px-10 py-3 rounded-full font-bold shadow-[0_6px_0_#b8860b] active:translate-y-1 active:shadow-none transition-all"
+           >
+              PLAY NOW
+           </button>
+         )}
+      </main>
 
-            {/* BLUE HOME (Dark Blue) */}
-            <div className="col-span-6 row-span-6 bg-blue-800 p-6 border-2 border-black/5">
-              <div className="w-full h-full bg-white rounded-2xl grid grid-cols-2 p-2 gap-4 shadow-inner">
-                  {[0,1,2,3].map(i => (
-                    <div key={i} className="rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
-                       {getPlayer('blue')?.tokens[i]?.position === -1 && <GamePiece color="blue" />}
-                    </div>
-                  ))}
-               </div>
-            </div>
-
-            {/* BOTTOM PATH (Blue Pathway) */}
-            <div className="col-span-3 row-span-6 grid grid-cols-3 grid-rows-6 bg-white">
-               {[...Array(18)].map((_, i) => (
-                <div key={i} className={cn("border-[0.5px] border-slate-200", i%3===1 && i<17 && "bg-blue-100")}></div>
-              ))}
-            </div>
-
-            {/* YELLOW HOME (Dark Yellow) */}
-            <div className="col-span-6 row-span-6 bg-yellow-700 p-6 border-2 border-black/5">
-              <div className="w-full h-full bg-white rounded-2xl grid grid-cols-2 p-2 gap-4 shadow-inner">
-                  {[0,1,2,3].map(i => (
-                    <div key={i} className="rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
-                       {getPlayer('yellow')?.tokens[i]?.position === -1 && <GamePiece color="yellow" />}
-                    </div>
-                  ))}
-               </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      {/* ACTION OVERLAY: TURN NOTIFICATION */}
-      {gameState?.turn === currentUser?.uid && (
+      {isMyTurn && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50">
-           <div className="bg-white text-slate-900 px-8 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-t-4 border-green-500 flex items-center gap-4 animate-bounce">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                 <span className="text-green-600 font-black">!</span>
-              </div>
-              <span className="font-black tracking-tight text-lg">YOUR TURN! ROLL THE DICE</span>
-           </div>
+           <Badge className="bg-green-500 text-white px-6 py-2 rounded-full animate-bounce shadow-xl">YOUR TURN</Badge>
         </div>
       )}
-
-      {/* DESIGN DECORATIONS */}
-      <div className="fixed -bottom-20 -left-20 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="fixed -top-20 -right-20 w-80 h-80 bg-red-600/10 rounded-full blur-[100px] pointer-events-none" />
     </div>
+  );
+}
+
+export default function LudoGamePage() {
+  return (
+    <AppLayout fullScreen>
+      <Suspense fallback={<div className="h-screen w-full bg-[#0a1a4a] flex items-center justify-center text-white">READYING BOARD...</div>}>
+        <LudoGameContent />
+      </Suspense>
+    </AppLayout>
   );
 }
