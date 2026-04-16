@@ -4,12 +4,18 @@ import android.os.Bundle;
 import android.util.Log;
 import com.getcapacitor.BridgeActivity;
 import com.google.firebase.FirebaseApp;
+import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d("UmmyAuth", "Initializing Firebase in MainActivity");
-        FirebaseApp.initializeApp(this);
+        try {
+            FirebaseApp.initializeApp(this);
+            registerPlugin(FirebaseAuthenticationPlugin.class);
+        } catch (Exception e) {
+            Log.e("UmmyAuth", "Initialization failed", e);
+        }
     }
 }
