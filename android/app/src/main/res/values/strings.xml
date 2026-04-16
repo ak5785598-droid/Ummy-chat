@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Ummy</string>
-    <string name="title_activity_main">Ummy</string>
+    <string name="app_name">Ummy v1.1.TEST</string>
+    <string name="title_activity_main">Ummy v1.1.TEST</string>
     <string name="package_name">app.vercel.ummy_chat.twa</string>
     <string name="custom_url_scheme">app.vercel.ummy_chat.twa</string>
 </resources>
