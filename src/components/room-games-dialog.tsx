@@ -45,6 +45,16 @@ const WORKING_GAMES = [
     title: 'Forest Party', 
     thumbnail: '/images/premium_3d_forest_party_game_icon_1775544521843.png'
   },
+  { 
+    id: 'roulette', 
+    title: 'Roulette', 
+    thumbnail: '/images/premium_3d_roulette_game_icon.png'
+  },
+  { 
+    id: 'teen-patti', 
+    title: '3 Patti', 
+    thumbnail: '/images/premium_3d_teen_patti_game_icon.png'
+  },
 ];
 
 export function RoomGamesDialog({ open, onOpenChange, onSelectGame }: RoomGamesDialogProps) {
