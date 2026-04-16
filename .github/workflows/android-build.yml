@@ -28,7 +28,6 @@ jobs:
 
       - name: Build Web Project
         run: pnpm build
-        continue-on-error: true
 
       - name: Ensure Web Directory Exists
         run: |
@@ -45,29 +44,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-
-      - name: Create debug keystore
-        run: |
-          keytool -genkey -v -keystore android/app/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Generate Signing Report
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew signingReport > ../fingerprints.txt
-          echo "IMAGE_BUILD_SHA1: $(sha1sum ../fingerprints.txt)"
-        
-      - name: Extract Secret Keystore Fingerprint (REAL ONE)
-        run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > secret.keystore
-          keytool -list -v -keystore secret.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> fingerprints.txt
-          rm secret.keystore
-
-      - name: Upload Fingerprints Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: fingerprints
-          path: fingerprints.txt
 
       - name: Build Release APK
         run: |

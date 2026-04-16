@@ -15,14 +15,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "373109833688-k68i2ron3vs01b4pn9r59f1gbm3m4hog.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "app.vercel.ummy_chat.twa",
-            "certificate_hash": "de237049a1ef71983d8f9b7b6e1be01ed1049a19"
-          }
-        },
-        {
           "client_id": "373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com",
           "client_type": 3
         }
