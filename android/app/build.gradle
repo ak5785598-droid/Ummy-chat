@@ -26,15 +26,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-
-// Global fix for Capacitor plugin variant selection failure in Gradle 8+
-configurations.all {
-    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-        if (details.requested.group == 'project' && details.requested.name.startsWith('capacitor-')) {
-             details.useTarget(details.requested.group + ":" + details.requested.name + ":" + details.requested.version)
-        }
-    }
 }
 
 repositories {
@@ -59,6 +50,9 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.1.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-common'
+
+    // Required for Native Google Sign-In
+    implementation 'com.google.android.gms:play-services-auth:21.2.0'
 }
 
 apply from: 'capacitor.build.gradle'

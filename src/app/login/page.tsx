@@ -52,6 +52,7 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [nativeVerificationId, setNativeVerificationId] = useState<string | null>(null);
 
   // Global Branding Sync
   const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
@@ -173,6 +174,41 @@ export default function LoginPage() {
       router.replace('/rooms');
     }
   }, [user, isAuthLoading, userProfile, isProfileLoading, profileError, router]);
+
+  // Native Phone Auth Listeners
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const phoneCodeSentListener = FirebaseAuthentication.addListener('phoneCodeSent', (event) => {
+      console.log("[Native-Auth] Phone Code Sent. ID:", event.verificationId);
+      setNativeVerificationId(event.verificationId);
+      setPhoneLoginStep('code');
+      setIsSigningIn(false);
+      toast({ title: 'Code Sent', description: 'OTP dispatched via native SMS.' });
+    });
+
+    const phoneVerificationCompletedListener = FirebaseAuthentication.addListener('phoneVerificationCompleted', async (event) => {
+      console.log("[Native-Auth] Phone Verification Completed Instantly.");
+      if (event.result.user) {
+        setIsSigningIn(true);
+        await syncUserIdentity(event.result.user.uid, event.result.user.phoneNumber || null, null);
+        setShowPhonePopup(false);
+        router.push('/rooms');
+      }
+    });
+
+    const phoneVerificationFailedListener = FirebaseAuthentication.addListener('phoneVerificationFailed', (event) => {
+      console.error("[Native-Auth] Phone Verification Failed:", event.message);
+      setIsSigningIn(false);
+      toast({ variant: 'destructive', title: 'Verification Failed', description: event.message });
+    });
+
+    return () => {
+      phoneCodeSentListener.then(l => l.remove());
+      phoneVerificationCompletedListener.then(l => l.remove());
+      phoneVerificationFailedListener.then(l => l.remove());
+    };
+  }, [auth, router]);
 
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore || !uid) return;
@@ -367,9 +403,23 @@ export default function LoginPage() {
       toast({ variant: 'destructive', title: 'Invalid Number', description: 'Enter a valid phone number with country code.' });
       return;
     }
+    console.log("[Auth-Debug] Phone Sign-In Clicked. Native Platform:", Capacitor.isNativePlatform());
     setIsSigningIn(true);
     try {
       const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${cleanNumber}`;
+      console.log("[Auth-Debug] Formatted Number:", formattedNumber);
+
+      if (Capacitor.isNativePlatform()) {
+        console.log("[Auth-Debug] Attempting Native Phone Sign-In...");
+        try {
+          await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: formattedNumber });
+          console.log("[Auth-Debug] Native Phone Sign-In call successful. Waiting for listeners...");
+          // Native response is handled via listeners
+          return;
+        } catch (nativeError: any) {
+          console.error("[Auth-Debug] Native Phone Sign-In failed, falling back to Web:", nativeError);
+        }
+      }
 
       const verifier = initRecaptcha();
       const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
@@ -380,15 +430,30 @@ export default function LoginPage() {
       console.error("Phone Auth Error", error);
       toast({ variant: 'destructive', title: 'Failed to Send Code', description: error.message });
     } finally {
-      setIsSigningIn(false);
+      if (!Capacitor.isNativePlatform()) {
+        setIsSigningIn(false);
+      }
     }
   };
 
   const handleVerifyCode = async () => {
-    if (!confirmationResult) return;
+    if (!confirmationResult && !nativeVerificationId) return;
     setIsSigningIn(true);
     try {
-      const result = await confirmationResult.confirm(verificationCode);
+      if (Capacitor.isNativePlatform() && nativeVerificationId) {
+        const result = await FirebaseAuthentication.confirmVerificationCode({
+          verificationId: nativeVerificationId,
+          verificationCode: verificationCode
+        });
+        if (result.user) {
+          await syncUserIdentity(result.user.uid, result.user.phoneNumber || null, null);
+          setShowPhonePopup(false);
+          router.push('/rooms');
+        }
+        return;
+      }
+
+      const result = await confirmationResult!.confirm(verificationCode);
       if (result.user) {
         await syncUserIdentity(result.user.uid, result.user.phoneNumber, null);
         setShowPhonePopup(false);
