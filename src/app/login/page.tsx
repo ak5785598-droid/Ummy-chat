@@ -603,25 +603,26 @@ export default function LoginPage() {
             <div className="w-full space-y-4">
               {phoneLoginStep === 'number' ? (
                 <>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full">
                     {/* Country Selector Button */}
                     <button
                       onClick={() => setIsCountryDropdownOpen(true)}
-                      className="flex-shrink-0 h-14 w-24 bg-black/30 border border-white/10 rounded-2xl px-3 flex items-center justify-between text-white hover:bg-black/40 transition-colors"
+                      className="flex-shrink-0 h-14 w-[85px] bg-black/20 border border-white/10 rounded-2xl px-2 flex items-center justify-between text-white hover:bg-black/30 transition-colors"
                     >
                       <span className="text-xl">{selectedCountry.flag}</span>
-                      <span className="font-bold text-sm">{selectedCountry.code}</span>
-                      <ChevronDown className="w-4 h-4 text-white/50" />
+                      <span className="font-bold text-xs">{selectedCountry.code}</span>
+                      <ChevronDown className="w-3 h-3 text-white/50" />
                     </button>
 
                     {/* Phone Number Input */}
                     <input
                       type="tel"
-                      placeholder="Enter phone number"
+                      placeholder="Number"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       disabled={isSigningIn}
-                      className="flex-1 h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-lg font-bold focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
+                      autoComplete="off"
+                      className="flex-1 min-w-0 h-14 bg-black/20 border border-white/10 rounded-2xl px-4 text-white text-lg font-bold focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
                     />
                   </div>
 
