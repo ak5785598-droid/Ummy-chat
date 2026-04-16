@@ -15,16 +15,24 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i("UmmyAuth", "=== MainActivity Start ===");
-        Toast.makeText(this, "NATIVE BRIDGE READY", Toast.LENGTH_LONG).show();
+        Log.e("UmmyAuth", "=== MainActivity OnCreate Starting ===");
+        Toast.makeText(this, "NATIVE BRIDGE LOADING...", Toast.LENGTH_SHORT).show();
+        
         try {
-            Log.i("UmmyAuth", "Initializing Firebase App...");
+            Log.e("UmmyAuth", "Force initializing Firebase...");
             FirebaseApp.initializeApp(this);
-            Log.i("UmmyAuth", "Registering FirebaseAuthenticationPlugin...");
+            
+            FirebaseApp app = FirebaseApp.getInstance();
+            Log.e("UmmyAuth", "FirebaseApp Instance: " + (app != null ? app.getName() : "NULL"));
+            
+            Log.e("UmmyAuth", "Registering Plugin...");
             registerPlugin(FirebaseAuthenticationPlugin.class);
-            Log.i("UmmyAuth", "Initialization SUCCESS");
+            Log.e("UmmyAuth", "Initialization SUCCESS");
+            
+            Toast.makeText(this, "NATIVE BRIDGE READY ✅", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Log.e("UmmyAuth", "Initialization FAILED: " + e.getMessage(), e);
+            Log.e("UmmyAuth", "Initialization CRASH: " + e.getMessage(), e);
+            Toast.makeText(this, "NATIVE BRIDGE ERROR ❌", Toast.LENGTH_LONG).show();
         }
     }
 }
