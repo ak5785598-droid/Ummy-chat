@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
- ChevronLeft, Volume2, VolumeX, Shield
+ Move, Volume2, VolumeX, HelpCircle, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,24 +39,47 @@ export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { r
  
    const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
 
+   // --- Floating Drag Logic ---
+   const [pos, setPos] = useState({ x: 0, y: 0 });
+   const [isDragging, setIsDragging] = useState(false);
+   const startPos = useRef({ x: 0, y: 0 });
+
+   const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+       setIsDragging(true);
+       startPos.current = {
+           x: e.clientX - pos.x,
+           y: e.clientY - pos.y
+       };
+       e.currentTarget.setPointerCapture(e.pointerId);
+   };
+
+   const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+       if (!isDragging) return;
+       setPos({
+           x: e.clientX - startPos.current.x,
+           y: e.clientY - startPos.current.y
+       });
+   };
+
+   const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+       setIsDragging(false);
+       e.currentTarget.releasePointerCapture(e.pointerId);
+   };
+   // ---------------------------
+
    useEffect(() => {
-    // Yeh code aapki poori body aur HTML ko transparent kar dega taaki piche ka view dikhe
     document.documentElement.style.backgroundColor = 'transparent';
     document.body.style.backgroundColor = 'transparent';
 
     const timer = setTimeout(() => setIsLaunching(false), 1500);
-    return () => {
-        clearTimeout(timer);
-        // Clean up: Agar aap chahte ho ki is page se jaane ke baad body wapis default ho jaye toh yahan set kar sakte ho
-        // document.body.style.backgroundColor = ''; 
-    };
+    return () => clearTimeout(timer);
    }, []);
 
-   // BOTTOM SHEET LOADING PAGE
+   // LOADING SCREEN
    if (isLaunching || isLoading) {
     if (isOverlay) {
       return (
-        <div className="h-full w-full bg-[#1e293b] flex flex-col items-center justify-center space-y-6">
+        <div className="h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center space-y-6">
             <div className="h-14 w-14 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin"></div>
             <h1 className="text-xl font-bold text-white tracking-tight">Preparing Arena</h1>
         </div>
@@ -64,24 +87,12 @@ export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { r
     }
     return (
      <div className="h-screen w-full bg-transparent flex flex-col justify-end overflow-hidden font-sans pointer-events-none">
-        {/* Top Half Blurred/Transparent Background */}
-        <div className="flex-1 w-full bg-transparent flex items-center justify-center">
-            {/* Top area bilkul khali aur transparent rakha hai */}
-        </div>
-
-        {/* Bottom Sheet - Exactly 50vh */}
-        <div className="h-[50vh] w-full bg-white rounded-t-[40px] flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-bottom duration-700 pointer-events-auto shadow-2xl">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-2" />
-            <div className="relative flex items-center justify-center">
-                <div className="h-14 w-14 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
-            </div>
+        <div className="flex-1 w-full bg-transparent"></div>
+        <div className="h-[50vh] w-full bg-[#0a0a0a] rounded-t-[40px] flex flex-col items-center justify-center space-y-6 animate-in slide-in-from-bottom duration-700 pointer-events-auto shadow-2xl border-t border-white/10">
+            <div className="h-14 w-14 border-4 border-white/10 border-t-blue-600 rounded-full animate-spin"></div>
             <div className="text-center space-y-2">
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Preparing Arena</h1>
+                <h1 className="text-xl font-bold text-white tracking-tight">Preparing Arena</h1>
                 <p className="text-sm text-slate-400 font-medium animate-pulse">Syncing 3D assets...</p>
-            </div>
-            <div className="flex flex-col items-center gap-1 pt-4">
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Powered By</span>
-                <span className="text-sm font-black text-slate-900 tracking-widest italic">UMMY TEAM</span>
             </div>
         </div>
      </div>
@@ -115,15 +126,17 @@ export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { r
          onClick={() => isMyTurn && setSelectedSquare(coord)}
          className={cn(
            "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
-           isBlack ? "bg-[#1e40af] shadow-inner" : "bg-[#60a5fa] shadow-inner",
-           selectedSquare === coord && "ring-4 ring-yellow-400 z-20 brightness-125"
+           isBlack ? "bg-[#2563eb] shadow-inner" : "bg-[#93c5fd] shadow-inner",
+           selectedSquare === coord && "ring-2 ring-yellow-400 z-20 brightness-125"
          )}
        >
          {pieceKey && (
            <img 
              src={pieceSVG[pieceKey]} 
              alt={pieceKey}
-             className="w-[85%] h-[85%] drop-shadow-lg transform hover:scale-110"
+             // Pieces ko counter-rotate kiya hai taaki wo board par sidhe khade dikhe (True 3D effect)
+             className="w-[90%] h-[90%] drop-shadow-2xl transition-transform hover:scale-110"
+             style={{ transform: 'rotateX(-35deg) translateY(-10%) scale(1.1)' }}
            />
          )}
        </div>
@@ -131,54 +144,77 @@ export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { r
    };
 
    const Content = (
-    <div className={cn(
-      "h-full w-full flex flex-col relative overflow-hidden text-white font-sans",
-      isOverlay ? "bg-[#1e293b] pointer-events-auto" : "bg-transparent justify-end pointer-events-none pb-12"
-    )}>
-    
-    {/* Header - Now floats over the transparent top half */}
-    {!isOverlay && (
-      <header className="absolute top-0 w-full z-50 flex items-center justify-between p-6 pointer-events-auto">
-        <button onClick={() => router.back()} className="bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-md shadow-sm"><ChevronLeft /></button>
-        <div className="text-center">
-            <h1 className="text-xl font-black italic tracking-tighter text-blue-400 drop-shadow-md">CHESS ROYALE 3D</h1>
-        </div>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-black/20 p-3 rounded-xl border border-white/20 backdrop-blur-md shadow-sm">
-            {isMuted ? <VolumeX /> : <Volume2 />}
-        </button>
-      </header>
-    )}
-
-    {/* Transparent area for the background to show through */}
-    {!isOverlay && <div className="flex-1 w-full bg-transparent" />}
-
-    {/* Main Bottom Sheet Game Area */}
-    <main className={cn(
-      "w-full bg-[#1e293b]/95 backdrop-blur-2xl border-t border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center p-4 duration-500 overflow-y-auto pointer-events-auto pb-6 scrollbar-hide",
-      isOverlay ? "h-full" : "h-[50vh] rounded-t-[48px] animate-in slide-in-from-bottom"
-    )}>
+    <div className="h-screen w-full flex items-center justify-center bg-transparent pointer-events-none p-4">
+      
+      {/* Floating Draggable Sheet */}
+      <main 
+        className={cn(
+          "relative w-full max-w-[400px] bg-[#0a0a0a]/95 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] flex flex-col items-center duration-0 pointer-events-auto pb-6",
+        )}
+        style={{
+           transform: `translate(${pos.x}px, ${pos.y}px)`,
+           // Smooth drag transition only when not dragging
+           transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+        }}
+      >
          
-         <div className="w-12 h-1.5 bg-white/10 rounded-full mb-4 shrink-0" />
+         {/* Top Header As Per Image */}
+         <div className="flex items-center justify-between w-full px-5 pt-4 pb-3 bg-[#111] rounded-t-[32px] border-b border-white/5">
+            <div className="flex gap-3">
+               {/* Drag Handle Icon */}
+               <button
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full cursor-grab active:cursor-grabbing text-white/70 touch-none"
+               >
+                   <Move size={18} />
+               </button>
+               {/* Mute/Unmute Icon */}
+               <button onClick={() => setIsMuted(!isMuted)} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full text-white/70">
+                   {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+               </button>
+            </div>
+
+            {/* Center Sheet Dash */}
+            <div className="w-8 h-1.5 bg-white/20 rounded-full"></div>
+
+            <div className="flex gap-3">
+               {/* Help Icon */}
+               <button className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full text-white/70">
+                   <HelpCircle size={18} />
+               </button>
+               {/* Close Icon */}
+               <button onClick={() => router.back()} className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 rounded-full text-white/70 transition-colors">
+                   <X size={18} />
+               </button>
+            </div>
+         </div>
          
-         {/* 3D Board Adjusted for 50vh Sheet View */}
-         <div 
-            className="relative w-[min(85vw,35vh)] max-w-[300px] aspect-square rounded-lg border-[6px] border-[#334155] shadow-2xl overflow-hidden shrink-0 mb-4"
-            style={{ 
-                transform: 'rotateX(15deg)',
-                transformStyle: 'preserve-3d',
-            }}
-         >
-            <div className="grid grid-cols-8 grid-rows-8 w-full h-full bg-[#0f172a]">
-                {Array.from({ length: 8 }).map((_, r) => 
-                  Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
-                )}
+         {/* 3D Board Area */}
+         <div className="w-full flex justify-center py-6 perspective-1000">
+            <div 
+               className="relative w-[85%] max-w-[320px] aspect-square bg-[#0a0a0a] rounded-sm shrink-0"
+               style={{ 
+                   transform: 'rotateX(35deg) scale(0.95)',
+                   transformStyle: 'preserve-3d',
+                   // Added thick bottom shadow to make board look like a physical block
+                   boxShadow: '0 15px 0 #1e3a8a, 0 30px 25px rgba(0,0,0,0.9)',
+               }}
+            >
+               <div className="grid grid-cols-8 grid-rows-8 w-full h-full border-4 border-[#1e3a8a] rounded-sm overflow-hidden">
+                   {Array.from({ length: 8 }).map((_, r) => 
+                     Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
+                   )}
+               </div>
             </div>
          </div>
 
-         <div className="w-full max-w-[380px] px-2 space-y-4 shrink-0">
-            <div className="flex justify-between items-center bg-white/5 p-3 rounded-3xl border border-white/10">
+         {/* Players and Controls Section */}
+         <div className="w-full px-6 space-y-4 shrink-0 mt-4 text-white">
+            <div className="flex justify-between items-center bg-white/5 p-3 rounded-3xl border border-white/5 shadow-inner">
                 <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8 ring-2 ring-blue-500"><AvatarImage src="" /></Avatar>
+                    <Avatar className="h-9 w-9 ring-2 ring-blue-500 bg-[#1a1a1a]"><AvatarImage src="" /></Avatar>
                     <div>
                         <p className="text-[10px] font-bold uppercase opacity-60 text-blue-400">Khai</p>
                         <p className="font-black text-xs uppercase">{userProfile?.username || 'YOU'}</p>
@@ -189,18 +225,17 @@ export function ChessGameContent({ roomId: propsRoomId, isOverlay = false }: { r
                         <p className="text-[10px] font-bold uppercase opacity-60 text-red-400">Opponent</p>
                         <p className="font-black text-xs">SEARCHING...</p>
                     </div>
-                    <Avatar className="h-8 w-8 ring-2 ring-red-500"><AvatarImage src="" /></Avatar>
+                    <Avatar className="h-9 w-9 ring-2 ring-red-500 bg-[#1a1a1a]"><AvatarImage src="" /></Avatar>
                 </div>
             </div>
 
             <button 
                 onClick={() => startMatch(userProfile)}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 py-3 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-sm"
+                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] py-4 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all text-sm"
             >
                 Start New Battle
             </button>
             
-            <p className="text-[10px] text-center font-bold text-white/20 uppercase tracking-[0.4em] pb-2">Powered by UMMY TEAM</p>
          </div>
       </main>
     </div>
