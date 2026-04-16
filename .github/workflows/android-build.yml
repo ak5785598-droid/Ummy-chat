@@ -50,7 +50,13 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew signingReport
+          ./gradlew signingReport > ../fingerprints.txt
+        
+      - name: Upload Fingerprints Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingerprints
+          path: fingerprints.txt
 
       - name: Build Release APK
         run: |
