@@ -27,8 +27,8 @@ import { AppLayout } from '@/components/layout/app-layout';
 // --- UI COMPONENTS ---
 
 const GamePiece = ({ color }: { color: string }) => (
-  <div className="relative flex flex-col items-center justify-center drop-shadow-md transition-transform hover:scale-110 cursor-pointer z-10 scale-75 md:scale-100">
-    <div className="w-[16px] h-[16px] md:w-[22px] md:h-[22px] bg-white rounded-full flex items-center justify-center shadow-sm relative z-10 border border-gray-100">
+  <div className="relative flex flex-col items-center justify-center drop-shadow-md transition-transform hover:scale-110 cursor-pointer z-10 scale-[0.65] md:scale-90">
+    <div className="w-[16px] h-[16px] md:w-[20px] md:h-[20px] bg-white rounded-full flex items-center justify-center shadow-sm relative z-10 border border-gray-100">
       <div className={cn(
         "w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-full shadow-inner",
         color === 'red' && "bg-[#FF4B4B]",
@@ -37,13 +37,13 @@ const GamePiece = ({ color }: { color: string }) => (
         color === 'yellow' && "bg-[#FFD500]"
       )} />
     </div>
-    <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] md:border-l-[8px] md:border-r-[8px] md:border-t-[10px] border-l-transparent border-r-transparent border-t-white absolute -bottom-[5px] md:-bottom-[8px]" />
+    <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] md:border-l-[7px] md:border-r-[7px] md:border-t-[9px] border-l-transparent border-r-transparent border-t-white absolute -bottom-[5px] md:-bottom-[7px]" />
   </div>
 );
 
 const HomeSocket = ({ color, children }: { color: string, children?: React.ReactNode }) => (
   <div className={cn(
-    "w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]",
+    "w-5 h-5 sm:w-7 sm:h-7 md:w-9 md:h-9 rounded-full flex items-center justify-center shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]",
     color === 'red' ? "bg-[#FF4B4B] border-[2px] border-[#b71c1c]" :
     color === 'green' ? "bg-[#00E676] border-[2px] border-[#1b5e20]" :
     color === 'blue' ? "bg-[#2979FF] border-[2px] border-[#0d47a1]" :
@@ -70,26 +70,26 @@ const PlayerCard = ({ color, isActive, diceValue, isRolling, onRoll, profileImg,
 
   return (
     <div className={cn(
-      "flex items-center gap-2 p-1.5 md:p-2 rounded-xl border transition-all duration-300 shadow-sm",
+      "flex items-center gap-2 p-1 md:p-1.5 rounded-xl border transition-all duration-300 shadow-sm",
       colorMap[color],
       isActive ? "scale-105 shadow-[0_5px_15px_rgba(0,0,0,0.1)] ring-2 ring-gray-200" : "opacity-70 grayscale-[0.3]"
     )}>
-      <Avatar className={cn("h-10 w-10 md:h-12 md:w-12 rounded-lg border", colorMap[color])}>
+      <Avatar className={cn("h-8 w-8 md:h-10 md:w-10 rounded-lg border", colorMap[color])}>
         <AvatarImage src={profileImg} />
-        <AvatarFallback className="bg-gray-100"><User size={20} className="text-gray-500" /></AvatarFallback>
+        <AvatarFallback className="bg-gray-100"><User size={16} className="text-gray-500" /></AvatarFallback>
       </Avatar>
 
       <button 
         onClick={onRoll}
         disabled={!isActive || isRolling}
         className={cn(
-          "w-10 h-10 md:w-12 md:h-12 rounded-lg shadow-inner flex items-center justify-center transition-transform active:scale-90",
+          "w-8 h-8 md:w-10 md:h-10 rounded-lg shadow-inner flex items-center justify-center transition-transform active:scale-90",
           btnColorMap[color],
           isActive && !isRolling ? "animate-pulse cursor-pointer shadow-md" : "cursor-default"
         )}
       >
         <span className={cn(
-          "text-lg md:text-xl font-black",
+          "text-base md:text-lg font-black",
           (color === 'yellow' || color === 'green') ? "text-black" : "text-white"
         )}>
           {isActive ? (isRolling ? "?" : diceValue || "?") : ""}
@@ -132,7 +132,6 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
 
   const isMyTurn = gameState?.turn === currentUser?.uid;
 
-  // Render logic for board paths (remains unchanged)
   const renderPath = (type: 'top' | 'left' | 'right' | 'bottom', i: number) => {
     let bg = "bg-white"; 
     let content = null;
@@ -169,7 +168,6 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
       "h-full w-full flex flex-col relative overflow-hidden font-sans bg-white",
       !isOverlay && "pb-20"
     )}>
-      {/* Header - Kept intact with original styling and icon colors */}
       {!isOverlay && (
         <header className="relative z-40 p-4 pt-12 flex items-center justify-between bg-[#0a1a4a] shrink-0 shadow-lg">
            <div className="flex gap-2">
@@ -185,13 +183,11 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
         </header>
       )}
 
-      {/* Main Body with Glossy White Background Theme */}
       <main className={cn(
         "flex-1 relative flex flex-col items-center justify-center p-4 z-10 bg-gradient-to-b from-white via-gray-50 to-gray-100",
         isOverlay ? "py-2" : "py-4"
       )}>
          
-         {/* PLAYER CARDS - POSITIONS */}
          <div className="absolute top-2 left-2 md:top-4 md:left-4">
            <PlayerCard 
               color="red" 
@@ -234,17 +230,21 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
            />
          </div>
 
-         {/* BOARD ARENA - Reduced Size and 3D Glossy Frame */}
+         {/* GAME AREA - Reduced size to max 320px/360px */}
          <div className={cn(
-            "relative w-full max-w-[360px] md:max-w-[400px] aspect-square bg-white rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white overflow-hidden",
+            "relative w-full max-w-[320px] md:max-w-[360px] aspect-square bg-white rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] border-[4px] border-white overflow-hidden",
             isOverlay && "scale-90"
          )}>
-            <div className="w-full h-full grid grid-cols-15 grid-rows-15 border-[0.5px] border-gray-400">
+            {/* FIXED GRID: Using inline styles instead of tailwind grid-cols-15 for perfect squares */}
+            <div 
+              className="w-full h-full border-[0.5px] border-gray-400"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 1fr)', gridTemplateRows: 'repeat(15, 1fr)' }}
+            >
                
-               {/* RED HOME - Updated to be perfectly equal padding */}
-               <div className="col-start-1 col-end-7 row-start-1 row-end-7 bg-[#FF4B4B] p-2 md:p-3 border-r-[0.5px] border-b-[0.5px] border-gray-400">
+               {/* RED HOME */}
+               <div className="col-start-1 col-end-7 row-start-1 row-end-7 bg-[#FF4B4B] p-1.5 md:p-2 border-r-[0.5px] border-b-[0.5px] border-gray-400">
                   <div className="w-full h-full bg-white flex items-center justify-center rounded-lg shadow-sm">
-                    <div className="grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 p-2">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1.5 md:gap-2 p-1.5">
                        {[1,2,3,4].map(i => <HomeSocket key={`red-${i}`} color="red"><GamePiece color="red" /></HomeSocket>)}
                     </div>
                   </div>
@@ -255,10 +255,10 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
                   {Array.from({ length: 18 }).map((_, i) => renderPath('top', i))}
                </div>
 
-               {/* GREEN HOME - Updated to be perfectly equal padding */}
-               <div className="col-start-10 col-end-16 row-start-1 row-end-7 bg-[#00E676] p-2 md:p-3 border-l-[0.5px] border-b-[0.5px] border-gray-400">
+               {/* GREEN HOME */}
+               <div className="col-start-10 col-end-16 row-start-1 row-end-7 bg-[#00E676] p-1.5 md:p-2 border-l-[0.5px] border-b-[0.5px] border-gray-400">
                   <div className="w-full h-full bg-white flex items-center justify-center rounded-lg shadow-sm">
-                    <div className="grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 p-2">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1.5 md:gap-2 p-1.5">
                        {[1,2,3,4].map(i => <HomeSocket key={`green-${i}`} color="green"><GamePiece color="green" /></HomeSocket>)}
                     </div>
                   </div>
@@ -282,10 +282,10 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
                   {Array.from({ length: 18 }).map((_, i) => renderPath('right', i))}
                </div>
 
-               {/* BLUE HOME - Updated to be perfectly equal padding */}
-               <div className="col-start-1 col-end-7 row-start-10 row-end-16 bg-[#2979FF] p-2 md:p-3 border-r-[0.5px] border-t-[0.5px] border-gray-400">
+               {/* BLUE HOME */}
+               <div className="col-start-1 col-end-7 row-start-10 row-end-16 bg-[#2979FF] p-1.5 md:p-2 border-r-[0.5px] border-t-[0.5px] border-gray-400">
                   <div className="w-full h-full bg-white flex items-center justify-center rounded-lg shadow-sm">
-                    <div className="grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 p-2">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1.5 md:gap-2 p-1.5">
                        {[1,2,3,4].map(i => <HomeSocket key={`blue-${i}`} color="blue"><GamePiece color="blue" /></HomeSocket>)}
                     </div>
                   </div>
@@ -296,10 +296,10 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
                   {Array.from({ length: 18 }).map((_, i) => renderPath('bottom', i))}
                </div>
 
-               {/* YELLOW HOME - Updated to be perfectly equal padding */}
-               <div className="col-start-10 col-end-16 row-start-10 row-end-16 bg-[#FFD500] p-2 md:p-3 border-l-[0.5px] border-t-[0.5px] border-gray-400">
+               {/* YELLOW HOME */}
+               <div className="col-start-10 col-end-16 row-start-10 row-end-16 bg-[#FFD500] p-1.5 md:p-2 border-l-[0.5px] border-t-[0.5px] border-gray-400">
                   <div className="w-full h-full bg-white flex items-center justify-center rounded-lg shadow-sm">
-                    <div className="grid grid-cols-2 grid-rows-2 gap-2 md:gap-3 p-2">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1.5 md:gap-2 p-1.5">
                        {[1,2,3,4].map(i => <HomeSocket key={`yellow-${i}`} color="yellow"><GamePiece color="yellow" /></HomeSocket>)}
                     </div>
                   </div>
@@ -307,11 +307,10 @@ export function LudoGameContent({ roomId: propsRoomId, isOverlay = false }: { ro
             </div>
          </div>
 
-         {/* JOIN LOBBY BUTTON */}
          {!gameState && (
            <button 
              onClick={() => joinLobby(userProfile)}
-             className="mt-8 bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-4 rounded-full font-black uppercase text-lg shadow-[0_10px_0_#b8860b] active:translate-y-1 active:shadow-none transition-all"
+             className="mt-8 bg-yellow-500 hover:bg-yellow-400 text-black px-12 py-3 rounded-full font-black uppercase text-base shadow-[0_8px_0_#b8860b] active:translate-y-1 active:shadow-none transition-all"
            >
               Enter Lobby
            </button>
