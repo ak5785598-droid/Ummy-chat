@@ -20,6 +20,7 @@ import {
   type ConfirmationResult,
 } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -280,10 +281,31 @@ export default function LoginPage() {
     setIsSigningIn(true);
     
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      // Use Redirect for Mobile/WebView compatibility
-      await signInWithRedirect(auth, provider);
+      if (Capacitor.isNativePlatform()) {
+        // Native Google Sign-In (Fix for ID Picker and Session Persistence)
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        
+        if (result.credential?.idToken) {
+          const credential = GoogleAuthProvider.credential(result.credential.idToken);
+          const userCredential = await signInWithCredential(auth, credential);
+          
+          if (userCredential.user) {
+            await syncUserIdentity(
+              userCredential.user.uid, 
+              userCredential.user.email, 
+              userCredential.user.displayName
+            );
+            router.replace('/rooms');
+          }
+        } else {
+          throw new Error("No ID Token received from Native Google Sign-In");
+        }
+      } else {
+        // Web-based Google Sign-In
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await signInWithRedirect(auth, provider);
+      }
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
