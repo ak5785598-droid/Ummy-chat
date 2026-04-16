@@ -4,4 +4,5 @@
     <string name="title_activity_main">Ummy</string>
     <string name="package_name">app.vercel.ummy_chat.twa</string>
     <string name="custom_url_scheme">app.vercel.ummy_chat.twa</string>
+    <string name="default_web_client_id">373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com</string>
 </resources>
