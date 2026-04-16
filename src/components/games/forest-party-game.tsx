@@ -60,6 +60,17 @@ const getGameDay = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
+// Helper function to format numbers to K and M
+const formatKandM = (num: number) => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
+  return num.toString();
+};
+
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
@@ -331,14 +342,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Winning Amount</span>
                   <div className="flex items-center gap-1.5">
                     <GoldCoinIcon className="h-6 w-6" />
-                    <span className="text-4xl font-black text-[#4a2511] tabular-nums">+{winnerData.win}</span>
+                    <span className="text-4xl font-black text-[#4a2511] tabular-nums">+{formatKandM(winnerData.win)}</span>
                   </div>
                 </div>
              </div>
              <div className="w-full grid grid-cols-2 gap-3 mt-2">
                 <div className="bg-orange-100/50 rounded-2xl p-3 border border-orange-200 flex flex-col items-center">
                    <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">Your Total Bet</span>
-                   <span className="text-lg font-black text-[#4a2511]">{winnerData.bet}</span>
+                   <span className="text-lg font-black text-[#4a2511]">{formatKandM(winnerData.bet)}</span>
                 </div>
                 <div className="bg-orange-500 rounded-2xl p-3 shadow-lg flex flex-col items-center justify-center">
                    <span className="text-[9px] font-black text-white/80 uppercase tracking-tighter">Status</span>
@@ -370,7 +381,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
-                            <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${rec.win}` : '0'}</span>
+                            <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
                         </div>
                     </div>
                 ))}
@@ -383,7 +394,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
       <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
-          <span className="text-white px-2 font-semibold text-[14px]">{localCoins}</span>
+          <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
           <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
@@ -399,7 +410,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      <div className="relative flex flex-col items-center">
        <span className="text-[32px] drop-shadow-xl select-none">🏆</span>
        <div className="absolute -bottom-3 bg-black/70 border border-yellow-500 rounded-full px-2 py-0.5 whitespace-nowrap shadow-md">
-          <span className="text-[10px] font-black text-yellow-400 tracking-wider">+{dailyWinnings}</span>
+          <span className="text-[10px] font-black text-yellow-400 tracking-wider">+{formatKandM(dailyWinnings)}</span>
        </div>
      </div>
    </div>
@@ -407,9 +418,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    {/* NEW CLOUDS OVER WHEEL */}
-    <div className="absolute top-[8%] left-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    <div className="absolute top-[8%] right-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    {/* NEW CLOUDS OVER WHEEL - UPDATED SIZES AND POSITIONS */}
+    <div className="absolute top-[8%] left-[5%] text-[60px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[3%] right-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     
     {/* NEW CACTUSES NEAR WHEEL */}
     <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
