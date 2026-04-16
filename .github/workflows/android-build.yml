@@ -55,7 +55,14 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew signingReport > ../fingerprints.txt
+          echo "IMAGE_BUILD_SHA1: $(sha1sum ../fingerprints.txt)"
         
+      - name: Extract Secret Keystore Fingerprint (REAL ONE)
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > secret.keystore
+          keytool -list -v -keystore secret.keystore -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> fingerprints.txt
+          rm secret.keystore
+
       - name: Upload Fingerprints Artifact
         uses: actions/upload-artifact@v4
         with:
