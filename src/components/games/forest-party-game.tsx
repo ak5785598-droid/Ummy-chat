@@ -47,6 +47,19 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
+// Helper function to calculate current game day (resets at 5:30 AM)
+const getGameDay = () => {
+  const now = new Date();
+  const resetTime = new Date(now);
+  resetTime.setHours(5, 30, 0, 0); // 5:30 AM
+
+  if (now < resetTime) {
+    // If it's before 5:30 AM, it belongs to yesterday's game day
+    now.setDate(now.getDate() - 1);
+  }
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+};
+
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
@@ -67,6 +80,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
+ 
+ // State for Today's Total Winning
+ const [dailyWinnings, setDailyWinnings] = useState(0);
 
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
@@ -82,6 +98,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      const saved = localStorage.getItem('forestPartyRecords');
      if (saved) {
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
+     }
+
+     // Load Daily Winnings Logic (5:30 AM Reset)
+     const savedDaily = localStorage.getItem('forestPartyDailyWin');
+     if (savedDaily) {
+       try {
+         const parsed = JSON.parse(savedDaily);
+         if (parsed.gameDay === getGameDay()) {
+           setDailyWinnings(parsed.amount);
+         } else {
+           // Reset ho gaya naya din aane par
+           setDailyWinnings(0);
+           localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
+         }
+       } catch (e) {}
+     } else {
+       localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
      // Digital Pop
@@ -156,7 +189,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setDroppedChips(prev => [...prev, newChip]);
   setLocalCoins(prev => prev - selectedChip);
   
-  // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
   const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
   
@@ -181,9 +213,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 10; // Reduced spins for faster speed
+  const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 15; // Faster initial speed
+  let speed = 20; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
@@ -193,7 +225,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    // Smoother speed transition
     if (remaining < 5) speed += 100;
     else if (remaining < 12) speed += 40;
     else if (remaining < 20) speed += 15;
@@ -213,7 +244,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
-  if (winAmount > 0) playSound('win'); 
+  if (winAmount > 0) {
+     playSound('win'); 
+     
+     // Update Daily Winnings automatically
+     setDailyWinnings(prev => {
+        const newAmount = prev + winAmount;
+        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount }));
+        return newAmount;
+     });
+  }
 
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
@@ -233,7 +273,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
-   // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
    
@@ -355,10 +394,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
+   {/* DAILY WINNING TROPHY (Placed below Header) */}
+   <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center justify-center">
+     <div className="relative flex flex-col items-center">
+       <span className="text-[32px] drop-shadow-xl select-none">🏆</span>
+       <div className="absolute -bottom-3 bg-black/70 border border-yellow-500 rounded-full px-2 py-0.5 whitespace-nowrap shadow-md">
+          <span className="text-[10px] font-black text-yellow-400 tracking-wider">+{dailyWinnings}</span>
+       </div>
+     </div>
+   </div>
+
    {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
+    
+    {/* NEW CLOUDS OVER WHEEL */}
+    <div className="absolute top-[8%] left-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[8%] right-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    
+    {/* NEW CACTUSES NEAR WHEEL */}
+    <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
+    <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
+
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-      
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
             <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
