@@ -181,6 +181,24 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       iterations++;
     }
 
+    // Calculate newly pocketed pieces and score
+    let scoreGained = 0;
+    let pocketedThisTurn = false;
+    
+    currentPieces.forEach((p, idx) => {
+      const oldPiece = pieces.find(oldP => oldP.id === p.id);
+      if (p.isPocketed && oldPiece && !oldPiece.isPocketed) {
+        if (p.id === 'striker') {
+          scoreGained -= 10; // Foul
+        } else {
+          pocketedThisTurn = true;
+          if (p.type === 'white') scoreGained += 20;
+          if (p.type === 'black') scoreGained += 10;
+          if (p.type === 'queen') scoreGained += 50;
+        }
+      }
+    });
+
     // Reset striker for next turn
     const finalPieces = currentPieces.map(p => {
       if (p.id === 'striker') {
@@ -189,16 +207,32 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       return p;
     });
 
-    // Switch turns
+    // Update Scores and Turn
     const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === userId);
-    const nextPlayer = gameState.players[(currentPlayerIndex + 1) % gameState.players.length];
+    const updatedPlayers = [...gameState.players];
+    updatedPlayers[currentPlayerIndex] = {
+      ...updatedPlayers[currentPlayerIndex],
+      score: Math.max(0, updatedPlayers[currentPlayerIndex].score + scoreGained)
+    };
+
+    // Check if game ended (all pieces except striker pocketed)
+    const piecesRemaining = finalPieces.some(p => p.id !== 'striker' && !p.isPocketed);
+    
+    if (!piecesRemaining) {
+      const winner = updatedPlayers.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+      await endMatch(winner.uid);
+      return;
+    }
+
+    const nextTurn = pocketedThisTurn ? userId : gameState.players[(currentPlayerIndex + 1) % gameState.players.length].uid;
 
     await updateDocumentNonBlocking(gameDocRef, {
       pieces: finalPieces,
-      turn: nextPlayer.uid,
+      players: updatedPlayers,
+      turn: nextTurn,
       updatedAt: serverTimestamp()
     });
-  }, [gameDocRef, gameState, userId]);
+  }, [gameDocRef, gameState, userId, endMatch]);
 
   const endMatch = useCallback(async (winnerId: string) => {
     if (!gameDocRef || !gameState || gameState.status !== 'playing') return;

@@ -121,39 +121,88 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   const movePiece = useCallback(async (pieceId: string) => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || !gameState.diceRolled) return;
 
-    const dice = gameState.dice;
+    const dice = gameState.dice || 0;
     const pieceIndex = gameState.pieces.findIndex((p: any) => p.id === pieceId);
     if (pieceIndex === -1) return;
 
     const piece = gameState.pieces[pieceIndex];
-    let newPos = piece.position;
+    let currentPos = piece.position;
+    let newPos = currentPos;
 
     // Movement Logic
-    if (newPos === 0) {
+    if (currentPos === 0) {
       if (dice === 6) newPos = 1; // Out of base on 6
       else return; // Can't move if not 6 and in base
-    } else {
-      newPos += dice;
+    } else if (currentPos >= 1 && currentPos <= 51) {
+      newPos = currentPos + dice;
+    } else if (currentPos >= 52 && currentPos < 57) {
+      newPos = currentPos + dice;
+    } else if (currentPos === 57) {
+      return; // Already finished
     }
 
-    // Safety checks for home path (52-57)
+    // Goal Check
     if (newPos > 57) return; // Over-roll
 
     const updatedPieces = [...gameState.pieces];
+    
+    // Check for "Killing" (Capture)
+    // Only happens on shared path 1-51 and NOT on safe spots
+    const isSharedPath = newPos >= 1 && newPos <= 51;
+    let killedSomeone = false;
+
+    if (isSharedPath) {
+       // Convert relative newPos to a Universal Index (0-51) for collision check
+       const getUniversalIndex = (pos: number, color: string) => {
+         const offsets: any = { blue: 1, red: 14, green: 27, yellow: 40 };
+         return (offsets[color] + (pos - 1)) % 52;
+       };
+
+       const myGlobalIdx = getUniversalIndex(newPos, piece.color);
+       
+       // Safe spots in Universal Indices
+       const SAFE_INDICES = [1, 9, 14, 22, 27, 35, 40, 48]; // Star/Entry points
+
+       if (!SAFE_INDICES.includes(myGlobalIdx)) {
+         // Check other players' pieces
+         updatedPieces.forEach((p, idx) => {
+            if (p.color !== piece.color && p.position >= 1 && p.position <= 51) {
+               const otherGlobalIdx = getUniversalIndex(p.position, p.color);
+               if (otherGlobalIdx === myGlobalIdx) {
+                  // KILL! Send back to base (pos 0)
+                  updatedPieces[idx] = { ...p, position: 0 };
+                  killedSomeone = true;
+               }
+            }
+         });
+       }
+    }
+
     updatedPieces[pieceIndex] = { ...piece, position: newPos };
 
-    // Pass turn logic (placeholder)
-    const nextPlayerIndex = (gameState.players.findIndex((p: any) => p.uid === userId) + 1) % gameState.players.length;
+    // Win condition - Check if all 4 pieces of a color are at 57
+    const playerColor = piece.color;
+    const playerPieces = updatedPieces.filter(p => p.color === playerColor);
+    const hasWon = playerPieces.every(p => p.position === 57);
+
+    if (hasWon) {
+      await endMatch(userId!);
+      return;
+    }
+
+    // Turn change logic
+    const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === userId);
+    const nextPlayerIndex = (currentPlayerIndex + 1) % gameState.players.length;
     const nextTurn = gameState.players[nextPlayerIndex].uid;
 
     await updateDocumentNonBlocking(gameDocRef, {
       pieces: updatedPieces,
-      turn: dice === 6 ? userId : nextTurn, // Extra turn on 6
+      turn: (dice === 6 || killedSomeone) ? userId : nextTurn, // Extra turn on 6 or Kill
       dice: null,
       diceRolled: false,
       updatedAt: serverTimestamp()
     });
-  }, [gameDocRef, gameState, userId]);
+  }, [gameDocRef, gameState, userId, endMatch]);
 
   const endMatch = useCallback(async (winnerId: string) => {
     if (!gameDocRef || !gameState) return;
