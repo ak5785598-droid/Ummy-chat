@@ -101,8 +101,8 @@ export function ProfileInitializer() {
      await batch.commit();
 
      // 1. SEQUENTIAL USER ID HANDSHAKE
-     const currentAccNum = userData.accountNumber || '';
-     const needsUserSync = !currentAccNum || currentAccNum.length !== 4 || isNaN(parseInt(currentAccNum)) || (user.uid === CREATOR_ID && currentAccNum !== '0000');
+     const currentAccNum = userData.accountNumber;
+     const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '0000');
 
      if (needsUserSync) {
        const counterRef = doc(firestore, 'appConfig', 'counters');
@@ -132,7 +132,7 @@ export function ProfileInitializer() {
      const roomSnap = await getDoc(roomRef);
      if (roomSnap.exists()) {
        const currentRoomNum = roomSnap.data().roomNumber;
-       const needsRoomSync = !currentRoomNum || parseInt(currentRoomNum) < 100 || parseInt(currentRoomNum) >= 1000 || (user.uid === CREATOR_ID && currentRoomNum !== '100');
+       const needsRoomSync = !currentRoomNum || (user.uid === CREATOR_ID && currentRoomNum !== '100');
        
        if (needsRoomSync) {
          const counterRef = doc(firestore, 'appConfig', 'counters');
