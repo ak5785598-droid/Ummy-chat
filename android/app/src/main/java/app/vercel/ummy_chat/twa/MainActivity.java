@@ -7,6 +7,10 @@ import com.google.firebase.FirebaseApp;
 import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
 
 public class MainActivity extends BridgeActivity {
+    static {
+        Log.e("UmmyAuth", ">>> MAIN_ACTIVITY_CLASS_LOADED <<<");
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
