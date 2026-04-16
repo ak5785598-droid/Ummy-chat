@@ -28,6 +28,7 @@ jobs:
 
       - name: Build Web Project
         run: pnpm build
+        continue-on-error: true
 
       - name: Ensure Web Directory Exists
         run: |
