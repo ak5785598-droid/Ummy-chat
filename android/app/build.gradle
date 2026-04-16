@@ -16,14 +16,25 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        // Force resolve missing variants for all plugins
+        matchingFallbacks = ['release']
     }
     buildTypes {
         debug {
-            matchingFallbacks = ['release']
+            // Inherits from defaultConfig fallback
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// Global fix for Capacitor plugin variant selection failure in Gradle 8+
+configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'project' && details.requested.name.startsWith('capacitor-')) {
+             details.useTarget(details.requested.group + ":" + details.requested.name + ":" + details.requested.version)
         }
     }
 }
