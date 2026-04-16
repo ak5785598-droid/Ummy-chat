@@ -26,15 +26,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build Web Project
+      - name: Build Web Project (Static Export)
         run: pnpm build
-
-      - name: Ensure Web Directory Exists
-        run: |
-          mkdir -p public
-          if [ ! -f public/index.html ]; then
-            echo "<html><body><h1>Placeholder</h1></body></html>" > public/index.html
-          fi
 
       - name: Capacitor Sync
         run: npx cap sync android

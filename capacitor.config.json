@@ -1,19 +1,13 @@
 {
   "appId": "app.vercel.ummy_chat.twa",
   "appName": "Ummy",
-  "webDir": "public",
-  "bundledWebRuntime": false,
+  "webDir": "out",
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
       "launchAutoHide": true,
       "backgroundColor": "#140028"
     }
-  },
-  "server": {
-    "url": "https://ummy-chat.vercel.app",
-    "cleartext": true,
-    "allowNavigation": ["*"]
   },
   "android": {
     "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
