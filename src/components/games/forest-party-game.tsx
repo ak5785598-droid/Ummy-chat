@@ -181,15 +181,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 4; // Reduced spins for faster speed
+  const spins = 10; // Reduced spins for faster speed
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 5; // Faster initial speed
+  let speed = 15; // Faster initial speed
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
-   if (currentStep % 2 === 0) playSound('tick'); 
+   if (currentStep % 10 === 0) playSound('tick'); 
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
