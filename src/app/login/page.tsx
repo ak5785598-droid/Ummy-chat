@@ -406,7 +406,11 @@ export default function LoginPage() {
     console.log("[Auth-Debug] Phone Sign-In Clicked. Native Platform:", Capacitor.isNativePlatform());
     setIsSigningIn(true);
     try {
-      const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${cleanNumber}`;
+      const formattedNumber = phoneNumber.startsWith('+') 
+        ? phoneNumber 
+        : cleanNumber.length === 10 
+          ? `+91${cleanNumber}` 
+          : `+${cleanNumber}`;
       console.log("[Auth-Debug] Formatted Number:", formattedNumber);
 
       if (Capacitor.isNativePlatform()) {
