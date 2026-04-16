@@ -4,10 +4,12 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import FruitPartyGame from './games/fruit-party-game';
 import ForestPartyGame from './games/forest-party-game';
-import { LudoGameContent } from '@/app/games/ludo/page';
-import { CarromGameContent } from '@/app/games/carrom/page';
-import { ChessGameContent } from '@/app/games/chess/page';
-import { X, Volume2, VolumeX, HelpCircle, Trophy } from 'lucide-react';
+import { LudoGameContent } from './games/ludo-game-content';
+import { CarromGameContent } from './games/carrom-game-content';
+import { ChessGameContent } from './games/chess-game-content';
+import { RouletteGameContent } from './games/roulette-game-content';
+import { TeenPattiGameContent } from './games/teen-patti-game-content';
+import { X } from 'lucide-react';
 
 interface RoomGameOverlayProps {
  activeGame: string | null;
@@ -28,23 +30,13 @@ export function RoomGameOverlay({ activeGame, roomId, onClose }: RoomGameOverlay
     <div className="flex-1 overflow-hidden rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/10 bg-[#0c0c14] relative">
      {activeGame === 'fruit-party' && <FruitPartyGame onClose={onClose} />}
      {activeGame === 'forest-party' && <ForestPartyGame onBack={onClose} />}
-     {activeGame === 'ludo' && (
-      <div className="h-full bg-[#0a1a4a] overflow-hidden">
-        <LudoGameContent isOverlay={true} roomId={roomId} />
-      </div>
-     )}
-     {activeGame === 'carrom' && (
-      <div className="h-full bg-[#004D40] overflow-hidden">
-        <CarromGameContent isOverlay={true} roomId={roomId} />
-      </div>
-     )}
-     {activeGame === 'chess' && (
-      <div className="h-full bg-[#1e293b] overflow-hidden">
-        <ChessGameContent isOverlay={true} roomId={roomId} />
-      </div>
-     )}
+     {activeGame === 'ludo' && <LudoGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
+     {activeGame === 'carrom' && <CarromGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
+     {activeGame === 'chess' && <ChessGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
+     {activeGame === 'roulette' && <RouletteGameContent isOverlay={true} onClose={onClose} />}
+     {activeGame === 'teen-patti' && <TeenPattiGameContent isOverlay={true} onClose={onClose} />}
      
-     {!['fruit-party', 'forest-party', 'ludo', 'carrom', 'chess'].includes(activeGame) && (
+     {!['fruit-party', 'forest-party', 'ludo', 'carrom', 'chess', 'roulette', 'teen-patti'].includes(activeGame) && (
       <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4">
        <div className="h-20 w-20 bg-white/10 rounded-full flex items-center justify-center">
         <X className="h-10 w-10 text-white/20" />

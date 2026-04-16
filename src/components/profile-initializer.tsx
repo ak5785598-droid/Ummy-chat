@@ -100,59 +100,73 @@ export function ProfileInitializer() {
      
      await batch.commit();
 
-     // 1. SEQUENTIAL USER ID HANDSHAKE
-     const currentAccNum = userData.accountNumber;
-     const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '0000');
+      try {
+        const currentAccNum = userData.accountNumber;
+        const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '0000');
 
-     if (needsUserSync) {
-       const counterRef = doc(firestore, 'appConfig', 'counters');
-       await runTransaction(firestore, async (transaction) => {
-         const counterDoc = await transaction.get(counterRef);
-         let nextUserId = 1;
+        if (needsUserSync) {
+          const counterRef = doc(firestore, 'appConfig', 'counters');
+          await runTransaction(firestore, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            let nextUserId = 1;
 
-          if (user.uid === CREATOR_ID) {
-            nextUserId = 0;
-          } else {
-            const lastId = counterDoc.data()?.lastUserId || 0;
-            nextUserId = lastId + 1;
+             if (user.uid === CREATOR_ID) {
+               nextUserId = 0;
+             } else {
+               const lastId = counterDoc.data()?.lastUserId || 0;
+               nextUserId = lastId + 1;
+             }
+
+             const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
+             const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
+            transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
+            transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
+            transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
+          });
+          console.log(`✅ Sequential User ID Synced: ${user.uid}`);
+        }
+      } catch (e: any) {
+        if (e?.code === 'permission-denied') {
+          console.warn("[Identity Sync] Sequential ID access restricted (403). Profile using defaults.");
+        } else {
+          console.error("[Identity Sync] User ID Error:", e);
+        }
+      }
+
+      try {
+        const roomRef = doc(firestore, 'chatRooms', user.uid);
+        const roomSnap = await getDoc(roomRef);
+        if (roomSnap.exists()) {
+          const currentRoomNum = roomSnap.data().roomNumber;
+          const needsRoomSync = !currentRoomNum || (user.uid === CREATOR_ID && currentRoomNum !== '100');
+          
+          if (needsRoomSync) {
+            const counterRef = doc(firestore, 'appConfig', 'counters');
+            await runTransaction(firestore, async (transaction) => {
+              const counterDoc = await transaction.get(counterRef);
+              let nextRoomId = 101;
+
+               if (user.uid === CREATOR_ID) {
+                 nextRoomId = 100;
+               } else {
+                 const lastId = counterDoc.data()?.lastRoomId || 100;
+                 nextRoomId = lastId + 1;
+               }
+
+               const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
+              transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
+              transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
+            });
+            console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
           }
-
-          const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
-          const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
-         transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
-         transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
-         transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
-       });
-       console.log(`✅ Sequential User ID Synced: ${user.uid}`);
-     }
-
-     // 2. ROOM ID HANDSHAKE
-     const roomRef = doc(firestore, 'chatRooms', user.uid);
-     const roomSnap = await getDoc(roomRef);
-     if (roomSnap.exists()) {
-       const currentRoomNum = roomSnap.data().roomNumber;
-       const needsRoomSync = !currentRoomNum || (user.uid === CREATOR_ID && currentRoomNum !== '100');
-       
-       if (needsRoomSync) {
-         const counterRef = doc(firestore, 'appConfig', 'counters');
-         await runTransaction(firestore, async (transaction) => {
-           const counterDoc = await transaction.get(counterRef);
-           let nextRoomId = 101;
-
-            if (user.uid === CREATOR_ID) {
-              nextRoomId = 100;
-            } else {
-              const lastId = counterDoc.data()?.lastRoomId || 100;
-              nextRoomId = lastId + 1;
-            }
-
-            const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
-           transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
-           transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
-         });
-         console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
-       }
-     }
+        }
+      } catch (e: any) {
+        if (e?.code === 'permission-denied') {
+          console.warn("[Identity Sync] Room ID access restricted (403).");
+        } else {
+          console.error("[Identity Sync] Room ID Error:", e);
+        }
+      }
 
      hasInitialized.current = profileId;
     }

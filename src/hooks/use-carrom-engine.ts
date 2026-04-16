@@ -154,6 +154,47 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     updateDocumentNonBlocking(gameDocRef, { strikerPos: pos });
   }, [gameDocRef, gameState, userId]);
 
+  const endMatch = useCallback(async (winnerId: string) => {
+    if (!gameDocRef || !gameState || gameState.status !== 'playing') return;
+
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+        const gameSnap = await transaction.get(gameDocRef);
+        if (!gameSnap.exists()) return;
+
+        const entryFee = gameSnap.data().entryFee || 0;
+        const totalPlayers = gameSnap.data().players.length;
+        const totalPool = entryFee * totalPlayers;
+        const prize = Math.floor(totalPool * 0.9); // 10% Platform Rake
+
+        if (prize > 0) {
+          const winnerRef = doc(firestore!, 'users', winnerId);
+          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
+          const walletRef = doc(firestore!, 'walletTransactions', `win_${winnerId}_${Date.now()}`);
+
+          transaction.update(winnerRef, { coins: increment(prize) });
+          transaction.update(winnerProfileRef, { coins: increment(prize) });
+          transaction.set(walletRef, {
+            userId: winnerId,
+            amount: prize,
+            type: 'game_win',
+            gameId: `carrom_${roomId}`,
+            timestamp: serverTimestamp()
+          });
+        }
+
+        transaction.update(gameDocRef, {
+          status: 'ended',
+          winner: winnerId,
+          prize,
+          updatedAt: serverTimestamp()
+        });
+      });
+    } catch (err) {
+      console.error("Failed to end match and pay winner:", err);
+    }
+  }, [gameDocRef, gameState, firestore, roomId]);
+
   const strike = useCallback(async (angle: number, power: number) => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
 
@@ -233,47 +274,6 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState, userId, endMatch]);
-
-  const endMatch = useCallback(async (winnerId: string) => {
-    if (!gameDocRef || !gameState || gameState.status !== 'playing') return;
-
-    try {
-      await runTransaction(firestore!, async (transaction) => {
-        const gameSnap = await transaction.get(gameDocRef);
-        if (!gameSnap.exists()) return;
-
-        const entryFee = gameSnap.data().entryFee || 0;
-        const totalPlayers = gameSnap.data().players.length;
-        const totalPool = entryFee * totalPlayers;
-        const prize = Math.floor(totalPool * 0.9); // 10% Platform Rake
-
-        if (prize > 0) {
-          const winnerRef = doc(firestore!, 'users', winnerId);
-          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
-          const walletRef = doc(firestore!, 'walletTransactions', `win_${winnerId}_${Date.now()}`);
-
-          transaction.update(winnerRef, { coins: increment(prize) });
-          transaction.update(winnerProfileRef, { coins: increment(prize) });
-          transaction.set(walletRef, {
-            userId: winnerId,
-            amount: prize,
-            type: 'game_win',
-            gameId: `carrom_${roomId}`,
-            timestamp: serverTimestamp()
-          });
-        }
-
-        transaction.update(gameDocRef, {
-          status: 'ended',
-          winner: winnerId,
-          prize,
-          updatedAt: serverTimestamp()
-        });
-      });
-    } catch (err) {
-      console.error("Failed to end match and pay winner:", err);
-    }
-  }, [gameDocRef, gameState, firestore, roomId]);
 
   return {
     gameState: gameState as CarromGameState | undefined,

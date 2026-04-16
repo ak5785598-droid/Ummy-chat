@@ -223,7 +223,13 @@ export function useAgora(
               if (AudioRoute) {
                 AudioRoute.forceEarbuds().catch(() => {});
               }
-              user.audioTrack?.play();
+              
+              if (!isSpeakerMuted) {
+                user.audioTrack?.play();
+              } else {
+                user.audioTrack?.stop();
+              }
+              
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
             }
           } catch (e) {}
@@ -283,15 +289,19 @@ export function useAgora(
   useEffect(() => {
     remoteUsers.forEach(user => {
       if (user.audioTrack) {
-        user.audioTrack.play();
+        if (isSpeakerMuted) {
+          user.audioTrack.stop();
+        } else {
+          user.audioTrack.play();
+        }
       }
     });
     
     // Force earbuds when remote users change (prevent speaker switch)
-    if (AudioRoute && remoteUsers.length > 0) {
+    if (AudioRoute && remoteUsers.length > 0 && !isSpeakerMuted) {
       AudioRoute.forceEarbuds().catch(() => {});
     }
-  }, [remoteUsers]);
+  }, [remoteUsers, isSpeakerMuted]);
 
   // EFFECT 3: Microphone Management (Native Earbud Compatible)
   useEffect(() => {

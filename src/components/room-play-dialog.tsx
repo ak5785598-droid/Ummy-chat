@@ -47,8 +47,8 @@ interface RoomPlayDialogProps {
   participants?: RoomParticipant[];
   roomId?: string;
   room?: any;
-  isMutedLocal: boolean;
-  setIsMutedLocal: (val: boolean) => void;
+  isAIListening: boolean;
+  onToggleAIListening: () => void;
   onOpenGames: () => void;
   onSelectGame?: (slug: string) => void;
   onPlayLocalMusic?: (file: File) => void;
@@ -68,8 +68,8 @@ export function RoomPlayDialog({
   participants = [], 
   roomId, 
   room,
-  isMutedLocal,
-  setIsMutedLocal,
+  isAIListening,
+  onToggleAIListening,
   onOpenGames,
   onSelectGame,
   onPlayLocalMusic,
@@ -405,7 +405,7 @@ export function RoomPlayDialog({
   const gameGrid = [
     { id: 'game-selector', label: 'Games', icon: '/images/premium_3d_game_controller_icon_1775544183875.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
     { id: 'music', label: 'Music', icon: '/images/premium_3d_music_notes_icon_1775544207576.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => { setView('music'); onToggleMiniPlayer?.(); } },
-    { id: 'speaker',  label: isMutedLocal ? 'Speaker Off' : 'Speaker On', icon: '/images/premium_3d_microphone_icon_1775544232062.png', color: isMutedLocal ? 'from-red-500/20 to-red-700/20' : 'from-green-500/20 to-emerald-600/20', onClick: () => setIsMutedLocal(!isMutedLocal) }, 
+    { id: 'ai-listening', label: isAIListening ? 'AI Listening' : 'AI Listen', icon: '/images/premium_3d_microphone_icon_1775544232062.png', color: isAIListening ? 'from-red-500/40 to-red-600/40' : 'from-purple-500/20 to-indigo-600/20', onClick: onToggleAIListening },
   ] ;
   return (
     <AnimatePresence>

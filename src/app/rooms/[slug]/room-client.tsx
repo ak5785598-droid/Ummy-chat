@@ -635,6 +635,12 @@ export function RoomClient({ room }: { room: Room }) {
   // DYNAMIC LEVELING SYNC
   useActivityTracker(room?.id, currentUser?.uid || null);
 
+  useEffect(() => {
+    if (musicAudioRef.current) {
+      musicAudioRef.current.muted = isSpeakerMuted;
+    }
+  }, [isSpeakerMuted]);
+
   const { 
     localAudioTrack, 
     remoteUsers,
@@ -1168,7 +1174,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, []);
 
   const speakAIText = (text: string) => {
-    if (!isAIVoiceEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (!isAIVoiceEnabled || isSpeakerMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
 
     // Store text for the post-handshake process
     (window as any)._pendingSpeechText = text;
@@ -2639,15 +2645,23 @@ export function RoomClient({ room }: { room: Room }) {
             Say Hi
           </button>
 
-          {/* AI MIC RESTORED */}
+          {/* ROOM MUTE BUTTON - Voice and Music Toggle */}
           <button
-            onClick={toggleAIListening}
+            onClick={() => {
+              setIsSpeakerMuted(!isSpeakerMuted);
+              toast({
+                title: !isSpeakerMuted ? 'Room Muted' : 'Room Unmuted',
+                description: !isSpeakerMuted ? 'Voice and music are now silent for you.' : 'Room audio restored.',
+                variant: !isSpeakerMuted ? 'destructive' : 'default'
+              });
+            }}
             className={cn(
               "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/10 bg-white/20",
-              isAIListening ? "bg-red-500 animate-pulse text-white" : "bg-white/10 text-white"
+              isSpeakerMuted ? "bg-red-500/30 border-red-500/50 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-white/10 text-white"
             )}
+            title={isSpeakerMuted ? "Unmute Room" : "Mute Room"}
           >
-            <Sparkles className="h-5 w-5" />
+            {isSpeakerMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
         </div>
 
@@ -2831,8 +2845,8 @@ export function RoomClient({ room }: { room: Room }) {
         participants={participants}
         roomId={room.id}
         room={room}
-        isMutedLocal={isSpeakerMuted}
-        setIsMutedLocal={setIsSpeakerMuted}
+        isAIListening={isAIListening}
+        onToggleAIListening={toggleAIListening}
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
           setActiveGameSlug(slug);
