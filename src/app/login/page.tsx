@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { UmmyLogoIcon } from '@/components/icons';
 import { FcGoogle } from 'react-icons/fc';
-import { Loader, Phone, X } from 'lucide-react';
+import { Loader, Phone, X, ChevronDown, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -45,6 +45,40 @@ export default function LoginPage() {
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; bannedUntil: any } | null>(null);
+
+  // Country Selection Data
+  const COUNTRIES = [
+    { name: 'India', code: '+91', flag: '🇮🇳', id: 'IN' },
+    { name: 'Pakistan', code: '+92', flag: '🇵🇰', id: 'PK' },
+    { name: 'Bangladesh', code: '+880', flag: '🇧🇩', id: 'BD' },
+    { name: 'UAE', code: '+971', flag: '🇦🇪', id: 'AE' },
+    { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦', id: 'SA' },
+    { name: 'USA', code: '+1', flag: '🇺🇸', id: 'US' },
+    { name: 'UK', code: '+44', flag: '🇬🇧', id: 'GB' },
+    { name: 'Canada', code: '+1', flag: '🇨🇦', id: 'CA' },
+    { name: 'Turkey', code: '+90', flag: '🇹🇷', id: 'TR' },
+    { name: 'Egypt', code: '+20', flag: '🇪🇬', id: 'EG' },
+    { name: 'Jordan', code: '+962', flag: '🇯🇴', id: 'JO' },
+    { name: 'Palestine', code: '+970', flag: '🇵🇸', id: 'PS' },
+    { name: 'Pakistan', code: '+92', flag: '🇵🇰', id: 'PK' },
+    { name: 'Bahrain', code: '+973', flag: '🇧🇭', id: 'BH' },
+    { name: 'Kuwait', code: '+965', flag: '🇰🇼', id: 'KW' },
+    { name: 'Oman', code: '+968', flag: '🇴🇲', id: 'OM' },
+    { name: 'Qatar', code: '+974', flag: '🇶🇦', id: 'QA' },
+    { name: 'Iraq', code: '+964', flag: '🇮🇶', id: 'IQ' },
+    { name: 'Syria', code: '+963', flag: '🇸🇾', id: 'SY' },
+    { name: 'Lebanon', code: '+961', flag: '🇱🇧', id: 'LB' },
+    { name: 'Yemen', code: '+967', flag: '🇾🇪', id: 'YE' },
+    { name: 'Algeria', code: '+213', flag: '🇩🇿', id: 'DZ' },
+    { name: 'Morocco', code: '+212', flag: '🇲🇦', id: 'MA' },
+    { name: 'Libya', code: '+218', flag: '🇱🇾', id: 'LY' },
+    { name: 'Tunisia', code: '+216', flag: '🇹🇳', id: 'TN' },
+  ];
+
+  // Country Picker State
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState('');
 
   // Phone Login State
   const [showPhonePopup, setShowPhonePopup] = useState(false);
@@ -406,11 +440,7 @@ export default function LoginPage() {
     console.log("[Auth-Debug] Phone Sign-In Clicked. Native Platform:", Capacitor.isNativePlatform());
     setIsSigningIn(true);
     try {
-      const formattedNumber = phoneNumber.startsWith('+') 
-        ? phoneNumber 
-        : cleanNumber.length === 10 
-          ? `+91${cleanNumber}` 
-          : `+${cleanNumber}`;
+      const formattedNumber = `${selectedCountry.code}${cleanNumber}`;
       console.log("[Auth-Debug] Formatted Number:", formattedNumber);
 
       if (Capacitor.isNativePlatform()) {
@@ -573,14 +603,28 @@ export default function LoginPage() {
             <div className="w-full space-y-4">
               {phoneLoginStep === 'number' ? (
                 <>
-                  <input
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    disabled={isSigningIn}
-                    className="w-full h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-lg font-bold text-center focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
-                  />
+                  <div className="flex gap-2">
+                    {/* Country Selector Button */}
+                    <button
+                      onClick={() => setIsCountryDropdownOpen(true)}
+                      className="flex-shrink-0 h-14 w-24 bg-black/30 border border-white/10 rounded-2xl px-3 flex items-center justify-between text-white hover:bg-black/40 transition-colors"
+                    >
+                      <span className="text-xl">{selectedCountry.flag}</span>
+                      <span className="font-bold text-sm">{selectedCountry.code}</span>
+                      <ChevronDown className="w-4 h-4 text-white/50" />
+                    </button>
+
+                    {/* Phone Number Input */}
+                    <input
+                      type="tel"
+                      placeholder="Enter phone number"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      disabled={isSigningIn}
+                      className="flex-1 h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-lg font-bold focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
+                    />
+                  </div>
+
                   <button
                     onClick={handlePhoneSignIn}
                     disabled={isSigningIn || !phoneNumber}
@@ -631,6 +675,72 @@ export default function LoginPage() {
         bannedUntil={banInfo?.bannedUntil}
         accountNumber={userProfile?.accountNumber}
       />
+
+      {/* Country Selector Modal Dropdown */}
+      {isCountryDropdownOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm h-[80vh] bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-white/10 rounded-[40px] shadow-2xl overflow-hidden flex flex-col">
+            
+            <div className="p-6 border-b border-white/5">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Select Country</h3>
+                <button 
+                  onClick={() => setIsCountryDropdownOpen(false)}
+                  className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-white/70" />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <input
+                  type="text"
+                  placeholder="Search country/code"
+                  value={countrySearchQuery}
+                  onChange={(e) => setCountrySearchQuery(e.target.value)}
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 text-white focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/30 transition-all placeholder:text-white/20"
+                />
+              </div>
+            </div>
+
+            {/* Country List */}
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+              {COUNTRIES.filter(c => 
+                c.name.toLowerCase().includes(countrySearchQuery.toLowerCase()) || 
+                c.code.includes(countrySearchQuery)
+              ).map((country) => (
+                <button
+                  key={`${country.id}-${country.code}`}
+                  onClick={() => {
+                    setSelectedCountry(country);
+                    setIsCountryDropdownOpen(false);
+                    setCountrySearchQuery('');
+                  }}
+                  className={`w-full h-16 rounded-3xl px-4 flex items-center justify-between transition-all group ${
+                    selectedCountry.id === country.id && selectedCountry.code === country.code ? 'bg-[#FFCC00]/10 ring-1 ring-[#FFCC00]/30' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-2xl w-8 text-center">{country.flag}</span>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-white group-hover:text-[#FFCC00] transition-colors">{country.name}</p>
+                      <p className="text-xs text-white/50">{country.id}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-white/70">{country.code}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Support hint */}
+            <div className="p-4 bg-black/40 text-center">
+              <p className="text-[10px] text-white/30 uppercase tracking-[0.2em]">Supported via Firebase Auth</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
