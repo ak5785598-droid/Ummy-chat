@@ -46,6 +46,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Generate Signing Report
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew signingReport
+
       - name: Build Release APK
         run: |
           cd android
