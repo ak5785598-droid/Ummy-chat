@@ -269,32 +269,15 @@ export default function LoginPage() {
           let nextUserId = 0;
 
           if (uid === CREATOR_ID) {
-            if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
-              const lastId = counterDoc.data().lastUserId;
-              if (lastId > 1000) {
-                nextUserId = 0;
-              } else {
-                nextUserId = lastId + 1;
-              }
-            } else {
-              nextUserId = 0;
-            }
+            nextUserId = 0;
           } else {
-            if (counterDoc.exists()) {
-              const data = counterDoc.data();
-              const lastId = data?.lastUserId;
-              if (lastId === undefined || lastId > 100000) {
-                nextUserId = 1;
-              } else {
-                nextUserId = lastId + 1;
-              }
-            } else {
-              nextUserId = 1;
-            }
+            const lastId = counterDoc.data()?.lastUserId || 0;
+            nextUserId = lastId + 1;
           }
 
           transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
-          return nextUserId.toString().padStart(4, '0');
+          const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
+          return paddedId;
         });
 
         const baseData = {

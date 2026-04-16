@@ -110,16 +110,15 @@ export function ProfileInitializer() {
          const counterDoc = await transaction.get(counterRef);
          let nextUserId = 1;
 
-         if (user.uid === CREATOR_ID) {
-           nextUserId = 0;
-         } else {
-           const lastId = counterDoc.data()?.lastUserId;
-           if (lastId === undefined || lastId > 5000) nextUserId = 1;
-           else nextUserId = lastId + 1;
-         }
+          if (user.uid === CREATOR_ID) {
+            nextUserId = 0;
+          } else {
+            const lastId = counterDoc.data()?.lastUserId || 0;
+            nextUserId = lastId + 1;
+          }
 
-         const paddedId = nextUserId.toString().padStart(4, '0');
-         const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
+          const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
+          const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
          transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
          transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
          transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
@@ -140,15 +139,14 @@ export function ProfileInitializer() {
            const counterDoc = await transaction.get(counterRef);
            let nextRoomId = 101;
 
-           if (user.uid === CREATOR_ID) {
-             nextRoomId = 100;
-           } else {
-             const lastId = counterDoc.data()?.lastRoomId;
-             if (lastId === undefined || lastId < 100 || lastId > 10000) nextRoomId = 101;
-             else nextRoomId = lastId + 1;
-           }
+            if (user.uid === CREATOR_ID) {
+              nextRoomId = 100;
+            } else {
+              const lastId = counterDoc.data()?.lastRoomId || 100;
+              nextRoomId = lastId + 1;
+            }
 
-           const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
+            const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastRoomId || 100) : nextRoomId;
            transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
            transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
          });
