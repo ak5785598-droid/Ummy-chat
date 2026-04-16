@@ -221,9 +221,9 @@ export default function LoginPage() {
       toast({ title: 'Code Sent', description: 'OTP dispatched via native SMS.' });
     });
 
-    const phoneVerificationCompletedListener = FirebaseAuthentication.addListener('phoneVerificationCompleted', async (event) => {
+    const phoneVerificationCompletedListener = FirebaseAuthentication.addListener('phoneVerificationCompleted', async (event: any) => {
       console.log("[Native-Auth] Phone Verification Completed Instantly.");
-      if (event.result.user) {
+      if (event.result?.user) {
         setIsSigningIn(true);
         await syncUserIdentity(event.result.user.uid, event.result.user.phoneNumber || null, null);
         setShowPhonePopup(false);
@@ -264,9 +264,10 @@ export default function LoginPage() {
           }
         }
       } else {
-        const accountNumber = await runTransaction(firestore, async (transaction) => {
+        // Create new user with sequential ID
+        const accountNumber: string = await runTransaction(firestore, async (transaction) => {
           const counterDoc = await transaction.get(counterRef);
-          let nextUserId = 0;
+          let nextUserId = 1;
 
           if (uid === CREATOR_ID) {
             nextUserId = 0;
@@ -343,7 +344,7 @@ export default function LoginPage() {
              throw new Error("Native Plugin not loaded");
           }
           
-          const result = await FirebaseAuthentication.signInWithGoogle({
+          const result = await (FirebaseAuthentication as any).signInWithGoogle({
             webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
           });
           
