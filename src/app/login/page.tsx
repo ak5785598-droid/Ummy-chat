@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; bannedUntil: any } | null>(null);
-  
+
   // Phone Login State
   const [showPhonePopup, setShowPhonePopup] = useState(false);
   const [phoneLoginStep, setPhoneLoginStep] = useState<'number' | 'code'>('number');
@@ -59,7 +59,7 @@ export default function LoginPage() {
   const splashBg = config?.splashScreenUrl;
   const loginBg = config?.loginBackgroundUrl;
   const fallbackBg = PlaceHolderImages.find(img => img.id === 'login-bg')?.imageUrl;
-  
+
   const activeBg = loginBg || splashBg || fallbackBg;
 
   // Global script ref to prevent multiple initializations
@@ -91,18 +91,18 @@ export default function LoginPage() {
       // @ts-ignore
       const gapi = window.google?.accounts?.id;
       if (!gapi) return false;
-      
+
       if (!hasInitializedGoogle.current) {
         gapi.initialize({
           client_id: GOOGLE_CLIENT_ID,
           callback: handleOneTapResponse,
-          auto_select: false, 
+          auto_select: false,
           cancel_on_tap_outside: false,
           itp_support: true
         });
         hasInitializedGoogle.current = true;
       }
-      
+
       gapi.prompt();
       return true;
     };
@@ -168,7 +168,7 @@ export default function LoginPage() {
           console.log(`[Login] Ban EXPIRED. Allowing entry.`);
         }
       }
-      
+
       console.log(`[Login] Authorized. Navigating to discovery.`);
       router.replace('/rooms');
     }
@@ -176,11 +176,11 @@ export default function LoginPage() {
 
   const syncUserIdentity = async (uid: string, email: string | null, displayName: string | null) => {
     if (!firestore || !uid) return;
-    
+
     const userRef = doc(firestore, 'users', uid);
     const profileRef = doc(firestore, 'users', uid, 'profile', uid);
     const counterRef = doc(firestore, 'appConfig', 'counters');
-    
+
     try {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
@@ -197,12 +197,12 @@ export default function LoginPage() {
         const accountNumber = await runTransaction(firestore, async (transaction) => {
           const counterDoc = await transaction.get(counterRef);
           let nextUserId = 0;
-          
+
           if (uid === CREATOR_ID) {
             if (counterDoc.exists() && counterDoc.data()?.lastUserId !== undefined) {
               const lastId = counterDoc.data().lastUserId;
               if (lastId > 1000) {
-                nextUserId = 0; 
+                nextUserId = 0;
               } else {
                 nextUserId = lastId + 1;
               }
@@ -214,7 +214,7 @@ export default function LoginPage() {
               const data = counterDoc.data();
               const lastId = data?.lastUserId;
               if (lastId === undefined || lastId > 100000) {
-                nextUserId = 1; 
+                nextUserId = 1;
               } else {
                 nextUserId = lastId + 1;
               }
@@ -222,11 +222,11 @@ export default function LoginPage() {
               nextUserId = 1;
             }
           }
-          
+
           transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
           return nextUserId.toString().padStart(4, '0');
         });
- 
+
         const baseData = {
           id: uid,
           username: displayName || `Tribe_${accountNumber.slice(-4)}`,
@@ -246,7 +246,7 @@ export default function LoginPage() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
- 
+
         await setDoc(userRef, baseData);
         await setDoc(profileRef, {
           ...baseData,
@@ -275,11 +275,11 @@ export default function LoginPage() {
       console.error("[Identity Sync] Error:", err);
     }
   };
- 
+
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
-    
+
     try {
       console.log("[Auth-Debug] Sign In Started. Native Platform:", Capacitor.isNativePlatform());
       console.log("[Auth-Debug] FirebaseAuthentication Plugin Object:", FirebaseAuthentication);
@@ -292,15 +292,15 @@ export default function LoginPage() {
         const result = await FirebaseAuthentication.signInWithGoogle({
           webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
         });
-        
+
         if (result.credential?.idToken) {
           const credential = GoogleAuthProvider.credential(result.credential.idToken);
           const userCredential = await signInWithCredential(auth, credential);
-          
+
           if (userCredential.user) {
             await syncUserIdentity(
-              userCredential.user.uid, 
-              userCredential.user.email, 
+              userCredential.user.uid,
+              userCredential.user.email,
               userCredential.user.displayName
             );
             router.replace('/rooms');
@@ -324,7 +324,7 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
- 
+
   const handleFacebookSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
@@ -342,17 +342,17 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
- 
+
   const initRecaptcha = () => {
     if (!auth) return;
     if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible'
       });
     }
     return (window as any).recaptchaVerifier;
   };
- 
+
   const handlePhoneSignIn = async () => {
     if (!auth) return;
     const cleanNumber = phoneNumber.replace(/\D/g, '');
@@ -376,7 +376,7 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
-  
+
   const handleVerifyCode = async () => {
     if (!confirmationResult) return;
     setIsSigningIn(true);
@@ -393,7 +393,7 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
- 
+
   if (isAuthLoading || user) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
@@ -401,9 +401,9 @@ export default function LoginPage() {
       </div>
     );
   }
- 
+
   return (
-    <div 
+    <div
       className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
       style={{
         backgroundImage: `url('/images/login_bg.png')`,
@@ -411,8 +411,8 @@ export default function LoginPage() {
         backgroundPosition: 'center'
       }}
     >
-      <Script 
-        src="https://accounts.google.com/gsi/client" 
+      <Script
+        src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
       />
       <div className="absolute inset-0 bg-black/40" />
@@ -438,7 +438,7 @@ export default function LoginPage() {
               <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
               Continue with Facebook
             </button>
- 
+
             <button
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
@@ -472,14 +472,14 @@ export default function LoginPage() {
       {showPhonePopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="relative w-full max-w-sm rounded-[32px] bg-gradient-to-b from-[#FF91B5] to-[#f472b6] border border-white/20 shadow-2xl p-6 md:p-8 flex flex-col items-center">
-            
-            <button 
+
+            <button
               onClick={() => { setShowPhonePopup(false); setPhoneLoginStep('number'); }}
               className="absolute top-4 right-4 p-2 bg-white/5 rounded-full hover:bg-white/20 transition-colors"
             >
               <X className="w-5 h-5 text-white/70" />
             </button>
-            
+
             <div className="h-16 w-16 bg-white/10 rounded-3xl flex items-center justify-center mb-6 shadow-inner ring-1 ring-white/20">
               <Phone className="w-7 h-7 text-[#FFCC00]" />
             </div>
@@ -488,8 +488,8 @@ export default function LoginPage() {
               {phoneLoginStep === 'number' ? 'Enter Phone Number' : 'Enter OTP Code'}
             </h2>
             <p className="text-sm font-medium text-white/60 text-center mb-8 px-2">
-              {phoneLoginStep === 'number' 
-                ? 'We will send you a verification code to authenticate your account securely.' 
+              {phoneLoginStep === 'number'
+                ? 'We will send you a verification code to authenticate your account securely.'
                 : `A 6-digit code was sent to ${phoneNumber}`
               }
             </p>
@@ -531,7 +531,7 @@ export default function LoginPage() {
                   >
                     {isSigningIn ? <Loader className="animate-spin w-5 h-5" /> : 'Verify & Login'}
                   </button>
-                  <button 
+                  <button
                     onClick={() => setPhoneLoginStep('number')}
                     className="w-full mt-4 text-[13px] font-semibold text-white/50 hover:text-white transition-colors"
                   >
@@ -546,8 +546,8 @@ export default function LoginPage() {
       )}
 
       {/* Premium Ban Dialog */}
-      <BanDialog 
-        isOpen={!!banInfo} 
+      <BanDialog
+        isOpen={!!banInfo}
         onClose={async () => {
           if (auth) await signOut(auth);
           setBanInfo(null);
