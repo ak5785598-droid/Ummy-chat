@@ -281,9 +281,17 @@ export default function LoginPage() {
     setIsSigningIn(true);
     
     try {
+      console.log("[Auth-Debug] Sign In Started. Native Platform:", Capacitor.isNativePlatform());
+      console.log("[Auth-Debug] FirebaseAuthentication Plugin Object:", FirebaseAuthentication);
+
       if (Capacitor.isNativePlatform()) {
-        // Native Google Sign-In (Fix for ID Picker and Session Persistence)
-        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (!FirebaseAuthentication) {
+          throw new Error("Capacitor Firebase Authentication plugin is NULL on native platform.");
+        }
+        // Native Google Sign-In with explicit Web Client ID
+        const result = await FirebaseAuthentication.signInWithGoogle({
+          webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
+        });
         
         if (result.credential?.idToken) {
           const credential = GoogleAuthProvider.credential(result.credential.idToken);
