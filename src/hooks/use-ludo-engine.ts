@@ -118,6 +118,47 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     });
   }, [gameDocRef, gameState, userId]);
 
+  const endMatch = useCallback(async (winnerId: string) => {
+    if (!gameDocRef || !gameState) return;
+
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+        const gameSnap = await transaction.get(gameDocRef);
+        if (!gameSnap.exists()) return;
+
+        const entryFee = gameSnap.data().entryFee || 0;
+        const totalPlayers = gameSnap.data().players.length;
+        const totalPool = entryFee * totalPlayers;
+        const prize = Math.floor(totalPool * 0.9); // 10% Plat Rake
+
+        if (prize > 0) {
+          const winnerRef = doc(firestore!, 'users', winnerId);
+          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
+          const walletRef = doc(firestore!, 'walletTransactions', `win_ludo_${winnerId}_${Date.now()}`);
+
+          transaction.update(winnerRef, { coins: increment(prize) });
+          transaction.update(winnerProfileRef, { coins: increment(prize) });
+          transaction.set(walletRef, {
+            userId: winnerId,
+            amount: prize,
+            type: 'game_win',
+            gameId: `ludo_${roomId}`,
+            timestamp: serverTimestamp()
+          });
+        }
+
+        transaction.update(gameDocRef, {
+          status: 'ended',
+          winner: winnerId,
+          prize,
+          updatedAt: serverTimestamp()
+        });
+      });
+    } catch (err) {
+      console.error("Failed to pay Ludo winner:", err);
+    }
+  }, [gameDocRef, gameState, firestore, roomId]);
+
   const movePiece = useCallback(async (pieceId: string) => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || !gameState.diceRolled) return;
 
@@ -174,7 +215,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
                   killedSomeone = true;
                }
             }
-         });
+          });
        }
     }
 
@@ -203,47 +244,6 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState, userId, endMatch]);
-
-  const endMatch = useCallback(async (winnerId: string) => {
-    if (!gameDocRef || !gameState) return;
-
-    try {
-      await runTransaction(firestore!, async (transaction) => {
-        const gameSnap = await transaction.get(gameDocRef);
-        if (!gameSnap.exists()) return;
-
-        const entryFee = gameSnap.data().entryFee || 0;
-        const totalPlayers = gameSnap.data().players.length;
-        const totalPool = entryFee * totalPlayers;
-        const prize = Math.floor(totalPool * 0.9); // 10% Plat Rake
-
-        if (prize > 0) {
-          const winnerRef = doc(firestore!, 'users', winnerId);
-          const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
-          const walletRef = doc(firestore!, 'walletTransactions', `win_ludo_${winnerId}_${Date.now()}`);
-
-          transaction.update(winnerRef, { coins: increment(prize) });
-          transaction.update(winnerProfileRef, { coins: increment(prize) });
-          transaction.set(walletRef, {
-            userId: winnerId,
-            amount: prize,
-            type: 'game_win',
-            gameId: `ludo_${roomId}`,
-            timestamp: serverTimestamp()
-          });
-        }
-
-        transaction.update(gameDocRef, {
-          status: 'ended',
-          winner: winnerId,
-          prize,
-          updatedAt: serverTimestamp()
-        });
-      });
-    } catch (err) {
-      console.error("Failed to pay Ludo winner:", err);
-    }
-  }, [gameDocRef, gameState, firestore, roomId]);
 
   return {
     gameState: gameState as LudoGameState | undefined,
