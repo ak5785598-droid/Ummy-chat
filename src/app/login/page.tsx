@@ -277,10 +277,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) {
-        alert("Firebase Auth Object is NULL");
-        return;
-    }
+    if (!auth) return;
     setIsSigningIn(true);
     
     try {
@@ -288,20 +285,14 @@ export default function LoginPage() {
       console.log("[Auth-Debug] Sign In Started. Native Platform:", isNative);
       
       if (isNative) {
-        // DIAGNOSTIC ALERT
         if (!FirebaseAuthentication) {
-           alert("CRITICAL: FirebaseAuthentication Plugin is NULL in JS!");
            throw new Error("Plugin missing");
         }
         
-        alert("Calling Native Google Sign-In...");
-
         const result = await FirebaseAuthentication.signInWithGoogle({
           webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
         });
         
-        alert("Native Result received: " + (result ? "SUCCESS" : "EMPTY"));
-
         if (result.credential?.idToken) {
           const credential = GoogleAuthProvider.credential(result.credential.idToken);
           const userCredential = await signInWithCredential(auth, credential);
