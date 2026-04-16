@@ -2,17 +2,15 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
   typescript: {
     // Ensuring the cloud build frequency is not interrupted by minor type mismatches
-    ignoreBuildErrors: true, 
+    ignoreBuildErrors: true,
   },
   eslint: {
     // Permissive linting for high-speed cloud rollout
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
