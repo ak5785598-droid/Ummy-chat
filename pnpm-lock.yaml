@@ -26,6 +26,9 @@ importers:
       '@capacitor/preferences':
         specifier: 7.0.0
         version: 7.0.0(@capacitor/core@7.0.0)
+      '@capacitor/splash-screen':
+        specifier: ^7.0.0
+        version: 7.0.5(@capacitor/core@7.0.0)
       '@capacitor/status-bar':
         specifier: 7.0.0
         version: 7.0.0(@capacitor/core@7.0.0)
@@ -287,6 +290,11 @@ packages:
 
   '@capacitor/preferences@7.0.0':
     resolution: {integrity: sha512-crlTtTIWcdlLfQULJ9ZiCPpvpm51WoZ8CIVG3+XSJGyavjD4bscHP15U24ya5SjpYmI44bGY9lvhvcSCfB5+AA==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/splash-screen@7.0.5':
+    resolution: {integrity: sha512-bPG2SamFL7VT5I3XsgsGgJhkiyxq3OXCOVKEDupSieVdtEiG7j2vLbSD0xL+91zteF/qLuxsjbugGy5LD8mS2A==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -5859,6 +5867,10 @@ snapshots:
       '@capacitor/core': 7.0.0
 
   '@capacitor/preferences@7.0.0(@capacitor/core@7.0.0)':
+    dependencies:
+      '@capacitor/core': 7.0.0
+
+  '@capacitor/splash-screen@7.0.5(@capacitor/core@7.0.0)':
     dependencies:
       '@capacitor/core': 7.0.0
 
