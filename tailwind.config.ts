@@ -50,6 +50,12 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
+      },
+      gridTemplateRows: {
+        '15': 'repeat(15, minmax(0, 1fr))',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],

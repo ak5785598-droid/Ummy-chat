@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Star, ArrowRight, ArrowLeft, ArrowUp, ArrowDown } from 'lucide-react';
+import { Star, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Trophy } from 'lucide-react';
 import { LudoPiece } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -57,37 +57,54 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
   const cells = Array.from({ length: size * size });
 
   const getCellType = (row: number, col: number) => {
+    // Bases
     if (row < 6 && col < 6) return 'base-blue';
     if (row < 6 && col > 8) return 'base-red';
     if (row > 8 && col < 6) return 'base-yellow';
     if (row > 8 && col > 8) return 'base-green';
 
+    // Center area (Finish)
     if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
-       if (row === 7 && col === 7) return 'finish-center';
-       return 'finish';
+       return 'center';
     }
 
+    // Home Stretches
     if (col === 7 && row >= 1 && row <= 5) return 'home-red';
     if (row === 7 && col >= 9 && col <= 13) return 'home-green';
     if (col === 7 && row >= 9 && row <= 13) return 'home-yellow';
     if (row === 7 && col >= 1 && col <= 5) return 'home-blue';
 
-    if (row === 6 && col === 1) return 'safe-blue';
-    if (row === 1 && col === 8) return 'safe-red';
-    if (row === 8 && col === 13) return 'safe-green';
-    if (row === 13 && col === 6) return 'safe-yellow';
+    // Safe Starts
+    if (row === 6 && col === 1) return 'start-blue';
+    if (row === 1 && col === 8) return 'start-red';
+    if (row === 8 && col === 13) return 'start-green';
+    if (row === 13 && col === 6) return 'start-yellow';
 
-    if ((row === 8 && col === 2) || (row === 2 && col === 6) || (row === 6 && col === 12) || (row === 12 && col === 8)) return 'safe-star';
+    // Safe Stars
+    const isStar = (row === 8 && col === 2) || (row === 2 && col === 6) || (row === 6 && col === 12) || (row === 12 && col === 8);
+    if (isStar) return 'star';
 
-    return 'path-white';
+    return 'path';
   };
 
   const getPieceCoords = (piece: LudoPiece) => {
     if (piece.position === 0) {
-      // Index within base pieces
-      const sameColorPieces = pieces.filter(p => p.color === piece.color);
-      const index = sameColorPieces.findIndex(p => p.id === piece.id);
-      return BASE_OFFSETS[piece.color][index];
+      // Index within base pieces to place in the 4 slots
+      const colorPieces = pieces.filter(p => p.color === piece.color);
+      const index = colorPieces.findIndex(p => p.id === piece.id);
+      
+      const offsets = BASE_OFFSETS[piece.color];
+      // For visual clarity, we use specific offsets within the base for the 4 slots
+      const baseCoords = [
+        [1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]
+      ];
+      
+      const [r, c] = baseCoords[index % 4];
+      const origin = piece.color === 'blue' ? [0, 0] : 
+                     piece.color === 'red' ? [0, 9] : 
+                     piece.color === 'yellow' ? [9, 0] : [9, 9];
+      
+      return [origin[0] + r, origin[1] + c];
     }
     
     if (piece.position >= 1 && piece.position <= 51) {
@@ -104,49 +121,84 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
     return [7, 7]; // Finished
   };
 
+  const renderBase = (color: 'blue' | 'red' | 'yellow' | 'green') => {
+    const bgColor = color === 'blue' ? 'bg-[#2196F3]' : color === 'red' ? 'bg-[#F44336]' : color === 'yellow' ? 'bg-[#FFEB3B]' : 'bg-[#4CAF50]';
+    return (
+      <div className={cn("absolute inset-0 p-[10%] flex items-center justify-center", bgColor)}>
+        <div className="w-full h-full bg-white rounded-lg p-[15%] grid grid-cols-2 grid-rows-2 gap-[15%]">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className={cn("rounded-full border border-black/10 shadow-inner", bgColor)} />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="relative w-full max-w-[450px] aspect-square bg-[#333] p-1 shadow-2xl rounded-sm">
-      <div className="grid grid-cols-15 grid-rows-15 w-full h-full bg-white gap-[1px] border border-black overflow-hidden relative">
+    <div className="relative w-full max-w-[450px] aspect-square bg-[#ddd] p-1.5 shadow-2xl rounded-md border-2 border-black/20">
+      <div className="grid grid-cols-15 grid-rows-15 w-full h-full bg-white gap-0 border-[1.5px] border-black overflow-hidden relative shadow-inner">
         {cells.map((_, i) => {
           const row = Math.floor(i / size);
           const col = i % size;
           const type = getCellType(row, col);
 
+          // Handle Base containers
+          if (row === 0 && col === 0) return <div key={i} className="col-span-6 row-span-6 relative border-r-2 border-b-2 border-black">{renderBase('blue')}</div>;
+          if (row === 0 && col === 9) return <div key={i} className="col-span-6 row-span-6 relative border-l-2 border-b-2 border-black">{renderBase('red')}</div>;
+          if (row === 9 && col === 0) return <div key={i} className="col-span-6 row-span-6 relative border-r-2 border-t-2 border-black">{renderBase('yellow')}</div>;
+          if (row === 9 && col === 9) return <div key={i} className="col-span-6 row-span-6 relative border-l-2 border-t-2 border-black">{renderBase('green')}</div>;
+
+          // Skip cells covered by col-span/row-span
+          if (row < 6 && col < 6 && (row !== 0 || col !== 0)) return null;
+          if (row < 6 && col > 8 && (row !== 0 || col !== 9)) return null;
+          if (row > 8 && col < 6 && (row !== 9 || col !== 0)) return null;
+          if (row > 8 && col > 8 && (row !== 9 || col !== 9)) return null;
+
+          // Handle Center/Finish
+          if (row === 6 && col === 6) {
+             return (
+               <div key={i} className="col-span-3 row-span-3 relative border-2 border-black z-30 overflow-hidden bg-white">
+                 {/* Triangles */}
+                 <div className="absolute inset-x-0 top-0 h-1/2 bg-[#F44336]" style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }} />
+                 <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[#FFEB3B]" style={{ clipPath: 'polygon(50% 0, 0 100%, 100% 100%)' }} />
+                 <div className="absolute inset-y-0 left-0 w-1/2 bg-[#2196F3]" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} />
+                 <div className="absolute inset-y-0 right-0 w-1/2 bg-[#4CAF50]" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 50%)' }} />
+                 {/* Finish text/logo overlay */}
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-white shadow-xl flex items-center justify-center">
+                       <Trophy className="w-2.5 h-2.5 text-orange-500" />
+                    </div>
+                 </div>
+               </div>
+             );
+          }
+          if (row >= 6 && row <= 8 && col >= 6 && col <= 8 && (row !== 6 || col !== 6)) return null;
+
           return (
             <div
               key={i}
               className={cn(
-                "relative flex items-center justify-center border-[0.2px] border-black/5 transition-colors",
-                type === 'base-blue' && "bg-[#1E88E5]",
-                type === 'base-red' && "bg-[#E53935]",
-                type === 'base-yellow' && "bg-[#FDD835]",
-                type === 'base-green' && "bg-[#43A047]",
+                "relative flex items-center justify-center border-[0.5px] border-black/40",
+                type === 'home-blue' && "bg-[#2196F3]",
+                type === 'home-red' && "bg-[#F44336]",
+                type === 'home-yellow' && "bg-[#FFEB3B]",
+                type === 'home-green' && "bg-[#4CAF50]",
                 
-                type === 'home-blue' && "bg-[#1E88E5]/50",
-                type === 'home-red' && "bg-[#E53935]/50",
-                type === 'home-yellow' && "bg-[#FDD835]/50",
-                type === 'home-green' && "bg-[#43A047]/50",
+                type === 'start-blue' && "bg-[#2196F3]",
+                type === 'start-red' && "bg-[#F44336]",
+                type === 'start-yellow' && "bg-[#FFEB3B]",
+                type === 'start-green' && "bg-[#4CAF50]",
 
-                type === 'safe-blue' && "bg-[#1E88E5]/80",
-                type === 'safe-red' && "bg-[#E53935]/80",
-                type === 'safe-yellow' && "bg-[#FDD835]/80",
-                type === 'safe-green' && "bg-[#43A047]/80",
-
-                type === 'path-white' && "bg-gray-50",
-                type === 'finish-center' && "bg-white z-20"
+                type === 'path' && "bg-white",
+                type === 'star' && "bg-gray-100"
               )}
             >
-              {type.includes('star') && <Star className="w-[60%] h-[60%] text-gray-400 opacity-30" />}
+              {type === 'star' && <Star className="w-[70%] h-[70%] text-black/20 fill-black/5" />}
               
-              {type === 'safe-blue' && <ArrowRight className="w-[60%] h-[60%] text-white" />}
-              {type === 'safe-red' && <ArrowDown className="w-[60%] h-[60%] text-white" />}
-              {type === 'safe-green' && <ArrowLeft className="w-[60%] h-[60%] text-white" />}
-              {type === 'safe-yellow' && <ArrowUp className="w-[60%] h-[60%] text-black" />}
-
-              {row === 6 && col === 7 && <div className="absolute inset-0 bg-[#E53935] clip-path-triangle-down" />}
-              {row === 8 && col === 7 && <div className="absolute inset-0 bg-[#FDD835] clip-path-triangle-up" />}
-              {row === 7 && col === 6 && <div className="absolute inset-0 bg-[#1E88E5] clip-path-triangle-right" />}
-              {row === 7 && col === 8 && <div className="absolute inset-0 bg-[#43A047] clip-path-triangle-left" />}
+              {type === 'start-blue' && <ArrowRight className="w-[60%] h-[60%] text-white drop-shadow-sm" />}
+              {type === 'start-red' && <ArrowDown className="w-[60%] h-[60%] text-white drop-shadow-sm" />}
+              {type === 'start-green' && <ArrowLeft className="w-[60%] h-[60%] text-white drop-shadow-sm" />}
+              {type === 'start-yellow' && <ArrowUp className="w-[60%] h-[60%] text-black/50 drop-shadow-sm" />}
             </div>
           );
         })}
@@ -162,24 +214,30 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
             <motion.div
               key={piece.id}
               initial={false}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
               animate={{ 
                 left: `${(col / 15) * 100}%`, 
                 top: `${(row / 15) * 100}%`,
               }}
-              className="absolute w-[6.66%] h-[6.66%] flex items-center justify-center z-40"
+              className="absolute w-[6.66%] h-[6.66%] flex items-center justify-center z-50 pointer-events-none"
             >
               <button
-                onClick={() => onPieceClick?.(piece.id)}
+                onClick={(e) => {
+                   e.stopPropagation();
+                   onPieceClick?.(piece.id);
+                }}
                 className={cn(
-                  "w-[75%] h-[75%] rounded-full shadow-lg border-2 border-white/40 transform transition-all active:scale-90",
-                  piece.color === 'blue' && "bg-blue-600",
-                  piece.color === 'red' && "bg-red-600",
-                  piece.color === 'yellow' && "bg-yellow-500",
-                  piece.color === 'green' && "bg-green-600",
-                  currentPlayerTurn === piece.ownerUid && "animate-reaction-pulse cursor-pointer ring-2 ring-white"
+                  "w-[85%] h-[85%] rounded-full shadow-2xl border-2 border-white pointer-events-auto transform transition-all active:scale-95",
+                  piece.color === 'blue' && "bg-gradient-to-br from-blue-400 to-blue-800",
+                  piece.color === 'red' && "bg-gradient-to-br from-red-400 to-red-800",
+                  piece.color === 'yellow' && "bg-gradient-to-br from-yellow-300 to-yellow-600",
+                  piece.color === 'green' && "bg-gradient-to-br from-green-400 to-green-800",
+                  // Only show ripple if it's the player's piece AND their turn
+                  currentPlayerTurn === piece.ownerUid && "animate-pulse ring-4 ring-white/50 cursor-pointer scale-110"
                 )}
               >
-                  <div className="w-[50%] h-[50%] bg-white/30 rounded-full mx-auto" />
+                  {/* Inner shine */}
+                  <div className="w-[40%] h-[40%] bg-white/40 rounded-full mt-[10%] ml-[10%]" />
               </button>
             </motion.div>
           );
@@ -187,10 +245,14 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
       </div>
 
       <style jsx>{`
-        .clip-path-triangle-down { clip-path: polygon(0 0, 100% 0, 50% 100%); }
-        .clip-path-triangle-up { clip-path: polygon(50% 0, 0 100%, 100% 100%); }
-        .clip-path-triangle-right { clip-path: polygon(0 0, 0 100%, 100% 50%); }
-        .clip-path-triangle-left { clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+        .animate-reaction-pulse {
+          animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+          70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
       `}</style>
     </div>
   );
