@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/firebase';
+import { SplashScreen as CapacitorSplash } from '@capacitor/splash-screen';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Splash Screen - Initial Landing Page
@@ -14,8 +16,14 @@ export default function SplashScreen() {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    // Start animation almost instantly
-    const timer = setTimeout(() => setShowContent(true), 50);
+    // 1. FORCE HIDE NATIVE SPLASH (Screenshot 11 fix)
+    // We do this immediately to get rid of the blue logo as fast as possible.
+    if (Capacitor.isNativePlatform()) {
+      CapacitorSplash.hide();
+    }
+
+    // 2. Start animation instantly
+    const timer = setTimeout(() => setShowContent(true), 10); // Even faster 10ms
 
     // SMART REDIRECTION: Only move forward when 
     // 1. Min duration (2s) reached 
@@ -24,7 +32,7 @@ export default function SplashScreen() {
       const redirectTimer = setTimeout(() => {
         const destination = user ? '/rooms' : '/login';
         router.push(destination);
-      }, 2000); // 2s minimum for the "Premium Intro" look
+      }, 2000); 
       return () => clearTimeout(redirectTimer);
     }
 
@@ -33,21 +41,13 @@ export default function SplashScreen() {
 
   return (
     /* Base background is now themed pink gradient to prevent "Black Flash" (Screenshot 1 fix) */
-    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
+    <div className="relative h-screen w-full overflow-hidden bg-[#ff8ebb]">
       
-      {/* Attractive Intro Logo - This shows IMMEDIATELY even before JS fully hydrates */}
-      {!showContent && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div 
-            className="w-48 h-48 rounded-3xl shadow-2xl overflow-hidden animate-pulse border-4 border-white/20"
-            style={{
-              backgroundImage: `url('/images/splash_bg.png')`,
-              backgroundSize: '350%', // Zoomed in on characters
-              backgroundPosition: 'center',
-            }}
-          />
-        </div>
-      )}
+      {/* 
+        REMOVED PLACEHOLDER LOGIC (Screenshot 12 fix)
+        We no longer show a separate square icon state.
+        The main animated splash will fade in over the pink background.
+      */}
 
       <AnimatePresence mode="wait">
         {showContent && (

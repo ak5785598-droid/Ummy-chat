@@ -16,12 +16,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "7.1.0",
     "@capacitor/android": "7.0.0",
     "@capacitor/app": "7.0.0",
-    "@capacitor-firebase/authentication": "7.1.0",
     "@capacitor/core": "7.0.0",
     "@capacitor/ios": "7.0.0",
     "@capacitor/preferences": "7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "7.0.0",
     "@cashfreepayments/cashfree-js": "^1.0.7",
     "@genkit-ai/google-genai": "1.19.1",

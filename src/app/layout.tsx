@@ -49,7 +49,7 @@ export default function RootLayout({
  return (
   <html lang="en" suppressHydrationWarning className="h-full w-full">
    <body
-    style={{ backgroundColor: `var(--app-bg, ${DESIGN_TOKENS.rootBackground})` }}
+    style={{ backgroundColor: '#ff8ebb' }}
     className={cn(
      'min-h-screen text-slate-900 antialiased touch-manipulation transition-colors duration-500',
      fontHeadline.variable,
