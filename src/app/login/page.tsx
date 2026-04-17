@@ -23,7 +23,7 @@ import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 // DEBUG FLAG: Set to 'true' to bypass Native Android Auth and force Google ReCaptcha (Web)
-const DEBUG_FORCE_WEB_AUTH = false;
+const DEBUG_FORCE_WEB_AUTH = true;
 
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -337,17 +337,11 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
-    
     try {
       const isNative = Capacitor.isNativePlatform();
-      console.log("[Auth-Debug] Sign In Started. Native Platform:", isNative);
-      
       if (isNative) {
         try {
-          if (!FirebaseAuthentication) {
-             throw new Error("Native Plugin not loaded");
-          }
-          
+          // Attempt Native Google Login
           const result = await (FirebaseAuthentication as any).signInWithGoogle({
             webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
           });
@@ -365,26 +359,22 @@ export default function LoginPage() {
               router.replace('/rooms');
               return; // Success
             }
-          } else {
-            console.warn("[Auth-Debug] Native ID Token missing, falling back to Web.");
           }
         } catch (nativeError: any) {
           console.error("[Auth-Debug] Native Sign-In failed, falling back to Web:", nativeError);
-          // Auto-fallback to web-based login below
         }
       }
 
-      // Web-based Google Sign-In (Used on web OR as fallback for native)
+      // Web-based Google Sign-In (Fallback if native fails or on Web platform)
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithRedirect(auth, provider);
-      
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: error.message || 'Could not sign in with Google. Please try again.',
+        description: error.message || 'Could not sign in with Google.',
       });
       setIsSigningIn(false);
     }
@@ -431,29 +421,16 @@ export default function LoginPage() {
       const formattedNumber = `${selectedCountry.code}${cleanNumber}`;
       console.log("[Auth-Debug] Formatted Number:", formattedNumber);
 
-      // --- NATIVE AUTH BYPASS LOGIC ---
-      if (Capacitor.isNativePlatform() && !DEBUG_FORCE_WEB_AUTH) {
-        console.log("[Auth-Debug] Attempting Native Phone Sign-In...");
-        try {
-          await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: formattedNumber });
-          console.log("[Auth-Debug] Native Phone Sign-In call successful. Waiting for listeners...");
-          // Native response is handled via listeners
-          return;
-        } catch (nativeError: any) {
-          console.error("[Auth-Debug] Native Phone Sign-In failed, falling back to Web:", nativeError);
-        }
-      }
-
-      console.log("[Auth-Debug] Initializing Recaptcha...");
+      // Force Web Flow with Recaptcha (Captcha)
+      console.log("[Auth] Initializing Recaptcha...");
       const verifier = initRecaptcha();
       
       if (!verifier) {
         throw new Error("Recaptcha could not be initialized.");
       }
 
-      console.log("[Auth-Debug] Sending OTP via Web SDK...");
+      console.log("[Auth] Sending OTP via Web SDK...");
       const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
-      console.log("[Auth-Debug] OTP Result received:", !!result);
       
       setConfirmationResult(result);
       setPhoneLoginStep('code');

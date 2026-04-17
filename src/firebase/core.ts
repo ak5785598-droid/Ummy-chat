@@ -6,7 +6,7 @@ import { getAuth, Auth } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getDatabase, Database } from 'firebase/database';
-// import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 /**
  * ABSOLUTE SINGLETON PATTERN - CORE INITIALIZATION.
@@ -65,8 +65,7 @@ export function initializeFirebase() {
     databaseInstance = getDatabase(appInstance);
   }
 
-  // APP CHECK INITIALIZATION - Temporarily disabled to resolve OTP issues
-  /*
+  // APP CHECK INITIALIZATION - Stable standard configuration
   if (typeof window !== 'undefined' && appInstance) {
     try {
       if (process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
@@ -79,10 +78,9 @@ export function initializeFirebase() {
       });
       console.log('[Firebase Core] App Check Initialized');
     } catch (e) {
-      // Silent fail for duplicate init
+      // Silent fail
     }
   }
-  */
 
   return {
     firebaseApp: appInstance,
