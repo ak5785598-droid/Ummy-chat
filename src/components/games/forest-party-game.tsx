@@ -47,20 +47,17 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
-// Helper function to calculate current game day (resets at 5:30 AM)
 const getGameDay = () => {
   const now = new Date();
   const resetTime = new Date(now);
-  resetTime.setHours(5, 30, 0, 0); // 5:30 AM
+  resetTime.setHours(5, 30, 0, 0); 
 
   if (now < resetTime) {
-    // If it's before 5:30 AM, it belongs to yesterday's game day
     now.setDate(now.getDate() - 1);
   }
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
-// Helper function to format numbers to K and M
 const formatKandM = (num: number) => {
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -92,16 +89,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
  
- // NEW STATE: For Group Winning Shining Effect
  const [shiningGroup, setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
- 
- // State for Today's Total Winning
  const [dailyWinnings, setDailyWinnings] = useState(0);
 
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Sfx Assets Only (Bg Music removed)
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
@@ -114,7 +107,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        try { setGameRecords(JSON.parse(saved)); } catch (e) {}
      }
 
-     // Load Daily Winnings Logic (5:30 AM Reset)
      const savedDaily = localStorage.getItem('forestPartyDailyWin');
      if (savedDaily) {
        try {
@@ -122,7 +114,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
          if (parsed.gameDay === getGameDay()) {
            setDailyWinnings(parsed.amount);
          } else {
-           // Reset ho gaya naya din aane par
            setDailyWinnings(0);
            localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
          }
@@ -131,13 +122,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     // Digital Pop
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
-     // Sci-fi Ramping Up (Fast)
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-     // Mechanical Click
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
-     // Jackpot
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
    }
  }, []);
@@ -152,7 +139,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
- // Timer Logic
  useEffect(() => {
   const interval = setInterval(() => {
    if (gameState === 'betting') {
@@ -213,11 +199,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setGameState('spinning');
   playSound('spin'); 
 
-  // Mix Winner Logic (Random Chance)
   let groupType: 'none' | 'left' | 'right' = 'none';
   const chance = Math.random();
-  if (chance < 0.15) groupType = 'left'; // 15% chance left group
-  else if (chance < 0.30) groupType = 'right'; // 15% chance right group
+  if (chance < 0.15) groupType = 'left'; 
+  else if (chance < 0.30) groupType = 'right'; 
 
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
@@ -236,7 +221,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      const forced = oracleSnap.data().forcedResult;
      if (ANIMALS.some(a => a.id === forced)) {
          winningId = forced;
-         groupType = 'none'; // Overridden by Admin Oracle
+         groupType = 'none'; 
      }
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
@@ -247,7 +232,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 30; 
+  let speed = 35; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
@@ -286,8 +271,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   if (winAmount > 0) {
      playSound('win'); 
-     
-     // Update Daily Winnings automatically
      setDailyWinnings(prev => {
         const newAmount = prev + winAmount;
         localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount }));
@@ -295,7 +278,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      });
   }
 
-  setShiningGroup(groupType); // Shine trigger
+  setShiningGroup(groupType); 
 
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
@@ -338,13 +321,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setMyBets({});
    setHighlightIdx(null);
    setDroppedChips([]);
-   setShiningGroup('none'); // Reset shine
+   setShiningGroup('none'); 
    setGameState('betting');
    setTimeLeft(25);
   }, 5000);
  };
 
- // Helper for UI Active state 
  const isWinningAnimal = (idx: number, itemId: string) => {
     if (gameState === 'result') {
         if (shiningGroup === 'left' && ['lion','tiger','fox','bear'].includes(itemId)) return true;
@@ -365,7 +347,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         transition={{ duration: 5, repeat: Infinity }}
         className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
       />
-      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[10%] left-0 opacity-30"><Cloud size={80} fill="white" color="white" /></motion.div>
+      
+      {/* Cloud Header ke niche position ensure ki gayi hai */}
+      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[12%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
+      
       <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
           <div className="absolute -top-6 left-[10%] w-12 h-8 bg-[#8B4513] rounded-[40%_60%_70%_30%] shadow-2xl rotate-12" />
           <div className="absolute -top-4 right-[20%] w-16 h-10 bg-[#5D2E0C] rounded-[60%_40%_30%_70%] shadow-2xl -rotate-6" />
@@ -452,7 +437,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   {/* DAILY WINNING TROPHY (Placed below Header) */}
+   {/* DAILY WINNING TROPHY */}
    <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center justify-center">
      <div className="relative flex flex-col items-center">
        <span className="text-[32px] drop-shadow-xl select-none">🏆</span>
@@ -471,32 +456,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
     <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
 
-    {/* LEFT FLOATING CIRCLE CARD - Modified for Shine */}
+    {/* LEFT GROUP CARD (Smaller & Higher) */}
     <div className={cn(
-        "absolute top-[28%] left-[5%] z-30 w-[64px] h-[64px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] overflow-hidden transition-all duration-500",
+        "absolute top-[18%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
-        <div className="flex flex-wrap w-[36px] justify-center items-center leading-none mt-1">
-            <span className="text-[14px]">🦁</span><span className="text-[14px]">🐯</span>
-            <span className="text-[14px]">🦊</span><span className="text-[14px]">🐻</span>
+        <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
+            <span className="text-[12px]">🦁</span><span className="text-[12px]">🐯</span>
+            <span className="text-[12px]">🦊</span><span className="text-[12px]">🐻</span>
         </div>
-        <div className={cn("absolute bottom-0 w-full border-t py-[2px] text-center", shiningGroup === 'left' ? "bg-yellow-900/50 border-[#FFD700]" : "bg-[#3a1c0d] border-[#eebb99]")}>
-             <span className={cn("text-[6px] font-bold uppercase tracking-tighter", shiningGroup === 'left' ? "text-[#FFD700]" : "text-white")}>WIN 5X</span>
-        </div>
+        <span className={cn("text-[9px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
     </div>
 
-    {/* RIGHT FLOATING CIRCLE CARD - Modified for Shine */}
+    {/* RIGHT GROUP CARD (Smaller & Higher) */}
     <div className={cn(
-        "absolute top-[28%] right-[5%] z-30 w-[64px] h-[64px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] overflow-hidden transition-all duration-500",
+        "absolute top-[18%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
-        <div className="flex flex-wrap w-[36px] justify-center items-center leading-none mt-1">
-            <span className="text-[14px]">🐰</span><span className="text-[14px]">🦓</span>
-            <span className="text-[14px]">🦥</span><span className="text-[14px]">🐔</span>
+        <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
+            <span className="text-[12px]">🐰</span><span className="text-[12px]">🦓</span>
+            <span className="text-[12px]">🦝</span><span className="text-[12px]">🐔</span>
         </div>
-        <div className={cn("absolute bottom-0 w-full border-t py-[2px] text-center", shiningGroup === 'right' ? "bg-yellow-900/50 border-[#FFD700]" : "bg-[#3a1c0d] border-[#eebb99]")}>
-             <span className={cn("text-[6px] font-bold uppercase tracking-tighter", shiningGroup === 'right' ? "text-[#FFD700]" : "text-white")}>WIN 5X</span>
-        </div>
+        <span className={cn("text-[9px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
     </div>
 
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
@@ -516,7 +497,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </filter>
         </defs>
         
-        {/* Support Legs */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
             <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" filter="url(#shadow3D)" />
