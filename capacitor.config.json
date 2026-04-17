@@ -5,9 +5,9 @@
   "bundledWebRuntime": false,
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
+      "launchShowDuration": 500,
       "launchAutoHide": true,
-      "backgroundColor": "#140028"
+      "backgroundColor": "#ff8ebb"
     },
     "FirebaseAuthentication": {
       "skipNativeAuth": false,

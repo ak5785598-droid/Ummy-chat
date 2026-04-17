@@ -17,16 +17,19 @@ export default function SplashScreen() {
     // Start animation almost instantly
     const timer = setTimeout(() => setShowContent(true), 50);
 
-    const redirectTimer = setTimeout(() => {
-      const destination = user ? '/rooms' : '/login';
-      router.push(destination);
-    }, 2800);
+    // SMART REDIRECTION: Only move forward when 
+    // 1. Min duration (2s) reached 
+    // 2. User info is loaded (No more loading flicker)
+    if (!isUserLoading && showContent) {
+      const redirectTimer = setTimeout(() => {
+        const destination = user ? '/rooms' : '/login';
+        router.push(destination);
+      }, 2000); // 2s minimum for the "Premium Intro" look
+      return () => clearTimeout(redirectTimer);
+    }
 
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(redirectTimer);
-    };
-  }, [user, isUserLoading, router]);
+    return () => clearTimeout(timer);
+  }, [user, isUserLoading, router, showContent]);
 
   return (
     /* Base background is now themed pink gradient to prevent "Black Flash" (Screenshot 1 fix) */
