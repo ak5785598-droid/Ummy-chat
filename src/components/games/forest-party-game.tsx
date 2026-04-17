@@ -348,7 +348,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
       />
       
-      {/* Cloud Header ke niche position ensure ki gayi hai */}
       <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[12%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
       
       <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
@@ -450,15 +449,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    <div className="absolute top-[22%] left-[12%] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    <div className="absolute top-[18%] right-[10%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    {/* CLOUD LEFT (Next to Trophy) */}
+    <div className="absolute top-[40px] left-[85px] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    {/* CLOUD RIGHT (Below Clock/Speaker/Help Icons) */}
+    <div className="absolute top-[50px] right-[20px] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     
     <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
     <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
 
-    {/* LEFT GROUP CARD (Smaller & Higher) */}
+    {/* LEFT GROUP CARD (Moved Higher to top-10%) */}
     <div className={cn(
-        "absolute top-[18%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[10%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
@@ -468,9 +469,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         <span className={cn("text-[9px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
     </div>
 
-    {/* RIGHT GROUP CARD (Smaller & Higher) */}
+    {/* RIGHT GROUP CARD (Moved Higher to top-10%) */}
     <div className={cn(
-        "absolute top-[18%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[10%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
