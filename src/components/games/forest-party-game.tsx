@@ -29,16 +29,12 @@ const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
   { id: 'cow', emoji: '🦝', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
-  { id: 'dog', emoji: '🦥', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
-  { id: 'fox', emoji: ' foxes', emoji_char: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', index: 4 },
+  { id: 'dog', emoji: '🦓', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
+  { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', index: 4 },
   { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', index: 5 },
-  { id: 'tiger', emoji: '🦓', multiplier: 25, label: 'x25', pos: 'left', index: 6 },
+  { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', index: 6 },
   { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', index: 7 },
 ];
-
-// Groups for Mix Win logic
-const LOW_GROUP = ['panda', 'rabbit', 'cow', 'dog'];
-const HIGH_GROUP = ['fox', 'bear', 'tiger', 'lion'];
 
 const CHIPS_DATA = [
  { value: 100, label: '100', color: 'from-blue-400 to-blue-600' },
@@ -51,17 +47,27 @@ const CHIPS_DATA = [
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 
+// Helper function to calculate current game day (resets at 5:30 AM)
 const getGameDay = () => {
   const now = new Date();
   const resetTime = new Date(now);
-  resetTime.setHours(5, 30, 0, 0); 
-  if (now < resetTime) now.setDate(now.getDate() - 1);
+  resetTime.setHours(5, 30, 0, 0); // 5:30 AM
+
+  if (now < resetTime) {
+    // If it's before 5:30 AM, it belongs to yesterday's game day
+    now.setDate(now.getDate() - 1);
+  }
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
+// Helper function to format numbers to K and M
 const formatKandM = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  }
   return num.toString();
 };
 
@@ -78,19 +84,21 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
  const [history, setHistory] = useState<string[]>(['panda', 'lion', 'fox']);
  const [isMuted, setIsMuted] = useState(false);
- const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number; isMix?: boolean } | null>(null);
+ const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
  const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
  
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
+ 
+ // State for Today's Total Winning
  const [dailyWinnings, setDailyWinnings] = useState(0);
- const [shiningCard, setShiningCard] = useState<'left' | 'right' | null>(null);
 
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
+ // Sfx Assets Only (Bg Music removed)
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
@@ -99,33 +107,49 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
-     if (saved) try { setGameRecords(JSON.parse(saved)); } catch (e) {}
+     if (saved) {
+       try { setGameRecords(JSON.parse(saved)); } catch (e) {}
+     }
+
+     // Load Daily Winnings Logic (5:30 AM Reset)
      const savedDaily = localStorage.getItem('forestPartyDailyWin');
      if (savedDaily) {
        try {
          const parsed = JSON.parse(savedDaily);
-         if (parsed.gameDay === getGameDay()) setDailyWinnings(parsed.amount);
-         else {
+         if (parsed.gameDay === getGameDay()) {
+           setDailyWinnings(parsed.amount);
+         } else {
+           // Reset ho gaya naya din aane par
            setDailyWinnings(0);
            localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
          }
        } catch (e) {}
+     } else {
+       localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
+
+     // Digital Pop
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'); 
+     // Sci-fi Ramping Up (Fast)
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+     // Mechanical Click
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
+     // Jackpot
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
    }
  }, []);
 
  useEffect(() => {
-   if (typeof window !== 'undefined') localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); 
+   if (typeof window !== 'undefined') {
+     localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); 
+   }
  }, [gameRecords]);
 
  useEffect(() => {
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
+ // Timer Logic
  useEffect(() => {
   const interval = setInterval(() => {
    if (gameState === 'betting') {
@@ -139,10 +163,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const playSound = (type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
-    const audios = { bet: chipAudio.current, tick: tickAudio.current, spin: spinAudio.current, win: winAudio.current };
+    const audios = {
+        bet: chipAudio.current,
+        tick: tickAudio.current,
+        spin: spinAudio.current,
+        win: winAudio.current,
+    };
     const audio = audios[type as keyof typeof audios];
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
-    if (type === 'stop') spinAudio.current?.pause();
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+    }
+    if (type === 'stop') {
+        spinAudio.current?.pause();
+    }
   } catch (error) {}
  };
 
@@ -152,151 +186,124 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    toast({ title: 'Coins Kam Hain!', variant: 'destructive' });
    return;
   }
+
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
   const newChip = {
-   id: Date.now(), itemIdx: animal.index, label: chipInfo?.label || '10',
+   id: Date.now(),
+   itemIdx: animal.index,
+   label: chipInfo?.label || '10',
    color: chipInfo?.color || 'from-blue-400 to-cyan-500',
-   x: (Math.random() * 30) - 15, y: (Math.random() * 20) - 10
+   x: (Math.random() * 30) - 15,
+   y: (Math.random() * 20) - 10
   };
   setDroppedChips(prev => [...prev, newChip]);
   setLocalCoins(prev => prev - selectedChip);
+  
   const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+  
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
 
  const startSpin = async () => {
   setGameState('spinning');
-  setShiningCard(null);
   playSound('spin'); 
+  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
-  // Mix logic probability
-  const rand = Math.random();
-  let winType: 'single' | 'low-mix' | 'high-mix' = 'single';
-  if (rand < 0.08) winType = 'low-mix'; // 8% chance small mix
-  else if (rand < 0.15) winType = 'high-mix'; // 7% chance big mix
-
-  let winningIds: string[] = [];
-  let mainTargetId = '';
-
-  if (winType === 'low-mix') {
-    winningIds = [...LOW_GROUP];
-    mainTargetId = winningIds[Math.floor(Math.random() * winningIds.length)];
-  } else if (winType === 'high-mix') {
-    winningIds = [...HIGH_GROUP];
-    mainTargetId = winningIds[Math.floor(Math.random() * winningIds.length)];
-  } else {
-    mainTargetId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
-    winningIds = [mainTargetId];
-  }
-
-  // Firestore override (only for single result usually)
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) {
-         mainTargetId = forced;
-         winningIds = [forced];
-         winType = 'single';
-     }
+     if (ANIMALS.some(a => a.id === forced)) winningId = forced;
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
    } catch (e) {}
   }
 
-  const targetIdx = ANIMALS.findIndex(a => a.id === mainTargetId);
+  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 5; 
+  const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
   let speed = 20; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
-   if (currentStep % 5 === 0) playSound('tick'); 
+   
+   if (currentStep % 10 === 0) playSound('tick'); 
+
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
     if (remaining < 5) speed += 100;
     else if (remaining < 12) speed += 40;
     else if (remaining < 20) speed += 15;
+    
     currentStep++;
     setTimeout(runChase, speed);
    } else {
     playSound('stop');
-    setTimeout(() => finalizeResult(winningIds, winType), 500);
+    setTimeout(() => finalizeResult(winningId), 500);
    }
   };
   runChase();
  };
 
- const finalizeResult = (ids: string[], type: 'single' | 'low-mix' | 'high-mix') => {
-  let totalWinAmount = 0;
+ const finalizeResult = (id: string) => {
+  const winItem = ANIMALS.find(i => i.id === id);
+  const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
-  
-  // Update shining cards
-  if (type === 'low-mix') setShiningCard('right');
-  else if (type === 'high-mix') setShiningCard('left');
-  else {
-      if (LOW_GROUP.includes(ids[0])) setShiningCard('right');
-      else setShiningCard('left');
-  }
 
-  // Calculate winnings for all winners in mix
-  ids.forEach(winId => {
-      const animal = ANIMALS.find(a => a.id === winId);
-      const win = (myBets[winId] || 0) * (animal?.multiplier || 0);
-      totalWinAmount += win;
-  });
-
-  if (totalWinAmount > 0) {
+  if (winAmount > 0) {
      playSound('win'); 
+     
+     // Update Daily Winnings automatically
      setDailyWinnings(prev => {
-        const newAmount = prev + totalWinAmount;
+        const newAmount = prev + winAmount;
         localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount }));
         return newAmount;
      });
   }
 
-  // Record generation
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
-     const isWinner = ids.includes(betId);
      return {
        id: Date.now() + Math.random(),
        emoji: animal?.emoji || '❓',
        bet: betAmount,
-       win: isWinner ? betAmount * (animal?.multiplier || 0) : 0,
+       win: betId === id ? betAmount * (animal?.multiplier || 0) : 0,
        timestamp: Date.now()
      };
   });
   
   if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
 
-  setHistory(prev => [ids[0], ...prev].slice(0, 15));
-  
-  setWinnerData({ 
-      emoji: type === 'single' ? (ANIMALS.find(a => a.id === ids[0])?.emoji || '🏆') : '🌟 MIX', 
-      win: totalWinAmount, 
-      bet: totalBetAmount,
-      isMix: type !== 'single'
-  });
+  setHistory(prev => [id, ...prev].slice(0, 15));
+  setWinnerData({ emoji: winItem?.emoji || '🏆', win: winAmount, bet: totalBetAmount });
   setGameState('result');
 
-  if (totalWinAmount > 0 && currentUser && firestore) {
+  if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
+   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
+   
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-    gameId: 'forest-party', userId: currentUser.uid, username: userProfile?.username || 'Guest',
-    avatarUrl: userProfile?.avatarUrl || null, amount: totalWinAmount, timestamp: serverTimestamp()
+    gameId: 'forest-party',
+    userId: currentUser.uid,
+    username: userProfile?.username || 'Guest',
+    avatarUrl: userProfile?.avatarUrl || null,
+    amount: winAmount,
+    timestamp: serverTimestamp()
    });
   }
 
   setTimeout(() => {
-   setWinnerData(null); setMyBets({}); setHighlightIdx(null); setDroppedChips([]);
-   setGameState('betting'); setShiningCard(null); setTimeLeft(25);
+   setWinnerData(null);
+   setMyBets({});
+   setHighlightIdx(null);
+   setDroppedChips([]);
+   setGameState('betting');
+   setTimeLeft(25);
   }, 5000);
  };
 
@@ -306,9 +313,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    {/* BACKGROUND LAYER */}
    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[#2D1B4E] via-[#FF6B6B] to-[#FFD93D]" />
-      <motion.div animate={{ x: [-10, 10, -10] }} transition={{ duration: 4, repeat: Infinity }} className="absolute top-[100px] left-[20px] opacity-80 z-20"><Cloud size={70} fill="white" color="white" /></motion.div>
-      <motion.div animate={{ x: [10, -10, 10] }} transition={{ duration: 5, repeat: Infinity }} className="absolute top-[55px] right-[20px] opacity-80 z-20"><Cloud size={90} fill="white" color="white" /></motion.div>
-      <motion.div animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }} transition={{ duration: 5, repeat: Infinity }} className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]" />
+      <motion.div 
+        animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }} 
+        transition={{ duration: 5, repeat: Infinity }}
+        className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
+      />
+      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[10%] left-0 opacity-30"><Cloud size={80} fill="white" color="white" /></motion.div>
       <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
           <div className="absolute -top-6 left-[10%] w-12 h-8 bg-[#8B4513] rounded-[40%_60%_70%_30%] shadow-2xl rotate-12" />
           <div className="absolute -top-4 right-[20%] w-16 h-10 bg-[#5D2E0C] rounded-[60%_40%_30%_70%] shadow-2xl -rotate-6" />
@@ -316,43 +326,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <div className="absolute -top-24 right-[8%] text-6xl drop-shadow-2xl select-none">🌵</div>
       </div>
    </div>
-
-   {/* 3D GROUP CARDS */}
-   <motion.div 
-     animate={{ 
-       y: [0, -5, 0],
-       boxShadow: shiningCard === 'left' ? '0 0 40px #FFD93D' : '0 10px 20px rgba(0,0,0,0.3)',
-       scale: shiningCard === 'left' ? 1.15 : 1
-     }}
-     transition={{ duration: 0.3 }}
-     className={cn(
-       "absolute top-[140px] left-[15px] z-[55] w-[70px] py-2 bg-[#3a1c0d] border-2 border-[#eebb99] rounded-2xl flex flex-col items-center gap-2 shadow-2xl transition-all",
-       shiningCard === 'left' && "border-yellow-400 ring-4 ring-yellow-400/50"
-     )}
-   >
-      {['🦊', '🐻', '🦁', '🦓'].map((em, i) => (
-        <motion.span key={i} animate={shiningCard === 'left' ? { scale: [1, 1.3, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="text-xl drop-shadow-md">{em}</motion.span>
-      ))}
-      <div className="text-[7px] font-black text-[#eebb99] bg-black/30 px-1 rounded uppercase">High</div>
-   </motion.div>
-
-   <motion.div 
-     animate={{ 
-       y: [0, -5, 0],
-       boxShadow: shiningCard === 'right' ? '0 0 40px #FFD93D' : '0 10px 20px rgba(0,0,0,0.3)',
-       scale: shiningCard === 'right' ? 1.15 : 1
-     }}
-     transition={{ duration: 0.3 }}
-     className={cn(
-       "absolute top-[140px] right-[15px] z-[55] w-[70px] py-2 bg-[#3a1c0d] border-2 border-[#eebb99] rounded-2xl flex flex-col items-center gap-2 shadow-2xl transition-all",
-       shiningCard === 'right' && "border-yellow-400 ring-4 ring-yellow-400/50"
-     )}
-   >
-      {['🐔', '🐰', '🦥', '🦝'].map((em, i) => (
-        <motion.span key={i} animate={shiningCard === 'right' ? { scale: [1, 1.3, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }} className="text-xl drop-shadow-md">{em}</motion.span>
-      ))}
-      <div className="text-[7px] font-black text-[#eebb99] bg-black/30 px-1 rounded uppercase">x5 All</div>
-   </motion.div>
 
    {/* WINNER OVERLAY */}
    <AnimatePresence>
@@ -363,7 +336,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
              <div className="flex items-center gap-6">
                 <div className="relative">
                   <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30 animate-pulse" />
-                  <div className={cn("relative text-7xl filter drop-shadow-md font-black", winnerData.isMix ? "text-orange-600 italic" : "")}>{winnerData.emoji}</div>
+                  <div className="relative text-7xl filter drop-shadow-md">{winnerData.emoji}</div>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Winning Amount</span>
@@ -380,7 +353,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 </div>
                 <div className="bg-orange-500 rounded-2xl p-3 shadow-lg flex flex-col items-center justify-center">
                    <span className="text-[9px] font-black text-white/80 uppercase tracking-tighter">Status</span>
-                   <span className="text-lg font-black text-white uppercase italic">{winnerData.win > 0 ? (winnerData.isMix ? 'MEGA WIN' : 'Winner') : 'Try Again'}</span>
+                   <span className="text-lg font-black text-white uppercase italic">{winnerData.win > 0 ? 'Winner' : 'Try Again'}</span>
                 </div>
              </div>
           </div>
@@ -388,7 +361,36 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   {/* REST OF UI (Same as original) */}
+   {/* RECORD PANEL */}
+   <AnimatePresence>
+    {showRecord && (
+        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
+            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
+                <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                {gameRecords.length === 0 ? <p className="text-[#4a2511]/40 text-center text-xs italic mt-4">No records found yet...</p> : gameRecords.map((rec) => (
+                    <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{rec.emoji}</span>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-orange-500 font-bold uppercase">Bet Amount</span>
+                                <span className="text-xs font-black text-[#4a2511]">{rec.bet}</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
+                            <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </motion.div>
+    )}
+   </AnimatePresence>
+
+   {/* HEADER */}
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
       <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
           <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600" /></div>
@@ -396,36 +398,62 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40"><Plus className="h-3 w-3 stroke-[3]" /></button>
       </div>
       <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><Clock size={16} /></button>
+          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><Clock size={16} /></button>
           <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white">{isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><HelpCircle size={16} /></button>
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white"><X size={16} /></button>
+          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><HelpCircle size={16} /></button>
+          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90"><X size={16} /></button>
       </div>
    </header>
 
-   <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center">
-     <div className="relative">
-       <span className="text-[32px] drop-shadow-xl">🏆</span>
+   {/* DAILY WINNING TROPHY (Placed below Header) */}
+   <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center justify-center">
+     <div className="relative flex flex-col items-center">
+       <span className="text-[32px] drop-shadow-xl select-none">🏆</span>
        <div className="absolute -bottom-3 bg-black/70 border border-yellow-500 rounded-full px-2 py-0.5 whitespace-nowrap shadow-md">
           <span className="text-[10px] font-black text-yellow-400 tracking-wider">+{formatKandM(dailyWinnings)}</span>
        </div>
      </div>
    </div>
 
+   {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
+    
+    {/* NEW CLOUDS OVER WHEEL - UPDATED SIZES AND POSITIONS */}
+    <div className="absolute top-[8%] left-[5%] text-[60px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[3%] right-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    
+    {/* NEW CACTUSES NEAR WHEEL */}
+    <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
+    <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
+
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#FFD700" /><stop offset="100%" stopColor="#DAA520" /></linearGradient>
-            <filter id="goldGlow"><feGaussianBlur stdDeviation="2.5" result="blur" /><feComposite in="SourceGraphic" in2="blur" operator="over" /></filter>
+            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFD700" />
+              <stop offset="50%" stopColor="#FFFACD" />
+              <stop offset="100%" stopColor="#DAA520" />
+            </linearGradient>
+            <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
+            </filter>
         </defs>
+        
+        {/* Support Legs */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" />
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#4a2511" strokeWidth="7" strokeLinecap="round" filter="url(#shadow3D)" />
             <line x1="50" y1="50" x2="50" y2="13" stroke="#c58a66" strokeWidth="5" strokeLinecap="round" />
+            <line x1="48.5" y1="50" x2="48.5" y2="13" stroke="#fef0e6" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
           </g>
         ))}
+
         <motion.circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldGradient)" strokeWidth={gameState === 'spinning' ? "4" : "2"} filter={gameState === 'spinning' ? "url(#goldGlow)" : ""} animate={{ opacity: gameState === 'spinning' ? [0.6, 1, 0.6] : 0.3 }} transition={{ duration: 1, repeat: Infinity }} />
+        <circle cx="50" cy="50" r="41" fill="none" stroke="#c58a66" strokeWidth="6" filter="url(#shadow3D)" />
       </svg>
 
       <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
@@ -442,6 +470,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     <span className="text-[7px] font-bold uppercase tracking-tighter">Win {item.multiplier}x</span>
                 </div>
             </div>
+            
             <AnimatePresence>
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[22px] w-[22px] rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg z-40 pointer-events-none", `bg-gradient-to-br ${chip.color}`)}>
@@ -449,6 +478,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     </motion.div>
                 ))}
             </AnimatePresence>
+            
             {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
           </button>
         </motion.div>
@@ -456,6 +486,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
    </main>
 
+   {/* FOOTER */}
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
         <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
@@ -469,31 +500,29 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           </div>
         </div>
       </div>
-      <div className="w-full h-[10vh] min-h-[70px] bg-[#3a1c0d] flex items-center justify-center gap-4 px-4 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] border-t-[4px] border-[#241108]">
+
+      <div className="w-full h-[10vh] min-h-[70px] bg-[#3a1c0d] rounded-none flex items-center justify-center gap-4 px-4 shadow-[0_-5px_25px_rgba(0,0,0,0.5)] border-t-[4px] border-[#241108]">
         {CHIPS_DATA.map(chip => (
-          <button key={chip.value} onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 shrink-0 relative", selectedChip === chip.value ? "border-white scale-115 z-20 shadow-[0_0_20px_white]" : "border-white/10 opacity-60", `bg-gradient-to-br ${chip.color}`)}>
+          <button key={chip.value} onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} className={cn("h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 shrink-0 relative", selectedChip === chip.value ? "border-white scale-115 z-20 shadow-[0_0_20px_white]" : "border-white/10 opacity-60 hover:opacity-100", `bg-gradient-to-br ${chip.color}`)}>
+              <div className="absolute inset-[2px] rounded-full border border-white/20 border-dashed animate-spin-slow" />
               <span className="text-[12px] font-black text-white relative z-10">{chip.label}</span>
           </button>
         ))}
       </div>
    </div>
-   
-   {/* Modals (Record & Rules) - Keeping same structure as requested */}
+
    <AnimatePresence>
-    {showRecord && (
-        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 flex flex-col">
+    {showRules && (
+        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
             <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
-                <button onClick={() => setShowRecord(false)} className="absolute right-4 text-orange-500"><X size={18} /></button>
+                <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
+                <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                {gameRecords.map((rec) => (
-                    <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
-                        <span className="text-2xl">{rec.emoji}</span>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
-                            <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
-                        </div>
+            <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
+                {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
+                    <div key={i} className="flex gap-3 items-start">
+                        <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0">{i+1}</span>
+                        <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
                     </div>
                 ))}
             </div>
@@ -503,7 +532,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    <style jsx global>{`
     .no-scrollbar::-webkit-scrollbar { display: none; }
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin-slow 8s linear infinite; }
    `}</style>
   </div>
  );
-}
+  }
