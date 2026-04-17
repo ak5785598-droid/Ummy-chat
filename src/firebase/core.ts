@@ -6,6 +6,7 @@ import { getAuth, Auth } from 'firebase/auth';
 import { initializeFirestore, getFirestore, Firestore, persistentLocalCache, persistentSingleTabManager } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getDatabase, Database } from 'firebase/database';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 /**
  * ABSOLUTE SINGLETON PATTERN - CORE INITIALIZATION.
@@ -62,6 +63,24 @@ export function initializeFirebase() {
 
   if (!databaseInstance) {
     databaseInstance = getDatabase(appInstance);
+  }
+
+  // APP CHECK INITIALIZATION - Critical for Phone Auth when enforced in Console
+  if (typeof window !== 'undefined' && appInstance) {
+    try {
+      // Enable Debug Token for TWA/Local testing
+      if (process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+        (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      }
+
+      initializeAppCheck(appInstance, {
+        provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6Le7kGsqAAAAANi6_pEUKvI5l0-m1XhM3l1_P-11'),
+        isTokenAutoRefreshEnabled: true
+      });
+      console.log('[Firebase Core] App Check Initialized');
+    } catch (e) {
+      // Silent fail for duplicate init
+    }
   }
 
   return {
