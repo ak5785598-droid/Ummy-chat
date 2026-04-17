@@ -92,6 +92,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
  
+ // NEW STATE: For Group Winning Shining Effect
+ const [shiningGroup, setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
+ 
  // State for Today's Total Winning
  const [dailyWinnings, setDailyWinnings] = useState(0);
 
@@ -209,14 +212,32 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const startSpin = async () => {
   setGameState('spinning');
   playSound('spin'); 
+
+  // Mix Winner Logic (Random Chance)
+  let groupType: 'none' | 'left' | 'right' = 'none';
+  const chance = Math.random();
+  if (chance < 0.15) groupType = 'left'; // 15% chance left group
+  else if (chance < 0.30) groupType = 'right'; // 15% chance right group
+
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+
+  if (groupType === 'left') {
+      const lefts = ['lion', 'tiger', 'fox', 'bear'];
+      winningId = lefts[Math.floor(Math.random() * lefts.length)];
+  } else if (groupType === 'right') {
+      const rights = ['panda', 'rabbit', 'cow', 'dog'];
+      winningId = rights[Math.floor(Math.random() * rights.length)];
+  }
 
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) winningId = forced;
+     if (ANIMALS.some(a => a.id === forced)) {
+         winningId = forced;
+         groupType = 'none'; // Overridden by Admin Oracle
+     }
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
    } catch (e) {}
@@ -226,7 +247,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 20; 
+  let speed = 30; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
@@ -244,15 +265,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     setTimeout(runChase, speed);
    } else {
     playSound('stop');
-    setTimeout(() => finalizeResult(winningId), 500);
+    setTimeout(() => finalizeResult(winningId, groupType), 500);
    }
   };
   runChase();
  };
 
- const finalizeResult = (id: string) => {
-  const winItem = ANIMALS.find(i => i.id === id);
-  const winAmount = (myBets[id] || 0) * (winItem?.multiplier || 0);
+ const finalizeResult = (id: string, groupType: 'none' | 'left' | 'right') => {
+  let winningIds = [id];
+  if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
+  else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
+
+  let winAmount = 0;
+  winningIds.forEach(wId => {
+      const winItem = ANIMALS.find(i => i.id === wId);
+      winAmount += (myBets[wId] || 0) * (winItem?.multiplier || 0);
+  });
+
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
   if (winAmount > 0) {
@@ -266,13 +295,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      });
   }
 
+  setShiningGroup(groupType); // Shine trigger
+
   const newRoundRecords = Object.entries(myBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
      return {
        id: Date.now() + Math.random(),
        emoji: animal?.emoji || '❓',
        bet: betAmount,
-       win: betId === id ? betAmount * (animal?.multiplier || 0) : 0,
+       win: winningIds.includes(betId) ? betAmount * (animal?.multiplier || 0) : 0,
        timestamp: Date.now()
      };
   });
@@ -280,7 +311,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
 
   setHistory(prev => [id, ...prev].slice(0, 15));
-  setWinnerData({ emoji: winItem?.emoji || '🏆', win: winAmount, bet: totalBetAmount });
+
+  let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
+  if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
+  if (groupType === 'right') displayEmoji = '🐰🦓🦝🐔'; 
+
+  setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
@@ -302,9 +338,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setMyBets({});
    setHighlightIdx(null);
    setDroppedChips([]);
+   setShiningGroup('none'); // Reset shine
    setGameState('betting');
    setTimeLeft(25);
   }, 5000);
+ };
+
+ // Helper for UI Active state 
+ const isWinningAnimal = (idx: number, itemId: string) => {
+    if (gameState === 'result') {
+        if (shiningGroup === 'left' && ['lion','tiger','fox','bear'].includes(itemId)) return true;
+        if (shiningGroup === 'right' && ['panda','rabbit','cow','dog'].includes(itemId)) return true;
+        return highlightIdx === idx;
+    }
+    return highlightIdx === idx;
  };
 
  return (
@@ -418,13 +465,39 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    {/* MAIN BOARD */}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    {/* NEW CLOUDS OVER WHEEL - UPDATED SIZES AND POSITIONS */}
-    <div className="absolute top-[8%] left-[5%] text-[60px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    <div className="absolute top-[3%] right-[5%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[22%] left-[12%] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[18%] right-[10%] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     
-    {/* NEW CACTUSES NEAR WHEEL */}
     <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
     <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
+
+    {/* LEFT FLOATING CIRCLE CARD - Modified for Shine */}
+    <div className={cn(
+        "absolute top-[28%] left-[5%] z-30 w-[64px] h-[64px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] overflow-hidden transition-all duration-500",
+        shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+    )}>
+        <div className="flex flex-wrap w-[36px] justify-center items-center leading-none mt-1">
+            <span className="text-[14px]">🦁</span><span className="text-[14px]">🐯</span>
+            <span className="text-[14px]">🦊</span><span className="text-[14px]">🐻</span>
+        </div>
+        <div className={cn("absolute bottom-0 w-full border-t py-[2px] text-center", shiningGroup === 'left' ? "bg-yellow-900/50 border-[#FFD700]" : "bg-[#3a1c0d] border-[#eebb99]")}>
+             <span className={cn("text-[6px] font-bold uppercase tracking-tighter", shiningGroup === 'left' ? "text-[#FFD700]" : "text-white")}>WIN 5X</span>
+        </div>
+    </div>
+
+    {/* RIGHT FLOATING CIRCLE CARD - Modified for Shine */}
+    <div className={cn(
+        "absolute top-[28%] right-[5%] z-30 w-[64px] h-[64px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] overflow-hidden transition-all duration-500",
+        shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+    )}>
+        <div className="flex flex-wrap w-[36px] justify-center items-center leading-none mt-1">
+            <span className="text-[14px]">🐰</span><span className="text-[14px]">🦓</span>
+            <span className="text-[14px]">🦥</span><span className="text-[14px]">🐔</span>
+        </div>
+        <div className={cn("absolute bottom-0 w-full border-t py-[2px] text-center", shiningGroup === 'right' ? "bg-yellow-900/50 border-[#FFD700]" : "bg-[#3a1c0d] border-[#eebb99]")}>
+             <span className={cn("text-[6px] font-bold uppercase tracking-tighter", shiningGroup === 'right' ? "text-[#FFD700]" : "text-white")}>WIN 5X</span>
+        </div>
+    </div>
 
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
@@ -461,12 +534,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '!!!'}</span>
       </div>
 
-      {ANIMALS.map((item, idx) => (
+      {ANIMALS.map((item, idx) => {
+        const active = isWinningAnimal(idx, item.id);
+        return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
-            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", highlightIdx === idx ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
-                <span className={cn("text-[38px] z-10", highlightIdx === idx ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
-                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", highlightIdx === idx ? "bg-white/20" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", active ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
+                <span className={cn("text-[38px] z-10", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
+                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", active ? "bg-white/20" : "bg-[#4a2511] border-t border-[#eebb99]")}>
                     <span className="text-[7px] font-bold uppercase tracking-tighter">Win {item.multiplier}x</span>
                 </div>
             </div>
@@ -482,7 +557,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
           </button>
         </motion.div>
-      ))}
+        )
+      })}
     </div>
    </main>
 
@@ -537,4 +613,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    `}</style>
   </div>
  );
-  }
+}
