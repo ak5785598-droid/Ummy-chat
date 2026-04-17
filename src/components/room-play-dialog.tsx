@@ -22,7 +22,10 @@ import {
  FileAudio, 
  Power,
  Trash2,
- Zap
+ Zap,
+ Bot,
+ Gamepad2,
+ Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -37,7 +40,6 @@ import { collection, getDocs, writeBatch, doc, serverTimestamp, query, onSnapsho
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { GameControllerIcon } from '@/components/icons';
 import { searchVideosAction } from '@/actions/get-videos';
 import { useRoomContext } from './room-provider';
 
@@ -104,7 +106,6 @@ export function RoomPlayDialog({
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
 
-  // Use the provided defaultView or fallback to 'grid' when dialog opens
   useEffect(() => {
     if (open) {
       setView(defaultView);
@@ -114,7 +115,6 @@ export function RoomPlayDialog({
     }
   }, [open, defaultView]);
 
- // Load room music library from Firestore
  useEffect(() => {
   if (!firestore || !roomId) return;
   
@@ -142,10 +142,8 @@ export function RoomPlayDialog({
    
    const batch = writeBatch(firestore);
    
-   // 1. Delete all existing messages
    snap.docs.forEach(d => batch.delete(d.ref));
    
-   // 2. Add System Message with LATEST Username
    const currentName = userProfile?.username || user.displayName || 'Admin';
    const systemMsgRef = doc(messagesRef);
    batch.set(systemMsgRef, {
@@ -154,7 +152,6 @@ export function RoomPlayDialog({
      timestamp: serverTimestamp(),
    });
 
-   // 3. Update room document with clear timestamp
    const roomRef = doc(firestore, 'chatRooms', roomId);
    batch.update(roomRef, {
      chatClearedAt: serverTimestamp(),
@@ -215,8 +212,6 @@ export function RoomPlayDialog({
  };
 
  const handleSyncMusic = (video: any) => {
-  // NOTE: YouTube URLs cannot be played by HTML <audio> element.
-  // User must upload actual audio files to Room Library.
   toast({ 
     variant: 'destructive',
     title: 'YouTube Not Supported',
@@ -224,7 +219,6 @@ export function RoomPlayDialog({
   });
  };
 
- // Upload file to Firebase Storage and save to room music library
  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file || !storage || !firestore || !roomId || !user) return;
@@ -236,14 +230,12 @@ export function RoomPlayDialog({
   
   setIsUploading(true);
   try {
-   // Upload to Firebase Storage
    const timestamp = Date.now();
    const storagePath = `rooms/${roomId}/music/${timestamp}_${file.name}`;
    const storageRef = ref(storage, storagePath);
    const uploadResult = await uploadBytes(storageRef, file);
    const downloadUrl = await getDownloadURL(uploadResult.ref);
    
-   // Save to room music library in Firestore
    const musicData = {
     name: file.name,
     url: downloadUrl,
@@ -266,7 +258,6 @@ export function RoomPlayDialog({
   }
  };
 
- // Sync track to room — ALL clients (including owner) will hear it via Firestore listener
  const handleSyncSharedMusic = async (track: any) => {
   if (!firestore || !roomId || !user) return;
   
@@ -277,21 +268,18 @@ export function RoomPlayDialog({
    currentMusicType: track.type || 'upload',
    currentMusicId: track.id,
    isMusicPlaying: true,
-   musicStartedAt: serverTimestamp(), // Virtual Clock: starts NOW
-   musicStartOffset: 0,              // from the beginning
+   musicStartedAt: serverTimestamp(),
+   musicStartOffset: 0,
    musicUpdatedAt: serverTimestamp(),
    musicUpdatedBy: user.uid,
    updatedAt: serverTimestamp()
   });
   
-  // NOTE: Do NOT play locally here. The useEffect sync in room-client.tsx
-  // will fire for ALL clients including the owner when Firestore updates.
   setIsMusicEnabled(true);
   toast({ title: '🎵 Music Broadcasting', description: `${track.name || 'Track'} is now playing for everyone.` });
   onOpenChange(false);
  };
 
- // Delete track from room library (owner/mod only)
  const handleDeleteTrack = async (track: any) => {
   if (!canManage) {
    toast({ variant: 'destructive', title: 'Unauthorized', description: 'Only room authorities can delete tracks.' });
@@ -300,13 +288,11 @@ export function RoomPlayDialog({
   if (!firestore || !storage || !roomId) return;
   
   try {
-   // Delete from Storage
    if (track.storagePath) {
     const storageRef = ref(storage, track.storagePath);
-    await deleteObject(storageRef).catch(() => {}); // Ignore if not found
+    await deleteObject(storageRef).catch(() => {});
    }
    
-   // Delete from Firestore
    await deleteDocumentNonBlocking(doc(firestore, 'chatRooms', roomId, 'music', track.id));
    toast({ title: 'Track Deleted', description: `${track.name} removed from library.` });
   } catch (error: any) {
@@ -327,7 +313,6 @@ export function RoomPlayDialog({
   }
  };
 
- // --- LONG PRESS GESTURE LOGIC ---
  const handlePressStart = (track: any) => {
    if (!canManage) return;
    wasLongPressRef.current = false;
@@ -337,7 +322,7 @@ export function RoomPlayDialog({
      if (typeof navigator !== 'undefined' && navigator.vibrate) {
        navigator.vibrate(50);
      }
-   }, 1500); // 1.5 seconds for premium feel
+   }, 1500);
  };
 
  const handlePressEnd = () => {
@@ -348,7 +333,6 @@ export function RoomPlayDialog({
  };
 
  const handleTrackClick = (track: any) => {
-   // If a long press was JUST triggered, don't perform the click action
    if (wasLongPressRef.current) {
      wasLongPressRef.current = false;
      return;
@@ -364,35 +348,41 @@ export function RoomPlayDialog({
    }
   };
 
-  // Header Toggle Action
+  // ----------------------------------------------------
+  // UPDATED GLOSSY UI: toggleOptions
+  // ----------------------------------------------------
   const toggleOptions = [
     { 
       id: 'clean', 
       label: 'Clean', 
       onClick: handleClearChat, 
       active: isClearingChat,
-      icon: <img src="https://img.icons8.com/clouds/100/trash.png" className="h-10 w-10" />,
-      color: 'bg-cyan-500/20 text-cyan-400'
+      icon: <Trash2 className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Red Dustbin
+      color: 'bg-gradient-to-b from-red-400 to-red-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border-red-400/50 text-white'
     },
     { 
       id: 'public-msg', 
       label: 'Public Msg', 
       onClick: handleToggleChatMute, 
       active: !isChatMuted,
-      icon: <img src="https://img.icons8.com/clouds/100/comments.png" className="h-10 w-10" />,
-      color: isChatMuted ? 'bg-slate-800 text-slate-500' : 'bg-blue-500/20 text-blue-400' 
+      icon: isChatMuted ? <MessageSquareOff className="h-7 w-7 text-white/50" /> : <MessageSquare className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Green Msg (Gray if muted)
+      color: isChatMuted 
+        ? 'bg-gradient-to-b from-slate-600 to-slate-800 shadow-inner border-slate-600' 
+        : 'bg-gradient-to-b from-green-400 to-green-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(34,197,94,0.5)] border-green-400/50 text-white' 
     },
     { 
       id: 'gift-effects', 
       label: 'Gift Effects', 
       onClick: () => toast({ title: 'Premium Feature', description: 'Gift effects are always active for Sovereign members! ✨' }), 
       active: true,
-      icon: <img src="https://img.icons8.com/clouds/100/lightning-bolt.png" className="h-10 w-10" />,
-      color: 'bg-yellow-500/20 text-yellow-500' 
+      icon: <Gift className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Orange Gift
+      color: 'bg-gradient-to-b from-orange-400 to-orange-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(249,115,22,0.5)] border-orange-400/50 text-white' 
     }
   ];
 
-  // Feature/Game Action Handler
   const handleGameSelect = (slug: string) => {
     if (onSelectGame) {
       onSelectGame(slug);
@@ -402,11 +392,38 @@ export function RoomPlayDialog({
     }
   };
 
+  // ----------------------------------------------------
+  // UPDATED GLOSSY UI: gameGrid
+  // ----------------------------------------------------
   const gameGrid = [
-    { id: 'game-selector', label: 'Games', icon: '/images/premium_3d_game_controller_icon_1775544183875.png', color: 'from-green-500/20 to-emerald-600/20', onClick: () => { onOpenGames(); onOpenChange(false); } },
-    { id: 'music', label: 'Music', icon: '/images/premium_3d_music_notes_icon_1775544207576.png', color: 'from-blue-400/20 to-cyan-500/20', onClick: () => { setView('music'); onToggleMiniPlayer?.(); } },
-    { id: 'ai-listening', label: isAIListening ? 'AI Listening' : 'AI Listen', icon: '/images/premium_3d_microphone_icon_1775544232062.png', color: isAIListening ? 'from-red-500/40 to-red-600/40' : 'from-purple-500/20 to-indigo-600/20', onClick: onToggleAIListening },
-  ] ;
+    { 
+      id: 'game-selector', 
+      label: 'Games', 
+      icon: <Gamepad2 className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Golden Games
+      color: 'from-yellow-400 to-amber-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(245,158,11,0.5)] border border-yellow-400/50', 
+      onClick: () => { onOpenGames(); onOpenChange(false); } 
+    },
+    { 
+      id: 'music', 
+      label: 'Music', 
+      icon: <Music className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Blue Music
+      color: 'from-cyan-400 to-blue-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-cyan-400/50', 
+      onClick: () => { setView('music'); onToggleMiniPlayer?.(); } 
+    },
+    { 
+      id: 'ai-listening', 
+      label: isAIListening ? 'AI Listening' : 'AI Listen', 
+      icon: <Bot className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Purple AI Robot (Turns to Red/Rose when active)
+      color: isAIListening 
+        ? 'from-rose-400 to-red-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(225,29,72,0.5)] border border-rose-400/50' 
+        : 'from-fuchsia-400 to-purple-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(168,85,247,0.5)] border border-fuchsia-400/50', 
+      onClick: onToggleAIListening 
+    },
+  ];
+
   return (
     <AnimatePresence>
       {open && (
@@ -429,26 +446,32 @@ export function RoomPlayDialog({
               maxHeight: view === 'grid' ? '65vh' : '75vh'
             }}
           >
-            {/* Wafa-style Pull Bar */}
+            {/* Pull Bar */}
             <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-2 shrink-0" />
 
             {view === 'grid' && (
               <div className="p-4 pt-2 space-y-6 overflow-y-auto no-scrollbar">
-                {/* Top Row: Quick Toggles (Glossy Circles) */}
+                
+                {/* Top Row: Quick Toggles (Now perfectly Glossy SVGA Style) */}
                 <div className="flex items-center justify-around px-4 shrink-0 pb-2">
                   {toggleOptions.map(opt => (
                     <div key={opt.id} className="flex flex-col items-center gap-2">
                        <button 
                         onClick={opt.onClick}
                         className={cn(
-                          "h-16 w-16 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-95 border border-white/10 relative overflow-hidden",
+                          "h-16 w-16 rounded-full flex items-center justify-center transition-all active:scale-95 relative overflow-hidden",
                           opt.color
                         )}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent" />
-                        {opt.icon}
+                        {/* Top glass reflection effect */}
+                        <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+                        
+                        <div className="relative z-10 flex items-center justify-center">
+                          {opt.icon}
+                        </div>
+
                         {opt.active && opt.id !== 'clean' && (
-                          <div className="absolute top-2 right-2 h-2.5 w-2.5 bg-green-400 rounded-full border-2 border-black" />
+                          <div className="absolute top-2 right-2 h-2.5 w-2.5 bg-green-400 rounded-full border-2 border-black z-20" />
                         )}
                       </button>
                       <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{opt.label}</span>
@@ -456,7 +479,7 @@ export function RoomPlayDialog({
                   ))}
                 </div>
 
-                {/* Feature/Game Grid - Compact like Wafa */}
+                {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
                   {gameGrid.map(item => (
                     <button 
@@ -465,15 +488,18 @@ export function RoomPlayDialog({
                       className="flex flex-col items-center gap-2.5 group active:scale-90 transition-all"
                     >
                       <div className={cn(
-                        "h-12 w-12 rounded-[1.2rem] bg-gradient-to-br flex items-center justify-center shadow-lg border border-white/5 relative overflow-hidden",
+                        "h-12 w-12 rounded-[1.2rem] bg-gradient-to-b flex items-center justify-center relative overflow-hidden",
                         item.color
                       )}>
-                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <img 
-                          src={item.icon} 
-                          className="h-9 w-9 drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform" 
-                          alt={item.label} 
-                        />
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
+                        {/* Top glass reflection effect for grid buttons */}
+                        <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+                        
+                        <div className="group-hover:scale-110 transition-transform relative z-10">
+                          {item.icon}
+                        </div>
                       </div>
                       <span className="text-[10px] font-bold text-white/50 uppercase tracking-tight truncate w-full text-center">
                         {item.label}
@@ -618,11 +644,9 @@ export function RoomPlayDialog({
               </div>
             )}
             
-            {/* Wafa-style Delete Confirmation Popup (Inline to fix Z-index & Background issues) */}
             <AnimatePresence>
               {trackToDelete && (
                 <div className="absolute inset-0 z-[110] flex items-center justify-center p-4">
-                  {/* Local Overlay for the sub-modal */}
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
