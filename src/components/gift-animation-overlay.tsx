@@ -21,7 +21,7 @@ export function GiftAnimationOverlay({
   onComplete, 
   targetSeat = 1 
 }: GiftAnimationOverlayProps) {
-  // Multiple gifts ko handle karne ke liye state
+  // Ab yahan ek time par bas ek hi gift aayega list mein
   const [activeGifts, setActiveGifts] = useState<FloatingGift[]>([]);
 
   // 1. EMOJI MAP (Isme saare names mapped hain)
@@ -66,20 +66,24 @@ export function GiftAnimationOverlay({
         xOffset: (Math.random() - 0.5) * 40, // Random drift left/right (-20 to 20)
       };
 
-      // Naya gift array mein add karo
-      setActiveGifts((prev) => [...prev, newGift]);
+      // YAHAN CHANGE KIYA HAI: Purane gifts hatayenge, sirf ek latest gift set karenge
+      setActiveGifts([newGift]);
 
-      // 2 seconds baad list se hata do taaki memory clean rahe
-      setTimeout(() => {
-        setActiveGifts((prev) => prev.filter(g => g.id !== newGift.id));
+      // 2 seconds baad screen clear kar do
+      const timer = setTimeout(() => {
+        setActiveGifts([]); // Array ko empty kar diya taaki gift hat jaye
         onComplete(); 
       }, 2000);
+
+      // Cleanup logic taaki agar jaldi-jaldi send dabayein toh purana timer cancel ho jaye
+      return () => clearTimeout(timer);
     }
   }, [giftId, getEmoji, onComplete]);
 
   return (
     <div className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden">
-      <AnimatePresence>
+      {/* mode="popLayout" se animation smooth hota hai jab purana item replace hota hai */}
+      <AnimatePresence mode="popLayout">
         {activeGifts.map((gift) => (
           <motion.div
             key={gift.id}
