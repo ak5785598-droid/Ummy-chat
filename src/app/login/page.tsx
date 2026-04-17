@@ -23,7 +23,7 @@ import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 // DEBUG FLAG: Set to 'true' to bypass Native Android Auth and force Google ReCaptcha (Web)
-const DEBUG_FORCE_WEB_AUTH = true;
+const DEBUG_FORCE_WEB_AUTH = false;
 
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -412,8 +412,7 @@ export default function LoginPage() {
     if (!auth) return;
     if (!(window as any).recaptchaVerifier) {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        // Change to 'normal' to see the Google "I am not a robot" box for debugging
-        size: DEBUG_FORCE_WEB_AUTH ? 'normal' : 'invisible'
+        size: 'invisible'
       });
     }
     return (window as any).recaptchaVerifier;
