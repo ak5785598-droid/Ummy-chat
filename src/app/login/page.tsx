@@ -445,8 +445,17 @@ export default function LoginPage() {
         }
       }
 
+      console.log("[Auth-Debug] Initializing Recaptcha...");
       const verifier = initRecaptcha();
+      
+      if (!verifier) {
+        throw new Error("Recaptcha could not be initialized.");
+      }
+
+      console.log("[Auth-Debug] Sending OTP via Web SDK...");
       const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
+      console.log("[Auth-Debug] OTP Result received:", !!result);
+      
       setConfirmationResult(result);
       setPhoneLoginStep('code');
       toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
@@ -518,7 +527,8 @@ export default function LoginPage() {
         strategy="afterInteractive"
       />
       <div className="absolute inset-0 bg-black/40" />
-      <div id="recaptcha-container" />
+      {/* ReCaptcha Container - High Z-Index for visibility */}
+      <div id="recaptcha-container" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999]" />
 
       <div className="relative z-20 w-full max-w-md p-5">
         <div className="w-full rounded-3xl bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl p-6 space-y-6 text-center">
