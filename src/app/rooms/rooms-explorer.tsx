@@ -303,8 +303,8 @@ function RoomsExplorerClassic() {
 
 
 
-            <div className="px-2.5 mb-1.5">
-              <div className="flex gap-2.5">
+            <div className="px-2 mb-1.5">
+              <div className="flex gap-1.5">
                  <RankingCard />
                  <FamilyCard />
                  <CpCard />
