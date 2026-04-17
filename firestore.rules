@@ -158,7 +158,7 @@ service cloud.firestore {
     // ============================================
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || (isSignedIn() && configId == 'counters');
     }
 
     match /roomThemes/{themeId} {

@@ -66,10 +66,33 @@ const RoomSkeleton = () => (
  );
 
 export default function RoomsExplorer() {
- const firestore = useFirestore();
- const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
- const { data: config } = useDoc(configRef);
- const theme = config?.appTheme || 'CLASSIC';
+  const firestore = useFirestore();
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config, isLoading } = useDoc(configRef);
+  const { isHydrated } = useFirebase();
+
+  if (!isHydrated || isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <Loader className="h-8 w-8 animate-spin text-slate-200" />
+      </div>
+    );
+  }
+
+  const theme = config?.appTheme || 'CLASSIC';
+
+  if (theme === 'GLOSSY') {
+    return <RoomsExplorerGlossy />;
+  }
+
+  return <RoomsExplorerClassic />;
+}
+
+/**
+ * THE CLASSIC ROOMS EXPLORER (Tier 1).
+ */
+function RoomsExplorerClassic() {
+  const firestore = useFirestore();
 
  const { user } = useUser();
  const { userProfile: userDoc } = useUserProfile(user?.uid);
@@ -174,10 +197,6 @@ export default function RoomsExplorer() {
 
   // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
-
-  if (theme === 'GLOSSY') {
-   return <RoomsExplorerGlossy />;
-  }
   return (
     <div className="h-[100dvh] flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
       <ThemeColorMeta color="#eef9ff" />

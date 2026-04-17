@@ -45,6 +45,38 @@ export function AppLayout(props: {
   hideBottomNav?: boolean;
   hideSidebarOnMobile?: boolean;
 }) {
+  const firestore = useFirestore();
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config, isLoading } = useDoc(configRef);
+  const { isHydrated } = useFirebase();
+
+  // STABILITY LOCK: Show nothing or a loader until we know the theme
+  if (!isHydrated || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <Loader className="h-8 w-8 animate-spin text-white opacity-20" />
+      </div>
+    );
+  }
+
+  const theme = config?.appTheme || 'CLASSIC';
+
+  if (theme === 'GLOSSY') {
+    return <AppLayoutGlossy {...props} />;
+  }
+
+  return <AppLayoutClassic {...props} />;
+}
+
+/**
+ * THE NUCLEAR STABILITY LAYOUT (Classic Tier).
+ */
+function AppLayoutClassic(props: {
+  children: React.ReactNode;
+  fullScreen?: boolean;
+  hideBottomNav?: boolean;
+  hideSidebarOnMobile?: boolean;
+}) {
   const pathname = usePathname();
   const { t } = useTranslation();
   const { isHydrated, isLoading: isFirebaseLoading } = useFirebase();
@@ -52,11 +84,6 @@ export function AppLayout(props: {
   const { userProfile } = useUserProfile(user?.uid);
   const [mounted, setMounted] = useState(false);
   
-  const firestore = useFirestore();
-  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
-  const { data: config } = useDoc(configRef);
-  const theme = config?.appTheme || 'CLASSIC';
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -68,10 +95,6 @@ export function AppLayout(props: {
   }, [pathname, props.fullScreen, isHydrated]);
 
   const isRoom = useMemo(() => pathname?.startsWith('/rooms/'), [pathname]);
-
-  if (theme === 'GLOSSY') {
-    return <AppLayoutGlossy {...props} />;
-  }
 
   const MAIN_TABS = ['/rooms', '/discover', '/messages', '/profile'];
   const isMainTab = useMemo(() => MAIN_TABS.includes(pathname || ''), [pathname]);
