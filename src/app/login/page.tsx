@@ -338,10 +338,12 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
+      const platform = Capacitor.getPlatform();
+      const isActuallyNative = platform === 'android' || platform === 'ios';
+
+      if (isActuallyNative) {
         try {
-          // Attempt Native Google Login
+          // Attempt Native Google Login (Priority for Mobile)
           const result = await (FirebaseAuthentication as any).signInWithGoogle({
             webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
           });
@@ -361,11 +363,12 @@ export default function LoginPage() {
             }
           }
         } catch (nativeError: any) {
-          console.error("[Auth-Debug] Native Sign-In failed, falling back to Web:", nativeError);
+          console.error("[Auth] Native Google Sign-In failed, falling back to Web:", nativeError);
+          // Fall back to web-based login below
         }
       }
 
-      // Web-based Google Sign-In (Fallback if native fails or on Web platform)
+      // Web-based Google Sign-In (Used on web OR as fallback for native)
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithRedirect(auth, provider);
@@ -379,7 +382,6 @@ export default function LoginPage() {
       setIsSigningIn(false);
     }
   };
-
   const handleFacebookSignIn = async () => {
     if (!auth) return;
     setIsSigningIn(true);
