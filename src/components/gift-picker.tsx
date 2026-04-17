@@ -17,29 +17,52 @@ const CustomGiftIcon = ({ type, active }: { type: string; active: boolean }) => 
   const base = cn("h-12 w-12 transition-all duration-500", active ? "scale-110 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" : "opacity-80");
   
   switch (type) {
-    // Naya Chocolate Box Design
+    // UPDATED: SAME TO SAME CHOCOLATE BOX DESIGN
     case 'chocolate-box':
       return (
-        <div className={cn("relative h-14 w-14 bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-lg shadow-inner border-b-4 border-orange-800 flex flex-wrap p-1.5 gap-1 justify-center items-center", active && "scale-110")}>
-          {/* Dark Brown Laddus */}
-          <div className="h-3 w-3 bg-amber-900 rounded-full shadow-md" />
-          <div className="h-3 w-3 bg-amber-900 rounded-full shadow-md" />
-          {/* White Kaju Katli (Diamond Shape) */}
-          <div className="h-3 w-3 bg-slate-100 rotate-45 shadow-sm border border-slate-300" />
-          <div className="h-3 w-3 bg-amber-900 rounded-full shadow-md" />
+        <div className={cn("relative h-14 w-14 flex items-center justify-center transition-all duration-300", active && "scale-110")}>
+          {/* Heart Shaped Box SVG Base */}
+          <svg viewBox="0 0 24 24" className="absolute inset-0 w-full h-full drop-shadow-lg">
+             <path 
+               fill="#e11d48" 
+               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+             />
+             <path 
+               fill="#fb7185" 
+               transform="scale(0.85) translate(2, 2.5)"
+               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+             />
+          </svg>
+
+          {/* Mini Chocolates Layout (Matching your image positions) */}
+          <div className="relative z-10 grid grid-cols-3 gap-1 p-2 mt-1">
+             {/* Top Row */}
+             <div className="h-2.5 w-2.5 bg-[#4a2c2a] rounded-full border border-black/20" /> {/* Dark Round */}
+             <div className="h-2.5 w-2.5 bg-[#fef3c7] rounded-sm border border-orange-200" />  {/* Square Light */}
+             <div className="h-2.5 w-2.5 bg-[#5d3a37] rounded-full" /> {/* Dark Nutty */}
+
+             {/* Middle Row */}
+             <div className="h-2 w-4 bg-[#3c2220] rounded-sm -ml-1 flex items-center justify-center"><div className="h-[1px] w-full bg-orange-300/30 rotate-12" /></div> {/* Rectangle Zigzag */}
+             <div className="h-3 w-3 bg-[#8b5a2b] rounded-full border border-orange-900/30" /> {/* Oval Center */}
+             <div className="h-3 w-3 bg-[#d97706] rounded-sm" /> {/* Square Orange */}
+
+             {/* Bottom Row */}
+             <div className="h-2.5 w-2.5 bg-[#452725] rounded-bl-full" /> {/* Triangle Dark */}
+             <div className="h-3 w-3 bg-[#fde68a] rounded-full border border-amber-600/20" /> {/* Light Swirl */}
+             <div className="h-2.5 w-3.5 bg-[#5d3a37] rounded-sm" /> {/* Brown Diamond */}
+          </div>
         </div>
       );
     
-    // Naya Chirag Design (Golden Glossy)
     case 'chirag':
       return (
         <div className="relative flex flex-col items-center">
           <div className={cn("relative h-10 w-14 bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 rounded-[50%_50%_40%_40%] shadow-[0_4px_10px_rgba(0,0,0,0.3)] border-b-2 border-amber-700", active && "animate-pulse")}>
-            <div className="absolute -left-2 top-2 h-4 w-6 border-4 border-yellow-500 rounded-full" /> {/* Handle */}
-            <div className="absolute -right-3 top-1 h-3 w-6 bg-yellow-500 rounded-full skew-x-12" /> {/* Spout */}
+            <div className="absolute -left-2 top-2 h-4 w-6 border-4 border-yellow-500 rounded-full" /> 
+            <div className="absolute -right-3 top-1 h-3 w-6 bg-yellow-500 rounded-full skew-x-12" /> 
             <Flame className="absolute -right-4 -top-3 h-5 w-5 text-orange-400 fill-orange-500 animate-bounce" />
           </div>
-          <div className="h-2 w-8 bg-amber-600 rounded-full mt-0.5" /> {/* Base */}
+          <div className="h-2 w-8 bg-amber-600 rounded-full mt-0.5" /> 
         </div>
       );
 
@@ -55,8 +78,6 @@ const CustomGiftIcon = ({ type, active }: { type: string; active: boolean }) => 
       return <div className="flex -space-x-3"><Beer className="h-9 w-9 text-orange-400 -rotate-12" /><Beer className="h-9 w-9 text-orange-400 rotate-12" /></div>;
     case 'fireworks': 
       return <Sparkles className={cn(base, "text-purple-400 animate-pulse")} />;
-    case 'friends': 
-      return <div className="relative"><Heart className={cn(base, "text-blue-400 fill-blue-500/20")} /><Star className="absolute top-0 right-0 h-4 w-4 text-yellow-400 fill-yellow-400" /></div>;
     default: 
       return <Gift className={cn(base, "text-indigo-400")} />;
   }
@@ -83,7 +104,6 @@ const GIFTS: Record<string, any[]> = {
  ]
 };
 
-// --- Daily Date Utility ---
 const getTodayString = () => {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
