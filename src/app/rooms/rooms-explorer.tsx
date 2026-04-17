@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { ChatRoomCard } from '@/components/chat-room-card';
 import { 
   useUser, 
@@ -26,8 +27,10 @@ import {
   Loader,
   Sparkles,
   Home,
-  LayoutGrid,
   Plus,
+  Compass,
+  Mail,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,6 +47,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import Autoplay from "embla-carousel-autoplay";
 import Image from 'next/image';
 import { RankingCard, FamilyCard, CpCard } from '@/components/premium-feature-cards';
+import { UnreadBadge } from '@/components/unread-badge';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQuestInitializer } from '@/hooks/use-quest-initializer';
 import { VipBadge } from '@/components/vip-badge';
@@ -98,6 +102,7 @@ function RoomsExplorerClassic() {
  const { userProfile: userDoc } = useUserProfile(user?.uid);
  const router = useRouter();
  const { t } = useTranslation();
+ const pathname = usePathname();
  const { isHydrated } = useFirebase();
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
@@ -205,16 +210,16 @@ function RoomsExplorerClassic() {
       <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
          <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.15]">
-            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-500">
-               <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
-            </svg>
-         </div>
-         <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
-            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-600">
-               <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
-            </svg>
-         </div>
-      </div>
+             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-400">
+                <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
+             </svg>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
+             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-400">
+                <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
+             </svg>
+          </div>
+       </div>
 
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
@@ -296,44 +301,7 @@ function RoomsExplorerClassic() {
               </Carousel>
             </div>
 
-            <div className="px-3 mb-2">
-            <div className="bg-gradient-to-r from-red-600 via-rose-700 to-red-800 rounded-[1.2rem] p-2 border-2 border-white/10 shadow-2xl overflow-hidden relative group h-[72px]">
-                <div className="absolute inset-0 bg-yellow-400/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-center justify-between mb-1 relative z-10 px-1">
-                   <div className="flex items-center gap-1">
-                      <Trophy className="h-2.5 w-2.5 text-yellow-400 animate-bounce" />
-                      <h2 className="text-[8px] font-black uppercase text-white/90 tracking-widest">Live Frequency</h2>
-                   </div>
-                   <button onClick={() => router.push('/rooms/all')} className="text-[7px] font-bold text-yellow-400/80 uppercase hover:text-yellow-400 transition-colors flex items-center gap-0.5">Explore <LayoutGrid className="h-2 w-2" /></button>
-                </div>
-                <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 relative z-10 min-h-[40px]">
-                   {!showSummary ? (
-                      Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="flex flex-col items-center gap-2 shrink-0 animate-pulse">
-                          <div className="h-10 w-10 rounded-full bg-red-900/20 border border-white/10" />
-                          <div className="h-1.5 w-8 bg-white/20 rounded-full" />
-                        </div>
-                      ))
-                   ) : (
-                     roomsData.slice(0, 10).map((room: any) => (
-                       <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
-                          <div className="relative">
-                             <Avatar className="h-10 w-10 border-1 border-yellow-400/30 shadow-[0_0_15px_rgba(234,179,8,0.2)] group-hover/item:border-yellow-400 transition-all">
-                                <AvatarImage src={room.coverUrl} className="object-cover" />
-                                <AvatarFallback className="bg-red-900/40 text-white/40 font-black text-[10px]">U</AvatarFallback>
-                             </Avatar>
-                             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-red-600 px-1.5 py-0.5 rounded-full border border-white/20 flex items-center gap-0.5 shadow-xl">
-                                <div className="h-1 w-1 rounded-full bg-green-400 animate-pulse shadow-[0_0_5px_rgba(74,222,128,0.5)]" />
-                                <span className="text-[7px] font-black text-white">{room.participantCount || 0}</span>
-                             </div>
-                          </div>
-                          <span className="text-[8px] font-bold text-white/90 uppercase tracking-tighter truncate w-14 text-center drop-shadow-sm">{room.title}</span>
-                       </div>
-                     ))
-                   )}
-                </div>
-              </div>
-            </div>
+
 
             <div className="px-2.5 mb-1.5">
               <div className="flex gap-2.5">
@@ -540,6 +508,42 @@ function RoomsExplorerClassic() {
           </div>
         )}
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION (Vibrant Indigo Rebuild) */}
+      {isHydrated && (
+        <nav 
+          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-indigo-600/90 backdrop-blur-xl border-t border-white/20"
+        >
+          <div className="flex items-center justify-around h-16 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.15)] transition-all">
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-white" : "text-white/40")}>
+               {pathname === '/rooms' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
+               <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
+               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
+            </Link>
+
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-white" : "text-white/40")}>
+               {pathname === '/discover' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
+               <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
+               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
+            </Link>
+
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-white" : "text-white/40")}>
+               {pathname === '/messages' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
+               <div className="relative">
+                 <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
+                 <UnreadBadge size="sm" className="absolute -top-2 -right-2" />
+               </div>
+               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
+            </Link>
+
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-white" : "text-white/40")}>
+               {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
+               <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
+            </Link>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

@@ -12,9 +12,9 @@ export const APP_THEME: string = 'CLASSIC'; // Use string to allow comparison ch
  */
 export const DESIGN_TOKENS = {
   // --- CORE COLORS ---
-  appBackground: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#F8F9FE',
-  rootBackground: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#020617', // Slate-950 for body
-  statusBarColor: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#F8F9FE',
+  appBackground: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#FFFFFF',
+  rootBackground: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#FFFFFF',
+  statusBarColor: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#FFFFFF',
   
   // --- NAVIGATION ---
   navAccentColor: APP_THEME === 'STELLAR_PINK' ? '#FF91B5' : '#FFCC00', // Yellow accent for classic

@@ -4,18 +4,18 @@
 
 @layer base {
   :root {
-    /* Background: Soft Lavender #f3e5f5 */
-    --background: 280 40% 93%;
-    --foreground: 270 100% 8%;
+    /* Background: Stellar Bright White #fdfaff */
+    --background: 280 100% 99%;
+    --foreground: 270 100% 5%;
     
     --card: 0 0% 100%;
-    --card-foreground: 270 100% 8%;
+    --card-foreground: 270 100% 5%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 270 100% 8%;
+    --popover-foreground: 270 100% 5%;
     
-    /* Primary: Vibrant Purple #9C27B0 */
-    --primary: 291 64% 42%;
+    /* Primary: Vibrant Neon Purple #B027FF */
+    --primary: 282 100% 58%;
     --primary-foreground: 0 0% 100%;
     
     --secondary: 270 40% 97%;

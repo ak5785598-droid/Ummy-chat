@@ -294,44 +294,7 @@ export function RoomsExplorerGlossy() {
                 </Carousel>
               </div>
 
-              {/* LIVE FREQUENCY SECTION */}
-              <div className="px-3 mb-3">
-                <div className="bg-white/85 rounded-[2rem] p-3 border border-white shadow-xl overflow-hidden relative group">
-                  <div className="flex items-center justify-between mb-3 relative z-10 px-1">
-                     <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                        <h2 className="text-[10px] font-black uppercase text-slate-800 tracking-widest">Live Now</h2>
-                     </div>
-                     <button onClick={() => router.push('/rooms/all')} className="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1 hover:text-slate-900 transition-colors">View All <LayoutGrid className="h-2.5 w-2.5" /></button>
-                  </div>
-                  <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-1 relative z-10">
-                     {!showSummary ? (
-                        Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i} className="flex flex-col items-center gap-2 shrink-0 animate-pulse">
-                            <div className="h-12 w-12 rounded-full bg-slate-100 border border-white" />
-                            <div className="h-2 w-10 bg-slate-100 rounded-full" />
-                          </div>
-                        ))
-                     ) : (
-                       roomsData.slice(0, 10).map((room: any) => (
-                         <div key={room.id} onClick={() => router.push(`/rooms/${room.id}`)} className="flex flex-col items-center gap-2 shrink-0 active:scale-95 transition-all cursor-pointer group/item">
-                            <div className="relative">
-                               <Avatar className="h-12 w-12 border-2 border-white shadow-md group-hover/item:border-slate-900 transition-all">
-                                  <AvatarImage src={room.coverUrl} className="object-cover" />
-                                  <AvatarFallback className="bg-slate-100 text-slate-400 font-black text-[10px]">U</AvatarFallback>
-                               </Avatar>
-                               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white px-1.5 py-0.2 rounded-full border border-slate-100 flex items-center gap-0.5 shadow-sm">
-                                  <div className="h-1 w-1 rounded-full bg-red-500 animate-pulse" />
-                                  <span className="text-[7px] font-black text-slate-800">{room.participantCount || 0}</span>
-                               </div>
-                            </div>
-                            <span className="text-[8px] font-bold text-slate-600 uppercase truncate w-14 text-center">{room.title}</span>
-                         </div>
-                       ))
-                     )}
-                  </div>
-                </div>
-              </div>
+
 
               {/* PREMIUM FEATURE CARDS */}
               <div className="px-3 mb-4">

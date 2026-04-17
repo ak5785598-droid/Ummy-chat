@@ -173,7 +173,7 @@ export function AppLayoutGlossy(props: {
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden"
         >
-          <div className="flex items-center justify-around bg-white/95 h-14 border-t border-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] transition-all">
+          <div className="flex items-center justify-around bg-indigo-50/80 backdrop-blur-xl h-14 border-t border-white shadow-[0_-5px_20px_rgba(0,0,0,0.05)] transition-all">
             <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-slate-400")}>
                {pathname === '/rooms' && <motion.div layoutId="bottom-nav-active" className="absolute -top-1 w-8 h-1 bg-slate-900 rounded-full" />}
                <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
