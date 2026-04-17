@@ -53,7 +53,7 @@ export function GiftAnimationOverlay({
   // 2. SEAT POSITION LOGIC (Coordinates of seats 1 to 9)
   // Yeh x aur y vh/vw me hain, center of screen se relative.
   // Tum inhe apne UI layout ke hisaab se tweak kar sakte ho.
-  const getSeatPosition = (seat: number) => {
+  const getSeatTarget = (seat: number) => {
   const positions: Record<number, { x: string; y: string }> = {
    1: { x: '0vw',   y: '-28vh' }, // Top single seat (NO.1)
    2: { x: '-38vw', y: '-12vh' }, // Left upper (NO.2)
