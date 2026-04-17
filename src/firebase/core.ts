@@ -65,7 +65,8 @@ export function initializeFirebase() {
     databaseInstance = getDatabase(appInstance);
   }
 
-  // APP CHECK INITIALIZATION - Stable standard configuration
+  // APP CHECK INITIALIZATION - Temporarily disabled to resolve 403 errors
+  /*
   if (typeof window !== 'undefined' && appInstance) {
     try {
       if (process.env.NODE_ENV === 'development' || !process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
@@ -81,6 +82,7 @@ export function initializeFirebase() {
       // Silent fail
     }
   }
+  */
 
   return {
     firebaseApp: appInstance,
