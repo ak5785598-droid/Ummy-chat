@@ -25,11 +25,11 @@ export function GiftAnimationOverlay({
       setIsVisible(true);
       setTriggerKey(prev => prev + 1);
       
-      // Total 3 seconds ki animation (0.5s appear + 2.0s stay + 0.5s fly to seat)
+      // Video ke hisaab se fast animation (Total 1.5s time diya hai)
       const timer = setTimeout(() => {
         setIsVisible(false);
         onComplete();
-      }, 3000); 
+      }, 1500); 
 
       return () => clearTimeout(timer);
     }
@@ -37,38 +37,38 @@ export function GiftAnimationOverlay({
 
   if (!giftId || !isVisible || typeof giftId !== 'string') return null;
 
-  // 1. FULL EMOJI MAP (Baki sab waise hi rakhe hain, naye add kiye hain)
+  // 1. FULL EMOJI MAP
   const getEmoji = () => {
     const map: Record<string, string> = {
       'heart': '❤️', 'cake': '🍰', 'lollipop': '🍭', 'popcorn': '🍿', 'donut': '🍩',
-      // Purane waale backup ke liye
       'choco-pops': '🍭', 'chai': '☕', 'rose': '🌹', 'applaud': '👏', 'love-bomb': '💣', 
       'kiss': '💋', 'chocolate-box': '🍫', 'money-gun': '🔫', 'watch': '⌚', 'birthday-cake': '🎂',
       'lucky-clover': '🍀', 'magic-wand': '🪄', 'jackpot': '🎰', 'treasure': '🪙', 'soaring': '🎆',
       'golden-football': '⚽', 'chupa-chups': '🍬', 'microphone': '🎤', 'headphones': '🎧', 
     };
-    return map[giftId] || giftId || '🎁'; // Agar direct emoji pass kiya to wo dikhega
+    return map[giftId] || giftId || '🎁'; 
   };
 
-  // 2. SEAT POSITION LOGIC (Coordinates of seats 1 to 9)
-  // Yeh x aur y vh/vw me hain, center of screen se relative.
-  // Tum inhe apne UI layout ke hisaab se tweak kar sakte ho.
+  // 2. SEAT POSITION LOGIC
   const getSeatTarget = (seat: number) => {
-  const positions: Record<number, { x: string; y: string }> = {
-   1: { x: '0vw',   y: '-28vh' }, // Top single seat (NO.1)
-   2: { x: '-38vw', y: '-12vh' }, // Left upper (NO.2)
-   3: { x: '-13vw', y: '-12vh' }, // Left center (NO.3)
-   4: { x: '13vw',  y: '-12vh' }, // Right center (NO.4)
-   5: { x: '38vw',  y: '-12vh' }, // Right upper (NO.5)
-   6: { x: '-38vw', y: '5vh'   }, // Left lower (NO.6)
-   7: { x: '-13vw', y: '5vh'   }, // Mid-left lower (NO.7)
-   8: { x: '13vw',  y: '5vh'   }, // Mid-right lower (NO.8)
-   9: { x: '38vw',  y: '5vh'   }, // Right lower (NO.9)
+    const positions: Record<number, { x: string; y: string }> = {
+     1: { x: '0vw',   y: '-28vh' }, // Top single seat (NO.1)
+     2: { x: '-38vw', y: '-12vh' }, // Left upper (NO.2)
+     3: { x: '-13vw', y: '-12vh' }, // Left center (NO.3)
+     4: { x: '13vw',  y: '-12vh' }, // Right center (NO.4)
+     5: { x: '38vw',  y: '-12vh' }, // Right upper (NO.5)
+     6: { x: '-38vw', y: '5vh'   }, // Left lower (NO.6)
+     7: { x: '-13vw', y: '5vh'   }, // Mid-left lower (NO.7)
+     8: { x: '13vw',  y: '5vh'   }, // Mid-right lower (NO.8)
+     9: { x: '38vw',  y: '5vh'   }, // Right lower (NO.9)
+    };
+    return positions[seat] || { x: '0vw', y: '0vh' };
   };
-  return positions[seat] || { x: '0vw', y: '0vh' };
- };
 
   const targetCoords = getSeatTarget(targetSeat);
+  
+  // Halki si random position takki jab user fast click kare toh sab ek dusre ke upar na chade (video jaisa organic flow)
+  const randomStartX = (Math.random() - 0.5) * 6 + 'vw';
 
   return (
     <AnimatePresence>
@@ -76,46 +76,37 @@ export function GiftAnimationOverlay({
         <motion.div 
           key={triggerKey} 
           className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden"
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }}
         >
           {/* MAIN EMOJI ICON */}
           <motion.div
             className="relative flex items-center justify-center"
             initial={{ 
-              scale: 0, 
+              scale: 0.2, 
               opacity: 0,
-              x: '0vw',
-              y: '0vh' 
+              x: randomStartX, 
+              y: '45vh' // Screen ke niche wale hisse (Gift Button) se shuru hoga
             }}
             animate={{ 
-              // 1. Appears (scale 1.5)
-              // 2. Stays in middle for 2 seconds
-              // 3. Flies to target avatar and shrinks to 0
-              scale: [0, 1.5, 1.5, 0], 
+              // 1. Pop out from bottom
+              // 2. Fly directly to target avatar without stopping
+              scale: [0.2, 1.2, 1, 0.5], 
               opacity: [0, 1, 1, 0],
-              x: ['0vw', '0vw', '0vw', targetCoords.x],
-              y: ['10vh', '0vh', '0vh', targetCoords.y], // 70vh se 30vh ke beech ka feel
+              x: [randomStartX, targetCoords.x],
+              y: ['45vh', targetCoords.y], 
             }}
             transition={{ 
-              duration: 3, 
-              // Times array defines kab kya hoga:
-              // 0.0 -> 0.16 (0.5 sec): Pop in
-              // 0.16 -> 0.83 (2.0 sec hold time): Middle stay
-              // 0.83 -> 1.0 (0.5 sec): Fly to target avatar
-              times: [0, 0.16, 0.83, 1], 
-              ease: "easeInOut" 
+              duration: 1.2, // Video ki tarah fast urta hua jayega
+              ease: "easeOut" // Niche se fast niklega aur upar smoothly jayega
             }}
           >
             {/* GLOSSY / NEON REFLECTION LAYER */}
-            <div className="absolute inset-0 blur-[40px] opacity-60 bg-white/40 rounded-full scale-[1.5]" />
+            <div className="absolute inset-0 blur-[25px] opacity-50 bg-white/40 rounded-full scale-[1.2]" />
             
             {/* ACTUAL ICON WITH GLOSSY DROP-SHADOW */}
             <span 
-              className="text-[12rem] relative z-10 select-none transform-gpu"
+              className="text-[5rem] relative z-10 select-none transform-gpu"
               style={{
-                filter: 'drop-shadow(0px 15px 25px rgba(255,255,255,0.6)) drop-shadow(0px 5px 10px rgba(0,0,0,0.3))'
+                filter: 'drop-shadow(0px 10px 15px rgba(255,255,255,0.5)) drop-shadow(0px 4px 8px rgba(0,0,0,0.3))'
               }}
             >
               {getEmoji()}
@@ -127,4 +118,3 @@ export function GiftAnimationOverlay({
     </AnimatePresence>
   );
 }
-
