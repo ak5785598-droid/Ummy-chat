@@ -117,17 +117,17 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
   onClick={onClick}
   className="flex flex-col items-center gap-1.5 group active:scale-90 transition-all"
  >
-  <div className={cn("h-11 w-11 rounded-full flex items-center justify-center shadow-md transition-transform group-hover:-translate-y-1", colorClass)}>
-   <Icon className="h-4 w-4 text-white" />
+  <div className={cn("h-12 w-12 rounded-[1.2rem] flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1 border-2 border-white", colorClass)}>
+   <Icon className="h-5 w-5 text-white" />
   </div>
-  <span className="text-[10px] font-semibold text-gray-600 tracking-wide">{label}</span>
+  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
  </button>
 );
 
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
- <button 
+  <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-3.5 border-b border-gray-50 last:border-0 px-2 hover:bg-gray-50 active:bg-gray-100 transition-all text-left"
+  className="w-full flex items-center justify-between py-3 border-b border-slate-50 last:border-0 px-3 hover:bg-slate-50 active:bg-slate-100 transition-all text-left group"
  >
   <div className="flex items-center gap-3">
    <div className={cn("p-1.5 rounded-xl", iconColor || "bg-slate-100 text-slate-600")}>
@@ -165,7 +165,7 @@ const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: numb
 };
 
 /**
- * Public Profile View - Updated for Stellat Pink Theme
+ * Public Profile View - Updated for Stellar Pink Theme
  */
 const PublicProfileView = ({ 
  profile, 
@@ -177,6 +177,7 @@ const PublicProfileView = ({
  contributors,
  isContributorsLoading,
  stats,
+ isOwnProfile,
  t
 }: { 
  profile: any, 
@@ -188,6 +189,7 @@ const PublicProfileView = ({
  contributors: any[] | null,
  isContributorsLoading: boolean,
  stats: { fans: number, following: number, friends: number, visitors: number },
+ isOwnProfile?: boolean,
  t: any
 }) => {
  const { toast } = useToast();
@@ -236,7 +238,7 @@ const PublicProfileView = ({
                 <button className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-transform"><MoreHorizontal className="h-5 w-5" /></button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-slate-900 border-white/5 text-white rounded-2xl p-2 w-48 shadow-2xl">
-                <DropdownMenuItem onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-400">
+                <DropdownMenuItem onClick={() => window.open('https://ajpep8qoykzh.jp.larksuite.com/wiki/KEQVw45e9iZVk1k2zI6jakXkpEg', '_blank')} className="flex items-center gap-3 p-3 focus:bg-white/10 rounded-xl cursor-pointer text-red-500">
                   <Flag className="h-4 w-4" />
                   <span className="font-bold uppercase text-[10px]">Report</span>
                 </DropdownMenuItem>
@@ -257,31 +259,37 @@ const PublicProfileView = ({
             </div>
             
             <div className="flex-1 min-w-0 pt-6">
-              {/* Row 1: Name, Flag, Gender */}
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h1>
-                <span className="text-sm leading-none">🇮🇳</span>
+              {/* Row 1: Name, Flag, Gender - Stabilized */}
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-xs">{profile.username}</h1>
+                <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
               
-              {/* Row 2: Levels */}
-              <div className="flex items-center gap-2 mb-2">
-                <RichLevelBadge level={profile.level?.rich || 1} />
-                <CharmLevelBadge level={profile.level?.charm || 1} />
-              </div>
-
-              {/* Row 3: ID Badge & Tags */}
-              <div className="flex flex-col items-start gap-1.5">
+              {/* Row 2: ID Badge with Copy Logic */}
+              <div 
+                onClick={handleCopyId}
+                className="flex items-center gap-1.5 mb-2 cursor-pointer active:opacity-70 transition-all group"
+              >
                 <BudgetTag 
                   variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
                   label={(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? "ID: Syncing..." : `ID: ${profile.accountNumber}`}
                   size="sm"
                 />
+                <div className="p-1 bg-slate-100 rounded-md group-hover:bg-slate-200 transition-colors">
+                  <Copy className="h-3 w-3 text-slate-400" />
+                </div>
+              </div>
+
+              {/* Row 3: Levels & Tags - Consolidated Horizontal */}
+              <div className="flex flex-wrap items-center gap-2">
+                <RichLevelBadge level={profile.level?.rich || 1} />
+                <CharmLevelBadge level={profile.level?.charm || 1} />
                 <div className="flex flex-wrap items-center gap-1.5">
-                  {isOfficial && <OfficialTag size="sm" className="scale-[0.65] origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.65] origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-[0.65] origin-left" />}
-                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.65] origin-left" />}
+                  {isOfficial && <OfficialTag size="sm" className="scale-[0.8] origin-left" />}
+                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.8] origin-left" />}
+                  {isSeller && <SellerTag size="sm" className="scale-[0.8] origin-left" />}
+                  {isCS && <CustomerServiceTag size="sm" className="scale-[0.8] origin-left" />}
                 </div>
               </div>
             </div>
@@ -290,7 +298,7 @@ const PublicProfileView = ({
           <div className="flex divide-x divide-gray-100 py-1 border-t border-gray-50 mt-2">
             <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
             <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
-            <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
+            <StatItem label="FRIENDS" value={stats.friends} onClick={() => onOpenSocial('friends')} />
             <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
           </div>
         </div>
@@ -326,33 +334,34 @@ const PublicProfileView = ({
         </div>
       </div>
 
-   <div className="fixed bottom-0 left-0 right-0 p-4 pt-1 pb-safe bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-3">
-     <button 
-      onClick={handleFollow}
-      disabled={isProcessingFollow}
-      className={cn(
-       "flex-1 h-12 rounded-full border-2 flex items-center justify-center gap-2 font-bold uppercase text-base shadow-lg active:scale-95 transition-all",
-       followData ? "bg-white border-pink-500 text-pink-500" : "bg-white border-pink-500 text-pink-500"
-      )}
-     >
-      {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
-       <>
-        <Heart className={cn("h-5 w-5", followData && "fill-current")} />
-        {followData ? t.profile.following : t.profile.follow}
-       </>
-      )}
-     </button>
-     
-     <DirectMessageDialog 
-      recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
-      trigger={
-       <button className="flex-1 h-12 rounded-full border-2 border-cyan-500 text-cyan-500 bg-white flex items-center justify-center gap-2 font-bold uppercase text-base shadow-lg active:scale-95 transition-all">
-        <MessageCircle className="h-5 w-5" />
-        {t.profile.chat}
+   {!isOwnProfile && (
+     <div className="fixed bottom-0 left-0 right-0 p-4 pt-1 pb-safe bg-gradient-to-t from-white via-white/95 to-transparent z-[100] flex gap-3">
+       <button 
+        onClick={handleFollow}
+        disabled={isProcessingFollow}
+        className={cn(
+         "flex-1 h-12 rounded-full border-2 flex items-center justify-center gap-2 font-bold uppercase text-base shadow-lg active:scale-95 transition-all text-pink-500 border-pink-500 bg-white"
+        )}
+       >
+        {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
+         <>
+          <Heart className={cn("h-5 w-5", followData && "fill-current")} />
+          {followData ? t.profile.following : t.profile.follow}
+         </>
+        )}
        </button>
-      }
-     />
-   </div>
+       
+       <DirectMessageDialog 
+        recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
+        trigger={
+         <button className="flex-1 h-12 rounded-full border-2 border-cyan-500 text-cyan-500 bg-white flex items-center justify-center gap-2 font-bold uppercase text-base shadow-lg active:scale-95 transition-all">
+          <MessageCircle className="h-5 w-5" />
+          {t.profile.chat}
+         </button>
+        }
+       />
+     </div>
+   )}
   </div>
  );
 };
@@ -481,12 +490,19 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   const isAuthorizedAdmin = currentUser?.uid === CREATOR_ID || profile?.isAdmin === true;
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || isAuthorizedAdmin;
-  const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin', 'Official Center'].includes(t)) || isAuthorizedAdmin;
+  
+  const handleCopyId = () => {
+    const idToCopy = (!profile?.accountNumber || profile?.accountNumber === 'undefined' || profile?.accountNumber === 'UNDEFINED') ? (profile?.id || '') : profile?.accountNumber;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+     navigator.clipboard.writeText(idToCopy).then(() => {
+      toast({ title: 'ID Copied' });
+     }).catch(() => {
+      toast({ variant: 'destructive', title: 'Copy Failed' });
+     });
+    }
+  };
 
- const isOfficial = profile?.tags?.includes('Official');
-const isCS = profile?.tags?.includes('Customer Service');
- const isCSLeader = profile?.tags?.includes('CS Leader');
- const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
+  const isOfficial = profile?.tags?.includes('Official');
 
  if (theme === 'GLOSSY') {
    return <ProfileViewGlossy profileId={profileId} mode={mode} />;
@@ -525,14 +541,14 @@ const isCS = profile?.tags?.includes('Customer Service');
      </div>
 
       {/* 🚀 FIXED HEADER (Identity + Stats + Wallet + VIP) */}
-      <div className="w-full bg-white/95 backdrop-blur-xl z-50 pt-safe pb-3 border-b border-black/5 shadow-sm sticky top-0 shrink-0">
+      <div className="w-full bg-white/95 backdrop-blur-xl z-50 pt-safe pb-4 border-b border-black/5 shadow-sm sticky top-0 shrink-0">
         <div className="px-5 space-y-4">
-          <header className="flex items-center gap-5 relative pt-1">
+          <header className="flex items-center gap-4 relative pt-1">
             <EditProfileDialog 
               profile={profile} 
               trigger={
-                <button className="absolute -top-1 -right-1 p-2 bg-slate-100/80 backdrop-blur-md rounded-full shadow-sm active:scale-95 transition-transform z-[60]">
-                  <Pencil className="h-4 w-4 text-gray-600" />
+                <button className="absolute -top-1 -right-1 p-2 bg-slate-900 rounded-full shadow-lg active:scale-95 transition-all z-[60] border border-slate-800">
+                  <Pencil className="h-3.5 w-3.5 text-white" />
                 </button>
               } 
             />
@@ -542,9 +558,9 @@ const isCS = profile?.tags?.includes('Customer Service');
               onClick={() => router.push(`/profile/${profileId}`)}
             >
               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10">
+                <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10 transition-transform">
                   <AvatarImage src={profile.avatarUrl || undefined} />
-                  <AvatarFallback className="text-2xl font-bold bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-2xl font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
@@ -554,90 +570,86 @@ const isCS = profile?.tags?.includes('Customer Service');
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center min-w-0 gap-1 h-24">
+            <div className="flex-1 flex flex-col justify-center min-w-0 pl-1">
               {/* Row 1: Name, Flag, Gender */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[140px] md:max-w-none">{profile.username}</h1>
+              <div className="flex items-center gap-2 mb-0.5">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
               
-              {/* Row 2: Levels */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <RichLevelBadge level={profile.level?.rich || 1} />
-                <CharmLevelBadge level={profile.level?.charm || 1} />
+              {/* Row 2: ID & Levels (Consolidated for space) */}
+              <div 
+                onClick={handleCopyId}
+                className="flex items-center gap-1.5 mb-1 opacity-70 cursor-pointer active:opacity-40 transition-opacity"
+              >
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">ID: {profile.accountNumber || '...'}</span>
+                <Copy className="h-2.5 w-2.5 text-slate-300" />
               </div>
 
-              {/* Row 3: ID & Tags */}
-              <div className="flex flex-col items-start gap-1.5 pt-0.5">
-                <BudgetTag 
-                  variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
-                  label={(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? "ID: Syncing..." : `ID: ${profile.accountNumber}`}
-                  size="sm"
-                />
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {isOfficial && <OfficialTag size="sm" className="scale-[0.7] origin-left" />}
-                  {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.7] origin-left" />}
-                  {isSeller && <SellerTag size="sm" className="scale-[0.7] origin-left" />}
-                </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <RichLevelBadge level={profile.level?.rich || 1} />
+                <CharmLevelBadge level={profile.level?.charm || 1} />
+                {isOfficial && <OfficialTag size="sm" className="scale-[0.8] origin-left" />}
               </div>
             </div>
           </header>
 
-          <div className="flex justify-between items-center border-t border-black/5 pt-3">
-            <StatItem label={t.profile.fans} value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-            <StatItem label={t.profile.following} value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-            <StatItem label={t.profile.friends} value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-            <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
+          <div className="flex justify-between items-center border-t border-black/5 pt-3 pb-1">
+            <StatItem label="FANS" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+            <StatItem label="FOLLOWING" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+            <StatItem label="FRIENDS" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+            <StatItem label="VISITORS" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
           </div>
 
-          {/* WALLET CARDS - Standardized Alignment */}
+          {/* WALLET CARDS - HIGH DENSITY COMPACT */}
           <div className="grid grid-cols-2 gap-3 w-full">
             <div 
               onClick={() => router.push('/wallet')} 
-              className="h-24 rounded-[1.5rem] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-4 relative overflow-hidden shadow-md active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
+              className="h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-3 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
             >
-              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none" style={{ animationDuration: '3s' }} />
-              <div className="relative z-30 flex flex-col h-full justify-between">
+              <div className="relative z-30 flex items-center justify-between h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
-                  <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase">{t.profile.coins}</h3>
+                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-xl"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
+                  <div className="flex flex-col -space-y-1">
+                    <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">{t.profile.coins}</span>
+                    <span className="text-base font-black text-white tracking-tighter">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex items-baseline"><span className="text-xl font-black text-white tracking-tighter">{(profile.wallet?.coins || 0).toLocaleString()}</span></div>
+                <ChevronRight className="h-3 w-3 text-white/40" />
               </div>
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 rotate-12 group-hover:rotate-45 transition-transform"><GoldCoinIcon className="w-full h-full" /></div>
             </div>
 
             <div 
               onClick={() => router.push('/wallet')} 
-              className="h-24 rounded-[1.5rem] bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-500 p-4 relative overflow-hidden shadow-md active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
+              className="h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-3 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
             >
-              <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none" style={{ animationDuration: '3.5s' }} />
-              <div className="relative z-30 flex flex-col h-full justify-between">
+              <div className="relative z-30 flex items-center justify-between h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-full border border-white/40"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
-                  <h3 className="text-[9px] font-black text-white/95 tracking-widest uppercase">{t.profile.diamonds}</h3>
+                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-xl"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
+                  <div className="flex flex-col -space-y-1">
+                    <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">{t.profile.diamonds}</span>
+                    <span className="text-base font-black text-white tracking-tighter">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex items-baseline"><span className="text-xl font-black text-white tracking-tighter">{(profile.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span></div>
+                <ChevronRight className="h-3 w-3 text-white/40" />
               </div>
-              <div className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20 -rotate-12 group-hover:rotate-[-45deg] transition-transform"><Gem className="w-full h-full text-white fill-current" /></div>
             </div>
           </div>
 
-          {/* VIP CARD - Standardized with Wallet Width */}
+          {/* VIP CARD - SLIM SLICK */}
           <div 
             onClick={() => router.push('/vips')}
-            className="relative rounded-[1.5rem] overflow-hidden group shadow-md active:scale-[0.99] transition-all cursor-pointer bg-gradient-to-r from-gray-900 via-gray-800 to-black p-4 flex items-center justify-between border border-gray-700/50"
+            className="h-14 rounded-2xl overflow-hidden group shadow-sm active:scale-[0.99] transition-all cursor-pointer bg-slate-900 border border-slate-700/50 flex items-center justify-between px-4"
           >
-            <div className="flex items-center gap-4 relative z-10 w-full">
-              <div className="bg-gradient-to-br from-amber-200 to-yellow-500 p-2.5 text-yellow-900 rounded-full shadow-inner"><Crown className="h-5 w-5 fill-current" /></div>
-              <div className="flex flex-col flex-1">
-                <h2 className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-400 tracking-wide uppercase">{t.profile.vip}</h2>
-                <span className="text-[10px] text-gray-400 font-medium tracking-tight whitespace-nowrap">{t.profile.secretCard}</span>
+            <div className="flex items-center gap-3">
+              <Crown className="h-5 w-5 text-amber-400 fill-current" />
+              <div className="flex flex-col -space-y-0.5">
+                <h2 className="text-xs font-black text-amber-200 uppercase tracking-wide">{t.profile.vip}</h2>
+                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">{t.profile.secretCard}</span>
               </div>
-              <div className="bg-white/10 rounded-full p-2"><ChevronRight className="h-4 w-4 text-gray-300" /></div>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-[30deg] -translate-x-[200%] group-hover:animate-shine pointer-events-none" style={{ animationDuration: '3s' }} />
+            <div className="bg-white/5 rounded-lg px-2 py-1 text-[8px] font-black text-slate-400 uppercase tracking-widest">Rewards Inside</div>
           </div>
         </div>
       </div>
@@ -672,7 +684,6 @@ const isCS = profile?.tags?.includes('Customer Service');
             <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
             <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
             {isCertifiedSeller && <SellerTransferDialog />}
-            {isAuthorizedAdmin && <OfficialCenterDialog isAuthorized={true} />}
           </Card>
 
           <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-2">
@@ -685,9 +696,9 @@ const isCS = profile?.tags?.includes('Customer Service');
           </Card>
         </div>
       </div>
-    </div>
 
     <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
+   </div>
    </AppLayout>
   );
  }
@@ -700,10 +711,11 @@ const isCS = profile?.tags?.includes('Customer Service');
      handleFollow={handleFollow} 
      followData={followData} 
      isProcessingFollow={isProcessingFollow} 
-     onOpenSocial={(tab) => { setSocialTab(tab); setSocialOpen(true); }} 
+     onOpenSocial={(tab: any) => { setSocialTab(tab); setSocialOpen(true); }} 
      contributors={contributors}
      isContributorsLoading={isContributorsLoading}
      stats={stats}
+     isOwnProfile={isOwnProfile}
      t={t}
     />
     <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />

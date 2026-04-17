@@ -94,15 +94,15 @@ export function GiftAnimationOverlay({
               y: '20vh' // Niche se start hoga
             }}
             animate={{ 
-              opacity: [0, 1, 1, 0], // Pehle dikhega, fir fade out
-              scale: [0.5, 1.2, 1],
+              opacity: [0, 1, 1, 0], // Pehle dikhega, fir stay, fir fade out
+              scale: [0.5, 1.3, 1.3, 1],
               x: [
                 '0vw', 
                 `${gift.xOffset}px`, 
                 targetCoords.x
               ],
               y: [
-                '20vh', 
+                '45vh', // Start exactly from near the gift button
                 '10vh', 
                 targetCoords.y
               ],

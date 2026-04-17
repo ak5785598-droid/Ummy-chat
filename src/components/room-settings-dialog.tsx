@@ -57,6 +57,8 @@ interface RoomSettingsDialogProps {
  trigger?: React.ReactNode;
  open?: boolean;
  onOpenChange?: (open: boolean) => void;
+ isAIVoiceEnabled?: boolean;
+ onToggleAIVoice?: () => void;
 }
 
 const SettingItem = ({ label, value, extra, onClick, showChevron = true, children, className }: any) => (
@@ -86,7 +88,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
  */
-export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: RoomSettingsDialogProps) {
+export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, isAIVoiceEnabled, onToggleAIVoice }: RoomSettingsDialogProps) {
  const router = useRouter();
  const [internalOpen, setInternalOpen] = useState(false);
 
@@ -268,6 +270,14 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
         {/* Microphone Test */}
         <SettingItem label="Microphone Test" onClick={() => setIsTestingMic(true)}>
           <Mic className="h-4 w-4 text-gray-400" />
+        </SettingItem>
+
+        {/* AI Voice Assistant Toggle */}
+        <SettingItem label="AI Voice Assistant" showChevron={false}>
+          <Switch 
+            checked={isAIVoiceEnabled || false} 
+            onCheckedChange={onToggleAIVoice} 
+          />
         </SettingItem>
         
         {/* Re-engineered Mic Selection Portal */}

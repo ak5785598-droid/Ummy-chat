@@ -61,7 +61,7 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
   className="px-6 py-4 flex items-center gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0"
  >
   <div className="relative shrink-0">
-   <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white", colorClass)}>
+   <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white overflow-hidden", colorClass)}>
     {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
    </div>
    {isVerified && (
@@ -119,7 +119,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
    )}
   >
    <div className="relative shrink-0">
-    <Avatar className="h-12 w-12 rounded-2xl border-2 border-white shadow-md">
+    <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
      <AvatarImage src={otherUser.avatarUrl || undefined} />
      <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
     </Avatar>
@@ -238,7 +238,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
       <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
         <ChevronLeft className="h-6 w-6 text-gray-800" />
       </button>
-      <Avatar className="h-10 w-10 border shadow-sm rounded-xl">
+      <Avatar className="h-10 w-10 border shadow-sm rounded-full">
         <AvatarImage src={otherUser?.avatarUrl || undefined} />
         <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
       </Avatar>
@@ -549,100 +549,89 @@ export default function MessagesView() {
          animationDelay: pos.delay
         }} />
        ))}
-     </div>
-
-     {/* MESSAGES HEADER - NOW TRULY FIXED */}
-     <header className="relative shrink-0 pt-safe pb-4 px-6 bg-transparent">
-      <div className="relative z-10 flex items-center justify-between pt-2">
-       <div className="flex items-center gap-3">
-         <div className="h-14 w-14 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex items-center justify-center p-2.5 active:scale-95 transition-transform shrink-0">
-           <UmmyLogoIcon className="h-full w-full" />
-         </div>
-         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold uppercase tracking-tight text-slate-900 drop-shadow-sm">{t.messages.title}</h1>
-          <div className="h-1 w-10 bg-primary/40 rounded-full mt-1" />
-         </div>
+     </div>      {/* MESSAGES HEADER - MINIMALIST */}
+      <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/40 backdrop-blur-md border-b border-black/5">
+       <div className="relative z-10 flex items-center justify-between pt-2">
+         <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900 drop-shadow-sm">{t.messages.title}</h1>
+         <button className="p-2.5 bg-white/60 rounded-full active:scale-95 transition-transform border border-black/5 text-slate-600">
+           <Search className="h-5 w-5" />
+         </button>
        </div>
-       <button className="text-primary hover:scale-110 transition-all p-2.5 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm active:scale-95 border border-white/50">
-         <CheckCircle2 className="h-6 w-6" strokeWidth={2.5} />
-       </button>
-      </div>
-     </header>
+      </header>
 
-     <div className="flex-1 overflow-y-auto no-scrollbar px-4 relative z-10 space-y-4 pb-40">
-      
-      <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-md">
-       <CategoryItem 
-        icon={Flag} 
-        label={t.messages.team} 
-        subtext={latestTeam?.content || "Welcome to ummy Chat"}
-        date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
-        colorClass="bg-gradient-to-br from-orange-400 to-red-500"
-        customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
-        isVerified
-        onClick={() => setShowOfficial(true)}
-       />
-       
-       <CategoryItem 
-        icon={Shield} 
-        label={t.messages.system} 
-        subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
-        date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
-        colorClass="bg-gradient-to-br from-blue-500 to-indigo-600"
-        customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
-        isVerified
-        onClick={() => setShowSystemDialog(true)}
-       />
+      <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-40">
+        
+        {/* SEAMLESS CATEGORIES */}
+        <div className="bg-white/30 backdrop-blur-sm">
+          <CategoryItem 
+            icon={Flag} 
+            label={t.messages.team} 
+            subtext={latestTeam?.content || "Welcome to ummy Chat"}
+            date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
+            colorClass="bg-gradient-to-br from-orange-400 to-red-500"
+            customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
+            isVerified
+            onClick={() => setShowOfficial(true)}
+          />
+          
+          <CategoryItem 
+            icon={Shield} 
+            label={t.messages.system} 
+            subtext={latestSystem?.content || "You receive 100 coins From Ummy team"}
+            date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
+            colorClass="bg-gradient-to-br from-blue-400 to-indigo-600"
+            customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
+            isVerified
+            onClick={() => setShowSystemDialog(true)}
+          />
 
-       <CategoryItem 
-        icon={Heart} 
-        label="Bond Requests" 
-        subtext={hasPending ? "You have a new relationship proposal!" : "No new bond requests."}
-        colorClass="bg-gradient-to-br from-rose-500 to-pink-600"
-        onClick={() => setShowRequests(true)}
-        customIcon={
-          <div className="relative">
-            <Heart className="h-6 w-6 text-white" fill="white" />
-            {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full animate-ping" />}
-            {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-rose-300 rounded-full" />}
-          </div>
-        }
-       />
-      </Card>
+          <CategoryItem 
+            icon={Heart} 
+            label="Bond Requests" 
+            subtext={hasPending ? "You have a new relationship proposal!" : "No new bond requests."}
+            colorClass="bg-gradient-to-br from-rose-400 to-pink-500"
+            onClick={() => setShowRequests(true)}
+            customIcon={
+              <div className="relative">
+                <Heart className="h-6 w-6 text-white" fill="white" />
+                {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-white rounded-full animate-ping" />}
+                {hasPending && <div className="absolute -top-1 -right-1 h-3 w-3 bg-rose-300 rounded-full" />}
+              </div>
+            }
+          />
+        </div>
 
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between px-4">
-         <h2 className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">{t.messages.conversations}</h2>
-         <button className="p-1.5 bg-white/40 rounded-lg"><Search className="h-3 w-3 text-slate-600" /></button>
+        <div className="mt-6 mb-2">
+          <h2 className="px-6 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 underline decoration-primary/20 underline-offset-4">{t.messages.conversations}</h2>
         </div>
         
-        <Card className="rounded-xl border-none shadow-xl overflow-hidden bg-white/60 backdrop-blur-md min-h-[300px]">
-         {isChatsLoading ? (
-          <div className="py-20 flex flex-col items-center gap-4">
-           <Loader className="animate-spin text-primary h-8 w-8" />
-           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Syncing Identity...</p>
-          </div>
-         ) : chats && chats.length > 0 ? (
-          chats.map(chat => (
-           <ChatListItem 
-            key={chat.id} 
-            chat={chat} 
-            currentUid={user?.uid} 
-            onSelect={handleSelectChat} 
-           />
-          ))
-         ) : (
-          <div className="py-20 text-center space-y-4 opacity-40 flex flex-col items-center">
-            <MessageSquare className="h-10 w-10 text-slate-300" />
-            <div className="space-y-1">
-             <p className="font-bold text-xs uppercase text-slate-400">{t.messages.quiet}</p>
-             <p className="text-[9px] font-bold uppercase text-slate-300">{t.messages.startVibe}</p>
+        {/* SEAMLESS CONVERSATIONS */}
+        <div className="min-h-[300px] bg-white/20 backdrop-blur-sm">
+          {isChatsLoading ? (
+            <div className="py-20 flex flex-col items-center gap-4">
+             <Loader className="animate-spin text-primary h-8 w-8" />
+             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Syncing Identity...</p>
             </div>
-          </div>
-         )}
-        </Card>
+          ) : chats && chats.length > 0 ? (
+            chats.map(chat => (
+             <ChatListItem 
+              key={chat.id} 
+              chat={chat} 
+              currentUid={user?.uid} 
+              onSelect={handleSelectChat} 
+             />
+            ))
+          ) : (
+            <div className="py-20 text-center space-y-4 opacity-40 flex flex-col items-center">
+              <MessageSquare className="h-10 w-10 text-slate-300" />
+              <div className="space-y-1">
+               <p className="font-bold text-xs uppercase text-slate-400">{t.messages.quiet}</p>
+               <p className="text-[9px] font-bold uppercase text-slate-300">{t.messages.startVibe}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-     </div>
 
      <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
       <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">

@@ -92,7 +92,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'wallet.coins': increment(-totalCost),
      'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
      'wallet.lastDailyResetDate': today
-   });
+    });
 
    const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
    
@@ -116,9 +116,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'rocket.progress': increment(totalCost)
    });
 
-   // Get seat of the first recipient for the animation trigger
-   const firstRecipientUid = selectedUids[0];
-   const recipientSeat = participants.find((p: any) => p.uid === firstRecipientUid)?.seatIndex || 1;
+    // Get seat and name of the first recipient for the animation trigger & chat log
+    const firstRecipientUid = selectedUids[0];
+    const recipientObj = participants.find((p: any) => p.uid === firstRecipientUid);
+    const recipientSeat = recipientObj?.seatIndex || 1;
+    const recipientName = recipientObj?.name || 'Someone';
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
    batch.set(msgRef, {
@@ -128,7 +130,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     giftId: selectedGift.animationId,
     recipientId: firstRecipientUid,
     recipientSeat: recipientSeat,
-    text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty}`,
+    text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty} to ${recipientName}`,
     timestamp: serverTimestamp()
    });
 

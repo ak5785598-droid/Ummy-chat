@@ -41,7 +41,10 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
 
   return (
     <>
-      <div onClick={onOpenRocket} className="fixed bottom-[110px] right-3 z-[40] flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-all">
+      <div 
+        onClick={onOpenRocket} 
+        className="fixed bottom-[110px] right-3 z-[40] flex flex-col items-center gap-1.5 cursor-pointer active:scale-95 transition-all scale-[0.85]"
+      >
         
         {/* Timer Bubble */}
         <AnimatePresence>

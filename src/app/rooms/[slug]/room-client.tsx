@@ -2251,18 +2251,7 @@ export function RoomClient({ room }: { room: Room }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={toggleAIVoice}
-              className={cn(
-                "relative h-9 w-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center transition-all active:scale-95 shadow-lg",
-                isAIVoiceEnabled ? "bg-[#BC5DFF]/40 text-[#BC5DFF] border-[#BC5DFF]/50 shadow-[#BC5DFF]/20" : "text-white/80"
-              )}
-            >
-              <div className="absolute -top-1 -right-0.5 h-3.5 w-3.5 bg-[#BC5DFF] border border-white/20 rounded-full flex items-center justify-center z-20 shadow-[0_0_8px_rgba(188,93,255,0.4)]">
-                <span className="text-[6px] font-black text-white uppercase italic tracking-tighter leading-none pt-[1px]">AI</span>
-              </div>
-              <Volume2 className={cn("h-3.5 w-3.5", isAIVoiceEnabled && "animate-pulse")} />
-            </button>
+
             <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center gap-0.5">
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[9px] font-bold">{onlineCount}</span>
@@ -2606,7 +2595,7 @@ export function RoomClient({ room }: { room: Room }) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-[150px] z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
+            "fixed right-4 bottom-[185px] z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
             "bg-cyan-500/20 text-cyan-400 shadow-cyan-500/10 hover:bg-cyan-500/30"
           )}
         >
@@ -2983,6 +2972,8 @@ export function RoomClient({ room }: { room: Room }) {
         open={isRoomSettingsOpen}
         onOpenChange={setIsRoomSettingsOpen}
         room={room}
+        isAIVoiceEnabled={isAIVoiceEnabled}
+        onToggleAIVoice={toggleAIVoice}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
