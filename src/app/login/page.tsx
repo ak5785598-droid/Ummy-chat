@@ -22,8 +22,7 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
-// DEBUG FLAG: Set to 'true' to bypass Native Android Auth and force Google ReCaptcha (Web)
-const DEBUG_FORCE_WEB_AUTH = true;
+
 
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -338,10 +337,7 @@ export default function LoginPage() {
     if (!auth) return;
     setIsSigningIn(true);
     try {
-      const platform = Capacitor.getPlatform();
-      const isActuallyNative = platform === 'android' || platform === 'ios';
-
-      if (isActuallyNative) {
+      if (Capacitor.isNativePlatform()) {
         try {
           // Attempt Native Google Login (Priority for Mobile)
           const result = await (FirebaseAuthentication as any).signInWithGoogle({
@@ -368,7 +364,7 @@ export default function LoginPage() {
         }
       }
 
-      // Web-based Google Sign-In (Used on web OR as fallback for native)
+      // Web-based Google Sign-In (Fallback if native fails or on Web platform)
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithRedirect(auth, provider);
@@ -414,38 +410,35 @@ export default function LoginPage() {
     if (!auth) return;
     const cleanNumber = phoneNumber.replace(/\D/g, '');
     if (cleanNumber.length < 10) {
-      toast({ variant: 'destructive', title: 'Invalid Number', description: 'Enter a valid phone number with country code.' });
+      toast({ variant: 'destructive', title: 'Invalid Number', description: 'Enter a valid phone number.' });
       return;
     }
-    console.log("[Auth-Debug] Phone Sign-In Clicked. Native Platform:", Capacitor.isNativePlatform());
     setIsSigningIn(true);
     try {
       const formattedNumber = `${selectedCountry.code}${cleanNumber}`;
-      console.log("[Auth-Debug] Formatted Number:", formattedNumber);
 
-      // Force Web Flow with Recaptcha (Captcha)
-      console.log("[Auth] Initializing Recaptcha...");
-      const verifier = initRecaptcha();
-      
-      if (!verifier) {
-        throw new Error("Recaptcha could not be initialized.");
+      // Native First Attempt
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: formattedNumber });
+          // Managed via native listeners defined in useEffect
+          return;
+        } catch (nativeError: any) {
+          console.error("[Auth] Native Phone Auth failed, using Web Captcha:", nativeError);
+        }
       }
 
-      console.log("[Auth] Sending OTP via Web SDK...");
+      // Web Fallback with Captcha
+      const verifier = initRecaptcha();
+      if (!verifier) throw new Error("Recaptcha could not be initialized.");
+
       const result = await signInWithPhoneNumber(auth, formattedNumber, verifier);
-      
       setConfirmationResult(result);
       setPhoneLoginStep('code');
       toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
     } catch (error: any) {
       console.error("Phone Auth Error", error);
-      
-      let errorMsg = error.message;
-      if (error.code === 'auth/missing-app-credential' || error.message?.includes('identifier')) {
-        errorMsg = "Verification Failed: Firebase Console mein SHA-1 key add karein aur Android Device Check API enable karein.";
-      }
-
-      toast({ variant: 'destructive', title: 'Failed to Send Code', description: errorMsg });
+      toast({ variant: 'destructive', title: 'Failed to Send Code', description: error.message });
     } finally {
       if (!Capacitor.isNativePlatform()) {
         setIsSigningIn(false);
@@ -505,8 +498,8 @@ export default function LoginPage() {
         strategy="afterInteractive"
       />
       <div className="absolute inset-0 bg-black/40" />
-      {/* ReCaptcha Container - High Z-Index for visibility */}
-      <div id="recaptcha-container" className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[999]" />
+      {/* ReCaptcha Container - Relocated to corner to avoid blocking OTP input (Screenshot Fix) */}
+      <div id="recaptcha-container" className="fixed bottom-4 right-4 z-[40]" />
 
       <div className="relative z-20 w-full max-w-md p-5">
         <div className="w-full rounded-3xl bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl p-6 space-y-6 text-center">

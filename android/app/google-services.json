@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "373109833688-ka09bfoma7sjkj55hedd4nuo9co5qc1j.apps.googleusercontent.com",
+          "client_id": "373109833688-mcccvhpu7jhk81i7986oi4itqqp80j8n.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "app.vercel.ummy_chat.twa",
-            "certificate_hash": "71a57280b61edd75b78092fcd5f7d6370705fb5b"
+            "certificate_hash": "2a4b68121ae03bf65751a4b6db7c3220c8ceb255"
           }
         },
         {
