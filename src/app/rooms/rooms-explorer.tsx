@@ -512,34 +512,34 @@ function RoomsExplorerClassic() {
       {/* MOBILE BOTTOM NAVIGATION (Vibrant Indigo Rebuild) */}
       {isHydrated && (
         <nav 
-          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-indigo-600/90 backdrop-blur-xl border-t border-white/20"
+          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/90 backdrop-blur-xl border-t border-white"
         >
-          <div className="flex items-center justify-around h-16 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.15)] transition-all">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-white" : "text-white/40")}>
-               {pathname === '/rooms' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
-               <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
+          <div className="flex items-center justify-around h-16 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.03)] transition-all">
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-indigo-600" : "text-slate-400")}>
+               {pathname === '/rooms' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
+               <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-white" : "text-white/40")}>
-               {pathname === '/discover' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
-               <Compass className={cn("h-5 w-5", pathname === '/discover' ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-indigo-600" : "text-slate-400")}>
+               {pathname === '/discover' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
+               <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
             </Link>
 
-            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-white" : "text-white/40")}>
-               {pathname === '/messages' && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-indigo-600" : "text-slate-400")}>
+               {pathname === '/messages' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
                <div className="relative">
-                 <Mail className={cn("h-5 w-5", pathname === '/messages' ? "fill-current" : "")} />
-                 <UnreadBadge size="sm" className="absolute -top-2 -right-2" />
+                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
+                 <UnreadBadge size="sm" className="absolute -top-2 -right-2 border-2 border-white" />
                </div>
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
             </Link>
 
-            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-white" : "text-white/40")}>
-               {pathname?.startsWith('/profile') && <div className="absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse bg-white" />}
-               <User className={cn("h-5 w-5", pathname?.startsWith('/profile') ? "fill-current" : "")} />
-               <span className="text-[8px] font-bold uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-indigo-600" : "text-slate-400")}>
+               {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
+               <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
             </Link>
           </div>
         </nav>
