@@ -21,6 +21,10 @@ import {
 } from 'firebase/auth';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
+
+// DEBUG FLAG: Set to 'true' to bypass Native Android Auth and force Google ReCaptcha (Web)
+const DEBUG_FORCE_WEB_AUTH = true;
+
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -408,7 +412,8 @@ export default function LoginPage() {
     if (!auth) return;
     if (!(window as any).recaptchaVerifier) {
       (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible'
+        // Change to 'normal' to see the Google "I am not a robot" box for debugging
+        size: DEBUG_FORCE_WEB_AUTH ? 'normal' : 'invisible'
       });
     }
     return (window as any).recaptchaVerifier;
@@ -427,7 +432,8 @@ export default function LoginPage() {
       const formattedNumber = `${selectedCountry.code}${cleanNumber}`;
       console.log("[Auth-Debug] Formatted Number:", formattedNumber);
 
-      if (Capacitor.isNativePlatform()) {
+      // --- NATIVE AUTH BYPASS LOGIC ---
+      if (Capacitor.isNativePlatform() && !DEBUG_FORCE_WEB_AUTH) {
         console.log("[Auth-Debug] Attempting Native Phone Sign-In...");
         try {
           await FirebaseAuthentication.signInWithPhoneNumber({ phoneNumber: formattedNumber });
@@ -446,7 +452,13 @@ export default function LoginPage() {
       toast({ title: 'Code Sent', description: 'OTP dispatched via SMS.' });
     } catch (error: any) {
       console.error("Phone Auth Error", error);
-      toast({ variant: 'destructive', title: 'Failed to Send Code', description: error.message });
+      
+      let errorMsg = error.message;
+      if (error.code === 'auth/missing-app-credential' || error.message?.includes('identifier')) {
+        errorMsg = "Verification Failed: Firebase Console mein SHA-1 key add karein aur Android Device Check API enable karein.";
+      }
+
+      toast({ variant: 'destructive', title: 'Failed to Send Code', description: errorMsg });
     } finally {
       if (!Capacitor.isNativePlatform()) {
         setIsSigningIn(false);
