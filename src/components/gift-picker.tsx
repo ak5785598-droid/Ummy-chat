@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, Zap } from 'lucide-react';
+import { Loader, Check, Zap, Gift } from 'lucide-react';
 import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
@@ -15,11 +15,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- NEW EMOJI GIFTS DATA ---
 const GIFTS: Record<string, any[]> = {
  'Hot': [
-  { id: 'heart', name: 'Heart', price: 99, icon: '❤️', animationId: 'heart_anim' },
-  { id: 'cake', name: 'Cake', price: 499, icon: '🍰', animationId: 'cake_anim' },
-  { id: 'popcorn', name: 'Popcorn', price: 799, icon: '🍿', animationId: 'popcorn_anim' },
-  { id: 'donut', name: 'Donut', price: 299, icon: '🍩', animationId: 'donut_anim' },
-  { id: 'lollipop', name: 'Lollipop', price: 199, icon: '🍭', animationId: 'lolly_anim' },
+  { id: 'heart', name: 'Heart', price: 99, emoji: '❤️', animationId: 'heart_anim' },
+  { id: 'cake', name: 'Cake', price: 499, emoji: '🍰', animationId: 'cake_anim' },
+  { id: 'popcorn', name: 'Popcorn', price: 799, emoji: '🍿', animationId: 'popcorn_anim' },
+  { id: 'donut', name: 'Donut', price: 299, emoji: '🍩', animationId: 'donut_anim' },
+  { id: 'lollipop', name: 'Lollipop', price: 199, emoji: '🍭', animationId: 'lollipop_anim' },
+ ],
+ 'Luxury': [
+    { id: 'dm', name: 'Diamond', price: 70000, emoji: '🎳', animationId: 'diamond' },
+    { id: 'tp', name: 'Trophy', price: 90000, emoji: '🎸', animationId: 'trophy' },
  ]
 };
 
@@ -40,11 +44,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  
- // Combo & Notification States
+ // UI States for animations
  const [showCombo, setShowCombo] = useState(false);
  const [comboCount, setComboCount] = useState(0);
- const [notification, setNotification] = useState<any>(null);
+ const [lastSentToast, setLastSentToast] = useState<any>(null); // For the Blue Card
+ 
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
+ const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
 
  const seatedParticipants = useMemo(() => {
   return participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
@@ -122,13 +128,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
 
-   // Show Blue Card Notification
-   setNotification({
-     userName: userProfile.username,
-     giftIcon: selectedGift.icon,
-     qty: isComboTrigger ? 1 : qty
-   });
-   setTimeout(() => setNotification(null), 3000);
+   // Trigger the Blue Side Toast
+   setLastSentToast({ emoji: selectedGift.emoji, qty: isComboTrigger ? comboCount + 1 : qty });
+   if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+   toastTimerRef.current = setTimeout(() => setLastSentToast(null), 3000);
 
    setComboCount(prev => prev + 1);
    setShowCombo(true);
@@ -141,26 +144,28 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* --- SIDE NOTIFICATION (BLUE CARD) --- */}
    <AnimatePresence>
-    {notification && (
-      <motion.div 
-        initial={{ x: -100, opacity: 0 }} 
-        animate={{ x: 20, opacity: 1 }} 
-        exit={{ x: -100, opacity: 0 }}
-        className="fixed top-24 left-0 z-[700] bg-blue-600/90 backdrop-blur-md px-4 py-2 rounded-r-full border-y border-r border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-3"
-      >
-        <div className="text-2xl">{notification.giftIcon}</div>
-        <div className="flex flex-col">
-          <span className="text-[10px] text-blue-100 font-bold uppercase tracking-wider">Gift Sent!</span>
-          <span className="text-sm font-black text-white">{notification.userName} <span className="text-blue-200">x{notification.qty}</span></span>
+    {/* --- SIDE BLUE CARD NOTIFICATION --- */}
+    {lastSentToast && (
+     <motion.div 
+      initial={{ x: -100, opacity: 0 }} 
+      animate={{ x: 16, opacity: 1 }} 
+      exit={{ x: -100, opacity: 0 }}
+      className="fixed top-24 left-0 z-[700] bg-blue-600/90 backdrop-blur-md p-2 pr-6 rounded-r-full flex items-center gap-3 border border-blue-400/50 shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+     >
+      <Avatar className="h-10 w-10 border-2 border-white/50">
+        <AvatarImage src={userProfile?.avatarUrl} />
+      </Avatar>
+      <div className="flex flex-col">
+        <span className="text-[10px] font-bold text-blue-100 uppercase tracking-tight leading-none">{userProfile?.username}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-lg">{lastSentToast.emoji}</span>
+          <span className="text-sm font-black text-white italic">x{lastSentToast.qty}</span>
         </div>
-      </motion.div>
+      </div>
+     </motion.div>
     )}
-   </AnimatePresence>
 
-   {/* --- COMBO BUTTON --- */}
-   <AnimatePresence>
     {showCombo && (
      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="fixed bottom-44 right-8 z-[600]">
       <button onClick={() => handleSend(true)} className="h-24 w-24 bg-gradient-to-tr from-orange-600 to-yellow-400 rounded-full border-4 border-white shadow-[0_0_30px_rgba(251,191,36,0.5)] flex flex-col items-center justify-center active:scale-90 transition-all">
@@ -172,26 +177,27 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
 
    <Sheet open={open} onOpenChange={onOpenChange}>
-    <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14]/95 backdrop-blur-md border-t border-white/10 p-0 rounded-t-[35px] overflow-hidden text-white h-[520px] pb-10">
+    <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-[35px] overflow-hidden text-white shadow-2xl h-[520px] pb-10">
      
-     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5">
-      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-black shrink-0 transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 text-white/40")}>ALL</button>
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-white/5">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-black shrink-0 transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 bg-white/5 text-white/40")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
         {selectedUids.includes(p.uid) && <div className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 rounded-full flex items-center justify-center"><Check className="h-3 w-3 text-black stroke-[4]" /></div>}
        </button>
       ))}
      </div>
 
      <Tabs defaultValue="Hot" className="w-full mt-3">
-      <TabsList className="mx-6 bg-white/5 p-1 rounded-2xl flex justify-between">
+      <TabsList className="mx-6 bg-white/5 p-1 rounded-2xl flex justify-between border border-white/5">
        {['Hot', 'Lucky', 'Luxury', 'Event'].map(id => (
-        <TabsTrigger key={id} value={id} className="text-[11px] font-black px-6 py-2 rounded-xl data-[state=active]:bg-blue-600">{id}</TabsTrigger>
+        <TabsTrigger key={id} value={id} className="text-[11px] font-black px-6 py-2 rounded-xl transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500">{id}</TabsTrigger>
        ))}
       </TabsList>
       
-      <div className="h-[360px] overflow-y-auto no-scrollbar p-4 grid grid-cols-4 gap-4 pb-24">
+      {/* --- CLEAN GRID (NO CARDS/BORDERS) --- */}
+      <div className="h-[360px] overflow-y-auto no-scrollbar p-4 grid grid-cols-4 gap-6 pb-24">
        {Object.entries(GIFTS).map(([cat, items]) => (
         <TabsContent key={cat} value={cat} className="contents">
          {items.map(gift => (
@@ -199,18 +205,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
            key={gift.id} 
            onClick={() => setSelectedGift(gift)} 
            className={cn(
-            "flex flex-col items-center py-2 transition-all", 
-            selectedGift?.id === gift.id ? "scale-110" : "opacity-70"
+            "flex flex-col items-center transition-all duration-300 relative py-2", 
+            selectedGift?.id === gift.id ? "scale-125 brightness-125" : "opacity-70"
            )}
           >
-           {/* SIMPLE EMOJI DESIGN - NO CARDS */}
            <div className="text-4xl mb-1 filter drop-shadow-md">
-             {gift.icon}
+             {gift.emoji}
            </div>
            <span className="text-[10px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-           <div className="flex items-center gap-1">
+           <div className="flex items-center gap-1 mt-0.5">
             <span className="text-[11px] text-yellow-500 font-black">{gift.price}</span>
            </div>
+           {/* Selection Indicator Dot */}
+           {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
           </button>
          ))}
         </TabsContent>
@@ -218,18 +225,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       </div>
      </Tabs>
 
-     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14] flex items-center justify-between border-t border-white/10">
-      <div className="flex items-center gap-2 px-4 py-2.5">
-       <div className="h-3 w-3 rounded-full bg-yellow-500" />
+     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl">
+      <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/5">
+       <div className="h-4 w-4 rounded-full bg-yellow-500 flex items-center justify-center text-[10px] font-black text-black">C</div>
        <span className="text-sm font-black text-yellow-500">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <div className="flex items-center gap-2">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-11 bg-white/5 border-none text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
+         <SelectTrigger className="w-16 h-11 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
          <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
        <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className="h-11 px-8 rounded-full bg-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 uppercase tracking-widest">
+         className="h-11 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20">
          {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
