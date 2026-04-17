@@ -4,103 +4,22 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, Zap, Gem, Heart, Flame, Sparkles, Beer, Star, Gift } from 'lucide-react';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { Loader, Check, Zap } from 'lucide-react';
+import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- CUSTOM SVG ICON GENERATOR ---
-const CustomGiftIcon = ({ type, active }: { type: string; active: boolean }) => {
-  const base = cn("h-12 w-12 transition-all duration-500", active ? "scale-110 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" : "opacity-80");
-  
-  switch (type) {
-    // UPDATED: SAME TO SAME CHOCOLATE BOX DESIGN
-    case 'chocolate-box':
-      return (
-        <div className={cn("relative h-14 w-14 flex items-center justify-center transition-all duration-300", active && "scale-110")}>
-          {/* Heart Shaped Box SVG Base */}
-          <svg viewBox="0 0 24 24" className="absolute inset-0 w-full h-full drop-shadow-lg">
-             <path 
-               fill="#e11d48" 
-               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-             />
-             <path 
-               fill="#fb7185" 
-               transform="scale(0.85) translate(2, 2.5)"
-               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-             />
-          </svg>
-
-          {/* Mini Chocolates Layout (Matching your image positions) */}
-          <div className="relative z-10 grid grid-cols-3 gap-1 p-2 mt-1">
-             {/* Top Row */}
-             <div className="h-2.5 w-2.5 bg-[#4a2c2a] rounded-full border border-black/20" /> {/* Dark Round */}
-             <div className="h-2.5 w-2.5 bg-[#fef3c7] rounded-sm border border-orange-200" />  {/* Square Light */}
-             <div className="h-2.5 w-2.5 bg-[#5d3a37] rounded-full" /> {/* Dark Nutty */}
-
-             {/* Middle Row */}
-             <div className="h-2 w-4 bg-[#3c2220] rounded-sm -ml-1 flex items-center justify-center"><div className="h-[1px] w-full bg-orange-300/30 rotate-12" /></div> {/* Rectangle Zigzag */}
-             <div className="h-3 w-3 bg-[#8b5a2b] rounded-full border border-orange-900/30" /> {/* Oval Center */}
-             <div className="h-3 w-3 bg-[#d97706] rounded-sm" /> {/* Square Orange */}
-
-             {/* Bottom Row */}
-             <div className="h-2.5 w-2.5 bg-[#452725] rounded-bl-full" /> {/* Triangle Dark */}
-             <div className="h-3 w-3 bg-[#fde68a] rounded-full border border-amber-600/20" /> {/* Light Swirl */}
-             <div className="h-2.5 w-3.5 bg-[#5d3a37] rounded-sm" /> {/* Brown Diamond */}
-          </div>
-        </div>
-      );
-    
-    case 'chirag':
-      return (
-        <div className="relative flex flex-col items-center">
-          <div className={cn("relative h-10 w-14 bg-gradient-to-r from-yellow-300 via-yellow-500 to-amber-600 rounded-[50%_50%_40%_40%] shadow-[0_4px_10px_rgba(0,0,0,0.3)] border-b-2 border-amber-700", active && "animate-pulse")}>
-            <div className="absolute -left-2 top-2 h-4 w-6 border-4 border-yellow-500 rounded-full" /> 
-            <div className="absolute -right-3 top-1 h-3 w-6 bg-yellow-500 rounded-full skew-x-12" /> 
-            <Flame className="absolute -right-4 -top-3 h-5 w-5 text-orange-400 fill-orange-500 animate-bounce" />
-          </div>
-          <div className="h-2 w-8 bg-amber-600 rounded-full mt-0.5" /> 
-        </div>
-      );
-
-    case 'bouquet': 
-      return <div className="relative"><Flame className={cn(base, "text-pink-400 fill-pink-500/20")} /><Heart className="absolute -top-1 -right-1 h-5 w-5 text-red-500 fill-red-500 animate-pulse" /></div>;
-    case 'love': 
-      return <div className={cn("font-black italic text-2xl tracking-tighter bg-gradient-to-br from-red-500 to-pink-500 bg-clip-text text-transparent", active && "scale-110")}>LOVE</div>;
-    case 'ring': 
-      return <div className="relative flex items-center justify-center"><div className="h-9 w-9 border-[3px] border-yellow-400 rounded-full rotate-[20deg]" /><Gem className="absolute -top-3 h-7 w-7 text-cyan-300 fill-cyan-400/20 animate-bounce" /></div>;
-    case 'chocolate': 
-      return <div className="p-1 bg-amber-900 rounded-lg border-2 border-amber-700 shadow-xl grid grid-cols-2 gap-0.5"><div className="h-3 w-3 bg-amber-800 rounded-sm"/><div className="h-3 w-3 bg-amber-700 rounded-sm"/><div className="h-3 w-3 bg-amber-600 rounded-sm"/><div className="h-3 w-3 bg-amber-800 rounded-sm"/></div>;
-    case 'cheers': 
-      return <div className="flex -space-x-3"><Beer className="h-9 w-9 text-orange-400 -rotate-12" /><Beer className="h-9 w-9 text-orange-400 rotate-12" /></div>;
-    case 'fireworks': 
-      return <Sparkles className={cn(base, "text-purple-400 animate-pulse")} />;
-    default: 
-      return <Gift className={cn(base, "text-indigo-400")} />;
-  }
-};
-
+// --- NEW EMOJI GIFTS DATA ---
 const GIFTS: Record<string, any[]> = {
  'Hot': [
-  { id: 'cb', name: 'Chocolate Box', price: 1599, type: 'chocolate-box', animationId: 'chocolate_box_special' },
-  { id: 'cg', name: 'Chirag', price: 599, type: 'chirag', animationId: 'chirag_golden' },
-  { id: 'bq', name: 'Bouquet', price: 15000, type: 'bouquet', animationId: 'bouquet' },
-  { id: 'lv', name: 'Love', price: 25000, type: 'love', animationId: 'love' },
-  { id: 'cr', name: 'Crown', price: 499, type: 'crown', animationId: 'crown_gift_premium' },
-  { id: 'lb', name: 'Love Balloon', price: 40000, type: 'fireworks', animationId: 'balloon' },
-  { id: 'ch', name: 'Chocolate', price: 250000, type: 'chocolate', animationId: 'choco' },
-  { id: 'rg', name: 'Ring', price: 400000, type: 'ring', animationId: 'ring' },
-  { id: 'cc', name: 'Coke Cheers', price: 20000, type: 'cheers', animationId: 'coke' },
- ],
- 'Luxury': [
-    { id: 'dm', name: 'Diamond', price: 70000, type: 'ring', animationId: 'diamond' },
-    { id: 'tp', name: 'Trophy', price: 90000, type: 'default', animationId: 'trophy' },
-    { id: 'fr', name: 'Ferrari', price: 150000, type: 'luxury', animationId: 'ferrari' },
-    { id: 'nc', name: 'Neon Car', price: 120000, type: 'luxury', animationId: 'neon-car' },
-    { id: 'ss', name: 'Space Station', price: 300000, type: 'luxury', animationId: 'space-station' },
+  { id: 'heart', name: 'Heart', price: 99, icon: '❤️', animationId: 'heart_anim' },
+  { id: 'cake', name: 'Cake', price: 499, icon: '🍰', animationId: 'cake_anim' },
+  { id: 'popcorn', name: 'Popcorn', price: 799, icon: '🍿', animationId: 'popcorn_anim' },
+  { id: 'donut', name: 'Donut', price: 299, icon: '🍩', animationId: 'donut_anim' },
+  { id: 'lollipop', name: 'Lollipop', price: 199, icon: '🍭', animationId: 'lolly_anim' },
  ]
 };
 
@@ -121,8 +40,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  
+ // Combo & Notification States
  const [showCombo, setShowCombo] = useState(false);
  const [comboCount, setComboCount] = useState(0);
+ const [notification, setNotification] = useState<any>(null);
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
 
  const seatedParticipants = useMemo(() => {
@@ -151,7 +72,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
-   
    const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
    
    batch.update(senderProfileRef, { 
@@ -202,6 +122,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    await batch.commit();
 
+   // Show Blue Card Notification
+   setNotification({
+     userName: userProfile.username,
+     giftIcon: selectedGift.icon,
+     qty: isComboTrigger ? 1 : qty
+   });
+   setTimeout(() => setNotification(null), 3000);
+
    setComboCount(prev => prev + 1);
    setShowCombo(true);
    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
@@ -213,6 +141,25 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
+   {/* --- SIDE NOTIFICATION (BLUE CARD) --- */}
+   <AnimatePresence>
+    {notification && (
+      <motion.div 
+        initial={{ x: -100, opacity: 0 }} 
+        animate={{ x: 20, opacity: 1 }} 
+        exit={{ x: -100, opacity: 0 }}
+        className="fixed top-24 left-0 z-[700] bg-blue-600/90 backdrop-blur-md px-4 py-2 rounded-r-full border-y border-r border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-3"
+      >
+        <div className="text-2xl">{notification.giftIcon}</div>
+        <div className="flex flex-col">
+          <span className="text-[10px] text-blue-100 font-bold uppercase tracking-wider">Gift Sent!</span>
+          <span className="text-sm font-black text-white">{notification.userName} <span className="text-blue-200">x{notification.qty}</span></span>
+        </div>
+      </motion.div>
+    )}
+   </AnimatePresence>
+
+   {/* --- COMBO BUTTON --- */}
    <AnimatePresence>
     {showCombo && (
      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="fixed bottom-44 right-8 z-[600]">
@@ -225,26 +172,26 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
 
    <Sheet open={open} onOpenChange={onOpenChange}>
-    <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-[35px] overflow-hidden text-white shadow-2xl h-[520px] pb-10">
+    <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14]/95 backdrop-blur-md border-t border-white/10 p-0 rounded-t-[35px] overflow-hidden text-white h-[520px] pb-10">
      
-     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-white/5">
-      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-black shrink-0 transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 bg-white/5 text-white/40")}>ALL</button>
+     <div className="p-4 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5">
+      <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-12 w-12 rounded-full border-2 text-[10px] font-black shrink-0 transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 text-white/40")}>ALL</button>
       {seatedParticipants.map((p: any) => (
        <button key={p.uid} onClick={() => setSelectedUids([p.uid])} className="relative shrink-0">
-        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400 scale-105" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
+        <Avatar className={cn("h-12 w-12 border-2 transition-all", selectedUids.includes(p.uid) ? "border-cyan-400" : "border-transparent opacity-50")}><AvatarImage src={p.avatarUrl} /></Avatar>
         {selectedUids.includes(p.uid) && <div className="absolute -top-1 -right-1 h-4 w-4 bg-cyan-400 rounded-full flex items-center justify-center"><Check className="h-3 w-3 text-black stroke-[4]" /></div>}
        </button>
       ))}
      </div>
 
      <Tabs defaultValue="Hot" className="w-full mt-3">
-      <TabsList className="mx-6 bg-white/5 p-1 rounded-2xl flex justify-between border border-white/5">
+      <TabsList className="mx-6 bg-white/5 p-1 rounded-2xl flex justify-between">
        {['Hot', 'Lucky', 'Luxury', 'Event'].map(id => (
-        <TabsTrigger key={id} value={id} className="text-[11px] font-black px-6 py-2 rounded-xl transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500">{id}</TabsTrigger>
+        <TabsTrigger key={id} value={id} className="text-[11px] font-black px-6 py-2 rounded-xl data-[state=active]:bg-blue-600">{id}</TabsTrigger>
        ))}
       </TabsList>
       
-      <div className="h-[360px] overflow-y-auto no-scrollbar p-4 grid grid-cols-4 gap-3 pb-24">
+      <div className="h-[360px] overflow-y-auto no-scrollbar p-4 grid grid-cols-4 gap-4 pb-24">
        {Object.entries(GIFTS).map(([cat, items]) => (
         <TabsContent key={cat} value={cat} className="contents">
          {items.map(gift => (
@@ -252,19 +199,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
            key={gift.id} 
            onClick={() => setSelectedGift(gift)} 
            className={cn(
-            "flex flex-col items-center p-2 rounded-[22px] border transition-all duration-300 relative", 
-            selectedGift?.id === gift.id 
-             ? "bg-gradient-to-b from-blue-500/20 to-transparent border-cyan-400/60 shadow-[0_0_20px_rgba(34,211,238,0.15)] scale-105" 
-             : "bg-[#141922] border-white/5 hover:border-white/20"
+            "flex flex-col items-center py-2 transition-all", 
+            selectedGift?.id === gift.id ? "scale-110" : "opacity-70"
            )}
           >
-           <div className="h-16 w-16 flex items-center justify-center">
-             <CustomGiftIcon type={gift.type} active={selectedGift?.id === gift.id} />
+           {/* SIMPLE EMOJI DESIGN - NO CARDS */}
+           <div className="text-4xl mb-1 filter drop-shadow-md">
+             {gift.icon}
            </div>
-           <span className="text-[10px] font-bold text-white/90 truncate w-full text-center mt-1">{gift.name}</span>
-           <div className="flex items-center gap-1 mt-0.5">
-            <div className="h-3 w-3 rounded-full bg-yellow-500 flex items-center justify-center text-[8px] font-black text-black">C</div>
-            <span className="text-[11px] text-yellow-500 font-black">{gift.price.toLocaleString()}</span>
+           <span className="text-[10px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+           <div className="flex items-center gap-1">
+            <span className="text-[11px] text-yellow-500 font-black">{gift.price}</span>
            </div>
           </button>
          ))}
@@ -273,18 +218,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       </div>
      </Tabs>
 
-     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl">
-      <div className="flex items-center gap-2 bg-white/5 px-4 py-2.5 rounded-2xl border border-white/5">
-       <div className="h-4 w-4 rounded-full bg-yellow-500 flex items-center justify-center text-[10px] font-black text-black">C</div>
+     <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#0b0e14] flex items-center justify-between border-t border-white/10">
+      <div className="flex items-center gap-2 px-4 py-2.5">
+       <div className="h-3 w-3 rounded-full bg-yellow-500" />
        <span className="text-sm font-black text-yellow-500">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
       </div>
       <div className="flex items-center gap-2">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-11 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
+         <SelectTrigger className="w-16 h-11 bg-white/5 border-none text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
          <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
        <button onClick={() => handleSend(false)} disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className="h-11 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20">
+         className="h-11 px-8 rounded-full bg-blue-600 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 uppercase tracking-widest">
          {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
