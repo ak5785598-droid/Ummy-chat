@@ -29,10 +29,14 @@ export function GiftAnimationOverlay({
     const map: Record<string, string> = {
       'heart': '❤️', 'cake': '🍰', 'lollipop': '🍭', 'popcorn': '🍿', 
       'donut': '🍩', 'rose': '🌹', 'chai': '☕', 'applaud': '👏',
-      'chocolate-box': '🍫', 'ice-cream': '🍦', 'teddy-bear': '🧸'
+      'chocolate-box': '🍫', 'ice-cream': '🍦', 'teddy-bear': '🧸',
+      'diamond': '🎳', 'trophy': '🎸'
     };
-    // Agar map me nahi mila toh check karega ki giftId khud ek emoji toh nahi
-    return map[id.toLowerCase()] || id || '🎁';
+    
+    // Normalize id: remove '_anim' suffix if present
+    const normalizedId = id.toLowerCase().replace('_anim', '');
+    
+    return map[normalizedId] || id || '🎁';
   }, []);
 
   // 2. SEAT POSITION LOGIC

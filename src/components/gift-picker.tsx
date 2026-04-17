@@ -116,12 +116,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'rocket.progress': increment(totalCost)
    });
 
+   // Get seat of the first recipient for the animation trigger
+   const firstRecipientUid = selectedUids[0];
+   const recipientSeat = participants.find((p: any) => p.uid === firstRecipientUid)?.seatIndex || 1;
+
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
    batch.set(msgRef, {
     type: 'gift',
     senderId: user.uid,
     senderName: userProfile.username,
     giftId: selectedGift.animationId,
+    recipientId: firstRecipientUid,
+    recipientSeat: recipientSeat,
     text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty}`,
     timestamp: serverTimestamp()
    });

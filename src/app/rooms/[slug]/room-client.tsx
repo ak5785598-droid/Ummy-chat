@@ -272,7 +272,7 @@ export function RoomClient({ room }: { room: Room }) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
-  const [activeGift, setActiveGift] = useState<{giftId: string, senderName: string} | null>(null);
+  const [activeGift, setActiveGift] = useState<{giftId: string, senderName: string, targetSeat?: number} | null>(null);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [portalDefaultView, setPortalDefaultView] = useState<'grid' | 'music'>('grid');
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
@@ -299,7 +299,6 @@ export function RoomClient({ room }: { room: Room }) {
   const [selectedParticipantUid, setSelectedParticipantUid] = useState<string | null>(null);
   const [giftRecipient, setGiftRecipient] = useState<{ uid: string; name: string; avatarUrl?: string } | null>(null);
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
-  const [activeGiftSync, setActiveGiftSync] = useState<{ id: string, senderName: string } | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicProgress, setMusicProgress] = useState(0);
@@ -1062,7 +1061,8 @@ export function RoomClient({ room }: { room: Room }) {
         lastProcessedGiftId.current = latestMsg.id;
         setActiveGift({ 
             giftId: latestMsg.giftId, 
-            senderName: latestMsg.senderName || 'User' 
+            senderName: latestMsg.senderName || 'User',
+            targetSeat: latestMsg.recipientSeat || 1
         });
     }
   }, [firestoreMessages]);
@@ -1395,7 +1395,7 @@ export function RoomClient({ room }: { room: Room }) {
           requestAnimationFrame(() => {
             chunk.forEach(msg => {
               if (msg.type === 'gift' && msg.giftId) {
-                setActiveGiftSync({ id: msg.giftId, senderName: msg.senderName });
+                 // Handled by the dedicated gift listener above
               } else if (msg.type === 'lucky-rain') {
                 setIsLuckyRainActive(true);
               } else if (msg.type === 'entrance' && isAIProcessor) {
@@ -3007,7 +3007,7 @@ export function RoomClient({ room }: { room: Room }) {
       <MountOverlay entries={mountEntries} />
       <GiftAnimationOverlay 
         giftId={activeGift?.giftId || null} 
-        senderName={activeGift?.senderName} 
+        targetSeat={activeGift?.targetSeat} 
         onComplete={() => setActiveGift(null)} 
       />
       <LuckyRainOverlay
