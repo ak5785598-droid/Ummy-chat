@@ -155,7 +155,7 @@ const PublicProfileView = ({
  t
 }: any) => {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans text-[13px]">
        <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-5 shrink-0">
           <div className="flex items-center justify-between max-w-lg mx-auto">
             <button onClick={onBack} className="p-2 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all"><ChevronLeft className="h-5 w-5" /></button>
@@ -321,7 +321,7 @@ export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: s
 
   if (mode === 'editable' && isOwnProfile) {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans text-[13px]">
       
       {/* FIXED GLOSSY HEADER */}
       <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-5 shrink-0">
