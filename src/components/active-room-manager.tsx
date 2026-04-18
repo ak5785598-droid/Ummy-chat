@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useAgora } from '@/hooks/use-agora';
