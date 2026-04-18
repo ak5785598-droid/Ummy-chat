@@ -77,6 +77,16 @@ export function useAgora(
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
+  const speakerMutedRef = useRef(isSpeakerMuted);
+  const onVolumeChangeRef = useRef(onVolumeChange);
+
+  useEffect(() => {
+    speakerMutedRef.current = isSpeakerMuted;
+  }, [isSpeakerMuted]);
+
+  useEffect(() => {
+    onVolumeChangeRef.current = onVolumeChange;
+  }, [onVolumeChange]);
 
   // Set audio output device for all remote users
   const setAudioOutputDevice = useCallback(async (deviceId: string) => {
@@ -224,7 +234,7 @@ export function useAgora(
                 AudioRoute.forceEarbuds().catch(() => {});
               }
               
-              if (!isSpeakerMuted) {
+              if (!speakerMutedRef.current) {
                 user.audioTrack?.play();
               } else {
                 user.audioTrack?.stop();
@@ -249,13 +259,12 @@ export function useAgora(
         const numericUid = hashUidToNumber(uid);
         await client.setClientRole('host');
         
-        // --- VOLUME DETECTION ---
-        client.enableAudioVolumeIndicator(200); 
-        client.on('volume-indicator', (volumes: { uid: string | number; level: number }[]) => {
-          if (onVolumeChange) {
-            onVolumeChange(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
-          }
-        });
+        if (onVolumeChangeRef.current) {
+          client.enableAudioVolumeIndicator(200);
+          client.on('volume-indicator', (volumes: { uid: string | number; level: number }[]) => {
+            onVolumeChangeRef.current?.(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
+          });
+        }
 
         await client.join(APP_ID, roomId, null, numericUid);
         
@@ -375,19 +384,17 @@ export function useAgora(
     }
   }, [isMuted, localAudioTrack]);
 
-  // ROUTING PERSISTENCE (Brute Force Lock every 2s as requested)
+  // ROUTING STABILITY: route once on key transitions (no aggressive 2s polling)
   useEffect(() => {
-    if (!AudioRoute) return;
-    
-    console.log('[Routing] Proactive Lock Started (Entry Fix)');
-    AudioRoute.forceEarbuds().catch(() => {});
+    if (!AudioRoute || connectionState !== 'CONNECTED' || isSpeakerMuted) return;
+    if (!isInSeat && remoteUsers.length === 0) return;
 
-    // Lock to earbuds every 2000ms - Version eb81e34 Style
-    const interval = setInterval(() => { 
-      AudioRoute.forceEarbuds().catch(() => {}); 
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []); 
+    const timer = setTimeout(() => {
+      AudioRoute.forceEarbuds().catch(() => {});
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [connectionState, isInSeat, remoteUsers.length, isSpeakerMuted]);
 
   return { 
     localAudioTrack, 

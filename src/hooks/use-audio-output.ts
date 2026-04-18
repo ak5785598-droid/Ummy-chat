@@ -37,9 +37,6 @@ export function useAudioOutput() {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
 
     try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = devices
         .filter(d => d.kind === 'audiooutput')
