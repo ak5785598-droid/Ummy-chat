@@ -103,7 +103,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Refs for preventing stale closures during setTimeouts & preserving stability
  const myBetsRef = useRef(myBets);
  const isMountedRef = useRef(true);
  const chaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -115,12 +114,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const tickAudio = useRef<HTMLAudioElement | null>(null);
  const winAudio = useRef<HTMLAudioElement | null>(null);
 
- // Sync refs
  useEffect(() => {
     myBetsRef.current = myBets;
  }, [myBets]);
 
- // Cleanup on unmount
  useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -131,7 +128,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     };
  }, []);
 
- // Initial banner auto-hide
  useEffect(() => {
     if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
     bannerTimeoutRef.current = setTimeout(() => {
@@ -211,7 +207,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
- // Optimized Timer Logic
  useEffect(() => {
   let interval: NodeJS.Timeout;
   if (gameState === 'betting') {
@@ -262,8 +257,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
 
   let winAmount = 0;
-  
-  // Always use the ref to prevent stale closures fetching 0 bets
   const currentBets = myBetsRef.current;
   
   winningIds.forEach(wId => {
@@ -333,7 +326,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setGameState('betting');
    setTimeLeft(25);
    
-   // FIX: Har round start pe proper banner logic with timeout clear
    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
    setBannerMsg('Start Betting');
    bannerTimeoutRef.current = setTimeout(() => {
@@ -345,7 +337,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const startSpin = useCallback(async () => {
   if (!isMountedRef.current) return;
 
-  // FIX: Har spin start pe proper banner logic with timeout clear
   if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
   setBannerMsg('Betting Over');
   bannerTimeoutRef.current = setTimeout(() => {
@@ -361,14 +352,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   else if (chance < 0.05) groupType = 'right'; 
 
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
-
-  if (groupType === 'left') {
-      const lefts = ['lion', 'tiger', 'fox', 'bear'];
-      winningId = lefts[Math.floor(Math.random() * lefts.length)];
-  } else if (groupType === 'right') {
-      const rights = ['panda', 'rabbit', 'cow', 'dog'];
-      winningId = rights[Math.floor(Math.random() * rights.length)];
-  }
 
   if (firestore) {
    try {
@@ -386,10 +369,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 10; 
+  const spins = 7; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
   
-  let speed = 40; // Initial fast speed
+  let speed = 40; 
 
   const runChase = () => {
    if (!isMountedRef.current) return;
@@ -397,17 +380,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
-   // FIX: Tick sound bug fixed, bajega smooth tarike se
    if (currentStep % 2 === 0) playSound('tick'); 
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
     
-    // NEW: Ekdam smooth deceleration curve (Smooth spin animation)
     if (remaining < 25) {
-        speed += 20; // Last me naturally smoothly slow hoga
+        speed += 20; 
     } else if (remaining < 45) {
-        speed += 4;  // Thoda pehle se slowdown shuru
+        speed += 4;  
     }
     
     currentStep++;
@@ -420,7 +401,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   runChase();
  }, [firestore, playSound, finalizeResult]);
 
- // Trigger spin when time reaches 0 smoothly
  useEffect(() => {
     if (gameState === 'betting' && timeLeft === 0) {
         startSpin();
@@ -474,7 +454,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
       />
       
-      {/* ☁️ Clouds Moved Up */}
       <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[6%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
       
       <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
@@ -485,7 +464,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </div>
 
-   {/* --- FIXED BANNER RENDER --- */}
    <AnimatePresence mode="wait">
     {bannerMsg && (
         <motion.div
@@ -590,7 +568,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    {/* ☁️ Clouds Moved Up */}
     <div className="absolute top-[10px] left-[85px] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     <div className="absolute top-[20px] right-[20px] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     
@@ -657,7 +634,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         const isSpinning = gameState === 'spinning';
         const isHighlighted = highlightIdx === idx;
         
-        // NEW LOGIC: Jab spinning chal rahi ho aur current card highlight na ho, toh color-less kardo
+        // --- ONLY THIS SECTION CHANGED: Colorless but not transparent ---
         const applyColorless = isSpinning && !isHighlighted;
         
         return (
@@ -666,15 +643,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className={cn(
                 "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#241108]", 
                 active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
-                // COLORLESS TAILWIND LOGIC ADDED HERE
-                applyColorless ? "grayscale-[0.9] opacity-60 brightness-75 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
+                // CHANGE: GrayScale lagaya, opacity full (100) rakhi
+                applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
             )}>
-                {/* Glossy Overlay Highlight Maintained */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
-                
                 <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
-                
-                {/* MULTIPLIER SHOWS ALWAYS, BUT GLOSSY EFFECT REMOVED DURING SPINNING */}
                 <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
                     <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                 </div>
