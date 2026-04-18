@@ -61,24 +61,36 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   }, [gameDocRef, gameState]);
 
   const joinArena = useCallback(async (userProfile: any) => {
-    if (!gameDocRef || !userId || !userProfile || gameState?.status !== 'lobby') return;
+    if (!gameDocRef || !userId || !userProfile || isLoading) {
+      console.log("Carrom: joinArena blocked", { gameDocRef: !!gameDocRef, userId, hasProfile: !!userProfile, isLoading });
+      return;
+    }
 
     // 1. Minimum Balance Check
-    const entryFee = gameState.entryFee || 0;
+    const entryFee = gameState?.entryFee || 0;
     const userCoins = userProfile.wallet?.coins ?? userProfile.coins ?? 0;
 
+    console.log("Carrom: Attempting to join lobby", { status: gameState?.status, userCoins, entryFee });
+
     if (userCoins < entryFee) {
+      console.log("Carrom: Insufficient coins", { userCoins, entryFee });
       alert("Insufficient coins to join this professional match!");
       return;
     }
 
+    if (gameState?.status !== 'lobby') return;
+
     const existingPlayer = gameState.players.find((p: any) => p.uid === userId);
-    if (existingPlayer) return;
+    if (existingPlayer) {
+      console.log("Carrom: User already in lobby");
+      return;
+    }
 
     if (gameState.players.length >= 4) return;
 
     // 2. Atomic Deduction & Join
     try {
+      console.log("Carrom: Starting join transaction...");
       await runTransaction(firestore!, async (transaction) => {
         const userRef = doc(firestore!, 'users', userId);
         const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
@@ -109,10 +121,11 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
           updatedAt: serverTimestamp()
         });
       });
+      console.log("Carrom: Join transaction successful");
     } catch (err) {
       console.error("Failed to join arena:", err);
     }
-  }, [gameDocRef, userId, gameState, firestore, roomId]);
+  }, [gameDocRef, userId, gameState, firestore, roomId, isLoading]);
 
   const startMatch = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.status !== 'lobby') return;

@@ -56,60 +56,39 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
   const isJoined = gameState?.players.some(p => p.uid === currentUser?.uid);
   const isMyTurn = gameState?.turn === currentUser?.uid;
 
-  // --- PREMIUM SPLASH SCREEN ---
+  // --- PREMIUM SPLASH SCREEN (Restored Original Visuals) ---
   if (isSplashing || !gameState) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a1a4a] text-white overflow-hidden relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-600/20 blur-[100px] rounded-full" />
-        
+      <div className={cn(
+        "w-full bg-[#1A0B2E] flex flex-col items-center justify-center p-8 font-sans overflow-hidden",
+        isOverlay ? "h-full min-h-[400px]" : "h-screen"
+      )}>
         <motion.div 
-          initial={{ scale: 0.5, opacity: 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-10 flex flex-col items-center"
+          className="relative w-64 h-64 mb-12"
         >
-          <div className="relative w-48 h-48 mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-            <img 
-              src="/images/carrom_3d_icon.webp" 
-              className="w-full h-full object-contain"
-              alt="Carrom Master"
-              onError={(e) => {
-                (e.target as any).src = '/images/ummy-logon.png';
-              }}
+          <img 
+            src="/images/games/carrom/loading_logo.png" 
+            className="w-full h-full object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+            alt="Carrom Master"
+            onError={(e) => {
+               (e.target as any).src = '/images/ummy-logon.png';
+            }}
+          />
+        </motion.div>
+        
+        <div className="w-full max-w-xs space-y-4">
+          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
+            <motion.div 
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 4, ease: "easeInOut" }}
+              className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_15px_#fbbf24]"
             />
           </div>
-
-          <div className="flex gap-1 mb-8">
-            {[
-              { char: 'C', color: 'text-blue-400' },
-              { char: 'A', color: 'text-white' },
-              { char: 'R', color: 'text-red-500' },
-              { char: 'R', color: 'text-red-500' },
-              { char: 'O', color: 'text-white' },
-              { char: 'M', color: 'text-blue-400' }
-            ].map((item, i) => (
-              <motion.span
-                key={i}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 + (i * 0.1) }}
-                className={cn("text-4xl font-black italic tracking-tighter drop-shadow-lg", item.color)}
-              >
-                {item.char}
-              </motion.span>
-            ))}
-          </div>
-
-          <div className="w-64 h-2 bg-white/5 rounded-full border border-white/10 overflow-hidden relative">
-             <motion.div 
-               initial={{ width: "0%" }}
-               animate={{ width: "100%" }}
-               transition={{ duration: 4 }}
-               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-             />
-          </div>
-          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Syncing Arena</p>
-        </motion.div>
+          <p className="text-center text-white/40 text-[10px] uppercase font-black tracking-[0.3em] animate-pulse">Syncing Arena...</p>
+        </div>
       </div>
     );
   }
