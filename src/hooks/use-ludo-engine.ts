@@ -114,6 +114,16 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     }
   }, [gameDocRef, userId, gameState, roomId, firestore]);
 
+  const startMatch = useCallback(async () => {
+    if (!gameDocRef || !gameState) return;
+    if (gameState.players.length < 2) return;
+    
+    await updateDocumentNonBlocking(gameDocRef, {
+      status: 'playing',
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, gameState]);
+
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
 
@@ -256,6 +266,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     gameState: gameState as LudoGameState | undefined,
     isLoading,
     joinLobby,
+    startMatch,
     rollDice,
     movePiece,
     endMatch

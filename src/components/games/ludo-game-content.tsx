@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Volume2, VolumeX, X, Trophy } from 'lucide-react';
+import { ChevronLeft, Volume2, VolumeX, X, Trophy, Plus } from 'lucide-react';
 import { useLudoEngine } from '@/hooks/use-ludo-engine';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -27,6 +27,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     gameState, 
     isLoading, 
     joinLobby, 
+    startMatch,
     rollDice, 
     movePiece 
   } = useLudoEngine(roomId, user?.uid || null);
@@ -42,15 +43,9 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     return () => clearTimeout(timer);
   }, []);
 
-  // Auto-join lobby on load
-  useEffect(() => {
-    if (!isLoading && user && userProfile && (!gameState || gameState.status === 'lobby')) {
-      const inLobby = gameState?.players.some(p => p.uid === user.uid);
-      if (!inLobby) {
-        joinLobby(userProfile);
-      }
-    }
-  }, [isLoading, user, userProfile, gameState, joinLobby]);
+  const isMyTurn = gameState?.turn === user?.uid;
+  const isJoined = gameState?.players.some(p => p.uid === user?.uid);
+  const currPlayer = gameState?.players.find(p => p.uid === gameState?.turn);
 
   if (isSplashing || isLoading || !gameState) {
     return (
@@ -108,8 +103,80 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     );
   }
 
-  const isMyTurn = gameState.turn === user?.uid;
-  const currPlayer = gameState.players.find(p => p.uid === gameState.turn);
+  // --- LOBBY VIEW ---
+  if (gameState.status === 'lobby') {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#1A0B2E] overflow-hidden relative p-4">
+        {/* Background Board Pattern Overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none p-4">
+           <LudoBoard pieces={[]} users={[]} currentPlayerTurn="" onPieceClick={() => {}} />
+        </div>
+
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative z-10 w-full max-w-[400px] bg-gradient-to-b from-purple-600 to-purple-800 rounded-[40px] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)] border-4 border-white/10"
+        >
+          <h2 className="text-2xl font-black text-white italic text-center mb-8 tracking-tight">Quick Mode</h2>
+
+          {/* Player Slots */}
+          <div className="grid grid-cols-4 gap-2 mb-10">
+            {[0, 1, 2, 3].map(i => {
+              const p = gameState.players[i];
+              return (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div className="relative h-14 w-14 rounded-full bg-black/20 border-2 border-white/20 flex items-center justify-center p-0.5 shadow-inner">
+                    {p ? (
+                      <Avatar className="h-full w-full">
+                        <AvatarImage src={p.avatarUrl} />
+                        <AvatarFallback className="bg-slate-700 text-white text-[10px]">{p.username[0]}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <button 
+                        onClick={() => !isJoined && userProfile && joinLobby(userProfile)}
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      >
+                        <Plus className="h-5 w-5 text-white/40" />
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[8px] font-black text-white/50 uppercase truncate max-w-full">
+                    {p?.uid === user?.uid ? 'You' : p?.username || `...`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col items-center gap-6">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] animate-pulse">Waiting for friends to join..</p>
+            
+            {!isJoined ? (
+              <button
+                onClick={() => userProfile && joinLobby(userProfile)}
+                className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full border-b-8 border-orange-700 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
+              >
+                <span className="text-2xl font-black text-black italic tracking-tighter uppercase">JOIN</span>
+              </button>
+            ) : (
+              gameState.players.length >= 2 ? (
+                <button
+                  onClick={startMatch}
+                  className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full border-b-8 border-orange-700 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
+                >
+                  <span className="text-2xl font-black text-black italic tracking-tighter uppercase">START</span>
+                </button>
+              ) : (
+                <div className="h-16 w-full opacity-50 bg-black/20 rounded-full flex items-center justify-center border-2 border-white/5">
+                   <span className="text-sm font-black text-white/30 uppercase tracking-[0.5em]">Waiting</span>
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   const handleBack = () => {
     if (onClose) onClose();
