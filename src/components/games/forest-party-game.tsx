@@ -36,17 +36,16 @@ const ANIMALS = [
   { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', index: 7 },
 ];
 
-// Naya Chips Data tumhare bataye huye colors aur values ke hisaab se
 const CHIPS_DATA = [
- { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' }, // Blue
- { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, // Purple
- { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, // Orange
- { value: 100000, label: '100k', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, // Red
- { value: 500000, label: '500k', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, // Green
- { value: 1000000, label: '1M', color: '#06b6d4', bgColor: 'from-cyan-400 to-cyan-600' }, // Sea Blue
- { value: 5000000, label: '5M', color: '#fef3c7', bgColor: 'from-amber-100 to-amber-200' }, // Cream
- { value: 10000000, label: '10M', color: '#581c87', bgColor: 'from-purple-800 to-purple-950' }, // Dark Purple
- { value: 100000000, label: '100M', color: '#eab308', bgColor: 'from-yellow-400 to-yellow-600' }, // Yellow
+ { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' }, 
+ { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, 
+ { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, 
+ { value: 100000, label: '100k', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, 
+ { value: 500000, label: '500k', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, 
+ { value: 1000000, label: '1M', color: '#06b6d4', bgColor: 'from-cyan-400 to-cyan-600' }, 
+ { value: 5000000, label: '5M', color: '#fef3c7', bgColor: 'from-amber-100 to-amber-200' }, 
+ { value: 10000000, label: '10M', color: '#581c87', bgColor: 'from-purple-800 to-purple-950' }, 
+ { value: 100000000, label: '100M', color: '#eab308', bgColor: 'from-yellow-400 to-yellow-600' }, 
 ];
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -89,8 +88,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [isMuted, setIsMuted] = useState(false);
  const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
- const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
- const [fakeDroppedChips, setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, x: number, y: number}[]>([]);
+ 
+ const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
+ const [fakeDroppedChips, setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number, delay: number}[]>([]);
  
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
@@ -129,7 +129,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1071/1071-preview.mp3'); 
+     // Golden Coins Sound Added here
+     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
@@ -139,20 +140,31 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
-        if (Math.random() > 0.4) {
-            const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
-            const randomChip = CHIPS_DATA[Math.floor(Math.random() * 3)];
-            const fakeChip = {
-                id: Date.now() + Math.random(),
-                itemIdx: randomAnimalIdx,
-                label: randomChip.label,
-                color: randomChip.bgColor,
-                x: (Math.random() * 30) - 15,
-                y: (Math.random() * 20) - 10
-            };
-            setFakeDroppedChips(prev => [...prev.slice(-20), fakeChip]);
+        if (Math.random() > 0.2) { // 80% chance to drop 10-15 chips
+            const dropCount = Math.floor(Math.random() * 6) + 10; // 10 to 15 chips
+            const newFakeChips = [];
+            
+            for (let i = 0; i < dropCount; i++) {
+                const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
+                // Biasing towards smaller chips for realism, but occasionally dropping big ones
+                const chipOptions = [0, 0, 0, 1, 1, 2, 3, 4, 5];
+                const randomChip = CHIPS_DATA[chipOptions[Math.floor(Math.random() * chipOptions.length)]] || CHIPS_DATA[0];
+                
+                newFakeChips.push({
+                    id: Date.now() + Math.random() + i,
+                    itemIdx: randomAnimalIdx,
+                    label: randomChip.label,
+                    bgColor: randomChip.bgColor,
+                    color: randomChip.color,
+                    x: (Math.random() * 40) - 20,
+                    y: (Math.random() * 30) - 15,
+                    delay: Math.random() * 0.8 // Staggering effect
+                });
+            }
+            
+            setFakeDroppedChips(prev => [...prev.slice(-60), ...newFakeChips]);
         }
-    }, 2500);
+    }, 2000); // Har 2 sec me check karega
     return () => clearInterval(interval);
  }, [gameState]);
 
@@ -209,7 +221,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    id: Date.now(),
    itemIdx: animal.index,
    label: chipInfo?.label || '10',
-   color: chipInfo?.bgColor || 'from-blue-400 to-cyan-500',
+   bgColor: chipInfo?.bgColor || 'from-blue-400 to-cyan-500',
+   color: chipInfo?.color || '#3b82f6',
    x: (Math.random() * 30) - 15,
    y: (Math.random() * 20) - 10
   };
@@ -549,14 +562,45 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </div>
             
             <AnimatePresence>
+                {/* Real Chips - Ab Zebra 3D Design ke sath */}
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                    <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[22px] w-[22px] rounded-full flex items-center justify-center border-2 border-white/30 shadow-[0_4px_8px_rgba(0,0,0,0.4)] z-40 pointer-events-none", `bg-gradient-to-br ${chip.color}`)}>
-                        <span className="text-[6px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+                    <motion.div 
+                        key={chip.id} 
+                        initial={{ opacity: 0, scale: 3, y: -60 }} 
+                        animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.6)] z-40 pointer-events-none"
+                        style={{
+                            background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                            padding: '2.5px',
+                            width: '24px',
+                            height: '24px'
+                        }}
+                    >
+                        <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                            <span className="text-[6px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+                        </div>
                     </motion.div>
                 ))}
+
+                {/* Fake Chips - 10 se 15 drop honge real zebra 3D look me */}
                 {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                    <motion.div key={chip.id} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 0.8, scale: 0.8, y: chip.y, x: chip.x }} exit={{ opacity: 0 }} className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[18px] w-[18px] rounded-full flex items-center justify-center border border-white/20 shadow-sm z-30 pointer-events-none", `bg-gradient-to-br ${chip.color}`)}>
-                        <span className="text-[5px] font-bold text-white/90">{chip.label}</span>
+                    <motion.div 
+                        key={chip.id} 
+                        initial={{ opacity: 0, scale: 2, y: -80 }} 
+                        animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
+                        exit={{ opacity: 0 }} 
+                        transition={{ delay: chip.delay, duration: 0.3 }}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_3px_5px_rgba(0,0,0,0.5)] z-30 pointer-events-none"
+                        style={{
+                            background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                            padding: '2px',
+                            width: '20px',
+                            height: '20px'
+                        }}
+                    >
+                        <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                            <span className="text-[5px] font-bold text-white/90">{chip.label}</span>
+                        </div>
                     </motion.div>
                 ))}
             </AnimatePresence>
@@ -595,8 +639,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             key={chip.value} 
             onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
             className={cn(
-                "h-13 w-13 min-w-[52px] rounded-full flex items-center justify-center transition-all relative shrink-0",
-                "shadow-[0_6px_0_#1a0d06,0_10px_15px_rgba(0,0,0,0.5)]", // 3D Bottom Shadow
+                "h-[52px] w-[52px] aspect-square rounded-full flex items-center justify-center transition-all relative shrink-0", // Perfect circle fix yaha pe
+                "shadow-[0_6px_0_#1a0d06,0_10px_15px_rgba(0,0,0,0.5)]", 
                 selectedChip === chip.value ? "scale-110 -translate-y-2" : "hover:-translate-y-1",
                 "active:translate-y-1 active:shadow-[0_2px_0_#1a0d06]"
             )}
