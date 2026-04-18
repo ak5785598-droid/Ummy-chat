@@ -49,6 +49,16 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     initializeGame();
   }, [initializeGame]);
 
+  // Auto-join arena if in lobby
+  useEffect(() => {
+    if (gameState?.status === 'lobby' && userProfile && currentUser) {
+      const inArena = gameState.players.some(p => p.uid === currentUser.uid);
+      if (!inArena && gameState.players.length < 4) {
+        joinArena(userProfile);
+      }
+    }
+  }, [gameState?.status, gameState?.players, userProfile, currentUser, joinArena]);
+
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();

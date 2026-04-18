@@ -62,50 +62,57 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
         status: 'lobby',
         updatedAt: serverTimestamp()
       });
-      // Join existing lobby
-      const entryFee = gameState.entryFee || 0;
-      if ((userProfile.coins || 0) < entryFee) {
-        alert("Insufficient coins to join this professional match!");
-        return;
-      }
-
-      const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
-      
-      try {
-        await runTransaction(firestore!, async (transaction) => {
-           const userRef = doc(firestore!, 'users', userId);
-           const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
-           const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
-
-           if (entryFee > 0) {
-             transaction.update(userRef, { coins: increment(-entryFee) });
-             transaction.update(profileRef, { coins: increment(-entryFee) });
-             transaction.set(walletRef, {
-               userId,
-               amount: -entryFee,
-               type: 'game_entry',
-               gameId: `ludo_${roomId}`,
-               timestamp: serverTimestamp()
-             });
-           }
-
-           transaction.update(gameDocRef, {
-             players: arrayUnion({
-              uid: userId,
-              username: userProfile.username || `Player ${gameState.players.length + 1}`,
-              avatarUrl: userProfile.avatarUrl || '',
-              color: assignedColor,
-              isReady: true,
-              isActive: true
-            }),
-            updatedAt: serverTimestamp()
-           });
-        });
-      } catch (err) {
-        console.error("Failed to join Ludo lobby:", err);
-      }
+      return;
     }
-  }, [gameDocRef, userId, gameState, roomId]);
+
+    // Join existing lobby
+    if (gameState.status !== 'lobby') return;
+    const inLobby = gameState.players.some(p => p.uid === userId);
+    if (inLobby) return;
+    if (gameState.players.length >= 4) return;
+
+    const entryFee = gameState.entryFee || 0;
+    if ((userProfile.coins || 0) < entryFee) {
+      alert("Insufficient coins to join this match!");
+      return;
+    }
+
+    const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
+    
+    try {
+      await runTransaction(firestore!, async (transaction) => {
+         const userRef = doc(firestore!, 'users', userId);
+         const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
+         const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
+
+         if (entryFee > 0) {
+           transaction.update(userRef, { coins: increment(-entryFee) });
+           transaction.update(profileRef, { coins: increment(-entryFee) });
+           transaction.set(walletRef, {
+             userId,
+             amount: -entryFee,
+             type: 'game_entry',
+             gameId: `ludo_${roomId}`,
+             timestamp: serverTimestamp()
+           });
+         }
+
+         transaction.update(gameDocRef, {
+           players: arrayUnion({
+            uid: userId,
+            username: userProfile.username || `Player ${gameState.players.length + 1}`,
+            avatarUrl: userProfile.avatarUrl || '',
+            color: assignedColor,
+            isReady: true,
+            isActive: true
+          }),
+          updatedAt: serverTimestamp()
+         });
+      });
+    } catch (err) {
+      console.error("Failed to join Ludo lobby:", err);
+    }
+  }, [gameDocRef, userId, gameState, roomId, firestore]);
 
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
