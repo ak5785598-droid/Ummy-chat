@@ -296,5 +296,3 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
     </div>
   );
 }
-  );
-}
