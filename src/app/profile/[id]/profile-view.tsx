@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth, useFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -77,7 +77,6 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
  * Professional Numerical Signature Formatting
- * Converts numbers to compact notation: 1.2k, 1.5M, 371.6B
  */
 const formatCompactNumber = (num: number) => {
   if (!num || num === 0) return '0';
@@ -176,7 +175,7 @@ const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: numb
 };
 
 /**
- * Public Profile View - Redesigned High-Density Layout
+ * Public Profile View
  */
 const PublicProfileView = ({ 
  profile, 
@@ -204,7 +203,6 @@ const PublicProfileView = ({
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
-       {/* REFINED HEADER WITH GAP CONTROL */}
        <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-6 pt-[calc(env(safe-area-inset-top)+12px)] shrink-0">
           <div className="flex items-center justify-between max-w-lg mx-auto">
             <button onClick={onBack} className="p-2.5 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all shadow-sm">
@@ -220,7 +218,6 @@ const PublicProfileView = ({
        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
           <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
             
-            {/* PRIMARY IDENTITY CARD (AVATAR LEFT) */}
             <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden">
                <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
                
@@ -270,7 +267,6 @@ const PublicProfileView = ({
                </div>
             </div>
 
-            {/* CONTRIBUTORS SECTION */}
             <div className="px-1">
               <div className="flex items-center justify-between mb-4 px-1">
                 <h4 className="text-[11px] font-outfit font-black uppercase text-slate-400 tracking-[0.3em]">Top Contribution</h4>
@@ -326,13 +322,14 @@ const PublicProfileView = ({
 };
 
 /**
- * Main Profile View Component - Integrated Redesign
+ * Main Profile View Component
  */
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
   const { t } = useTranslation();
+  const { auth } = useFirebase();
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
@@ -375,7 +372,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const isAuthorizedAdmin = currentUser?.uid === CREATOR_ID || profile?.isAdmin === true;
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || isAuthorizedAdmin;
 
-  // Record a visit if it's someone else's profile
   useEffect(() => {
     if (!firestore || !currentUser || !profileId || isOwnProfile) return;
     const recordVisit = async () => {
@@ -439,8 +435,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return (
       <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
-        
-        {/* REFINED ME HEADER WITH GAP CONTROL */}
         <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-6 pt-[calc(env(safe-area-inset-top)+12px)] shrink-0">
           <div className="flex items-center justify-between max-w-lg mx-auto">
             <div className="flex items-center gap-3">
@@ -463,10 +457,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </header>
 
-        {/* SCROLLABLE IDENTITY DASHBOARD */}
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
           <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
-            
             <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden">
                <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
                <div className="flex items-center gap-7 relative z-10">
@@ -511,7 +503,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                </div>
             </div>
 
-            {/* UPGRADED WALLET CARDS */}
             <div className="grid grid-cols-2 gap-5">
               <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-xl active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-36 border border-white/20">
                  <div className="absolute inset-0 bg-white/10 -skew-x-[45deg] animate-shine"></div>
@@ -586,7 +577,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-2">
                 <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                 <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-100 text-slate-400" onClick={() => {}} />
-                <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />
+                {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
               </div>
             </div>
           </div>
