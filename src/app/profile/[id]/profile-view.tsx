@@ -22,7 +22,8 @@ import {
  Trophy,
  Info,
  LogOut,
- Users
+ Users,
+ Gem
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
