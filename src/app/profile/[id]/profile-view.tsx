@@ -20,6 +20,7 @@ import {
  History,
  Trophy,
  Info,
+ Settings as SettingsIcon,
  LogOut,
  Users,
  Gem
@@ -344,19 +345,19 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <div className="flex items-start gap-3 pt-1">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-24 w-24 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
+                    <Avatar className="h-28 w-28 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-2xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
                 </div>
-                <div className="flex-1 pt-1 space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
+                <div className="flex-1 self-center space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-[20px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
                     <span className="text-xl leading-none">🇮🇳</span>
                     <GenderCircle gender={profile.gender} />
                   </div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2">
                     <RichLevelBadge level={profile.level?.rich || 1} />
                     <CharmLevelBadge level={profile.level?.charm || 1} />
                   </div>
@@ -452,6 +453,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   )}
                 </div>
                 <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+                  <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
                   <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                   <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => {}} />
                   {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
