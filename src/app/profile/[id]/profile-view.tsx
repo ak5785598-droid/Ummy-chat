@@ -106,39 +106,39 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 const StatItem = ({ label, value, onClick }: { label: string, value: number | string, onClick?: () => void }) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center justify-center flex-1 py-1 active-press group"
+  className="flex flex-col items-center justify-center flex-1 py-1.5 active-press group"
  >
-  <span className="text-xl font-outfit font-black text-slate-800 leading-none group-hover:text-primary transition-colors">{value}</span>
-  <span className="text-[8px] font-outfit font-black text-slate-400 tracking-[0.2em] uppercase mt-1">{label}</span>
+  <span className="text-[22px] font-outfit font-black text-slate-900 leading-none group-hover:text-primary transition-colors">{value}</span>
+  <span className="text-[9px] font-outfit font-black text-slate-400 tracking-[0.25em] uppercase mt-1.5">{label}</span>
  </button>
 );
 
 const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center gap-1 group active:scale-90 transition-all"
+  className="flex flex-col items-center gap-2 group active:scale-90 transition-all"
  >
-  <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:-translate-y-0.5 border-2 border-white", colorClass)}>
-   <Icon className="h-5 w-5 text-white" />
+  <div className={cn("h-[58px] w-[58px] rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:-translate-y-0.5 border-2 border-white", colorClass)}>
+   <Icon className="h-7 w-7 text-white" />
   </div>
-  <span className="text-[8px] font-outfit font-black text-slate-400 uppercase tracking-widest">{label}</span>
+  <span className="text-[10px] font-outfit font-black text-slate-400 uppercase tracking-widest">{label}</span>
  </button>
 );
 
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
   <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 px-3 hover:bg-slate-50 active:bg-slate-100 transition-all text-left group"
+  className="w-full flex items-center justify-between py-3.5 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50 active:bg-slate-100 transition-all text-left group"
  >
-  <div className="flex items-center gap-3">
-   <div className={cn("p-1.5 rounded-xl transition-all group-hover:scale-110", iconColor || "bg-slate-100 text-slate-600")}>
-    <Icon className="h-4 w-4" />
+  <div className="flex items-center gap-5">
+   <div className={cn("p-2.5 rounded-xl transition-all shadow-sm group-hover:scale-110", iconColor || "bg-slate-100 text-slate-600")}>
+    <Icon className="h-6 w-6" />
    </div>
-   <span className={cn("font-outfit font-bold text-sm tracking-tight", destructive ? "text-red-500" : "text-gray-800")}>{label}</span>
+   <span className={cn("font-outfit font-bold text-[17px] tracking-tight", destructive ? "text-red-500" : "text-gray-900")}>{label}</span>
   </div>
-  <div className="flex items-center gap-2">
-   {extra && <span className="text-[9px] font-outfit font-black text-gray-300 uppercase tracking-wider">{extra}</span>}
-   <ChevronRight className="h-4 w-4 text-gray-200 group-hover:translate-x-1 transition-transform" />
+  <div className="flex items-center gap-3">
+   {extra && <span className="text-[11px] font-outfit font-black text-gray-300 uppercase tracking-widest">{extra}</span>}
+   <ChevronRight className="h-6 w-6 text-gray-200 group-hover:translate-x-1 transition-transform" />
   </div>
  </button>
 );

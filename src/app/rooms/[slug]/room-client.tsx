@@ -1053,21 +1053,6 @@ export function RoomClient({ room }: { room: Room }) {
     }
   }, [firestoreMessages]);
   
-  // TRIGGER GIFT ANIMATION ON NEW GIFT MESSAGE
-  const lastProcessedGiftId = useRef<string | null>(null);
-  useEffect(() => {
-    if (!firestoreMessages || firestoreMessages.length === 0) return;
-    const latestMsg = firestoreMessages[firestoreMessages.length - 1];
-    if (latestMsg.type === 'gift' && latestMsg.id !== lastProcessedGiftId.current) {
-        lastProcessedGiftId.current = latestMsg.id;
-        setActiveGift({ 
-            giftId: latestMsg.giftId, 
-            senderName: latestMsg.senderName || 'User',
-            targetSeat: latestMsg.recipientSeat || 1
-        });
-    }
-  }, [firestoreMessages]);
-
   // PERSISTENT EMOJI AUTO-CLEAR (3-SECOND RULE)
   useEffect(() => {
     if (!firestore || !room.id || !currentUser?.uid || !currentUserParticipant?.activeEmoji) return;

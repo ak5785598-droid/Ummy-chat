@@ -52,25 +52,25 @@ export function GiftAnimationOverlay({
 
   useEffect(() => {
     if (giftId) {
-      // Naya gift set karne se pehle state reset (Single Icon Logic)
+      // Clear existing and trigger new animation cycle
       setActiveGift(null); 
       
-      const timerId = setTimeout(() => {
+      const triggerTimer = setTimeout(() => {
         setActiveGift({
           id: Date.now(),
           emoji: getEmoji(giftId),
         });
-      }, 10);
+      }, 50);
 
-      // 1.8 seconds mein icon gayab aur parent ko notification
-      const completeTimer = setTimeout(() => {
+      // Duration is 1.2s for flight, we wait 1.5s total before clearing
+      const finishTimer = setTimeout(() => {
         setActiveGift(null);
         onComplete();
-      }, 1800);
+      }, 1600);
 
       return () => {
-        clearTimeout(timerId);
-        clearTimeout(completeTimer);
+        clearTimeout(triggerTimer);
+        clearTimeout(finishTimer);
       };
     }
   }, [giftId, getEmoji, onComplete]);
@@ -83,28 +83,31 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ 
               opacity: 0, 
-              scale: 0.5, 
+              scale: 0.2, 
               x: '0vw', 
-              y: '40vh' // Screen ke kaafi niche se start
+              y: '45vh' // Start from the gift button area
             }}
             animate={{ 
-              opacity: [0, 1, 1, 0], // Smoothly aayega aur upar jaake fade out
-              scale: [0.8, 1.5, 1.2], // Thoda pop effect
-              x: targetCoords.x,
-              y: targetCoords.y,
+              opacity: [0, 1, 1, 0],
+              scale: [0.5, 1.8, 2.2, 0], // Scale up during flight, pop at target, then shrink
+              x: [ '0vw', targetCoords.x, targetCoords.x ],
+              y: [ '45vh', targetCoords.y, targetCoords.y ],
             }}
-            exit={{ opacity: 0, scale: 0.5 }}
+            exit={{ opacity: 0, scale: 0 }}
             transition={{ 
-              duration: 1.5, 
-              ease: [0.23, 1, 0.32, 1] // Custom cubic-bezier for smooth "fly" feel
+              duration: 1.4, 
+              times: [0, 0.2, 0.8, 1], // Timing for the stages (appear, flight, pop, fade)
+              ease: "circOut"
             }}
             className="absolute"
           >
             <div className="relative">
+              {/* Glow effect behind emoji */}
+              <div className="absolute inset-0 bg-white/40 blur-2xl rounded-full scale-150 animate-pulse" />
               <span 
-                className="text-7xl select-none"
+                className="text-7xl select-none leading-none block"
                 style={{
-                  filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.9))'
+                  filter: 'drop-shadow(0 0 20px rgba(255,255,255,1))'
                 }}
               >
                 {activeGift.emoji}
