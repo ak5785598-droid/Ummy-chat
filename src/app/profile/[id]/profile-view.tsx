@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
  Loader, 
  ChevronLeft,
- Settings as SettingsIcon,
  Crown,
  UserPlus,
  Star,
@@ -27,7 +26,7 @@ import {
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, setDocumentNonBlocking, useAuth, useFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, setDocumentNonBlocking, useFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -40,10 +39,7 @@ import { SellerTag } from '@/components/seller-tag';
 import { BudgetTag } from '@/components/budget-tag';
 import { doc, serverTimestamp, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
-import { Card } from '@/components/ui/card';
 import { signOut } from 'firebase/auth';
-import { SellerTransferDialog } from '@/components/seller-transfer-dialog';
-import { OfficialCenterDialog } from '@/components/official-center-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
@@ -92,7 +88,7 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
  </button>
 );
 
-const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
+const IconButton = ({ icon: Icon, label, colorClass, onClick }: { icon: any, label: string, colorClass: string, onClick: () => void }) => (
  <button 
   onClick={onClick}
   className="flex flex-col items-center gap-2 transition-transform active:scale-95 group"
@@ -104,7 +100,7 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
  </button>
 );
 
-const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: any) => (
+const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
  <button 
   onClick={onClick}
   className="w-full flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
@@ -122,28 +118,6 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
  </button>
 );
 
-const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: number }) => {
- const colors = [
-  "border-yellow-400",
-  "border-slate-300",
-  "border-orange-400",
- ];
- const badges = ["🥇", "🥈", "🥉"];
-
- return (
-  <div className="flex flex-col items-center gap-1">
-   <div className="relative">
-    <Avatar className={cn("h-11 w-11 border-2", colors[rank - 1])}>
-     <AvatarImage src={contributor.avatarUrl || undefined} className="object-cover" />
-     <AvatarFallback className="bg-slate-100 text-[10px] font-outfit font-bold">{rank}</AvatarFallback>
-    </Avatar>
-    <div className="absolute -top-2 -right-1 text-sm drop-shadow-md">{badges[rank - 1]}</div>
-   </div>
-   <span className="text-[8px] font-outfit font-black uppercase text-gray-400 truncate w-14 text-center mt-1">{contributor.username || '...'}</span>
-  </div>
- );
-};
-
 const PublicProfileView = ({ 
  profile, 
  onBack, 
@@ -151,8 +125,6 @@ const PublicProfileView = ({
  followData, 
  isProcessingFollow,
  onOpenSocial,
- contributors,
- isContributorsLoading,
  stats,
  t
 }: any) => {
@@ -189,7 +161,7 @@ const PublicProfileView = ({
                   <div className="shrink-0 relative">
                     <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                       <Avatar className="h-28 w-28 border-[6px] border-white shadow-xl rounded-full">
-                        <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
+                        <AvatarImage src={profile.avatarUrl} className="object-cover" />
                         <AvatarFallback className="text-3xl bg-slate-100 font-outfit font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
                       </Avatar>
                     </AvatarFrame>
@@ -303,7 +275,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       } catch (e) { console.error(e); }
     };
     recordVisit();
-  }, [firestore, currentUser?.uid, profileId, isOwnProfile]);
+  }, [firestore, currentUser, profileId, isOwnProfile]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -316,7 +288,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return query(collection(firestore, 'users', profileId, 'topContributors'), orderBy('amount', 'desc'), limit(3));
   }, [firestore, profileId]);
 
-  const { data: contributors, isLoading: isContributorsLoading } = useCollection(contributorsQuery);
+  const { data: contributors } = useCollection(contributorsQuery);
 
   const handleFollow = async () => {
     if (!firestore || !currentUser || !profileId || isProcessingFollow) return;
@@ -356,177 +328,146 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   if (mode === 'editable' && isOwnProfile) {
     return (
       <AppLayout>
-      <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px]">
-        {/* Header with Edit Button */}
-        <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl px-6 py-2 pt-[calc(env(safe-area-inset-top)+4px)] shrink-0">
-          <div className="flex items-center justify-end max-w-lg mx-auto h-12">
-             <EditProfileDialog profile={profile} trigger={
-               <button className="h-10 w-10 bg-slate-900 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ring-4 ring-slate-900/10">
-                 <Pencil className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
-               </button>
-             }/>
-          </div>
-        </header>
+        <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px]">
+          <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl px-6 py-2 pt-[calc(env(safe-area-inset-top)+4px)] shrink-0">
+            <div className="flex items-center justify-end max-w-lg mx-auto h-12">
+               <EditProfileDialog profile={profile} trigger={
+                 <button className="h-10 w-10 bg-slate-900 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ring-4 ring-slate-900/10">
+                   <Pencil className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
+                 </button>
+               }/>
+            </div>
+          </header>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-          <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
-            {/* Identity Section - Side-by-Side - Ultra Tight */}
-            <div className="flex items-start gap-3 pt-1">
-              <div className="shrink-0 scale-95 origin-top-left">
-                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <div className="relative">
+          <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
+            <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
+              <div className="flex items-start gap-3 pt-1">
+                <div className="shrink-0 scale-95 origin-top-left">
+                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                     <Avatar className="h-24 w-24 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-2xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
+                  </AvatarFrame>
+                </div>
+                <div className="flex-1 pt-1 space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
+                    <span className="text-xl leading-none">🇮🇳</span>
+                    <GenderCircle gender={profile.gender} />
                   </div>
-                </AvatarFrame>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <RichLevelBadge level={profile.level?.rich || 1} />
+                    <CharmLevelBadge level={profile.level?.charm || 1} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                      <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
+                      </div>
+                    </div>
+                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex-1 pt-1 space-y-0.5 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
-                  <span className="text-xl leading-none">🇮🇳</span>
-                  <GenderCircle gender={profile.gender} />
-                </div>
-                
-                <div className="flex items-center gap-2 mb-0.5">
-                  <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
-                    </div>
-                  </div>
-                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                  {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                </div>
+              <div className="flex justify-between items-center py-0 px-2">
+                <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+                <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+                <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+                <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
               </div>
-            </div>
 
-            {/* Stats Row */}
-            <div className="flex justify-between items-center py-0 px-2">
-              <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-              <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-              <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-              <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
-            </div>
-
-            {/* Wallet Section - Ultra Compact Cards */}
-            <div className="grid grid-cols-2 gap-2.5 mx-0.5">
-              <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-1.5 relative z-10 opacity-90">
-                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
-                      <GoldCoinIcon className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">Coins</span>
-                 </div>
-                 <div className="absolute bottom-3.5 left-5 right-5 z-10">
-                   <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
-                    {formatCompactNumber(profile.wallet?.coins || 0)}
+              <div className="grid grid-cols-2 gap-2.5 mx-0.5">
+                <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   <div className="flex items-center gap-1.5 relative z-10 opacity-90">
+                      <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
+                        <GoldCoinIcon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Coins</span>
                    </div>
-                 </div>
-                 <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
-              </div>
-
-              <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-1.5 relative z-10 opacity-90">
-                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
-                      <Gem className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">Diamonds</span>
-                 </div>
-                 <div className="absolute bottom-3.5 left-5 right-5 z-10">
-                   <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
-                    {formatCompactNumber(profile.wallet?.diamonds || 0)}
+                   <div className="absolute bottom-3.5 left-5 right-5 z-10">
+                     <p className="font-black text-[22px] text-white tracking-tight truncate leading-none">
+                      {formatCompactNumber(profile.wallet?.coins || 0)}
+                     </p>
                    </div>
+                   <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
+                </div>
+                <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   <div className="flex items-center gap-1.5 relative z-10 opacity-90">
+                      <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
+                        <Gem className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Diamonds</span>
+                   </div>
+                   <div className="absolute bottom-3.5 left-5 right-5 z-10">
+                     <p className="font-black text-[22px] text-white tracking-tight truncate leading-none">
+                      {formatCompactNumber(profile.wallet?.diamonds || 0)}
+                     </p>
+                   </div>
+                   <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
+                </div>
+              </div>
+
+              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.2rem] p-4.5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5">
+                 <div className="flex items-center gap-3.5 relative z-10">
+                    <div className="h-11 w-11 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
+                      <Crown className="h-5 w-5 text-amber-400 fill-current" />
+                    </div>
+                    <div className="flex flex-col">
+                       <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
+                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
+                    </div>
                  </div>
-                 <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
-              </div>
-            </div>
-
-            {/* VIP Premium Card */}
-            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.2rem] p-4.5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5">
-               <div className="flex items-center gap-3.5 relative z-10">
-                  <div className="h-11 w-11 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
-                    <Crown className="h-5 w-5 text-amber-400 fill-current" />
-                  </div>
-                  <div className="flex flex-col">
-                     <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
-                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
-                  </div>
-               </div>
-               <div className="h-7 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
-                Rewards Inside
-               </div>
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex justify-between items-center px-1 py-1">
-              <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
-              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
-              <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
-              <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-500" onClick={() => router.push('/tasks')} />
-            </div>
-
-            {/* Consolidated Menu List */}
-            <div className="space-y-3 pt-1">
-              <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
-
-
-                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    const shareUrl = window.location.origin;
-                    const text = encodeURIComponent(`Join me on Ummy: ${shareUrl}`);
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
-                  }
-                }}/>
-                <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
-                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
-                
-                {isCertifiedSeller && (
-                  <ProfileMenuItem 
-                    icon={Sparkles} 
-                    label="Seller Center" 
-                    extra="Transfer Portal" 
-                    extraColor="text-emerald-500" 
-                    iconColor="bg-emerald-50 text-emerald-500" 
-                    onClick={() => router.push('/admin')} // Assuming admin handles seller center
-                  />
-                )}
-                {isAuthorizedAdmin && (
-                  <ProfileMenuItem 
-                    icon={Crown} 
-                    label="Official Centre" 
-                    extra="Supreme Authority" 
-                    extraColor="text-blue-600" 
-                    iconColor="bg-blue-50 text-blue-600" 
-                    onClick={() => router.push('/admin')} 
-                  />
-                )}
+                 <div className="h-7 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
+                  Rewards Inside
+                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
-                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
-                <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => {}} />
-                {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
+              <div className="flex justify-between items-center px-1 py-1">
+                <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+                <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
+                <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
+                <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-500" onClick={() => router.push('/tasks')} />
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+                  <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      const shareUrl = window.location.origin;
+                      const text = encodeURIComponent(`Join me on Ummy: ${shareUrl}`);
+                      window.open(`https://wa.me/?text=${text}`, '_blank');
+                    }
+                  }}/>
+                  <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                  <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                  <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                  {isCertifiedSeller && (
+                    <ProfileMenuItem icon={Sparkles} label="Seller Center" extra="Transfer Portal" extraColor="text-emerald-500" iconColor="bg-emerald-50 text-emerald-500" onClick={() => router.push('/admin')} />
+                  )}
+                  {isAuthorizedAdmin && (
+                    <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/admin')} />
+                  )}
+                </div>
+                <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+                  <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                  <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => {}} />
+                  {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
+                </div>
               </div>
             </div>
           </div>
+          <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
         </div>
-        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
-      </div>
       </AppLayout>
     );
-   }
+  }
 
   return (
     <AppLayout>
-      <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab: any) => { setSocialTab(tab); setSocialOpen(true); }} contributors={contributors} isContributorsLoading={isContributorsLoading} stats={stats} t={t}/>
+      <PublicProfileView profile={profile} onBack={() => router.back()} handleFollow={handleFollow} followData={followData} isProcessingFollow={isProcessingFollow} onOpenSocial={(tab: 'followers' | 'following' | 'friends' | 'visitors') => { setSocialTab(tab); setSocialOpen(true); }} stats={stats} t={t}/>
       <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
     </AppLayout>
   );
