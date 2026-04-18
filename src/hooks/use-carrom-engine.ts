@@ -65,7 +65,9 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
 
     // 1. Minimum Balance Check
     const entryFee = gameState.entryFee || 0;
-    if ((userProfile.coins || 0) < entryFee) {
+    const userCoins = userProfile.wallet?.coins ?? userProfile.coins ?? 0;
+
+    if (userCoins < entryFee) {
       alert("Insufficient coins to join this professional match!");
       return;
     }

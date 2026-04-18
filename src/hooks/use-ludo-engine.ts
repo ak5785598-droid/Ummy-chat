@@ -25,10 +25,14 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
   const joinLobby = useCallback(async (userProfile: any) => {
-    if (!gameDocRef || !userId || !userProfile) return;
+    if (!gameDocRef || !userId || !userProfile || isLoading) {
+      console.log("Ludo: joinLobby blocked", { gameDocRef: !!gameDocRef, userId, hasProfile: !!userProfile, isLoading });
+      return;
+    }
 
     if (!gameState) {
       // Create new game instance
+      console.log("Ludo: Initializing new game instance for roomId:", roomId);
       const initialPieces: LudoPiece[] = [];
       const colors: ('red' | 'blue' | 'yellow' | 'green')[] = ['red', 'green', 'yellow', 'blue'];
       
@@ -66,13 +70,21 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     }
 
     // Join existing lobby
+    console.log("Ludo: Attempting to join existing lobby", { status: gameState.status, playerCount: gameState.players.length });
+    
     if (gameState.status !== 'lobby') return;
     const inLobby = gameState.players.some(p => p.uid === userId);
-    if (inLobby) return;
+    if (inLobby) {
+      console.log("Ludo: User already in lobby");
+      return;
+    }
     if (gameState.players.length >= 4) return;
 
     const entryFee = gameState.entryFee || 0;
-    if ((userProfile.coins || 0) < entryFee) {
+    const userCoins = userProfile.wallet?.coins ?? userProfile.coins ?? 0;
+    
+    if (userCoins < entryFee) {
+      console.log("Ludo: Insufficient coins", { userCoins, entryFee });
       alert("Insufficient coins to join this match!");
       return;
     }
@@ -80,6 +92,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
     
     try {
+      console.log("Ludo: Starting join transaction...");
       await runTransaction(firestore!, async (transaction) => {
          const userRef = doc(firestore!, 'users', userId);
          const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
@@ -109,10 +122,11 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
           updatedAt: serverTimestamp()
          });
       });
+      console.log("Ludo: Join transaction successful");
     } catch (err) {
       console.error("Failed to join Ludo lobby:", err);
     }
-  }, [gameDocRef, userId, gameState, roomId, firestore]);
+  }, [gameDocRef, userId, gameState, roomId, firestore, isLoading]);
 
   const startMatch = useCallback(async () => {
     if (!gameDocRef || !gameState) return;

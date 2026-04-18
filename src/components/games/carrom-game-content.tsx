@@ -40,6 +40,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     strike 
   } = useCarromEngine(roomId, currentUser?.uid || null);
 
+  const [isSplashing, setIsSplashing] = useState(true);
   const [power, setPower] = useState(0);
   const [angle, setAngle] = useState(0);
   const [isStriking, setIsStriking] = useState(false);
@@ -47,158 +48,191 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
   useEffect(() => {
     initializeGame();
+    // Splash Timer
+    const timer = setTimeout(() => setIsSplashing(false), 4500);
+    return () => clearTimeout(timer);
   }, [initializeGame]);
 
-  // Auto-join arena if in lobby
-  useEffect(() => {
-    if (gameState?.status === 'lobby' && userProfile && currentUser) {
-      const inArena = gameState.players.some(p => p.uid === currentUser.uid);
-      if (!inArena && gameState.players.length < 4) {
-        joinArena(userProfile);
-      }
-    }
-  }, [gameState?.status, gameState?.players, userProfile, currentUser, joinArena]);
+  const isJoined = gameState?.players.some(p => p.uid === currentUser?.uid);
+  const isMyTurn = gameState?.turn === currentUser?.uid;
 
+  // --- PREMIUM SPLASH SCREEN ---
+  if (isSplashing || !gameState) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a1a4a] text-white overflow-hidden relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-600/20 blur-[100px] rounded-full" />
+        
+        <motion.div 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="relative z-10 flex flex-col items-center"
+        >
+          <div className="relative w-48 h-48 mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <img 
+              src="/images/carrom_3d_icon.webp" 
+              className="w-full h-full object-contain"
+              alt="Carrom Master"
+              onError={(e) => {
+                (e.target as any).src = '/images/ummy-logon.png';
+              }}
+            />
+          </div>
+
+          <div className="flex gap-1 mb-8">
+            {[
+              { char: 'C', color: 'text-blue-400' },
+              { char: 'A', color: 'text-white' },
+              { char: 'R', color: 'text-red-500' },
+              { char: 'R', color: 'text-red-500' },
+              { char: 'O', color: 'text-white' },
+              { char: 'M', color: 'text-blue-400' }
+            ].map((item, i) => (
+              <motion.span
+                key={i}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 + (i * 0.1) }}
+                className={cn("text-4xl font-black italic tracking-tighter drop-shadow-lg", item.color)}
+              >
+                {item.char}
+              </motion.span>
+            ))}
+          </div>
+
+          <div className="w-64 h-2 bg-white/5 rounded-full border border-white/10 overflow-hidden relative">
+             <motion.div 
+               initial={{ width: "0%" }}
+               animate={{ width: "100%" }}
+               transition={{ duration: 4 }}
+               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
+             />
+          </div>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Syncing Arena</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // --- MODE SELECT VIEW ---
+  if (gameState.status === 'mode_select') {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a1a4a] p-6">
+        <motion.div 
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="w-full max-w-[400px] bg-black/40 backdrop-blur-xl rounded-[40px] p-8 border border-white/10 shadow-2xl flex flex-col items-center"
+        >
+          <Trophy className="h-16 w-16 text-yellow-400 mb-4" />
+          <h2 className="text-2xl font-black text-white italic tracking-tight mb-2 uppercase">Arena Setup</h2>
+          <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest mb-8">Select Match Difficulty</p>
+          
+          <div className="grid grid-cols-1 gap-4 w-full">
+            <button 
+              onClick={() => selectMode('freestyle', 0)}
+              className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left flex items-center justify-between"
+            >
+              <div>
+                <span className="text-lg font-black text-white italic">FREESTYLE</span>
+                <p className="text-[10px] text-white/40 font-bold uppercase">Beginner Friendly • Free</p>
+              </div>
+              <Plus className="text-white/20" />
+            </button>
+            <button 
+              onClick={() => selectMode('professional', 100)}
+              className="p-6 rounded-3xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/20 hover:from-yellow-500/30 transition-all text-left flex items-center justify-between"
+            >
+              <div>
+                <span className="text-lg font-black text-yellow-500 italic">PROFESSIONAL</span>
+                <p className="text-[10px] text-yellow-500/60 font-bold uppercase">100 Coins Entry • Ranked</p>
+              </div>
+              <Plus className="text-yellow-500/40" />
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // --- PREMIUM LOBBY VIEW ---
+  if (gameState.status === 'lobby') {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#01091A] overflow-hidden relative p-4">
+        {/* Decorative Grid */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 10px 10px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="relative z-10 w-full max-w-[400px] bg-gradient-to-b from-blue-600 to-indigo-900 rounded-[40px] p-8 shadow-[0_30px_70px_rgba(0,0,0,0.7)] border-4 border-white/10"
+        >
+          <div className="flex flex-col items-center mb-8">
+             <h2 className="text-2xl font-black text-white italic tracking-tight uppercase">Carrom Arena</h2>
+             <span className="px-3 py-1 bg-black/30 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest mt-2">{gameState.mode} Mode</span>
+          </div>
+
+          {/* Player Slots */}
+          <div className="grid grid-cols-4 gap-2 mb-10">
+            {[0, 1, 2, 3].map(i => {
+              const p = gameState.players[i];
+              return (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div className="relative h-14 w-14 rounded-full bg-black/20 border-2 border-white/20 flex items-center justify-center p-0.5 shadow-inner">
+                    {p ? (
+                      <Avatar className="h-full w-full">
+                        <AvatarImage src={p.avatarUrl} />
+                        <AvatarFallback className="bg-slate-700 text-white text-[10px]">{p.username[0]}</AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <button 
+                        onClick={() => !isJoined && userProfile && joinArena(userProfile)}
+                        className="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      >
+                        <Plus className="h-5 w-5 text-white/40" />
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[8px] font-black text-white/50 uppercase truncate max-w-full">
+                    {p?.uid === currentUser?.uid ? 'You' : p?.username || `...`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col items-center gap-6">
+            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] animate-pulse">Waiting for contenders..</p>
+            
+            {!isJoined ? (
+              <button
+                onClick={() => userProfile && joinArena(userProfile)}
+                className="w-full h-16 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full border-b-8 border-blue-800 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all group"
+              >
+                <span className="text-2xl font-black text-white italic tracking-tighter uppercase group-hover:scale-110 transition-transform">JOIN ARENA</span>
+              </button>
+            ) : (
+              gameState.players.length >= 2 ? (
+                <button
+                  onClick={startMatch}
+                  className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full border-b-8 border-orange-700 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
+                >
+                  <span className="text-2xl font-black text-black italic tracking-tighter uppercase">START MATCH</span>
+                </button>
+              ) : (
+                <div className="h-16 w-full opacity-50 bg-black/20 rounded-full flex items-center justify-center border-2 border-white/5">
+                   <span className="text-sm font-black text-white/30 uppercase tracking-[0.5em]">Waiting</span>
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();
   };
-
-  if (!gameState || gameState.status === 'loading') {
-    return (
-      <div className={cn(
-        "w-full bg-[#1A0B2E] flex flex-col items-center justify-center p-8 font-sans overflow-hidden",
-        isOverlay ? "h-full min-h-[400px]" : "h-screen"
-      )}>
-        <motion.div 
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="relative w-64 h-64 mb-12"
-        >
-          <img 
-            src="/images/games/carrom/loading_logo.png" 
-            className="w-full h-full object-contain filter drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-            alt="Carrom Master"
-          />
-        </motion.div>
-        
-        <div className="w-full max-w-xs space-y-4">
-          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 2.5, ease: "easeInOut" }}
-              className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 shadow-[0_0_15px_#fbbf24]"
-            />
-          </div>
-          <p className="text-center text-white/40 text-[10px] uppercase font-black tracking-[0.3em] animate-pulse">Syncing Arena...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // --- MODE SELECTION ---
-  if (gameState.status === 'mode_select') {
-    return (
-      <div className={cn(
-        "w-full bg-[#00897B] flex flex-col items-center justify-center p-8 relative overflow-hidden",
-        isOverlay ? "h-full min-h-[400px]" : "h-screen"
-      )}>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#004D40]/20 to-[#009688]/80 pointer-events-none" />
-        
-        <motion.div 
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="relative z-10 w-full max-w-sm bg-[#00695C]/60 backdrop-blur-3xl rounded-[3rem] p-10 border border-white/10 shadow-2xl flex flex-col items-center"
-        >
-          <h2 className="text-white text-2xl font-black uppercase tracking-tighter mb-12 drop-shadow-lg">Select Mode</h2>
-          
-          <div className="w-full space-y-4">
-            <button 
-              onClick={() => selectMode('freestyle')}
-              className="w-full bg-[#FFB300] hover:bg-[#FFA000] text-black py-4 rounded-3xl font-black uppercase text-sm tracking-widest shadow-xl active:scale-95 transition-all border-b-4 border-yellow-700"
-            >
-              Freestyle
-            </button>
-            <button 
-              disabled
-              className="w-full bg-[#424242]/40 text-white/30 py-4 rounded-3xl font-black uppercase text-sm tracking-widest border border-white/5 flex items-center justify-center gap-2"
-            >
-              Coming Soon <X className="h-3 w-3" />
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // --- LOBBY ARENA ---
-  if (gameState.status === 'lobby') {
-    const isAdmin = gameState.players[0]?.uid === currentUser?.uid;
-    const canStart = gameState.players.length >= 2;
-
-    return (
-      <div className={cn(
-        "w-full bg-gradient-to-br from-[#006064] to-[#004D40] flex flex-col items-center p-8 font-sans relative overflow-hidden",
-        isOverlay ? "h-full min-h-[400px]" : "h-screen"
-      )}>
-        <div className="w-full flex justify-between items-center mb-12 relative z-20">
-          <button onClick={handleBack} className="p-2 bg-white/10 rounded-full backdrop-blur-md border border-white/10"><X className="h-5 w-5 text-white" /></button>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tighter drop-shadow-lg">Carrom Arena</h2>
-          <div className="w-9" />
-        </div>
-
-        <div className="w-full max-w-sm bg-black/20 backdrop-blur-3xl rounded-[3rem] p-8 border border-white/10 shadow-2xl relative z-10 flex flex-col items-center">
-           <h3 className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-8">Waiting for players</h3>
-           
-           <div className="grid grid-cols-4 gap-4 mb-12">
-             {Array.from({ length: 4 }).map((_, i) => {
-               const p = gameState.players[i];
-               return (
-                 <div key={i} className="flex flex-col items-center gap-2">
-                   {p ? (
-                     <div className="relative">
-                        <Avatar className="h-16 w-16 border-4 border-yellow-500 shadow-[0_0_20px_#eab308]">
-                          <AvatarImage src={p.avatarUrl} />
-                          <AvatarFallback className="bg-[#4D2C19] text-white">P</AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -bottom-1 left-1/2 -cross-x-1/2 bg-[#00E676] px-1.5 py-0.5 rounded-full text-[6px] font-black text-white">READY</div>
-                     </div>
-                   ) : (
-                     <button 
-                      onClick={() => joinArena(userProfile)}
-                      className="h-16 w-16 rounded-full bg-white/5 border-2 border-dashed border-white/20 flex items-center justify-center text-white/20 hover:bg-white/10 hover:border-white/40 transition-all"
-                     >
-                       <Plus className="h-6 w-6" />
-                     </button>
-                   )}
-                   <span className="text-[8px] font-bold text-white/50 truncate w-16 text-center uppercase">{p?.username || 'Open'}</span>
-                 </div>
-               );
-             })}
-           </div>
-
-           {isAdmin ? (
-             <button 
-               onClick={startMatch}
-               disabled={!canStart}
-               className={cn(
-                 "w-full py-5 rounded-3xl font-black uppercase tracking-widest text-sm shadow-2xl transition-all border-b-4",
-                 canStart ? "bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-yellow-700 active:scale-95" : "bg-white/5 text-white/10 border-transparent grayscale"
-               )}
-             >
-               Start Match
-             </button>
-           ) : (
-             <p className="text-white/30 text-[9px] font-bold uppercase tracking-wider animate-pulse">Host starting soon...</p>
-           )}
-        </div>
-      </div>
-    );
-  }
-
-  // --- CORE GAMEPLAY ARENA ---
-  const isMyTurn = gameState.turn === currentUser?.uid;
 
   return (
     <div className={cn(
