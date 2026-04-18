@@ -369,10 +369,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         </header>
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-          <div className="max-w-lg mx-auto px-6 py-2 space-y-4">
-            {/* Identity Section - Side-by-Side */}
-            <div className="flex items-start gap-4 pt-4">
-              <div className="shrink-0">
+          <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
+            {/* Identity Section - Side-by-Side - Ultra Tight */}
+            <div className="flex items-start gap-3 pt-1">
+              <div className="shrink-0 scale-95 origin-top-left">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                   <div className="relative">
                     <Avatar className="h-24 w-24 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
@@ -383,14 +383,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </AvatarFrame>
               </div>
 
-              <div className="flex-1 pt-1 space-y-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
+              <div className="flex-1 pt-1 space-y-0.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
                   <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
-                  <span className="text-xl">🇮🇳</span>
+                  <span className="text-xl leading-none">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
                 </div>
                 
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-0.5">
                   <RichLevelBadge level={profile.level?.rich || 1} />
                   <CharmLevelBadge level={profile.level?.charm || 1} />
                 </div>
@@ -408,64 +408,64 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Stats Row */}
-            <div className="flex justify-between items-center py-2 px-2">
+            <div className="flex justify-between items-center py-0 px-2">
               <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
               <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
               <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section - Compact Square Cards */}
-            <div className="grid grid-cols-2 gap-3 mx-1">
-              <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.2rem] p-5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-2 relative z-10 opacity-90">
-                    <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                      <GoldCoinIcon className="h-4 w-4" />
+            {/* Wallet Section - Ultra Compact Cards */}
+            <div className="grid grid-cols-2 gap-2.5 mx-0.5">
+              <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-1.5 relative z-10 opacity-90">
+                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
+                      <GoldCoinIcon className="h-3.5 w-3.5" />
                     </div>
                     <span className="text-[9px] font-black text-white uppercase tracking-widest">Coins</span>
                  </div>
-                 <div className="absolute bottom-4 left-5 right-5 z-10">
+                 <div className="absolute bottom-3.5 left-5 right-5 z-10">
                    <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
                     {formatCompactNumber(profile.wallet?.coins || 0)}
                    </div>
                  </div>
-                 <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
+                 <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
               </div>
 
-              <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.2rem] p-5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-2 relative z-10 opacity-90">
-                    <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
-                      <Gem className="h-4 w-4 text-white" />
+              <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.2rem] p-4.5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-1.5 relative z-10 opacity-90">
+                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
+                      <Gem className="h-3.5 w-3.5 text-white" />
                     </div>
                     <span className="text-[9px] font-black text-white uppercase tracking-widest">Diamonds</span>
                  </div>
-                 <div className="absolute bottom-4 left-5 right-5 z-10">
+                 <div className="absolute bottom-3.5 left-5 right-5 z-10">
                    <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
                     {formatCompactNumber(profile.wallet?.diamonds || 0)}
                    </div>
                  </div>
-                 <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
+                 <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
               </div>
             </div>
 
             {/* VIP Premium Card */}
-            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.2rem] p-5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-1">
-               <div className="flex items-center gap-4 relative z-10">
-                  <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
-                    <Crown className="h-6 w-6 text-amber-400 fill-current" />
+            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.2rem] p-4.5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5">
+               <div className="flex items-center gap-3.5 relative z-10">
+                  <div className="h-11 w-11 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
+                    <Crown className="h-5 w-5 text-amber-400 fill-current" />
                   </div>
                   <div className="flex flex-col">
                      <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
                   </div>
                </div>
-               <div className="h-8 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
+               <div className="h-7 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
                 Rewards Inside
                </div>
             </div>
 
             {/* Action Bar */}
-            <div className="flex justify-between items-center px-2">
+            <div className="flex justify-between items-center px-1 py-1">
               <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
               <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
               <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
@@ -473,8 +473,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Consolidated Menu List */}
-            <div className="space-y-4 pt-2">
+            <div className="space-y-3 pt-1">
               <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+
 
                 <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
                   if (typeof window !== 'undefined') {
