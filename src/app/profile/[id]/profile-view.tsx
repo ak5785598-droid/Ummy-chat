@@ -107,7 +107,7 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: any) => (
  <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-4 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
+  className="w-full flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
  >
   <div className="flex items-center gap-4">
    <div className={cn("p-2 rounded-[1rem] transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
@@ -369,9 +369,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         </header>
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-          <div className="max-w-lg mx-auto px-6 py-4 space-y-8">
+          <div className="max-w-lg mx-auto px-6 py-2 space-y-4">
             {/* Identity Section - Side-by-Side */}
-            <div className="flex items-start gap-6">
+            <div className="flex items-start gap-4 pt-4">
               <div className="shrink-0">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                   <div className="relative">
@@ -383,22 +383,22 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </AvatarFrame>
               </div>
 
-              <div className="flex-1 pt-1 space-y-2.5 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex-1 pt-1 space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
                   <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
                   <span className="text-xl">🇮🇳</span>
                   <GenderCircle gender={profile.gender} />
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-1">
                   <RichLevelBadge level={profile.level?.rich || 1} />
                   <CharmLevelBadge level={profile.level?.charm || 1} />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
                     <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ID: {profile.accountNumber || '0123'}</span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
                     </div>
                   </div>
                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
@@ -408,67 +408,64 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Stats Row */}
-            <div className="flex justify-between items-center py-4 px-2">
+            <div className="flex justify-between items-center py-2 px-2">
               <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
               <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
               <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section - Squircle Cards */}
-            <div className="grid grid-cols-2 gap-4">
-              <div onClick={() => router.push('/wallet')} className="aspect-square bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-3 mb-auto relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
-                      <GoldCoinIcon className="h-5 w-5" />
+            {/* Wallet Section - Compact Square Cards */}
+            <div className="grid grid-cols-2 gap-3 mx-1">
+              <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.2rem] p-5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-2 relative z-10 opacity-90">
+                    <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
+                      <GoldCoinIcon className="h-4 w-4" />
                     </div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Coins</span>
+                    <span className="text-[9px] font-black text-white uppercase tracking-widest">Coins</span>
                  </div>
-                 <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col">
-                   <div className="font-black text-[24px] text-white tracking-tight truncate">
+                 <div className="absolute bottom-4 left-5 right-5 z-10">
+                   <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
                     {formatCompactNumber(profile.wallet?.coins || 0)}
                    </div>
                  </div>
-                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/40 group-hover:text-white transition-colors" />
-                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-white/10 rounded-full blur-3xl" />
+                 <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
               </div>
 
-              <div onClick={() => router.push('/wallet')} className="aspect-square bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-6 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                 <div className="flex items-center gap-3 mb-auto relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
-                      <Gem className="h-5 w-5 text-white" />
+              <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.2rem] p-5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-2 relative z-10 opacity-90">
+                    <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30">
+                      <Gem className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Diamonds</span>
+                    <span className="text-[9px] font-black text-white uppercase tracking-widest">Diamonds</span>
                  </div>
-                 <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col">
-                   <div className="font-black text-[24px] text-white tracking-tight truncate">
+                 <div className="absolute bottom-4 left-5 right-5 z-10">
+                   <div className="font-black text-[22px] text-white tracking-tight truncate leading-none">
                     {formatCompactNumber(profile.wallet?.diamonds || 0)}
                    </div>
                  </div>
-                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/40 group-hover:text-white transition-colors" />
-                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-white/10 rounded-full blur-3xl" />
+                 <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
               </div>
             </div>
 
             {/* VIP Premium Card */}
-            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-6 pr-8 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden">
-               <div className="flex items-center gap-5 relative z-10">
-                  <div className="h-14 w-14 bg-white/10 rounded-3xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110">
-                    <Crown className="h-7 w-7 text-amber-400 fill-current drop-shadow-glow" />
+            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.2rem] p-5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-1">
+               <div className="flex items-center gap-4 relative z-10">
+                  <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
+                    <Crown className="h-6 w-6 text-amber-400 fill-current" />
                   </div>
                   <div className="flex flex-col">
-                     <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">VIP Premium™</h3>
-                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
+                     <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
+                     <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
                   </div>
                </div>
-               <div className="h-9 px-4 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[10px] text-slate-400 uppercase tracking-widest relative z-10 hover:bg-white/10 transition-colors">
+               <div className="h-8 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
                 Rewards Inside
                </div>
-               <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-amber-500/5 rounded-full blur-3xl" />
             </div>
 
             {/* Action Bar */}
-            <div className="flex justify-between items-center px-2 py-2">
+            <div className="flex justify-between items-center px-2">
               <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
               <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
               <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
@@ -476,8 +473,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Consolidated Menu List */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
+            <div className="space-y-4 pt-2">
+              <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+
                 <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
                   if (typeof window !== 'undefined') {
                     const shareUrl = window.location.origin;
