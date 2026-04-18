@@ -41,6 +41,7 @@ import {
  Users
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
+import { ProfileViewGlossy } from './profile-view-glossy';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, updateDocumentNonBlocking, setDocumentNonBlocking, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -80,16 +81,16 @@ const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 const RichLevelBadge = ({ level }: { level: number }) => (
  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
   <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
-  <Star className="h-2.5 w-2.5 fill-white text-white drop-shadow-sm" />
-  <span className="text-[9px] font-bold text-white leading-none drop-shadow-sm">Lv.{level}</span>
+  <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+  <span className="text-[9px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
  </div>
 );
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 px-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
   <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
-  <Sparkles className="h-2.5 w-2.5 fill-white text-white drop-shadow-sm" />
-  <span className="text-[9px] font-bold text-white leading-none drop-shadow-sm">Lv.{level}</span>
+  <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
+  <span className="text-[9px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
  </div>
 );
 
@@ -107,37 +108,37 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number | st
   onClick={onClick}
   className="flex flex-col items-center justify-center flex-1 py-1 active-press group"
  >
-  <span className="text-2xl font-black text-slate-800 leading-none group-hover:text-primary transition-colors">{value}</span>
-  <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-1.5">{label}</span>
+  <span className="text-xl font-outfit font-black text-slate-800 leading-none group-hover:text-primary transition-colors">{value}</span>
+  <span className="text-[8px] font-outfit font-black text-slate-400 tracking-[0.2em] uppercase mt-1">{label}</span>
  </button>
 );
 
 const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center gap-1.5 group active:scale-90 transition-all"
+  className="flex flex-col items-center gap-1 group active:scale-90 transition-all"
  >
-  <div className={cn("h-12 w-12 rounded-[1.2rem] flex items-center justify-center shadow-lg transition-transform group-hover:-translate-y-1 border-2 border-white", colorClass)}>
+  <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:-translate-y-0.5 border-2 border-white", colorClass)}>
    <Icon className="h-5 w-5 text-white" />
   </div>
-  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+  <span className="text-[8px] font-outfit font-black text-slate-400 uppercase tracking-widest">{label}</span>
  </button>
 );
 
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
   <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-3 border-b border-slate-50 last:border-0 px-3 hover:bg-slate-50 active:bg-slate-100 transition-all text-left group"
+  className="w-full flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 px-3 hover:bg-slate-50 active:bg-slate-100 transition-all text-left group"
  >
   <div className="flex items-center gap-3">
-   <div className={cn("p-1.5 rounded-xl", iconColor || "bg-slate-100 text-slate-600")}>
+   <div className={cn("p-1.5 rounded-xl transition-all group-hover:scale-110", iconColor || "bg-slate-100 text-slate-600")}>
     <Icon className="h-4 w-4" />
    </div>
-   <span className={cn("font-medium text-sm tracking-tight", destructive ? "text-red-500" : "text-gray-800")}>{label}</span>
+   <span className={cn("font-outfit font-bold text-sm tracking-tight", destructive ? "text-red-500" : "text-gray-800")}>{label}</span>
   </div>
   <div className="flex items-center gap-2">
-   {extra && <span className="text-[10px] font-medium text-gray-400 uppercase">{extra}</span>}
-   <ChevronRight className="h-4 w-4 text-gray-300" />
+   {extra && <span className="text-[9px] font-outfit font-black text-gray-300 uppercase tracking-wider">{extra}</span>}
+   <ChevronRight className="h-4 w-4 text-gray-200 group-hover:translate-x-1 transition-transform" />
   </div>
  </button>
 );
@@ -247,21 +248,21 @@ const PublicProfileView = ({
           </div>
         </div>
 
-        <div className="px-5 -mt-8 relative z-40">
-          <div className="flex items-start gap-4 mb-4">
+        <div className="px-5 -mt-10 relative z-40">
+          <div className="flex items-start gap-3 mb-2">
             <div className="shrink-0 relative -mt-4">
-              <AvatarFrame frameId={profile.inventory?.activeFrame} size="lg">
-                <Avatar className="h-20 w-20 border-4 border-white shadow-xl bg-slate-50">
+              <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                <Avatar className="h-24 w-24 border-4 border-white shadow-xl bg-slate-50">
                   <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
-                  <AvatarFallback className="text-xl bg-slate-100 text-slate-400">{firstLetter}</AvatarFallback>
+                  <AvatarFallback className="text-xl bg-slate-100 text-slate-400 font-outfit font-black">{firstLetter}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
             </div>
             
-            <div className="flex-1 min-w-0 pt-6">
+            <div className="flex-1 min-w-0 pt-4">
               {/* Row 1: Name, Flag, Gender - Stabilized */}
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-xs">{profile.username}</h1>
+              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                <h1 className="text-2xl font-outfit font-black text-slate-900 tracking-tighter leading-none truncate max-w-xs">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
@@ -269,7 +270,7 @@ const PublicProfileView = ({
               {/* Row 2: ID Badge with Copy Logic */}
               <div 
                 onClick={handleCopyId}
-                className="flex items-center gap-1.5 mb-2 cursor-pointer active:opacity-70 transition-all group"
+                className="flex items-center gap-1 mb-1.5 cursor-pointer active:opacity-70 transition-all group"
               >
                 <BudgetTag 
                   variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
@@ -277,15 +278,15 @@ const PublicProfileView = ({
                   size="sm"
                 />
                 <div className="p-1 bg-slate-100 rounded-md group-hover:bg-slate-200 transition-colors">
-                  <Copy className="h-3 w-3 text-slate-400" />
+                  <Copy className="h-2.5 w-2.5 text-slate-300" />
                 </div>
               </div>
 
               {/* Row 3: Levels & Tags - Consolidated Horizontal */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <RichLevelBadge level={profile.level?.rich || 1} />
                 <CharmLevelBadge level={profile.level?.charm || 1} />
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1">
                   {isOfficial && <OfficialTag size="sm" className="scale-[0.8] origin-left" />}
                   {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.8] origin-left" />}
                   {isSeller && <SellerTag size="sm" className="scale-[0.8] origin-left" />}
@@ -295,7 +296,7 @@ const PublicProfileView = ({
             </div>
           </div>
 
-          <div className="flex divide-x divide-gray-100 py-1 border-t border-gray-50 mt-2">
+          <div className="flex divide-x divide-gray-100 py-1 border-t border-gray-50">
             <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
             <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
             <StatItem label="FRIENDS" value={stats.friends} onClick={() => onOpenSocial('friends')} />
@@ -305,13 +306,13 @@ const PublicProfileView = ({
       </div>
 
       {/* SCROLLABLE BOTTOM SECTION */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pt-4 pb-40 px-5 space-y-6 relative z-10">
-        <div className="px-1 pt-1">
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-[0.2em]">Top Contribution</h4>
+      <div className="flex-1 overflow-y-auto no-scrollbar pt-3 pb-40 px-5 space-y-4 relative z-10">
+        <div className="px-1">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <h4 className="text-[10px] font-outfit font-black uppercase text-gray-400 tracking-[0.2em]">Top Contribution</h4>
             <ChevronRight className="h-3 w-3 text-gray-300" />
           </div>
-          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-3 flex justify-around items-center">
+          <div className="bg-white/50 rounded-2xl border border-white p-2.5 flex justify-around items-center shadow-sm">
             {isContributorsLoading ? (
               <div className="py-2 flex justify-center w-full"><Loader className="animate-spin h-3 w-3 text-primary/40" /></div>
             ) : contributors && contributors.length > 0 ? (
@@ -319,15 +320,15 @@ const PublicProfileView = ({
                 <ContributorAvatar key={c.id} contributor={c} rank={i + 1} />
               ))
             ) : (
-              <p className="text-[9px] font-bold text-gray-300 uppercase py-2">Awaiting Sync...</p>
+              <p className="text-[9px] font-outfit font-black text-gray-300 uppercase py-2">Awaiting Sync...</p>
             )}
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="px-1 pt-1">
-            <h4 className="text-[9px] font-bold uppercase text-gray-400 tracking-wider mb-1.5 ml-1">Signature Bio</h4>
-            <p className="text-xs font-body text-gray-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <div className="space-y-2">
+          <div className="px-1">
+            <h4 className="text-[10px] font-outfit font-black uppercase text-gray-400 tracking-wider mb-1 ml-1">Signature Bio</h4>
+            <p className="text-xs font-sans text-gray-600 leading-relaxed bg-white/50 p-3 rounded-xl border border-white shadow-sm">
               {profile.bio || 'This member has not established a custom personality signature yet.'}
             </p>
           </div>
@@ -366,7 +367,7 @@ const PublicProfileView = ({
  );
 };
 
-import { ProfileViewGlossy } from './profile-view-glossy';
+
 
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string, mode?: 'public' | 'editable' }) {
  const router = useRouter();
@@ -542,13 +543,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
       {/* 🚀 FIXED HEADER (Identity + Stats + Wallet + VIP) */}
       <div className="w-full bg-white/95 backdrop-blur-xl z-50 pt-safe pb-2 border-b border-black/5 shadow-sm sticky top-0 shrink-0">
-        <div className="px-5 space-y-2">
-          <header className="flex items-center gap-4 relative pt-1">
+        <div className="px-5 space-y-1">
+          <header className="flex items-center gap-3 relative pt-1">
             <EditProfileDialog 
               profile={profile} 
               trigger={
                 <button className="absolute -top-1 -right-1 p-2 bg-slate-900 rounded-full shadow-lg active:scale-95 transition-all z-[60] border border-slate-800">
-                  <Pencil className="h-3.5 w-3.5 text-white" />
+                  <Pencil className="h-4 w-4 text-white" />
                 </button>
               } 
             />
@@ -558,9 +559,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               onClick={() => router.push(`/profile/${profileId}`)}
             >
               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10 transition-transform">
+                <Avatar className="h-28 w-28 border-4 border-white shadow-xl relative z-10 transition-transform">
                   <AvatarImage src={profile.avatarUrl || undefined} />
-                  <AvatarFallback className="text-2xl font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-3xl font-outfit font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
@@ -572,8 +573,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
             <div className="flex-1 flex flex-col justify-center min-w-0 pl-1">
               {/* Row 1: Name, Flag, Gender */}
-              <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none truncate max-w-[150px]">{profile.username}</h1>
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <h1 className="text-2xl font-outfit font-black text-slate-900 tracking-tighter leading-none truncate max-w-[150px]">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
@@ -581,9 +582,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               {/* Row 2: ID & Levels (Consolidated for space) */}
               <div 
                 onClick={handleCopyId}
-                className="flex items-center gap-1.5 mb-1 opacity-70 cursor-pointer active:opacity-40 transition-opacity"
+                className="flex items-center gap-1 mb-1 opacity-70 cursor-pointer active:opacity-40 transition-opacity"
               >
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-tighter">ID: {profile.accountNumber || '...'}</span>
+                <span className="text-[11px] font-outfit font-black text-slate-400 uppercase tracking-tighter">ID: {profile.accountNumber || '...'}</span>
                 <Copy className="h-2.5 w-2.5 text-slate-300" />
               </div>
 
@@ -595,7 +596,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
           </header>
 
-          <div className="flex justify-between items-center border-t border-black/5 pt-2 pb-0.5">
+          <div className="flex justify-between items-center border-t border-black/5 pt-1.5 pb-0.5">
             <StatItem label="FANS" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
             <StatItem label="FOLLOWING" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
             <StatItem label="FRIENDS" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
@@ -603,36 +604,36 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
 
           {/* WALLET CARDS - HIGH DENSITY COMPACT */}
-          <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <div 
               onClick={() => router.push('/wallet')} 
-              className="h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-3 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
+              className="h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 p-2.5 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
             >
               <div className="relative z-30 flex items-center justify-between h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-xl"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
+                  <div className="bg-white/20 backdrop-blur-md p-1 rounded-xl"><GoldCoinIcon className="h-4 w-4 drop-shadow-md" /></div>
                   <div className="flex flex-col -space-y-1">
-                    <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">{t.profile.coins}</span>
-                    <span className="text-base font-black text-white tracking-tighter">{(profile.wallet?.coins || 0).toLocaleString()}</span>
+                    <span className="text-[7.5px] font-outfit font-black text-white/60 uppercase tracking-widest">{t.profile.coins}</span>
+                    <span className="text-sm font-outfit font-black text-white tracking-tighter">{(profile.wallet?.coins || 0).toLocaleString()}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-3 w-3 text-white/40" />
+                <ChevronRight className="h-3 w-3 text-white/30" />
               </div>
             </div>
 
             <div 
               onClick={() => router.push('/wallet')} 
-              className="h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-3 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
+              className="h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-indigo-500 to-blue-600 p-2.5 relative overflow-hidden shadow-sm active:scale-[0.98] transition-all group cursor-pointer border border-white/20"
             >
               <div className="relative z-30 flex items-center justify-between h-full">
                 <div className="flex items-center gap-2">
-                  <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-xl"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
+                  <div className="bg-white/20 backdrop-blur-md p-1 rounded-xl"><Gem className="h-4 w-4 text-white fill-current drop-shadow-md" /></div>
                   <div className="flex flex-col -space-y-1">
-                    <span className="text-[8px] font-black text-white/70 uppercase tracking-widest">{t.profile.diamonds}</span>
-                    <span className="text-base font-black text-white tracking-tighter">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
+                    <span className="text-[7.5px] font-outfit font-black text-white/60 uppercase tracking-widest">{t.profile.diamonds}</span>
+                    <span className="text-sm font-outfit font-black text-white tracking-tighter">{(profile.wallet?.diamonds || 0).toLocaleString()}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-3 w-3 text-white/40" />
+                <ChevronRight className="h-3 w-3 text-white/30" />
               </div>
             </div>
           </div>
@@ -640,16 +641,16 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           {/* VIP CARD - SLIM SLICK */}
           <div 
             onClick={() => router.push('/vips')}
-            className="h-14 rounded-2xl overflow-hidden group shadow-sm active:scale-[0.99] transition-all cursor-pointer bg-slate-900 border border-slate-700/50 flex items-center justify-between px-4"
+            className="h-12 rounded-2xl overflow-hidden group shadow-sm active:scale-[0.99] transition-all cursor-pointer bg-slate-900 border border-slate-800 flex items-center justify-between px-4"
           >
             <div className="flex items-center gap-3">
-              <Crown className="h-5 w-5 text-amber-400 fill-current" />
+              <Crown className="h-4 w-4 text-amber-400 fill-current" />
               <div className="flex flex-col -space-y-0.5">
-                <h2 className="text-xs font-black text-amber-200 uppercase tracking-wide">{t.profile.vip}</h2>
-                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">{t.profile.secretCard}</span>
+                <h2 className="text-[10px] font-outfit font-black text-amber-200 uppercase tracking-wider">{t.profile.vip}</h2>
+                <span className="text-[7px] text-slate-500 font-outfit font-black uppercase tracking-widest">{t.profile.secretCard}</span>
               </div>
             </div>
-            <div className="bg-white/5 rounded-lg px-2 py-1 text-[8px] font-black text-slate-400 uppercase tracking-widest">Rewards Inside</div>
+            <div className="bg-white/5 rounded-lg px-2 py-0.5 text-[7px] font-outfit font-black text-slate-500 uppercase tracking-widest border border-white/5">Rewards Inside</div>
           </div>
         </div>
       </div>
@@ -666,8 +667,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         </div>
 
         {/* LIST SECTION */}
-        <div className="space-y-4">
-          <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-2">
+        <div className="space-y-2">
+          <Card className="rounded-[1.2rem] border-none shadow-sm overflow-hidden bg-white px-1">
             <ProfileMenuItem 
               icon={UserPlus} 
               label={t.profile.invite} 
@@ -687,12 +688,12 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {isAuthorizedAdmin && <OfficialCenterDialog isAuthorized={true} />}
           </Card>
 
-          <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-2">
+          <Card className="rounded-[1.2rem] border-none shadow-sm overflow-hidden bg-white px-1">
             <ProfileMenuItem icon={HelpCircle} label={t.profile.help} iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
             <ProfileMenuItem icon={Info} label={t.profile.about} iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/about')} />
           </Card>
 
-          <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-2">
+          <Card className="rounded-[1.2rem] border-none shadow-sm overflow-hidden bg-white px-1">
             <ProfileMenuItem icon={SettingsIcon} label={t.profile.settings} iconColor="bg-slate-100 text-slate-600" onClick={() => router.push('/settings')} />
           </Card>
         </div>
