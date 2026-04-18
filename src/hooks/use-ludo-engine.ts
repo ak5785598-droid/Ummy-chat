@@ -24,6 +24,36 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   const gameDocRef = useMemo(() => (!firestore || !roomId) ? null : doc(firestore, 'games', `ludo_${roomId}`), [firestore, roomId]);
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
+  const initializeGame = useCallback(async () => {
+    if (!gameDocRef || !userId || gameState) return;
+
+    const initialPieces: LudoPiece[] = [];
+    const colors: ('red' | 'blue' | 'yellow' | 'green')[] = ['red', 'green', 'yellow', 'blue'];
+
+    colors.forEach(color => {
+      for (let i = 0; i < 4; i++) {
+        initialPieces.push({
+          id: `${color}_${i}`,
+          ownerUid: '',
+          color,
+          position: 0
+        });
+      }
+    });
+
+    await setDoc(gameDocRef, {
+      id: `ludo_${roomId}`,
+      roomId,
+      players: [],
+      pieces: initialPieces,
+      turn: '',
+      dice: null,
+      diceRolled: false,
+      status: 'lobby',
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, userId, gameState, roomId]);
+
   const joinLobby = useCallback(async (userProfile: any) => {
     if (!gameDocRef || !userId || !userProfile || isLoading) {
       console.log("Ludo: joinLobby blocked", { gameDocRef: !!gameDocRef, userId, hasProfile: !!userProfile, isLoading });
@@ -73,7 +103,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     console.log("Ludo: Attempting to join existing lobby", { status: gameState.status, playerCount: gameState.players.length });
     
     if (gameState.status !== 'lobby') return;
-    const inLobby = gameState.players.some(p => p.uid === userId);
+    const inLobby = gameState.players.some((p: any) => p.uid === userId);
     if (inLobby) {
       console.log("Ludo: User already in lobby");
       return;
@@ -309,6 +339,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   return {
     gameState: gameState as LudoGameState | undefined,
     isLoading,
+    initializeGame,
     joinLobby,
     initializeGame,
     startMatch,

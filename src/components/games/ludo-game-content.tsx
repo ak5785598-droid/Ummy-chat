@@ -26,6 +26,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
   const { 
     gameState, 
     isLoading, 
+    initializeGame,
     joinLobby, 
     initializeGame,
     startMatch,
@@ -43,11 +44,12 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
 
   // Splash Screen Timer
   useEffect(() => {
+    initializeGame();
     const timer = setTimeout(() => {
       setIsSplashing(false);
     }, 4500); // 4.5s for a nice premium feel
     return () => clearTimeout(timer);
-  }, []);
+  }, [initializeGame]);
 
   const isMyTurn = gameState?.turn === user?.uid;
   const isJoined = gameState?.players.some(p => p.uid === user?.uid);
