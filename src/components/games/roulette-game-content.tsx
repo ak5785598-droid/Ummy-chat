@@ -10,9 +10,10 @@ import {
   VolumeX, 
   HelpCircle, 
   X,
-  Move,
   ChevronDown,
-  Users
+  Users,
+  Clock,
+  Plus
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -239,22 +240,6 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
-  const handleRepeat = () => {
-   if (gameState !== 'betting' || !currentUser || !userProfile) return;
-   const totalCost = Object.values(lastBets).reduce((a, b) => a + b, 0);
-   if (totalCost === 0) return;
-   if ((userProfile.wallet?.coins || 0) < totalCost) {
-    toast({ variant: 'destructive', title: 'Insufficient Coins' });
-    return;
-   }
-
-   playBetSound();
-   const updateData = { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() };
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-   setMyBets(lastBets);
-  };
-
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();
@@ -293,7 +278,7 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    )}>
     <CompactRoomView />
 
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0 pointer-events-none">
       {gameData?.backgroundUrl ? (
        <Image key={gameData.backgroundUrl} src={gameData.backgroundUrl} alt="Casino Theme" fill className="object-cover opacity-40 animate-in fade-in duration-1000" unoptimized />
       ) : (
@@ -311,27 +296,39 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
      />
     )}
 
+    {/* MATCHED NEW HEADER DESIGN */}
     <header className="relative z-50 flex items-center justify-between p-4 pt-10">
+      
+      {/* Left: Balance Pill */}
+      <div className="bg-[#24133d] border border-white/10 rounded-full flex items-center p-1 pl-1.5 pr-1.5 shadow-lg h-12">
+        <GoldCoinIcon className="h-7 w-7" />
+        <span className="text-white font-bold text-[15px] px-3">
+          {(userProfile?.wallet?.coins || 0).toLocaleString()}
+        </span>
+        <button className="bg-[#59d48b] h-9 w-9 rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform ml-1">
+          <Plus className="h-5 w-5 stroke-[3]" />
+        </button>
+      </div>
+
+      {/* Right: Action Buttons */}
       <div className="flex gap-2 text-white">
-       <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Move className="h-5 w-5" /></button>
-       <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-       </button>
+        <button className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
+          <Clock className="h-5 w-5" />
+        </button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
+          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+        <button className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
+          <HelpCircle className="h-5 w-5" />
+        </button>
+        <button onClick={handleBack} className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
+          <X className="h-5 w-5" />
+        </button>
       </div>
-      <div className="flex flex-col items-center">
-       <span className="text-[8px] font-bold text-white/40 uppercase tracking-wider">ROULETTE LIVE SYNC</span>
-       <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-md px-2 py-0.5 flex items-center gap-1">
-         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-         <span className="text-[8px] font-bold text-emerald-400">Synchronized</span>
-       </div>
-      </div>
-      <div className="flex gap-2 text-white">
-       <button className="bg-white/10 p-2 rounded-full backdrop-blur-md"><HelpCircle className="h-5 w-5" /></button>
-       <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><X className="h-5 w-5" /></button>
-      </div>
+
     </header>
 
-    <div className="relative flex-1 flex flex-col items-center justify-center p-4">
+    <div className="relative flex-1 flex flex-col items-center justify-center p-4 min-h-[300px]">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none" />
       
       <div className="relative w-64 h-64 z-10 transition-transform duration-[5000ms] ease-out" style={{ transform: `rotate(-${rotation}deg)` }}>
@@ -406,8 +403,9 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
       </div>
     </div>
 
-    <div className="bg-emerald-600/20 backdrop-blur-3xl rounded-t-[3rem] p-4 pb-10 border-t-2 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] -translate-y-12">
-      <div className="grid grid-cols-4 gap-2 mb-6">
+    {/* BOTTOM SHEET - Set to mt-auto to stay completely at the bottom */}
+    <div className="bg-emerald-600/20 backdrop-blur-3xl rounded-t-[2rem] p-4 pb-6 mt-auto border-t-2 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] relative z-40 w-full">
+      <div className="grid grid-cols-4 gap-2 mb-4">
        {BET_OPTIONS.map((opt) => (
         <button
          key={opt.id}
@@ -438,16 +436,9 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
        ))}
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-       <div className="flex flex-col gap-1">
-         <span className="text-[10px] font-bold uppercase text-white/40 truncate w-24">{(userProfile?.username || 'GUEST').slice(0, 8)}...</span>
-         <div className="bg-black/40 rounded-full px-3 py-1 flex items-center gap-2 border border-white/5 shadow-inner text-white">
-          <GoldCoinIcon className="h-4 w-4" />
-          <span className="text-xs font-bold ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-         </div>
-       </div>
-
-       <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar py-2">
+      {/* FOOTER CHIPS (Cleaned up, no balance card, no repeat button) */}
+      <div className="flex items-center justify-center w-full">
+       <div className="flex justify-center gap-2 overflow-x-auto no-scrollbar py-2 w-full max-w-full">
          {CHIPS.map((chip) => (
           <button
            key={chip.value}
@@ -463,14 +454,6 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
           </button>
          ))}
        </div>
-
-       <button 
-        onClick={handleRepeat}
-        disabled={gameState !== 'betting'}
-        className="bg-gray-200 text-gray-800 px-6 h-12 rounded-2xl font-bold uppercase text-sm shadow-xl active:scale-95 transition-transform"
-       >
-         Repeat
-       </button>
       </div>
     </div>
 
@@ -483,3 +466,4 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    </div>
   );
 }
+

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -18,7 +18,7 @@ import Image from 'next/image';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ItemPreview } from '@/components/item-preview';
 
-// --- NEW PREMIUM DESIGN COMPONENT (THE ONE YOU JUST SHARED) ---
+// --- PREMIUM AVATAR FRAME COMPONENT ---
 interface PremiumAvatarFrameProps {
   imageUrl: string;
   size?: number;
@@ -28,10 +28,8 @@ interface PremiumAvatarFrameProps {
 const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAvatarFrameProps) => {
   return (
     <div className={cn("relative flex items-center justify-center", className)} style={{ width: size, height: size }}>
-      {/* SVG Structure */}
       <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-10">
         <defs>
-          {/* Multi-layered Gold Gradient */}
           <linearGradient id="premiumGold" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style={{ stopColor: '#FDF0AD' }} />
             <stop offset="20%" style={{ stopColor: '#D4AF37' }} />
@@ -39,8 +37,6 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
             <stop offset="80%" style={{ stopColor: '#BD9731' }} />
             <stop offset="100%" style={{ stopColor: '#8A6E00' }} />
           </linearGradient>
-
-          {/* Specular Lighting for Metallic Polish */}
           <filter id="metalRelief" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
             <feSpecularLighting in="blur" surfaceScale="6" specularConstant="1.2" specularExponent="35" lightingColor="white" result="specOut">
@@ -50,52 +46,33 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
             <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
           </filter>
         </defs>
-
-        {/* 1. Sculpted Side Wings */}
         <g filter="url(#metalRelief)" stroke="#5c4300" strokeWidth="0.5">
           <path d="M100 240 C50 240 30 180 50 130 L95 155 C80 185 85 210 100 235 Z" fill="url(#premiumGold)" />
           <path d="M300 240 C350 240 370 180 350 130 L305 155 C320 185 315 210 300 235 Z" fill="url(#premiumGold)" />
         </g>
-
-        {/* 2. Concentric Beveled Rings */}
         <circle cx="200" cy="200" r="108" fill="none" stroke="#3d2d00" strokeWidth="12" />
         <circle cx="200" cy="200" r="102" fill="none" stroke="url(#premiumGold)" strokeWidth="8" filter="url(#metalRelief)" />
-
-        {/* 3. High-Detail Imperial Crown */}
         <g filter="url(#metalRelief)">
           <path d="M125 105 L105 40 L160 75 L200 15 L240 75 L295 40 L275 105 Z" fill="url(#premiumGold)" stroke="#5c4300" strokeWidth="1" />
         </g>
-
-        {/* 4. Bottom Scalloped Shell Emblem */}
         <g filter="url(#metalRelief)">
           <path d="M160 280 Q200 350 240 280 L230 265 Q200 280 170 265 Z" fill="url(#premiumGold)" stroke="#4a3700" />
         </g>
-
-        {/* 5. Animated Twinkle Flares */}
         <g className="animate-pulse">
           <circle cx="200" cy="15" r="4" fill="white" className="blur-[2px]" />
           <circle cx="105" cy="40" r="2" fill="white" className="blur-[1px]" />
           <circle cx="295" cy="40" r="2" fill="white" className="blur-[1px]" />
         </g>
       </svg>
-
-      {/* 6. Centered User Image Container */}
-      <div 
-        className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0"
-        style={{ width: '43%', height: '43%' }}
-      >
-        <img 
-          src={imageUrl} 
-          alt="User Avatar" 
-          className="w-full h-full object-cover brightness-105"
-        />
+      <div className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0" style={{ width: '43%', height: '43%' }}>
+        <img src={imageUrl} alt="User Avatar" className="w-full h-full object-cover brightness-105" />
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
       </div>
     </div>
   );
 };
 
-// --- MAIN STORE PAGE ---
+// --- STORE ITEMS (UPDATED WITH NEW WAVES) ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 30, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 30, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -105,6 +82,11 @@ const STATIC_STORE_ITEMS = [
   { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 30, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
   { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 30, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
   { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, durationDays: 7, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
+  
+  // --- NEW WAVES ADDED HERE ---
+  { id: 'w-sky', name: 'Sky Voice Wave', type: 'Wave', price: 9999, durationDays: 7, description: 'Premium blue circular voice frequency.', icon: Circle, color: 'text-blue-500' },
+  { id: 'w-butterfly', name: 'Butterfly Waves', type: 'Wave', price: 7999, durationDays: 7, description: 'Elegant purple rhythmic wave.', icon: Circle, color: 'text-purple-500' },
+  { id: 'w-wing', name: 'Wing', type: 'Wave', price: 49999, durationDays: 7, description: 'Elite pink wing pattern frequency.', icon: Circle, color: 'text-pink-500' },
 ];
 
 export default function StorePage() {
@@ -182,12 +164,15 @@ export default function StorePage() {
           </div>
         </header>
 
+        {/* TABS LIST: Scrollable functionality added here */}
         <Tabs defaultValue="All" className="w-full">
-          <TabsList className="bg-white/60 p-1 rounded-full mb-6">
-            {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
-              <TabsTrigger key={cat} value={cat} className="rounded-full px-6 font-bold">{cat}</TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="w-full overflow-x-auto no-scrollbar mb-6">
+            <TabsList className="bg-white/60 p-1 rounded-full inline-flex min-w-full md:min-w-0">
+              {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
+                <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-bold whitespace-nowrap">{cat}</TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(category => (
             <TabsContent key={category} value={category}>
@@ -217,7 +202,7 @@ export default function StorePage() {
                       </div>
                       
                       <CardHeader className="text-center p-3">
-                        <CardTitle className="text-sm font-black uppercase">{item.name}</CardTitle>
+                        <CardTitle className="text-sm font-black uppercase truncate">{item.name}</CardTitle>
                       </CardHeader>
                       
                       <CardFooter className="flex flex-col gap-2 p-3 pt-0">
@@ -226,7 +211,7 @@ export default function StorePage() {
                         </div>
                         <Button 
                           onClick={() => isOwned ? handleEquip(item) : handlePurchase(item)} 
-                          className={cn("w-full rounded-xl font-black uppercase text-[10px]", isOwned && isActive ? "bg-green-500" : "bg-primary")}
+                          className={cn("w-full rounded-xl font-black uppercase text-[10px]", isOwned && isActive ? "bg-green-500 hover:bg-green-600" : "bg-primary hover:bg-primary/90")}
                         >
                           {isOwned ? (isActive ? 'Active' : 'Equip') : 'Purchase'}
                         </Button>
@@ -244,4 +229,3 @@ export default function StorePage() {
     </div>
   );
 }
-

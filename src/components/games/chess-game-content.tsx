@@ -1,221 +1,208 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
-import { 
-  Move, Volume2, VolumeX, HelpCircle, X, Maximize2
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Chess } from 'chess.js'; // Chess logic handle karne ke liye
+import { AppLayout } from '@/components/layout/app-layout';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useChessEngine } from '@/hooks/use-chess-engine';
+import { Move, RotateCcw, Trophy } from 'lucide-react';
 
+// 3D Pieces URLs (Clean SVGs with shadow logic)
 const pieceSVG: Record<string, string> = {
-  'pw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wP.svg',
-  'rw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wR.svg',
-  'nw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wN.svg',
-  'bw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wB.svg',
-  'qw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wQ.svg',
-  'kw': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/wK.svg',
-  'pb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bP.svg',
-  'rb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bR.svg',
-  'nb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bN.svg',
-  'bb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bB.svg',
-  'qb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bQ.svg',
-  'kb': 'https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/cburnett/bK.svg'
+  'wP': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+  'wR': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+  'wN': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+  'wB': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+  'wQ': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+  'wK': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+  'bP': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+  'bR': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+  'bN': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+  'bB': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+  'bQ': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+  'bK': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
 };
 
-interface ChessGameContentProps {
-  roomId?: string;
-  isOverlay?: boolean;
-  onClose?: () => void;
-}
+export default function ChessGamePage() {
+  const [game, setGame] = useState(new Chess());
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [moveHistory, setMoveHistory] = useState<string[]>([]);
 
-export function ChessGameContent({ roomId: propsRoomId, isOverlay = false, onClose }: ChessGameContentProps) {
-   const router = useRouter();
-   const roomId = propsRoomId || 'global_room';
-   const { user: currentUser } = useUser();
-   const { userProfile } = useUserProfile(currentUser?.uid);
-   const [isLaunching, setIsLaunching] = useState(true);
-   const [isMuted, setIsMuted] = useState(false);
-   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
- 
-   const { gameState, isLoading, startMatch } = useChessEngine(roomId, currentUser?.uid || null);
+  // 1. Game Logic: Move handling
+  function makeAMove(move: any) {
+    try {
+      const result = game.move(move);
+      if (result) {
+        setGame(new Chess(game.fen())); // State update to trigger re-render
+        setMoveHistory([...moveHistory, result.san]);
+        return result;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
 
-   // --- Floating Drag Logic ---
-   const [pos, setPos] = useState({ x: 0, y: 0 });
-   const [isDragging, setIsDragging] = useState(false);
-   const startPos = useRef({ x: 0, y: 0 });
+  // 2. Square click logic
+  function onSquareClick(square: string) {
+    if (selectedSquare === null) {
+      // Piece select karna
+      const piece = game.get(square as any);
+      if (piece && piece.color === game.turn()) {
+        setSelectedSquare(square);
+      }
+    } else {
+      // Move attempt karna
+      const move = makeAMove({
+        from: selectedSquare,
+        to: square,
+        promotion: 'q', // Default promotion to queen
+      });
 
-   const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-       setIsDragging(true);
-       startPos.current = {
-           x: e.clientX - pos.x,
-           y: e.clientY - pos.y
-       };
-       e.currentTarget.setPointerCapture(e.pointerId);
-   };
+      if (move === null) {
+        // Agar invalid move hai, to naya selection check karo
+        const piece = game.get(square as any);
+        if (piece && piece.color === game.turn()) {
+          setSelectedSquare(square);
+        } else {
+          setSelectedSquare(null);
+        }
+      } else {
+        setSelectedSquare(null);
+      }
+    }
+  }
 
-   const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
-       if (!isDragging) return;
-       setPos({
-           x: e.clientX - startPos.current.x,
-           y: e.clientY - startPos.current.y
-       });
-   };
+  // Board layout helper
+  const board = [];
+  const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
+  const cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
-   const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
-       setIsDragging(false);
-       e.currentTarget.releasePointerCapture(e.pointerId);
-   };
+  for (let i = 0; i < 8; i++) {
+    for (let j = 0; j < 8; j++) {
+      const square = `${cols[j]}${rows[i]}`;
+      const piece = game.get(square as any);
+      const isDark = (i + j) % 2 === 1;
+      const isSelected = selectedSquare === square;
 
-   useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), 1500);
-    return () => clearTimeout(timer);
-   }, []);
+      board.push(
+        <div
+          key={square}
+          onClick={() => onSquareClick(square)}
+          className={cn(
+            "relative flex items-center justify-center w-full h-full cursor-pointer transition-colors",
+            isDark ? "bg-[#b58863]" : "bg-[#f0d9b5]",
+            isSelected && "ring-4 ring-yellow-400 z-10 shadow-lg"
+          )}
+        >
+          {/* Square Label (a1, b2 etc) - Chota sa corner mein */}
+          <span className="absolute bottom-0 left-0.5 text-[8px] opacity-30 select-none">
+            {square}
+          </span>
 
-   const handleBack = () => {
-    if (onClose) onClose();
-    else router.back();
-   };
+          {/* 3D Piece Rendering */}
+          {piece && (
+            <div className="relative w-[85%] h-[85%] transition-transform active:scale-95">
+              {/* Piece Shadow (Yahi 3D look dega) */}
+              <div className="absolute inset-0 translate-y-1 translate-x-0.5 blur-[2px] opacity-30 scale-95">
+                <img 
+                  src={pieceSVG[`${piece.color}${piece.type.toUpperCase()}`]} 
+                  className="w-full h-full brightness-0" 
+                  alt="" 
+                />
+              </div>
+              {/* Actual Piece */}
+              <img
+                src={pieceSVG[`${piece.color}${piece.type.toUpperCase()}`]}
+                alt={piece.type}
+                className={cn(
+                  "w-full h-full drop-shadow-xl transform transition-transform",
+                  "hover:-translate-y-1 active:-translate-y-2", // Khari (Standing) effect
+                  piece.color === 'w' ? "filter drop-shadow(0 4px 2px rgba(0,0,0,0.2))" : ""
+                )}
+                style={{ 
+                  filter: `drop-shadow(0px 5px 3px rgba(0,0,0,0.4))`,
+                  transform: 'perspective(100px) translateZ(10px)' // Mild 3D perspective
+                }}
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+  }
 
-   if (isLaunching || isLoading) {
-     return (
-       <div className="h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center space-y-6 min-h-[400px]">
-           <div className="h-14 w-14 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin"></div>
-           <h1 className="text-xl font-bold text-white tracking-tight">Preparing Arena</h1>
-       </div>
-     );
-   }
+  return (
+    <AppLayout>
+      <div className="flex flex-col lg:flex-row items-center justify-center min-h-[calc(100-64px)] p-4 md:p-8 gap-8 bg-zinc-950 text-white">
+        
+        {/* Left Side: Chess Board (Sheet Layout) */}
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-amber-600 to-yellow-500 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+          <div className="relative bg-zinc-900 p-2 rounded-sm shadow-2xl overflow-hidden">
+            {/* Chess Grid */}
+            <div className="grid grid-cols-8 grid-rows-8 w-[320px] h-[320px] md:w-[560px] md:h-[560px] border-4 border-zinc-800 shadow-inner">
+              {board}
+            </div>
+          </div>
+        </div>
 
-   const isMyTurn = (gameState?.turn === 'w' && gameState?.white?.uid === currentUser?.uid) || 
-                    (gameState?.turn === 'b' && gameState?.black?.uid === currentUser?.uid);
-
-   const renderSquare = (row: number, col: number) => {
-     const isBlack = (row + col) % 2 === 1;
-     const fileLabel = String.fromCharCode(97 + col);
-     const rankLabel = 8 - row;
-     const coord = `${fileLabel}${rankLabel}`;
-
-     let pieceKey = "";
-     if (row === 1) pieceKey = "pb";
-     if (row === 6) pieceKey = "pw";
-     if (row === 0) {
-        const rank0 = ["rb", "nb", "bb", "qb", "kb", "bb", "nb", "rb"];
-        pieceKey = rank0[col];
-     }
-     if (row === 7) {
-        const rank7 = ["rw", "nw", "bw", "qw", "kw", "bw", "nw", "rw"];
-        pieceKey = rank7[col];
-     }
-
-     return (
-       <div 
-         key={coord}
-         onClick={() => isMyTurn && setSelectedSquare(coord)}
-         className={cn(
-           "relative w-full aspect-square flex items-center justify-center transition-all duration-300",
-           isBlack ? "bg-[#2563eb] shadow-inner" : "bg-[#93c5fd] shadow-inner",
-           selectedSquare === coord && "ring-2 ring-yellow-400 z-20 brightness-125"
-         )}
-       >
-         {pieceKey && (
-           <img 
-             src={pieceSVG[pieceKey]} 
-             alt={pieceKey}
-             className="w-[90%] h-[90%] drop-shadow-2xl transition-transform hover:scale-110"
-             style={{ transform: 'rotateX(-35deg) translateY(-10%) scale(1.1)' }}
-           />
-         )}
-       </div>
-     );
-   };
-
-   return (
-    <div className={cn(
-      "h-full w-full flex items-center justify-center bg-transparent pointer-events-none p-4",
-      !isOverlay && "min-h-screen"
-    )}>
-      <main 
-        className={cn(
-          "relative w-full max-w-[400px] bg-[#0a0a0a]/95 backdrop-blur-2xl rounded-[32px] border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.8)] flex flex-col items-center duration-0 pointer-events-auto pb-6",
-        )}
-        style={{
-           transform: `translate(${pos.x}px, ${pos.y}px)`,
-           transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-        }}
-      >
-         <div className="flex items-center justify-between w-full px-5 pt-4 pb-3 bg-[#111] rounded-t-[32px] border-b border-white/5">
-            <div className="flex gap-3 text-white/70">
-               <button
-                  onPointerDown={handlePointerDown}
-                  onPointerMove={handlePointerMove}
-                  onPointerUp={handlePointerUp}
-                  className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full cursor-grab active:cursor-grabbing touch-none"
-               >
-                   <Move size={18} />
-               </button>
-               <button onClick={() => setIsMuted(!isMuted)} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full">
-                   {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-               </button>
+        {/* Right Side: Stats & Moves (Static Sheet) */}
+        <div className="w-full lg:w-80 flex flex-col gap-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-6 border-b border-zinc-800 pb-4">
+              <Trophy className="text-yellow-500 w-6 h-6" />
+              <h2 className="text-xl font-bold tracking-tight">Game Stats</h2>
             </div>
 
-            <div className="w-8 h-1.5 bg-white/20 rounded-full"></div>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Turn</span>
+                <span className={cn(
+                  "px-3 py-1 rounded-full text-xs font-bold uppercase",
+                  game.turn() === 'w' ? "bg-white text-black" : "bg-zinc-700 text-white"
+                )}>
+                  {game.turn() === 'w' ? "White's Move" : "Black's Move"}
+                </span>
+              </div>
 
-            <div className="flex gap-3 text-white/70">
-               <button className="p-2.5 bg-white/5 hover:bg-white/10 rounded-full">
-                   <HelpCircle size={18} />
-               </button>
-               <button onClick={handleBack} className="p-2.5 bg-white/5 hover:bg-red-500/20 hover:text-red-400 rounded-full transition-colors">
-                   <X size={18} />
-               </button>
-            </div>
-         </div>
-         
-         <div className="w-full flex justify-center py-6 perspective-1000">
-            <div 
-               className="relative w-[85%] max-w-[320px] aspect-square bg-[#0a0a0a] rounded-sm shrink-0"
-               style={{ 
-                   transform: 'rotateX(35deg) scale(0.95)',
-                   transformStyle: 'preserve-3d',
-                   boxShadow: '0 15px 0 #1e3a8a, 0 30px 25px rgba(0,0,0,0.9)',
-               }}
-            >
-               <div className="grid grid-cols-8 grid-rows-8 w-full h-full border-4 border-[#1e3a8a] rounded-sm overflow-hidden">
-                   {Array.from({ length: 8 }).map((_, r) => 
-                     Array.from({ length: 8 }).map((_, c) => renderSquare(r, c))
-                   )}
-               </div>
-            </div>
-         </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-zinc-400">Status</span>
+                <span className="font-mono">
+                  {game.isCheck() ? "⚠️ Check!" : "Steady"}
+                </span>
+              </div>
 
-         <div className="w-full px-6 space-y-4 shrink-0 mt-4 text-white">
-            <div className="flex justify-between items-center bg-white/5 p-3 rounded-3xl border border-white/5 shadow-inner">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 ring-2 ring-blue-500 bg-[#1a1a1a]"><AvatarFallback className="text-white">Y</AvatarFallback><AvatarImage src={userProfile?.avatarUrl || ""} /></Avatar>
-                    <div>
-                        <p className="text-[10px] font-bold uppercase opacity-60 text-blue-400">White</p>
-                        <p className="font-black text-xs uppercase">{userProfile?.username || 'YOU'}</p>
+              {/* Move History */}
+              <div className="mt-6">
+                <p className="text-xs font-semibold text-zinc-500 mb-2 uppercase">Move History</p>
+                <div className="h-48 overflow-y-auto bg-zinc-950 rounded-lg p-3 grid grid-cols-2 gap-2 text-sm font-mono border border-zinc-800">
+                  {moveHistory.map((m, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <span className="opacity-30">{Math.floor(idx/2)+1}.</span>
+                      <span>{m}</span>
                     </div>
+                  ))}
+                  {moveHistory.length === 0 && (
+                    <span className="col-span-2 text-zinc-600 italic text-xs">No moves yet...</span>
+                  )}
                 </div>
-                <div className="flex items-center gap-3 text-right">
-                    <div>
-                        <p className="text-[10px] font-bold uppercase opacity-60 text-red-400">Black</p>
-                        <p className="font-black text-xs">SEARCHING...</p>
-                    </div>
-                    <Avatar className="h-9 w-9 ring-2 ring-red-500 bg-[#1a1a1a]"><AvatarFallback className="text-white">O</AvatarFallback></Avatar>
-                </div>
-            </div>
+              </div>
 
-            <button 
-                onClick={() => startMatch(userProfile)}
-                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] py-4 rounded-2xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all text-sm"
-            >
-                Start New Battle
-            </button>
-         </div>
-      </main>
-    </div>
-   );
+              <button 
+                onClick={() => {
+                  setGame(new Chess());
+                  setMoveHistory([]);
+                }}
+                className="w-full mt-4 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-lg transition-all active:scale-95"
+              >
+                <RotateCcw size={18} />
+                Reset Game
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </AppLayout>
+  );
 }
