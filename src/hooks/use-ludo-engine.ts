@@ -119,7 +119,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   }, [gameDocRef, userId, gameState, roomId, firestore, isLoading]);
 
   const initializeGame = useCallback(async () => {
-    if (!gameDocRef || !roomId) return;
+    if (!gameDocRef || !roomId || isLoading) return;
     
     // Check if game already exists
     if (gameState) return;
@@ -145,7 +145,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
         roomId,
         players: [],
         pieces: initialPieces,
-        turn: '',
+        turn: '', // Initially empty, set on join or start
         dice: null,
         diceRolled: false,
         status: 'lobby',
@@ -156,16 +156,23 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     } catch (err) {
       console.error("Failed to initialize Ludo game:", err);
     }
-  }, [gameDocRef, roomId, gameState]);
+  }, [gameDocRef, roomId, gameState, isLoading]);
 
   const startMatch = useCallback(async () => {
     if (!gameDocRef || !gameState) return;
     if (gameState.players.length < 2) return;
-    
-    await updateDocumentNonBlocking(gameDocRef, {
-      status: 'playing',
-      updatedAt: serverTimestamp()
-    });
+
+    try {
+      console.log("Ludo: Starting match...");
+      await updateDocumentNonBlocking(gameDocRef, {
+        status: 'playing',
+        turn: gameState.players[0].uid, // Set initial turn to first player
+        updatedAt: serverTimestamp()
+      });
+      console.log("Ludo: Match started successfully");
+    } catch (err) {
+      console.error("Failed to start match:", err);
+    }
   }, [gameDocRef, gameState]);
 
   const rollDice = useCallback(async () => {
