@@ -1,6 +1,8 @@
 import { LudoPiece, LudoPlayer } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { Star, ArrowRight, ArrowLeft, ArrowUp, ArrowDown, Trophy } from 'lucide-react';
 
 // --- COORDINATE MAPPING ---
 
