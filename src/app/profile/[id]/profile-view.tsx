@@ -391,50 +391,48 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
               {/* Wallet Section - Rounded Rectangular Cards */}
               <div className="grid grid-cols-2 gap-2.5 mx-0.5">
-                <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2rem] p-4.5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                   <div className="flex items-center gap-1.5 relative z-10 opacity-90">
-                      <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
-                        <GoldCoinIcon className="h-3.5 w-3.5" />
+                <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   <div className="flex items-center gap-2 relative z-10">
+                      <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                        <GoldCoinIcon className="h-4 w-4" />
                       </div>
-                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Coins</span>
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Coins</span>
                    </div>
-                   <div className="absolute bottom-3.5 left-5 right-5 z-10">
-                     <p className="font-black text-[22px] text-white tracking-tight truncate leading-none">
+                   <div className="absolute bottom-4 left-6 z-10">
+                     <p className="font-black text-[28px] text-white tracking-tighter leading-none">
                       {formatCompactNumber(profile.wallet?.coins || 0)}
                      </p>
                    </div>
-                   <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
                 </div>
 
-                <div onClick={() => router.push('/wallet')} className="h-[105px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2rem] p-4.5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                   <div className="flex items-center gap-1.5 relative z-10 opacity-90">
-                      <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center border border-white/30">
-                        <Gem className="h-3.5 w-3.5 text-white" />
+                <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   <div className="flex items-center gap-2 relative z-10">
+                      <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
+                        <Gem className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-[9px] font-black text-white uppercase tracking-widest">Diamonds</span>
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span>
                    </div>
-                   <div className="absolute bottom-3.5 left-5 right-5 z-10">
-                     <p className="font-black text-[22px] text-white tracking-tight truncate leading-none">
+                   <div className="absolute bottom-4 left-6 z-10">
+                     <p className="font-black text-[28px] text-white tracking-tighter leading-none">
                       {formatCompactNumber(profile.wallet?.diamonds || 0)}
                      </p>
                    </div>
-                   <ChevronRight className="absolute bottom-3.5 right-4 h-4 w-4 text-white/40 group-hover:text-white transition-colors" />
                 </div>
               </div>
 
               {/* VIP Premium Card - Rounded Rectangular */}
-              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2rem] p-4.5 pr-7 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5">
-                 <div className="flex items-center gap-3.5 relative z-10">
-                    <div className="h-11 w-11 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-105">
-                      <Crown className="h-5 w-5 text-amber-400 fill-current" />
+              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-4.5 pl-6 pr-6 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5 min-h-[85px]">
+                 <div className="flex items-center gap-4 relative z-10">
+                    <div className="h-12 w-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
+                      <Crown className="h-6 w-6 text-slate-900 fill-current" />
                     </div>
                     <div className="flex flex-col">
-                       <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
-                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
+                       <h3 className="text-[18px] font-black text-white uppercase tracking-tight leading-tight">VIP Premium™</h3>
+                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p>
                     </div>
                  </div>
-                 <div className="h-7 px-3 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[9px] text-slate-400 uppercase tracking-widest relative z-10">
-                  Rewards Inside
+                 <div className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center border border-white/5 group-hover:bg-white/10 transition-colors">
+                   <ChevronRight className="h-5 w-5 text-white/40 group-hover:text-white" />
                  </div>
               </div>
 
