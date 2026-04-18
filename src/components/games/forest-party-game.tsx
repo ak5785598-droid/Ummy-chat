@@ -388,7 +388,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 50; 
+  
+  let speed = 40; // Initial fast speed
 
   const runChase = () => {
    if (!isMountedRef.current) return;
@@ -396,13 +397,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
-   if (currentStep % 10 === 0) playSound('tick'); 
+   // FIX: Tick sound bug fixed, bajega smooth tarike se
+   if (currentStep % 2 === 0) playSound('tick'); 
 
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    if (remaining < 5) speed += 100;
-    else if (remaining < 12) speed += 40;
-    else if (remaining < 20) speed += 15;
+    
+    // NEW: Ekdam smooth deceleration curve (Smooth spin animation)
+    if (remaining < 25) {
+        speed += 20; // Last me naturally smoothly slow hoga
+    } else if (remaining < 45) {
+        speed += 4;  // Thoda pehle se slowdown shuru
+    }
     
     currentStep++;
     chaseTimeoutRef.current = setTimeout(runChase, speed);
@@ -648,12 +654,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
       {ANIMALS.map((item, idx) => {
         const active = isWinningAnimal(idx, item.id);
+        const isSpinning = gameState === 'spinning';
+        const isHighlighted = highlightIdx === idx;
+        
+        // NEW LOGIC: Jab spinning chal rahi ho aur current card highlight na ho, toh color-less kardo
+        const applyColorless = isSpinning && !isHighlighted;
+        
         return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
             <div className={cn(
-                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", 
-                active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]"
+                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#241108]", 
+                active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
+                // COLORLESS TAILWIND LOGIC ADDED HERE
+                applyColorless ? "grayscale-[0.9] opacity-60 brightness-75 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
             )}>
                 {/* Glossy Overlay Highlight Maintained */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
@@ -661,7 +675,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
                 
                 {/* MULTIPLIER SHOWS ALWAYS, BUT GLOSSY EFFECT REMOVED DURING SPINNING */}
-                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
                     <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                 </div>
             </div>
