@@ -208,6 +208,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /walletTransactions/{id} {
+      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isSignedIn() && isNotBanned() && request.resource.data.userId == request.auth.uid;
+    }
+
     // ============================================
     // COIN AUDIT LOGS
     // ============================================
