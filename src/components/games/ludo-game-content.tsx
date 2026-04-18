@@ -31,7 +31,16 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     movePiece 
   } = useLudoEngine(roomId, user?.uid || null);
 
+  const [isSplashing, setIsSplashing] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Splash Screen Timer
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsSplashing(false);
+    }, 4500); // 4.5s for a nice premium feel
+    return () => clearTimeout(timer);
+  }, []);
 
   // Auto-join lobby on load
   useEffect(() => {
@@ -43,11 +52,58 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     }
   }, [isLoading, user, userProfile, gameState, joinLobby]);
 
-  if (isLoading || !gameState) {
+  if (isSplashing || isLoading || !gameState) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-[#0a1a4a] text-white min-h-[400px]">
-        <img src="/images/ummy-logon.png" className="h-20 w-20 animate-bounce mb-4" alt="Loading" />
-        <p className="font-black italic tracking-widest animate-pulse">SYNCING LUDO ARENA...</p>
+      <div className="h-full w-full flex flex-col items-center justify-center bg-[#1A0B2E] text-white overflow-hidden relative">
+        {/* Ambient Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-600/20 blur-[100px] rounded-full" />
+        
+        <motion.div 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="relative z-10 flex flex-col items-center"
+        >
+          {/* Ludo Icon */}
+          <div className="relative w-48 h-48 mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+            <img 
+              src="/images/premium_3d_ludo_game_icon_1775544459753.png" 
+              className="w-full h-full object-contain"
+              alt="Ludo Master"
+            />
+          </div>
+
+          {/* LUDO Logo Text */}
+          <div className="flex gap-1 mb-8">
+            {[
+              { char: 'L', color: 'text-red-500' },
+              { char: 'U', color: 'text-yellow-400' },
+              { char: 'D', color: 'text-blue-500' },
+              { char: 'O', color: 'text-green-500' }
+            ].map((item, i) => (
+              <motion.span
+                key={i}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 + (i * 0.1) }}
+                className={cn("text-5xl font-black italic tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]", item.color)}
+              >
+                {item.char}
+              </motion.span>
+            ))}
+          </div>
+
+          {/* Progress Bar Container */}
+          <div className="w-64 h-2 bg-white/5 rounded-full border border-white/10 overflow-hidden relative">
+             <motion.div 
+               initial={{ width: "0%" }}
+               animate={{ width: "100%" }}
+               transition={{ duration: 4, ease: "easeInOut" }}
+               className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+             />
+          </div>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Entering Arena</p>
+        </motion.div>
       </div>
     );
   }
