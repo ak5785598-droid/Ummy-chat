@@ -44,46 +44,26 @@ export function ActiveRoomManager() {
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
   const isMuted = currentUserParticipant?.isMuted ?? true;
 
-  // AGORA CORE - Professional Voice Engine (New System)
-  const musicTrack = musicStream ? musicStream.getAudioTracks()[0] : null;
-  const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, isSpeakerMuted);
-  
     // Voice Activity Bridge (Agora -> UI Waves)
     const { setVolumes } = useVoiceActivityContext();
 
-    const volumeEnabledForClient = useRef<any>(null);
+    const handleVolume = useCallback((volumes: { uid: string; level: number }[]) => {
+      const currentVolumes: Record<string, number> = {};
+      
+      volumes.forEach(v => {
+          // Scale intensity for visual effect (0-100)
+          const intensity = Math.min(100, v.level * 1.5);
+          if (intensity > 5) {
+              currentVolumes[v.uid] = intensity;
+          }
+      });
 
-    useEffect(() => {
-        if (!client) return;
+      // Update global speaking states for ALL users simultaneously
+      setVolumes(currentVolumes);
+    }, [setVolumes]);
 
-        // GUARD: Only enable volume indicator ONCE per client instance to prevent console warnings
-        if (volumeEnabledForClient.current !== client) {
-            client.enableAudioVolumeIndicator();
-            volumeEnabledForClient.current = client;
-        }
-        
-        const handleVolume = (volumes: { uid: string | number, level: number }[]) => {
-            const currentVolumes: Record<string, number> = {};
-            
-            volumes.forEach(v => {
-                // Scale intensity for visual effect (0-100)
-                const intensity = Math.min(100, v.level * 1.5);
-                if (intensity > 5) {
-                    currentVolumes[v.uid.toString()] = intensity;
-                }
-            });
-
-            // Update global speaking states for ALL users simultaneously
-            setVolumes(currentVolumes);
-        };
-
-        client.on('volume-indicator', handleVolume);
-        return () => {
-            client.off('volume-indicator', handleVolume);
-            // Optimization: Only clear volumes if the component is actually unmounting,
-            // or if the client itself is changing. 
-        };
-    }, [client, setVolumes]);
+    // AGORA CORE - Professional Voice Engine (New System)
+    const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, isSpeakerMuted, handleVolume);
 
   if (!sessionRoom) return null;
 

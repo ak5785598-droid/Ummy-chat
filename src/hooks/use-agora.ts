@@ -77,6 +77,12 @@ export function useAgora(
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
+  const onVolumeChangeRef = useRef(onVolumeChange);
+
+  // Keep ref in sync
+  useEffect(() => {
+    onVolumeChangeRef.current = onVolumeChange;
+  }, [onVolumeChange]);
 
   // Set audio output device for all remote users
   const setAudioOutputDevice = useCallback(async (deviceId: string) => {
@@ -249,13 +255,15 @@ export function useAgora(
         const numericUid = hashUidToNumber(uid);
         await client.setClientRole('host');
         
-        // --- VOLUME DETECTION ---
-        client.enableAudioVolumeIndicator(200); 
-        client.on('volume-indicator', (volumes: { uid: string | number; level: number }[]) => {
-          if (onVolumeChange) {
-            onVolumeChange(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
-          }
-        });
+        // --- VOLUME DETECTION (Safe Ref Implementation) ---
+        if (onVolumeChangeRef.current) {
+          client.enableAudioVolumeIndicator(200); 
+          client.on('volume-indicator', (volumes: { uid: string | number; level: number }[]) => {
+            if (onVolumeChangeRef.current) {
+              onVolumeChangeRef.current(volumes.map(v => ({ uid: v.uid.toString(), level: v.level })));
+            }
+          });
+        }
 
         await client.join(APP_ID, roomId, null, numericUid);
         
@@ -375,19 +383,11 @@ export function useAgora(
     }
   }, [isMuted, localAudioTrack]);
 
-  // ROUTING PERSISTENCE (Brute Force Lock every 2s as requested)
+  // ROUTING ON MOUNT (One-shot fix)
   useEffect(() => {
     if (!AudioRoute) return;
-    
-    console.log('[Routing] Proactive Lock Started (Entry Fix)');
     AudioRoute.forceEarbuds().catch(() => {});
-
-    // Lock to earbuds every 2000ms - Version eb81e34 Style
-    const interval = setInterval(() => { 
-      AudioRoute.forceEarbuds().catch(() => {}); 
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []); 
+  }, []);
 
   return { 
     localAudioTrack, 

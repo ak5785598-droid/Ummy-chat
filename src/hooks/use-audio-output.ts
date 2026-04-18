@@ -37,9 +37,8 @@ export function useAudioOutput() {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
 
     try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      
+      // Permission should be handled by the main voice engine (Agora)
+      // or should already be granted. Enumerate alone is less intrusive.
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = devices
         .filter(d => d.kind === 'audiooutput')
