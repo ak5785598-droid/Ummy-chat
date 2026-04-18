@@ -27,6 +27,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     gameState, 
     isLoading, 
     joinLobby, 
+    initializeGame,
     startMatch,
     rollDice, 
     movePiece 
@@ -34,6 +35,11 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
 
   const [isSplashing, setIsSplashing] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+
+  // Initialize Game on Mount (Codex Fix)
+  useEffect(() => {
+    initializeGame();
+  }, [initializeGame]);
 
   // Splash Screen Timer
   useEffect(() => {

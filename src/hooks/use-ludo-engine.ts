@@ -118,6 +118,46 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     }
   }, [gameDocRef, userId, gameState, roomId, firestore, isLoading]);
 
+  const initializeGame = useCallback(async () => {
+    if (!gameDocRef || !roomId) return;
+    
+    // Check if game already exists
+    if (gameState) return;
+
+    try {
+      console.log("Ludo: Initializing game document for roomId:", roomId);
+      const initialPieces: LudoPiece[] = [];
+      const colors: ('red' | 'blue' | 'yellow' | 'green')[] = ['red', 'green', 'yellow', 'blue'];
+      
+      colors.forEach(color => {
+         for (let i = 0; i < 4; i++) {
+           initialPieces.push({
+             id: `${color}_${i}`,
+             ownerUid: '',
+             color,
+             position: 0
+           });
+         }
+      });
+
+      await setDoc(gameDocRef, {
+        id: `ludo_${roomId}`,
+        roomId,
+        players: [],
+        pieces: initialPieces,
+        turn: '',
+        dice: null,
+        diceRolled: false,
+        status: 'lobby',
+        entryFee: 0,
+        updatedAt: serverTimestamp()
+      });
+      console.log("Ludo: Game document created successfully");
+    } catch (err) {
+      console.error("Failed to initialize Ludo game:", err);
+    }
+  }, [gameDocRef, roomId, gameState]);
+
   const startMatch = useCallback(async () => {
     if (!gameDocRef || !gameState) return;
     if (gameState.players.length < 2) return;
@@ -270,6 +310,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     gameState: gameState as LudoGameState | undefined,
     isLoading,
     joinLobby,
+    initializeGame,
     startMatch,
     rollDice,
     movePiece,
