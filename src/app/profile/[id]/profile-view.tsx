@@ -141,10 +141,10 @@ const PublicProfileView = ({
     }
   };
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
-       <header className="sticky top-0 z-[100] w-full bg-white px-6 py-4 pt-[calc(env(safe-area-inset-top)+12px)] shrink-0">
-          <div className="flex items-center justify-between max-w-lg mx-auto">
+   return (
+    <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px]">
+       <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl px-6 pt-[calc(env(safe-area-inset-top)+4px)] pb-[2px] shrink-0">
+          <div className="flex items-center justify-between max-w-lg mx-auto h-12">
             <button onClick={onBack} className="p-2 rounded-full text-slate-900 active:bg-slate-50 transition-colors">
               <ChevronLeft className="h-6 w-6" />
             </button>
@@ -156,46 +156,55 @@ const PublicProfileView = ({
        </header>
 
        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-          <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
-            <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden">
-               <div className="flex items-center gap-7 relative z-10">
-                  <div className="shrink-0 relative">
-                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                      <Avatar className="h-28 w-28 border-[6px] border-white shadow-xl rounded-full">
-                        <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                        <AvatarFallback className="text-3xl bg-slate-100 font-outfit font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </AvatarFrame>
-                  </div>
+          <div className="max-w-lg mx-auto px-6 pt-0 pb-4">
+             {/* Main Consolidated Profile Card (Public Mode) */}
+             <div className="bg-white rounded-[3rem] p-5 shadow-sm border border-slate-100 space-y-5">
+                {/* Section 1: Identity */}
+                <div className="flex items-start gap-1.5 pt-0">
+                   <div className="shrink-0 scale-95 origin-top-left">
+                     <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                       <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
+                         <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                         <AvatarFallback className="text-3xl bg-slate-100 font-outfit font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
+                       </Avatar>
+                     </AvatarFrame>
+                   </div>
 
-                  <div className="flex-1 flex flex-col gap-2 min-w-0 pt-2">
-                     <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-[26px] font-outfit font-black text-[#1a1c1e] tracking-tight leading-none truncate">{profile.username}</h2>
-                        <span className="text-xl leading-none">🇮🇳</span>
-                        <GenderCircle gender={profile.gender} />
-                     </div>
-                     <div className="flex items-center gap-2.5 pt-1">
-                        <RichLevelBadge level={profile.level?.rich || 1} />
-                        <CharmLevelBadge level={profile.level?.charm || 1} />
-                     </div>
-                     <div className="flex flex-col gap-1.5 pt-2">
-                        <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity w-fit">
-                          <BudgetTag variant="silver" label={`ID: ${profile.accountNumber || '0123'}`} size="sm" />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                          {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div className="mt-10 flex justify-between items-center bg-slate-50/50 rounded-[2rem] p-5 shadow-inner border border-white">
-                  <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
-                  <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
-                  <StatItem label={t.profile.friends || "Friends"} value={stats.friends} onClick={() => onOpenSocial('friends')} />
-                  <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
-               </div>
-            </div>
+                   <div className="flex-1 self-center space-y-1 min-w-0">
+                      {/* Row 1: Name, Flag, Gender */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                         <h2 className="text-[20px] font-outfit font-black text-[#1a1c1e] tracking-tight leading-none truncate">{profile.username}</h2>
+                         <span className="text-xl leading-none">🇮🇳</span>
+                         <GenderCircle gender={profile.gender} />
+                      </div>
+
+                      {/* Row 2: Levels */}
+                      <div className="flex items-center gap-2">
+                         <RichLevelBadge level={profile.level?.rich || 1} />
+                         <CharmLevelBadge level={profile.level?.charm || 1} />
+                      </div>
+
+                      {/* Row 3: ID & Professional Tags */}
+                      <div className="flex flex-wrap items-center gap-3">
+                         <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                           <BudgetTag variant="silver" label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id : profile.accountNumber}`} size="sm" />
+                         </div>
+                         {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                         {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="h-px bg-slate-50/50 mx-2" />
+
+                {/* Section 2: Stats Row */}
+                <div className="flex justify-between items-center py-0 px-2">
+                   <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
+                   <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
+                   <StatItem label={t.profile.friends || "Friends"} value={stats.friends} onClick={() => onOpenSocial('friends')} />
+                   <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
+                </div>
+             </div>
           </div>
        </div>
 
