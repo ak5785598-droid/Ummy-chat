@@ -586,9 +586,12 @@ export function RoomClient({ room }: { room: Room }) {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
+  const isAIVoiceEnabledRef = useRef<boolean>(false);
+  const isSpeakerMutedRef = useRef<boolean>(false);
   useEffect(() => {
     if (localStorage.getItem('ummy_ai_voice_enabled') === 'true') {
       setIsAIVoiceEnabled(true);
+      isAIVoiceEnabledRef.current = true;
     }
   }, []);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
@@ -628,6 +631,14 @@ export function RoomClient({ room }: { room: Room }) {
     isSpeakerMuted,
     setIsSpeakerMuted
   } = useRoomContext();
+
+  useEffect(() => {
+    isAIVoiceEnabledRef.current = isAIVoiceEnabled;
+  }, [isAIVoiceEnabled]);
+
+  useEffect(() => {
+    isSpeakerMutedRef.current = isSpeakerMuted;
+  }, [isSpeakerMuted]);
 
   // Voice activity handled per-seat via context
   const { speakingVolumes, setVolumes } = useVoiceActivityContext();
@@ -1160,7 +1171,7 @@ export function RoomClient({ room }: { room: Room }) {
   }, []);
 
   const speakAIText = (text: string) => {
-    if (!isAIVoiceEnabled || isSpeakerMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (!isAIVoiceEnabledRef.current || isSpeakerMutedRef.current || typeof window === 'undefined' || !window.speechSynthesis) return;
 
     // Store text for the post-handshake process
     (window as any)._pendingSpeechText = text;
@@ -1322,6 +1333,7 @@ export function RoomClient({ room }: { room: Room }) {
   const toggleAIVoice = () => {
     const nextValue = !isAIVoiceEnabled;
     setIsAIVoiceEnabled(nextValue);
+    isAIVoiceEnabledRef.current = nextValue;
     localStorage.setItem('ummy_ai_voice_enabled', String(nextValue));
 
     // BROWSER HANDSHAKE: Prime the engine on first interaction
