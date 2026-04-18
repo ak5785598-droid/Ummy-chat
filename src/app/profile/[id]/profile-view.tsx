@@ -366,20 +366,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     <CharmLevelBadge level={profile.level?.charm || 1} />
                   </div>
 
-                  {/* Row 3: ID */}
-                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity w-fit">
-                    <div className="flex items-center gap-1.5 bg-slate-100/80 px-4 py-1.5 rounded-full border border-slate-200/50">
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
+                  {/* Row 3: ID & Professional Tags */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                      <BudgetTag variant="silver" label={`ID: ${profile.accountNumber || '0123'}`} size="sm" />
                     </div>
+                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
                   </div>
-
-                  {/* Row 4: Professional Tags */}
-                  {(profile.tags?.includes('Official') || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t))) && (
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                      {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                    </div>
-                  )}
                 </div>
               </div>
 
