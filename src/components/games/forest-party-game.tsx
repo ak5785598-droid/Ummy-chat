@@ -388,7 +388,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 40; 
+  let speed = 50; 
 
   const runChase = () => {
    if (!isMountedRef.current) return;
@@ -468,7 +468,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
       />
       
-      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[12%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
+      {/* ☁️ Clouds Moved Up */}
+      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[6%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
       
       <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
           <div className="absolute -top-6 left-[10%] w-12 h-8 bg-[#8B4513] rounded-[40%_60%_70%_30%] shadow-2xl rotate-12" />
@@ -583,8 +584,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    <div className="absolute top-[40px] left-[85px] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    <div className="absolute top-[50px] right-[20px] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    {/* ☁️ Clouds Moved Up */}
+    <div className="absolute top-[10px] left-[85px] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
+    <div className="absolute top-[20px] right-[20px] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
     
     <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
     <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
@@ -649,7 +651,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
-            {/* UPDATED BORDER FOR SHINE DURING ACTIVE */}
             <div className={cn(
                 "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", 
                 active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]"
@@ -659,12 +660,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 
                 <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
                 
-                {/* HIDE MULTIPLIER BAR DURING SPINNING */}
-                {gameState !== 'spinning' && (
-                  <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", active ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
-                      <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
-                  </div>
-                )}
+                {/* MULTIPLIER SHOWS ALWAYS, BUT GLOSSY EFFECT REMOVED DURING SPINNING */}
+                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                    <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
+                </div>
             </div>
             
             <AnimatePresence>
