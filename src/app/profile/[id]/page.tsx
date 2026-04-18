@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Loader } from 'lucide-react';
 
-const ProfileView = dynamic(() => import('./profile-view-glossy'), {
+const ProfileView = dynamic(() => import('./profile-view'), {
   ssr: false,
   loading: () => (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center gap-4">
