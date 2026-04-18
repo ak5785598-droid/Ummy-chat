@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, use, useState, useMemo } from 'react';
+import React, { useEffect, use, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
  Loader, 
@@ -72,12 +72,14 @@ import { OfficialCenterDialog } from '@/components/official-center-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+
 /**
  * Professional Numerical Signature Formatting
  * Converts numbers to compact notation: 1.2k, 1.5M, 371.6B
  */
 const formatCompactNumber = (num: number) => {
-  if (num === 0) return '0';
+  if (!num || num === 0) return '0';
   const formatter = Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
   return formatter.format(num);
 };
@@ -87,7 +89,7 @@ const formatCompactNumber = (num: number) => {
  */
 const RichLevelBadge = ({ level }: { level: number }) => (
  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
-  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
   <Star className="h-2 w-2 fill-white text-white drop-shadow-sm" />
   <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
  </div>
@@ -95,7 +97,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
-  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine" />
+  <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
   <Sparkles className="h-2 w-2 fill-white text-white drop-shadow-sm" />
   <span className="text-[9px] font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
  </div>
@@ -150,6 +152,31 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
  </button>
 );
 
+const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: number }) => {
+ const colors = [
+  "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]", // Gold
+  "border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.4)]", // Silver
+  "border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.4)]", // Bronze
+ ];
+ const badges = ["🥇", "🥈", "🥉"];
+
+ return (
+  <div className="flex flex-col items-center gap-1">
+   <div className="relative">
+    <Avatar className={cn("h-11 w-11 border-2", colors[rank - 1])}>
+     <AvatarImage src={contributor.avatarUrl || undefined} className="object-cover" />
+     <AvatarFallback className="bg-slate-100 text-[10px] font-bold">{rank}</AvatarFallback>
+    </Avatar>
+    <div className="absolute -top-2 -right-1 text-sm drop-shadow-md">{badges[rank - 1]}</div>
+   </div>
+   <span className="text-[8px] font-black uppercase text-gray-400 truncate w-14 text-center mt-1">{contributor.username || '...'}</span>
+  </div>
+ );
+};
+
+/**
+ * Public Profile View - Redesign with Glossy Aesthetic
+ */
 const PublicProfileView = ({ 
  profile, 
  onBack, 
@@ -163,12 +190,17 @@ const PublicProfileView = ({
  t
 }: any) => {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans text-[13px]">
-       <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-5 pt-safe shrink-0">
+    <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
+       {/* REFINED HEADER WITH GAP CONTROL */}
+       <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-6 pt-[calc(env(safe-area-inset-top)+12px)] shrink-0">
           <div className="flex items-center justify-between max-w-lg mx-auto">
-            <button onClick={onBack} className="p-2.5 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all shadow-sm"><ChevronLeft className="h-5.5 w-5.5" /></button>
+            <button onClick={onBack} className="p-2.5 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all shadow-sm">
+              <ChevronLeft className="h-5.5 w-5.5" />
+            </button>
             <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900">Profile</h1>
-            <button className="p-2.5 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all shadow-sm"><MoreHorizontal className="h-5.5 w-5.5" /></button>
+            <button className="p-2.5 bg-slate-100/80 rounded-full text-slate-900 active:scale-90 transition-all shadow-sm">
+              <MoreHorizontal className="h-5.5 w-5.5" />
+            </button>
           </div>
        </header>
 
@@ -176,16 +208,18 @@ const PublicProfileView = ({
           <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
             
             {/* PRIMARY IDENTITY CARD (AVATAR LEFT) */}
-            <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50" />
+            <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
                
                <div className="flex items-center gap-7 relative z-10">
-                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
+                  <div className="shrink-0 relative">
+                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                      <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
+                        <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
+                        <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </AvatarFrame>
+                  </div>
 
                   <div className="flex-1 flex flex-col gap-2.5 min-w-0">
                      <div className="flex items-center gap-2 flex-wrap">
@@ -199,7 +233,6 @@ const PublicProfileView = ({
                         <CharmLevelBadge level={profile.level?.charm || 1} />
                      </div>
                      
-                     {/* ID & Tag Row */}
                      <div className="flex flex-col gap-1.5 pt-1">
                         <BudgetTag 
                           variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
@@ -217,15 +250,33 @@ const PublicProfileView = ({
                <div className="mt-10 flex justify-between items-center bg-slate-50/50 rounded-[2rem] p-5 shadow-inner border border-white">
                   <StatItem label={t.profile.fans} value={stats.fans} onClick={() => onOpenSocial('followers')} />
                   <StatItem label={t.profile.following} value={stats.following} onClick={() => onOpenSocial('following')} />
-                  <StatItem label={t.profile.friends} value={stats.friends} onClick={() => onOpenSocial('friends')} />
+                  <StatItem label={t.profile.friends || "Friends"} value={stats.friends} onClick={() => onOpenSocial('friends')} />
                   <StatItem label={t.profile.visitors} value={stats.visitors} onClick={() => onOpenSocial('visitors')} />
                </div>
             </div>
 
-            {/* BIO SECTION */}
+            {/* CONTRIBUTORS SECTION */}
+            <div className="px-1">
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.3em]">Top Contribution</h4>
+                <ChevronRight className="h-4 w-4 text-slate-300" />
+              </div>
+              <div className="bg-white rounded-[2.5rem] p-6 flex justify-around items-center shadow-xl border border-white">
+                {isContributorsLoading ? (
+                  <div className="py-4 flex justify-center w-full"><Loader className="animate-spin h-4 w-4 text-slate-200" /></div>
+                ) : contributors && contributors.length > 0 ? (
+                  contributors.map((c: any, i: number) => (
+                    <ContributorAvatar key={c.id} contributor={c} rank={i + 1} />
+                  ))
+                ) : (
+                  <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest py-4">Awaiting Sync...</p>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white rounded-[2.5rem] p-7 shadow-2xl border border-white space-y-4">
               <div className="flex items-center justify-between px-1">
-                  <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.3em] ">Signature Bio</h4>
+                  <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.3em]">Signature Bio</h4>
               </div>
               <p className="text-[15px] font-medium text-slate-600 leading-relaxed px-1">
                 {profile.bio || "In the frequency of discovery."}
@@ -234,70 +285,92 @@ const PublicProfileView = ({
           </div>
        </div>
 
-       {/* ACTION DOCK */}
        <div className="fixed bottom-0 left-0 right-0 p-6 pb-12 bg-white/70 backdrop-blur-3xl z-[100] border-t border-white shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
          <div className="max-w-lg mx-auto flex gap-4 w-full">
-           <button onClick={handleFollow} className="flex-2 h-16 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase text-sm shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 px-8">
-              <Heart className={cn("h-5.5 w-5.5", followData && "fill-current text-rose-500")} />
-              {followData ? "Joined" : "Join"}
+           <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-16 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase text-sm shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 px-8">
+              {isProcessingFollow ? <Loader className="animate-spin h-6 w-6" /> : (
+                <>
+                  <Heart className={cn("h-5.5 w-5.5", followData && "fill-current text-rose-500")} />
+                  {followData ? "Joined" : "Join"}
+                </>
+              )}
            </button>
-           <button className="flex-1 h-16 bg-white text-slate-900 border-2 border-slate-900 rounded-[1.5rem] font-black uppercase text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-3">
-              <MessageCircle className="h-5.5 w-5.5" />
-              Vibe
-           </button>
+           <DirectMessageDialog 
+              recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} 
+              trigger={
+                <button className="flex-1 h-16 bg-white text-slate-900 border-2 border-slate-900 rounded-[1.5rem] font-black uppercase text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-3">
+                  <MessageCircle className="h-5.5 w-5.5" />
+                  Vibe
+                </button>
+              }
+           />
          </div>
        </div>
     </div>
   );
 };
 
+/**
+ * Main Profile View Component - Glossy Edition
+ */
 export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
- const router = useRouter();
- const { toast } = useToast();
- const firestore = useFirestore();
- const { t } = useTranslation();
- const { user: currentUser, isUserLoading } = useUser();
- const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
+  const router = useRouter();
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const { t } = useTranslation();
+  const { user: currentUser, isUserLoading } = useUser();
+  const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
- const [isProcessingFollow, setIsProcessingFollow] = useState(false);
- const [socialOpen, setSocialOpen] = useState(false);
- const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
+  const [isProcessingFollow, setIsProcessingFollow] = useState(false);
+  const [socialOpen, setSocialOpen] = useState(false);
+  const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
 
- const isOwnProfile = currentUser?.uid === profileId;
+  const isOwnProfile = currentUser?.uid === profileId;
 
- // Real-time Social Queries
- const fansQuery = useMemoFirebase(() => {
-  if (!firestore || !profileId) return null;
-  return query(collection(firestore, 'followers'), where('followingId', '==', profileId));
- }, [firestore, profileId]);
+  // Real-time Social Queries
+  const fansQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'followers'), where('followingId', '==', profileId));
+  }, [firestore, profileId]);
 
- const followingQuery = useMemoFirebase(() => {
-  if (!firestore || !profileId) return null;
-  return query(collection(firestore, 'followers'), where('followerId', '==', profileId));
- }, [firestore, profileId]);
+  const followingQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'followers'), where('followerId', '==', profileId));
+  }, [firestore, profileId]);
 
- const visitorsQuery = useMemoFirebase(() => {
-  if (!firestore || !profileId) return null;
-  return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
- }, [firestore, profileId]);
+  const visitorsQuery = useMemoFirebase(() => {
+    if (!firestore || !profileId) return null;
+    return query(collection(firestore, 'users', profileId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
+  }, [firestore, profileId]);
 
- const { data: fansData } = useCollection(fansQuery);
- const { data: followingData } = useCollection(followingQuery);
- const { data: visitorsData } = useCollection(visitorsQuery);
+  const { data: fansData } = useCollection(fansQuery);
+  const { data: followingData } = useCollection(followingQuery);
+  const { data: visitorsData } = useCollection(visitorsQuery);
 
- const stats = useMemo(() => {
-  const fans = fansData?.length || 0;
-  const following = followingData?.length || 0;
-  const visitors = visitorsData?.length || 0;
-  const fanIds = new Set(fansData?.map(f => f.followerId) || []);
-  const followingIds = followingData?.map(f => f.followingId) || [];
-  const friends = followingIds.filter(id => fanIds.has(id)).length;
-  return { fans, following, friends, visitors };
- }, [fansData, followingData, visitorsData]);
+  const stats = useMemo(() => {
+    const fans = fansData?.length || 0;
+    const following = followingData?.length || 0;
+    const visitors = visitorsData?.length || 0;
+    const fanIds = new Set(fansData?.map(f => f.followerId) || []);
+    const followingIds = followingData?.map(f => f.followingId) || [];
+    const friends = followingIds.filter(id => fanIds.has(id)).length;
+    return { fans, following, friends, visitors };
+  }, [fansData, followingData, visitorsData]);
 
   const isAuthorizedAdmin = currentUser?.uid === CREATOR_ID || profile?.isAdmin === true;
   const isCertifiedSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || isAuthorizedAdmin;
-  const isOfficialCenter = profile?.tags?.some((t: string) => ['Official center', 'Admin', 'Official Center'].includes(t)) || isAuthorizedAdmin;
+
+  // Record a visit if it's someone else's profile
+  useEffect(() => {
+    if (!firestore || !currentUser || !profileId || isOwnProfile) return;
+    const recordVisit = async () => {
+      try {
+        const visitRef = doc(firestore, 'users', profileId, 'profileVisitors', currentUser.uid);
+        await setDocumentNonBlocking(visitRef, { visitorId: currentUser.uid, timestamp: serverTimestamp() }, { merge: true });
+      } catch (e) { console.error(e); }
+    };
+    recordVisit();
+  }, [firestore, currentUser?.uid, profileId, isOwnProfile]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -309,6 +382,7 @@ export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: s
     if (!firestore || !profileId) return null;
     return query(collection(firestore, 'users', profileId, 'topContributors'), orderBy('amount', 'desc'), limit(3));
   }, [firestore, profileId]);
+
   const { data: contributors, isLoading: isContributorsLoading } = useCollection(contributorsQuery);
 
   const handleFollow = async () => {
@@ -316,205 +390,188 @@ export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: s
     setIsProcessingFollow(true);
     const fRef = doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
     try {
-     if (followData) {
-      await deleteDocumentNonBlocking(fRef);
-      toast({ title: 'Unfollowed' });
-     } else {
-      await setDocumentNonBlocking(fRef, { followerId: currentUser.uid, followingId: profileId, timestamp: serverTimestamp() }, { merge: true });
-      toast({ title: 'Following' });
-     }
+      if (followData) {
+        await deleteDocumentNonBlocking(fRef);
+        toast({ title: 'Unfollowed' });
+      } else {
+        await setDocumentNonBlocking(fRef, { followerId: currentUser.uid, followingId: profileId, timestamp: serverTimestamp() }, { merge: true });
+        toast({ title: 'Following' });
+      }
     } catch (e: any) { console.error(e); } finally { setIsProcessingFollow(false); }
-   };
+  };
 
- if (isUserLoading || isProfileLoading || !profile) return (
-  <div className="flex h-screen w-full flex-col items-center justify-center bg-white space-y-4">
-    <Loader className="animate-spin h-10 w-10 text-slate-300" />
-    <p className="text-[10px] font-black uppercase text-slate-400">Syncing Identity...</p>
-  </div>
- );
+  if (isUserLoading || isProfileLoading || !profile) return (
+    <AppLayout>
+      <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
+        <Loader className="animate-spin h-10 w-10 text-slate-300" />
+        <p className="text-[10px] font-black uppercase text-slate-400">Syncing Identity...</p>
+      </div>
+    </AppLayout>
+  );
 
   if (mode === 'editable' && isOwnProfile) {
-  return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans text-[13px]">
-      
-      {/* FIXED PREMIUM HEADER */}
-      <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-5 pt-safe shrink-0">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
-          <div className="flex items-center gap-3">
-             <div className="h-3.5 w-3.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
-             <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">ME</h1>
-          </div>
-          <div className="flex items-center gap-2">
-             <button onClick={() => router.push('/settings')} className="p-2.5 bg-white/50 rounded-2xl border border-white active:scale-95 transition-all shadow-sm">
-                <SettingsIcon className="h-5.5 w-5.5 text-slate-900" />
-             </button>
-             <button className="p-2.5 bg-slate-900 rounded-2xl active:scale-95 transition-all shadow-lg border border-slate-800">
-                <Pencil className="h-5.5 w-5.5 text-white" />
-             </button>
-          </div>
-        </div>
-      </header>
-
-      {/* SCROLLABLE IDENTITY DASHBOARD */}
-      <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-        <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
-          
-          {/* PRIMARY IDENTITY CARD (AVATAR LEFT) */}
-          <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden">
-             {/* Decorative Background Glow */}
-             <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50" />
-             
-             <div className="flex items-center gap-7 relative z-10">
-                <div className="relative shrink-0">
-                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl font-black bg-slate-100 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
-                </div>
-
-                <div className="flex-1 flex flex-col gap-2.5 min-w-0">
-                   <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-[26px] font-black text-slate-900 tracking-tight leading-none truncate">{profile.username}</h2>
-                      <span className="text-xl leading-none">🇮🇳</span>
-                      <GenderCircle gender={profile.gender} />
-                   </div>
-                   
-                   <div className="flex items-center gap-2.5">
-                      <RichLevelBadge level={profile.level?.rich || 1} />
-                      <CharmLevelBadge level={profile.level?.charm || 1} />
-                   </div>
-
-                   <div className="flex flex-col gap-1.5 pt-1">
-                      <BudgetTag 
-                        variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
-                        label={`ID: ${profile.accountNumber || '0123'}`}
-                        size="sm"
-                      />
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                        {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                      </div>
-                   </div>
-                </div>
-             </div>
-
-             <div className="mt-10 flex justify-between items-center bg-slate-50/50 rounded-[2rem] p-5 shadow-inner border border-white">
-                <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-                <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-                <StatItem label="Friend" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-                <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
-             </div>
-          </div>
-
-          {/* GLOSSY WALLET DUAL-CORE */}
-          <div className="grid grid-cols-2 gap-5">
-            <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-xl active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-36">
-               <div className="absolute inset-0 bg-white/10 -skew-x-[45deg] animate-shine" />
-               <div className="flex items-center gap-3 mb-5 relative z-10">
-                  <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30 shadow-sm"><GoldCoinIcon className="h-6 w-6" /></div>
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Coins</span>
-               </div>
-               <div className="relative z-10">
-                 <span className="text-[22px] font-black text-white tracking-tight">{formatCompactNumber(profile.wallet?.coins || 0)}</span>
-               </div>
-               <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
+    return (
+      <AppLayout>
+      <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
+        
+        {/* REFINED ME HEADER WITH GAP CONTROL */}
+        <header className="sticky top-0 z-[100] w-full bg-white/70 backdrop-blur-3xl border-b border-white shadow-[0_4px_30px_rgba(0,0,0,0.03)] px-6 py-6 pt-[calc(env(safe-area-inset-top)+12px)] shrink-0">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            <div className="flex items-center gap-3">
+               <div className="h-3.5 w-3.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]"></div>
+               <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">ME</h1>
             </div>
+            <div className="flex items-center gap-2">
+               <button onClick={() => router.push('/settings')} className="p-2.5 bg-white/50 rounded-2xl border border-white active:scale-95 transition-all shadow-sm">
+                  <SettingsIcon className="h-5.5 w-5.5 text-slate-900" />
+               </button>
+               <EditProfileDialog 
+                  profile={profile} 
+                  trigger={
+                    <button className="p-2.5 bg-slate-900 rounded-2xl active:scale-95 transition-all shadow-lg border border-slate-800">
+                      <Pencil className="h-5.5 w-5.5 text-white" />
+                    </button>
+                  } 
+               />
+            </div>
+          </div>
+        </header>
+
+        {/* SCROLLABLE IDENTITY DASHBOARD */}
+        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
+          <div className="max-w-lg mx-auto px-4 py-8 space-y-7">
             
-            <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-6 shadow-xl active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-36">
-               <div className="absolute inset-0 bg-white/10 -skew-x-[45deg] animate-shine" />
-               <div className="flex items-center gap-3 mb-5 relative z-10">
-                  <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30 shadow-sm"><Gem className="h-6 w-6 text-white" /></div>
-                  <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Diamonds</span>
+            <div className="bg-white rounded-[3rem] p-8 shadow-2xl border border-white relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
+               <div className="flex items-center gap-7 relative z-10">
+                  <div className="shrink-0 relative">
+                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                      <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
+                        <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
+                        <AvatarFallback className="text-3xl font-black bg-slate-100 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </AvatarFrame>
+                  </div>
+                  <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+                     <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-[26px] font-black text-slate-900 tracking-tight leading-none truncate">{profile.username}</h2>
+                        <span className="text-xl leading-none">🇮🇳</span>
+                        <GenderCircle gender={profile.gender} />
+                     </div>
+                     <div className="flex items-center gap-2.5">
+                        <RichLevelBadge level={profile.level?.rich || 1} />
+                        <CharmLevelBadge level={profile.level?.charm || 1} />
+                     </div>
+                     <div className="flex flex-col gap-1.5 pt-1">
+                        <BudgetTag 
+                          variant={profile.isAdmin ? 'gold' : profile.tags?.includes('Official') ? 'diamond' : 'silver'} 
+                          label={`ID: ${profile.accountNumber || '0123'}`}
+                          size="sm"
+                        />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                          {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                        </div>
+                     </div>
+                  </div>
                </div>
-               <div className="relative z-10">
-                 <span className="text-[22px] font-black text-white tracking-tight">{formatCompactNumber(profile.wallet?.diamonds || 0)}</span>
+               <div className="mt-10 flex justify-between items-center bg-slate-50/50 rounded-[2rem] p-5 shadow-inner border border-white">
+                  <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+                  <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+                  <StatItem label="Friend" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+                  <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
                </div>
-               <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
-            </div>
-          </div>
-
-          {/* PREMIUM FEATURE BAR */}
-          <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-7 shadow-2xl flex items-center justify-between group active:scale-[0.99] transition-all cursor-pointer border border-slate-700">
-             <div className="flex items-center gap-6">
-                <div className="h-14 w-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><Crown className="h-7 w-7 text-amber-400 fill-current" /></div>
-                <div>
-                   <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
-                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
-                </div>
-             </div>
-             <div className="h-10 px-4 bg-white/5 rounded-xl flex items-center justify-center border border-white/5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rewards Inside</span>
-             </div>
-          </div>
-
-          {/* QUICK ACCESS GRID */}
-          <div className="flex justify-between items-center px-4">
-            <IconButton icon={Trophy} label="Level" colorClass="bg-gradient-to-br from-orange-400 to-orange-500" onClick={() => router.push('/level')} />
-            <IconButton icon={ShoppingBag} label="Store" colorClass="bg-gradient-to-br from-pink-400 to-rose-500" onClick={() => router.push('/store')} />
-            <IconButton icon={History} label="Budget" colorClass="bg-gradient-to-br from-blue-400 to-indigo-500" onClick={() => router.push('/wallet')} />
-            <IconButton icon={ClipboardList} label="Task" colorClass="bg-gradient-to-br from-green-400 to-emerald-500" onClick={() => router.push('/tasks')} />
-          </div>
-
-          {/* MENU OPERATIONS (REFINED) */}
-          <div className="space-y-5">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-2">
-              <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}} />
-              <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-              <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
-              <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
             </div>
 
-            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-4 px-2 space-y-1">
-               {isCertifiedSeller && (
-                 <ProfileMenuItem 
-                   icon={ShieldCheck} 
-                   label="Seller Center" 
-                   extra="Transfer Portal" 
-                   iconColor="bg-purple-50 text-purple-600" 
-                   onClick={() => router.push('/admin/seller-portal')} 
-                 />
-               )}
-               {isAuthorizedAdmin && (
-                 <ProfileMenuItem 
-                   icon={CheckCircle2} 
-                   label="Official Centre" 
-                   extra="Supreme Authority" 
-                   iconColor="bg-blue-50 text-blue-600" 
-                   onClick={() => router.push('/admin/official-center')} 
-                 />
-               )}
+            <div className="grid grid-cols-2 gap-5">
+              <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-xl active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-36">
+                 <div className="absolute inset-0 bg-white/10 -skew-x-[45deg] animate-shine"></div>
+                 <div className="flex items-center gap-3 mb-5 relative z-10">
+                    <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30 shadow-sm"><GoldCoinIcon className="h-6 w-6" /></div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Coins</span>
+                 </div>
+                 <div className="relative z-10">
+                   <span className="text-[22px] font-black text-white tracking-tight">{formatCompactNumber(profile.wallet?.coins || 0)}</span>
+                 </div>
+                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
+              </div>
+              <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-6 shadow-xl active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden h-36">
+                 <div className="absolute inset-0 bg-white/10 -skew-x-[45deg] animate-shine"></div>
+                 <div className="flex items-center gap-3 mb-5 relative z-10">
+                    <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30 shadow-sm"><Gem className="h-6 w-6 text-white" /></div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Diamonds</span>
+                 </div>
+                 <div className="relative z-10">
+                   <span className="text-[22px] font-black text-white tracking-tight">{formatCompactNumber(profile.wallet?.diamonds || 0)}</span>
+                 </div>
+                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
+              </div>
             </div>
 
-            <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-2">
-              <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
-              <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-100 text-slate-400" onClick={() => {}} />
+            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-7 shadow-2xl flex items-center justify-between group active:scale-[0.99] transition-all cursor-pointer border border-slate-700">
+               <div className="flex items-center gap-6">
+                  <div className="h-14 w-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-lg border border-white/5"><Crown className="h-7 w-7 text-amber-400 fill-current" /></div>
+                  <div>
+                     <h3 className="text-[17px] font-black text-white uppercase tracking-tight">VIP Premium™</h3>
+                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
+                  </div>
+               </div>
+               <div className="h-10 px-4 bg-white/5 rounded-xl flex items-center justify-center border border-white/5">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rewards Inside</span>
+               </div>
+            </div>
+
+            <div className="flex justify-between items-center px-4">
+              <IconButton icon={Trophy} label="Level" colorClass="bg-gradient-to-br from-orange-400 to-orange-500" onClick={() => router.push('/level')} />
+              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-gradient-to-br from-pink-400 to-rose-500" onClick={() => router.push('/store')} />
+              <IconButton icon={History} label="Budget" colorClass="bg-gradient-to-br from-blue-400 to-indigo-500" onClick={() => router.push('/wallet')} />
+              <IconButton icon={ClipboardList} label="Task" colorClass="bg-gradient-to-br from-green-400 to-emerald-500" onClick={() => router.push('/tasks')} />
+            </div>
+
+            <div className="space-y-5">
+              <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-2">
+                <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}} />
+                <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+              </div>
+              <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-4 px-2 space-y-1">
+                 {isCertifiedSeller && (
+                   <SellerTransferDialog />
+                 )}
+                 {isAuthorizedAdmin && (
+                   <OfficialCenterDialog isAuthorized={true} />
+                 )}
+              </div>
+              <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-white py-2">
+                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-100 text-slate-400" onClick={() => {}} />
+              </div>
             </div>
           </div>
         </div>
+        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
       </div>
-      <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
-    </div>
-  );
- }
+      </AppLayout>
+    );
+   }
 
   return (
-    <>
+    <AppLayout>
       <PublicProfileView 
-       profile={profile} 
-       onBack={() => router.back()} 
-       handleFollow={handleFollow} 
-       followData={followData} 
-       isProcessingFollow={isProcessingFollow} 
-       onOpenSocial={(tab: any) => { setSocialTab(tab); setSocialOpen(true); }} 
-       contributors={contributors}
-       isContributorsLoading={isContributorsLoading}
-       stats={stats}
-       t={t}
+        profile={profile} 
+        onBack={() => router.back()} 
+        handleFollow={handleFollow} 
+        followData={followData} 
+        isProcessingFollow={isProcessingFollow} 
+        onOpenSocial={(tab: any) => { setSocialTab(tab); setSocialOpen(true); }} 
+        contributors={contributors}
+        isContributorsLoading={isContributorsLoading}
+        stats={stats}
+        t={t}
       />
       <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
-    </>
+    </AppLayout>
   );
 }
 

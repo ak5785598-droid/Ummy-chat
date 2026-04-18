@@ -6,7 +6,7 @@ import { useUser } from '@/firebase';
 import { UmmyLogoIcon } from '@/components/icons';
 import dynamic from 'next/dynamic';
 
-const ProfileView = dynamic(() => import('./[id]/profile-view'), {
+const ProfileView = dynamic(() => import('./[id]/profile-view-glossy'), {
   ssr: false,
   loading: () => <ProfileLoadingView />
 });
