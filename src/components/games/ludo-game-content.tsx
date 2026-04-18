@@ -85,87 +85,88 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
          </div>
       </header>
 
-      <main className="flex-1 relative flex flex-col items-center justify-center p-4">
+      <main className="flex-1 relative flex flex-col items-center justify-center p-2 pt-4">
          
-         {/* PLAYER CARDS Grid */}
-         <div className="w-full max-w-[450px] grid grid-cols-2 gap-4 mb-6">
-           {gameState.players.map((p, i) => (
-             <div 
-              key={p.uid} 
-              className={cn(
-                "flex items-center gap-3 p-2 rounded-2xl border transition-all",
-                gameState.turn === p.uid ? "bg-white/10 border-white/20 shadow-lg scale-105" : "bg-black/20 border-white/5 opacity-50"
-              )}
-             >
-               <div className="relative">
-                 <Avatar className={cn("h-10 w-10 border-2", 
-                   p.color === 'blue' && "border-blue-500",
-                   p.color === 'red' && "border-red-500",
-                   p.color === 'yellow' && "border-yellow-400",
-                   p.color === 'green' && "border-green-500"
-                 )}>
-                   <AvatarImage src={p.avatarUrl} />
-                   <AvatarFallback>{p.username[0]}</AvatarFallback>
-                 </Avatar>
-                 {gameState.turn === p.uid && <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-[#0a1a4a] animate-pulse" />}
-               </div>
-               <div className="flex flex-col min-w-0">
-                 <span className="text-[10px] font-black text-white truncate">{p.username}</span>
-                 <span className={cn("text-[8px] font-bold uppercase",
-                   p.color === 'blue' && "text-blue-400",
-                   p.color === 'red' && "text-red-400",
-                   p.color === 'yellow' && "text-yellow-400",
-                   p.color === 'green' && "text-green-400"
-                 )}>{p.color}</span>
-               </div>
-             </div>
-           ))}
+         {/* HIGH FIDELITY BOARD - Now with corner avatars */}
+         <div className="w-full max-w-[480px] px-2 animate-in fade-in zoom-in duration-500">
+           <LudoBoard 
+              pieces={gameState.pieces} 
+              users={gameState.players} 
+              currentPlayerTurn={gameState.turn}
+              onPieceClick={(id) => movePiece(id)}
+           />
          </div>
 
-         {/* HIGH FIDELITY BOARD */}
-         <LudoBoard 
-            pieces={gameState.pieces} 
-            users={gameState.players} 
-            currentPlayerTurn={gameState.turn}
-            onPieceClick={(id) => movePiece(id)}
-         />
-
-         {/* GAME CONTROLS / DICE */}
-         <div className="mt-8 flex flex-col items-center gap-4 w-full">
+         {/* GAME CONTROLS / DICE - Premium Glossy Style */}
+         <div className="mt-6 flex flex-col items-center gap-4 w-full px-6">
             <AnimatePresence mode="wait">
               {isMyTurn && !gameState.diceRolled ? (
-                <motion.button
-                  key="roll"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  onClick={rollDice}
-                  className="px-12 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-black uppercase tracking-widest rounded-full shadow-[0_5px_0_#ca8a04] hover:shadow-none hover:translate-y-1 transition-all active:scale-95 text-sm"
+                <motion.div
+                  key="roll-area"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  className="flex flex-col items-center gap-3"
                 >
-                  Roll Dice 🎲
-                </motion.button>
+                  <button
+                    onClick={rollDice}
+                    className="group relative h-20 w-20 flex items-center justify-center active:scale-90 transition-all"
+                  >
+                    {/* Shadow/Glow */}
+                    <div className="absolute inset-0 bg-yellow-400/20 rounded-2xl blur-xl group-hover:bg-yellow-400/40 transition-colors" />
+                    
+                    {/* Button Body */}
+                    <div className="relative h-full w-full bg-gradient-to-tr from-yellow-400 to-orange-500 rounded-3xl border-b-8 border-orange-700 flex items-center justify-center shadow-2xl overflow-hidden">
+                       {/* Gloss reflection */}
+                       <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
+                       <span className="text-4xl filter drop-shadow-lg">🎲</span>
+                    </div>
+                  </button>
+                  <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.3em] animate-pulse">Your Turn to Roll</span>
+                </motion.div>
               ) : (
                 <motion.div 
                   key="status"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-4 bg-black/30 px-8 py-3 rounded-2xl border border-white/5"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-4 bg-gradient-to-b from-white/10 to-transparent backdrop-blur-3xl px-10 py-4 rounded-3xl border border-white/10 shadow-2xl"
                 >
-                   <div className="flex flex-col items-center">
-                     <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Dice Status</span>
-                     <span className="text-xl font-black text-white">{gameState.dice || '—'}</span>
+                   <div className="flex flex-col items-center min-w-[60px]">
+                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Dice</span>
+                     <div className={cn(
+                       "text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]",
+                       gameState.dice === 6 && "text-yellow-400"
+                     )}>
+                       {gameState.dice || '—'}
+                     </div>
                    </div>
-                   <div className="w-px h-8 bg-white/10" />
-                   <div className="flex flex-col items-center">
-                     <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">Turn Of</span>
-                     <span className="text-[10px] font-bold text-white uppercase italic">{currPlayer?.username || 'WAITING'}</span>
+                   
+                   <div className="w-px h-10 bg-white/10" />
+                   
+                   <div className="flex flex-col items-start min-w-[100px]">
+                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Current Turn</span>
+                     <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6 border border-white/20">
+                          <AvatarImage src={currPlayer?.avatarUrl} />
+                          <AvatarFallback className="text-[8px] bg-slate-800 text-white">{currPlayer?.username[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-[12px] font-black text-white uppercase italic truncate max-w-[80px]">
+                          {isMyTurn ? 'YOU' : currPlayer?.username || 'WAITING'}
+                        </span>
+                     </div>
                    </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {isMyTurn && gameState.diceRolled && (
-              <p className="text-white font-black text-[10px] uppercase tracking-widest animate-pulse mt-2">👇 Select Piece to Move</p>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-white font-black text-[11px] uppercase tracking-[0.2em] animate-pulse flex items-center gap-2 mt-2"
+              >
+                <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" /> Select Piece to Move
+              </motion.p>
             )}
          </div>
 
