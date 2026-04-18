@@ -10,9 +10,9 @@ import {
   VolumeX, 
   HelpCircle, 
   X,
-  Move,
   ChevronDown,
-  Users
+  Users,
+  Clock 
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -239,22 +239,6 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
-  const handleRepeat = () => {
-   if (gameState !== 'betting' || !currentUser || !userProfile) return;
-   const totalCost = Object.values(lastBets).reduce((a, b) => a + b, 0);
-   if (totalCost === 0) return;
-   if ((userProfile.wallet?.coins || 0) < totalCost) {
-    toast({ variant: 'destructive', title: 'Insufficient Coins' });
-    return;
-   }
-
-   playBetSound();
-   const updateData = { 'wallet.coins': increment(-totalCost), updatedAt: serverTimestamp() };
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-   setMyBets(lastBets);
-  };
-
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();
@@ -311,32 +295,49 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
      />
     )}
 
+    {/* HEADER */}
     <header className="relative z-50 flex items-center justify-between p-4 pt-10">
-      <div className="flex gap-2 text-white">
-       <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><Move className="h-5 w-5" /></button>
-       <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md">
-        {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-       </button>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center bg-[#231545]/80 backdrop-blur-md rounded-[30px] p-1 border border-white/5 shadow-lg">
+          <div className="bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full h-8 w-8 flex items-center justify-center shadow-inner">
+            <GoldCoinIcon className="h-5 w-5" />
+          </div>
+          <span className="text-white font-bold px-3 text-sm tracking-wide">
+            {userProfile?.wallet?.coins >= 1000000 
+              ? `${(userProfile.wallet.coins / 1000000).toFixed(1)}M`
+              : (userProfile?.wallet?.coins || 0).toLocaleString()}
+          </span>
+          <button className="bg-emerald-400 hover:bg-emerald-500 rounded-full h-8 w-8 flex items-center justify-center text-white text-xl font-bold shadow-md transition-all active:scale-95">
+            +
+          </button>
+        </div>
       </div>
-      <div className="flex flex-col items-center">
-       <span className="text-[8px] font-bold text-white/40 uppercase tracking-wider">ROULETTE LIVE SYNC</span>
-       <div className="bg-emerald-500/20 border border-emerald-500/40 rounded-md px-2 py-0.5 flex items-center gap-1">
-         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-         <span className="text-[8px] font-bold text-emerald-400">Synchronized</span>
-       </div>
-      </div>
-      <div className="flex gap-2 text-white">
-       <button className="bg-white/10 p-2 rounded-full backdrop-blur-md"><HelpCircle className="h-5 w-5" /></button>
-       <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><X className="h-5 w-5" /></button>
+
+      <div className="flex items-center gap-2">
+        <button className="bg-[#231545]/80 p-2 rounded-full border border-white/5 backdrop-blur-md hover:bg-white/10 transition-colors">
+          <Clock className="h-5 w-5 text-white" />
+        </button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-[#231545]/80 p-2 rounded-full border border-white/5 backdrop-blur-md hover:bg-white/10 transition-colors">
+          {isMuted ? <VolumeX className="h-5 w-5 text-white" /> : <Volume2 className="h-5 w-5 text-white" />}
+        </button>
+        <button className="bg-[#231545]/80 p-2 rounded-full border border-white/5 backdrop-blur-md hover:bg-white/10 transition-colors">
+          <HelpCircle className="h-5 w-5 text-white" />
+        </button>
+        <button onClick={handleBack} className="bg-[#231545]/80 p-2 rounded-full border border-white/5 backdrop-blur-md hover:bg-white/10 transition-colors">
+          <X className="h-5 w-5 text-white" />
+        </button>
       </div>
     </header>
 
     <div className="relative flex-1 flex flex-col items-center justify-center p-4">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none" />
       
+      {/* ROULETTE WHEEL WITH BALL */}
       <div className="relative w-64 h-64 z-10 transition-transform duration-[5000ms] ease-out" style={{ transform: `rotate(-${rotation}deg)` }}>
-       <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
-         <circle cx="50" cy="50" r="48" fill="#3d2b1f" stroke="#b88a44" strokeWidth="4" />
+       <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_25px_rgba(0,0,0,0.5)]">
+         <circle cx="50" cy="50" r="49" fill="#1e130c" stroke="#d4af37" strokeWidth="1.5" />
+         <circle cx="50" cy="50" r="47" fill="#2a1b12" />
+         
          {NUMBERS.map((num, i) => {
           const angle = (i * 360) / 37;
           const isRed = RED_NUMBERS.includes(num);
@@ -344,37 +345,41 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
           return (
            <g key={num} transform={`rotate(${angle}, 50, 50)`}>
             <path 
-             d="M 50 2 L 54 2 L 52 15 L 48 15 Z" 
+             d="M 50 3 L 53.5 3 L 52 16 L 48 16 Z" 
              fill={isZero ? '#10b981' : isRed ? '#ef4444' : '#1a1a1a'} 
              stroke="#3d2b1f" 
-             strokeWidth="0.2"
+             strokeWidth="0.3"
             />
             <text 
-             x="50" y="8" 
+             x="50" y="9" 
              fontSize="3" 
              textAnchor="middle" 
              fill="white" 
              fontWeight="black" 
-             transform={`rotate(180, 50, 8)`}
+             transform={`rotate(180, 50, 9)`}
             >
              {num}
             </text>
            </g>
           );
          })}
-         <circle cx="50" cy="50" r="15" fill="#b88a44" />
-         <circle cx="50" cy="50" r="12" fill="#3d2b1f" opacity="0.2" />
-         <path d="M 50 35 L 50 65 M 35 50 L 65 50" stroke="#b88a44" strokeWidth="3" strokeLinecap="round" />
-         <circle cx="50" cy="35" r="2" fill="#b88a44" />
-         <circle cx="50" cy="65" r="2" fill="#b88a44" />
-         <circle cx="35" cy="50" r="2" fill="#b88a44" />
-         <circle cx="65" cy="50" r="2" fill="#b88a44" />
-         <circle cx="50" cy="50" r="4" fill="#fcd34d" />
+         
+         {/* THE WHITE BALL (Rotates with the wheel) */}
+         <circle cx="50" cy="13.5" r="1.8" fill="white" className="drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" />
+
+         <circle cx="50" cy="50" r="16" fill="#d4af37" />
+         <circle cx="50" cy="50" r="14" fill="#1e130c" />
+         <path d="M 50 34 L 50 66 M 34 50 L 66 50" stroke="#d4af37" strokeWidth="2.5" strokeLinecap="round" />
+         <circle cx="50" cy="34" r="2" fill="#d4af37" />
+         <circle cx="50" cy="66" r="2" fill="#d4af37" />
+         <circle cx="34" cy="50" r="2" fill="#d4af37" />
+         <circle cx="66" cy="50" r="2" fill="#d4af37" />
+         <circle cx="50" cy="50" r="5" fill="#fcd34d" shadow="0 0 5px rgba(0,0,0,0.5)" />
        </svg>
       </div>
 
-      <div className="absolute top-[calc(50%-132px)] left-1/2 -translate-x-1/2 z-20">
-       <div className="w-4 h-6 bg-yellow-400 clip-path-triangle" />
+      <div className="absolute top-[calc(50%-136px)] left-1/2 -translate-x-1/2 z-20">
+       <div className="w-4 h-6 bg-gradient-to-b from-yellow-300 to-yellow-600 clip-path-triangle shadow-lg border-b-2 border-yellow-800" />
       </div>
 
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-30">
@@ -406,30 +411,31 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
       </div>
     </div>
 
-    <div className="bg-emerald-600/20 backdrop-blur-3xl rounded-t-[3rem] p-4 pb-10 border-t-2 border-white/10 shadow-[0_-20px_50px_rgba(0,0,0,0.3)] -translate-y-12">
-      <div className="grid grid-cols-4 gap-2 mb-6">
+    {/* GAME SHEET MOVED TO BOTTOM */}
+    <div className="bg-black/40 backdrop-blur-3xl rounded-t-[2.5rem] p-4 pb-6 border-t border-white/10 shadow-[0_-15px_40px_rgba(0,0,0,0.4)] relative z-40">
+      <div className="grid grid-cols-4 gap-2 mb-4">
        {BET_OPTIONS.map((opt) => (
         <button
          key={opt.id}
          onClick={() => handlePlaceBet(opt.id)}
          disabled={gameState !== 'betting'}
          className={cn(
-          "relative aspect-[4/3] rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-0.5 group active:scale-95 overflow-hidden text-white",
-          "border-white/5",
+          "relative aspect-[4/3] rounded-xl border transition-all duration-300 flex flex-col items-center justify-center group active:scale-95 overflow-hidden text-white",
+          "border-white/10",
           opt.color,
           gameState !== 'betting' && "opacity-60"
          )}
         >
-          <div className="absolute top-1 right-2 flex items-center gap-0.5">
+          <div className="absolute top-1 right-2">
            <span className="text-[8px] font-bold text-yellow-400">{(myBets[opt.id] || 0).toLocaleString()}</span>
           </div>
-          <h4 className="text-base font-bold uppercase tracking-tight">{opt.label}</h4>
-          <span className="text-[10px] font-bold text-white/60">x{opt.multiplier}</span>
+          <h4 className="text-sm font-bold uppercase">{opt.label}</h4>
+          <span className="text-[9px] font-medium text-white/50">x{opt.multiplier}</span>
           
           {myBets[opt.id] > 0 && (
-           <div className="absolute inset-0 bg-yellow-400/10 flex items-center justify-center pointer-events-none">
-            <div className="h-8 w-8 rounded-full border-2 border-dashed border-yellow-400/40 animate-spin-slow" />
-            <div className="absolute bg-white text-blue-600 rounded-full h-6 w-6 flex items-center justify-center text-[8px] font-bold shadow-lg">
+           <div className="absolute inset-0 bg-white/10 flex items-center justify-center pointer-events-none">
+            <div className="h-6 w-6 rounded-full border border-dashed border-white/30 animate-spin-slow" />
+            <div className="absolute bg-yellow-500 text-black rounded-full h-5 w-5 flex items-center justify-center text-[7px] font-black shadow-md">
               {selectedChip >= 1000 ? `${(selectedChip/1000)}k` : selectedChip}
             </div>
            </div>
@@ -438,39 +444,24 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
        ))}
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-       <div className="flex flex-col gap-1">
-         <span className="text-[10px] font-bold uppercase text-white/40 truncate w-24">{(userProfile?.username || 'GUEST').slice(0, 8)}...</span>
-         <div className="bg-black/40 rounded-full px-3 py-1 flex items-center gap-2 border border-white/5 shadow-inner text-white">
-          <GoldCoinIcon className="h-4 w-4" />
-          <span className="text-xs font-bold ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-         </div>
-       </div>
-
-       <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar py-2">
+      {/* CHIPS AREA */}
+      <div className="flex items-center justify-center w-full">
+       <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 w-full justify-center px-4">
          {CHIPS.map((chip) => (
           <button
            key={chip.value}
            onClick={() => setSelectedChip(chip.value)}
            className={cn(
-            "h-12 w-12 rounded-full border-2 transition-all flex items-center justify-center shrink-0 shadow-lg relative overflow-hidden group active:scale-90",
-            selectedChip === chip.value ? "border-white scale-110 ring-4 ring-white/20 z-10" : "border-white/10 opacity-60 grayscale-[0.2]",
+            "h-12 w-12 rounded-full border-2 transition-all flex items-center justify-center shrink-0 shadow-lg relative active:scale-90",
+            selectedChip === chip.value ? "border-white scale-110 ring-2 ring-white/20 z-10" : "border-white/5 opacity-60",
             chip.color
            )}
           >
-           <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent h-1/2" />
-           <span className="text-[10px] font-bold text-white drop-shadow-md">{chip.label}</span>
+           <span className="text-[10px] font-black text-white drop-shadow-sm z-10">{chip.label}</span>
+           <div className="absolute inset-1 border border-white/20 rounded-full border-dashed" />
           </button>
          ))}
        </div>
-
-       <button 
-        onClick={handleRepeat}
-        disabled={gameState !== 'betting'}
-        className="bg-gray-200 text-gray-800 px-6 h-12 rounded-2xl font-bold uppercase text-sm shadow-xl active:scale-95 transition-transform"
-       >
-         Repeat
-       </button>
       </div>
     </div>
 
