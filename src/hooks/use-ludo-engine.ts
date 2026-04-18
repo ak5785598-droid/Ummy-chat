@@ -80,8 +80,9 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     }
     if (gameState.players.length >= 4) return;
 
-    const entryFee = gameState.entryFee || 0;
-    const userCoins = userProfile.wallet?.coins ?? userProfile.coins ?? 0;
+    // FREE ENTRY OVERRIDE
+    const entryFee = 0; 
+    const userCoins = 999999; // Mock balance for free entry
     
     if (userCoins < entryFee) {
       console.log("Ludo: Insufficient coins", { userCoins, entryFee });
@@ -92,23 +93,12 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
     
     try {
-      console.log("Ludo: Starting join transaction...");
+      console.log("Ludo: Starting join transaction (FREE)...");
       await runTransaction(firestore!, async (transaction) => {
          const userRef = doc(firestore!, 'users', userId);
          const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
-         const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
 
-         if (entryFee > 0) {
-           transaction.update(userRef, { coins: increment(-entryFee) });
-           transaction.update(profileRef, { coins: increment(-entryFee) });
-           transaction.set(walletRef, {
-             userId,
-             amount: -entryFee,
-             type: 'game_entry',
-             gameId: `ludo_${roomId}`,
-             timestamp: serverTimestamp()
-           });
-         }
+         // Coin deduction skipped for Free Mode
 
          transaction.update(gameDocRef, {
            players: arrayUnion({

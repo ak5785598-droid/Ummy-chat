@@ -66,11 +66,11 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       return;
     }
 
-    // 1. Minimum Balance Check
-    const entryFee = gameState?.entryFee || 0;
-    const userCoins = userProfile.wallet?.coins ?? userProfile.coins ?? 0;
+    // 1. Minimum Balance Check (FREE OVERRIDE)
+    const entryFee = 0;
+    const userCoins = 999999;
 
-    console.log("Carrom: Attempting to join lobby", { status: gameState?.status, userCoins, entryFee });
+    console.log("Carrom: Attempting to join lobby (FREE)", { status: gameState?.status, userCoins, entryFee });
 
     if (userCoins < entryFee) {
       console.log("Carrom: Insufficient coins", { userCoins, entryFee });
@@ -88,25 +88,14 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
 
     if (gameState.players.length >= 4) return;
 
-    // 2. Atomic Deduction & Join
+    // 2. Atomic Join (NO FEE)
     try {
-      console.log("Carrom: Starting join transaction...");
+      console.log("Carrom: Starting join transaction (FREE)...");
       await runTransaction(firestore!, async (transaction) => {
         const userRef = doc(firestore!, 'users', userId);
         const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
-        const walletRef = doc(firestore!, 'walletTransactions', `${userId}_${Date.now()}`);
 
-        if (entryFee > 0) {
-          transaction.update(userRef, { coins: increment(-entryFee) });
-          transaction.update(profileRef, { coins: increment(-entryFee) });
-          transaction.set(walletRef, {
-            userId,
-            amount: -entryFee,
-            type: 'game_entry',
-            gameId: `carrom_${roomId}`,
-            timestamp: serverTimestamp()
-          });
-        }
+        // Coin deduction skipped for Free Mode
 
         const newPlayer: CarromPlayer = {
           uid: userId,
