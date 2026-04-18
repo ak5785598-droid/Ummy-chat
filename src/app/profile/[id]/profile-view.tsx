@@ -342,34 +342,44 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
           <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
             <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
-              <div className="flex items-start gap-3 pt-1">
+              {/* Identity Section - Side-by-Side - Ultra Tight */}
+              <div className="flex items-start gap-1.5 pt-0">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-28 w-28 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
+                    <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-2xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="text-3xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
                 </div>
-                <div className="flex-1 self-center space-y-0.5 min-w-0">
+                <div className="flex-1 self-center space-y-1 min-w-0">
+                  {/* Row 1: Name, Flag, Gender */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-[20px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
                     <span className="text-xl leading-none">🇮🇳</span>
                     <GenderCircle gender={profile.gender} />
                   </div>
+
+                  {/* Row 2: Levels */}
                   <div className="flex items-center gap-2">
                     <RichLevelBadge level={profile.level?.rich || 1} />
                     <CharmLevelBadge level={profile.level?.charm || 1} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                      <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
-                      </div>
+
+                  {/* Row 3: ID */}
+                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity w-fit">
+                    <div className="flex items-center gap-1.5 bg-slate-100/80 px-4 py-1.5 rounded-full border border-slate-200/50">
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">ID: {profile.accountNumber || '0123'}</span>
                     </div>
-                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
                   </div>
+
+                  {/* Row 4: Professional Tags */}
+                  {(profile.tags?.includes('Official') || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t))) && (
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                      {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                    </div>
+                  )}
                 </div>
               </div>
 
