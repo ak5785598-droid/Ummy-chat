@@ -129,9 +129,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3'); 
-     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
-     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
+     // Updated with more exciting arcade/casino sounds
+     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
+     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
+     tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
    }
  }, []);
@@ -239,7 +240,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   let groupType: 'none' | 'left' | 'right' = 'none';
   const chance = Math.random();
-  // Changed to strictly 5% Mix chance (2.5% left + 2.5% right = 5% total)
   if (chance < 0.025) groupType = 'left'; 
   else if (chance < 0.05) groupType = 'right'; 
 
@@ -277,7 +277,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
-   // Added rapid trick-trick whirring effect (Plays every 2 steps instead of 10)
    if (currentStep % 10 === 0) playSound('tick'); 
 
    if (currentStep < totalSteps) {
@@ -297,6 +296,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  };
 
  const finalizeResult = (id: string, groupType: 'none' | 'left' | 'right') => {
+  
+  // Winner declare hote hi chips turant clear kar di jayengi
+  setDroppedChips([]);
+  setFakeDroppedChips([]);
+
   let winningIds = [id];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
@@ -364,8 +368,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setWinnerData(null);
    setMyBets({});
    setHighlightIdx(null);
-   setDroppedChips([]);
-   setFakeDroppedChips([]);
    setShiningGroup('none'); 
    setGameState('betting');
    setTimeLeft(25);
@@ -554,9 +556,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
-            {/* Glossy Animals Card Design Added */}
-            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", active ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
-                {/* Glossy Overlay Highlight */}
+            {/* Background color untouched, only Golden Ring/Shining Border added when active */}
+            <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", active ? "scale-110 border-[#FFD700] shadow-[0_0_20px_#FFD700] z-50 ring-4 ring-[#FFD700]/50" : "border-[#eebb99]")}>
+                {/* Glossy Overlay Highlight Maintained */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
                 
                 <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
