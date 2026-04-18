@@ -541,8 +541,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
      </div>
 
       {/* 🚀 FIXED HEADER (Identity + Stats + Wallet + VIP) */}
-      <div className="w-full bg-white/95 backdrop-blur-xl z-50 pt-safe pb-4 border-b border-black/5 shadow-sm sticky top-0 shrink-0">
-        <div className="px-5 space-y-4">
+      <div className="w-full bg-white/95 backdrop-blur-xl z-50 pt-safe pb-2 border-b border-black/5 shadow-sm sticky top-0 shrink-0">
+        <div className="px-5 space-y-2">
           <header className="flex items-center gap-4 relative pt-1">
             <EditProfileDialog 
               profile={profile} 
@@ -595,7 +595,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
           </header>
 
-          <div className="flex justify-between items-center border-t border-black/5 pt-3 pb-1">
+          <div className="flex justify-between items-center border-t border-black/5 pt-2 pb-0.5">
             <StatItem label="FANS" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
             <StatItem label="FOLLOWING" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
             <StatItem label="FRIENDS" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
@@ -655,7 +655,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
 
       {/* 📜 SCROLLABLE CONTENT SECTION (Icons + Menus) */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pt-6 pb-24 relative z-10 px-5 space-y-6">
+      <div className="flex-1 overflow-y-auto no-scrollbar pt-2 pb-24 relative z-10 px-5 space-y-3">
         
         {/* ICON NAVIGATION BUTTONS */}
         <div className="flex justify-between items-center px-1">
@@ -684,6 +684,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <ProfileMenuItem icon={ShoppingBag} label={t.profile.bag} extra={t.profile.inventory} iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
             <ProfileMenuItem icon={Heart} label={t.profile.cp} iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
             {isCertifiedSeller && <SellerTransferDialog />}
+            {isAuthorizedAdmin && <OfficialCenterDialog isAuthorized={true} />}
           </Card>
 
           <Card className="rounded-[1.5rem] border-none shadow-sm overflow-hidden bg-white px-2">

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   Mic,
   MicOff,
+  Gift,
   Gift as GiftIcon,
   Users,
   Volume2,
@@ -1395,7 +1396,21 @@ export function RoomClient({ room }: { room: Room }) {
           requestAnimationFrame(() => {
             chunk.forEach(msg => {
               if (msg.type === 'gift' && msg.giftId) {
-                 // Handled by the dedicated gift listener above
+                // TRIGGER LOCAL ANIMATION:
+                setActiveGift({
+                  giftId: msg.giftId,
+                  senderName: msg.senderName,
+                  targetSeat: msg.recipientSeat || 1
+                });
+                
+                // Haptic feedback for sender/recipient
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  const isRecipient = msg.recipientId === currentUser?.uid;
+                  const isSender = msg.senderId === currentUser?.uid;
+                  if (isRecipient || isSender) {
+                    navigator.vibrate(100);
+                  }
+                }
               } else if (msg.type === 'lucky-rain') {
                 setIsLuckyRainActive(true);
               } else if (msg.type === 'entrance' && isAIProcessor) {
@@ -2398,6 +2413,14 @@ export function RoomClient({ room }: { room: Room }) {
                           </div>
                         )}
                         {msg.content && <p className="break-words py-0.5">{msg.content}</p>}
+                        {msg.type === 'gift' && msg.text && (
+                          <div className="py-1">
+                            <p className="text-yellow-400 font-bold drop-shadow-sm flex items-center gap-1">
+                              <Gift className="h-3 w-3" />
+                              {msg.text}
+                            </p>
+                          </div>
+                        )}
                       </ChatMessageBubble>
                     </div>
                   </div>

@@ -80,7 +80,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   const totalCost = selectedGift.price * qty * selectedUids.length;
   
   if ((userProfile.wallet?.coins || 0) < totalCost) return;
-  if (!isComboTrigger) setIsSending(true);
+  if (isSending) return;
+  setIsSending(true);
 
   try {
    const batch = writeBatch(firestore);
