@@ -85,39 +85,39 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
 const StatItem = ({ label, value, onClick }: { label: string, value: number, onClick?: () => void }) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center justify-center flex-1 py-1 active-press"
+  className="flex flex-col items-center justify-center flex-1 py-1 active:scale-95 transition-transform"
  >
-  <span className="text-[20px] font-outfit font-black text-[#1a1c1e] leading-none mb-2">{formatCompactNumber(value)}</span>
-  <span className="text-[10px] font-outfit font-black text-slate-400 tracking-widest uppercase">{label}</span>
+  <span className="text-[22px] font-outfit font-black text-slate-900 leading-none mb-1.5">{formatCompactNumber(value)}</span>
+  <span className="text-[10px] font-outfit font-black text-slate-400 tracking-wider uppercase">{label}</span>
  </button>
 );
 
 const IconButton = ({ icon: Icon, label, colorClass, onClick }: any) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center gap-3 transition-transform active:scale-90"
+  className="flex flex-col items-center gap-2 transition-transform active:scale-95 group"
  >
-  <div className={cn("h-16 w-16 rounded-full flex items-center justify-center shadow-md border-4 border-white", colorClass)}>
-   <Icon className="h-7 w-7 text-white" />
+  <div className={cn("h-14 w-14 rounded-full flex items-center justify-center shadow-sm transition-all group-hover:shadow-md", colorClass)}>
+   <Icon className="h-6 w-6 text-white" />
   </div>
-  <span className="text-[10px] font-outfit font-black text-slate-400 uppercase tracking-widest">{label}</span>
+  <span className="text-[10px] font-outfit font-black text-slate-400 uppercase tracking-wider">{label}</span>
  </button>
 );
 
-const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive }: any) => (
+const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: any) => (
  <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-5 border-b border-slate-50 last:border-0 px-2 hover:bg-slate-50 active:bg-slate-100 transition-all text-left"
+  className="w-full flex items-center justify-between py-4 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
  >
   <div className="flex items-center gap-4">
-   <div className={cn("p-2.5 rounded-2xl transition-colors shadow-sm", iconColor || "bg-slate-100 text-slate-400")}>
+   <div className={cn("p-2 rounded-[1rem] transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
     <Icon className="h-5 w-5" />
    </div>
-   <span className={cn("font-outfit font-black text-[15px] uppercase tracking-tight", destructive ? "text-red-500" : "text-slate-800")}>{label}</span>
+   <span className={cn("font-outfit font-black text-[14px] tracking-tight", destructive ? "text-red-500" : "text-slate-700")}>{label}</span>
   </div>
-  <div className="flex items-center gap-3">
-   {extra && <span className="text-[10px] font-outfit font-black text-slate-300 uppercase tracking-widest">{extra}</span>}
-   <ChevronRight className="h-5 w-5 text-slate-200" />
+  <div className="flex items-center gap-2">
+   {extra && <span className={cn("text-[11px] font-outfit font-black uppercase tracking-wider", extraColor || "text-slate-300")}>{extra}</span>}
+   <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-0.5 transition-transform" />
   </div>
  </button>
 );
@@ -356,97 +356,128 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   if (mode === 'editable' && isOwnProfile) {
     return (
       <AppLayout>
-      <div className="flex flex-col h-full overflow-hidden bg-[#F4F7FE] font-outfit text-[13px]">
-        <header className="sticky top-0 z-[100] w-full bg-white px-6 py-2 pt-[calc(env(safe-area-inset-top)+4px)] shrink-0">
+      <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px]">
+        {/* Header with Edit Button */}
+        <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl px-6 py-2 pt-[calc(env(safe-area-inset-top)+4px)] shrink-0">
           <div className="flex items-center justify-end max-w-lg mx-auto h-12">
              <EditProfileDialog profile={profile} trigger={
-               <button className="p-2.5 bg-slate-900 rounded-full active:scale-95 transition-all shadow-md">
-                 <Pencil className="h-4.5 w-4.5 text-white" />
+               <button className="h-10 w-10 bg-slate-900 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ring-4 ring-slate-900/10">
+                 <Pencil className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
                </button>
              }/>
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-          <div className="max-w-lg mx-auto px-4 py-2 space-y-7">
-            <div className="bg-white rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden">
-               <div className="flex items-center gap-7 relative z-10">
-                  <div className="shrink-0 relative">
-                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                      <Avatar className="h-28 w-28 border-[6px] border-white shadow-xl rounded-full">
-                        <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
-                        <AvatarFallback className="text-3xl font-outfit font-black bg-slate-100 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </AvatarFrame>
+          <div className="max-w-lg mx-auto px-6 py-4 space-y-8">
+            {/* Identity Section - Side-by-Side */}
+            <div className="flex items-start gap-6">
+              <div className="shrink-0">
+                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                  <div className="relative">
+                    <Avatar className="h-24 w-24 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" unoptimized />
+                      <AvatarFallback className="text-2xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
                   </div>
-                  <div className="flex-1 flex flex-col gap-2 min-w-0 pt-2">
-                     <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-[26px] font-outfit font-black text-[#1a1c1e] tracking-tight leading-none truncate">{profile.username}</h2>
-                        <span className="text-xl leading-none">🇮🇳</span>
-                        <GenderCircle gender={profile.gender} />
-                     </div>
-                     <div className="flex items-center gap-2.5 pt-1">
-                        <RichLevelBadge level={profile.level?.rich || 1} />
-                        <CharmLevelBadge level={profile.level?.charm || 1} />
-                     </div>
-                     <div className="flex flex-col gap-2 pt-2">
-                        <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity w-fit">
-                          <BudgetTag variant="silver" label={`ID: ${profile.accountNumber || '0123'}`} size="sm" />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                          {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div className="mt-8 flex justify-between items-center pt-6 border-t border-slate-50">
-                  <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-                  <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-                  <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-                  <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
-               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-5">
-              <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-md cursor-pointer relative overflow-hidden h-36 border border-white/20">
-                 <div className="flex items-center gap-3 mb-5 relative z-10">
-                    <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30"><GoldCoinIcon className="h-6 w-6" /></div>
-                    <span className="text-[11px] font-outfit font-black text-white/90">Coins</span>
-                 </div>
-                 <div className="relative z-10 font-outfit font-black text-[22px] text-white tracking-tight">{formatCompactNumber(profile.wallet?.coins || 0)}</div>
-                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
+                </AvatarFrame>
               </div>
-              <div onClick={() => router.push('/wallet')} className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-6 shadow-md cursor-pointer relative overflow-hidden h-36 border border-white/20">
-                 <div className="flex items-center gap-3 mb-5 relative z-10">
-                    <div className="h-11 w-11 bg-white/20 backdrop-blur-md rounded-[1rem] flex items-center justify-center border border-white/30"><Gem className="h-6 w-6 text-white" /></div>
-                    <span className="text-[11px] font-outfit font-black text-white/90">Diamonds</span>
-                 </div>
-                 <div className="relative z-10 font-outfit font-black text-[22px] text-white tracking-tight">{formatCompactNumber(profile.wallet?.diamonds || 0)}</div>
-                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/30" />
+
+              <div className="flex-1 pt-1 space-y-2.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-[28px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
+                  <span className="text-xl">🇮🇳</span>
+                  <GenderCircle gender={profile.gender} />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <RichLevelBadge level={profile.level?.rich || 1} />
+                  <CharmLevelBadge level={profile.level?.charm || 1} />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                    <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full border border-slate-200/50">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ID: {profile.accountNumber || '0123'}</span>
+                    </div>
+                  </div>
+                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                  {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                </div>
               </div>
             </div>
 
-            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2rem] p-7 shadow-xl flex items-center justify-between cursor-pointer border border-slate-700">
-               <div className="flex items-center gap-6">
-                  <div className="h-14 w-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/5"><Crown className="h-7 w-7 text-amber-400 fill-current" /></div>
+            {/* Stats Row */}
+            <div className="flex justify-between items-center py-4 px-2">
+              <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+              <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+              <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+              <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
+            </div>
+
+            {/* Wallet Section - Squircle Cards */}
+            <div className="grid grid-cols-2 gap-4">
+              <div onClick={() => router.push('/wallet')} className="aspect-square bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-6 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-3 mb-auto relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+                      <GoldCoinIcon className="h-5 w-5" />
+                    </div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Coins</span>
+                 </div>
+                 <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col">
+                   <div className="font-black text-[24px] text-white tracking-tight truncate">
+                    {formatCompactNumber(profile.wallet?.coins || 0)}
+                   </div>
+                 </div>
+                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/40 group-hover:text-white transition-colors" />
+                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-white/10 rounded-full blur-3xl" />
+              </div>
+
+              <div onClick={() => router.push('/wallet')} className="aspect-square bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-6 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                 <div className="flex items-center gap-3 mb-auto relative z-10 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30">
+                      <Gem className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Diamonds</span>
+                 </div>
+                 <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col">
+                   <div className="font-black text-[24px] text-white tracking-tight truncate">
+                    {formatCompactNumber(profile.wallet?.diamonds || 0)}
+                   </div>
+                 </div>
+                 <ChevronRight className="absolute bottom-6 right-6 h-5 w-5 text-white/40 group-hover:text-white transition-colors" />
+                 <div className="absolute -top-10 -right-10 h-32 w-32 bg-white/10 rounded-full blur-3xl" />
+              </div>
+            </div>
+
+            {/* VIP Premium Card */}
+            <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-6 pr-8 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden">
+               <div className="flex items-center gap-5 relative z-10">
+                  <div className="h-14 w-14 bg-white/10 rounded-3xl flex items-center justify-center border border-white/5 transition-transform group-hover:scale-110">
+                    <Crown className="h-7 w-7 text-amber-400 fill-current drop-shadow-glow" />
+                  </div>
                   <div className="flex flex-col">
-                     <h3 className="text-[17px] font-outfit font-black text-white uppercase tracking-tight">VIP Premium™</h3>
-                     <p className="text-[10px] font-outfit font-bold text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
+                     <h3 className="text-[18px] font-black text-white uppercase tracking-tighter">VIP Premium™</h3>
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret Card Get Rewards</p>
                   </div>
                </div>
-               <div className="h-10 px-4 bg-white/5 rounded-xl flex items-center justify-center border border-white/5 font-outfit font-black text-[10px] text-slate-400 uppercase tracking-widest">Rewards Inside</div>
+               <div className="h-9 px-4 bg-white/5 rounded-full flex items-center justify-center border border-white/5 font-black text-[10px] text-slate-400 uppercase tracking-widest relative z-10 hover:bg-white/10 transition-colors">
+                Rewards Inside
+               </div>
+               <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-amber-500/5 rounded-full blur-3xl" />
             </div>
 
-            <div className="flex justify-between items-center px-4">
-              <IconButton icon={Trophy} label="Level" colorClass="bg-gradient-to-br from-orange-400 to-orange-500" onClick={() => router.push('/level')} />
-              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-gradient-to-br from-pink-400 to-rose-500" onClick={() => router.push('/store')} />
-              <IconButton icon={History} label="Budget" colorClass="bg-gradient-to-br from-blue-400 to-indigo-500" onClick={() => router.push('/wallet')} />
-              <IconButton icon={ClipboardList} label="Task" colorClass="bg-gradient-to-br from-green-400 to-emerald-500" onClick={() => router.push('/tasks')} />
+            {/* Action Bar */}
+            <div className="flex justify-between items-center px-2 py-2">
+              <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
+              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
+              <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
+              <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-500" onClick={() => router.push('/tasks')} />
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-white rounded-[2.5rem] shadow-sm border border-white py-2">
+            {/* Consolidated Menu List */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
                   if (typeof window !== 'undefined') {
                     const shareUrl = window.location.origin;
@@ -454,15 +485,33 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     window.open(`https://wa.me/?text=${text}`, '_blank');
                   }
                 }}/>
-                <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                 <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                
+                {isCertifiedSeller && (
+                  <ProfileMenuItem 
+                    icon={Sparkles} 
+                    label="Seller Center" 
+                    extra="Transfer Portal" 
+                    extraColor="text-emerald-500" 
+                    iconColor="bg-emerald-50 text-emerald-500" 
+                    onClick={() => router.push('/admin')} // Assuming admin handles seller center
+                  />
+                )}
+                {isAuthorizedAdmin && (
+                  <ProfileMenuItem 
+                    icon={Crown} 
+                    label="Official Centre" 
+                    extra="Supreme Authority" 
+                    extraColor="text-blue-600" 
+                    iconColor="bg-blue-50 text-blue-600" 
+                    onClick={() => router.push('/admin')} 
+                  />
+                )}
               </div>
-              <div className="bg-white rounded-[2.5rem] shadow-sm border border-white py-4 px-2 space-y-1">
-                 {isCertifiedSeller && <SellerTransferDialog />}
-                 {isAuthorizedAdmin && <OfficialCenterDialog isAuthorized={true} />}
-              </div>
-              <div className="bg-white rounded-[2.5rem] shadow-sm border border-white py-2">
+
+              <div className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                 <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => {}} />
                 {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
