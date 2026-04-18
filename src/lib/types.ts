@@ -292,5 +292,7 @@ export type ChessGameState = {
   turn: 'w' | 'b';
   fen: string; // Standard Chess algebraic notation
   status: 'lobby' | 'playing' | 'checkmate' | 'draw';
+  winner: string | null;
+  history: string[];
   updatedAt: any;
 };

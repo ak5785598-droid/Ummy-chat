@@ -41,6 +41,8 @@ export function useChessEngine(roomId: string | null, userId: string | null) {
         turn: 'w',
         fen: initialFen,
         status: 'lobby',
+        winner: null,
+        history: [],
         updatedAt: serverTimestamp()
       });
     } else if (gameState.status === 'lobby' && !gameState.black && gameState.white?.uid !== userId) {
@@ -56,7 +58,7 @@ export function useChessEngine(roomId: string | null, userId: string | null) {
     }
   }, [gameDocRef, userId, gameState, roomId]);
 
-  const makeMove = useCallback(async (newFen: string) => {
+  const makeMove = useCallback(async (newFen: string, san: string, status: 'playing' | 'checkmate' | 'draw' = 'playing', winnerUid: string | null = null) => {
     if (!gameDocRef || !gameState) return;
 
     const nextTurn = gameState.turn === 'w' ? 'b' : 'w';
@@ -64,6 +66,9 @@ export function useChessEngine(roomId: string | null, userId: string | null) {
     await updateDocumentNonBlocking(gameDocRef, {
       fen: newFen,
       turn: nextTurn,
+      status: status,
+      winner: winnerUid,
+      history: [...(gameState.history || []), san],
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState]);
