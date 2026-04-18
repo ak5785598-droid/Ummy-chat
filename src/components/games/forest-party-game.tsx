@@ -129,7 +129,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     // Golden Coins Sound Added here
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2044/2044-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/588/588-preview.mp3');
@@ -140,13 +139,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
-        if (Math.random() > 0.2) { // 80% chance to drop 10-15 chips
-            const dropCount = Math.floor(Math.random() * 6) + 10; // 10 to 15 chips
+        if (Math.random() > 0.2) { 
+            const dropCount = Math.floor(Math.random() * 6) + 10; 
             const newFakeChips = [];
             
             for (let i = 0; i < dropCount; i++) {
                 const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
-                // Biasing towards smaller chips for realism, but occasionally dropping big ones
                 const chipOptions = [0, 0, 0, 1, 1, 2, 3, 4, 5];
                 const randomChip = CHIPS_DATA[chipOptions[Math.floor(Math.random() * chipOptions.length)]] || CHIPS_DATA[0];
                 
@@ -158,13 +156,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     color: randomChip.color,
                     x: (Math.random() * 40) - 20,
                     y: (Math.random() * 30) - 15,
-                    delay: Math.random() * 0.8 // Staggering effect
+                    delay: Math.random() * 0.8 
                 });
             }
             
             setFakeDroppedChips(prev => [...prev.slice(-60), ...newFakeChips]);
         }
-    }, 2000); // Har 2 sec me check karega
+    }, 2000); 
     return () => clearInterval(interval);
  }, [gameState]);
 
@@ -211,7 +209,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameState !== 'betting' || !currentUser) return;
   if (localCoins < selectedChip) {
-   toast({ title: 'Coins Kam Hain!', variant: 'destructive' });
+   toast({ title: 'You do not have any Coins!', variant: 'destructive' });
    return;
   }
 
@@ -241,8 +239,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   let groupType: 'none' | 'left' | 'right' = 'none';
   const chance = Math.random();
-  if (chance < 0.15) groupType = 'left'; 
-  else if (chance < 0.30) groupType = 'right'; 
+  // Changed to strictly 5% Mix chance (2.5% left + 2.5% right = 5% total)
+  if (chance < 0.025) groupType = 'left'; 
+  else if (chance < 0.05) groupType = 'right'; 
 
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
 
@@ -272,12 +271,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let currentStep = 0;
   const spins = 10; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  let speed = 35; 
+  let speed = 40; 
 
   const runChase = () => {
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
    
+   // Added rapid trick-trick whirring effect (Plays every 2 steps instead of 10)
    if (currentStep % 10 === 0) playSound('tick'); 
 
    if (currentStep < totalSteps) {
@@ -554,15 +554,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
+            {/* Glossy Animals Card Design Added */}
             <div className={cn("h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all duration-75 overflow-hidden relative shadow-[0_6px_0_#241108]", active ? "scale-110 border-white bg-gradient-to-b from-yellow-400 to-yellow-700 z-50 ring-4 ring-yellow-400/30" : "border-[#eebb99]")}>
+                {/* Glossy Overlay Highlight */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
+                
                 <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
-                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", active ? "bg-white/20" : "bg-[#4a2511] border-t border-[#eebb99]")}>
-                    <span className="text-[7px] font-bold uppercase tracking-tighter">Win {item.multiplier}x</span>
+                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20", active ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                    <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                 </div>
             </div>
             
             <AnimatePresence>
-                {/* Real Chips - Ab Zebra 3D Design ke sath */}
                 {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div 
                         key={chip.id} 
@@ -582,7 +585,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     </motion.div>
                 ))}
 
-                {/* Fake Chips - 10 se 15 drop honge real zebra 3D look me */}
                 {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
                     <motion.div 
                         key={chip.id} 
@@ -639,7 +641,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             key={chip.value} 
             onClick={() => { playSound('bet'); setSelectedChip(chip.value); }} 
             className={cn(
-                "h-[52px] w-[52px] aspect-square rounded-full flex items-center justify-center transition-all relative shrink-0", // Perfect circle fix yaha pe
+                "h-[52px] w-[52px] aspect-square rounded-full flex items-center justify-center transition-all relative shrink-0", 
                 "shadow-[0_6px_0_#1a0d06,0_10px_15px_rgba(0,0,0,0.5)]", 
                 selectedChip === chip.value ? "scale-110 -translate-y-2" : "hover:-translate-y-1",
                 "active:translate-y-1 active:shadow-[0_2px_0_#1a0d06]"
