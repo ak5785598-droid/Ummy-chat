@@ -27,7 +27,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
   const initializeGame = useCallback(async () => {
-    if (!gameDocRef || !userId) return;
+    if (!gameDocRef || !userId || isLoading) return;
     
     // Initialize if doesn't exist
     if (!gameState) {
@@ -48,7 +48,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
         await updateDocumentNonBlocking(gameDocRef, { status: 'mode_select' });
       }, 2000);
     }
-  }, [gameDocRef, userId, gameState, roomId]);
+  }, [gameDocRef, userId, gameState, roomId, isLoading]);
 
   const selectMode = useCallback(async (mode: 'freestyle' | 'professional', entryFee: number = 0) => {
     if (!gameDocRef || gameState?.status !== 'mode_select') return;
