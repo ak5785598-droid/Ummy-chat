@@ -451,7 +451,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
       <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
       <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
-      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
+      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌿</div>
    </div>
 
    <AnimatePresence mode="wait">
@@ -534,11 +534,21 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </AnimatePresence>
 
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
-          <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
-          <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
-          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+      <div className="flex items-center gap-2">
+          {/* Main Coins Display */}
+          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+              <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
+              <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
+              <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+          </div>
+          
+          {/* New Trophy & Daily Winnings Display */}
+          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] px-2 gap-1.5 shadow-sm">
+              <span className="text-[16px] drop-shadow-md">🏆</span>
+              <span className="text-yellow-400 font-bold text-[13px] tracking-wide">+{formatKandM(dailyWinnings)}</span>
+          </div>
       </div>
+
       <div className="flex items-center gap-2">
           <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><Clock size={16} className="filter drop-shadow-md brightness-110" /></button>
           <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white shadow-inner">{isMuted ? <VolumeX size={16} className="filter drop-shadow-md" /> : <Volume2 size={16} className="filter drop-shadow-md" />}</button>
@@ -546,15 +556,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><X size={16} className="filter drop-shadow-md" /></button>
       </div>
    </header>
-
-   <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center justify-center">
-     <div className="relative flex flex-col items-center">
-       <span className="text-[20px] drop-shadow-2xl select-none filter brightness-110">🏆</span>
-       <div className="absolute -bottom-1.5 bg-black/80 border border-yellow-500 rounded-full px-1 py-[1px] whitespace-nowrap shadow-md scale-75">
-          <span className="text-[8px] font-black text-yellow-400 tracking-wider">+{dailyWinnings}</span>
-       </div>
-     </div>
-   </div>
 
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
@@ -590,7 +591,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#241108" strokeWidth="6" strokeLinecap="round" filter="url(#shadow3D)" />
+            {/* Outer thick darker skin line for 3D depth */}
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="10" strokeLinecap="round" filter="url(#shadow3D)" />
+            {/* Inner lighter skin color line */}
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="6" strokeLinecap="round" />
           </g>
         ))}
       </svg>
