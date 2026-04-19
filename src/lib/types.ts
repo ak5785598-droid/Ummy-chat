@@ -62,6 +62,8 @@ export type User = {
  charmPoints?: number; // Total EXP from receiving gifts
  svip?: number; // SVIP Level (1-10)
  medals?: string[]; // Array of medal IDs
+ whatsapp?: string;
+ showWhatsapp?: boolean;
 };
 
 export type Message = {

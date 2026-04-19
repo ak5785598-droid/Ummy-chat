@@ -60,12 +60,17 @@ export interface UserProfile {
     startDate: any;
   };
   tags?: string[];
+  country?: string | null;
+  whatsapp?: string;
+  showWhatsapp?: boolean;
   createdAt?: any;
   updatedAt?: any;
   lastSignInAt?: any;
   lastMoneyTreeClaimAt?: any;
   isAdmin?: boolean;
   activityPoints?: number;
+  whatsapp?: string;
+  showWhatsapp?: boolean;
   idColor?: 'red' | 'blue' | 'purple' | 'none';
   isBudgetId?: boolean;
   isOnline?: boolean;
