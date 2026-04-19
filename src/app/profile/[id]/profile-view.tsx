@@ -92,12 +92,12 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
 const IconButton = ({ icon: Icon, label, colorClass, onClick }: { icon: any, label: string, colorClass: string, onClick: () => void }) => (
  <button 
   onClick={onClick}
-  className="flex flex-col items-center gap-2 transition-transform active:scale-95 group"
+  className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group"
  >
-  <div className={cn("h-14 w-14 rounded-full flex items-center justify-center shadow-sm transition-all group-hover:shadow-md", colorClass)}>
-   <Icon className="h-6 w-6 text-white" />
+  <div className={cn("h-[52px] w-[52px] rounded-full flex items-center justify-center shadow-sm transition-all group-hover:shadow-md", colorClass)}>
+   <Icon className="h-5 w-5 text-white" />
   </div>
-  <span className="text-[10px] font-outfit font-black text-slate-400 uppercase tracking-wider">{label}</span>
+  <span className="text-[9px] font-outfit font-black text-slate-400 uppercase tracking-wider">{label}</span>
  </button>
 );
 
@@ -158,7 +158,7 @@ const PublicProfileView = ({
        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
           <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
              {/* Identity Section (Public Mode) - 3 ROWS ONLY - FLUSH LAYOUT */}
-             <div className="flex items-start gap-0 pt-0">
+             <div className="flex items-center gap-0 pt-0">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
@@ -168,10 +168,10 @@ const PublicProfileView = ({
                   </AvatarFrame>
                 </div>
 
-                <div className="flex-1 self-center space-y-1 min-w-0">
+                <div className="flex-1 space-y-1 min-w-0 ml-[-2px]">
                    {/* Row 1: Name, Flag, Gender */}
                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-[20px] font-outfit font-black text-[#1a1c1e] tracking-tight leading-none truncate">{profile.username}</h2>
+                      <h2 className="text-[19px] font-outfit font-black text-[#1a1c1e] tracking-tight leading-none truncate">{profile.username}</h2>
                       <span className="text-xl leading-none">🇮🇳</span>
                       <GenderCircle gender={profile.gender} />
                    </div>
@@ -346,8 +346,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
           <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
             <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
-              {/* Identity Section - Side-by-Side - Ultra Tight (3 ROWS ONLY) */}
-              <div className="flex items-start gap-0 pt-0">
+              {/* Identity Section - Side-by-Side - FLUSH LAYOUT (3 ROWS ONLY) */}
+              <div className="flex items-center gap-0 pt-0">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
@@ -356,10 +356,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     </Avatar>
                   </AvatarFrame>
                 </div>
-                <div className="flex-1 self-center space-y-1 min-w-0">
+                <div className="flex-1 space-y-0.5 min-w-0 ml-[-2px]">
                   {/* Row 1: Name, Flag, Gender */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-[20px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
+                    <h2 className="text-[19px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
                     <span className="text-xl leading-none">🇮🇳</span>
                     <GenderCircle gender={profile.gender} />
                   </div>
@@ -390,7 +390,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
 
               {/* Wallet Section - Rounded Rectangular Cards */}
-              <div className="grid grid-cols-2 gap-2.5 mx-0.5">
+              <div className="grid grid-cols-2 gap-2.5 mx-0.5 mt-[-6px]">
                 <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
                    <div className="flex items-center gap-2 relative z-10">
                       <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
@@ -421,7 +421,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
 
               {/* VIP Premium Card - Rounded Rectangular */}
-              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-4.5 pl-6 pr-6 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5 min-h-[85px]">
+              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-4.5 pl-6 pr-6 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5 min-h-[85px] mt-1.5">
                  <div className="flex items-center gap-4 relative z-10">
                     <div className="h-12 w-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
                       <Crown className="h-6 w-6 text-slate-900 fill-current" />
