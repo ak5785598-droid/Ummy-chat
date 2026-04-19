@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, Suspense } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   Card,
@@ -360,7 +360,7 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
   );
 };
 
-export default function AdminPage() {
+function AdminPageContent() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { user } = useUser();
@@ -4924,5 +4924,18 @@ export default function AdminPage() {
         </Tabs>
       </div>
     </AppLayout>
+  );
+}
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    }>
+      <AdminPageContent />
+    </Suspense>
   );
 }
