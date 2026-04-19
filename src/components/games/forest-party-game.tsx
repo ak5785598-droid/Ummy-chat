@@ -444,24 +444,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  };
 
  return (
-  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#2D1B4E] rounded-none">
+  <div className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-none">
    
    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2D1B4E] via-[#FF6B6B] to-[#FFD93D]" />
-      <motion.div 
-        animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }} 
-        transition={{ duration: 5, repeat: Infinity }}
-        className="absolute top-[15%] right-[15%] w-24 h-24 bg-gradient-to-t from-[#FFD93D] to-[#FFFFFF] rounded-full blur-[2px] shadow-[0_0_60px_#FFD93D]"
-      />
-      
-      <motion.div animate={{ x: [-100, 400] }} transition={{ duration: 40, repeat: Infinity, ease: "linear" }} className="absolute top-[6%] left-0 opacity-30 z-10"><Cloud size={80} fill="white" color="white" /></motion.div>
-      
-      <div className="absolute bottom-0 left-0 right-0 h-[20%] z-10 bg-gradient-to-t from-[#B5674D] to-[#E38B67]">
-          <div className="absolute -top-6 left-[10%] w-12 h-8 bg-[#8B4513] rounded-[40%_60%_70%_30%] shadow-2xl rotate-12" />
-          <div className="absolute -top-4 right-[20%] w-16 h-10 bg-[#5D2E0C] rounded-[60%_40%_30%_70%] shadow-2xl -rotate-6" />
-          <div className="absolute -top-20 left-[5%] text-6xl drop-shadow-2xl select-none">🌵</div>
-          <div className="absolute -top-24 right-[8%] text-6xl drop-shadow-2xl select-none">🌵</div>
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
+      <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
+      <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
+      <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
+      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
    </div>
 
    <AnimatePresence mode="wait">
@@ -544,11 +534,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </AnimatePresence>
 
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
-          <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
-          <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
-          <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+      <div className="flex flex-col items-start gap-1.5">
+          {/* Main Coins Display */}
+          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+              <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
+              <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
+              <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+          </div>
       </div>
+
       <div className="flex items-center gap-2">
           <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><Clock size={16} className="filter drop-shadow-md brightness-110" /></button>
           <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white shadow-inner">{isMuted ? <VolumeX size={16} className="filter drop-shadow-md" /> : <Volume2 size={16} className="filter drop-shadow-md" />}</button>
@@ -557,25 +551,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   <div className="absolute top-[45px] left-4 z-50 flex flex-col items-center justify-center">
-     <div className="relative flex flex-col items-center">
-       <span className="text-[24px] drop-shadow-2xl select-none filter brightness-110">🏆</span>
-       <div className="absolute -bottom-2 bg-black/70 border border-yellow-500 rounded-full px-1.5 py-0.2 whitespace-nowrap shadow-md scale-90">
-          <span className="text-[8px] font-black text-yellow-400 tracking-wider">+{formatKandM(dailyWinnings)}</span>
-       </div>
-     </div>
-   </div>
-
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
-    <div className="absolute top-[10px] left-[85px] text-[70px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    <div className="absolute top-[20px] right-[20px] text-[80px] z-10 drop-shadow-2xl opacity-95 select-none pointer-events-none">☁️</div>
-    
-    <div className="absolute bottom-[2%] left-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
-    <div className="absolute bottom-[2%] right-[2%] text-[50px] z-10 drop-shadow-2xl select-none pointer-events-none">🌵</div>
-
     <div className={cn(
-        "absolute top-[10%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
@@ -586,7 +565,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
 
     <div className={cn(
-        "absolute top-[10%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
@@ -599,15 +578,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
       <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
         <defs>
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFD700" />
-              <stop offset="50%" stopColor="#FFFACD" />
-              <stop offset="100%" stopColor="#DAA520" />
-            </linearGradient>
-            <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
             <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
             </filter>
@@ -615,13 +585,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="6" strokeLinecap="round" filter="url(#shadow3D)" />
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#fef0e6" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+            {/* 3D Connecting lines */}
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
           </g>
         ))}
-
-        <motion.circle cx="50" cy="50" r="44" fill="none" stroke="url(#goldGradient)" strokeWidth={gameState === 'spinning' ? "4" : "2"} filter={gameState === 'spinning' ? "url(#goldGlow)" : ""} animate={{ opacity: gameState === 'spinning' ? [0.6, 1, 0.6] : 0.3 }} transition={{ duration: 1, repeat: Infinity }} />
-        <circle cx="50" cy="50" r="41" fill="none" stroke="#eebb99" strokeWidth="6" filter="url(#shadow3D)" />
       </svg>
 
       <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
@@ -634,16 +602,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         const isSpinning = gameState === 'spinning';
         const isHighlighted = highlightIdx === idx;
         
-        // --- ONLY THIS SECTION CHANGED: Colorless but not transparent ---
         const applyColorless = isSpinning && !isHighlighted;
         
         return (
         <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
           <button onClick={() => handlePlaceBet(item)} className="relative group">
             <div className={cn(
-                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#241108]", 
+                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#d4a373]", 
                 active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
-                // CHANGE: GrayScale lagaya, opacity full (100) rakhi
                 applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
             )}>
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
@@ -705,7 +671,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
-        <div className="bg-[#3a1c0d] border-[1.5px] border-[#241108] rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
+        {/* History Bar: Transparent background applied here */}
+        <div className="bg-transparent border-[1.5px] border-white/10 rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-none">
           <span className="text-yellow-400 font-black text-[10px] px-2 shrink-0 uppercase tracking-widest italic filter brightness-110">History</span>
           <div className="flex items-center gap-2 px-1">
             {history.map((item, i) => (
