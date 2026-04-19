@@ -157,8 +157,8 @@ const PublicProfileView = ({
 
        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
           <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
-             {/* Identity Section (Public Mode) - 3 ROWS ONLY */}
-             <div className="flex items-start gap-1.5 pt-0">
+             {/* Identity Section (Public Mode) - 3 ROWS ONLY - FLUSH LAYOUT */}
+             <div className="flex items-start gap-0 pt-0">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
@@ -347,7 +347,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
             <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
               {/* Identity Section - Side-by-Side - Ultra Tight (3 ROWS ONLY) */}
-              <div className="flex items-start gap-1.5 pt-0">
+              <div className="flex items-start gap-0 pt-0">
                 <div className="shrink-0 scale-95 origin-top-left">
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
                     <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
