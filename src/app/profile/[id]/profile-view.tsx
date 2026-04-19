@@ -504,6 +504,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   };
 
   const isOfficial = profile?.tags?.includes('Official');
+  const isSeller = profile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
+  const isCS = profile?.tags?.includes('Customer Service');
+  const isCSLeader = profile?.tags?.includes('CS Leader');
 
  if (theme === 'GLOSSY') {
    return <ProfileViewGlossy profileId={profileId} mode={mode} />;
@@ -559,9 +562,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               onClick={() => router.push(`/profile/${profileId}`)}
             >
               <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                <Avatar className="h-28 w-28 border-4 border-white shadow-xl relative z-10 transition-transform">
+                <Avatar className="h-24 w-24 border-4 border-white shadow-xl relative z-10 transition-transform">
                   <AvatarImage src={profile.avatarUrl || undefined} />
-                  <AvatarFallback className="text-3xl font-outfit font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-2xl font-outfit font-black bg-slate-50">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                 </Avatar>
               </AvatarFrame>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-20">
@@ -571,27 +574,33 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-center min-w-0 pl-1">
+            <div className="flex-1 flex flex-col justify-center min-w-0 pl-1 gap-1">
               {/* Row 1: Name, Flag, Gender */}
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <h1 className="text-2xl font-outfit font-black text-slate-900 tracking-tighter leading-none truncate max-w-[150px]">{profile.username}</h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-[30px] font-outfit font-black text-slate-900 tracking-tighter leading-none truncate max-w-[150px]">{profile.username}</h1>
                 <span className="text-base leading-none">🇮🇳</span>
                 <GenderCircle gender={profile.gender} />
               </div>
               
-              {/* Row 2: ID & Levels (Consolidated for space) */}
-              <div 
-                onClick={handleCopyId}
-                className="flex items-center gap-1 mb-1 opacity-70 cursor-pointer active:opacity-40 transition-opacity"
-              >
-                <span className="text-[11px] font-outfit font-black text-slate-400 uppercase tracking-tighter">ID: {profile.accountNumber || '...'}</span>
-                <Copy className="h-2.5 w-2.5 text-slate-300" />
-              </div>
-
+              {/* Row 2: Levels */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <RichLevelBadge level={profile.level?.rich || 1} />
                 <CharmLevelBadge level={profile.level?.charm || 1} />
+              </div>
+
+              {/* Row 3: ID + Tags (only actual tags) */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={handleCopyId}
+                  className="flex items-center gap-1 opacity-70 cursor-pointer active:opacity-40 transition-opacity"
+                >
+                  <span className="text-[11px] font-outfit font-black text-slate-400 uppercase tracking-tighter">ID: {profile.accountNumber || '...'}</span>
+                  <Copy className="h-2.5 w-2.5 text-slate-300" />
+                </button>
                 {isOfficial && <OfficialTag size="sm" className="scale-[0.8] origin-left" />}
+                {isSeller && <SellerTag size="sm" className="scale-[0.8] origin-left" />}
+                {isCSLeader && <CsLeaderTag size="sm" className="scale-[0.8] origin-left" />}
+                {isCS && <CustomerServiceTag size="sm" className="scale-[0.8] origin-left" />}
               </div>
             </div>
           </header>
