@@ -534,7 +534,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </AnimatePresence>
 
    <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col items-start gap-1.5">
           {/* Main Coins Display */}
           <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
               <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
@@ -542,10 +542,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
           </div>
           
-          {/* New Trophy & Daily Winnings Display */}
-          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] px-2 gap-1.5 shadow-sm">
-              <span className="text-[16px] drop-shadow-md">🏆</span>
-              <span className="text-yellow-400 font-bold text-[13px] tracking-wide">+{formatKandM(dailyWinnings)}</span>
+          {/* Moved Trophy Card: Now below Balance and above Left Mix Card */}
+          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[28px] px-2 gap-1.5 shadow-sm">
+              <span className="text-[14px] drop-shadow-md">🏆</span>
+              <span className="text-yellow-400 font-bold text-[11px] tracking-wide">+{formatKandM(dailyWinnings)}</span>
           </div>
       </div>
 
@@ -560,7 +560,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
     <div className={cn(
-        "absolute top-[10%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
@@ -571,7 +571,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
 
     <div className={cn(
-        "absolute top-[10%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
         <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
@@ -591,10 +591,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
-            {/* Outer thick darker skin line for 3D depth */}
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="10" strokeLinecap="round" filter="url(#shadow3D)" />
-            {/* Inner lighter skin color line */}
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="6" strokeLinecap="round" />
+            {/* 3D Connecting lines made slightly thinner as requested */}
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
+            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
           </g>
         ))}
       </svg>
