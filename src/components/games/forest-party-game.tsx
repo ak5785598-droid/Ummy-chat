@@ -17,7 +17,8 @@ import {
  HelpCircle, 
  X,
  Plus,
- Clock
+ Clock,
+ Cloud
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -450,7 +451,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
       <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
       <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
-      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌿</div>
+      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
    </div>
 
    <AnimatePresence mode="wait">
@@ -550,7 +551,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   <main className="flex-1 w-full flex flex-col items-center justify-start pt-16 px-4 relative">
+   <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
     
     <div className={cn(
         "absolute top-[12%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
@@ -584,6 +585,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         
         {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
           <g key={deg} transform={`rotate(${deg} 50 50)`}>
+            {/* 3D Connecting lines */}
             <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
             <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
           </g>
@@ -669,8 +671,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
    <div className="fixed bottom-0 left-0 right-0 flex flex-col items-center z-[60]">
       <div className="w-full max-w-[340px] px-4 mb-3">
-        {/* History Bar: Transparent Background and refined border */}
-        <div className="bg-black/20 backdrop-blur-md border-[1.5px] border-white/10 rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-lg">
+        {/* History Bar: Transparent background applied here */}
+        <div className="bg-transparent border-[1.5px] border-white/10 rounded-[20px] p-1.5 flex items-center overflow-x-auto no-scrollbar shadow-none">
           <span className="text-yellow-400 font-black text-[10px] px-2 shrink-0 uppercase tracking-widest italic filter brightness-110">History</span>
           <div className="flex items-center gap-2 px-1">
             {history.map((item, i) => (
