@@ -61,7 +61,7 @@ export function BudgetTag({ className, size = 'md', variant = 'gold', label }: B
       
       {/* Main Tag Container (Glassmorphism Base) */}
       <div className={cn(
-        "relative flex items-center gap-2 pl-2 pr-4 py-1 bg-black/40 backdrop-blur-md rounded-[0.9rem] border-[1.5px] shadow-2xl overflow-hidden",
+        "relative flex items-center gap-2 pl-2 pr-4 py-0.5 bg-black/40 backdrop-blur-md rounded-[0.5rem] border-[1.5px] shadow-2xl overflow-hidden",
         current.border
       )}>
         {/* Liquid Gradient Layer */}

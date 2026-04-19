@@ -1,0 +1,1 @@
+{"name":"Ummy","short_name":"Ummy","description":"Connect Your Tribe","start_url":"/","display":"standalone","background_color":"#140028","theme_color":"#140028","orientation":"portrait","icons":[{"src":"/images/ummy-logon.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"/images/ummy-logon.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}

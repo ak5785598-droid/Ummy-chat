@@ -94,20 +94,20 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: { icon: any, lab
   onClick={onClick}
   className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group"
  >
-  <div className={cn("h-[52px] w-[52px] rounded-full flex items-center justify-center shadow-sm transition-all group-hover:shadow-md", colorClass)}>
-   <Icon className="h-5 w-5 text-white" />
+  <div className={cn("h-[44px] w-[44px] rounded-2xl flex items-center justify-center shadow-lg transition-all group-hover:shadow-md", colorClass)}>
+   <Icon className="h-4 w-4 text-white" />
   </div>
-  <span className="text-[9px] font-outfit font-black text-slate-400 uppercase tracking-wider">{label}</span>
+  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
  </button>
 );
 
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
  <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-2.5 border-b border-slate-50 last:border-0 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
+  className="w-full flex items-center justify-between py-2.5 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
  >
   <div className="flex items-center gap-4">
-   <div className={cn("p-2 rounded-[1rem] transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
+   <div className={cn("p-2 rounded-xl transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
     <Icon className="h-5 w-5" />
    </div>
    <span className={cn("font-outfit font-black text-[14px] tracking-tight", destructive ? "text-red-500" : "text-slate-700")}>{label}</span>
@@ -312,12 +312,33 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   const handleCopyId = () => {
     const idToCopy = (!profile?.accountNumber || profile?.accountNumber === 'undefined' || profile?.accountNumber === 'UNDEFINED') ? (profile?.id || '') : profile?.accountNumber;
+    
+    if (!idToCopy) return;
+
+    // Modern Clipboard API
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(idToCopy).then(() => {
-        toast({ title: 'ID Copied' });
+        toast({ title: 'ID Copied', description: `${idToCopy} copied to clipboard.` });
       }).catch(() => {
-        toast({ variant: 'destructive', title: 'Copy Failed' });
+        // Fallback to execCommand
+        copyFallback(idToCopy);
       });
+    } else {
+      copyFallback(idToCopy);
+    }
+  };
+
+  const copyFallback = (text: string) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast({ title: 'ID Copied', description: `${text} copied to clipboard.` });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Copy Failed' });
     }
   };
 
@@ -334,105 +355,120 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return (
       <AppLayout>
         <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px]">
-          <header className="sticky top-0 z-[100] w-full bg-white/80 backdrop-blur-xl px-6 pt-[calc(env(safe-area-inset-top)+4px)] pb-[2px] shrink-0">
-            <div className="flex items-center justify-end max-w-lg mx-auto h-12">
+          {/* Absolute Header - Floats over content without taking layout space */}
+          <header className="absolute top-0 left-0 right-0 z-[100] bg-transparent px-6 pt-12 pb-0">
+            <div className="flex items-center justify-end max-w-lg mx-auto">
                <EditProfileDialog profile={profile} trigger={
-                 <button className="h-10 w-10 bg-slate-900 rounded-full flex items-center justify-center active:scale-90 transition-all shadow-lg ring-4 ring-slate-900/10">
-                   <Pencil className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
+                 <button className="h-10 w-10 bg-slate-900/10 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-white/20">
+                   <Pencil className="h-5 w-5 text-slate-800" strokeWidth={2.5} />
                  </button>
                }/>
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32">
-            <div className="max-w-lg mx-auto px-6 pt-0 pb-4 space-y-1.5">
-              {/* Identity Section - Side-by-Side - FLUSH LAYOUT (3 ROWS ONLY) */}
-              <div className="flex items-center gap-0 pt-0">
-                <div className="shrink-0 scale-95 origin-top-left">
-                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-32 w-32 border-4 border-white shadow-2xl rounded-full ring-1 ring-slate-100">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
-                </div>
-                <div className="flex-1 space-y-0.5 min-w-0 ml-[-2px]">
-                  {/* Row 1: Name, Flag, Gender */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-[19px] font-black text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
-                    <span className="text-xl leading-none">🇮🇳</span>
-                    <GenderCircle gender={profile.gender} />
+          <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pb-32 pt-8">
+            <div className="max-w-lg mx-auto px-4 pb-4 space-y-1">
+              {/* Identity Section - High & Clean (Safe from clipping) */}
+              <div className="relative mx-0.5 mt-2">
+                <div className="flex items-center gap-1 relative z-10 transition-all">
+                  <div className="shrink-0 scale-95 origin-left">
+                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                      <Avatar className="h-[108px] w-[108px] border-[6px] border-white shadow-xl rounded-full ring-1 ring-slate-100">
+                        <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="text-4xl font-black bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </AvatarFrame>
                   </div>
-
-                  {/* Row 2: Levels */}
-                  <div className="flex items-center gap-2">
-                    <RichLevelBadge level={profile.level?.rich || 1} />
-                    <CharmLevelBadge level={profile.level?.charm || 1} />
-                  </div>
-
-                  {/* Row 3: ID & Professional Tags (CONSOLIDATED) */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                      <BudgetTag variant="silver" label={`ID: ${profile.accountNumber || '0123'}`} size="sm" />
+                  <div className="flex-1 min-w-0 -ml-2.5 pt-4">
+                    {/* Row 1: Name, Flag, Gender (mt-0) */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h2 className="text-[21px] font-black text-slate-900 tracking-tight leading-none truncate">{profile.username}</h2>
+                      <span className="text-lg leading-none">🇮🇳</span>
+                      <GenderCircle gender={profile.gender} />
                     </div>
-                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+
+                    {/* Row 2: Levels (mt-1 for tight gap from name) */}
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <RichLevelBadge level={profile.level?.rich || 1} />
+                      <CharmLevelBadge level={profile.level?.charm || 1} />
+                    </div>
+
+                    {/* Row 3: ID & Professional Tags (mt-0.5 for slight gap from levels) */}
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                      <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                        <BudgetTag variant="silver" label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} size="sm" />
+                      </div>
+                      {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                      {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                    </div>
                   </div>
+                </div>
+
+                {/* Stats Row - Ultra Close to Identity */}
+                <div className="flex justify-start items-center gap-8 mt-0 px-0.5 pb-1">
+                  <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
+                  <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
+                  <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
+                  <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
                 </div>
               </div>
 
-              {/* Stats Row */}
-              <div className="flex justify-between items-center py-0 px-2">
-                <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
-                <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
-                <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
-                <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
-              </div>
-
-              {/* Wallet Section - Rounded Rectangular Cards */}
-              <div className="grid grid-cols-2 gap-2.5 mx-0.5 mt-[-6px]">
-                <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-orange-400 to-amber-500 rounded-[2.5rem] p-5 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+              {/* Wallet Section (Ultra Slim & Even Higher Position) */}
+              <div className="grid grid-cols-2 gap-1.5 mx-[-2px] mt-[-28px]">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FF9D2E] to-[#FFBB33] rounded-[1.4rem] p-4 shadow-xl shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   {/* Bear Silhouette Watermark (SS3) */}
+                   <div className="absolute -right-2 -bottom-4 opacity-[0.08] pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                     <svg width="100" height="100" viewBox="0 0 100 100" fill="white">
+                       <circle cx="25" cy="40" r="12" />
+                       <circle cx="75" cy="40" r="12" />
+                       <circle cx="50" cy="55" r="30" />
+                     </svg>
+                   </div>
                    <div className="flex items-center gap-2 relative z-10">
                       <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
                         <GoldCoinIcon className="h-4 w-4" />
                       </div>
                       <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Coins</span>
                    </div>
-                   <div className="absolute bottom-4 left-6 z-10">
-                     <p className="font-black text-[28px] text-white tracking-tighter leading-none">
-                      {formatCompactNumber(profile.wallet?.coins || 0)}
+                   <div className="absolute bottom-5 left-6 z-10">
+                     <p className="font-black text-[24px] text-white tracking-tighter leading-none">
+                      {profile.wallet?.coins?.toFixed(1) || '0.0'}
                      </p>
                    </div>
                 </div>
 
-                <div onClick={() => router.push('/wallet')} className="h-[110px] bg-gradient-to-br from-cyan-400 to-blue-500 rounded-[2.5rem] p-5 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#4AB9FF] to-[#2E86FF] rounded-[1.4rem] p-4 shadow-xl shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
+                   {/* Diamond Geometric Watermark (SS3) */}
+                   <div className="absolute -right-4 -bottom-4 opacity-[0.08] pointer-events-none group-hover:scale-110 transition-transform duration-500">
+                     <Gem className="w-24 h-24 text-white" />
+                   </div>
                    <div className="flex items-center gap-2 relative z-10">
                       <div className="h-8 w-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
                         <Gem className="h-4 w-4 text-white" />
                       </div>
                       <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span>
                    </div>
-                   <div className="absolute bottom-4 left-6 z-10">
-                     <p className="font-black text-[28px] text-white tracking-tighter leading-none">
-                      {formatCompactNumber(profile.wallet?.diamonds || 0)}
+                   <div className="absolute bottom-5 left-6 z-10">
+                     <p className="font-black text-[24px] text-white tracking-tighter leading-none">
+                      {profile.wallet?.diamonds?.toFixed(1) || '0.0'}
                      </p>
                    </div>
                 </div>
               </div>
 
-              {/* VIP Premium Card - Rounded Rectangular */}
-              <div onClick={() => router.push('/vips')} className="bg-slate-900 rounded-[2.5rem] p-4.5 pl-6 pr-6 shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 active:scale-[0.98] transition-all group relative overflow-hidden mx-0.5 min-h-[85px] mt-1.5">
-                 <div className="flex items-center gap-4 relative z-10">
-                    <div className="h-12 w-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
-                      <Crown className="h-6 w-6 text-slate-900 fill-current" />
+              {/* VIP Premium Card (Ultra Slim & High Position) */}
+              <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-[1.4rem] p-4 pl-7 pr-6 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group relative overflow-hidden mx-[-2px] min-h-[60px] mt-[-12px]">
+                 <div className="flex items-center gap-5 relative z-10">
+                    <div className="h-12 w-12 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
+                      <Crown className="h-6 w-6 text-black fill-current" />
                     </div>
                     <div className="flex flex-col">
                        <h3 className="text-[18px] font-black text-white uppercase tracking-tight leading-tight">VIP Premium™</h3>
-                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p>
+                       <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p>
                     </div>
                  </div>
-                 <div className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center border border-white/5 group-hover:bg-white/10 transition-colors">
-                   <ChevronRight className="h-5 w-5 text-white/40 group-hover:text-white" />
+                 <div className="h-10 w-10 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:bg-white/10 transition-colors">
+                   <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white" />
                  </div>
               </div>
 
@@ -444,17 +480,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-500" onClick={() => router.push('/tasks')} />
               </div>
 
-              <div className="space-y-3 pt-1">
-                <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
-                  <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      const shareUrl = window.location.origin;
-                      const text = encodeURIComponent(`Join me on Ummy: ${shareUrl}`);
-                      window.open(`https://wa.me/?text=${text}`, '_blank');
-                    }
-                  }}/>
-                  <ProfileMenuItem icon={Users} label="Family" extra="Tribal Unity" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-                  <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="Inventory" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+              <div className="space-y-3 pt-0 mt-[-4px]">
+                <div className="bg-white rounded-lg shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-slate-100/50 overflow-hidden">
+                  <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
+                  <ProfileMenuItem icon={Users} label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                  <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                   <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                   {isCertifiedSeller && (
                     <ProfileMenuItem icon={Sparkles} label="Seller Center" extra="Transfer Portal" extraColor="text-emerald-500" iconColor="bg-emerald-50 text-emerald-500" onClick={() => router.push('/admin')} />
@@ -463,11 +493,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/admin')} />
                   )}
                 </div>
-                <div className="bg-white rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-lg shadow-[0_4px_20px_rgb(0,0,0,0.02)] border border-slate-100/50 overflow-hidden">
                   <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
                   <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
                   <ProfileMenuItem icon={Info} label="About" iconColor="bg-slate-50 text-slate-500" onClick={() => {}} />
-                  {auth && <ProfileMenuItem icon={LogOut} label="Log Out" iconColor="bg-red-50 text-red-500" onClick={() => signOut(auth)} destructive />}
                 </div>
               </div>
             </div>

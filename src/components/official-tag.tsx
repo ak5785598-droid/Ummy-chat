@@ -21,14 +21,14 @@ export function OfficialTag({ className, size = 'md' }: { className?: string, si
    
    {/* Main Tag Container */}
    <div className={cn(
-    "relative flex items-center gap-2 pl-1 pr-4 py-1.5 bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] rounded-full border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6),inset_0_2px_4px_rgba(255,255,255,0.3)] overflow-hidden",
+    "relative flex items-center gap-2 pl-1 pr-4 py-0.5 bg-gradient-to-b from-[#4ade80] via-[#16a34a] to-[#14532d] rounded-[0.5rem] border-[3px] border-[#fbbf24] shadow-[0_0_15px_rgba(251,191,36,0.6),inset_0_2px_4px_rgba(255,255,255,0.3)] overflow-hidden",
     "before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/40 before:to-transparent before:h-1/2 before:z-10"
    )}>
     {/* Dynamic Shine Animation Streak */}
     <div className="absolute inset-0 w-1/2 h-full bg-white/30 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" />
     
     {/* Refined 3D Bear Icon */}
-    <div className="relative shrink-0 w-8 h-8 flex items-center justify-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-30">
+    <div className="relative shrink-0 w-6 h-6 flex items-center justify-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] z-30">
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
        <defs>
         <linearGradient id="bearBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -61,7 +61,7 @@ export function OfficialTag({ className, size = 'md' }: { className?: string, si
     </div>
 
     {/* Official Text */}
-    <span className="relative z-30 font-sans text-[15px] font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] tracking-tight ">
+    <span className="relative z-30 font-sans text-[13px] font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)] tracking-tight ">
      Official
     </span>
     
