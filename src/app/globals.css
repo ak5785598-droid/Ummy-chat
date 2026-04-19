@@ -121,3 +121,10 @@
 
 @keyframes reaction-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .animate-reaction-float { animation: reaction-float 3s ease-in-out infinite; }
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}

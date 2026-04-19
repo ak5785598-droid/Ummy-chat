@@ -127,6 +127,8 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { format } from "date-fns";
 import Image from "next/image";
 
+import { useSearchParams } from "next/navigation";
+
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
 
 const AUTHORITY_ROLES = [
@@ -374,7 +376,16 @@ export default function AdminPage() {
   const isAdminDelegated = currentUserProfile?.isAdmin === true;
   const isAuthorized = isCreator || isAdminDelegated;
 
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("app-data");
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [foundUsers, setFoundUsers] = useState<any[]>([]);
 
@@ -4697,10 +4708,12 @@ export default function AdminPage() {
                           </label>
                           <div className="grid grid-cols-4 gap-2">
                             {[
-                              { id: "none", label: "None", color: "bg-slate-100 text-slate-400" },
-                              { id: "red", label: "Red", color: "bg-red-500 text-white" },
-                              { id: "blue", label: "Blue", color: "bg-blue-500 text-white" },
-                              { id: "purple", label: "Purple", color: "bg-purple-600 text-white" },
+                               { id: "none", label: "None (Silver)", color: "bg-slate-100 text-slate-400" },
+                               { id: "gold", label: "Gold", color: "bg-amber-400 text-white" },
+                               { id: "rose", label: "Rose (Red)", color: "bg-rose-500 text-white" },
+                               { id: "diamond", label: "Diamond (Blue)", color: "bg-cyan-500 text-white" },
+                               { id: "purple", label: "Purple", color: "bg-purple-600 text-white" },
+                               { id: "emerald", label: "Emerald (Green)", color: "bg-emerald-500 text-white" },
                             ].map((c) => (
                               <button
                                 key={c.id}

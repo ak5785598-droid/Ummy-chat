@@ -2,22 +2,46 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Crown, Gem, ShieldCheck } from 'lucide-react';
+import { Crown, Gem, ShieldCheck, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BudgetTagProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'gold' | 'diamond' | 'silver';
+  variant?: 'gold' | 'diamond' | 'silver' | 'purple' | 'emerald' | 'rose' | 'rainbow' | 'none';
   label?: string; // NEW: Allow custom text (like User ID)
 }
 
 /**
+ * Maps spending amount to budget tier variants (For Creator Auto-Tiering)
+ */
+export function getTierVariant(spent: number): BudgetTagProps['variant'] {
+  if (spent >= 1000000) return 'diamond';
+  if (spent >= 500000) return 'emerald';
+  if (spent >= 100000) return 'purple';
+  if (spent >= 10000) return 'gold';
+  return 'silver';
+}
+
+/**
  * Premium Sovereign / Budget Tag Component.
- * Supports prestigious Liquid Gold, Diamond, and Silver variants.
+ * Supports prestigious Liquid Gold, Diamond, Silver, Purple, Emerald, Rose, and Rainbow variants.
  */
 export function BudgetTag({ className, size = 'md', variant = 'gold', label }: BudgetTagProps) {
   const scale = size === 'sm' ? 0.7 : size === 'lg' ? 1.25 : 1;
+
+  if (variant === 'none') {
+    return (
+      <div className={cn("inline-flex items-center gap-1.5", className)}>
+        <span className={cn(
+          "font-bold text-slate-500 uppercase tracking-tight",
+          size === 'sm' ? "text-[11px]" : "text-[13px]"
+        )}>
+          {label || 'ID: ---'}
+        </span>
+      </div>
+    );
+  }
 
   const styles = {
     gold: {
@@ -43,6 +67,38 @@ export function BudgetTag({ className, size = 'md', variant = 'gold', label }: B
       icon: ShieldCheck,
       shimmer: "from-white/0 via-white/30 to-white/0",
       textColor: "text-slate-50"
+    },
+    purple: {
+      gradient: "from-[#a855f7] via-[#7e22ce] to-[#581c87]",
+      glow: "bg-purple-400/25",
+      border: "border-purple-400/30",
+      icon: Sparkles,
+      shimmer: "from-white/0 via-white/40 to-white/0",
+      textColor: "text-purple-50"
+    },
+    emerald: {
+      gradient: "from-[#10b981] via-[#059669] to-[#064e3b]",
+      glow: "bg-emerald-400/25",
+      border: "border-emerald-400/30",
+      icon: Gem,
+      shimmer: "from-white/0 via-white/40 to-white/0",
+      textColor: "text-emerald-50"
+    },
+    rose: {
+      gradient: "from-[#f43f5e] via-[#e11d48] to-[#881337]",
+      glow: "bg-rose-400/25",
+      border: "border-rose-400/30",
+      icon: Crown,
+      shimmer: "from-white/0 via-white/40 to-white/0",
+      textColor: "text-rose-50"
+    },
+    rainbow: {
+      gradient: "from-[#ff0000] via-[#ff00ff] to-[#0000ff] animate-gradient-x bg-[length:200%_200%]",
+      glow: "bg-purple-500/30",
+      border: "border-white/40",
+      icon: Sparkles,
+      shimmer: "from-white/0 via-white/60 to-white/0",
+      textColor: "text-white"
     }
   };
 

@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldCheck, Loader, BadgeCheck, ChevronRight, User, CheckCircle2, Send, AlertCircle, Ban } from 'lucide-react';
+import { Sparkles, Loader, BadgeCheck, ChevronRight, User, CheckCircle2, Send, AlertCircle, Ban } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -184,25 +184,25 @@ export function SellerTransferDialog() {
    <DialogTrigger asChild>
     <button 
      type="button"
-     className="w-full flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-50 last:border-0 text-left"
+     className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
     >
      <div className="flex items-center gap-4">
-      <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-sm bg-purple-100 text-purple-600">
-       <BadgeCheck className="h-5 w-5" />
+      <div className="h-10 w-10 p-2 rounded-xl flex items-center justify-center transition-colors bg-emerald-50 text-emerald-500">
+       <Sparkles className="h-5 w-5" />
       </div>
-      <span className="font-bold text-[13px] uppercase text-gray-800 tracking-tight">Seller center</span>
+      <span className="font-medium text-[16px] text-[#1F2937]">Seller Center</span>
      </div>
-     <div className="flex items-center gap-2">
-      <span className="text-[10px] font-bold text-green-500 uppercase ">Transfer Portal</span>
-      <ChevronRight className="h-4 w-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+     <div className="flex items-center gap-1">
+      <span className="text-[11px] font-medium uppercase tracking-wider text-emerald-500">Transfer Portal</span>
+      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-0.5 transition-transform" />
      </div>
     </button>
    </DialogTrigger>
    <DialogContent className="sm:max-w-[425px] bg-white text-black p-0 rounded-t-[2.5rem] md:rounded-3xl overflow-hidden border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-sans">
     <form onSubmit={handleTransfer}>
-     <DialogHeader className="p-8 pb-4 text-center border-b border-gray-50">
-      <DialogTitle className="font-sans text-3xl uppercase tracking-tight text-slate-900">coins transfer</DialogTitle>
-      <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mt-1">
+     <DialogHeader className="p-8 pb-4 text-center border-b border-slate-50">
+      <DialogTitle className="font-sans text-2xl uppercase tracking-tighter text-slate-900">coins transfer</DialogTitle>
+      <DialogDescription className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">
        Transfer Coins to any user by entering their User ID and amount. Requires active certification.
       </DialogDescription>
      </DialogHeader>

@@ -37,17 +37,27 @@ import { DirectMessageDialog } from '@/components/direct-message-dialog';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { OfficialTag } from '@/components/official-tag';
 import { SellerTag } from '@/components/seller-tag';
-import { BudgetTag } from '@/components/budget-tag';
 import { doc, serverTimestamp, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { signOut } from 'firebase/auth';
 import { useTranslation } from '@/hooks/use-translation';
+import { SellerTransferDialog } from "@/components/seller-transfer-dialog";
+import { BudgetTag, getTierVariant } from "@/components/budget-tag";
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
 /**
- * Numerical Signature Formatting
+ * Identity Variant Logic
  */
+const getBudgetVariant = (profile: any) => {
+  if (profile.id === CREATOR_ID || profile.tags?.includes('Official')) {
+    return 'rainbow';
+  }
+  if (profile.idColor && profile.idColor !== 'none') {
+    return profile.idColor;
+  }
+  return 'none';
+};
 const formatCompactNumber = (num: number) => {
   if (!num || num === 0) return '0';
   const formatter = Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
@@ -104,16 +114,16 @@ const IconButton = ({ icon: Icon, label, colorClass, onClick }: { icon: any, lab
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
  <button 
   onClick={onClick}
-  className="w-full flex items-center justify-between py-2.5 px-4 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
+  className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
  >
   <div className="flex items-center gap-4">
    <div className={cn("p-2 rounded-xl transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
     <Icon className="h-5 w-5" />
    </div>
-   <span className={cn("font-outfit font-black text-[14px] tracking-tight", destructive ? "text-red-500" : "text-slate-700")}>{label}</span>
+   <span className={cn("font-medium text-[16px]", destructive ? "text-red-500" : "text-[#1F2937]")}>{label}</span>
   </div>
-  <div className="flex items-center gap-2">
-   {extra && <span className={cn("text-[11px] font-outfit font-black uppercase tracking-wider", extraColor || "text-slate-300")}>{extra}</span>}
+  <div className="flex items-center gap-1">
+   {extra && <span className={cn("text-[11px] font-medium uppercase tracking-wider", extraColor || "text-slate-300")}>{extra}</span>}
    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-0.5 transition-transform" />
   </div>
  </button>
@@ -185,7 +195,7 @@ const PublicProfileView = ({
                    {/* Row 3: ID & Professional Tags (CONSOLIDATED) */}
                    <div className="flex flex-wrap items-center gap-3">
                       <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                        <BudgetTag variant="silver" label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id : profile.accountNumber}`} size="sm" />
+                        <BudgetTag variant={getBudgetVariant(profile)} label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id : profile.accountNumber}`} size="sm" />
                       </div>
                       {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                       {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
@@ -396,7 +406,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     {/* Row 3: ID & Professional Tags (mt-0.5 for slight gap from levels) */}
                     <div className="flex flex-wrap items-center gap-2 mt-0.5">
                       <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                        <BudgetTag variant="silver" label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} size="sm" />
+                        <BudgetTag variant={getBudgetVariant(profile)} label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} size="sm" />
                       </div>
                       {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                       {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
@@ -431,7 +441,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Coins</span>
                    </div>
                    <div className="absolute bottom-5 left-6 z-10">
-                     <p className="font-black text-[24px] text-white tracking-tighter leading-none">
+                     <p className="font-bold text-[20px] text-white tracking-tighter leading-none">
                       {profile.wallet?.coins?.toFixed(1) || '0.0'}
                      </p>
                    </div>
@@ -449,7 +459,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span>
                    </div>
                    <div className="absolute bottom-5 left-6 z-10">
-                     <p className="font-black text-[24px] text-white tracking-tighter leading-none">
+                     <p className="font-bold text-[20px] text-white tracking-tighter leading-none">
                       {profile.wallet?.diamonds?.toFixed(1) || '0.0'}
                      </p>
                    </div>
@@ -463,7 +473,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <Crown className="h-6 w-6 text-black fill-current" />
                     </div>
                     <div className="flex flex-col">
-                       <h3 className="text-[18px] font-black text-white uppercase tracking-tight leading-tight">VIP Premium™</h3>
+                       <h3 className="text-[18px] font-bold text-white uppercase tracking-tight leading-tight">VIP Premium™</h3>
                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p>
                     </div>
                  </div>
@@ -487,7 +497,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   <ProfileMenuItem icon={ShoppingBag} label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
                   <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                   {isCertifiedSeller && (
-                    <ProfileMenuItem icon={Sparkles} label="Seller Center" extra="Transfer Portal" extraColor="text-emerald-500" iconColor="bg-emerald-50 text-emerald-500" onClick={() => router.push('/admin')} />
+                    <SellerTransferDialog />
                   )}
                   {isAuthorizedAdmin && (
                     <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/admin')} />
