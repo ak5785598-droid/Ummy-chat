@@ -15,8 +15,13 @@ export function useBackButtonHandler() {
 
   useEffect(() => {
     const backButtonListener = App.addListener('backButton', ({ canGoBack }) => {
-      // 1. Logic for specific pages that should exit the app (like Login or a clean Home state)
-      const ROOT_PAGES = ['/login', '/rooms'];
+      // 1. If we are in a room, let the RoomClient handle it via its own listener
+      if (pathname?.startsWith('/rooms/')) {
+        return;
+      }
+
+      // 2. Logic for specific pages that should exit the app (like Login or a clean Home state)
+      const ROOT_PAGES = ['/login', '/discover', '/home'];
       const isRoot = ROOT_PAGES.includes(pathname);
 
       if (isRoot) {

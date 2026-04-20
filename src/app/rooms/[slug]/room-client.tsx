@@ -1741,12 +1741,35 @@ export function RoomClient({ room }: { room: Room }) {
    * NAVIGATION & BACK BUTTON INTERCEPTION
    */
   useEffect(() => {
-    // NUCLEAR SYNC FIX: Room context is now managed by the parent Gateway (page.tsx)
-    // to ensure safe hydration-aware frame updates. We only handle the local intercept logic here.
-
     // Add a dummy entry to history to intercept back
     window.history.pushState(null, '', window.location.href);
+  }, [room.id]);
 
+  // CAPACITOR HARDWARE BACK BUTTON INTERCEPTION
+  useEffect(() => {
+    let backListener: any = null;
+    
+    const initListener = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        backListener = await App.addListener('backButton', ({ canGoBack }) => {
+          // If a dialog is open (other than exit dialog), we should close that first
+          // But for simplicity in Haza, we show the Exit prompt to give the user control
+          setShowExitDialog(true);
+        });
+      } catch (e) {
+        // Fallback for web - handled by popstate below
+      }
+    };
+
+    initListener();
+    return () => {
+      if (backListener) backListener.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    // WEB BACK BUTTON INTERCEPTION (Popstate)
     const handlePopState = (event: PopStateEvent) => {
       // Re-push to keep user on same URL while dialog is open
       window.history.pushState(null, '', window.location.href);
@@ -1757,7 +1780,7 @@ export function RoomClient({ room }: { room: Room }) {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [room]);
+  }, []);
 
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -1850,7 +1873,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMinimize = () => {
     setMinimizedRoom(room);
     setActiveRoom(null);
-    router.push('/rooms');
+    router.push('/discover'); // Move to Discover instead of /rooms for a better "browsing" start
   };
 
   const handleExit = () => {
@@ -2982,6 +3005,20 @@ export function RoomClient({ room }: { room: Room }) {
         room={room}
         isAIVoiceEnabled={isAIVoiceEnabled}
         onToggleAIVoice={toggleAIVoice}
+      />
+
+      <ExitRoomDialog
+        isOpen={showExitDialog}
+        onClose={() => setShowExitDialog(false)}
+        onMinimize={() => {
+          setShowExitDialog(false);
+          handleMinimize();
+        }}
+        onConfirmExit={() => {
+          setShowExitDialog(false);
+          handleExit();
+          router.push('/discover');
+        }}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `

@@ -29,10 +29,10 @@ const HOME_PATHS = {
 };
 
 const BASE_OFFSETS = {
-  blue:   [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
-  red:    [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
-  green:  [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]],
-  yellow: [[1.5, 1.5], [1.5, 3.5], [3.5, 1.5], [3.5, 3.5]]
+  blue:   [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
+  red:    [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
+  green:  [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
+  yellow: [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]]
 };
 
 const START_INDEX = {
@@ -128,31 +128,44 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
            {/* Glossy Bevel */}
            <div className="absolute top-0 inset-x-0 h-1 bg-white/40 z-10" />
 
-           {/* AVATAR OVERLAY at the corner of the base house */}
-           <div className={cn(
-             "absolute z-40 p-0.5 rounded-full border-2 transition-all duration-500",
-             isActive ? "scale-125 border-white shadow-[0_0_20px_white] animate-pulse" : "border-black/20 opacity-60",
-             color === 'blue' && "top-2 left-2",
-             color === 'red' && "top-2 right-2",
-             color === 'yellow' && "bottom-2 left-2",
-             color === 'green' && "bottom-2 right-2"
-           )}>
-             <Avatar className="h-10 w-10 md:h-12 md:w-12 border border-black/5 ring-2 ring-black/10">
-               <AvatarImage src={player?.avatarUrl} />
-               <AvatarFallback className="bg-slate-200 text-slate-500 text-[10px] font-black uppercase">P{users.indexOf(player as any) + 1}</AvatarFallback>
-             </Avatar>
-             {isActive && (
-               <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white shadow-lg animate-bounce" />
-             )}
-             {player && (
-               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 z-50">
-                 <span className="text-[7px] font-black text-white uppercase tracking-tighter">{player.username.split(' ')[0]}</span>
-               </div>
-             )}
-           </div>
+            {/* AVATAR OVERLAY - WAF Style Overlay Alignment */}
+            <div className={cn(
+              "absolute z-[100] transition-all duration-500",
+              isActive ? "scale-110" : "opacity-90 scale-95",
+              color === 'blue' && "-top-6 -left-6",
+              color === 'red' && "-top-6 -right-6",
+              color === 'yellow' && "-bottom-6 -left-6",
+              color === 'green' && "-bottom-6 -right-6"
+            )}>
+              <div className={cn(
+                "relative p-0.5 rounded-full border-[5px] bg-white/90 backdrop-blur-md shadow-2xl",
+                isActive ? "animate-pulse" : "",
+                color === 'blue' && "border-blue-500",
+                color === 'red' && "border-red-500",
+                color === 'yellow' && "border-yellow-400",
+                color === 'green' && "border-green-500"
+              )}>
+                <Avatar className="h-14 w-14 md:h-16 md:w-16 border-2 border-black/10 ring-1 ring-white/40">
+                  <AvatarImage src={player?.avatarUrl} />
+                  <AvatarFallback className="bg-slate-200 text-slate-500 text-[12px] font-black uppercase">P{users.indexOf(player as any) + 1}</AvatarFallback>
+                </Avatar>
+                {isActive && (
+                  <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white shadow-lg animate-bounce z-20" />
+                )}
+              </div>
+              
+              {player && (
+                <div className={cn(
+                  "absolute whitespace-nowrap bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 z-50 shadow-2xl",
+                  (color === 'blue' || color === 'yellow') ? "left-12 -bottom-2" : "right-12 -bottom-2"
+                )}>
+                  <span className="text-[9px] font-black text-amber-400 uppercase tracking-tighter shadow-sm">{player.username.split(' ')[0]}</span>
+                </div>
+              )}
+            </div>
 
            {/* 4 Holes for pieces to return to */}
-           <div className="flex-1 w-full grid grid-cols-2 grid-rows-2 gap-[15%] p-4 pt-10">
+           <div className="flex-1 w-full grid grid-cols-2 grid-rows-2 gap-[15%] p-4">
               {[0, 1, 2, 3].map(i => (
                 <div key={i} className={cn("rounded-full shadow-[inset_0_4px_8px_rgba(0,0,0,0.3)] bg-gradient-to-br border-2 border-black/5", colors[color])} />
               ))}
@@ -163,9 +176,11 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
   };
 
   return (
-    <div className="relative w-full max-w-[450px] aspect-square bg-[#ddd] p-1.5 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] rounded-2xl border-4 border-[#3d2616] overflow-hidden">
-      {/* Texture Layer */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
+    <div className="relative w-full max-w-[480px] aspect-square p-4 bg-[#8b4513] rounded-3xl border-[12px] border-[#5d2e0c] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.7),inset_0_4px_20px_rgba(255,255,255,0.1)] overflow-hidden scale-[0.98]">
+      {/* Premium Wood Grain Overlay */}
+      <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")' }} />
+      {/* Internal Gloss Bevel */}
+      <div className="absolute inset-[3px] rounded-2xl border-2 border-white/10 pointer-events-none z-10" />
       
       <div className="grid grid-cols-15 grid-rows-15 w-full h-full bg-white gap-0 border-[2px] border-black/80 overflow-hidden relative shadow-inner">
         {cells.map((_, i) => {
@@ -255,27 +270,37 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
               style={{ x: '-50%', y: '-50%' }}
               className="absolute w-[6.66%] h-[6.66%] flex items-center justify-center z-50 pointer-events-none"
             >
-              <button
+               <button
                 onClick={(e) => {
                    e.stopPropagation();
                    onPieceClick?.(piece.id);
                 }}
                 className={cn(
-                  "w-[90%] h-[90%] rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.4)] border-[2.5px] border-white/90 pointer-events-auto transform transition-all active:scale-90 relative overflow-hidden",
-                  piece.color === 'blue' && "bg-gradient-to-br from-blue-400 to-blue-800",
-                  piece.color === 'red' && "bg-gradient-to-br from-red-400 to-red-800",
-                  piece.color === 'yellow' && "bg-gradient-to-br from-yellow-300 to-yellow-600",
-                  piece.color === 'green' && "bg-gradient-to-br from-green-400 to-green-800",
-                  isMyTurn && "animate-reaction-pulse ring-4 ring-white/40 cursor-pointer scale-125 z-[60]"
+                  "w-[94%] h-[94%] rounded-full shadow-[0_6px_15px_rgba(0,0,0,0.6)] border-[1.5px] border-white/40 pointer-events-auto transform transition-all active:scale-95 relative overflow-hidden group",
+                  piece.color === 'blue' && "bg-gradient-to-br from-blue-400 via-blue-600 to-blue-900",
+                  piece.color === 'red' && "bg-gradient-to-br from-red-400 via-red-600 to-red-900",
+                  piece.color === 'yellow' && "bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700",
+                  piece.color === 'green' && "bg-gradient-to-br from-green-400 via-green-600 to-green-900",
+                  isMyTurn && "animate-reaction-pulse ring-[6px] ring-white/20 cursor-pointer scale-110 z-[60]"
                 )}
               >
-                  {/* Inner shine for marble effect */}
-                  <div className="absolute top-1 left-1 w-1/3 h-1/3 bg-white/30 rounded-full blur-[1px]" />
+                  {/* 3D Base Edge (Coin Depth) */}
+                  <div className="absolute inset-0 rounded-full border-b-[6px] border-black/30 pointer-events-none" />
                   
-                  {/* Center Dot */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/20 border border-white/5" />
+                  {/* Gloss Top Layer */}
+                  <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-full pointer-events-none" />
+                  
+                  {/* USER LOGO (Mouse-Cat / Ummy Logo) */}
+                  <div className="absolute inset-1.5 flex items-center justify-center bg-white/10 rounded-full border border-white/10 overflow-hidden">
+                    <img 
+                      src="/images/ummy-logo.png" 
+                      className="w-[110%] h-[110%] object-contain scale-110 drop-shadow-md"
+                      alt="Piece Icon"
+                    />
                   </div>
+
+                  {/* Shine effect on hover */}
+                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             </motion.div>
           );

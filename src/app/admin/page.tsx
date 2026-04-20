@@ -102,9 +102,9 @@ import {
   PinOff,
   ShoppingBag,
   ShieldAlert,
-  ArrowRightLeft,
   Waves,
   Cloud,
+  ArrowLeft,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -127,7 +127,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { format } from "date-fns";
 import Image from "next/image";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
 
@@ -360,6 +360,119 @@ const LogViewer = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: 
   );
 };
 
+const ReportsManager = ({ firestore, isAuthorized }: { firestore: any, isAuthorized: boolean }) => {
+  const { toast } = useToast();
+  const reportsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "reports"), orderBy("timestamp", "desc"), limit(100));
+  }, [firestore, isAuthorized]);
+
+  const { data: reports, isLoading } = useCollection(reportsQuery);
+
+  const handleDeletePost = async (report: any) => {
+    if (!firestore || !isAuthorized) return;
+    try {
+      // Delete the actual moment
+      await deleteDocumentNonBlocking(doc(firestore, "moments", report.targetId));
+      // Delete the report record
+      await deleteDocumentNonBlocking(doc(firestore, "reports", report.id));
+      toast({ title: "Post Deleted Successfully" });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
+    }
+  };
+
+  const handleDismissReport = async (reportId: string) => {
+    if (!firestore || !isAuthorized) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "reports", reportId));
+      toast({ title: "Report Dismissed" });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Dismiss Failed", description: e.message });
+    }
+  };
+
+  if (isLoading) return <div className="flex justify-center p-20"><Loader className="animate-spin text-red-500" /></div>;
+
+  return (
+    <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8 overflow-hidden">
+      <CardHeader className="px-0">
+        <CardTitle className="text-2xl uppercase flex items-center gap-2 text-red-600">
+          <ShieldAlert className="h-6 w-6" /> Moderation Reports
+        </CardTitle>
+        <CardDescription>
+          Review flagged content. Please investigate before taking action.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-0">
+        <ScrollArea className="h-[70vh]">
+          <div className="space-y-4">
+            {!reports || reports.length === 0 ? (
+              <div className="py-20 text-center opacity-20 font-bold uppercase text-xs">No Pending Reports</div>
+            ) : (
+              <div className="grid gap-4">
+                {reports.map((report: any) => (
+                  <div key={report.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row gap-4 group transition-all hover:border-red-200">
+                    {/* Content Preview */}
+                    {report.targetImageUrl && (
+                      <div className="relative h-24 w-24 rounded-xl overflow-hidden bg-black shrink-0">
+                        <Image src={report.targetImageUrl} alt="Reported" fill className="object-cover opacity-80" />
+                      </div>
+                    )}
+                    
+                    <div className="flex-1 space-y-2">
+                       <div className="flex items-center justify-between">
+                         <Badge variant="destructive" className="uppercase font-black text-[9px] px-2 py-0.5">
+                           {report.reason}
+                         </Badge>
+                         <span className="text-[10px] text-slate-400 font-bold uppercase">
+                           {report.timestamp?.toDate ? format(report.timestamp.toDate(), "MMM d, HH:mm") : "Just now"}
+                         </span>
+                       </div>
+                       
+                       <p className="text-sm font-medium text-slate-700 italic">
+                         "{report.targetContent || "No text content"}"
+                       </p>
+
+                       <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50">
+                         <p className="text-[9px] font-bold text-slate-400 uppercase">
+                           Author: <span className="text-slate-900">{report.targetAuthorName}</span>
+                         </p>
+                         <p className="text-[9px] font-bold text-slate-400 uppercase">
+                           Reporter: <span className="text-slate-900">{report.reporterName}</span>
+                         </p>
+                       </div>
+                    </div>
+
+                    <div className="flex sm:flex-col gap-2 shrink-0">
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleDeletePost(report)}
+                        className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDismissReport(report.id)}
+                        className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
+                      >
+                        <Check className="h-3 w-3" /> Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+};
+
 function AdminPageContent() {
   const firestore = useFirestore();
   const storage = useStorage();
@@ -377,6 +490,7 @@ function AdminPageContent() {
   const isAuthorized = isCreator || isAdminDelegated;
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("app-data");
 
   useEffect(() => {
@@ -2078,14 +2192,22 @@ function AdminPageContent() {
 
   return (
     <AppLayout>
-      <div className="space-y-8 max-w-7xl mx-auto p-4 animate-in fade-in duration-700 font-sans bg-white min-h-full">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+      <div className="space-y-2 max-w-7xl mx-auto px-4 pt-24 pb-4 animate-in fade-in duration-700 font-sans bg-white min-h-full relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => router.back()} 
+          className="absolute left-4 top-6 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-100 transition-all z-[110] shadow-sm"
+        >
+          <ArrowLeft className="h-5 w-5 text-slate-600" />
+        </Button>
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-3">
           <div className="flex items-center gap-4">
             <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
               <Shield className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold uppercase tracking-tight text-slate-900">
+              <h1 className="text-2xl font-bold uppercase tracking-tight text-slate-900">
                 Supreme Command
               </h1>
               <p className="text-muted-foreground">
@@ -2093,12 +2215,12 @@ function AdminPageContent() {
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            <Badge className="bg-primary text-black font-bold uppercase px-4 py-1.5 h-10 rounded-xl">
+          <div className="flex flex-col items-start md:items-end gap-1.5 shrink-0">
+            <Badge className="bg-primary text-black font-bold uppercase px-4 py-1.5 h-10 rounded-xl shadow-sm border-none">
               {isCreator ? "Supreme Creator" : "Staff Administrator"}
             </Badge>
-            <p className="text-[8px] font-mono text-slate-400 select-all">
-              UID: {user?.uid}
+            <p className="text-[10px] font-mono text-slate-400 select-all px-1">
+              ID: {user?.uid}
             </p>
           </div>
         </header>
@@ -2211,7 +2333,14 @@ function AdminPageContent() {
                   value="rewards"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
-                  <Gift className="h-4 w-4" /> Rewards
+                  <Gift className="h-4 w-4" /> Rewards Center
+                </TabsTrigger>
+
+                <TabsTrigger
+                  value="moderation-reports"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-red-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <ShieldAlert className="h-4 w-4" /> Moderation Reports
                 </TabsTrigger>
                 <TabsTrigger
                   value="splash-screen"
@@ -4919,6 +5048,9 @@ function AdminPageContent() {
                 </div>
               </CardContent>
             </Card>
+            </TabsContent>
+            <TabsContent value="moderation-reports">
+               <ReportsManager firestore={firestore} isAuthorized={isAuthorized} />
             </TabsContent>
           </div>
         </Tabs>

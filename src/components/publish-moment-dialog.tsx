@@ -9,7 +9,6 @@ import {
  Dialog,
  DialogContent,
  DialogDescription,
- DialogFooter,
  DialogHeader,
  DialogTitle,
 } from '@/components/ui/dialog';
@@ -19,9 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Image from 'next/image';
 
-/**
- * High-Fidelity Moment Publishing Dialog (Controllable).
- */
 export interface PublishMomentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -88,7 +84,7 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
 
    } catch (e: any) {
     console.error("Publish Error:", e);
-    toast({ variant: 'destructive', title: 'Publish Failed', description: 'Could not broadcast vibe.' });
+    toast({ variant: 'destructive', title: 'Publish Failed', description: e.message || 'Could not broadcast vibe.' });
    } finally {
     setIsSubmitting(false);
    }
@@ -97,54 +93,57 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
   return (
    <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent hideClose={true} className="sm:max-w-[425px] rounded-t-[2.5rem] border-none shadow-2xl bg-white text-black p-0 overflow-hidden animate-in slide-in-from-bottom-full duration-500 max-h-[90vh] overflow-y-auto">
-     <DialogHeader className="p-8 pb-4">
-      <DialogTitle className="text-center font-headline text-3xl uppercase tracking-tighter">Share Moment</DialogTitle>
-      <DialogDescription className="text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Broadcast Vibe to Social Galaxy</DialogDescription>
-     </DialogHeader>
-     <div className="p-8 space-y-6">
-      <div className="relative group">
-       <Textarea 
-        placeholder="What's happening in your galaxy?"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="resize-none h-32 rounded-3xl border-2 border-gray-100 focus:border-purple-500 transition-all p-4 text-sm font-sans font-medium"
-        disabled={isSubmitting}
-       />
-      </div>
-
-      <div className="flex flex-col items-center justify-center">
-       {imagePreview ? (
-        <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden border-2 border-dashed border-purple-500 shadow-xl bg-gray-50">
-         <Image src={imagePreview} alt="Preview" fill className="object-cover" />
-         <button 
-          onClick={() => { setSelectedImage(null); setImagePreview(null); }}
-          className="absolute top-4 right-4 bg-black/60 p-2 rounded-full text-white backdrop-blur-md"
-         >
-          <X className="h-5 w-5" />
-         </button>
+      <DialogHeader className="p-6 pb-2">
+        <DialogTitle className="text-center font-headline text-xl uppercase tracking-tighter">Share Moment</DialogTitle>
+        <DialogDescription className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Broadcast Vibe to Social Galaxy</DialogDescription>
+      </DialogHeader>
+      
+      <div className="p-6 pt-0 space-y-4">
+        <div className="relative group">
+          <Textarea 
+            placeholder="What's happening in your galaxy?"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="resize-none h-32 rounded-3xl border-2 border-gray-100 focus:border-purple-500 transition-all p-4 text-sm font-sans font-medium"
+            disabled={isSubmitting}
+          />
         </div>
-       ) : (
-        <button 
-         onClick={() => fileInputRef.current?.click()}
-         className="w-full h-32 rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-all group"
-        >
-         <Camera className="h-8 w-8 text-gray-300 group-hover:text-purple-500 transition-colors" />
-         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Add Galaxy Vibe</span>
-        </button>
-       )}
+
+        <div className="flex flex-col items-center justify-center">
+          {imagePreview ? (
+            <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden border-2 border-dashed border-purple-500 shadow-xl bg-gray-50">
+              <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+              <button 
+                onClick={() => { setSelectedImage(null); setImagePreview(null); }}
+                className="absolute top-4 right-4 bg-black/60 p-2 rounded-full text-white backdrop-blur-md"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-32 rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-all group"
+            >
+              <Camera className="h-8 w-8 text-gray-300 group-hover:text-purple-500 transition-colors" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Add Galaxy Vibe</span>
+            </button>
+          )}
+        </div>
+
+        <div className="pt-2">
+          <Button 
+            onClick={handlePublish} 
+            disabled={isSubmitting || !content.trim()} 
+            className="w-full h-12 rounded-2xl text-sm font-headline font-black uppercase shadow-lg bg-gradient-to-r from-purple-600 to-pink-500 border-none"
+          >
+            {isSubmitting ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            Broadcast Post
+          </Button>
+        </div>
       </div>
-     </div>
-     <DialogFooter className="p-8 pt-0">
-      <Button 
-       onClick={handlePublish} 
-       disabled={isSubmitting || !content.trim()} 
-       className="w-full h-16 rounded-[1.5rem] text-lg font-headline font-black uppercase shadow-xl shadow-purple-500/20 bg-gradient-to-r from-purple-600 to-pink-500 hover:brightness-110 border-none"
-      >
-       {isSubmitting ? <Loader className="mr-2 h-6 w-6 animate-spin" /> : <Send className="mr-2 h-6 w-6" />}
-       Broadcast Post
-      </Button>
-     </DialogFooter>
-     <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
+      
+      <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
     </DialogContent>
    </Dialog>
   );

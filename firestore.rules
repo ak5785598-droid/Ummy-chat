@@ -187,10 +187,14 @@ service cloud.firestore {
     // MOMENTS
     // ============================================
     match /moments/{id} {
-      allow read: if isSignedIn() && isNotBanned();
-      allow create: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
-      allow update: if isSignedIn() && isNotBanned() && request.auth.uid == request.resource.data.userId;
-      allow delete: if isSignedIn() && (request.auth.uid == request.resource.data.userId || isAdmin());
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      match /{allSub=**} {
+        allow read, write: if isSignedIn();
+      }
     }
     
     // ============================================
@@ -229,6 +233,12 @@ service cloud.firestore {
       allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && isNotBanned();
       allow update, delete: if isAdmin();
+    }
+
+    // --- REPORTS ---
+    match /reports/{id} {
+      allow create: if isSignedIn() && isNotBanned();
+      allow read, delete, update: if isAdmin();
     }
   }
 }

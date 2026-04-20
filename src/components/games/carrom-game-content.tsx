@@ -233,7 +233,6 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
         </h2>
 
         <div className="flex gap-2">
-          <button onClick={handleBack} className="bg-white/10 p-2 rounded-full border border-white/10 backdrop-blur-md"><X className="h-4 w-4" /></button>
         </div>
       </header>
 

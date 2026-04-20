@@ -105,11 +105,11 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
  return (
   <Dialog open={open} onOpenChange={(val) => !isProcessing && onOpenChange(val)}>
    <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-t-[2.5rem] md:rounded-3xl bg-white text-black border-none shadow-2xl font-sans z-[10001]">
-    <DialogHeader className="p-6 border-b border-gray-50">
-     <DialogTitle className="text-2xl font-bold uppercase tracking-tight text-center">Adjust Visual Vibe</DialogTitle>
+    <DialogHeader className="pt-6 pb-2 border-none">
+     <DialogTitle className="text-xl font-black uppercase tracking-tighter text-center">Adjust Visual Vibe</DialogTitle>
     </DialogHeader>
     
-    <div className="relative h-[400px] w-full bg-slate-900">
+    <div className="relative h-[240px] w-full bg-slate-50">
      {image && (
       <Cropper
        image={image}
@@ -123,9 +123,9 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
      )}
     </div>
 
-    <div className="p-6 space-y-6 bg-white">
-     <div className="space-y-2">
-      <div className="flex justify-between items-center text-[10px] font-bold uppercase text-gray-400">
+    <div className="px-6 py-4 space-y-4 bg-white">
+     <div className="space-y-1">
+      <div className="flex justify-between items-center text-[9px] font-black uppercase text-slate-400 tracking-widest">
        <span>Zoom Sync</span>
        <span>{Math.round(zoom * 100)}%</span>
       </div>
@@ -135,26 +135,26 @@ export function ImageCropDialog({ image, open, onOpenChange, onCropComplete, asp
        max={3}
        step={0.1}
        onValueChange={(vals) => setZoom(vals[0])}
-       className="py-4"
+       className="py-1 mt-0.5"
       />
      </div>
-
-     <div className="flex gap-3">
+ 
+     <div className="flex gap-4 pt-2">
       <Button 
-       variant="outline" 
+       variant="ghost" 
        onClick={() => onOpenChange(false)} 
        disabled={isProcessing}
-       className="flex-1 h-14 rounded-2xl font-bold uppercase text-xs border-2"
+       className="flex-1 h-11 rounded-xl font-bold uppercase text-[9px] bg-slate-100 text-slate-500"
       >
-       <X className="mr-2 h-4 w-4" /> Cancel
+       <X className="mr-2 h-3 w-3" /> Cancel
       </Button>
       <Button 
        onClick={handleConfirm} 
        disabled={isProcessing}
-       className="flex-[2] h-14 rounded-2xl font-bold uppercase text-lg shadow-xl shadow-primary/20 bg-primary text-white"
+       className="flex-1 h-11 rounded-xl font-black uppercase text-[9px] shadow-lg shadow-primary/20 bg-primary text-white"
       >
-       {isProcessing ? <Loader className="mr-2 h-6 w-6 animate-spin" /> : <Check className="mr-2 h-6 w-6" />}
-       Synchronize Crop
+       {isProcessing ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+       Save Changes
       </Button>
      </div>
     </div>

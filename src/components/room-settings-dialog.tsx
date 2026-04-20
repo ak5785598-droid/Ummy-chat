@@ -15,7 +15,8 @@ import {
  Palette,
  ShieldCheck,
  Mic,
- MicOff
+ MicOff,
+ X
 } from 'lucide-react';
 import {
  Dialog,
@@ -62,13 +63,13 @@ interface RoomSettingsDialogProps {
 }
 
 const SettingItem = ({ label, value, extra, onClick, showChevron = true, children, className }: any) => (
- <div 
-  onClick={onClick}
-  className={cn(
-   "flex items-center justify-between p-5 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer border-b border-gray-50 last:border-0",
-   className
-  )}
- >
+  <div 
+   onClick={onClick}
+   className={cn(
+    "flex items-center justify-between px-6 py-3 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer border-b border-gray-50 last:border-0",
+    className
+   )}
+  >
   <div className="flex items-center gap-4">
    <span className="font-bold text-[14px] text-gray-800 uppercase tracking-tight">{label}</span>
   </div>
@@ -232,19 +233,19 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
     <DialogTrigger asChild>
      {trigger}
     </DialogTrigger>
-    <DialogContent hideClose={true} className="sm:max-w-[450px] h-full sm:h-[90vh] overflow-hidden bg-white p-0 rounded-none sm:rounded-3xl border-none shadow-2xl animate-in slide-in-from-bottom-full duration-500 font-sans text-black z-[9999]">
-     <DialogHeader className="p-6 border-b border-gray-50 flex flex-row items-center justify-between space-y-0 shrink-0 bg-white sticky top-0 z-10">
+    <DialogContent hideClose={true} className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none m-0 p-0 overflow-hidden bg-white rounded-none border-none shadow-none animate-in slide-in-from-bottom-full duration-500 font-sans text-black z-[9999] gap-0 flex flex-col">
+     <DialogHeader className="px-6 pt-12 pb-2 border-b border-gray-50 flex flex-row items-center justify-between space-y-0 shrink-0 bg-white sticky top-0 z-10">
        <button onClick={() => setOpen(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors">
         <ChevronLeft className="h-6 w-6 text-gray-600" />
        </button>
-       <DialogTitle className="text-xl font-bold uppercase tracking-tight">Settings</DialogTitle>
+       <DialogTitle className="text-base font-black uppercase tracking-tighter">Settings</DialogTitle>
        <div className="w-10" />
        <DialogDescription className="sr-only">Manage room identity.</DialogDescription>
      </DialogHeader>
 
-     <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-80px)] md:max-h-[600px]">
-       <div className="pb-10">
-        <SettingItem label="Profile" onClick={() => !isUploadingProfile && fileInputRef.current?.click()} className="py-8">
+      <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-48px)] md:max-h-[600px]">
+       <div className="pb-10 pt-0">
+        <SettingItem label="Profile" onClick={() => !isUploadingProfile && fileInputRef.current?.click()} className="py-2">
           <div className="relative">
            <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">
              <AvatarImage key={room.coverUrl} src={room.coverUrl || undefined} className="object-cover" />
@@ -367,31 +368,51 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
      )}
 
      {isEditingName && (
-      <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
-        <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-         <button onClick={() => setIsEditingName(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
-           <ChevronLeft className="h-6 w-6 text-gray-800" />
-         </button>
-         <h3 className="font-bold uppercase text-lg tracking-tight">Room Name</h3>
-         <button onClick={handleSaveName} className="text-primary font-bold uppercase text-sm tracking-wider px-2">Save</button>
-        </header>
-        <div className="p-8">
-         <Input value={newName} onChange={(e) => setNewName(e.target.value)} className="h-16 rounded-2xl border-2 text-xl font-bold focus:border-primary transition-all" autoFocus />
+      <div className="absolute inset-0 z-[110] bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-6">
+        <div className="bg-white w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <header className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+           <h3 className="font-black uppercase text-sm tracking-widest text-slate-400">Edit Name</h3>
+           <button onClick={() => setIsEditingName(false)} className="p-1 hover:bg-gray-100 rounded-full">
+            <X className="h-4 w-4 text-gray-400" />
+           </button>
+          </header>
+          <div className="p-6 space-y-4">
+           <Input 
+            value={newName} 
+            onChange={(e) => setNewName(e.target.value)} 
+            className="h-12 rounded-xl border-2 text-base font-bold focus:border-primary transition-all text-center" 
+            autoFocus 
+           />
+           <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setIsEditingName(false)} className="flex-1 h-10 rounded-xl font-bold uppercase text-[10px] bg-slate-50 text-slate-500">Cancel</Button>
+            <Button onClick={handleSaveName} className="flex-1 h-10 rounded-xl font-black uppercase text-[10px] bg-primary text-white shadow-lg shadow-primary/20">Save</Button>
+           </div>
+          </div>
         </div>
       </div>
      )}
 
      {isEditingAnnouncement && (
-      <div className="absolute inset-0 z-[100] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
-        <header className="p-6 border-b border-gray-50 flex items-center justify-between">
-         <button onClick={() => setIsEditingAnnouncement(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
-           <ChevronLeft className="h-6 w-6 text-gray-800" />
-         </button>
-         <h3 className="font-bold uppercase text-lg tracking-tight">Announcement</h3>
-         <button onClick={handleSaveAnnouncement} className="text-primary font-bold uppercase text-sm tracking-wider px-2">Save</button>
-        </header>
-        <div className="p-8">
-         <Textarea value={newAnnouncement} onChange={(e) => setNewAnnouncement(e.target.value)} className="h-40 rounded-2xl border-2 text-lg font-body focus:border-primary transition-all p-6" autoFocus />
+      <div className="absolute inset-0 z-[110] bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 flex items-center justify-center p-6">
+        <div className="bg-white w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+          <header className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+           <h3 className="font-black uppercase text-sm tracking-widest text-slate-400">Announcement</h3>
+           <button onClick={() => setIsEditingAnnouncement(false)} className="p-1 hover:bg-gray-100 rounded-full">
+            <X className="h-4 w-4 text-gray-400" />
+           </button>
+          </header>
+          <div className="p-6 space-y-4">
+           <Textarea 
+            value={newAnnouncement} 
+            onChange={(e) => setNewAnnouncement(e.target.value)} 
+            className="h-28 rounded-xl border-2 text-sm font-medium focus:border-primary transition-all p-4 resize-none" 
+            autoFocus 
+           />
+           <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setIsEditingAnnouncement(false)} className="flex-1 h-10 rounded-xl font-bold uppercase text-[10px] bg-slate-50 text-slate-500">Cancel</Button>
+            <Button onClick={handleSaveAnnouncement} className="flex-1 h-10 rounded-xl font-black uppercase text-[10px] bg-primary text-white shadow-lg shadow-primary/20">Save</Button>
+           </div>
+          </div>
         </div>
       </div>
      )}

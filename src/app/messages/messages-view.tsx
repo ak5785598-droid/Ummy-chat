@@ -17,8 +17,10 @@ import {
  Search,
  Image as ImageIcon,
  X,
- Heart
+ Heart,
+ Home
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { MessagesViewGlossy } from './messages-view-glossy';
 import { 
@@ -82,74 +84,93 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
 );
 
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
- const participantIds = chat?.participantIds || [];
- const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
- const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
+  const router = useRouter();
+  const participantIds = chat?.participantIds || [];
+  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
+  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
 
- if (isLoading) return (
-  <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-black/5 last:border-0">
-   <div className="h-12 w-12 bg-white/40 rounded-2xl" />
-   <div className="flex-1 space-y-3 pt-2">
-    <div className="h-3 bg-white/40 rounded w-1/3" />
-    <div className="h-2 bg-white/40 rounded w-1/2" />
-   </div>
-  </div>
- );
-
- if (!otherUser) return null;
-
- const getDisplayTime = (timestamp: any) => {
-  if (!timestamp) return '...';
-  const date = timestamp.toDate();
-  if (isToday(date)) return format(date, 'h:mm a');
-  if (isYesterday(date)) return 'Yesterday';
-  if (isSameWeek(date, new Date())) return format(date, 'eeee');
-  return format(date, 'M/d/yy');
- };
-
- const isOfficial = otherUser.tags?.includes('Official') || otherUser.tags?.includes('Admin');
- const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
-
- return (
-  <div 
-   onClick={() => onSelect(chat.id, otherUser)}
-   className={cn(
-    "px-6 py-4 flex gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0",
-    isUnread && "bg-primary/10"
-   )}
-  >
-   <div className="relative shrink-0">
-    <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
-     <AvatarImage src={otherUser.avatarUrl || undefined} />
-     <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
-    </Avatar>
-    {isOfficial && (
-     <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-       <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500" strokeWidth={3} />
-     </div>
-    )}
-    {isUnread && (
-     <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
-    )}
-   </div>
-   <div className="flex-1 min-w-0 pt-1">
-    <div className="flex items-center justify-between mb-0.5">
-     <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
-      {otherUser.username}
-     </h3>
-     <span className="text-[10px] font-bold text-slate-500 uppercase">
-      {getDisplayTime(chat.updatedAt)}
-     </span>
+  if (isLoading) return (
+   <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-black/5 last:border-0">
+    <div className="h-12 w-12 bg-white/40 rounded-2xl" />
+    <div className="flex-1 space-y-3 pt-2">
+     <div className="h-3 bg-white/40 rounded w-1/3" />
+     <div className="h-2 bg-white/40 rounded w-1/2" />
     </div>
-    <p className={cn("text-[11px] font-body truncate ", isUnread ? "font-black text-slate-900" : "text-slate-600")}>
-     {chat.lastMessage || 'Sent a vibe'}
-    </p>
    </div>
-   <div className="flex items-center">
-     <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+  );
+
+  if (!otherUser) return null;
+
+  const getDisplayTime = (timestamp: any) => {
+   if (!timestamp) return '...';
+   const date = timestamp.toDate();
+   if (isToday(date)) return format(date, 'h:mm a');
+   if (isYesterday(date)) return 'Yesterday';
+   if (isSameWeek(date, new Date())) return format(date, 'eeee');
+   return format(date, 'M/d/yy');
+  };
+
+  const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
+  const isOnline = otherUser.isOnline === true;
+  const inRoomId = otherUser.currentRoomId;
+
+  return (
+   <div 
+    onClick={() => onSelect(chat.id, otherUser)}
+    className={cn(
+     "px-6 py-4 flex gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0",
+     isUnread && "bg-primary/10"
+    )}
+   >
+    <div className="relative shrink-0">
+     <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
+      <AvatarImage src={otherUser.avatarUrl || undefined} />
+      <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
+     </Avatar>
+     {isUnread && (
+      <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
+     )}
+    </div>
+    <div className="flex-1 min-w-0 pt-1">
+     <div className="flex items-center justify-between mb-0.5">
+      <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
+       {otherUser.username}
+      </h3>
+      <div className="flex items-center gap-1.5">
+       {isOnline && !inRoomId && (
+         <div className="h-2 w-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+       )}
+       <span className="text-[10px] font-bold text-slate-500 uppercase">
+        {getDisplayTime(chat.updatedAt)}
+       </span>
+      </div>
+     </div>
+     <div className="flex items-center justify-between gap-2 overflow-hidden">
+       <p className={cn("text-[11px] font-body truncate flex-1 ", isUnread ? "font-black text-slate-900" : "text-slate-600")}>
+        {chat.lastMessage || 'Sent a vibe'}
+       </p>
+       
+       {isOnline && inRoomId && (
+         <div 
+           onClick={(e) => {
+             e.stopPropagation();
+             router.push(`/rooms/${inRoomId}`);
+           }}
+           className="flex items-center bg-indigo-500/90 text-white rounded-full pl-2 pr-0.5 py-0.5 shadow-md active:scale-95 transition-all animate-in zoom-in duration-500 shrink-0 border border-white/20 backdrop-blur-sm"
+         >
+           <div className="flex items-center gap-1.5">
+             <Home className="h-2.5 w-2.5 fill-current" />
+             <span className="text-[8px] font-black uppercase tracking-tighter">In Room</span>
+           </div>
+           <div className="ml-2 px-1.5 py-0.5 bg-yellow-400 rounded-full text-[8px] font-black text-slate-900 flex items-center gap-0.5 shadow-sm">
+             GO <ChevronRight className="h-2 w-2" />
+           </div>
+         </div>
+       )}
+     </div>
+    </div>
    </div>
-  </div>
- );
+  );
 };
 
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
@@ -570,7 +591,6 @@ export default function MessagesView() {
             date={latestTeam?.timestamp ? format(latestTeam.timestamp.toDate(), 'h:mm a') : ""}
             colorClass="bg-gradient-to-br from-orange-400 to-red-500"
             customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />}
-            isVerified
             onClick={() => setShowOfficial(true)}
           />
           
@@ -581,7 +601,6 @@ export default function MessagesView() {
             date={latestSystem?.timestamp ? format(latestSystem.timestamp.toDate(), 'h:mm a') : ""}
             colorClass="bg-gradient-to-br from-blue-400 to-indigo-600"
             customIcon={<img src="https://img.icons8.com/color/96/appointment-reminders--v1.png" className="h-7 w-7" alt="System" />}
-            isVerified
             onClick={() => setShowSystemDialog(true)}
           />
 
