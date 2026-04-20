@@ -106,7 +106,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
  const { toast } = useToast();
- const dragControls = useDragControls(); // Drag logic initialization
+ const dragControls = useDragControls();
 
  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
  const [timeLeft, setTimeLeft] = useState(25);
@@ -370,12 +370,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
   setBannerMsg('Betting Over');
-  bannerTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) setBannerMsg(null);
-  }, 1500);
   
+  // IMMEDIATELY Start Spinning
   setGameState('spinning');
   playSound('spin'); 
+
+  bannerTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) setBannerMsg(null);
+  }, 1000);
+  
 
   let groupType: 'none' | 'left' | 'right' = 'none';
   const chance = Math.random();
@@ -484,7 +487,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     initial="initial"
     animate="animate"
     whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
-    className="h-[60vh] w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
+    /* 'my-auto' AND 'h-[70vh]' ADDED TO KEEP IT CENTERED IN PARENT */
+    className="h-[70vh] my-auto w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
   >
    
    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -574,9 +578,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     )}
    </AnimatePresence>
 
-   <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
+   <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
       <div className="flex items-center gap-1.5">
-          {/* Drag Handle: Move icon connected to dragControls */}
           <div 
             onPointerDown={(e) => dragControls.start(e)}
             className="cursor-grab active:cursor-grabbing p-1"
@@ -599,28 +602,41 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       </div>
    </header>
 
-   <main className="flex-1 w-full flex flex-col items-center justify-start pt-24 px-4 relative">
+   {/* THIN TRANSPARENT WINNING HISTORY BAR */}
+   <div className="w-full bg-black/20 backdrop-blur-sm py-1.5 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border-y border-white/10 shrink-0 z-40 relative">
+      <span className="text-[9px] text-white/60 uppercase font-black tracking-widest shrink-0">History</span>
+      <div className="flex items-center gap-2">
+        {history.map((h, i) => {
+            const animal = ANIMALS.find(a => a.id === h.id);
+            return <span key={i} className="text-sm shrink-0 filter drop-shadow-md">{animal?.emoji}</span>
+        })}
+      </div>
+   </div>
+
+   {/* GAME AREA - `pt-10` se thora upar shift kiya hai */}
+   <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
     
+    {/* MIX CARDS - Size Chota Kiya (`w-[44px] h-[44px]`) */}
     <div className={cn(
-        "absolute top-[12%] left-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] left-[5%] z-30 w-[44px] h-[44px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
-        <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
-            <span className="text-[12px]">🦁</span><span className="text-[12px]">🐯</span>
-            <span className="text-[12px]">🦊</span><span className="text-[12px]">🐻</span>
+        <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
+            <span className="text-[10px]">🦁</span><span className="text-[10px]">🐯</span>
+            <span className="text-[10px]">🦊</span><span className="text-[10px]">🐻</span>
         </div>
-        <span className={cn("text-[9px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+        <span className={cn("text-[8px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
     </div>
 
     <div className={cn(
-        "absolute top-[12%] right-[5%] z-30 w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
+        "absolute top-[12%] right-[5%] z-30 w-[44px] h-[44px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
         shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
     )}>
-        <div className="flex flex-wrap w-[32px] justify-center items-center leading-none">
-            <span className="text-[12px]">🐰</span><span className="text-[12px]">🦓</span>
-            <span className="text-[12px]">🦝</span><span className="text-[12px]">🐔</span>
+        <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
+            <span className="text-[10px]">🐰</span><span className="text-[10px]">🦓</span>
+            <span className="text-[10px]">🦝</span><span className="text-[10px]">🐔</span>
         </div>
-        <span className={cn("text-[9px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+        <span className={cn("text-[8px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
     </div>
 
     <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
@@ -711,6 +727,31 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     </div>
    </main>
 
+   {/* NEW ZEBRA DESIGN CHIPS TAB BELOW GAME AREA */}
+   <div className="w-full bg-[#2a1309] border-t-2 border-[#4a2511] py-3 px-4 flex items-center gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-5px_15px_rgba(0,0,0,0.4)]">
+      {CHIPS_DATA.map((chip) => (
+          <button
+              key={chip.value}
+              onClick={() => setSelectedChip(chip.value)}
+              className={cn(
+                  "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200",
+                  selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_5px_15px_rgba(0,0,0,0.5)]" : "scale-95 opacity-70 hover:opacity-100"
+              )}
+              style={{
+                  background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                  padding: '4px', width: '48px', height: '48px'
+              }}
+          >
+              <div className={cn("w-full h-full rounded-full flex items-center justify-center border-[1.5px] border-black/50 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                  <span className="text-[10px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+              </div>
+              {selectedChip === chip.value && (
+                  <div className="absolute -bottom-3 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse shadow-[0_0_8px_#facc15]" />
+              )}
+          </button>
+      ))}
+   </div>
+
    <AnimatePresence>
     {showRules && (
         <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
@@ -737,4 +778,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    `}</style>
   </motion.div>
  );
-}
+}a
