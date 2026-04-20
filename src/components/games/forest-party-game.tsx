@@ -58,7 +58,7 @@ const floatingVariants = {
 const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
-  { id: 'cow', emoji: '🦝', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
+  { id: 'cow', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
   { id: 'dog', emoji: '🦓', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
   { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', index: 4 },
   { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', index: 5 },
@@ -371,7 +371,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
   setBannerMsg('Betting Over');
   
-  // IMMEDIATELY Start Spinning
   setGameState('spinning');
   playSound('spin'); 
 
@@ -432,7 +431,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     chaseTimeoutRef.current = setTimeout(() => finalizeResult(winningId, groupType), 500);
    }
   };
+
   runChase();
+
  }, [firestore, playSound, finalizeResult]);
 
  useEffect(() => {
@@ -483,299 +484,313 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     dragControls={dragControls}
     dragListener={false}
     dragMomentum={false}
+    whileDrag={{ scale: 1.02, transition: { duration: 0.2 }, zIndex: 50 }}
+    className="h-[70vh] my-auto w-full relative"
+  >
+   <motion.div
     variants={floatingVariants}
     initial="initial"
     animate="animate"
-    whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
-    /* 'my-auto' AND 'h-[70vh]' ADDED TO KEEP IT CENTERED IN PARENT */
-    className="h-[70vh] my-auto w-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
-  >
-   
-   <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
-      <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
-      <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
-      <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
-      <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
-   </div>
+    className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
+   >
+       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
+          <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
+          <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
+          <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
+       </div>
 
-   <AnimatePresence mode="wait">
-    {bannerMsg && (
-        <motion.div
-            key={bannerMsg}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            className="absolute top-[45%] left-0 right-0 z-[250] flex justify-center pointer-events-none"
-        >
-            <div className="bg-[#fdf8e7] border-y-4 border-[#e6c17e] py-3 px-10 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
-                <span className="text-white font-black text-2xl uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" style={{ WebkitTextStroke: '1px #b48530' }}>
-                    {bannerMsg}
-                </span>
-            </div>
-        </motion.div>
-    )}
-   </AnimatePresence>
+       <AnimatePresence mode="wait">
+        {bannerMsg && (
+            <motion.div
+                key={bannerMsg}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="absolute top-[45%] left-0 right-0 z-[250] flex justify-center pointer-events-none"
+            >
+                <div className="bg-[#fdf8e7] border-y-4 border-[#e6c17e] py-3 px-10 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
+                    <span className="text-white font-black text-2xl uppercase tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" style={{ WebkitTextStroke: '1px #b48530' }}>
+                        {bannerMsg}
+                    </span>
+                </div>
+            </motion.div>
+        )}
+       </AnimatePresence>
 
-   <AnimatePresence>
-    {winnerData && (
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-          <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-2 shrink-0" />
-          <div className="flex-1 flex flex-col items-center justify-center w-full gap-4">
-             <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30 animate-pulse" />
-                  <div className="relative text-7xl filter drop-shadow-md">{winnerData.emoji}</div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Winning Amount</span>
-                  <div className="flex items-center gap-1.5">
-                    <GoldCoinIcon className="h-6 w-6 filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] brightness-110" />
-                    <span className="text-4xl font-black text-[#4a2511] tabular-nums">+{formatKandM(winnerData.win)}</span>
-                  </div>
-                </div>
-             </div>
-             <div className="w-full grid grid-cols-2 gap-3 mt-2">
-                <div className="bg-orange-100/50 rounded-2xl p-3 border border-orange-200 flex flex-col items-center">
-                   <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">Your Total Bet</span>
-                   <span className="text-lg font-black text-[#4a2511]">{formatKandM(winnerData.bet)}</span>
-                </div>
-                <div className="bg-orange-500 rounded-2xl p-3 shadow-lg flex flex-col items-center justify-center">
-                   <span className="text-[9px] font-black text-white/80 uppercase tracking-tighter">Status</span>
-                   <span className="text-lg font-black text-white uppercase italic">{winnerData.win > 0 ? 'Winner' : 'Try Again'}</span>
-                </div>
-             </div>
-          </div>
-      </motion.div>
-    )}
-   </AnimatePresence>
+       <AnimatePresence>
+        {winnerData && (
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+              <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-2 shrink-0" />
+              <div className="flex-1 flex flex-col items-center justify-center w-full gap-4">
+                 <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30 animate-pulse" />
+                      <div className="relative text-7xl filter drop-shadow-md">{winnerData.emoji}</div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Winning Amount</span>
+                      <div className="flex items-center gap-1.5">
+                        <GoldCoinIcon className="h-6 w-6 filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] brightness-110" />
+                        <span className="text-4xl font-black text-[#4a2511] tabular-nums">+{formatKandM(winnerData.win)}</span>
+                      </div>
+                    </div>
+                 </div>
+                 <div className="w-full grid grid-cols-2 gap-3 mt-2">
+                    <div className="bg-orange-100/50 rounded-2xl p-3 border border-orange-200 flex flex-col items-center">
+                       <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">Your Total Bet</span>
+                       <span className="text-lg font-black text-[#4a2511]">{formatKandM(winnerData.bet)}</span>
+                    </div>
+                    <div className="bg-orange-500 rounded-2xl p-3 shadow-lg flex flex-col items-center justify-center">
+                       <span className="text-[9px] font-black text-white/80 uppercase tracking-tighter">Status</span>
+                       <span className="text-lg font-black text-white uppercase italic">{winnerData.win > 0 ? 'Winner' : 'Try Again'}</span>
+                    </div>
+                 </div>
+              </div>
+          </motion.div>
+        )}
+       </AnimatePresence>
 
-   <AnimatePresence>
-    {showRecord && (
-        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
-            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
-                <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                {gameRecords.length === 0 ? <p className="text-[#4a2511]/40 text-center text-xs italic mt-4">No records found yet...</p> : gameRecords.map((rec) => (
-                    <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl">{rec.emoji}</span>
-                            <div className="flex flex-col">
-                                <span className="text-[9px] text-orange-500 font-bold uppercase">Bet Amount</span>
-                                <span className="text-xs font-black text-[#4a2511]">{rec.bet}</span>
+       <AnimatePresence>
+        {showRecord && (
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
+                <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                    <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
+                    <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                    {gameRecords.length === 0 ? <p className="text-[#4a2511]/40 text-center text-xs italic mt-4">No records found yet...</p> : gameRecords.map((rec) => (
+                        <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">{rec.emoji}</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-orange-500 font-bold uppercase">Bet Amount</span>
+                                    <span className="text-xs font-black text-[#4a2511]">{rec.bet}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
+                                <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
                             </div>
                         </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
-                            <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </motion.div>
-    )}
-   </AnimatePresence>
-
-   <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
-      <div className="flex items-center gap-1.5">
-          <div 
-            onPointerDown={(e) => dragControls.start(e)}
-            className="cursor-grab active:cursor-grabbing p-1"
-          >
-            <Move size={18} className="text-white/70 mr-1" />
-          </div>
-          
-          <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
-              <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
-              <span className="text-white px-2 font-semibold text-[14px]">{formatKandM(localCoins)}</span>
-              <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
-          </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-          <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><Clock size={16} className="filter drop-shadow-md brightness-110" /></button>
-          <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white shadow-inner">{isMuted ? <VolumeX size={16} className="filter drop-shadow-md" /> : <Volume2 size={16} className="filter drop-shadow-md" />}</button>
-          <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><HelpCircle size={16} className="filter drop-shadow-md brightness-110" /></button>
-          <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><X size={16} className="filter drop-shadow-md" /></button>
-      </div>
-   </header>
-
-   {/* THIN TRANSPARENT WINNING HISTORY BAR */}
-   <div className="w-full bg-black/20 backdrop-blur-sm py-1.5 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border-y border-white/10 shrink-0 z-40 relative">
-      <span className="text-[9px] text-white/60 uppercase font-black tracking-widest shrink-0">History</span>
-      <div className="flex items-center gap-2">
-        {history.map((h, i) => {
-            const animal = ANIMALS.find(a => a.id === h.id);
-            return <span key={i} className="text-sm shrink-0 filter drop-shadow-md">{animal?.emoji}</span>
-        })}
-      </div>
-   </div>
-
-   {/* GAME AREA - `pt-10` se thora upar shift kiya hai */}
-   <main className="flex-1 w-full flex flex-col items-center justify-start pt-10 px-4 relative">
-    
-    {/* MIX CARDS - Size Chota Kiya (`w-[44px] h-[44px]`) */}
-    <div className={cn(
-        "absolute top-[12%] left-[5%] z-30 w-[44px] h-[44px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
-        shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
-    )}>
-        <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
-            <span className="text-[10px]">🦁</span><span className="text-[10px]">🐯</span>
-            <span className="text-[10px]">🦊</span><span className="text-[10px]">🐻</span>
-        </div>
-        <span className={cn("text-[8px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
-    </div>
-
-    <div className={cn(
-        "absolute top-[12%] right-[5%] z-30 w-[44px] h-[44px] rounded-full flex flex-col items-center justify-center border-[2.5px] shadow-[0_4px_0_#241108] transition-all duration-500",
-        shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_30px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
-    )}>
-        <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
-            <span className="text-[10px]">🐰</span><span className="text-[10px]">🦓</span>
-            <span className="text-[10px]">🦝</span><span className="text-[10px]">🐔</span>
-        </div>
-        <span className={cn("text-[8px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
-    </div>
-
-    <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-      <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
-        <defs>
-            <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
-            </filter>
-        </defs>
-        
-        {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-          <g key={deg} transform={`rotate(${deg} 50 50)`}>
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
-            <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
-          </g>
-        ))}
-      </svg>
-
-      <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
-        <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : '🔥'}</p>
-        <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '!!!'}</span>
-      </div>
-
-      {ANIMALS.map((item, idx) => {
-        const active = isWinningAnimal(idx, item.id);
-        const isSpinning = gameState === 'spinning';
-        const isHighlighted = highlightIdx === idx;
-        const applyColorless = isSpinning && !isHighlighted;
-        
-        return (
-        <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
-          <button onClick={() => handlePlaceBet(item)} className="relative group">
-            <div className={cn(
-                "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#d4a373]", 
-                active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
-                applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
-            )}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
-                <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
-                <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
-                    <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
+                    ))}
                 </div>
-            </div>
-            
-            <AnimatePresence>
-                {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                    <motion.div 
-                        key={chip.id} 
-                        initial={{ opacity: 0, scale: 3, y: -60 }} 
-                        animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.6)] z-40 pointer-events-none"
-                        style={{
-                            background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                            padding: '2.5px', width: '24px', height: '24px'
-                        }}
-                    >
-                        <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
-                            <span className="text-[6px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
-                        </div>
-                    </motion.div>
-                ))}
+            </motion.div>
+        )}
+       </AnimatePresence>
 
-                {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                    <motion.div 
-                        key={chip.id} 
-                        initial={{ opacity: 0, scale: 2, y: -80 }} 
-                        animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
-                        exit={{ opacity: 0 }} 
-                        transition={{ delay: chip.delay, duration: 0.3 }}
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_3px_5px_rgba(0,0,0,0.5)] z-30 pointer-events-none"
-                        style={{
-                            background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                            padding: '2px', width: '20px', height: '20px'
-                        }}
-                    >
-                        <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
-                            <span className="text-[5px] font-bold text-white/90">{chip.label}</span>
-                        </div>
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-            
-            {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
-          </button>
-        </motion.div>
-        )
-      })}
-    </div>
-   </main>
-
-   {/* NEW ZEBRA DESIGN CHIPS TAB BELOW GAME AREA */}
-   <div className="w-full bg-[#2a1309] border-t-2 border-[#4a2511] py-3 px-4 flex items-center gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-5px_15px_rgba(0,0,0,0.4)]">
-      {CHIPS_DATA.map((chip) => (
-          <button
-              key={chip.value}
-              onClick={() => setSelectedChip(chip.value)}
-              className={cn(
-                  "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200",
-                  selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_5px_15px_rgba(0,0,0,0.5)]" : "scale-95 opacity-70 hover:opacity-100"
-              )}
-              style={{
-                  background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                  padding: '4px', width: '48px', height: '48px'
-              }}
-          >
-              <div className={cn("w-full h-full rounded-full flex items-center justify-center border-[1.5px] border-black/50 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
-                  <span className="text-[10px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+       <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
+          <div className="flex items-center gap-1.5">
+              <div 
+                onPointerDown={(e) => dragControls.start(e)}
+                style={{ touchAction: 'none' }}
+                className="cursor-grab active:cursor-grabbing p-1 touch-none"
+              >
+                <Move size={18} className="text-white/70 mr-1 pointer-events-none" />
               </div>
-              {selectedChip === chip.value && (
-                  <div className="absolute -bottom-3 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse shadow-[0_0_8px_#facc15]" />
-              )}
-          </button>
-      ))}
-   </div>
+              
+              <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1">
+                  <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
+                  <span className="text-white px-2 font-semibold text-[12px]">{localCoins}</span>
+                  <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+              </div>
+          </div>
 
-   <AnimatePresence>
-    {showRules && (
-        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
-            <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
-                <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+              <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><Clock size={16} className="filter drop-shadow-md brightness-110" /></button>
+              <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white shadow-inner">{isMuted ? <VolumeX size={16} className="filter drop-shadow-md" /> : <Volume2 size={16} className="filter drop-shadow-md" />}</button>
+              <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><HelpCircle size={16} className="filter drop-shadow-md brightness-110" /></button>
+              <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-md border border-white/30 bg-black/30 text-white transition-active active:scale-90 shadow-inner"><X size={16} className="filter drop-shadow-md" /></button>
+          </div>
+       </header>
+
+       <div className="px-4 py-1 shrink-0 z-40 relative">
+         <div className="w-full bg-white/10 backdrop-blur-md py-2 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border border-white/20 rounded-2xl shadow-lg ring-1 ring-white/5">
+            <div className="flex flex-col items-center justify-center border-r border-white/20 pr-3 mr-1 shrink-0">
+              <span className="text-[7px] text-white/50 uppercase font-black tracking-widest leading-none mb-0.5">Winning</span>
+              <span className="text-[9px] text-white/80 font-black tracking-tighter leading-none">History</span>
             </div>
-            <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
-                {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                        <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0 shadow-md">{i+1}</span>
-                        <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
+            <div className="flex items-center gap-3">
+              {history.map((h, i) => {
+                  const animal = ANIMALS.find(a => a.id === h.id);
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-0.5 shrink-0">
+                      <span className="text-base filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
+                      {h.type !== 'single' && (
+                        <span className="text-[6px] font-black uppercase text-yellow-400 bg-yellow-900/40 px-1 rounded-full border border-yellow-400/20">Mix</span>
+                      )}
                     </div>
-                ))}
+                  )
+              })}
             </div>
-        </motion.div>
-    )}
-   </AnimatePresence>
+         </div>
+       </div>
 
-   <style jsx global>{`
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .animate-spin-slow { animation: spin-slow 8s linear infinite; }
-   `}</style>
+       {/* GAME AREA */}
+       <main className="flex-1 w-full flex flex-col items-center justify-start pt-0 px-4 relative">
+        
+        {/* MIX CARDS */}
+        <div className={cn(
+            "absolute top-[8%] left-[6%] z-30 w-[34px] h-[34px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
+            shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+        )}>
+            <div className="flex flex-wrap w-[20px] justify-center items-center leading-none">
+                <span className="text-[8px]">🦁</span><span className="text-[8px]">🐯</span>
+                <span className="text-[8px]">🦊</span><span className="text-[8px]">🐻</span>
+            </div>
+            <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+        </div>
+
+        <div className={cn(
+            "absolute top-[8%] right-[6%] z-30 w-[34px] h-[34px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
+            shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+        )}>
+            <div className="flex flex-wrap w-[20px] justify-center items-center leading-none">
+                <span className="text-[8px]">🐰</span><span className="text-[8px]">🦓</span>
+                <span className="text-[8px]">🦝</span><span className="text-[8px]">🐔</span>
+            </div>
+            <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+        </div>
+
+        <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+          <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
+            <defs>
+                <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
+                </filter>
+            </defs>
+            
+            {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
+              <g key={deg} transform={`rotate(${deg} 50 50)`}>
+                <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
+                <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
+              </g>
+            ))}
+          </svg>
+
+          <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
+            <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : '🔥'}</p>
+            <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '!!!'}</span>
+          </div>
+
+          {ANIMALS.map((item, idx) => {
+            const active = isWinningAnimal(idx, item.id);
+            const isSpinning = gameState === 'spinning';
+            const isHighlighted = highlightIdx === idx;
+            const applyColorless = isSpinning && !isHighlighted;
+            
+            return (
+            <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
+              <button onClick={() => handlePlaceBet(item)} className="relative group">
+                <div className={cn(
+                    "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#d4a373]", 
+                    active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
+                    applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
+                )}>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
+                    <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
+                    <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                        <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
+                    </div>
+                </div>
+                
+                <AnimatePresence>
+                    {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
+                        <motion.div 
+                            key={chip.id} 
+                            initial={{ opacity: 0, scale: 3, y: -60 }} 
+                            animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.6)] z-40 pointer-events-none"
+                            style={{
+                                background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                                padding: '2.5px', width: '24px', height: '24px'
+                            }}
+                        >
+                            <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                                <span className="text-[6px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+                            </div>
+                        </motion.div>
+                    ))}
+
+                    {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
+                        <motion.div 
+                            key={chip.id} 
+                            initial={{ opacity: 0, scale: 2, y: -80 }} 
+                            animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
+                            exit={{ opacity: 0 }} 
+                            transition={{ delay: chip.delay, duration: 0.3 }}
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_3px_5px_rgba(0,0,0,0.5)] z-30 pointer-events-none"
+                            style={{
+                                background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                                padding: '2px', width: '20px', height: '20px'
+                            }}
+                        >
+                            <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                                <span className="text-[5px] font-bold text-white/90">{chip.label}</span>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+                
+                {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
+              </button>
+            </motion.div>
+            )
+          })}
+        </div>
+       </main>
+
+       {/* --- NEW CHIP TAB (DARK BROWN) --- */}
+       <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-t-[32px]">
+          {CHIPS_DATA.map((chip) => (
+              <button
+                  key={chip.value}
+                  onClick={() => setSelectedChip(chip.value)}
+                  className={cn(
+                      "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200",
+                      selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_5px_15px_rgba(0,0,0,0.5)]" : "scale-95 opacity-70 hover:opacity-100"
+                  )}
+                  style={{
+                      background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
+                      padding: '5px', width: '52px', height: '52px'
+                  }}
+              >
+                  <div className={cn("w-full h-full rounded-full flex items-center justify-center border-[2px] border-black/50 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
+                      <span className="text-[11px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
+                  </div>
+                  {selectedChip === chip.value && (
+                      <div className="absolute -bottom-3 w-2 h-2 bg-yellow-400 rounded-full animate-pulse shadow-[0_0_10px_#facc15]" />
+                  )}
+              </button>
+          ))}
+       </div>
+
+       <AnimatePresence>
+        {showRules && (
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
+                <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
+                    <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
+                    <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+                </div>
+                <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
+                    {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
+                        <div key={i} className="flex gap-3 items-start">
+                            <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0 shadow-md">{i+1}</span>
+                            <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+        )}
+       </AnimatePresence>
+
+       <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+       `}</style>
+   </motion.div>
   </motion.div>
  );
 }
