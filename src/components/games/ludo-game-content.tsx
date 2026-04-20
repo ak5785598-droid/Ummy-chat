@@ -110,6 +110,30 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     }
   }, [gameState, user?.uid, skipTurn]);
 
+  // --- 28 SECOND TURN TIMER AUTO-SKIP ---
+  const [timeLeft, setTimeLeft] = useState(28);
+  useEffect(() => {
+    if (!gameState || gameState.status !== 'playing' || !gameState.turnStartTime) {
+      setTimeLeft(28);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const startTime = gameState.turnStartTime?.toDate?.()?.getTime() || Date.now();
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = Math.max(0, 28 - elapsed);
+      setTimeLeft(remaining);
+
+      // Only the person whose turn it is triggers the skip to prevent multiple triggers
+      if (remaining === 0 && gameState.turn === user?.uid && gameState.status === 'playing') {
+        console.log("Ludo: Time's up! Auto-skipping turn...");
+        skipTurn();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameState?.turnStartTime, gameState?.turn, gameState?.status, user?.uid, skipTurn]);
+
   const handleBack = () => {
     if (user?.uid && isJoined) {
       leaveGame(user.uid);
@@ -370,12 +394,23 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                              </div>
                            </div>
                            <div className="w-px h-6 bg-white/10" />
-                           <div className="flex flex-col items-start min-w-[70px]">
+                           <div className="flex flex-col items-start min-w-[70px] relative">
                              <span className="text-[7px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Turn</span>
+                             
+                             {/* TIMER BADGE */}
+                             {gameState?.status === 'playing' && (
+                               <div className={cn(
+                                 "absolute -top-6 left-0 px-2 py-0.5 rounded-md border font-black text-[9px] transition-all duration-300",
+                                 timeLeft <= 5 ? "bg-red-500/20 border-red-500 text-red-500 animate-pulse" : "bg-blue-500/20 border-blue-500 text-blue-400"
+                               )}>
+                                 {timeLeft}s
+                               </div>
+                             )}
+
                              <div className="flex items-center gap-1.5">
                                 <Avatar className="h-5 w-5 border border-white/20">
                                   <AvatarImage src={currPlayer?.avatarUrl} />
-                                  <AvatarFallback className="text-[6px] bg-slate-800 text-white">{currPlayer?.username[0]}</AvatarFallback>
+                                  <AvatarFallback className="text-[6px] bg-slate-800 text-white">{(currPlayer?.username || 'P')[0]}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-[10px] font-black text-white uppercase italic truncate max-w-[60px]">
                                   {isMyTurn ? 'YOU' : currPlayer?.username || 'WAITING'}

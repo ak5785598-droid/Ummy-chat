@@ -167,6 +167,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       await updateDocumentNonBlocking(gameDocRef, {
         status: 'playing',
         turn: gameState.players[0].uid,
+        turnStartTime: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
     } catch (err) {
@@ -232,6 +233,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       turn: nextTurn,
       dice: null,
       diceRolled: false,
+      turnStartTime: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState]);
@@ -359,6 +361,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       turn: (dice === 6 || killedSomeone) ? userId : nextTurn, // Extra turn on 6 or Kill
       dice: null,
       diceRolled: false,
+      turnStartTime: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState, userId, endMatch]);
