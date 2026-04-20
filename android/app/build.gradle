@@ -2,10 +2,10 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 android {
-    namespace "ummyndiapvtltd.ummyvoice"
+    namespace "app.vercel.ummy_chat.twa"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ummyndiapvtltd.ummyvoice"
+        applicationId "app.vercel.ummy_chat.twa"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 6

@@ -6,7 +6,7 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "ummyndiapvtltd.ummyvoice",
+      "package_name": "app.vercel.ummy_chat.twa",
       "sha256_cert_fingerprints": [
         "59:BC:B9:AD:63:D1:1A:04:80:C2:92:CA:CA:AC:1D:29:19:5C:B5:A0:04:B1:95:FF:72:CB:33:42:9F:E2:DE:65"
       ]
