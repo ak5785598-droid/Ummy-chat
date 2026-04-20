@@ -18,7 +18,7 @@
     }
   },
   "server": {
-    "url": "http://192.168.1.155:9002",
+    "url": "https://ummy-chat.vercel.app",
     "cleartext": true,
     "allowNavigation": [
       "*"
