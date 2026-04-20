@@ -10,6 +10,7 @@ interface VoiceActivityContextType {
 const VoiceActivityContext = createContext<VoiceActivityContextType | undefined>(undefined);
 
 export function VoiceActivityProvider({ children }: { children: ReactNode }) {
+  const [speakingVolumes, setSpeakingVolumes] = useState<Record<string, number>>({});
   const lastUpdateRef = useRef<number>(0);
   const nextVolumesRef = useRef<Record<string, number> | null>(null);
 
