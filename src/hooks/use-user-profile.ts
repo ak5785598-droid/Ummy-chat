@@ -83,21 +83,23 @@ export interface UserProfile {
 /**
  * Hook to fetch a specific user's profile from Firestore in real-time.
  * Unified with global isHydrated signal to prevent React 18 hydration crashes.
+ * DATA DEDUPLICATED: Now shares the same Firestore connection across all components.
  */
 export function useUserProfile(userId: string | undefined, options?: { suppressGlobalError?: boolean }) {
   const { isHydrated, firestore } = useFirebase();
 
-  // Guard the reference itself.
-  const userProfileRef = useMemoFirebase(() => {
+  // Guard the reference itself with useMemo to keep it stable.
+  const userProfileRef = useMemo(() => {
     if (!firestore || !userId || !isHydrated) return null;
     return doc(firestore, 'users', userId, 'profile', userId);
   }, [firestore, userId, isHydrated]);
   
   const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef, options);
 
-  return { 
+  // Memoize the final return object to prevent downstream re-render loops.
+  return useMemo(() => ({ 
     userProfile: isHydrated ? data : null, 
     isLoading: !isHydrated || isLoading, 
     error 
-  };
+  }), [data, isLoading, error, isHydrated]);
 }
