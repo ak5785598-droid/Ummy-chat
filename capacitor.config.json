@@ -15,6 +15,9 @@
         "google.com",
         "phone"
       ]
+    },
+    "GoogleAuth": {
+      "webClientId": "373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com"
     }
   },
   "server": {
