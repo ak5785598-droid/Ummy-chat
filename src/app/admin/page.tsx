@@ -412,56 +412,100 @@ const ReportsManager = ({ firestore, isAuthorized }: { firestore: any, isAuthori
             ) : (
               <div className="grid gap-4">
                 {reports.map((report: any) => (
-                  <div key={report.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row gap-4 group transition-all hover:border-red-200">
-                    {/* Content Preview */}
-                    {report.targetImageUrl && (
-                      <div className="relative h-24 w-24 rounded-xl overflow-hidden bg-black shrink-0">
-                        <Image src={report.targetImageUrl} alt="Reported" fill className="object-cover opacity-80" />
+                  <div key={report.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-4 group transition-all hover:border-red-200">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {/* Content Preview (Existing Moment Style) */}
+                      {report.targetImageUrl && (
+                        <div className="relative h-24 w-24 rounded-xl overflow-hidden bg-black shrink-0">
+                          <Image src={report.targetImageUrl} alt="Reported" fill className="object-cover opacity-80" />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 space-y-2">
+                         <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                             <Badge variant={report.type === 'user_report' ? 'secondary' : 'destructive'} className="uppercase font-black text-[9px] px-2 py-0.5">
+                               {report.type === 'user_report' ? 'User Report' : 'Post Report'}
+                             </Badge>
+                             <Badge variant="outline" className="uppercase font-black text-[9px] px-2 py-0.5 border-red-200 text-red-600">
+                               {report.reason}
+                             </Badge>
+                           </div>
+                           <span className="text-[10px] text-slate-400 font-bold uppercase">
+                             {report.timestamp?.toDate ? format(report.timestamp.toDate(), "MMM d, HH:mm") : "Just now"}
+                           </span>
+                         </div>
+                         
+                         <p className="text-sm font-medium text-slate-700 italic">
+                           "{report.targetContent || report.description || "No text content"}"
+                         </p>
+
+                         <div className="flex items-center gap-3 pt-1 border-t border-slate-200/50">
+                           <div className="flex flex-col">
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Accused/Author</p>
+                             <p className="text-[10px] font-bold text-slate-900">{report.targetName || report.targetAuthorName} {report.targetAccount && <span className="text-slate-400 font-medium">(ID: {report.targetAccount})</span>}</p>
+                           </div>
+                           <div className="h-4 w-[1px] bg-slate-200" />
+                           <div className="flex flex-col">
+                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Reporter</p>
+                             <p className="text-[10px] font-bold text-slate-900">{report.reporterName}</p>
+                           </div>
+                         </div>
+                      </div>
+
+                      <div className="flex sm:flex-col gap-2 shrink-0">
+                        {report.type !== 'user_report' && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeletePost(report)}
+                            className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete Post
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleDismissReport(report.id)}
+                          className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
+                        >
+                          <Check className="h-3 w-3" /> Dismiss
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Evidence Gallery (For User Reports) */}
+                    {report.evidenceUrls && report.evidenceUrls.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <ImageIcon className="h-3 w-3" /> Evidence Proof ({report.evidenceUrls.length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {report.evidenceUrls.map((url: string, idx: number) => {
+                            const isVideo = url.includes('.mp4') || url.includes('.mov') || url.includes('.webm');
+                            return (
+                              <a 
+                                key={idx} 
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="relative h-20 w-20 rounded-xl overflow-hidden bg-slate-200 border border-slate-200 group active:scale-95 transition-all shadow-sm"
+                              >
+                                {isVideo ? (
+                                  <div className="h-full w-full flex items-center justify-center bg-slate-900">
+                                    <Video className="h-6 w-6 text-white" />
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  </div>
+                                ) : (
+                                  <Image src={url} alt="Proof" fill className="object-cover group-hover:scale-110 transition-transform" />
+                                )}
+                              </a>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
-                    
-                    <div className="flex-1 space-y-2">
-                       <div className="flex items-center justify-between">
-                         <Badge variant="destructive" className="uppercase font-black text-[9px] px-2 py-0.5">
-                           {report.reason}
-                         </Badge>
-                         <span className="text-[10px] text-slate-400 font-bold uppercase">
-                           {report.timestamp?.toDate ? format(report.timestamp.toDate(), "MMM d, HH:mm") : "Just now"}
-                         </span>
-                       </div>
-                       
-                       <p className="text-sm font-medium text-slate-700 italic">
-                         "{report.targetContent || "No text content"}"
-                       </p>
-
-                       <div className="flex items-center gap-2 pt-1 border-t border-slate-200/50">
-                         <p className="text-[9px] font-bold text-slate-400 uppercase">
-                           Author: <span className="text-slate-900">{report.targetAuthorName}</span>
-                         </p>
-                         <p className="text-[9px] font-bold text-slate-400 uppercase">
-                           Reporter: <span className="text-slate-900">{report.reporterName}</span>
-                         </p>
-                       </div>
-                    </div>
-
-                    <div className="flex sm:flex-col gap-2 shrink-0">
-                      <Button 
-                        size="sm" 
-                        variant="destructive"
-                        onClick={() => handleDeletePost(report)}
-                        className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
-                      >
-                        <Trash2 className="h-3 w-3" /> Delete
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => handleDismissReport(report.id)}
-                        className="h-9 px-4 rounded-xl font-black uppercase text-[10px] gap-2"
-                      >
-                        <Check className="h-3 w-3" /> Dismiss
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>

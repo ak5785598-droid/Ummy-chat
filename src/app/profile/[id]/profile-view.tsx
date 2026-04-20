@@ -47,6 +47,19 @@ import { useTranslation } from '@/hooks/use-translation';
 import { SellerTransferDialog } from "@/components/seller-transfer-dialog";
 import { BudgetTag } from "@/components/budget-tag";
 import { FullProfileDialog } from '@/components/full-profile-dialog';
+import { ReportUserDialog } from '@/components/report-user-dialog';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Carousel,
   CarouselContent,
@@ -184,6 +197,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const [socialOpen, setSocialOpen] = useState(false);
   const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
   const [fullViewOpen, setFullViewOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
 
   const isOwnProfile = currentUser?.uid === profileId;
@@ -304,9 +318,34 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <button onClick={() => router.back()} className="h-10 w-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/10">
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <button className="h-10 w-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/10">
-                <MoreHorizontal className="h-6 w-6" />
-              </button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-10 w-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/10 outline-none">
+                    <MoreHorizontal className="h-6 w-6" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-white/80 backdrop-blur-3xl rounded-2xl border-white/20 shadow-2xl z-[200] p-1 font-outfit">
+                  {!isOwnProfile && (
+                    <DropdownMenuItem 
+                      onClick={() => setReportOpen(true)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl focus:bg-red-50 focus:text-red-600 font-bold uppercase text-[10px] tracking-widest transition-all cursor-pointer text-slate-600"
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      Report User
+                    </DropdownMenuItem>
+                  )}
+                  {isOwnProfile && (
+                    <DropdownMenuItem 
+                      onClick={() => router.push('/settings')}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl focus:bg-slate-50 font-bold uppercase text-[10px] tracking-widest transition-all cursor-pointer text-slate-600"
+                    >
+                      <SettingsIcon className="h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10 z-10" />
           </div>
@@ -529,6 +568,15 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
         <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
         <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} />
+        <ReportUserDialog 
+          open={reportOpen} 
+          onOpenChange={setReportOpen} 
+          targetUser={{ 
+            uid: profile.id, 
+            username: profile.username, 
+            accountNumber: profile.accountNumber || profile.id.substring(0, 6) 
+          }} 
+        />
       </div>
     </AppLayout>
   );
