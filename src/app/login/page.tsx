@@ -339,11 +339,14 @@ export default function LoginPage() {
     try {
       if (Capacitor.isNativePlatform()) {
         try {
+          console.log("[Auth] Attempting Native Google Sign-In via FirebaseAuthentication...");
           // Attempt Native Google Login (Priority for Mobile)
           const result = await (FirebaseAuthentication as any).signInWithGoogle({
             webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
           });
           
+          console.log("[Auth] Native Login Result:", result);
+
           if (result.credential?.idToken) {
             const credential = GoogleAuthProvider.credential(result.credential.idToken);
             const userCredential = await signInWithCredential(auth, credential);
@@ -357,10 +360,19 @@ export default function LoginPage() {
               router.replace('/rooms');
               return; // Success
             }
+          } else {
+            console.warn("[Auth] Native login succeeded but no ID Token found in credentials.");
           }
         } catch (nativeError: any) {
-          console.error("[Auth] Native Google Sign-In failed, falling back to Web:", nativeError);
+          console.error("[Auth] Native Google Sign-In failed:", nativeError);
+          // Helpful toast for debugging native configuration issues (SHA-1 mismatch)
+          toast({
+            variant: 'destructive',
+            title: 'Native Auth Failed',
+            description: nativeError.message || 'Check SHA-1 fingerprints in Firebase Console.',
+          });
           // Fall back to web-based login below
+          console.log("[Auth] Falling back to Web-based Redirect...");
         }
       }
 
