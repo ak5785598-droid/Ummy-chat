@@ -29,10 +29,10 @@ const HOME_PATHS = {
 };
 
 const BASE_OFFSETS = {
-  blue:   [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
-  red:    [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
-  green:  [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
-  yellow: [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]]
+  blue:   [[1.5, 1.5], [1.5, 4.5], [4.5, 1.5], [4.5, 4.5]],
+  red:    [[1.5, 1.5], [1.5, 4.5], [4.5, 1.5], [4.5, 4.5]],
+  green:  [[1.5, 1.5], [1.5, 4.5], [4.5, 1.5], [4.5, 4.5]],
+  yellow: [[1.5, 1.5], [1.5, 4.5], [4.5, 1.5], [4.5, 4.5]]
 };
 
 const START_INDEX = {
@@ -98,12 +98,14 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
     if (piece.position >= 1 && piece.position <= 51) {
       const startIdx = START_INDEX[piece.color];
       const globalIdx = (startIdx + (piece.position - 1)) % 52;
-      return GLOBAL_PATH[globalIdx] as [number, number];
+      const [r, c] = GLOBAL_PATH[globalIdx];
+      return [r + 0.5, c + 0.5];
     }
 
     if (piece.position >= 52 && piece.position <= 57) {
       const homeIdx = piece.position - 52;
-      return HOME_PATHS[piece.color][homeIdx] as [number, number];
+      const [r, c] = HOME_PATHS[piece.color][homeIdx];
+      return [r + 0.5, c + 0.5];
     }
 
     return [7, 7]; // Finished
@@ -132,13 +134,13 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
             <div className={cn(
               "absolute z-[100] transition-all duration-500",
               isActive ? "scale-110" : "opacity-90 scale-95",
-              color === 'blue' && "-top-6 -left-6",
-              color === 'red' && "-top-6 -right-6",
-              color === 'yellow' && "-bottom-6 -left-6",
-              color === 'green' && "-bottom-6 -right-6"
+              color === 'blue' && "-top-4 -left-4",
+              color === 'red' && "-top-4 -right-4",
+              color === 'yellow' && "-bottom-4 -left-4",
+              color === 'green' && "-bottom-4 -right-4"
             )}>
               <div className={cn(
-                "relative p-0.5 rounded-full border-[5px] bg-white/90 backdrop-blur-md shadow-2xl",
+                "relative p-0.5 rounded-full border-[3px] bg-white shadow-2xl",
                 isActive ? "animate-pulse" : "",
                 color === 'blue' && "border-blue-500",
                 color === 'red' && "border-red-500",
@@ -176,7 +178,7 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
   };
 
   return (
-    <div className="relative w-full max-w-[480px] aspect-square p-4 bg-[#8b4513] rounded-3xl border-[12px] border-[#5d2e0c] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.7),inset_0_4px_20px_rgba(255,255,255,0.1)] overflow-hidden scale-[0.98]">
+    <div className="relative w-full max-w-[480px] aspect-square p-2 bg-[#8b4513] rounded-3xl border-[8px] border-[#5d2e0c] shadow-[0_4 link:40px_80px_-15px_rgba(0,0,0,0.7)] scale-[0.98]">
       {/* Premium Wood Grain Overlay */}
       <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")' }} />
       {/* Internal Gloss Bevel */}
