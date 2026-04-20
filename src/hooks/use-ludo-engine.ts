@@ -207,6 +207,8 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     } catch (err) {
       console.error("Failed to leave Ludo game:", err);
     }
+  }, [gameDocRef, gameState, resetGame]);
+
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
 
