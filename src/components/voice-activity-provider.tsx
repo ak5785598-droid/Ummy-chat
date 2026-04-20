@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback, useMemo, useRef, useEffect } from 'react';
 
 interface VoiceActivityContextType {
   speakingVolumes: Record<string, number>; // Map of hashed Numeric UID to intensity (0-100)
