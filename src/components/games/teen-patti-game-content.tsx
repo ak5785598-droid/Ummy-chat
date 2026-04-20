@@ -14,8 +14,8 @@ import {
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { GameResultOverlay, GameWinner } from '@/components/game-result-overlay';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const CHIPS = [
  { value: 10000, label: '10k', color: 'bg-[#00E5FF] border-[#00E5FF]/50 shadow-[#00E5FF]/40' },
@@ -41,6 +41,7 @@ interface TeenPattiGameContentProps {
 
 export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGameContentProps) {
   const router = useRouter();
+  const dragControls = useDragControls();
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
@@ -168,10 +169,17 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const winnerBanner = winnerId ? FACTIONS.find(f => f.id === winnerId)?.bannerUrl : null;
 
   return (
-   <div className={cn(
-     "h-full w-full bg-[#581c87] flex flex-col relative overflow-hidden font-sans text-white",
-     !isOverlay && "min-h-screen"
-   )}>
+   <motion.div 
+     drag
+     dragControls={dragControls}
+     dragListener={false}
+     dragMomentum={false}
+     initial={isOverlay ? { y: '35%' } : {}}
+     className={cn(
+       "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#581c87] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+       !isOverlay && "min-h-screen"
+     )}
+   >
     <CompactRoomView />
     
     {gameState === 'result' && winnerId && (
@@ -183,17 +191,28 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      />
     )}
 
-    <header className="relative z-[110] flex items-center justify-between p-4 pt-10">
-      <div className="flex gap-2 text-white">
-        <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md"><ChevronLeft className="h-5 w-5" /></button>
+    <header className="relative z-50 flex items-center justify-between p-4 pt-8 shrink-0">
+      <div className="flex items-center gap-2">
+        <button 
+          onPointerDown={(e) => dragControls.start(e)}
+          className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90 cursor-grab active:cursor-grabbing text-white/80"
+        >
+          <Move className="h-4.5 w-4.5" />
+        </button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md transition-all active:scale-90">
+          {isMuted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+        </button>
       </div>
+      
       <div className="flex flex-col items-center">
-       <h1 className="text-4xl font-bold uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">TEEN PATTI</h1>
-       <div className="mt-2 bg-gradient-to-r from-[#4c1d95] via-[#7c3aed] to-[#4c1d95] border-2 border-white/20 px-6 py-1 rounded-xl shadow-2xl"><span className="text-[11px] font-bold uppercase tracking-wider text-white">Countdown {timeLeft}s</span></div>
+       <h1 className="text-xl font-bold uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-lg italic">TEEN PATTI</h1>
+       <div className="bg-black/20 border border-white/10 px-3 py-0.5 rounded-full"><span className="text-[8px] font-bold uppercase tracking-wider text-white">Left {timeLeft}s</span></div>
       </div>
-      <div className="flex gap-2 text-white">
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md">{isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}</button>
-        <button onClick={handleBack} className="bg-white/10 p-2 rounded-full backdrop-blur-md text-white"><X className="h-5 w-5" /></button>
+
+      <div className="flex items-center gap-1">
+        <button onClick={handleBack} className="bg-red-500/10 p-2 rounded-xl border border-red-500/20 text-red-500 transition-all active:scale-90">
+          <X className="h-4.5 w-4.5 font-bold" />
+        </button>
       </div>
     </header>
 
@@ -225,21 +244,21 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </main>
 
-    <footer className="fixed bottom-0 left-0 right-0 p-4 pb-10 bg-gradient-to-t from-black via-black/90 to-transparent z-[120]">
-      <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
-       <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 pl-3 pr-4 py-2 shadow-2xl text-white">
-        <GoldCoinIcon className="h-5 w-5 text-[#ffd700]" /><span className="text-[15px] font-bold text-[#ffd700] ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+    <footer className="p-4 py-6 bg-gradient-to-t from-black to-transparent mt-auto shrink-0 relative z-50">
+      <div className="w-full flex items-center justify-between gap-3">
+       <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 pl-2 pr-3 py-1 shadow-2xl text-white">
+        <GoldCoinIcon className="h-6 w-6 text-[#ffd700]" /><span className="text-xs font-bold text-[#ffd700] ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
        </div>
-       <div className="flex-1 flex items-center gap-2.5 overflow-x-auto no-scrollbar px-2 py-1">
+       <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
          {CHIPS.map(chip => (
-          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-14 w-14 rounded-full flex flex-col items-center justify-center transition-all border-[3px] border-white/10 shrink-0 shadow-2xl relative group overflow-hidden", chip.color, selectedChip === chip.value ? "scale-115 border-white ring-[6px] ring-white/20 z-10 -translate-y-2" : "opacity-70 grayscale-[0.2]")}>
-           <span className="text-[10px] font-bold text-white ">{chip.label}</span>
+          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-10 w-10 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value ? "scale-110 border-white ring-4 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
+           <span className="text-[8px] font-bold text-white ">{chip.label}</span>
           </button>
          ))}
        </div>
       </div>
     </footer>
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
-   </div>
+   </motion.div>
   );
 }

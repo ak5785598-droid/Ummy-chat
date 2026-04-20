@@ -40,6 +40,8 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     joinLobby, 
     initializeGame,
     startMatch,
+    resetGame,
+    leaveGame,
     rollDice, 
     movePiece 
   } = useLudoEngine(roomId, user?.uid || null);
@@ -60,16 +62,34 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     return () => clearTimeout(timer);
   }, []);
 
-  const isMyTurn = gameState?.turn === user?.uid;
   const isJoined = gameState?.players.some(p => p.uid === user?.uid);
+  const isMyTurn = gameState?.turn === user?.uid;
   const currPlayer = gameState?.players.find(p => p.uid === gameState?.turn);
+
+  // --- SELF-HEALING / ABANDONED SESSION RESET ---
+  // If no players are left in an active game, reset it to lobby for the next person
+  useEffect(() => {
+    if (!isLoading && gameState?.status === 'playing' && (!gameState?.players || gameState.players.length === 0)) {
+      console.log("Ludo: Abandoned session detected, auto-resetting...");
+      resetGame();
+    }
+  }, [gameState, isLoading, resetGame]);
+
+  // --- AUTOMATIC SESSION CLEANUP ---
+  // If the user closes the game or leaves the room, they should leave the game instance.
+  useEffect(() => {
+    return () => {
+      if (user?.uid && isJoined && gameState?.status !== 'ended') {
+        leaveGame(user.uid);
+      }
+    };
+  }, [user?.uid, isJoined, leaveGame, gameState?.status]);
 
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();
   };
 
-  // Loading state placeholder if engine isn't ready
   if (isLoading && !gameState) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-[#1A0B2E]">
@@ -84,9 +104,9 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
-      initial={isOverlay ? { y: '10%' } : {}}
+      initial={isOverlay ? { y: '35%' } : {}}
       className={cn(
-        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-slate-950/90 backdrop-blur-3xl pb-6 rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-slate-950/90 backdrop-blur-3xl pb-1 rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
         !isOverlay && "min-h-screen"
       )}
     >
@@ -126,7 +146,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
          </div>
       </header>
 
-      <main className="flex-1 relative flex flex-col items-center justify-start p-2 pt-4 overflow-y-auto">
+      <main className="flex-1 relative flex flex-col items-center justify-start p-1.5 pt-0.5 overflow-y-auto">
         
         {/* --- SPLASH SCREEN VIEW --- */}
         <AnimatePresence>
@@ -166,13 +186,13 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                    className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]"
                  />
               </div>
-              <p className="mt-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/30 animate-pulse">Entering Arena</p>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* --- LOBBY / JOIN VIEW --- */}
-        {!isSplashing && gameState?.status === 'lobby' && (
+        {/* Show this if user hasn't joined YET. This satisfies "Har bar Join dikhe" */}
+        {!isSplashing && !isJoined && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -187,7 +207,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
               
               <div className="grid grid-cols-4 gap-2 mb-10">
                 {[0, 1, 2, 3].map(i => {
-                  const p = gameState.players[i];
+                  const p = gameState?.players[i];
                   return (
                     <div key={i} className="flex flex-col items-center gap-2">
                       <div className="relative h-14 w-14 rounded-full bg-black/40 border-2 border-white/20 flex items-center justify-center p-0.5 shadow-inner">
@@ -198,7 +218,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                           </Avatar>
                         ) : (
                           <button 
-                            onClick={() => !isJoined && userProfile && joinLobby(userProfile)}
+                            onClick={() => gameState?.status === 'lobby' && userProfile && joinLobby(userProfile)}
                             className="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
                           >
                             <Plus className="h-5 w-5 text-white/40" />
@@ -214,7 +234,7 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
               </div>
 
               <div className="flex flex-col items-center gap-6">
-                {!isJoined ? (
+                {gameState?.status === 'lobby' ? (
                   <button
                     onClick={() => userProfile && joinLobby(userProfile)}
                     className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full border-b-8 border-orange-700 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
@@ -222,7 +242,30 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                     <span className="text-2xl font-black text-black italic tracking-tighter uppercase">JOIN GAME</span>
                   </button>
                 ) : (
-                  gameState.players.length >= 2 ? (
+                  <div className="flex flex-col items-center gap-2 w-full">
+                    <div className="h-16 w-full opacity-50 bg-black/40 rounded-full flex items-center justify-center border-2 border-white/5">
+                       <span className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Match in Progress</span>
+                    </div>
+                    <p className="text-[9px] font-bold text-white/20 uppercase">Please wait for the current match to finish</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- MAIN GAME VIEW --- */}
+        {!isSplashing && isJoined && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="w-full flex flex-col items-center"
+          >
+             {/* If game is in lobby status but user has joined, show Start button area */}
+             {gameState?.status === 'lobby' ? (
+               <div className="w-full max-w-[400px] bg-white/5 backdrop-blur-xl rounded-[40px] p-8 border border-white/10 flex flex-col items-center gap-6 mb-4">
+                 <h3 className="text-lg font-black text-white uppercase italic">Ready to Start?</h3>
+                 {gameState.players.length >= 2 ? (
                     <button
                       onClick={startMatch}
                       className="w-full h-16 bg-gradient-to-b from-green-400 to-emerald-600 rounded-full border-b-8 border-emerald-800 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
@@ -233,99 +276,92 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                     <div className="h-16 w-full opacity-50 bg-black/40 rounded-full flex items-center justify-center border-2 border-white/5">
                        <span className="text-sm font-black text-white/30 uppercase tracking-[0.4em] animate-pulse">Waiting for Players</span>
                     </div>
-                  )
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* --- MAIN GAME VIEW --- */}
-        {!isSplashing && gameState?.status !== 'lobby' && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="w-full flex flex-col items-center"
-          >
-             <div className="w-full max-w-[480px] px-2 animate-in fade-in zoom-in duration-500 mb-4">
-               <LudoBoard 
-                  pieces={gameState.pieces} 
-                  users={gameState.players} 
-                  currentPlayerTurn={gameState.turn}
-                  onPieceClick={(id) => movePiece(id)}
-               />
-             </div>
-
-             <div className="mt-2 flex flex-col items-center gap-4 w-full px-6 pb-8">
-                <AnimatePresence mode="wait">
-                  {isMyTurn && !gameState.diceRolled ? (
-                    <motion.div
-                      key="roll-area"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -20, opacity: 0 }}
-                      className="flex flex-col items-center gap-3"
-                    >
-                      <button
-                        onClick={rollDice}
-                        className="group relative h-20 w-20 flex items-center justify-center active:scale-90 transition-all"
-                      >
-                        <div className="absolute inset-0 bg-yellow-400/20 rounded-2xl blur-xl group-hover:bg-yellow-400/40 transition-colors" />
-                        <div className="relative h-full w-full bg-gradient-to-tr from-yellow-400 to-orange-500 rounded-3xl border-b-8 border-orange-700 flex items-center justify-center shadow-2xl overflow-hidden">
-                           <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
-                           <span className="text-4xl filter drop-shadow-lg">🎲</span>
-                        </div>
-                      </button>
-                      <span className="text-[10px] font-black text-yellow-400 uppercase tracking-[0.3em] animate-pulse">Your Turn to Roll</span>
-                    </motion.div>
-                  ) : (
-                    <motion.div 
-                      key="status"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-4 bg-gradient-to-b from-white/10 to-transparent backdrop-blur-3xl px-10 py-4 rounded-3xl border border-white/10 shadow-2xl"
-                    >
-                       <div className="flex flex-col items-center min-w-[60px]">
-                         <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Dice</span>
-                         <div className={cn(
-                           "text-3xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]",
-                           gameState.dice === 6 && "text-yellow-400"
-                         )}>
-                           {gameState.dice || '—'}
-                         </div>
-                       </div>
-                       <div className="w-px h-10 bg-white/10" />
-                       <div className="flex flex-col items-start min-w-[100px]">
-                         <span className="text-[9px] font-black text-white/30 uppercase tracking-widest mb-1">Current Turn</span>
-                         <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6 border border-white/20">
-                              <AvatarImage src={currPlayer?.avatarUrl} />
-                              <AvatarFallback className="text-[8px] bg-slate-800 text-white">{currPlayer?.username[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-[12px] font-black text-white uppercase italic truncate max-w-[80px]">
-                              {isMyTurn ? 'YOU' : currPlayer?.username || 'WAITING'}
-                            </span>
-                         </div>
-                       </div>
-                    </motion.div>
                   )}
-                </AnimatePresence>
+                  {/* Option to leave if match hasn't started */}
+                  <button onClick={() => user?.uid && leaveGame(user.uid)} className="text-[10px] font-bold text-white/30 uppercase hover:text-white transition-colors">Leave Lobby</button>
+               </div>
+             ) : (
+               <>
+                 <div className="w-full max-w-[480px] px-2 animate-in fade-in zoom-in duration-500 mb-4">
+                   <LudoBoard 
+                      pieces={gameState?.pieces || []} 
+                      users={gameState?.players || []} 
+                      currentPlayerTurn={gameState?.turn || ''}
+                      onPieceClick={(id) => movePiece(id)}
+                   />
+                 </div>
 
-                {isMyTurn && gameState.diceRolled && (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-white font-black text-[11px] uppercase tracking-[0.2em] animate-pulse flex items-center gap-2 mt-2"
-                  >
-                    <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" /> Select Piece to Move
-                  </motion.p>
-                )}
-             </div>
+                 <div className="mt-1 flex flex-col items-center gap-2 w-full px-6 pb-2">
+                    <AnimatePresence mode="wait">
+                      {isMyTurn && !gameState?.diceRolled ? (
+                        <motion.div
+                          key="roll-area"
+                          initial={{ y: 10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          className="flex flex-col items-center gap-1"
+                        >
+                          <button
+                            onClick={rollDice}
+                            className="group relative h-14 w-14 flex items-center justify-center active:scale-95 transition-all"
+                          >
+                            <div className="absolute inset-0 bg-yellow-400/20 rounded-xl blur-lg group-hover:bg-yellow-400/30 transition-colors" />
+                            <div className="relative h-full w-full bg-gradient-to-tr from-yellow-400 to-orange-500 rounded-2xl border-b-4 border-orange-700 flex items-center justify-center shadow-2xl overflow-hidden">
+                               <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
+                               <span className="text-2xl filter drop-shadow-lg">🎲</span>
+                            </div>
+                          </button>
+                        </motion.div>
+                      ) : (
+                        <motion.div 
+                          key="status"
+                          initial={{ opacity: 0, scale: 1 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="flex items-center gap-3 bg-white/5 backdrop-blur-2xl px-6 py-2 rounded-2xl border border-white/10 shadow-lg"
+                        >
+                           <div className="flex flex-col items-center min-w-[40px]">
+                             <span className="text-[7px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Dice</span>
+                             <div className={cn(
+                               "text-xl font-black text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]",
+                               gameState?.dice === 6 && "text-yellow-400"
+                             )}>
+                               {gameState?.dice || '—'}
+                             </div>
+                           </div>
+                           <div className="w-px h-6 bg-white/10" />
+                           <div className="flex flex-col items-start min-w-[70px]">
+                             <span className="text-[7px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Turn</span>
+                             <div className="flex items-center gap-1.5">
+                                <Avatar className="h-5 w-5 border border-white/20">
+                                  <AvatarImage src={currPlayer?.avatarUrl} />
+                                  <AvatarFallback className="text-[6px] bg-slate-800 text-white">{currPlayer?.username[0]}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-[10px] font-black text-white uppercase italic truncate max-w-[60px]">
+                                  {isMyTurn ? 'YOU' : currPlayer?.username || 'WAITING'}
+                                </span>
+                             </div>
+                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {isMyTurn && gameState?.diceRolled && (
+                      <motion.p 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-white font-black text-[9px] uppercase tracking-[0.1em] animate-pulse flex items-center gap-1.5 mt-0.5"
+                      >
+                        <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" /> Select Piece
+                      </motion.p>
+                    )}
+                 </div>
+               </>
+             )}
           </motion.div>
         )}
       </main>
 
-      {/* WIN OVERLAY - Persistent across all states */}
+      {/* WIN OVERLAY */}
       {gameState?.status === 'ended' && (
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-8">
            <Trophy className="h-32 w-32 text-yellow-400 mb-6 animate-bounce" />

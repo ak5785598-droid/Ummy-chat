@@ -5,22 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { 
-  Volume2, 
-  VolumeX, 
-  HelpCircle, 
-  X,
-  ChevronDown,
-  Users,
-  Clock,
-  Plus
-} from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const NUMBERS = [
  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -57,6 +44,7 @@ interface RouletteGameContentProps {
 
 export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGameContentProps) {
   const router = useRouter();
+  const dragControls = useDragControls();
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
@@ -272,10 +260,17 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
   ) : null;
 
   return (
-   <div className={cn(
-     "h-full w-full bg-[#311b92] flex flex-col relative overflow-hidden font-sans text-white select-none",
-     !isOverlay && "min-h-screen"
-   )}>
+   <motion.div 
+     drag
+     dragControls={dragControls}
+     dragListener={false}
+     dragMomentum={false}
+     initial={isOverlay ? { y: '35%' } : {}}
+     className={cn(
+       "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#311b92] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+       !isOverlay && "min-h-screen"
+     )}
+   >
     <CompactRoomView />
 
     <div className="absolute inset-0 z-0 pointer-events-none">
@@ -297,32 +292,31 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
     )}
 
     {/* MATCHED NEW HEADER DESIGN */}
-    <header className="relative z-50 flex items-center justify-between p-4 pt-10">
+    <header className="relative z-50 flex items-center justify-between p-4 pt-8 shrink-0">
       
-      {/* Left: Balance Pill */}
-      <div className="bg-[#24133d] border border-white/10 rounded-full flex items-center p-1 pl-1.5 pr-1.5 shadow-lg h-12">
-        <GoldCoinIcon className="h-7 w-7" />
-        <span className="text-white font-bold text-[15px] px-3">
-          {(userProfile?.wallet?.coins || 0).toLocaleString()}
-        </span>
-        <button className="bg-[#59d48b] h-9 w-9 rounded-full flex items-center justify-center text-white shadow-md active:scale-95 transition-transform ml-1">
-          <Plus className="h-5 w-5 stroke-[3]" />
+      <div className="flex items-center gap-2">
+        <button 
+          onPointerDown={(e) => dragControls.start(e)}
+          className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90 cursor-grab active:cursor-grabbing text-white/80"
+        >
+          <Move className="h-4.5 w-4.5" />
         </button>
+        {/* Left: Balance Pill */}
+        <div className="bg-[#24133d] border border-white/10 rounded-full flex items-center p-1 pl-1.5 pr-1.5 shadow-lg h-10">
+          <GoldCoinIcon className="h-6 w-6" />
+          <span className="text-white font-bold text-[12px] px-2">
+            {(userProfile?.wallet?.coins || 0).toLocaleString()}
+          </span>
+        </div>
       </div>
 
       {/* Right: Action Buttons */}
-      <div className="flex gap-2 text-white">
-        <button className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
-          <Clock className="h-5 w-5" />
+      <div className="flex gap-1.5 text-white">
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-[#24133d] border border-white/10 h-10 w-10 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
+          {isMuted ? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
         </button>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
-          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </button>
-        <button className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
-          <HelpCircle className="h-5 w-5" />
-        </button>
-        <button onClick={handleBack} className="bg-[#24133d] border border-white/10 h-11 w-11 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg active:scale-95 transition-transform">
-          <X className="h-5 w-5" />
+        <button onClick={handleBack} className="bg-red-500/10 border border-red-500/20 h-10 w-10 rounded-xl flex items-center justify-center text-red-500 shadow-lg active:scale-95 transition-transform">
+          <X className="h-4.5 w-4.5 font-bold" />
         </button>
       </div>
 
@@ -463,7 +457,7 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
      .animate-spin-slow { animation: spin 10s linear infinite; }
      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     `}</style>
-   </div>
+   </motion.div>
   );
 }
 

@@ -166,14 +166,48 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       console.log("Ludo: Starting match...");
       await updateDocumentNonBlocking(gameDocRef, {
         status: 'playing',
-        turn: gameState.players[0].uid, // Set initial turn to first player
+        turn: gameState.players[0].uid,
         updatedAt: serverTimestamp()
       });
-      console.log("Ludo: Match started successfully");
     } catch (err) {
       console.error("Failed to start match:", err);
     }
   }, [gameDocRef, gameState]);
+
+  const resetGame = useCallback(async () => {
+    if (!gameDocRef) return;
+    try {
+      console.log("Ludo: Resetting game to lobby...");
+      await updateDocumentNonBlocking(gameDocRef, {
+        players: [],
+        status: 'lobby',
+        turn: '',
+        dice: null,
+        diceRolled: false,
+        updatedAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Failed to reset Ludo game:", err);
+    }
+  }, [gameDocRef]);
+
+  const leaveGame = useCallback(async (targetUserId: string) => {
+    if (!gameDocRef || !gameState) return;
+    try {
+      const updatedPlayers = gameState.players.filter(p => p.uid !== targetUserId);
+      
+      if (updatedPlayers.length === 0) {
+        await resetGame();
+      } else {
+        await updateDocumentNonBlocking(gameDocRef, {
+          players: updatedPlayers,
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (err) {
+      console.error("Failed to leave Ludo game:", err);
+    }
+  }, [gameDocRef, gameState, resetGame]);
 
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
@@ -319,6 +353,8 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     joinLobby,
     initializeGame,
     startMatch,
+    resetGame,
+    leaveGame,
     rollDice,
     movePiece,
     endMatch

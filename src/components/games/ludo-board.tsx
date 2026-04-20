@@ -29,10 +29,10 @@ const HOME_PATHS = {
 };
 
 const BASE_OFFSETS = {
-  blue:   [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
-  red:    [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
-  green:  [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]],
-  yellow: [[1.7, 1.7], [1.7, 4.3], [4.3, 1.7], [4.3, 4.3]]
+  blue:   [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
+  red:    [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
+  green:  [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]],
+  yellow: [[1.8, 1.8], [1.8, 4.2], [4.2, 1.8], [4.2, 4.2]]
 };
 
 const START_INDEX = {
@@ -291,10 +291,10 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
                   <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-full pointer-events-none" />
                   
                   {/* USER LOGO (Mouse-Cat / Ummy Logo) */}
-                  <div className="absolute inset-1.5 flex items-center justify-center bg-white/10 rounded-full border border-white/10 overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full overflow-hidden">
                     <img 
                       src="/images/ummy-logo.png" 
-                      className="w-[110%] h-[110%] object-contain scale-110 drop-shadow-md"
+                      className="w-full h-full object-cover scale-[1.75] drop-shadow-md"
                       alt="Piece Icon"
                     />
                   </div>
