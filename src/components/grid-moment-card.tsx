@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { doc, increment, setDoc, deleteDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
