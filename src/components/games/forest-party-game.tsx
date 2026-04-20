@@ -778,4 +778,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    `}</style>
   </motion.div>
  );
-}a
+}
