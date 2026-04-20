@@ -1873,7 +1873,7 @@ export function RoomClient({ room }: { room: Room }) {
   const handleMinimize = () => {
     setMinimizedRoom(room);
     setActiveRoom(null);
-    router.push('/discover'); // Move to Discover instead of /rooms for a better "browsing" start
+    router.push('/rooms'); // Minimize should go to Home (/rooms)
   };
 
   const handleExit = () => {
@@ -1901,7 +1901,7 @@ export function RoomClient({ room }: { room: Room }) {
 
     setActiveRoom(null);
     setMinimizedRoom(null);
-    router.push('/rooms');
+    router.push('/discover'); // Exit should go to Discover (/discover)
   };
 
   const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
@@ -3017,7 +3017,6 @@ export function RoomClient({ room }: { room: Room }) {
         onConfirmExit={() => {
           setShowExitDialog(false);
           handleExit();
-          router.push('/discover');
         }}
       />
 
