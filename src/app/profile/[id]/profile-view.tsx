@@ -462,11 +462,21 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               }/>
             </div>
           </footer>
-          <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
-        </div>
-      </AppLayout>
-    );
-  }
+        <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
+        <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} />
+        <ReportUserDialog 
+          open={reportOpen} 
+          onOpenChange={setReportOpen} 
+          targetUser={{ 
+            uid: profile.id, 
+            username: profile.username, 
+            accountNumber: profile.accountNumber || profile.id.substring(0, 6) 
+          }} 
+        />
+      </div>
+    </AppLayout>
+  );
+}
 
   return (
     <AppLayout>
