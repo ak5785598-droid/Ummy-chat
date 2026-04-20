@@ -33,7 +33,7 @@ const PremiumRocketSVG = ({ colors, isActive }: { colors: any, isActive: boolean
       rotate: [0, 1, -1, 0]
     } : {}}
     transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-    className="relative w-48 h-48 flex items-center justify-center"
+    className="relative w-44 h-44 flex items-center justify-center"
   >
     <svg viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]">
       <defs>
@@ -93,7 +93,7 @@ export function RocketDialog({
       <DialogContent className="max-w-[385px] p-0 bg-[#050810] border-none rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
         
         {/* HEADER AREA - BLUE SPACE THEME */}
-        <div className="relative h-[340px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">
+        <div className="relative h-[280px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">
           {/* Animated Falling Stars */}
           <div className="absolute inset-0 overflow-hidden opacity-30">
             {[...Array(12)].map((_, i) => (
@@ -107,8 +107,8 @@ export function RocketDialog({
             ))}
           </div>
 
-          <button onClick={() => onOpenChange(false)} className="absolute top-8 right-8 text-white/20 hover:text-white z-50">
-            <X size={24} />
+          <button onClick={() => onOpenChange(false)} className="absolute top-6 right-6 text-white/20 hover:text-white z-50">
+            <X size={20} />
           </button>
 
           {/* MAIN ROCKET DISPLAY */}
@@ -126,7 +126,7 @@ export function RocketDialog({
         </div>
 
         {/* PROGRESS SECTION */}
-        <div className="p-8 pt-6 flex flex-col gap-6">
+        <div className="p-6 pt-4 flex flex-col gap-5">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Next Evolution</span>

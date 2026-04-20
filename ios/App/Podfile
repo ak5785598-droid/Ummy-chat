@@ -1,4 +1,4 @@
-require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
+require_relative '../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/ios/scripts/pods_helpers'
 
 platform :ios, '15.0'
 use_frameworks!
@@ -9,13 +9,14 @@ use_frameworks!
 install! 'cocoapods', :disable_input_output_paths => true
 
 def capacitor_pods
-  pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
-  pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-  pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/@capacitor-firebase/authentication'
-  pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
-  pod 'CapacitorPreferences', :path => '../../node_modules/@capacitor/preferences'
-  pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
-  pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
+  pod 'Capacitor', :path => '../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/ios'
+  pod 'CapacitorCordova', :path => '../../node_modules/.pnpm/@capacitor+ios@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/ios'
+  pod 'CapacitorCommunityTextToSpeech', :path => '../../node_modules/.pnpm/@capacitor-community+text-t_fb937920d3a079673765134c8c96b927/node_modules/@capacitor-community/text-to-speech'
+  pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/.pnpm/@capacitor-firebase+authent_6c322dd14cb2f27c49f9fd07dd185a28/node_modules/@capacitor-firebase/authentication'
+  pod 'CapacitorApp', :path => '../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/app'
+  pod 'CapacitorPreferences', :path => '../../node_modules/.pnpm/@capacitor+preferences@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/preferences'
+  pod 'CapacitorSplashScreen', :path => '../../node_modules/.pnpm/@capacitor+splash-screen@7.0.5_@capacitor+core@7.0.0/node_modules/@capacitor/splash-screen'
+  pod 'CapacitorStatusBar', :path => '../../node_modules/.pnpm/@capacitor+status-bar@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/status-bar'
   pod 'CordovaPlugins', :path => '../capacitor-cordova-ios-plugins'
 end
 

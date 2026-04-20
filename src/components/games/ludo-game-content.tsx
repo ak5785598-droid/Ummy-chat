@@ -45,6 +45,16 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     rollDice, 
     movePiece 
   } = useLudoEngine(roomId, user?.uid || null);
+  
+  // STABLE REFS: Prevent infinite loops in cleanup
+  const leaveGameRef = React.useRef(leaveGame);
+  useEffect(() => { leaveGameRef.current = leaveGame; }, [leaveGame]);
+
+  // ROBUST JOIN STATE: Prevent flickering when players join
+  const [hasConfirmedJoin, setHasConfirmedJoin] = useState(false);
+  const isJoined = gameState?.players.some(p => p.uid === user?.uid) || hasConfirmedJoin;
+  const isMyTurn = gameState?.turn === user?.uid;
+  const currPlayer = gameState?.players.find(p => p.uid === gameState?.turn);
 
   const [isSplashing, setIsSplashing] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -54,6 +64,13 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     initializeGame();
   }, [initializeGame]);
 
+  // Sync confirmed join status
+  useEffect(() => {
+    if (gameState?.players.some(p => p.uid === user?.uid)) {
+      setHasConfirmedJoin(true);
+    }
+  }, [gameState?.players, user?.uid]);
+
   // Splash Screen Timer
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,30 +79,19 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     return () => clearTimeout(timer);
   }, []);
 
-  const isJoined = gameState?.players.some(p => p.uid === user?.uid);
-  const isMyTurn = gameState?.turn === user?.uid;
-  const currPlayer = gameState?.players.find(p => p.uid === gameState?.turn);
-
-  // --- SELF-HEALING / ABANDONED SESSION RESET ---
-  // If no players are left in an active game, reset it to lobby for the next person
-  useEffect(() => {
-    if (!isLoading && gameState?.status === 'playing' && (!gameState?.players || gameState.players.length === 0)) {
-      console.log("Ludo: Abandoned session detected, auto-resetting...");
-      resetGame();
-    }
-  }, [gameState, isLoading, resetGame]);
+  // --- AUTOMATIC SESSION CLEANUP (DEPRECATED FOR STABILITY) ---
+  // Note: We removed the auto-reset useEffect because it was causing race conditions
+  // and infinite loops during match starts. Manual reset is now the safe fallback.
 
   // --- AUTOMATIC SESSION CLEANUP ---
-  // If the user closes the game or leaves the room, they should leave the game instance.
-  useEffect(() => {
-    return () => {
-      if (user?.uid && isJoined && gameState?.status !== 'ended') {
-        leaveGame(user.uid);
-      }
-    };
-  }, [user?.uid, isJoined, leaveGame, gameState?.status]);
+  // We remove the automatic unmount-leave to prevent the "Loading-Unmount-Reset" Loop.
+  // Instead, the leave logic is handled by specific back/close actions or room exit.
 
   const handleBack = () => {
+    if (user?.uid && isJoined) {
+      leaveGame(user.uid);
+    }
+    setHasConfirmedJoin(false); // Reset on exit
     if (onClose) onClose();
     else router.back();
   };
@@ -104,9 +110,9 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
       dragControls={dragControls}
       dragListener={false}
       dragMomentum={false}
-      initial={isOverlay ? { y: '35%' } : {}}
+      initial={isOverlay ? { y: 0 } : {}}
       className={cn(
-        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-slate-950/90 backdrop-blur-3xl pb-1 rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-slate-900/60 backdrop-blur-3xl pb-1 rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
         !isOverlay && "min-h-screen"
       )}
     >
@@ -196,9 +202,9 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-[400px] flex flex-col items-center gap-8 py-8"
+            className="w-full max-w-[400px] flex flex-col items-center gap-2 py-2"
           >
-            <div className="relative w-full aspect-square opacity-20 pointer-events-none scale-75 -my-20">
+            <div className="relative w-full aspect-square opacity-20 pointer-events-none scale-75 -my-40">
                <LudoBoard pieces={[]} users={[]} currentPlayerTurn="" onPieceClick={() => {}} />
             </div>
 
@@ -214,7 +220,9 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                         {p ? (
                           <Avatar className="h-full w-full">
                             <AvatarImage src={p.avatarUrl} />
-                            <AvatarFallback className="bg-slate-700 text-white text-[10px]">{p.username[0]}</AvatarFallback>
+                            <AvatarFallback className="bg-slate-700 text-white text-[10px] font-black uppercase">
+                              {(p.username || 'P').charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                         ) : (
                           <button 
@@ -225,8 +233,8 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                           </button>
                         )}
                       </div>
-                      <span className="text-[8px] font-black text-white/50 uppercase truncate max-w-full">
-                        {p?.uid === user?.uid ? 'You' : p?.username || `...`}
+                      <span className="text-[8px] font-black text-white/50 uppercase truncate max-w-[50px]">
+                        {p?.uid === user?.uid ? 'You' : (p?.username === 'IMAGE' ? 'Player' : (p?.username || '...'))}
                       </span>
                     </div>
                   );
@@ -246,7 +254,17 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
                     <div className="h-16 w-full opacity-50 bg-black/40 rounded-full flex items-center justify-center border-2 border-white/5">
                        <span className="text-xs font-black text-white/30 uppercase tracking-[0.2em]">Match in Progress</span>
                     </div>
-                    <p className="text-[9px] font-bold text-white/20 uppercase">Please wait for the current match to finish</p>
+                    <p className="text-[9px] font-bold text-white/20 uppercase text-center">Please wait for the current match to finish</p>
+                    
+                    {/* EMERGENCY RESET FOR STUCK SESSIONS */}
+                    {(gameState?.players.length || 0) < 2 && (
+                      <button 
+                        onClick={resetGame}
+                        className="mt-2 text-[9px] font-black text-blue-400 uppercase tracking-tighter hover:text-blue-300 transition-colors underline underline-offset-2"
+                      >
+                        Reset Stuck Session
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
