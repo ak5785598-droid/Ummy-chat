@@ -261,7 +261,12 @@ const Seat = memo(({
   );
 });
 
-export function RoomClient({ room }: { room: Room }) {
+interface RoomClientProps {
+  room: Room;
+  onExit?: () => void;
+}
+
+export function RoomClient({ room, onExit }: RoomClientProps) {
   const [messageText, setMessageText] = useState('');
   const [showSoundboard, setShowSoundboard] = useState(false);
   const [activeLiveTheme, setActiveLiveTheme] = useState<'galaxy' | 'stars' | 'love' | 'rain' | 'none'>('none');
@@ -1877,6 +1882,7 @@ export function RoomClient({ room }: { room: Room }) {
   };
 
   const handleExit = () => {
+    if (onExit) onExit();
     if (firestore && currentUser) {
       const roomDocRef = doc(firestore, 'chatRooms', room.id);
       updateDocumentNonBlocking(roomDocRef, {

@@ -28,6 +28,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  const [isUnlocked, setIsUnlocked] = useState(false);
  const [passwordInput, setPasswordInput] = useState('');
  const [isMounted, setIsMounted] = useState(false);
+ const [isExiting, setIsExiting] = useState(false);
 
  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
  const { data: config } = useDoc(configRef);
@@ -101,7 +102,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  const requiresPassword = activeRoom?.password && !isOwner && !isUnlocked;
 
   useEffect(() => {
-   if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
+   if (activeRoom && !bannedUntil && !requiresPassword && isMounted && !isExiting) {
      requestAnimationFrame(() => {
       if (activeRoom.id !== currentActiveRoom?.id) {
        setActiveRoom(activeRoom);
@@ -109,7 +110,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
       setIsMinimized(false);
      });
    }
-  }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
+  }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted, isExiting]);
 
  const handleVerifyPassword = () => {
   if (passwordInput === activeRoom?.password) {
@@ -221,7 +222,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
 
  return (
   <AppLayout hideSidebarOnMobile fullScreen hideBottomNav={true}>
-    <RoomClient room={activeRoom} />
+    <RoomClient room={activeRoom} onExit={() => setIsExiting(true)} />
   </AppLayout>
  );
 }
