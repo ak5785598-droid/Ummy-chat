@@ -817,8 +817,10 @@ export function RoomClient({ room }: { room: Room }) {
       aiSilentAudioRef.current.play().catch(() => {});
     }
 
-    // VOICE WARM-UP: Ensure we clear old tasks before speaking
-    window.speechSynthesis.cancel();
+    // VOICE WARM-UP: Only cancel if currently speaking to avoid Android WebView freeze bugs
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
     setIsAISpeaking(true);
 
     const cleanText = text
@@ -948,7 +950,9 @@ export function RoomClient({ room }: { room: Room }) {
 
     // BROWSER HANDSHAKE: Prime the engine on first interaction
     if (nextValue) {
-      const warmUp = new SpeechSynthesisUtterance("");
+      // Avoid empty utterance on Android, use a silent space
+      const warmUp = new SpeechSynthesisUtterance(" ");
+      warmUp.volume = 0; // Keep it silent
       window.speechSynthesis.speak(warmUp);
       speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
     } else {
