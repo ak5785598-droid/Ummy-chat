@@ -1901,7 +1901,7 @@ export function RoomClient({ room }: { room: Room }) {
 
     setActiveRoom(null);
     setMinimizedRoom(null);
-    router.push('/discover'); // Exit should go to Discover (/discover)
+    router.push('/rooms'); // Exit should also go to Home (/rooms)
   };
 
   const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
