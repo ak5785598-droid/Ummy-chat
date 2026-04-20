@@ -207,8 +207,6 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     } catch (err) {
       console.error("Failed to leave Ludo game:", err);
     }
-  }, [gameDocRef, gameState, resetGame]);
-
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
 
@@ -219,6 +217,22 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
       updatedAt: serverTimestamp()
     });
   }, [gameDocRef, gameState, userId]);
+  
+  const skipTurn = useCallback(async () => {
+    if (!gameDocRef || !gameState) return;
+    
+    console.log("Ludo: Skipping turn (no moves possible)");
+    const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === gameState.turn);
+    const nextPlayerIndex = (currentPlayerIndex + 1) % gameState.players.length;
+    const nextTurn = gameState.players[nextPlayerIndex].uid;
+
+    await updateDocumentNonBlocking(gameDocRef, {
+      turn: nextTurn,
+      dice: null,
+      diceRolled: false,
+      updatedAt: serverTimestamp()
+    });
+  }, [gameDocRef, gameState]);
 
   const endMatch = useCallback(async (winnerId: string) => {
     if (!gameDocRef || !gameState) return;
@@ -355,8 +369,8 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     startMatch,
     resetGame,
     leaveGame,
-    rollDice,
     movePiece,
-    endMatch
+    endMatch,
+    skipTurn
   };
 }

@@ -43,7 +43,8 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     resetGame,
     leaveGame,
     rollDice, 
-    movePiece 
+    movePiece,
+    skipTurn
   } = useLudoEngine(roomId, user?.uid || null);
   
   // STABLE REFS: Prevent infinite loops in cleanup
@@ -86,6 +87,28 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
   // --- AUTOMATIC SESSION CLEANUP ---
   // We remove the automatic unmount-leave to prevent the "Loading-Unmount-Reset" Loop.
   // Instead, the leave logic is handled by specific back/close actions or room exit.
+
+  // --- AUTO-SKIP TURN IF NO MOVES POSSIBLE ---
+  useEffect(() => {
+    if (!gameState || !user?.uid || gameState.status !== 'playing' || gameState.turn !== user?.uid || !gameState.diceRolled) return;
+
+    const dice = gameState.dice || 0;
+    const myPieces = gameState.pieces.filter(p => p.color === gameState.players.find(pl => pl.uid === user?.uid)?.color);
+    
+    const canMoveAnyPiece = myPieces.some(p => {
+      if (p.position === 0) return dice === 6;
+      if (p.position >= 1 && p.position < 57) return p.position + dice <= 57;
+      return false;
+    });
+
+    if (!canMoveAnyPiece) {
+      console.log("Ludo: No moves possible, auto-skipping in 1.5s...");
+      const timer = setTimeout(() => {
+        skipTurn();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState, user?.uid, skipTurn]);
 
   const handleBack = () => {
     if (user?.uid && isJoined) {
