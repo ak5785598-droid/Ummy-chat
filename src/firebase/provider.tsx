@@ -184,7 +184,7 @@ export function useDoc<T = any>(docRef: any, options?: { suppressGlobalError?: b
 
       unsubscribe = onSnapshot(docRef, 
         (snapshot: any) => {
-          const docData = snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() }) as T : null;
+          const docData = snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data({ serverTimestamps: 'estimate' }) }) as T : null;
           const l = sharedDocListeners.get(path);
           if (l) {
             l.currentData = docData;
@@ -263,7 +263,7 @@ export function useCollection<T = any>(query: any, options?: { silent?: boolean 
     if (!queryKey) {
       const unsub = onSnapshot(query, 
         (snap) => {
-          setData(snap.docs.map(d => ({ id: d.id, ...d.data() })) as T[]);
+          setData(snap.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) })) as T[]);
           setIsLoading(false);
         },
         (err) => {
@@ -279,7 +279,7 @@ export function useCollection<T = any>(query: any, options?: { silent?: boolean 
     // as it is the primary culprit in Profile hooks.
     const unsubscribe = onSnapshot(query, 
       (snapshot: any) => {
-        const docs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })) as T[];
+        const docs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) })) as T[];
         setData(docs);
         setIsLoading(false);
         setError(null);
