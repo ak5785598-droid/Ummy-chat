@@ -14,6 +14,8 @@ export interface UserProfile {
   gender?: 'Male' | 'Female' | null;
   country?: string | null;
   interests?: string[];
+  birthday?: string;
+  spaceImages?: string[];
   wallet?: {
    coins: number;
    diamonds: number;
@@ -35,6 +37,7 @@ export interface UserProfile {
    followers: number;
    fans: number;
    dailyFans: number;
+   receivedGifts?: Record<string, number>;
   };
   level?: {
    rich: number;
@@ -45,6 +48,7 @@ export interface UserProfile {
    activeWave?: string;
    activeBubble?: string;
    activeTheme?: string;
+   activeVehicle?: string;
    ownedItems: string[];
   };
   banStatus?: {
@@ -61,7 +65,6 @@ export interface UserProfile {
     startDate: any;
   };
   tags?: string[];
-  country?: string | null;
   whatsapp?: string;
   showWhatsapp?: boolean;
   createdAt?: any;
@@ -70,8 +73,6 @@ export interface UserProfile {
   lastMoneyTreeClaimAt?: any;
   isAdmin?: boolean;
   activityPoints?: number;
-  whatsapp?: string;
-  showWhatsapp?: boolean;
   idColor?: 'red' | 'blue' | 'purple' | 'none';
   isBudgetId?: boolean;
   isOnline?: boolean;

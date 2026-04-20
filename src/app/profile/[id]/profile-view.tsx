@@ -27,7 +27,8 @@ import {
   Calendar,
   Globe,
   Phone,
-  Camera
+  Camera,
+  ShieldAlert
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -60,12 +61,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from "@/components/ui/carousel";
 
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
