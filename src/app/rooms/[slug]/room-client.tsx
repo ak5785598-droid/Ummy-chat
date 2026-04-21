@@ -2675,7 +2675,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       )}
 
 
-      <footer className="relative z-50 px-4 pb-2 flex items-center justify-between pt-2 h-16">
+      <footer className="relative z-50 px-4 flex items-center justify-between pt-2 h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom,8px)]">
         <div className="flex items-center flex-1 mr-2 gap-2">
           {/* Left: Say Hi Input-like Button */}
           <button
