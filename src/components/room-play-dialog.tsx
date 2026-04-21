@@ -454,7 +454,7 @@ export function RoomPlayDialog({
                 
                 {/* Top Row: Quick Toggles (Now perfectly Glossy SVGA Style) */}
                 <div className="flex items-center justify-around px-4 shrink-0 pb-2">
-                  {toggleOptions.map(opt => (
+                  {toggleOptions.filter(opt => canManage || opt.id === 'gift-effects').map(opt => (
                     <div key={opt.id} className="flex flex-col items-center gap-2">
                        <button 
                         onClick={opt.onClick}
@@ -481,7 +481,7 @@ export function RoomPlayDialog({
 
                 {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
-                  {gameGrid.map(item => (
+                  {gameGrid.filter(item => canManage || item.id === 'game-selector').map(item => (
                     <button 
                       key={item.id} 
                       onClick={item.onClick}
