@@ -2176,6 +2176,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         achievedTasks={achievedTasks}
         claimedTasks={claimedTasks}
         onClaim={claimTask}
+        totalRoomGifts={room.stats?.totalGifts || 0}
       />
 
       <audio 
