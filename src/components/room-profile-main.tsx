@@ -164,7 +164,7 @@ export function RoomProfileMain({
       <SheetContent 
         side="bottom" 
         hideOverlay={true}
-        className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 rounded-t-[3rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-12"
+        className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 rounded-t-[3rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-8"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>User Profile</SheetTitle>

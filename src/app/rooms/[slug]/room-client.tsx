@@ -2773,7 +2773,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       </footer>
 
       {showInput && (
-        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-6 font-headline pointer-events-none">
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-safe pb-8 font-headline pointer-events-none">
           <div
             className="absolute inset-0 bg-black/5 pointer-events-auto"
             onClick={() => setShowInput(false)}

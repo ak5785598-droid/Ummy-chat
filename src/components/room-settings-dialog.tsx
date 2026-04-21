@@ -245,7 +245,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
      </DialogHeader>
 
       <ScrollArea className="flex-1 overflow-y-auto max-h-[calc(90vh-48px)] md:max-h-[600px]">
-       <div className="pb-10 pt-0">
+       <div className="pb-safe pb-10 pt-0">
         <SettingItem label="Profile" onClick={() => !isUploadingProfile && fileInputRef.current?.click()} className="py-2">
           <div className="relative">
            <Avatar className="h-16 w-16 rounded-xl border-2 border-slate-100 shadow-sm overflow-hidden bg-slate-50">

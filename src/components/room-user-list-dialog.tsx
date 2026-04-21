@@ -56,7 +56,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
 
  return (
   <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent hideClose={true} className="max-w-full sm:max-w-md bg-white text-black p-0 rounded-t-[2rem] border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom duration-500 bottom-0 top-auto fixed translate-y-0">
+   <DialogContent hideClose={true} className="max-w-full sm:max-w-md bg-white text-black p-0 pb-safe pb-4 rounded-t-[2rem] border-none shadow-2xl overflow-hidden font-sans animate-in slide-in-from-bottom duration-500 bottom-0 top-auto fixed translate-y-0">
     <DialogHeader className="sr-only">
       <DialogTitle>Online Users</DialogTitle>
       <DialogDescription>List of users currently in this room</DialogDescription>
