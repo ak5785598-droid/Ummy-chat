@@ -19,13 +19,15 @@ interface ItemPreviewProps {
     description: string;
     url?: string;
   } | null;
+  avatarUrl?: string;
+  username?: string;
 }
 
 /**
  * ItemPreview - A high-fidelity "Try-On" experience for store assets.
  * Allows users to see exactly how a Frame, Bubble, or Theme looks in a real context.
  */
-export function ItemPreview({ isOpen, onClose, item }: ItemPreviewProps) {
+export function ItemPreview({ isOpen, onClose, item, avatarUrl, username }: ItemPreviewProps) {
   if (!isOpen || !item) return null;
 
   return (
@@ -37,14 +39,14 @@ export function ItemPreview({ isOpen, onClose, item }: ItemPreviewProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/40 backdrop-blur-md"
+          className="absolute inset-0 bg-black/40"
         />
 
         <motion.div 
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-md bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-[2.5rem] border border-white/20 shadow-2xl overflow-hidden p-8"
+          className="relative w-full max-w-[280px] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-[1.5rem] border border-white/20 shadow-2xl overflow-hidden p-3"
         >
           {/* Close Button */}
           <button 
@@ -54,25 +56,29 @@ export function ItemPreview({ isOpen, onClose, item }: ItemPreviewProps) {
             <X className="h-5 w-5" />
           </button>
 
-          <header className="text-center mb-8">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-2 block">Premium Preview</span>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">{item.name}</h2>
-            <p className="text-white/40 text-xs mt-2 font-medium px-4">{item.description}</p>
+          <header className="text-center mb-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-0.5 block">Preview</span>
+            <h2 className="text-xl font-black text-white uppercase tracking-tight">{item.name}</h2>
+            <p className="text-white/40 text-[9px] mt-1 font-medium px-2">{item.description}</p>
           </header>
 
-          <div className="flex flex-col items-center justify-center min-h-[250px] relative">
+          <div className="flex flex-col items-center justify-center min-h-[140px] relative">
             {/* Context-Specific Component Render */}
             {item.type === 'Frame' && (
-              <div className="relative p-12">
+              <div className="relative p-6">
                 <motion.div 
                   initial={{ rotate: -10, scale: 0.8 }}
                   animate={{ rotate: 0, scale: 1.1 }}
                   className="z-10"
                 >
-                  <AvatarFrame frameId={item.id} className="w-32 h-32 md:w-40 md:h-40">
+                  <AvatarFrame frameId={item.id} size="md" className="transition-transform">
                     <Avatar className="w-full h-full border-4 border-white/10 shadow-2xl overflow-hidden">
-                      <AvatarImage src={`https://picsum.photos/seed/${item.id}/400`} />
-                      <AvatarFallback className="bg-slate-800 text-white font-black text-2xl">U</AvatarFallback>
+                      {avatarUrl ? (
+                         <AvatarImage src={avatarUrl} />
+                      ) : (
+                         <AvatarImage src={`https://picsum.photos/seed/${item.id}/400`} />
+                      )}
+                      <AvatarFallback className="bg-slate-800 text-white font-black text-2xl">{(username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
                 </motion.div>
@@ -136,8 +142,8 @@ export function ItemPreview({ isOpen, onClose, item }: ItemPreviewProps) {
             )}
           </div>
 
-          <footer className="mt-8 flex flex-col gap-3">
-             <div className="flex items-center justify-center gap-2 mb-2">
+          <footer className="mt-2 flex flex-col gap-2">
+             <div className="flex items-center justify-center gap-2 mb-0.5">
                 <div className="h-px bg-white/10 flex-1" />
                 <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
                 <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />

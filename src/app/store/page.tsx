@@ -209,7 +209,11 @@ export default function StorePage() {
                   const isActive = userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
                   
                   return (
-                    <Card key={item.id} className="overflow-hidden rounded-[1.5rem] bg-white border-none shadow-sm">
+                    <Card 
+                      key={item.id} 
+                      onClick={() => setPreviewItem(item)}
+                      className="overflow-hidden rounded-[1.5rem] bg-white border-none shadow-sm cursor-pointer hover:scale-[1.02] active:scale-95 transition-all"
+                    >
                       <div className="aspect-square bg-slate-50 flex items-center justify-center p-4 relative">
                         {item.type === 'Frame' ? (
                           <div className="scale-110">
@@ -260,7 +264,13 @@ export default function StorePage() {
           ))}
         </Tabs>
         
-        <ItemPreview isOpen={!!previewItem} onClose={() => setPreviewItem(null)} item={previewItem} />
+        <ItemPreview 
+          isOpen={!!previewItem} 
+          onClose={() => setPreviewItem(null)} 
+          item={previewItem} 
+          avatarUrl={userProfile?.avatarUrl}
+          username={userProfile?.username}
+        />
       </div>
     </div>
   );
