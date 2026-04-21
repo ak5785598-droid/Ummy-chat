@@ -3015,8 +3015,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         open={isUserProfileCardOpen}
         onOpenChange={setIsUserProfileCardOpen}
         canManage={canManageRoom}
-        isOwner={isOwner}
-        roomOwnerId={room.id}
+        isOwner={currentUser?.uid === room.ownerId}
+        roomOwnerId={room.ownerId}
         roomModeratorIds={room.moderatorIds || []}
         onSilence={handleSilence}
         isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
