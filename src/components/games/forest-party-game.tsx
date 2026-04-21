@@ -25,36 +25,6 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
-// 1. Floating Animation Variants
-const floatingVariants = {
-  initial: { 
-    opacity: 0, 
-    scale: 0.9, 
-    y: 20,
-    rotate: 0 
-  },
-  animate: { 
-    opacity: 1, 
-    scale: 1, 
-    y: [0, -15, 0], 
-    rotate: [-0.5, 0.5, -0.5], 
-    transition: {
-      y: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
-      },
-      rotate: {
-        duration: 5,
-        repeat: Infinity,
-        ease: "easeInOut"
-      },
-      opacity: { duration: 0.4 },
-      scale: { duration: 0.4 }
-    }
-  }
-};
-
 const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
@@ -84,20 +54,13 @@ const getGameDay = () => {
   const now = new Date();
   const resetTime = new Date(now);
   resetTime.setHours(5, 30, 0, 0); 
-
-  if (now < resetTime) {
-    now.setDate(now.getDate() - 1);
-  }
+  if (now < resetTime) now.setDate(now.getDate() - 1);
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
 const formatKandM = (num: number) => {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  }
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  }
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return num.toString();
 };
 
@@ -204,12 +167,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         if (Math.random() > 0.2) { 
             const dropCount = Math.floor(Math.random() * 6) + 10; 
             const newFakeChips = [];
-            
             for (let i = 0; i < dropCount; i++) {
                 const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
                 const chipOptions = [0, 0, 0, 1, 1, 2, 3, 4, 5];
                 const randomChip = CHIPS_DATA[chipOptions[Math.floor(Math.random() * chipOptions.length)]] || CHIPS_DATA[0];
-                
                 newFakeChips.push({
                     id: Date.now() + Math.random() + i,
                     itemIdx: randomAnimalIdx,
@@ -221,7 +182,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     delay: Math.random() * 0.8 
                 });
             }
-            
             setFakeDroppedChips(prev => [...prev.slice(-60), ...newFakeChips]);
         }
     }, 2000); 
@@ -257,46 +217,31 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const playSound = useCallback((type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
-    const audios = {
-        bet: chipAudio.current,
-        tick: tickAudio.current,
-        spin: spinAudio.current,
-        win: winAudio.current,
-    };
+    const audios = { bet: chipAudio.current, tick: tickAudio.current, spin: spinAudio.current, win: winAudio.current };
     const audio = audios[type as keyof typeof audios];
     if (audio) {
         audio.currentTime = 0;
         const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {});
-        }
+        if (playPromise !== undefined) playPromise.catch(() => {});
     }
-    if (type === 'stop') {
-        spinAudio.current?.pause();
-    }
+    if (type === 'stop') spinAudio.current?.pause();
   } catch (error) {}
  }, [isMuted]);
 
  const finalizeResult = useCallback((id: string, groupType: 'none' | 'left' | 'right') => {
   if (!isMountedRef.current) return;
-  
   setDroppedChips([]);
   setFakeDroppedChips([]);
-
   let winningIds = [id];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
-
   let winAmount = 0;
   const currentBets = myBetsRef.current;
-  
   winningIds.forEach(wId => {
       const winItem = ANIMALS.find(i => i.id === wId);
       winAmount += (currentBets[wId] || 0) * (winItem?.multiplier || 0);
   });
-
   const totalBetAmount = Object.values(currentBets).reduce((a, b) => a + b, 0);
-
   if (winAmount > 0) {
      playSound('win'); 
      setDailyWinnings(prev => {
@@ -305,9 +250,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         return newAmount;
      });
   }
-
   setShiningGroup(groupType); 
-
   const newRoundRecords = Object.entries(currentBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
      return {
@@ -318,26 +261,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        timestamp: Date.now()
      };
   });
-  
   if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
-
-  const historyItem = { 
-    id: id, 
-    type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' 
-  };
+  const historyItem = { id: id, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
   setHistory(prev => [historyItem, ...prev].slice(0, 15));
-
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
   if (groupType === 'right') displayEmoji = '🐰🦓🦝🐔'; 
-
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
-
   if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
-   
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'forest-party',
     userId: currentUser.uid,
@@ -347,7 +281,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     timestamp: serverTimestamp()
    });
   }
-
   winnerTimeoutRef.current = setTimeout(() => {
    if (!isMountedRef.current) return;
    setWinnerData(null);
@@ -356,7 +289,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setShiningGroup('none'); 
    setGameState('betting');
    setTimeLeft(25);
-   
    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
    setBannerMsg('Start Betting');
    bannerTimeoutRef.current = setTimeout(() => {
@@ -367,63 +299,42 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  const startSpin = useCallback(async () => {
   if (!isMountedRef.current) return;
-
   if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
   setBannerMsg('Betting Over');
-  
   setGameState('spinning');
   playSound('spin'); 
-
   bannerTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) setBannerMsg(null);
   }, 1000);
-  
-
   let groupType: 'none' | 'left' | 'right' = 'none';
   const chance = Math.random();
   if (chance < 0.025) groupType = 'left'; 
   else if (chance < 0.05) groupType = 'right'; 
-
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
-
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
     if (oracleSnap.exists() && oracleSnap.data().isActive) {
      const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) {
-         winningId = forced;
-         groupType = 'none'; 
-     }
+     if (ANIMALS.some(a => a.id === forced)) { winningId = forced; groupType = 'none'; }
      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
     }
    } catch (e) {}
   }
-
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
   const spins = 7; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
-  
   let speed = 40; 
-
   const runChase = () => {
    if (!isMountedRef.current) return;
-   
    const activeIdx = currentStep % SEQUENCE.length;
    setHighlightIdx(activeIdx);
-   
    if (currentStep % 2 === 0) playSound('tick'); 
-
    if (currentStep < totalSteps) {
     const remaining = totalSteps - currentStep;
-    
-    if (remaining < 25) {
-        speed += 20; 
-    } else if (remaining < 45) {
-        speed += 4;  
-    }
-    
+    if (remaining < 25) speed += 20; 
+    else if (remaining < 45) speed += 4;  
     currentStep++;
     chaseTimeoutRef.current = setTimeout(runChase, speed);
    } else {
@@ -431,15 +342,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     chaseTimeoutRef.current = setTimeout(() => finalizeResult(winningId, groupType), 500);
    }
   };
-
   runChase();
-
  }, [firestore, playSound, finalizeResult]);
 
  useEffect(() => {
-    if (gameState === 'betting' && timeLeft === 0) {
-        startSpin();
-    }
+    if (gameState === 'betting' && timeLeft === 0) startSpin();
  }, [timeLeft, gameState, startSpin]);
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
@@ -448,7 +355,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    toast({ title: 'You do not have any Coins!', variant: 'destructive' });
    return;
   }
-
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
   const newChip = {
@@ -462,10 +368,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   };
   setDroppedChips(prev => [...prev, newChip]);
   setLocalCoins(prev => prev - selectedChip);
-  
   const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
-  
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
 
@@ -485,12 +389,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     dragListener={false}
     dragMomentum={false}
     whileDrag={{ scale: 1.02, transition: { duration: 0.2 }, zIndex: 50 }}
-    className="h-[70vh] my-auto w-full relative"
+    className="h-[66vh] my-auto w-full relative" // Height decreased from top
   >
    <motion.div
-    variants={floatingVariants}
-    initial="initial"
-    animate="animate"
+    // Floating animation removed from here
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
    >
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -582,6 +484,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
        <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
           <div className="flex items-center gap-1.5">
+              {/* Only Move Icon handles the Drag */}
               <div 
                 onPointerDown={(e) => dragControls.start(e)}
                 style={{ touchAction: 'none' }}
@@ -627,28 +530,25 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
          </div>
        </div>
 
-       {/* GAME AREA */}
-       <main className="flex-1 w-full flex flex-col items-center justify-start pt-0 px-4 relative">
-        
-        {/* MIX CARDS */}
+       <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
         <div className={cn(
-            "absolute top-[8%] left-[6%] z-30 w-[34px] h-[34px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
+            "absolute top-[8%] left-[6%] z-30 w-[42px] h-[42px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
             shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
         )}>
-            <div className="flex flex-wrap w-[20px] justify-center items-center leading-none">
-                <span className="text-[8px]">🦁</span><span className="text-[8px]">🐯</span>
-                <span className="text-[8px]">🦊</span><span className="text-[8px]">🐻</span>
+            <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
+                <span className="text-[10px]">🦁</span><span className="text-[10px]">🐯</span>
+                <span className="text-[10px]">🦊</span><span className="text-[10px]">🐻</span>
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
         </div>
 
         <div className={cn(
-            "absolute top-[8%] right-[6%] z-30 w-[34px] h-[34px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
+            "absolute top-[8%] right-[6%] z-30 w-[42px] h-[42px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
             shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
         )}>
-            <div className="flex flex-wrap w-[20px] justify-center items-center leading-none">
-                <span className="text-[8px]">🐰</span><span className="text-[8px]">🦓</span>
-                <span className="text-[8px]">🦝</span><span className="text-[8px]">🐔</span>
+            <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
+                <span className="text-[10px]">🐰</span><span className="text-[10px]">🦓</span>
+                <span className="text-[10px]">🦝</span><span className="text-[10px]">🐔</span>
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
         </div>
@@ -660,7 +560,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
                 </filter>
             </defs>
-            
             {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
               <g key={deg} transform={`rotate(${deg} 50 50)`}>
                 <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
@@ -679,7 +578,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             const isSpinning = gameState === 'spinning';
             const isHighlighted = highlightIdx === idx;
             const applyColorless = isSpinning && !isHighlighted;
-            
             return (
             <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
               <button onClick={() => handlePlaceBet(item)} className="relative group">
@@ -694,45 +592,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                     </div>
                 </div>
-                
                 <AnimatePresence>
                     {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                        <motion.div 
-                            key={chip.id} 
-                            initial={{ opacity: 0, scale: 3, y: -60 }} 
-                            animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.6)] z-40 pointer-events-none"
-                            style={{
-                                background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                                padding: '2.5px', width: '24px', height: '24px'
-                            }}
-                        >
+                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.6)] z-40 pointer-events-none" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '2.5px', width: '24px', height: '24px' }}>
                             <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
                                 <span className="text-[6px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
                             </div>
                         </motion.div>
                     ))}
-
                     {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                        <motion.div 
-                            key={chip.id} 
-                            initial={{ opacity: 0, scale: 2, y: -80 }} 
-                            animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} 
-                            exit={{ opacity: 0 }} 
-                            transition={{ delay: chip.delay, duration: 0.3 }}
-                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_3px_5px_rgba(0,0,0,0.5)] z-30 pointer-events-none"
-                            style={{
-                                background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                                padding: '2px', width: '20px', height: '20px'
-                            }}
-                        >
+                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 2, y: -80 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} exit={{ opacity: 0 }} transition={{ delay: chip.delay, duration: 0.3 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_3px_5px_rgba(0,0,0,0.5)] z-30 pointer-events-none" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '2px', width: '20px', height: '20px' }}>
                             <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/20 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
                                 <span className="text-[5px] font-bold text-white/90">{chip.label}</span>
                             </div>
                         </motion.div>
                     ))}
                 </AnimatePresence>
-                
                 {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
               </button>
             </motion.div>
@@ -741,8 +616,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
        </main>
 
-       {/* --- NEW CHIP TAB (DARK BROWN) --- */}
-       <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-t-[32px]">
+       <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center justify-start gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-t-[32px]">
           {CHIPS_DATA.map((chip) => (
               <button
                   key={chip.value}
@@ -751,10 +625,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                       "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200",
                       selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_5px_15px_rgba(0,0,0,0.5)]" : "scale-95 opacity-70 hover:opacity-100"
                   )}
-                  style={{
-                      background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`,
-                      padding: '5px', width: '52px', height: '52px'
-                  }}
+                  style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '5px', width: '52px', height: '52px' }}
               >
                   <div className={cn("w-full h-full rounded-full flex items-center justify-center border-[2px] border-black/50 shadow-inner", `bg-gradient-to-br ${chip.bgColor}`)}>
                       <span className="text-[11px] font-black text-white filter drop-shadow-sm">{chip.label}</span>
