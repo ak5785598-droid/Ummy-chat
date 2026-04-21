@@ -140,13 +140,13 @@ function RoomsExplorerClassic() {
  // ⭐ DAILY QUEST INITIALIZER
  useQuestInitializer();
 
- const CATEGORIES = [
-  { id: "All", label: t.home.categories.all },
-  { id: "Chat", label: t.home.categories.chat },
-  { id: "Games", label: t.home.categories.games },
-  { id: "Newcomers", label: t.home.categories.newcomers },
-  { id: "Party", label: t.home.categories.party }
- ];
+  const CATEGORIES = [
+   { id: "All", label: t.home.categories.all },
+   { id: "Chat", label: t.home.categories.chat },
+   { id: "Game", label: t.home.categories.game },
+   { id: "Music", label: t.home.categories.music },
+   { id: "Party", label: t.home.categories.party }
+  ];
 
  const roomsQuery = useMemoFirebase(() => {
   if (!firestore) return null;

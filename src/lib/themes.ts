@@ -16,6 +16,7 @@ export interface RoomTheme {
 }
 
 export const ROOM_THEMES: RoomTheme[] = [
+  { id: 'ummy_prime', name: 'Ummy Prime', url: '/themes/ummy_prime.png', isOfficial: true, seatColor: 'rgba(217, 70, 239, 0.2)', accentColor: '#d946ef', category: 'general' },
   // --- ORIGINAL 25 COLLECTION ---
   { id: 'neon_universe', name: 'Neon Universe', url: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=2000', seatColor: 'rgba(147, 51, 234, 0.2)', accentColor: '#d946ef', category: 'entertainment' },
   { id: 'emoji_party', name: 'Emoji Party', url: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=2000', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'entertainment' },

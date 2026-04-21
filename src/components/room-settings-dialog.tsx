@@ -101,6 +101,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  const [isEditingPassword, setIsEditingPassword] = useState(false);
  const [isManagingAdmins, setIsManagingAdmins] = useState(false);
  const [isTestingMic, setIsTestingMic] = useState(false);
+ const [isEditingCategory, setIsEditingCategory] = useState(false);
  
  const [newName, setNewName] = useState(room.title || room.name);
  const [newAnnouncement, setNewAnnouncement] = useState(room.announcement || '');
@@ -307,6 +308,10 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
 
         <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
         <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
+        
+        {/* ROOM TAG SELECTION */}
+        <SettingItem label="Room Tag" value={room.category || 'Chat'} onClick={() => setIsEditingCategory(true)} />
+
         <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
        </div>
      </ScrollArea>
@@ -463,6 +468,48 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
         </ScrollArea>
       </div>
      )}
+
+     {isEditingCategory && (
+      <div className="absolute inset-0 z-[120] bg-white animate-in slide-in-from-right duration-300 flex flex-col">
+        <header className="p-6 border-b border-gray-50 flex items-center justify-between">
+         <button onClick={() => setIsEditingCategory(false)} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-all">
+           <ChevronLeft className="h-6 w-6 text-gray-800" />
+         </button>
+         <h3 className="font-bold uppercase text-lg tracking-tight">Room Tag</h3>
+         <div className="w-10" />
+        </header>
+        <div className="p-6 grid grid-cols-1 gap-3">
+          {['Chat', 'Game', 'Music', 'Party'].map((tag) => (
+            <button
+              key={tag}
+              onClick={() => {
+                handleUpdate('category', tag);
+                setIsEditingCategory(false);
+                toast({ title: 'Tag Synchronized', description: `Room is now tagged as ${tag}.` });
+              }}
+              className={cn(
+                "w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition-all active:scale-[0.98]",
+                (room.category || 'Chat') === tag 
+                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/10" 
+                  : "border-gray-100 hover:border-gray-200"
+              )}
+            >
+              <div className="flex flex-col items-start gap-1">
+                <span className={cn("font-black uppercase tracking-widest text-lg", (room.category || 'Chat') === tag ? "text-primary" : "text-gray-400")}>
+                  {tag}
+                </span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Show in {tag} section</span>
+              </div>
+              {(room.category || 'Chat') === tag && (
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+       </div>
+      )}
 
      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
     </DialogContent>

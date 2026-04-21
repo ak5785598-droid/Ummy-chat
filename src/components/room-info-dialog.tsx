@@ -22,7 +22,11 @@ import {
  MoreVertical,
  ShieldCheck,
  UserMinus,
- UserPlus
+ UserPlus,
+ Gamepad2,
+ Music as MusicIcon,
+ MessageSquare,
+ PartyPopper
 } from 'lucide-react';
 import { 
  useFirestore, 
@@ -41,6 +45,7 @@ import {
 } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useTranslation } from '@/hooks/use-translation';
 import { 
  DropdownMenu, 
  DropdownMenuContent, 
@@ -127,6 +132,18 @@ const UserRow = ({
 
 export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: RoomInfoDialogProps) {
  const firestore = useFirestore();
+ const { t } = useTranslation();
+
+ const TAG_CONFIG: Record<string, { icon: any, color: string, bg: string, label: string }> = {
+  Chat: { icon: MessageSquare, color: 'text-blue-500', bg: 'bg-blue-50', label: t.home.categories.chat },
+  Game: { icon: Gamepad2, color: 'text-purple-500', bg: 'bg-purple-50', label: t.home.categories.game },
+  Music: { icon: MusicIcon, color: 'text-pink-500', bg: 'bg-pink-50', label: t.home.categories.music },
+  Party: { icon: PartyPopper, color: 'text-orange-500', bg: 'bg-orange-50', label: t.home.categories.party },
+ };
+
+ const currentTag = room.category || 'Chat';
+ const tagInfo = TAG_CONFIG[currentTag] || TAG_CONFIG.Chat;
+ const TagIcon = tagInfo.icon;
 
  // Level Calculation Logic
  const currentExp = room.levelPoints || 0;
@@ -163,8 +180,8 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
       <button onClick={() => onOpenChange(false)} className="absolute right-6 top-8 p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="h-6 w-6 text-gray-400" /></button>
      </div>
 
-     <div className="max-h-[70vh] min-h-[50vh] overflow-hidden">
-      <TabsContent value="profile" className="p-6 m-0 focus-visible:ring-0">
+     <div className="max-h-[60vh] min-h-[30vh] overflow-hidden">
+      <TabsContent value="profile" className="p-6 pt-2 m-0 focus-visible:ring-0">
        <div className="flex items-start gap-5 mb-8">
         <Avatar className="h-24 w-24 rounded-3xl shadow-2xl border-2 border-white">
          <AvatarImage src={room.coverUrl || undefined} className="object-cover" />
@@ -188,7 +205,7 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
        <div className="space-y-6">
         <div>
          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Member</label>
-         <p className="text-sm font-black text-gray-800 tracking-tight">{room.participantCount || 0}</p>
+         <p className="text-sm font-black text-gray-800 tracking-tight">{followers?.length || 0}</p>
         </div>
 
         <div>
@@ -198,8 +215,11 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
 
         <div className="grid grid-cols-2 gap-4">
          <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Tag</label>
-          <p className="text-sm font-black text-gray-800 tracking-tight">{room.category || 'Game'}</p>
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Tag</label>
+          <div className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-xl w-fit", tagInfo.bg)}>
+            <TagIcon className={cn("h-3.5 w-3.5", tagInfo.color)} />
+            <span className={cn("text-xs font-black uppercase tracking-tight", tagInfo.color)}>{tagInfo.label}</span>
+          </div>
          </div>
          <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">Room Language</label>
