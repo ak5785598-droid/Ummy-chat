@@ -208,7 +208,7 @@ function AppLayoutClassic(props: {
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-[#1a0b2e]"
         >
-          <div className="flex items-center justify-around h-16 pb-safe border-t border-white/10 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] transition-all">
+          <div className="flex items-center justify-around min-h-[4rem] pb-safe border-t border-white/10 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] transition-all">
             <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? DESIGN_TOKENS.navActiveTextColor : "text-white/40")}>
                {pathname === '/rooms' && <div className={cn("absolute -top-2 w-8 h-0.5 rounded-full blur-[1px] animate-pulse", DESIGN_TOKENS.navAccentColor === '#FF91B5' ? 'bg-pink-400' : 'bg-primary')} />}
                <Home className={cn("h-5 w-5", pathname === '/rooms' ? "fill-current" : "")} />
