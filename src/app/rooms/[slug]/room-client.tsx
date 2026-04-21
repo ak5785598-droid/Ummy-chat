@@ -2225,13 +2225,30 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           alt="Background"
           fill
           unoptimized
-          className="object-cover object-top opacity-95 animate-in fade-in duration-1000 contrast-[1.05] saturate-[1.1] brightness-[0.9]"
+          className={cn(
+            "object-cover object-top animate-in fade-in duration-1000",
+            (room?.isBrightMode !== false) 
+              ? "contrast-[1.1] saturate-[1.5] brightness-[1.1] opacity-100" 
+              : "contrast-[1.05] saturate-[1.1] brightness-[0.9] opacity-95"
+          )}
           priority
         />
 
         {/* PREMIUM UI CLARITY OVERLAYS (Vignettes) */}
-        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent z-10 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none" />
+        {/* Top Vignette (Only in Normal Mode) */}
+        {(room?.isBrightMode === false) && (
+          <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/70 via-black/30 to-transparent z-10 pointer-events-none transition-all duration-1000" />
+        )}
+
+        {/* Bottom Vignette - Conditional Density */}
+        <div 
+          className={cn(
+            "absolute bottom-0 left-0 right-0 z-10 pointer-events-none transition-all duration-1000",
+            (room?.isBrightMode !== false)
+              ? "h-48 bg-gradient-to-t from-black/20 to-transparent" // Bright Mode (Light)
+              : "h-96 bg-gradient-to-t from-black/90 via-black/40 to-transparent" // Normal Mode (Deep)
+          )} 
+        />
       </div>
 
       {/* SOUNDBOARD OVERLAY */}
@@ -2253,7 +2270,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </Avatar>
             <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
-                <h1 className="text-[14px] font-bold text-white tracking-tight leading-none truncate flex-1">
+                <h1 className="text-[14px] font-bold text-white tracking-tight leading-none truncate flex-1 drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                   {room.title}
                 </h1>
                 {(isHydrated && !isOwner) && (
@@ -2281,20 +2298,20 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
           <div className="flex items-center gap-2 shrink-0">
 
-            <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center gap-0.5">
-              <Users className="h-4 w-4 text-white/80" />
-              <span className="text-[9px] font-bold">{onlineCount}</span>
+            <button onClick={() => setIsUserListOpen(true)} className="h-10 w-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center gap-0.5 shadow-lg shadow-black/20">
+              <Users className="h-4 w-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+              <span className="text-[9px] font-bold text-white">{onlineCount}</span>
             </button>
             {(isHydrated && canManageRoom) && (
-              <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-white/80" />
+              <button onClick={() => setIsRoomSettingsOpen(true)} className="h-10 w-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+                <Settings className="h-5 w-5 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
               </button>
             )}
-            <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
-              <Share2 className="h-4 w-4 text-white/80" />
+            <button onClick={() => setIsShareOpen(true)} className="h-10 w-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+              <Share2 className="h-4 w-4 text-white drop-shadow-[0_0_8_px_rgba(255,255,255,0.4)]" />
             </button>
-            <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/60 border border-white/10 flex items-center justify-center">
-              <Power className="h-4 w-4 text-white/80" />
+            <button onClick={() => setShowExitDialog(true)} className="h-10 w-10 rounded-full bg-black/40 border border-white/10 flex items-center justify-center shadow-lg shadow-black/20">
+              <Power className="h-4 w-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
             </button>
           </div>
         </div>
@@ -2410,7 +2427,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                     </Avatar>
 
                     <div className="flex flex-col items-start min-w-0">
-                      <span className={cn("text-[9px] font-semibold uppercase tracking-tighter leading-none mb-1 px-1", isMe ? "text-primary" : "text-white/60")}>
+                      <span className={cn("text-[9px] font-semibold uppercase tracking-tighter leading-none mb-1 px-1 drop-shadow-[0_1px_1.5px_rgba(0,0,0,1)]", isMe ? "text-primary" : "text-white/85")}>
                         {msg.senderName || 'Tribe Member'}
                       </span>
 
@@ -2658,13 +2675,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       )}
 
 
-      <footer className="relative z-50 px-4 pb-6 flex items-center justify-between pt-2 h-20">
+      <footer className="relative z-50 px-4 pb-2 flex items-center justify-between pt-2 h-16">
         <div className="flex items-center flex-1 mr-2 gap-2">
           {/* Left: Say Hi Input-like Button */}
           <button
             onClick={handleInputClick}
             className={cn(
-              "flex-1 h-11 rounded-full px-5 flex items-center bg-white/20 border border-white/5 active:scale-95 transition-all text-white/50 text-[13px] font-medium",
+              "flex-1 h-11 rounded-full px-5 flex items-center bg-black/40 border border-white/10 active:scale-95 transition-all text-white/80 text-[13px] font-bold shadow-lg shadow-black/20",
               isChatMuted && !canManageRoom && "opacity-50 grayscale"
             )}
           >
@@ -2682,23 +2699,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               });
             }}
             className={cn(
-              "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-lg border border-white/10 bg-white/20",
-              isSpeakerMuted ? "bg-red-500/30 border-red-500/50 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-white/10 text-white"
+              "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-xl border border-white/10 bg-black/40",
+              isSpeakerMuted ? "bg-red-500/40 border-red-500/60 text-red-100 shadow-[0_0_15px_rgba(239,68,68,0.3)]" : "text-white"
             )}
             title={isSpeakerMuted ? "Unmute Room" : "Mute Room"}
           >
-            {isSpeakerMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            {isSpeakerMuted ? <VolumeX className="h-5 w-5 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /> : <Volume2 className="h-5 w-5 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />}
           </button>
         </div>
 
         {/* Right: Icon Actions Grouped */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
-            <SmilePlus className="h-6 w-6 text-white/80" />
+          <button onClick={() => setIsEmojiPickerOpen(true)} className="p-1 px-1 active:scale-90 transition-transform bg-black/40 rounded-full h-11 w-11 flex items-center justify-center border border-white/10 shadow-lg">
+            <SmilePlus className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
           </button>
 
-          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("p-1 px-1 transition-all active:scale-90", !isInSeat && "opacity-30")}>
-            {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/40" />}
+          <button onClick={handleMicToggle} disabled={!isInSeat} className={cn("h-11 w-11 rounded-full flex items-center justify-center transition-all active:scale-90 border border-white/10 bg-black/40 shadow-lg", !isInSeat && "opacity-30")}>
+            {isInSeat && !currentUserParticipant?.isMuted ? <Mic className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" /> : <MicOff className="h-6 w-6 text-white/60" />}
           </button>
 
           {/* Speaker/Earbuds Toggle */}
@@ -2724,8 +2741,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </button>
           )}
 
-          <button onClick={() => setIsMessagesOpen(true)} className="p-1 px-1 active:scale-90 transition-transform">
-            <Mail className="h-6 w-6 text-white/80" />
+          <button onClick={() => setIsMessagesOpen(true)} className="h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform bg-black/40 border border-white/10 shadow-lg">
+            <Mail className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
           </button>
 
           <button
@@ -2743,15 +2760,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                setPortalDefaultView('grid');
                setIsRoomPlayOpen(true);
              }}
-             className="p-1 px-1 active:scale-90 transition-transform"
+             className="h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform bg-black/40 border border-white/10 shadow-lg"
            >
-             <LayoutGrid className="h-6 w-6 text-white/80" />
+             <LayoutGrid className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
            </button>
         </div>
       </footer>
 
       {showInput && (
-        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-12 font-headline pointer-events-none">
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-6 font-headline pointer-events-none">
           <div
             className="absolute inset-0 bg-black/5 pointer-events-auto"
             onClick={() => setShowInput(false)}

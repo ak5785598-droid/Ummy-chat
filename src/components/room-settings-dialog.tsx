@@ -281,6 +281,23 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
             onCheckedChange={onToggleAIVoice} 
           />
         </SettingItem>
+
+        {/* Super Glow Mode Toggle - Enhanced Visuals */}
+        <SettingItem label="Super Glow Mode" showChevron={false}>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-yellow-500 animate-pulse">PRO</span>
+            <Switch 
+              checked={room.isBrightMode !== false} // Default to true if undefined
+              onCheckedChange={(val) => {
+                handleUpdate('isBrightMode', val);
+                toast({ 
+                  title: val ? 'Super Glow: ON ✨' : 'Super Glow: OFF 🛡️',
+                  description: val ? 'High-vibrancy lighting activated.' : 'Original balanced lighting restored.'
+                });
+              }} 
+            />
+          </div>
+        </SettingItem>
         
         {/* Re-engineered Mic Selection Portal */}
         <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">

@@ -91,6 +91,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
     roomThemeId: firestoreRoom.roomThemeId,
     isSuperMic: firestoreRoom.isSuperMic || false,
     chatClearedAt: firestoreRoom.chatClearedAt,
+    isBrightMode: firestoreRoom.isBrightMode,
     rocket: firestoreRoom.rocket || { level: 1, progress: 0, open: false }
    } as any;
   }
