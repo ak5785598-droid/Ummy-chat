@@ -21,14 +21,15 @@ interface RoomUserListDialogProps {
  open: boolean;
  onOpenChange: (open: boolean) => void;
  roomId: string;
- participants?: any[]; // Optional: pass participants from parent
+ participants?: any[];
+ onUserClick?: (uid: string) => void;
 }
 
 /**
  * Mobile-First Compact Room Roster.
  * Matches UI screenshot with centered header and streamlined user rows.
  */
-export function RoomUserListDialog({ open, onOpenChange, roomId, participants: propParticipants }: RoomUserListDialogProps) {
+export function RoomUserListDialog({ open, onOpenChange, roomId, participants: propParticipants, onUserClick }: RoomUserListDialogProps) {
  const firestore = useFirestore();
  const router = useRouter();
 
@@ -87,8 +88,12 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
             key={p.uid} 
             className="p-4 flex items-center justify-between group active:bg-gray-50 transition-all cursor-pointer"
             onClick={() => {
-              onOpenChange(false);
-              router.push(`/profile/${p.uid}`);
+              if (onUserClick) {
+                onUserClick(p.uid);
+              } else {
+                onOpenChange(false);
+                router.push(`/profile/${p.uid}`);
+              }
             }}
           >
            <div className="flex items-center gap-4">
@@ -134,7 +139,7 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
                <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || (p.uid ? p.uid.slice(-6).toUpperCase() : '----')}</p>
               <ChevronRight className="h-4 w-4 text-gray-200" />
            </div>
-         </div>
+          </div>
         ))}
        </div>
       ) : (

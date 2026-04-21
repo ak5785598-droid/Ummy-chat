@@ -107,7 +107,7 @@ import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
-import { RoomUserProfileDialog } from '@/components/room-user-profile-dialog';
+import { RoomProfileMain } from '@/components/room-profile-main';
 import { RoomSettingsDialog } from '@/components/room-settings-dialog';
 import { RoomUserListDialog } from '@/components/room-user-list-dialog';
 import { RoomInfoDialog } from '@/components/room-info-dialog';
@@ -827,10 +827,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         musicStartedAt: newPlayingState ? serverTimestamp() : null,
         updatedAt: serverTimestamp()
       });
-      toast({ 
-        title: newPlayingState ? '🎵 Music Resumed' : '⏸️ Music Paused',
-        description: newPlayingState ? 'Enjoy the vibes.' : 'Silence in the room.'
-      });
+      // toast({ 
+      //   title: newPlayingState ? '🎵 Music Resumed' : '⏸️ Music Paused',
+      //   description: newPlayingState ? 'Enjoy the vibes.' : 'Silence in the room.'
+      // });
     } catch (e) {}
   };
 
@@ -1112,7 +1112,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       await updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         chatClearedAt: serverTimestamp()
       });
-      toast({ title: 'AI: Chat Cleared ✨🧹' });
+      // toast({ title: 'AI: Chat Cleared ✨🧹' });
     } catch (e) { console.error(e); }
   };
 
@@ -1134,13 +1134,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       setIsRoomGamesOpen(false); // Close menu if we are jumping into a game
     } else if (lowerSlug.includes('open') || lowerSlug.includes('menu')) {
       setIsRoomGamesOpen(true);
-      toast({ title: 'AI: Opening Games Hub! 🎮✨' });
+      // toast({ title: 'AI: Opening Games Hub! 🎮✨' });
     }
   };
 
   const handleAIOpenMusic = () => {
     setIsRoomPlayOpen(true);
-    toast({ title: 'AI: Opening Music Player 🎵✨' });
+    // toast({ title: 'AI: Opening Music Player 🎵✨' });
   };
 
   // AI VOICE ENGINE (TTS)
@@ -1582,7 +1582,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         if (upperResponse.includes('[CMD:CLEAN]')) {
           if (isAdminAction) {
             handleAIClearChat();
-            toast({ title: 'Sovereign Master', description: 'Purifying chat stream...' });
+            // toast({ title: 'Sovereign Master', description: 'Purifying chat stream...' });
           }
         } else if (upperResponse.includes('[CMD:MUTE:')) {
           const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/i)?.[1];
@@ -1590,7 +1590,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
               handleSilence(target.uid, false);
-              toast({ title: 'Sovereign Master', description: `Silence enforced on ${username}.` });
+              // toast({ title: 'Sovereign Master', description: `Silence enforced on ${username}.` });
             }
           }
         } else if (upperResponse.includes('[CMD:UNMUTE:')) {
@@ -1599,7 +1599,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
               handleSilence(target.uid, true);
-              toast({ title: 'Sovereign Master', description: `Voice restored to ${username}.` });
+              // toast({ title: 'Sovereign Master', description: `Voice restored to ${username}.` });
             }
           }
         } else if (upperResponse.includes('[CMD:KICK:')) {
@@ -1618,7 +1618,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 toast({ variant: 'destructive', title: 'Permission Denied', description: 'Room Owner cannot be kicked by Admins!' });
               } else {
                 handleKick(target.uid, 60);
-                toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
+                // toast({ title: 'Sovereign Master', description: `${username} has been banished.` });
               }
             }
           }
@@ -1628,7 +1628,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             const index = parseInt(seatNum);
             if (!room.lockedSeats?.includes(index)) {
               handleAILockSeat(index);
-              toast({ title: 'Sovereign Master', description: `Seat ${index + 1} secured.` });
+              // toast({ title: 'Sovereign Master', description: `Seat ${index + 1} secured.` });
             }
           }
         } else if (upperResponse.includes('[CMD:UNLOCK:')) {
@@ -1637,31 +1637,31 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             const index = parseInt(seatNum);
             if (room.lockedSeats?.includes(index)) {
               handleAILockSeat(index);
-              toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
+              // toast({ title: 'Sovereign Master', description: `Seat ${index + 1} released.` });
             }
           }
         } else if (upperResponse.includes('[CMD:JAR:OPEN]') || upperResponse.includes('[CMD:TASKS:OPEN]') || upperResponse.includes('JAR KHOL') || upperResponse.includes('OPEN JAR')) {
           if (isAdminAction) {
             setIsRoomTasksOpen(true);
-            toast({ title: 'Sovereign Master', description: 'Opening the Golden Task Jar... ✨' });
+            // toast({ title: 'Sovereign Master', description: 'Opening the Golden Task Jar... ✨' });
           } else {
             speakAIText("Maafi chahti hoon, par ye adhikar sirf Room Owner ke paas hai.");
           }
         } else if (upperResponse.includes('[CMD:GAMES:OPEN]')) {
           if (isAdminAction) {
             setIsRoomGamesOpen(true);
-            toast({ title: 'Sovereign Master', description: 'Opening the Games Library... 🎮' });
+            // toast({ title: 'Sovereign Master', description: 'Opening the Games Library... 🎮' });
           }
         } else if (upperResponse.includes('[CMD:GAME:')) {
           const slug = aiResponse.match(/\[CMD:GAME:(.*?)\]/i)?.[1];
           if (slug) {
             handleAIOpenGame(slug);
-            toast({ title: 'Sovereign Master', description: `Initializing ${slug} frequency...` });
+            // toast({ title: 'Sovereign Master', description: `Initializing ${slug} frequency...` });
           }
         } else if (upperResponse.includes('[CMD:MUSIC:OPEN]')) {
           if (isAdminAction) {
             handleAIOpenMusic();
-            toast({ title: 'Sovereign Master', description: 'Synchronizing music hub...' });
+            // toast({ title: 'Sovereign Master', description: 'Synchronizing music hub...' });
           }
         }
 
@@ -1931,7 +1931,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       musicAudioRef.current.pause();
       musicAudioRef.current.currentTime = 0;
       setIsMusicPlaying(false);
-      toast({ title: 'Music Stopped', description: 'Admin has muted you' });
+      // toast({ title: 'Music Stopped', description: 'Admin has muted you' });
     }
   };
 
@@ -2031,10 +2031,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    toast({
-      title: 'Seat Taken',
-      description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}`
-    });
+    // toast({
+    //   title: 'Seat Taken',
+    //   description: isSeatMuted ? `Seat #${seatIndex} is muted. Unmute to speak.` : `You are now on mic at seat #${seatIndex}`
+    // });
+    setIsSeatMenuOpen(false);
   };
 
   const handleToggleSeatMute = (seatIdx: number, currentMuted: boolean) => {
@@ -2047,7 +2048,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
+    // toast({ title: currentMuted ? 'Seat Unmuted' : 'Seat Muted', description: `Seat #${seatIdx} is now ${currentMuted ? 'unmuted' : 'muted'}` });
+    setIsSeatMenuOpen(false);
   };
 
   const handleToggleLock = (seatIdx: number, isLocked: boolean) => {
@@ -2058,7 +2060,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    toast({ title: isLocked ? 'Mic Unlocked' : 'Mic Locked', description: `Seat #${seatIdx} is now ${isLocked ? 'open' : 'restricted'}` });
+    // toast({ title: isLocked ? 'Mic Unlocked' : 'Mic Locked', description: `Seat #${seatIdx} is now ${isLocked ? 'open' : 'restricted'}` });
+    setIsSeatMenuOpen(false);
   };
 
   const handleToggleMod = (uid: string) => {
@@ -2466,11 +2469,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       {/* MINI MUSIC PLAYER - Wafa Style - Show when music is available and mini player is open */}
       {room.currentMusicUrl && showMiniPlayer && (
         <div className="fixed bottom-[140px] left-0 right-0 z-40 px-4">
-          <div className="bg-black/85 rounded-2xl p-3 border border-white/10 shadow-2xl">
+          <div className="bg-black/95 rounded-2xl p-3 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.4)] backdrop-blur-xl">
             {/* Song Title */}
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shrink-0">
-                <Music className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400/50">
+                <Music className="h-4 w-4 text-white drop-shadow-[0_0_8px_rgba(255,255,255,1)]" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-medium text-white truncate">
@@ -2644,20 +2647,22 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         </div>
       )}
 
-      {/* RIGHT SIDE FLOATING MUSIC BUTTON */}
       {room.currentMusicUrl && !showMiniPlayer && (
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-[185px] z-40 p-1.5 rounded-xl transition-all active:scale-95 shadow-lg border border-cyan-500/50 animate-bounce-slow",
-            "bg-cyan-500/20 text-cyan-400 shadow-cyan-500/10 hover:bg-cyan-500/30"
+            "fixed right-4 bottom-[185px] z-40 p-1 rounded-[1.25rem] transition-all active:scale-95 animate-bounce-slow",
+            "bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-[0_0_20px_rgba(59,130,246,0.6)] border border-blue-400/50"
           )}
         >
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/10 overflow-hidden">
+          <div className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-black/20 backdrop-blur-md overflow-hidden border border-white/20">
+             {/* Dynamic Aurora Glow */}
+             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-500/30 animate-pulse" />
+            
             {room.isMusicPlaying ? (
-              <Music className="h-4 w-4 text-cyan-400 animate-pulse" />
+              <Music className="relative z-10 h-6 w-6 text-white animate-pulse drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
             ) : (
-              <Music className="h-4 w-4 text-cyan-400/60" />
+              <Music className="relative z-10 h-6 w-6 text-white/40" />
             )}
           </div>
         </button>
@@ -2692,11 +2697,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           <button
             onClick={() => {
               setIsSpeakerMuted(!isSpeakerMuted);
-              toast({
-                title: !isSpeakerMuted ? 'Room Muted' : 'Room Unmuted',
-                description: !isSpeakerMuted ? 'Voice and music are now silent for you.' : 'Room audio restored.',
-                variant: !isSpeakerMuted ? 'destructive' : 'default'
-              });
+              // toast({
+              //   title: !isSpeakerMuted ? 'Room Muted' : 'Room Unmuted',
+              //   description: !isSpeakerMuted ? 'Voice and music are now silent for you.' : 'Room audio restored.',
+              //   variant: !isSpeakerMuted ? 'destructive' : 'default'
+              // });
             }}
             className={cn(
               "h-11 w-11 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0 shadow-xl border border-white/10 bg-black/40",
@@ -2867,7 +2872,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       </Dialog>
 
 
-      <RoomUserListDialog open={isUserListOpen} onOpenChange={setIsUserListOpen} roomId={room.id} participants={participants} />
+      <RoomUserListDialog 
+        open={isUserListOpen} 
+        onOpenChange={setIsUserListOpen} 
+        roomId={room.id} 
+        participants={participants} 
+        onUserClick={(uid) => {
+          setSelectedParticipantUid(uid);
+          setIsUserProfileCardOpen(true);
+          setIsUserListOpen(false);
+        }}
+      />
       <RoomInfoDialog
         open={isRoomInfoOpen}
         onOpenChange={setIsRoomInfoOpen}
@@ -2995,13 +3010,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }}
       />
 
-      <RoomUserProfileDialog
+      <RoomProfileMain
         userId={selectedParticipantUid}
         open={isUserProfileCardOpen}
         onOpenChange={setIsUserProfileCardOpen}
         canManage={canManageRoom}
         isOwner={isOwner}
-        roomOwnerId={room.ownerId}
+        roomOwnerId={room.id}
         roomModeratorIds={room.moderatorIds || []}
         onSilence={handleSilence}
         isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
@@ -3012,6 +3027,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenChat={handleOpenChatFromProfile}
         onMention={handleMention}
         isMe={selectedParticipantUid === currentUser?.uid}
+        isInSeat={participants.find(p => p.uid === selectedParticipantUid)?.seatIndex !== undefined && (participants.find(p => p.uid === selectedParticipantUid)?.seatIndex ?? 0) > 0}
       />
 
       <RoomInfoDialog

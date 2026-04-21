@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -17,6 +17,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ItemPreview } from '@/components/item-preview';
+import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
+import { AvatarFrame } from '@/components/avatar-frame';
 
 // --- PREMIUM AVATAR FRAME COMPONENT ---
 interface PremiumAvatarFrameProps {
@@ -112,7 +114,32 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes];
+  const frameItems = useMemo(() => {
+    // 1. None Option
+    const frames = [{
+      id: 'None',
+      name: 'Identity Cleanse',
+      type: 'Frame',
+      price: 0,
+      description: 'Remove current frame and show default avatar aura.',
+      icon: X,
+      color: 'text-slate-400'
+    }];
+
+    // 2. Map all items from registry
+    (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
+      frames.push({
+        ...f,
+        type: 'Frame',
+        price: 0, // In this version, all frames are listed as owned/available if they are in registry
+        description: `Premium ${f.tier} identity frame.`
+      } as any);
+    });
+
+    return frames;
+  }, []);
+
+  const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes, ...frameItems];
 
   const handlePurchase = (item: any) => {
     if (!userProfile || !user || !firestore) return;
@@ -140,10 +167,10 @@ export default function StorePage() {
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
-    const updateData = { [field]: item.id, updatedAt: serverTimestamp() };
+    const updateData = { [field]: item.id === 'None' ? 'None' : item.id, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-    toast({ title: 'Item Equipped' });
+    toast({ title: item.id === 'None' ? 'Frame Removed' : 'Item Equipped' });
   };
 
   if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -185,11 +212,20 @@ export default function StorePage() {
                     <Card key={item.id} className="overflow-hidden rounded-[1.5rem] bg-white border-none shadow-sm">
                       <div className="aspect-square bg-slate-50 flex items-center justify-center p-4 relative">
                         {item.type === 'Frame' ? (
-                          <PremiumAvatarFrame 
-                            imageUrl={`https://picsum.photos/seed/${item.id}/200`} 
-                            size={120} 
-                            className="scale-110"
-                          />
+                          <div className="scale-110">
+                            {item.id === 'None' ? (
+                              <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center">
+                                <X className="h-10 w-10 text-slate-300" />
+                              </div>
+                            ) : (
+                              <AvatarFrame frameId={item.id} size="md">
+                                <Avatar className="h-16 w-16">
+                                  <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
+                                  <AvatarFallback>U</AvatarFallback>
+                                </Avatar>
+                              </AvatarFrame>
+                            )}
+                          </div>
                         ) : item.type === 'Bubble' ? (
                           <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
                         ) : item.type === 'Theme' ? (

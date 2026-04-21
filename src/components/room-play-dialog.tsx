@@ -375,7 +375,7 @@ export function RoomPlayDialog({
     { 
       id: 'gift-effects', 
       label: 'Gift Effects', 
-      onClick: () => toast({ title: 'Premium Feature', description: 'Gift effects are always active for Sovereign members! ✨' }), 
+      onClick: () => {}, // toast({ title: 'Premium Feature', description: 'Gift effects are always active for Sovereign members! ✨' }), 
       active: true,
       icon: <Gift className="h-7 w-7 text-white drop-shadow-md" />,
       // Glossy Orange Gift
