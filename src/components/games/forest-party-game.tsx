@@ -389,10 +389,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     dragListener={false}
     dragMomentum={false}
     whileDrag={{ scale: 1.02, transition: { duration: 0.2 }, zIndex: 50 }}
-    className="h-[66vh] my-auto w-full relative" // Height decreased from top
+    className="h-[66vh] my-auto w-full relative" 
   >
    <motion.div
-    // Floating animation removed from here
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
    >
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -484,7 +483,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
        <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
           <div className="flex items-center gap-1.5">
-              {/* Only Move Icon handles the Drag */}
               <div 
                 onPointerDown={(e) => dragControls.start(e)}
                 style={{ touchAction: 'none' }}
@@ -531,26 +529,39 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
+        
+        {/* Update 1: LEFT MIX CARD - Updated Grid Layout */}
         <div className={cn(
-            "absolute top-[8%] left-[6%] z-30 w-[42px] h-[42px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
-            shiningGroup === 'left' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+            "absolute top-[6%] left-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
+            shiningGroup === 'left' 
+                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 animate-pulse bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
+                : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
-            <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
-                <span className="text-[10px]">🦁</span><span className="text-[10px]">🐯</span>
-                <span className="text-[10px]">🦊</span><span className="text-[10px]">🐻</span>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/50 to-white/5 rounded-full pointer-events-none z-0" />
+            <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦁</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐯</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦊</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐻</span>
             </div>
-            <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'left' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+            <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
+        {/* Update 2: RIGHT MIX CARD - Updated Grid Layout */}
         <div className={cn(
-            "absolute top-[8%] right-[6%] z-30 w-[42px] h-[42px] rounded-full flex flex-col items-center justify-center border-[2px] shadow-[0_3px_0_#241108] transition-all duration-500",
-            shiningGroup === 'right' ? "border-[#FFD700] shadow-[0_0_20px_#FFD700] scale-110 animate-pulse bg-gradient-to-b from-yellow-500 to-yellow-800" : "bg-[#4a2511] border-[#eebb99]"
+            "absolute top-[6%] right-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
+            shiningGroup === 'right' 
+                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 animate-pulse bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
+                : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
-            <div className="flex flex-wrap w-[24px] justify-center items-center leading-none">
-                <span className="text-[10px]">🐰</span><span className="text-[10px]">🦓</span>
-                <span className="text-[10px]">🦝</span><span className="text-[10px]">🐔</span>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/50 to-white/5 rounded-full pointer-events-none z-0" />
+            <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐰</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦓</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦝</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
-            <span className={cn("text-[6px] font-black uppercase mt-0.5", shiningGroup === 'right' ? "text-yellow-200" : "text-white/80")}>Mix</span>
+            <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'right' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
         <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
@@ -608,7 +619,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         </motion.div>
                     ))}
                 </AnimatePresence>
-                {myBets[item.id] > 0 && <div className="absolute -top-1 -right-1 bg-yellow-400 text-[#4a2511] text-[8px] font-black h-6 w-6 rounded-full flex items-center justify-center border-2 border-white z-[60] shadow-xl animate-bounce">{myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}</div>}
+                {/* Update 3: PATTLI PATTI for Bet Amount */}
+                {myBets[item.id] > 0 && (
+                    <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-[#4a2511] text-[8px] font-black px-2.5 py-[2px] rounded-sm border border-white z-[60] shadow-md whitespace-nowrap tracking-tight">
+                        {myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}
+                    </div>
+                )}
               </button>
             </motion.div>
             )
@@ -665,3 +681,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
