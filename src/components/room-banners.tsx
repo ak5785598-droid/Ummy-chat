@@ -9,6 +9,9 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { cn } from "@/lib/utils";
 import { Sparkles, Trophy, Rocket, Crown, Gift } from "lucide-react";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import Image from "next/image";
 
 interface BannerSlide {
   id: string;
@@ -64,9 +67,21 @@ const BANNERS: BannerSlide[] = [
 ];
 
 export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBannersProps) {
+  const firestore = useFirestore();
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'roomBanners'), [firestore]);
+  const { data: bannerConfig } = useDoc(bannerRef);
+
   const plugin = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: false })
   );
+
+  const displayBanners = React.useMemo(() => {
+    if (!bannerConfig?.slides) return BANNERS;
+    return BANNERS.map(b => {
+      const custom = bannerConfig.slides.find((s: any) => s.id === b.id);
+      return custom ? { ...b, imageUrl: custom.imageUrl } : b;
+    });
+  }, [bannerConfig]);
 
   return (
     <div className="w-[75px] group select-none">
@@ -79,7 +94,7 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
         }}
       >
         <CarouselContent className="-ml-0">
-          {BANNERS.map((banner) => (
+          {displayBanners.map((banner: any) => (
             <CarouselItem key={banner.id} className="pl-0">
               <div 
                 className={cn(
@@ -92,6 +107,10 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
                   if (banner.id === 'golden-chest') onOpenChest?.();
                 }}
               >
+                {banner.imageUrl && (
+                  <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" unoptimized />
+                )}
+                
                 {/* Visual Flair */}
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/40" />
@@ -121,7 +140,7 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
       
       {/* Pagination Dots (Compact) */}
       <div className="flex justify-center gap-1 mt-1.5 py-1">
-        {BANNERS.map((_, i) => (
+        {displayBanners.map((_, i) => (
           <div 
             key={i} 
             className="h-1 w-1 rounded-full bg-white/20"

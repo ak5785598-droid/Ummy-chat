@@ -647,6 +647,12 @@ function AdminPageContent() {
     null,
   );
   const bannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const [isUploadingRoomBanner, setIsUploadingRoomBanner] = useState<number | null>(
+    null,
+  );
+  const roomBannerFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   const rankingBGFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingRankingKey, setUploadingRankingKey] = useState<string | null>(
     null,
@@ -749,6 +755,12 @@ function AdminPageContent() {
     return doc(firestore, "appConfig", "rankings");
   }, [firestore, isAuthorized]);
   const { data: rankingConfig } = useDoc(rankingConfigRef);
+
+  const roomBannerConfigRef = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return doc(firestore, "appConfig", "roomBanners");
+  }, [firestore, isAuthorized]);
+  const { data: roomBannerConfig } = useDoc(roomBannerConfigRef);
 
   const handleUpdateGlobalNotice = () => {
     if (!firestore || !isAuthorized || !configRef) return;
@@ -1867,6 +1879,38 @@ function AdminPageContent() {
         });
     } finally {
       setIsUploadingBanner(null);
+    }
+  };
+
+  const handleRoomBannerImageUpload = async (index: number, f: File) => {
+    if (!storage || !roomBannerConfigRef) return;
+    setIsUploadingRoomBanner(index);
+    try {
+      const sRef = ref(storage, `roomBanners/slide_${index}_${Date.now()}.jpg`);
+      const result = await uploadBytes(sRef, f);
+      const url = await getDownloadURL(result.ref);
+      const currentSlides = roomBannerConfig?.slides || [
+        { id: 'weekly-star', title: 'Weekly Star', imageUrl: '' },
+        { id: 'aristocracy', title: 'Merge Aristocracy', imageUrl: '' },
+        { id: 'room-support', title: 'Room Support', imageUrl: '' },
+        { id: 'golden-chest', title: 'Golden Chest', imageUrl: '' },
+        { id: 'lucky-spin', title: 'Lucky Spin', imageUrl: '' },
+      ];
+      const newSlides = [...currentSlides];
+      newSlides[index] = { ...newSlides[index], imageUrl: url };
+      setDoc(roomBannerConfigRef, { slides: newSlides }, { merge: true })
+        .then(() => toast({ title: "Room Banner Updated" }))
+        .catch((err) => {
+          errorEmitter.emit(
+            "permission-error",
+            new FirestorePermissionError({
+              path: roomBannerConfigRef.path,
+              operation: "write",
+            }),
+          );
+        });
+    } finally {
+      setIsUploadingRoomBanner(null);
     }
   };
 
@@ -4283,6 +4327,62 @@ function AdminPageContent() {
                         </div>
                       ),
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ROOM BANNERS MANAGEMENT */}
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8 mt-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-indigo-600">
+                    <Rocket className="h-6 w-6" /> Room Banners
+                  </CardTitle>
+                  <CardDescription>
+                    Manage background images for vertical room features (Room Support, lucky spin, etc).
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {(roomBannerConfig?.slides || [
+                      { id: 'weekly-star', title: 'Weekly Star', imageUrl: '' },
+                      { id: 'aristocracy', title: 'Merge Aristocracy', imageUrl: '' },
+                      { id: 'room-support', title: 'Room Support', imageUrl: '' },
+                      { id: 'golden-chest', title: 'Golden Chest', imageUrl: '' },
+                      { id: 'lucky-spin', title: 'Lucky Spin', imageUrl: '' },
+                    ]).map((slide: any, idx: number) => (
+                      <div key={slide.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{slide.title}</span>
+                          <Badge variant="outline" className="text-[8px] uppercase">{slide.id}</Badge>
+                        </div>
+                        <div className="aspect-[2/3] relative rounded-xl overflow-hidden bg-slate-200 border border-slate-200">
+                          {slide.imageUrl ? (
+                            <Image src={slide.imageUrl} alt={slide.title} fill className="object-cover" unoptimized />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-slate-300">
+                              <ImageIcon className="h-8 w-8" />
+                            </div>
+                          )}
+                          {isUploadingRoomBanner === idx && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <Loader className="animate-spin text-white h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
+                        <Button 
+                          onClick={() => roomBannerFileInputRefs.current[idx]?.click()}
+                          className="w-full bg-white text-indigo-600 border border-indigo-100 hover:bg-indigo-50 h-10 rounded-xl font-bold text-[10px] uppercase gap-2"
+                        >
+                          <Camera className="h-3.5 w-3.5" /> Change Background
+                        </Button>
+                        <input 
+                          type="file" 
+                          ref={el => { roomBannerFileInputRefs.current[idx] = el; }}
+                          className="hidden"
+                          onChange={(e) => e.target.files?.[0] && handleRoomBannerImageUpload(idx, e.target.files[0])}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
