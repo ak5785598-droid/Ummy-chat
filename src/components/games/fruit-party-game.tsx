@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment } from 'firebase/firestore';
+import { doc, increment, collection } from 'firebase/firestore';
 import { X, Trophy, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -70,19 +70,17 @@ const CHIPS_DATA = [
   { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
-// --- Floating Animation Variants ---
+// --- UPDATED VARIANTS: Automatic Floating Hata Diya Gaya Hai ---
 const floatingVariants = {
   initial: { opacity: 0, scale: 0.9, y: 20, rotate: 0 },
   animate: { 
     opacity: 1, 
     scale: 1, 
-    y: [0, -15, 0], 
-    rotate: [-0.5, 0.5, -0.5], 
+    y: 0,        // Reset to 0 (No more floating arrays)
+    rotate: 0,   // Reset to 0 (No more rotating arrays)
     transition: {
-      y: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-      rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
-      opacity: { duration: 0.4 },
-      scale: { duration: 0.4 }
+      duration: 0.4,
+      ease: "easeOut"
     }
   }
 };
@@ -91,14 +89,17 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
-  const dragControls = useDragControls(); // Handle for Move button
+  const dragControls = useDragControls();
 
   const [isLoading, setIsLoading] = useState(true);
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
-  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
+  
+  const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
+  const [shineType, setShineType] = useState<'pizza' | 'salad' | null>(null);
+
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
@@ -129,29 +130,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   }, []);
 
   useEffect(() => {
-    const checkAndClearHistory = () => {
-      const now = new Date();
-      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      if (istTime.getUTCHours() === 0 && istTime.getUTCMinutes() === 0) {
-        setHistoryData([]);
-        setTodayWins(0);
-      }
-    };
-    const interval = setInterval(checkAndClearHistory, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (gameState !== 'betting') { setFloatingChips([]); return; }
-    const interval = setInterval(() => {
-      const randomItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-      const randomChip = CHIPS_DATA[Math.floor(Math.random() * CHIPS_DATA.length)];
-      setFloatingChips(prev => [...prev, { id: Math.random().toString(), itemId: randomItem.id, color: randomChip.color }]);
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
       setLocalCoins(userProfile.wallet.coins);
       setIsCoinsLoaded(true);
@@ -170,40 +148,74 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   }, [gameState, isLoading]);
 
   const handlePlaceBet = (id: string) => {
-    if (gameState !== 'betting' || localCoins < selectedChip) return;
+    if (gameState !== 'betting' || !currentUser) return;
+    if (localCoins < selectedChip) {
+      alert('You do not have any Coins!'); 
+      return;
+    }
     playSound(SOUNDS.BET, 0.9);
-    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
-    
-    const fullRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
-    updateDocumentNonBlocking(fullRef, { 'wallet.coins': increment(-selectedChip) });
+    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
   const startSpin = () => {
     setGameState('spinning');
     playSound(SOUNDS.WHIRRING, 1.0);
     
-    const winItem = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+    const randomChance = Math.random() * 100;
+    let winningItemsArray: any[] = [];
+    let visualTargetIdx = 0;
+
+    if (randomChance <= 2.5) {
+      winningItemsArray = ITEMS.filter(item => item.multiplier > 5);
+      setShineType('pizza');
+      const target = winningItemsArray[Math.floor(Math.random() * winningItemsArray.length)];
+      visualTargetIdx = ITEMS.indexOf(target);
+    } 
+    else if (randomChance > 2.5 && randomChance <= 5.0) {
+      winningItemsArray = ITEMS.filter(item => item.multiplier === 5);
+      setShineType('salad');
+      const target = winningItemsArray[Math.floor(Math.random() * winningItemsArray.length)];
+      visualTargetIdx = ITEMS.indexOf(target);
+    } 
+    else {
+      const target = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      winningItemsArray = [target];
+      setShineType(null);
+      visualTargetIdx = ITEMS.indexOf(target);
+    }
+
     let currentStep = 0;
-    const totalSteps = 40 + ITEMS.indexOf(winItem);
+    const totalSteps = 40 + visualTargetIdx;
 
     const run = () => {
-      setHighlightIdx(currentStep % ITEMS.length);
+      setHighlightIdxs([currentStep % ITEMS.length]);
       playSound(SOUNDS.TICK, 0.3);
       if (currentStep < totalSteps) {
         currentStep++;
         setTimeout(run, 50 + (currentStep * 2));
       } else {
-        setTimeout(() => finalizeResult(winItem), 1000);
+        const allWinningIdxs = winningItemsArray.map(item => ITEMS.indexOf(item));
+        setHighlightIdxs(allWinningIdxs);
+        setTimeout(() => finalizeResult(winningItemsArray), 1000);
       }
     };
     run();
   };
 
-  const finalizeResult = (winItem: any) => {
-    const betOnWinner = myBets[winItem.id] || 0;
-    const winAmount = betOnWinner * winItem.multiplier;
-    setHistory(prev => [winItem.icon, ...prev].slice(0, 10));
+  const finalizeResult = (winningItems: any[]) => {
+    let totalWinAmount = 0;
+    let totalMyBetOnWinners = 0;
+
+    winningItems.forEach(winItem => {
+      const betOnItem = myBets[winItem.id] || 0;
+      totalWinAmount += (betOnItem * winItem.multiplier);
+      totalMyBetOnWinners += betOnItem;
+    });
+    
+    setHistory(prev => [winningItems[0].icon, ...prev].slice(0, 10));
 
     Object.entries(myBets).forEach(([itemId, amount]) => {
       const item = ITEMS.find(i => i.id === itemId);
@@ -216,16 +228,27 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       }
     });
 
-    if (winAmount > 0) {
+    if (totalWinAmount > 0 && currentUser && firestore) {
       playSound(SOUNDS.WIN, 0.6);
-      setLocalCoins(prev => prev + winAmount);
-      setTodayWins(prev => prev + winAmount);
+      setLocalCoins(prev => prev + totalWinAmount);
+      setTodayWins(prev => prev + totalWinAmount);
       
-      const userProfileRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
-      updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
+      const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
+      
+      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+        gameId: 'fruit-party', 
+        amount: totalWinAmount,
+        userId: currentUser.uid,
+        timestamp: new Date(),
+        isGroupWin: winningItems.length > 1
+      });
+
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      updateDocumentNonBlocking(userRef, { 'stats.totalWins': increment(totalWinAmount) });
     }
     
-    setWinnerData({ ...winItem, win: winAmount, myBet: betOnWinner });
+    setWinnerData({ ...winningItems[0], win: totalWinAmount, myBet: totalMyBetOnWinners, isGroup: winningItems.length > 1 });
     setGameState('result');
 
     setTimeout(() => {
@@ -233,7 +256,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       setTimeLeft(30);
       setMyBets({});
       setWinnerData(null);
-      setHighlightIdx(null);
+      setHighlightIdxs([]);
+      setShineType(null);
     }, 5000);
   };
 
@@ -269,8 +293,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             <div className="w-full flex flex-col z-20">
               <div className="w-full p-4 flex justify-between items-center relative">
                 <div className="flex items-center gap-2">
-                  
-                  {/* DRAGGABLE Move Icon */}
+                  {/* DRAG BUTTON: Yahi se screen move hogi */}
                   <button 
                     onPointerDown={(e) => dragControls.start(e)}
                     className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white cursor-grab active:cursor-grabbing touch-none"
@@ -278,7 +301,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                     <Move className="w-[18px] h-[18px]" strokeWidth={2.5} />
                   </button>
 
-                  {/* BALANCE CARD */}
                   <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[105px] ml-2">
                     <div className="absolute -left-1 w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
                       <span className="text-lg drop-shadow-md">🪙</span>
@@ -360,16 +382,17 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 const x = Math.cos((angle * Math.PI) / 180) * 135;
                 const y = Math.sin((angle * Math.PI) / 180) * 135;
                 const betAmount = myBets[item.id] || 0;
+                const isHighlighted = highlightIdxs.includes(idx);
 
                 return (
                   <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
                     <button 
                       onClick={() => handlePlaceBet(item.id)}
-                      style={{ transform: `rotateY(${highlightIdx === idx ? '0deg' : '15deg'}) rotateX(10deg)` }}
+                      style={{ transform: `rotateY(${isHighlighted ? '0deg' : '15deg'}) rotateX(10deg)` }}
                       className={cn(
                         "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
                         "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5)]",
-                        highlightIdx === idx ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
+                        isHighlighted ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
                       )}
                     >
                       <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-0.5 z-[60] pointer-events-none p-4">
@@ -401,9 +424,19 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             <div className="w-full px-4 mb-2 z-20 relative">
                <div className="flex justify-between px-1 mb-1 items-end relative">
                 <div className="absolute -top-16 left-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
-                <span className="text-4xl relative z-20">🥗</span>
+                <span className={cn(
+                  "text-4xl relative z-20 transition-all duration-500",
+                  shineType === 'salad' ? "scale-150 drop-shadow-[0_0_15px_rgba(34,197,94,0.8)] brightness-125" : ""
+                )}>
+                  🥗
+                </span>
                 <div className="absolute -top-16 right-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
-                <span className="text-4xl relative z-20">🍕</span>
+                <span className={cn(
+                  "text-4xl relative z-20 transition-all duration-500",
+                  shineType === 'pizza' ? "scale-150 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] brightness-125" : ""
+                )}>
+                  🍕
+                </span>
               </div>
               <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar">
                  <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
@@ -413,6 +446,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               </div>
             </div>
 
+            {/* CHIPS AREA */}
             <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9]">
               {CHIPS_DATA.map(chip => (
                 <button 
@@ -431,13 +465,16 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               ))}
             </div>
 
-            {/* RESULTS / RULES / HISTORY PAGES (Preserved Exactly) */}
+            {/* RESULTS / RULES / HISTORY PAGES */}
             <AnimatePresence>
               {gameState === 'result' && winnerData && (
                 <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] border-t-[12px] border-[#0284c7] z-[200] flex flex-col items-center justify-center">
                   <div className="absolute -top-10 bg-yellow-400 p-4 rounded-full border-4 border-white shadow-lg"><Trophy className="w-10 h-10 text-white" /></div>
                   <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white w-[75%] py-6 rounded-[2.5rem] shadow-xl flex flex-col items-center gap-2">
-                    <span className="text-7xl">{winnerData.icon}</span>
+                    <div className="flex gap-2">
+                       <span className="text-7xl">{winnerData.icon}</span>
+                       {winnerData.isGroup && <span className="text-2xl self-end font-black text-yellow-500 animate-bounce">GROUP WIN!</span>}
+                    </div>
                     <span className="text-gray-800 font-black text-xl">🪙 {(winnerData.myBet || 0).toLocaleString()}</span>
                     <div className="mt-2 bg-green-100 px-6 py-2 rounded-2xl border-2 border-green-500">
                       <span className="text-green-600 font-black text-3xl">+{winnerData.win.toLocaleString()}</span>
@@ -447,7 +484,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               )}
             </AnimatePresence>
             
-            {/* ... Rules and History pages follow same structure ... */}
             {showRules && (
               <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8">
                 <div className="flex items-center justify-center mb-6">
@@ -458,6 +494,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                   <p>1. Select Chip amount</p>
                   <p>2. Put bets on Items</p>
                   <p>3. Win Amount = Bet × Multiplier</p>
+                  <p className="text-yellow-200 font-bold">4. Special: Groups have a 2.5% chance to win together!</p>
                 </div>
               </motion.div>
             )}
