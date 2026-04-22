@@ -152,7 +152,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
     const timer = setTimeout(() => {
         setIsLoading(false);
-    }, 2000); // 2 Seconds Loading
+    }, 2000); 
     return () => clearTimeout(timer);
  }, []);
 
@@ -311,6 +311,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
   if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
+  
+  // Modal pop-up set karna har baar
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
 
@@ -435,7 +437,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return highlightIdx === idx;
  };
 
- // --- RENDER LOADING PAGE ---
  if (isLoading) {
     return (
         <div className="h-[66vh] my-auto w-full flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
@@ -445,7 +446,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     );
  }
 
- // --- RENDER ACTUAL GAME ---
  return (
   <motion.div 
     drag
@@ -484,6 +484,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
+       {/* WINNING PAGE (WINNER MODAL) */}
        <AnimatePresence>
         {winnerData && (
           <motion.div 
@@ -522,6 +523,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                  <span className="text-[10px] font-black text-[#4a2511]/60 uppercase tracking-widest mb-3">Top Winners</span>
                  
                  <div className="flex items-end justify-center gap-6 w-full h-[90px]">
+                    {/* #2 Winner Slot */}
                     {winnersList[1] ? (
                        <div className="flex flex-col items-center relative pb-2 opacity-90">
                           <div className="absolute -top-2.5 z-10 bg-gradient-to-r from-gray-300 to-gray-400 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#2</div>
@@ -533,6 +535,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                        </div>
                     ) : <div className="w-12" />}
 
+                    {/* #1 Winner Slot */}
                     {winnersList[0] ? (
                        <div className="flex flex-col items-center relative z-20">
                           <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4a2511] text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md border border-white/50">#1</div>
@@ -544,6 +547,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                        </div>
                     ) : <div className="w-16" />}
 
+                    {/* #3 Winner Slot */}
                     {winnersList[2] ? (
                        <div className="flex flex-col items-center relative pb-3 opacity-80">
                           <div className="absolute -top-2 z-10 bg-gradient-to-r from-[#CD7F32] to-[#A0522D] text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
@@ -640,7 +644,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                                 ) : (
                                     <>
                                         <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐰</span>
-                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐻‍❄️a</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐻‍❄️</span>
                                         <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🦝</span>
                                         <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐔</span>
                                     </>
@@ -659,6 +663,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
+        {/* Left Mix shining */}
         <div className={cn(
             "absolute top-[3.5%] left-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
@@ -675,6 +680,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
+        {/* Right Mix shining */}
         <div className={cn(
             "absolute top-[3.5%] right-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
