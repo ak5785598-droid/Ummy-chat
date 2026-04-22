@@ -55,6 +55,10 @@ import { Input } from '@/components/ui/input';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VipBadge } from '@/components/vip-badge';
+import { RoomBanners } from "@/components/room-banners";
+import { RoomSupportDialog } from "@/components/room-support-dialog";
+import { RoomLuckySpinDialog } from "@/components/room-lucky-spin-dialog";
+import { RoomGoldenChestDialog } from "@/components/room-golden-chest-dialog";
 import { MountOverlay, MountEntry } from '@/components/mount-overlay';
 import {
   Dialog,
@@ -286,6 +290,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
+  const [isRoomSupportOpen, setIsRoomSupportOpen] = useState(false);
+  const [isSpinOpen, setIsSpinOpen] = useState(false);
+  const [isChestOpen, setIsChestOpen] = useState(false);
   const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -2150,7 +2157,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     isRoomTasksOpen || isUserProfileCardOpen || isRoomSettingsOpen || 
     isRoomInfoOpen || isUserListOpen || isShareOpen || isSeatMenuOpen || 
     isRoomPlayOpen || isRoomGamesOpen || isMessagesOpen || isFollowersOpen || 
-    isAudienceInviteOpen || showExitDialog || showMicInviteDialog || showSoundboard;
+    isAudienceInviteOpen || showExitDialog || showMicInviteDialog || showSoundboard ||
+    isRoomSupportOpen || isSpinOpen || isChestOpen;
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
@@ -2177,6 +2185,21 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         claimedTasks={claimedTasks}
         onClaim={claimTask}
         totalRoomGifts={room.stats?.totalGifts || 0}
+      />
+      <RoomSupportDialog
+        open={isRoomSupportOpen}
+        onOpenChange={setIsRoomSupportOpen}
+        roomStats={room.stats}
+        visitorCount={onlineCount}
+        levelPoints={room.levelPoints || 0}
+      />
+      <RoomLuckySpinDialog
+        open={isSpinOpen}
+        onOpenChange={setIsSpinOpen}
+      />
+      <RoomGoldenChestDialog
+        open={isChestOpen}
+        onOpenChange={setIsChestOpen}
       />
 
       <audio 
@@ -2259,6 +2282,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       {showSoundboard && (
         <div className="fixed inset-x-0 bottom-24 px-6 z-50 animate-in slide-in-from-bottom-10 duration-300">
           <RoomSoundboard onTrigger={handleSfxTrigger} />
+        </div>
+      )}
+
+      {/* FLOAT-RIGHT EVENT BANNERS: HAZA STYLE */}
+      {!isAnyDialogShowing && (
+        <div className="absolute right-3 bottom-[270px] z-40 animate-in fade-in slide-in-from-right-4 duration-700">
+          <RoomBanners 
+            onOpenSupport={() => setIsRoomSupportOpen(true)}
+            onOpenSpin={() => setIsSpinOpen(true)}
+            onOpenChest={() => setIsChestOpen(true)}
+          />
         </div>
       )}
 
@@ -2354,34 +2388,20 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <div className="flex-1 w-full overflow-hidden mt-0.5 relative flex flex-col">
           <ScrollArea className="flex-1 w-full max-w-[75%] px-3">
             <div className="flex flex-col gap-1.5 py-2 justify-start min-h-full pb-32">
-              {/* PREMIUM SYSTEM ANNOUNCEMENT BANNER - TRANSPARENT & NORMAL FONT (Wafa-style) */}
+              {/* SLIM SYSTEM ANNOUNCEMENT: COMPACT & LOW-PROFILE */}
               {(globalConfig?.globalAnnouncement || room.announcement) &&
                 (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < (sessionJoinTime || new Date())) && (
-                  <div className="flex flex-col gap-1 mb-4 px-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-700">
-                    <div className="relative overflow-hidden bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-4">
-                      <div className="space-y-4">
-                        {globalConfig?.globalAnnouncement && (
-                          <div className="flex items-start gap-2.5">
-                            <div className="mt-1 bg-red-500 text-white text-[7px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0 flex items-center gap-0.5">
-                              <Zap className="h-2 w-2 fill-current" />
-                              OFFICIAL
-                            </div>
-                            <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
-                              {globalConfig.globalAnnouncement}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className={cn("flex items-start gap-2.5 pt-2", globalConfig?.globalAnnouncement && "border-t border-white/5")}>
-                          <div className="mt-1 bg-yellow-500 text-black text-[7px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0">
-                            INFO
-                          </div>
-                          <p className="text-[12px] font-normal text-white/90 leading-snug tracking-tight">
-                            {room.announcement || "Welcome to the tribe!"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex flex-col gap-1 mb-3 px-3 py-1.5 mx-3 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 animate-in fade-in slide-in-from-top-2 duration-700 shadow-xl">
+                    {globalConfig?.globalAnnouncement && (
+                      <p className="text-[11px] font-bold text-white leading-tight tracking-tight">
+                        {globalConfig.globalAnnouncement}
+                      </p>
+                    )}
+                    {room.announcement && (
+                      <p className="text-[11px] font-medium text-white/80 leading-tight tracking-tight">
+                        {room.announcement}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -2652,7 +2672,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <button
           onClick={() => setShowMiniPlayer(true)}
           className={cn(
-            "fixed right-4 bottom-[185px] z-40 p-1 rounded-[1.25rem] transition-all active:scale-95 animate-bounce-slow",
+            "fixed right-4 bottom-[165px] z-40 p-1 rounded-[1.25rem] transition-all active:scale-95 animate-bounce-slow",
             "bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-[0_0_20px_rgba(59,130,246,0.6)] border border-blue-400/50"
           )}
         >
