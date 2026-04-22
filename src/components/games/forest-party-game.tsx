@@ -1,16 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
  useUser, 
  useFirestore, 
  updateDocumentNonBlocking, 
  useDoc, 
  useMemoFirebase, 
- addDocumentNonBlocking 
+ addDocumentNonBlocking,
+ useCollection 
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection } from 'firebase/firestore';
+import { 
+  doc, 
+  increment, 
+  serverTimestamp, 
+  getDoc, 
+  collection,
+  query, 
+  where, 
+  orderBy, 
+  limit 
+} from 'firebase/firestore';
 import { 
  Volume2, 
  VolumeX, 
@@ -29,7 +40,7 @@ const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
   { id: 'cow', emoji: '🐼', multiplier: 5, label: 'x5', pos: 'right', index: 2 },
-  { id: 'dog', emoji: '🦓', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
+  { id: 'dog', emoji: '🐻‍❄️', multiplier: 5, label: 'x5', pos: 'bottom-right', index: 3 },
   { id: 'fox', emoji: '🦊', multiplier: 10, label: 'x10', pos: 'bottom', index: 4 },
   { id: 'bear', emoji: '🐻', multiplier: 15, label: 'x15', pos: 'bottom-left', index: 5 },
   { id: 'tiger', emoji: '🐯', multiplier: 25, label: 'x25', pos: 'left', index: 6 },
@@ -65,6 +76,9 @@ const formatKandM = (num: number) => {
 };
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
+ // --- LOADING STATE ---
+ const [isLoading, setIsLoading] = useState(true);
+ 
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -97,6 +111,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
+ // Real-time Winner Data logic
+ const winnersQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'globalGameWins'), 
+      where('gameId', '==', 'forest-party'), 
+      orderBy('timestamp', 'desc'),           
+      limit(5)                                
+    );
+ }, [firestore]);
+  
+ const { data: liveWins } = useCollection(winnersQuery);
+  
+ const winnersList = useMemo(() => {
+    return liveWins?.map(w => ({
+      name: w.username,
+      win: w.amount,
+      avatar: w.avatarUrl,
+      isMe: w.userId === currentUser?.uid
+    })) || [];
+ }, [liveWins, currentUser]);
+
  const myBetsRef = useRef(myBets);
  const isMountedRef = useRef(true);
  const chaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -111,6 +147,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
     myBetsRef.current = myBets;
  }, [myBets]);
+
+ // Loader timer
+ useEffect(() => {
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 2000); // 2 Seconds Loading
+    return () => clearTimeout(timer);
+ }, []);
 
  useEffect(() => {
     isMountedRef.current = true;
@@ -266,21 +310,30 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setHistory(prev => [historyItem, ...prev].slice(0, 15));
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🦓🦝🐔'; 
+  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
+
   if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
+   
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-    gameId: 'forest-party',
+    gameId: 'forest-party', 
     userId: currentUser.uid,
     username: userProfile?.username || 'Guest',
     avatarUrl: userProfile?.avatarUrl || null,
     amount: winAmount,
     timestamp: serverTimestamp()
    });
+
+   const userRef = doc(firestore, 'users', currentUser.uid);
+   updateDocumentNonBlocking(userRef, {
+     'stats.totalWins': increment(winAmount),
+     updatedAt: serverTimestamp()
+   });
   }
+
   winnerTimeoutRef.current = setTimeout(() => {
    if (!isMountedRef.current) return;
    setWinnerData(null);
@@ -382,6 +435,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return highlightIdx === idx;
  };
 
+ // --- RENDER LOADING PAGE ---
+ if (isLoading) {
+    return (
+        <div className="h-[66vh] my-auto w-full flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
+            <div className="w-12 h-12 border-4 border-gray-100 border-t-orange-500 rounded-full animate-spin mb-4 shadow-sm" />
+            <h2 className="text-2xl font-black text-gray-800 tracking-widest uppercase">Ummy</h2>
+        </div>
+    );
+ }
+
+ // --- RENDER ACTUAL GAME ---
  return (
   <motion.div 
     drag
@@ -422,31 +486,74 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
        <AnimatePresence>
         {winnerData && (
-          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[210] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none p-6 flex flex-col items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-              <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-2 shrink-0" />
-              <div className="flex-1 flex flex-col items-center justify-center w-full gap-4">
-                 <div className="flex items-center gap-6">
+          <motion.div 
+            initial={{ y: "100%" }} 
+            animate={{ y: 0 }} 
+            exit={{ y: "100%" }} 
+            className="fixed bottom-0 left-0 right-0 z-[210] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-t-[32px] p-5 flex flex-col items-center shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6"
+          >
+              <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-4 shrink-0" />
+              
+              <div className="w-full flex items-center justify-between bg-orange-100/50 p-4 rounded-2xl border border-orange-200 mb-5 shadow-sm">
+                 <div className="flex flex-col items-center justify-center pl-2">
                     <div className="relative">
                       <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30 animate-pulse" />
-                      <div className="relative text-7xl filter drop-shadow-md">{winnerData.emoji}</div>
+                      <div className="relative text-6xl filter drop-shadow-md">{winnerData.emoji}</div>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-orange-400 uppercase tracking-widest">Winning Amount</span>
-                      <div className="flex items-center gap-1.5">
-                        <GoldCoinIcon className="h-6 w-6 filter drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)] brightness-110" />
-                        <span className="text-4xl font-black text-[#4a2511] tabular-nums">+{formatKandM(winnerData.win)}</span>
-                      </div>
+                    <span className="text-[10px] font-black text-orange-500 uppercase mt-1 tracking-wider">Winner</span>
+                 </div>
+                 
+                 <div className="flex flex-col items-end gap-2 pr-2">
+                    <div className="flex flex-col items-end">
+                       <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">My Win</span>
+                       <div className="flex items-center gap-1.5">
+                         <GoldCoinIcon className="h-5 w-5 filter drop-shadow-md" />
+                         <span className="text-2xl font-black text-emerald-600 tabular-nums">+{formatKandM(winnerData.win)}</span>
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                       <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">My Bet Amount</span>
+                       <span className="text-sm font-black text-[#4a2511] tabular-nums">{formatKandM(winnerData.bet)}</span>
                     </div>
                  </div>
-                 <div className="w-full grid grid-cols-2 gap-3 mt-2">
-                    <div className="bg-orange-100/50 rounded-2xl p-3 border border-orange-200 flex flex-col items-center">
-                       <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter">Your Total Bet</span>
-                       <span className="text-lg font-black text-[#4a2511]">{formatKandM(winnerData.bet)}</span>
-                    </div>
-                    <div className="bg-orange-500 rounded-2xl p-3 shadow-lg flex flex-col items-center justify-center">
-                       <span className="text-[9px] font-black text-white/80 uppercase tracking-tighter">Status</span>
-                       <span className="text-lg font-black text-white uppercase italic">{winnerData.win > 0 ? 'Winner' : 'Try Again'}</span>
-                    </div>
+              </div>
+
+              <div className="w-full flex flex-col items-center">
+                 <span className="text-[10px] font-black text-[#4a2511]/60 uppercase tracking-widest mb-3">Top Winners</span>
+                 
+                 <div className="flex items-end justify-center gap-6 w-full h-[90px]">
+                    {winnersList[1] ? (
+                       <div className="flex flex-col items-center relative pb-2 opacity-90">
+                          <div className="absolute -top-2.5 z-10 bg-gradient-to-r from-gray-300 to-gray-400 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#2</div>
+                          <div className="w-12 h-12 rounded-full border-[3px] border-gray-300 shadow-[0_0_10px_rgba(192,192,192,0.6)] overflow-hidden bg-white/50">
+                             <img src={winnersList[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[1].name}`} alt="user" className="w-full h-full object-cover" />
+                          </div>
+                          <span className="text-[9px] font-bold mt-1 text-[#4a2511] truncate w-14 text-center">{winnersList[1].name}</span>
+                          <span className="text-[8px] text-orange-600 font-bold">{formatKandM(winnersList[1].win)}</span>
+                       </div>
+                    ) : <div className="w-12" />}
+
+                    {winnersList[0] ? (
+                       <div className="flex flex-col items-center relative z-20">
+                          <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4a2511] text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md border border-white/50">#1</div>
+                          <div className="w-16 h-16 rounded-full border-[4px] border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)] overflow-hidden bg-white/50 animate-pulse">
+                             <img src={winnersList[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[0].name}`} alt="user" className="w-full h-full object-cover" />
+                          </div>
+                          <span className="text-[10px] font-black mt-1 text-[#4a2511] truncate w-16 text-center">{winnersList[0].name}</span>
+                          <span className="text-[9px] text-orange-600 font-bold">{formatKandM(winnersList[0].win)}</span>
+                       </div>
+                    ) : <div className="w-16" />}
+
+                    {winnersList[2] ? (
+                       <div className="flex flex-col items-center relative pb-3 opacity-80">
+                          <div className="absolute -top-2 z-10 bg-gradient-to-r from-[#CD7F32] to-[#A0522D] text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
+                          <div className="w-10 h-10 rounded-full border-[3px] border-[#CD7F32] shadow-[0_0_10px_rgba(205,127,50,0.6)] overflow-hidden bg-white/50">
+                             <img src={winnersList[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[2].name}`} alt="user" className="w-full h-full object-cover" />
+                          </div>
+                          <span className="text-[8px] font-bold mt-1 text-[#4a2511] truncate w-12 text-center">{winnersList[2].name}</span>
+                          <span className="text-[7px] text-orange-600 font-bold">{formatKandM(winnersList[2].win)}</span>
+                       </div>
+                    ) : <div className="w-10" />}
                  </div>
               </div>
           </motion.div>
@@ -517,9 +624,32 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   const animal = ANIMALS.find(a => a.id === h.id);
                   return (
                     <div key={i} className="flex flex-col items-center gap-0.5 shrink-0">
-                      <span className="text-base filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
+                      {h.type === 'single' ? (
+                        <span className="text-base filter drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
+                      ) : (
+                        <div className="relative w-[22px] h-[22px] rounded-full flex flex-col items-center justify-center bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border border-[#eebb99] overflow-hidden shadow-sm">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/50 to-white/5 rounded-full pointer-events-none z-0" />
+                            <div className="grid grid-cols-2 gap-x-[1px] gap-y-[1px] justify-center items-center z-10">
+                                {h.type === 'left' ? (
+                                    <>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🦁</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐯</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🦊</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐻</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐰</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐻‍❄️a</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🦝</span>
+                                        <span className="text-[5px] filter drop-shadow-sm leading-none text-center">🐔</span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                      )}
                       {h.type !== 'single' && (
-                        <span className="text-[6px] font-black uppercase text-yellow-400 bg-yellow-900/40 px-1 rounded-full border border-yellow-400/20">Mix</span>
+                        <span className="text-[5px] font-black uppercase text-yellow-400 bg-yellow-900/40 px-[3px] py-[1px] rounded-full border border-yellow-400/20 leading-none tracking-tight">Mix</span>
                       )}
                     </div>
                   )
@@ -529,10 +659,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
-        
-        {/* Update 1: LEFT MIX CARD - Updated Grid Layout */}
         <div className={cn(
-            "absolute top-[6%] left-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
+            "absolute top-[3.5%] left-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
                 ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 animate-pulse bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
                 : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)]"
@@ -547,9 +675,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
-        {/* Update 2: RIGHT MIX CARD - Updated Grid Layout */}
         <div className={cn(
-            "absolute top-[6%] right-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
+            "absolute top-[3.5%] right-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
                 ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 animate-pulse bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
                 : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_4px_6px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.2)]"
@@ -557,7 +684,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/50 to-white/5 rounded-full pointer-events-none z-0" />
             <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐰</span>
-                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦓</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦝</span>
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
@@ -619,7 +746,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         </motion.div>
                     ))}
                 </AnimatePresence>
-                {/* Update 3: PATTLI PATTI for Bet Amount */}
                 {myBets[item.id] > 0 && (
                     <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-[#4a2511] text-[8px] font-black px-2.5 py-[2px] rounded-sm border border-white z-[60] shadow-md whitespace-nowrap tracking-tight">
                         {myBets[item.id] >= 1000 ? (myBets[item.id]/1000)+'K' : myBets[item.id]}
@@ -681,4 +807,3 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
-
