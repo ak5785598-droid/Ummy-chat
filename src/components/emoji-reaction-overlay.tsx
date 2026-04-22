@@ -7,22 +7,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Emoji3DRenderer = ({ type }: { type: string }) => {
   const defs = (
     <defs>
-      <radialGradient id="emojiHDGrad" cx="35%" cy="30%" r="75%">
-        <stop offset="0%" stopColor="#FFF9C4" />
-        <stop offset="40%" stopColor="#FFD600" />
+      {/* Shining hata di gayi hai, ab smooth 3D base hai */}
+      <radialGradient id="emojiHDGrad" cx="30%" cy="30%" r="70%">
+        <stop offset="0%" stopColor="#FFC107" />
+        <stop offset="40%" stopColor="#FF9800" />
         <stop offset="85%" stopColor="#F57C00" />
         <stop offset="100%" stopColor="#E65100" />
       </radialGradient>
-      <radialGradient id="angerGrad" cx="50%" cy="40%" r="70%">
-        <stop offset="0%" stopColor="#FF5252" />
+      
+      <radialGradient id="angerGrad" cx="30%" cy="30%" r="70%">
+        <stop offset="0%" stopColor="#F44336" />
         <stop offset="100%" stopColor="#B71C1C" />
       </radialGradient>
-      <radialGradient id="tearGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#E1F5FE" />
-        <stop offset="100%" stopColor="#29B6F6" />
+      
+      <radialGradient id="tearGrad" cx="30%" cy="30%" r="70%">
+        <stop offset="0%" stopColor="#81D4FA" />
+        <stop offset="100%" stopColor="#0277BD" />
       </radialGradient>
+
+      {/* Yeh naya gradient Glossy 3D effect ke liye add kiya hai */}
+      <linearGradient id="glossyHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+      </linearGradient>
+
       <filter id="3dShadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.4"/>
+        <feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity="0.4"/>
       </filter>
     </defs>
   );
@@ -30,7 +40,8 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
   const FaceBase = ({ fill = "url(#emojiHDGrad)", anger = false }) => (
     <g filter="url(#3dShadow)">
       <circle cx="50" cy="50" r="47" fill={fill} stroke={anger ? "#B71C1C" : "#E65100"} strokeWidth="0.5" />
-      <ellipse cx="35" cy="25" rx="15" ry="10" fill="white" fillOpacity="0.3" />
+      {/* Ye glossy ellipse ek premium 3D shine dega bina ajeeb lage */}
+      <ellipse cx="50" cy="18" rx="28" ry="10" fill="url(#glossyHighlight)" />
     </g>
   );
 
@@ -119,6 +130,7 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full" style={{ transform: isRight ? 'scaleX(-1)' : 'none' }}>
           {defs}
           <FaceBase fill="url(#angerGrad)" anger />
+          <path d="M 22 45 L 42 50 M 78 45 L 58 50" stroke="#3E2723" strokeWidth="4" strokeLinecap="round" />
           <motion.g animate={{ rotate: [0, 45, -10, 0] }} transition={{ duration: 0.4, repeat: Infinity }} style={{ originX: "50px", originY: "50px" }}>
             <rect x="75" y="15" width="22" height="14" rx="2" fill="#424242" />
             <rect x="84" y="29" width="5" height="18" rx="1" fill="#795548" />
@@ -169,11 +181,13 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
       return (
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
-          <FaceBase fill="url(#angerGrad)" anger />
-          <motion.path d="M 20 35 L 45 42 M 80 35 L 55 42" stroke="black" strokeWidth="6" strokeLinecap="round" animate={{ y: [-2, 2] }} transition={{ repeat: Infinity, duration: 0.3 }} />
-          <circle cx="35" cy="52" r="7" fill="white" /><circle cx="35" cy="52" r="3" fill="black" />
-          <circle cx="65" cy="52" r="7" fill="white" /><circle cx="65" cy="52" r="3" fill="black" />
-          <path d="M 30 82 Q 50 65 70 82" stroke="black" strokeWidth="5" fill="none" strokeLinecap="round" />
+          <motion.g animate={{ x: [-3, 3, -3, 3, 0], y: [-2, 2, -1, 1, 0] }} transition={{ repeat: Infinity, duration: 0.15 }}>
+            <FaceBase fill="url(#angerGrad)" anger />
+            <path d="M 20 35 L 45 42 M 80 35 L 55 42" stroke="black" strokeWidth="6" strokeLinecap="round" />
+            <circle cx="35" cy="52" r="7" fill="white" /><circle cx="35" cy="52" r="3" fill="black" />
+            <circle cx="65" cy="52" r="7" fill="white" /><circle cx="65" cy="52" r="3" fill="black" />
+            <path d="M 30 82 Q 50 65 70 82" stroke="black" strokeWidth="5" fill="none" strokeLinecap="round" />
+          </motion.g>
         </svg>
       );
 
@@ -182,8 +196,13 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           {defs}
           <FaceBase />
-          <path d="M 15 50 H 48 V 62 Q 32 67 15 62 Z M 52 50 H 85 V 62 Q 68 67 52 62 Z" fill="#212121" />
           <path d="M 30 80 Q 50 90 70 80" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round" />
+          <motion.g 
+            animate={{ y: [-60, 0, -10, 0] }} 
+            transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
+          >
+            <path d="M 15 50 H 48 V 62 Q 32 67 15 62 Z M 52 50 H 85 V 62 Q 68 67 52 62 Z" fill="#212121" />
+          </motion.g>
         </svg>
       );
 
@@ -239,4 +258,4 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | 
       </AnimatePresence>
     </div>
   );
-          }
+}
