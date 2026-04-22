@@ -10,7 +10,7 @@ import {
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 
-// --- ULTRA HD 3D EMOJI DESIGNS ---
+// --- ULTRA HD 3D EMOJI DESIGNS (UNTOUCHED) ---
 const EmojiHD = ({ type }: { type: string }) => {
   const defs = (
     <defs>
@@ -244,11 +244,29 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
       {/* Visual Top Handle */}
       <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
       
-      <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-       <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
+      <DialogHeader className="p-4 pb-0 text-left flex-shrink-0">
+       <div className="flex items-center gap-3 ml-2">
+         {/* 😃 Smiley SVG Icon */}
+         <svg width="32" height="32" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="#FFD54F" stroke="#E65100" strokeWidth="2"/>
+            <circle cx="35" cy="40" r="5" fill="#3E2723"/>
+            <circle cx="65" cy="40" r="5" fill="#3E2723"/>
+            <path d="M 30 65 Q 50 80 70 65" stroke="#3E2723" strokeWidth="4" fill="none" strokeLinecap="round"/>
+         </svg>
+
+         {/* Star Icon with Eyes and Mouth (Custom SVG) */}
+         <svg width="36" height="36" viewBox="0 0 100 100">
+            <path d="M 50 5 L 63 38 L 98 38 L 70 58 L 80 95 L 50 75 L 20 95 L 30 58 L 2 38 L 37 38 Z" fill="#FFD54F" stroke="#E65100" strokeWidth="2" />
+            <circle cx="42" cy="48" r="3.5" fill="#3E2723"/>
+            <circle cx="58" cy="48" r="3.5" fill="#3E2723"/>
+            <path d="M 44 62 Q 50 66 56 62" stroke="#3E2723" strokeWidth="2" fill="none" strokeLinecap="round"/>
+         </svg>
+       </div>
+       {/* Hidden Title for Accessibility but removed from visual UI */}
+       <DialogTitle className="sr-only">Emoji Picker</DialogTitle>
       </DialogHeader>
 
-      {/* Grid Container - Fixed height for 9 Emojis view, scrollable for others */}
+      {/* Grid Container (REACTIONS Logic untouched) */}
       <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
         <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
           {REACTIONS.map((item) => (
