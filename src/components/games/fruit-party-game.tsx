@@ -4,15 +4,43 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Trophy, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Trophy, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
-// --- LOADING PAGE COMPONENT ---
+// --- 1. Floating Animation Variants ---
+const floatingVariants = {
+  initial: { 
+    opacity: 0, 
+    scale: 0.9, 
+    y: 20,
+    rotate: 0 
+  },
+  animate: { 
+    opacity: 1, 
+    scale: 1, 
+    y: [0, -15, 0], 
+    rotate: [-0.5, 0.5, -0.5], 
+    transition: {
+      y: {
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeInOut"
+      },
+      rotate: {
+        duration: 5,
+        repeat: Infinity,
+        ease: "easeInOut"
+      },
+      opacity: { duration: 0.4 },
+      scale: { duration: 0.4 }
+    }
+  }
+};
+
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    // REMOVED: rounded-t-[3.5rem] and border-t-8 border-yellow-500
     className="h-[80vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
@@ -71,10 +99,11 @@ const CHIPS_DATA = [
   { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
-export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
+export default function CarnivalFoodParty({ onClose, isOverlay = true }: { onClose?: () => void, isOverlay?: boolean }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
+  const dragControls = useDragControls(); // Drag handler state
 
   const [isLoading, setIsLoading] = useState(true);
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
@@ -158,9 +187,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
     setLocalCoins(prev => prev - selectedChip);
     
-    // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
-    const userProfileRef = doc(firestore, currentUser!.uid, "profile", currentUser!.uid);
-    // Note: The doc ref above is actually from 'users' collection in firestore structure
     const fullRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
     updateDocumentNonBlocking(fullRef, { 'wallet.coins': increment(-selectedChip) });
   };
@@ -207,7 +233,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setLocalCoins(prev => prev + winAmount);
       setTodayWins(prev => prev + winAmount);
       
-      // FIX: Path was /users/{uid}, should be /users/{uid}/profile/{uid}
       const userProfileRef = doc(firestore, 'users', currentUser!.uid, 'profile', currentUser!.uid);
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
     }
@@ -225,9 +250,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   return (
-    // REMOVED bg-black/60 (dark blur) and added bg-black/10 for a very clean, clear top view
-    <div className="fixed inset-0 bg-black/10 flex flex-col justify-end z-[100]">
-      <div className="flex-1" onClick={onClose} />
+    <div className="fixed inset-0 bg-black/10 flex flex-col justify-end z-[100] items-center p-4">
+      <div className="absolute inset-0" onClick={onClose} />
 
       <AnimatePresence mode="wait">
         {isLoading ? (
@@ -235,16 +259,36 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         ) : (
           <motion.div 
             key="game"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            // REMOVED: rounded-t-[3.5rem] and border-t-8 border-yellow-500
-            className="h-[80vh] w-full bg-[#020617] relative overflow-hidden flex flex-col items-center"
-            style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
+            drag
+            dragControls={dragControls}
+            dragListener={false}
+            dragMomentum={false}
+            variants={floatingVariants}
+            initial="initial"
+            animate="animate"
+            whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }} 
+            className={cn(
+              "h-fit max-h-[90vh] w-full max-w-lg flex flex-col relative overflow-hidden bg-[#020617] rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+              !isOverlay && "min-h-screen"
+            )}
+            style={{ 
+              backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}
           >
             
             {/* HEADER */}
             <div className="w-full flex flex-col z-20">
               <div className="w-full p-4 flex justify-between items-center relative">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {/* --- DRAG HANDLE ICON (4-direction arrow) --- */}
+                  <button 
+                    onPointerDown={(e) => dragControls.start(e)}
+                    className="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white cursor-grab active:cursor-grabbing"
+                  >
+                    <Move className="w-5 h-5" />
+                  </button>
+
                   <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-8 min-w-[120px]">
                     <div className="absolute -left-1 w-10 h-10 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
                       <span className="text-xl drop-shadow-md">🪙</span>
@@ -405,7 +449,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {gameState === 'result' && winnerData && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  // REMOVED curve to match square theme
                   className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] border-t-[12px] border-[#0284c7] z-[200] flex flex-col items-center justify-center shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
                 >
                   <div className="absolute -top-10 bg-yellow-400 p-4 rounded-full border-4 border-white shadow-lg">
@@ -431,7 +474,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {showRules && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  // REMOVED curve to match square theme
                   className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]"
                 >
                   <div className="relative flex items-center justify-center w-full mb-6">
@@ -455,7 +497,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               {showHistoryPage && (
                 <motion.div 
                   initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                  // REMOVED curve to match square theme
                   className="absolute bottom-0 left-0 right-0 h-[60vh] bg-[#0ea5e9] border-t-[10px] border-[#0284c7] z-[400] flex flex-col shadow-[0_-20px_60px_rgba(0,0,0,0.6)]"
                 >
                    <div className="p-6 flex items-center justify-between relative">
@@ -502,3 +543,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     </div>
   );
 }
+
