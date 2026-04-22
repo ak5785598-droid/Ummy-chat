@@ -51,6 +51,7 @@ const SOUNDS = {
   WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3',
 };
 
+// --- MULTIPLIERS UPDATED AS PER REQUEST ---
 const ITEMS = [
   { id: 'broccoli', icon: '🥦', multiplier: 10 },
   { id: 'lettuce', icon: '🥬', multiplier: 15 },
@@ -70,14 +71,13 @@ const CHIPS_DATA = [
   { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
-// --- UPDATED VARIANTS: Automatic Floating Hata Diya Gaya Hai ---
 const floatingVariants = {
   initial: { opacity: 0, scale: 0.9, y: 20, rotate: 0 },
   animate: { 
     opacity: 1, 
     scale: 1, 
-    y: 0,        // Reset to 0 (No more floating arrays)
-    rotate: 0,   // Reset to 0 (No more rotating arrays)
+    y: 0,        
+    rotate: 0,   
     transition: {
       duration: 0.4,
       ease: "easeOut"
@@ -94,7 +94,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   const [isLoading, setIsLoading] = useState(true);
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
-  const [selectedChip, setSelectedChip] = useState(100);
+  const [selectedChip, setSelectedChip] = useState(1000); 
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   
   const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
@@ -106,7 +106,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   const [todayWins, setTodayWins] = useState(0); 
   const [history, setHistory] = useState(['🍎', '🍊', '🍇', '🥦', '🥕']);
   const [historyData, setHistoryData] = useState<{ icon: string, bet: number, time: string }[]>([]);
-  const [floatingChips, setFloatingChips] = useState<{ id: string, itemId: string, color: string }[]>([]);
   
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [showRules, setShowRules] = useState(false);
@@ -188,7 +187,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     }
 
     let currentStep = 0;
-    const totalSteps = 40 + visualTargetIdx;
+    const totalSteps = 40 + visualTargetIdx; // Ensures it lands exactly on the targeted fruit
 
     const run = () => {
       setHighlightIdxs([currentStep % ITEMS.length]);
@@ -293,7 +292,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             <div className="w-full flex flex-col z-20">
               <div className="w-full p-4 flex justify-between items-center relative">
                 <div className="flex items-center gap-2">
-                  {/* DRAG BUTTON: Yahi se screen move hogi */}
                   <button 
                     onPointerDown={(e) => dragControls.start(e)}
                     className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white cursor-grab active:cursor-grabbing touch-none"
@@ -395,12 +393,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                         isHighlighted ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
                       )}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center flex-wrap gap-0.5 z-[60] pointer-events-none p-4">
-                        {floatingChips.filter(fc => fc.itemId === item.id).map(fc => (
-                          <motion.div key={fc.id} initial={{ y: -70, opacity: 0, scale: 0 }} animate={{ y: -20, opacity: 1, scale: 1 }} className={cn("w-4 h-4 rounded-full border border-white/50 bg-gradient-to-br shadow-sm", fc.color)} />
-                        ))}
-                      </div>
-
                       <div className="w-full flex-[1.2] flex items-center justify-center">
                         <span className="text-4xl drop-shadow-lg z-20">{item.icon}</span>
                       </div>
@@ -475,9 +467,10 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                        <span className="text-7xl">{winnerData.icon}</span>
                        {winnerData.isGroup && <span className="text-2xl self-end font-black text-yellow-500 animate-bounce">GROUP WIN!</span>}
                     </div>
-                    <span className="text-gray-800 font-black text-xl">🪙 {(winnerData.myBet || 0).toLocaleString()}</span>
+                    {/* Added Bet and Win texts clearly for the winner page as requested */}
+                    <span className="text-gray-800 font-black text-xl">Bet: 🪙 {(winnerData.myBet || 0).toLocaleString()}</span>
                     <div className="mt-2 bg-green-100 px-6 py-2 rounded-2xl border-2 border-green-500">
-                      <span className="text-green-600 font-black text-3xl">+{winnerData.win.toLocaleString()}</span>
+                      <span className="text-green-600 font-black text-3xl">Win: +{winnerData.win.toLocaleString()}</span>
                     </div>
                   </motion.div>
                 </motion.div>
@@ -524,4 +517,3 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     </div>
   );
 }
-
