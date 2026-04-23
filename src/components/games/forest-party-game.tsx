@@ -468,12 +468,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    <motion.div
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
    >
-       {/* Background Tree Height Updated */}
+       {/* Background Updated: No Tree Icons */}
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
           <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
-          <div className="absolute bottom-[-5%] left-[-5%] text-[66vh] leading-[1] drop-shadow-2xl opacity-40 select-none">🌲</div>
-          <div className="absolute bottom-[-5%] right-[-5%] text-[66vh] leading-[1] drop-shadow-2xl opacity-30 select-none">🌳</div>
        </div>
 
        <AnimatePresence mode="wait">
@@ -703,46 +701,33 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
 
         <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-          {/* YAHAN PE UPDATES HUE HAIN - SIRF SVG KO MODIFY KIYA HAI */}
+          {/* UPDATED 3D GLOSSY CONNECTING LINES */}
           <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
             <defs>
                 <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="3" stdDeviation="2" floodOpacity="0.7"/>
+                  <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.8"/>
                 </filter>
+                <linearGradient id="glossyGold" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#8b4513" />
+                  <stop offset="50%" stopColor="#f4d4b8" />
+                  <stop offset="100%" stopColor="#8b4513" />
+                </linearGradient>
             </defs>
             {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
               <g key={deg} transform={`rotate(${deg} 50 50)`}>
-                {/* Original Connecting Lines */}
-                <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
-                <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
-                
-                {/* Lipti hui dark green bel (Vine wrapping) */}
-                <path 
-                   d="M 50 48 Q 42 43 50 38 T 50 28 T 50 18 T 50 13" 
-                   fill="none" 
-                   stroke="#14532d" 
-                   strokeWidth="2.5" 
-                   strokeLinecap="round" 
-                   filter="url(#shadow3D)"
-                />
-                <path 
-                   d="M 50 45 Q 58 40 50 35 T 50 25 T 50 15 T 50 12" 
-                   fill="none" 
-                   stroke="#166534" 
-                   strokeWidth="1.5" 
-                   strokeLinecap="round" 
-                />
-
-                {/* Chhote chhote leaves (Tiny Patte) */}
-                <path d="M 46 43 Q 42 40 46 37 Q 49 40 46 43 Z" fill="#22c55e" />
-                <path d="M 54 30 Q 58 27 54 24 Q 51 27 54 30 Z" fill="#4ade80" />
-                <path d="M 46 20 Q 42 17 46 14 Q 49 17 46 20 Z" fill="#15803d" />
+                {/* Base Shadow Line */}
+                <line x1="50" y1="50" x2="50" y2="13" stroke="rgba(0,0,0,0.5)" strokeWidth="10" strokeLinecap="round" filter="url(#shadow3D)" />
+                {/* 3D Border Line */}
+                <line x1="50" y1="50" x2="50" y2="13" stroke="#5d2e14" strokeWidth="8" strokeLinecap="round" />
+                {/* Main Glossy Line */}
+                <line x1="50" y1="50" x2="50" y2="13" stroke="url(#glossyGold)" strokeWidth="5" strokeLinecap="round" />
+                {/* Top Shine Highlight */}
+                <line x1="50.5" y1="50" x2="50.5" y2="13" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
               </g>
             ))}
           </svg>
-          {/* UPDATES END YAHAN */}
 
-          {/* 3D Glossy Shining Countdown Updated */}
+          {/* 3D Glossy Shining Countdown */}
           <div className={cn(
             "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 overflow-hidden", 
             gameState === 'spinning' 
@@ -805,6 +790,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
        </main>
 
+       {/* Bottom Chips Section */}
        <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center justify-start gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-t-[32px]">
           {CHIPS_DATA.map((chip) => (
               <button
@@ -854,3 +840,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
