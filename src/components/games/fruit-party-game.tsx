@@ -12,7 +12,7 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[75vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
+    className="h-[70vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-t-none rounded-b-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
@@ -260,8 +260,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             animate="animate"
             whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
             className={cn(
-              "h-[75vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-t-none rounded-b-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
-              !isOverlay && "min-h-[75vh]"
+              "h-[70vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-t-none rounded-b-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+              !isOverlay && "min-h-[70vh]"
             )}
             style={{ 
               backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)',
@@ -292,8 +292,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 </div>
 
                 <div className="flex items-center gap-2 relative">
-                   {/* Top Right Cloud Replaced with ☁️ */}
-                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)] text-xl">
+                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)] text-4xl">
                      ☁️
                   </div>
                   {[ 
@@ -313,13 +312,12 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
                   <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
-                {/* Cloud below Trophy */}
-                <div className="absolute -bottom-4 left-6 text-sm opacity-80 pointer-events-none">☁️</div>
+                <div className="absolute -bottom-6 left-6 text-3xl opacity-80 pointer-events-none">☁️</div>
               </div>
             </div>
 
             {/* BOARD AREA */}
-            <div className="relative w-full flex-1 flex items-center justify-center scale-90 translate-y-2" style={{ perspective: '1000px' }}>
+            <div className="relative w-full flex-1 flex items-center justify-center scale-90 translate-y-12" style={{ perspective: '1000px' }}>
               <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
                 <defs>
                   <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -396,9 +394,9 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             {/* BOTTOM UI */}
             <div className="w-full px-4 mb-2 z-20 relative">
                <div className="flex justify-between px-1 mb-1 items-end relative">
-                {/* Cloud above Salad */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[10px] mb-[-4px] pointer-events-none opacity-80">☁️</span>
+                {/* UPGRADED CLOUDS: Moved higher with -translate-y-2 */}
+                <div className="flex flex-col items-center -translate-y-2">
+                  <span className="text-3xl mb-[-4px] pointer-events-none opacity-80">☁️</span>
                   <span className={cn(
                     "text-4xl transition-all duration-500",
                     shineType === 'salad' ? "scale-150 drop-shadow-[0_0_15px_rgba(34,197,94,0.8)] brightness-125" : ""
@@ -406,9 +404,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                     🥗
                   </span>
                 </div>
-                {/* Cloud above Pizza */}
-                <div className="flex flex-col items-center">
-                  <span className="text-[10px] mb-[-4px] pointer-events-none opacity-80">☁️</span>
+                <div className="flex flex-col items-center -translate-y-2">
+                  <span className="text-3xl mb-[-4px] pointer-events-none opacity-80">☁️</span>
                   <span className={cn(
                     "text-4xl transition-all duration-500",
                     shineType === 'pizza' ? "scale-150 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] brightness-125" : ""
@@ -425,7 +422,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               </div>
             </div>
 
-            {/* CHIPS AREA */}
+            {/* CHIPS AREA: Fixed Perfectly Circular Shape */}
             <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] pt-6 pb-8 z-20 border-t-4 border-[#f5d0a9] overflow-hidden">
                <div className="flex overflow-x-auto no-scrollbar px-6 gap-4 snap-x snap-mandatory">
                 {CHIPS_DATA.map(chip => (
@@ -433,7 +430,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                     key={chip.value}
                     onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "w-14 h-14 min-w-[56px] rounded-full flex items-center justify-center text-[10px] font-black transition-all relative shadow-[0_5px_0_rgba(0,0,0,0.6)] snap-center",
+                      "w-14 h-14 min-w-[56px] min-h-[56px] flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-black transition-all relative shadow-[0_5px_0_rgba(0,0,0,0.6)] snap-center aspect-square overflow-hidden",
                       selectedChip === chip.value ? "scale-110 -translate-y-2 opacity-100 ring-2 ring-white/50" : "opacity-80"
                     )}
                   >
@@ -479,10 +476,11 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                   <h2 className="text-white font-black text-2xl">RULES</h2>
                 </div>
                 <div className="text-white/95 font-semibold text-sm space-y-4">
-                  <p>1. Select Chip amount</p>
-                  <p>2. Put bets on Items</p>
+                  <p>1. Select Chip and put your Bet amount</p>
+                  <p>2. Put bets on Fruit Items Crad</p>
                   <p>3. Win Amount = Bet × Multiplier</p>
-                  <p className="text-yellow-200 font-bold">4. Special: Groups have a 2.5% chance to win together!</p>
+                  <p className="text-yellow-200 font-bold">4. Special: If Salad Shine So all 5time will be winner (Low Mix)!</p>
+                  <p className="text-yellow-200 font-bold">5. Special: If Pizza Shine So 10,15,25,45 time will be winner (High Mix)!</p>                       
                 </div>
               </motion.div>
             )}
@@ -512,4 +510,3 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     </div>
   );
 }
-
