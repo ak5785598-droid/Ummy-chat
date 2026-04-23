@@ -14,7 +14,8 @@ import {
   X,
   ChevronDown,
   Volume2,
-  VolumeX
+  VolumeX,
+  HelpCircle
 } from 'lucide-react';
 import { useChessEngine } from '@/hooks/use-chess-engine';
 import { useUser } from '@/firebase';
@@ -133,7 +134,20 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
   const rows = ['8', '7', '6', '5', '4', '3', '2', '1'];
   const cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
-  if (isLoading) return <div className="h-40 flex items-center justify-center bg-zinc-950 text-white">Loading Arena...</div>;
+  const BubbleButton = ({ children, onClick, onPointerDown, className }: any) => (
+    <button 
+      onClick={onClick}
+      onPointerDown={onPointerDown}
+      className={cn(
+        "w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-b from-white/20 to-transparent border border-white/30 shadow-[inset_0px_2px_4px_rgba(255,255,255,0.3)] backdrop-blur-sm active:scale-95 transition-all text-white",
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+
+  if (isLoading) return <div className="h-40 flex items-center justify-center bg-[#061635] text-white">Loading Arena...</div>;
 
   return (
     <motion.div 
@@ -143,61 +157,65 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
       dragMomentum={false}
       initial={isOverlay ? { y: '35%' } : {}}
       className={cn(
-        "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-zinc-950 text-white font-headline pb-4 rounded-[2.8rem] border border-white/10 shadow-2xl transition-all duration-300",
-        !isOverlay && "min-h-screen"
+        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden font-headline pb-1 rounded-[2rem] border border-white/10 shadow-2xl transition-all duration-300",
+        // Main Background changed to match Header Gradient
+        "bg-gradient-to-b from-[#0a2357] to-[#061635] text-white",
+        !isOverlay && "min-h-0" 
       )}
     >
-      {/* Header */}
-      <header className="relative z-50 flex items-center justify-between p-3 pt-6 shrink-0 bg-zinc-900/40 backdrop-blur-md">
+      {/* Header - Sticky Style */}
+      <header className="relative z-50 flex items-center justify-between px-4 py-3 shrink-0 border-b border-white/10 bg-white/5 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <button 
-            onPointerDown={(e) => dragControls.start(e)}
-            className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90 cursor-grab active:cursor-grabbing text-white/80"
-          >
-            <Move className="h-4.5 w-4.5" />
-          </button>
-          <button onClick={() => setIsMuted(!isMuted)} className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90">
-            {isMuted ? <VolumeX className="h-4.5 w-4.5 text-white/60" /> : <Volume2 className="h-4.5 w-4.5 text-white/80" />}
-          </button>
+          <BubbleButton onPointerDown={(e: any) => dragControls.start(e)} className="cursor-grab active:cursor-grabbing">
+            <Move className="h-5 w-5" />
+          </BubbleButton>
+          <BubbleButton onClick={() => setIsMuted(!isMuted)}>
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </BubbleButton>
+          <BubbleButton onClick={() => window.location.reload()}>
+            <RotateCcw className="h-5 w-5" />
+          </BubbleButton>
         </div>
         
-        <h2 className="text-sm font-black uppercase tracking-tighter italic flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" /> Chess Arena
-        </h2>
+        <div className="flex-1" />
 
-        <div className="flex items-center gap-1">
-           <button className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90">
-              <ChevronDown className="h-4.5 w-4.5 text-white/40" />
-            </button>
-            <button onClick={handleBack} className="p-2 hover:bg-red-500/20 rounded-xl transition-all bg-red-500/10 text-red-500 ml-1 border border-red-500/20 active:scale-90">
-              <X className="h-4.5 w-4.5" />
-            </button>
+        <div className="flex items-center gap-2">
+           <BubbleButton>
+              <HelpCircle className="h-5 w-5" />
+            </BubbleButton>
+            <BubbleButton>
+              <ChevronDown className="h-5 w-5" />
+            </BubbleButton>
+            <BubbleButton onClick={handleBack} className="bg-red-500/20 border-red-500/40">
+              <X className="h-5 w-5 text-red-100" />
+            </BubbleButton>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-6">
+      {/* Main Content Area - Logic preserved, backgrounds made glassmorphic */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col gap-4">
         
         {/* Opponent Panel */}
-        <div className="w-full flex items-center justify-between bg-zinc-900/50 p-3 rounded-2xl border border-white/5">
+        <div className="w-full flex items-center justify-between bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10">
            <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border border-white/10">
                 <AvatarImage src={myColor === 'w' ? gameState?.black?.avatarUrl : gameState?.white?.avatarUrl} />
                 <AvatarFallback><User className="w-5 h-5 opacity-40" /></AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-xs font-bold text-white/9w truncate max-w-[100px]">
+                <p className="text-xs font-bold text-white/90 truncate max-w-[100px]">
                   {myColor === 'w' ? (gameState?.black?.username || 'Waiting...') : (gameState?.white?.username || 'Waiting...')}
                 </p>
-                <p className="text-[8px] font-black uppercase text-zinc-500 tracking-widest">{myColor === 'w' ? 'Black' : 'White'}</p>
+                <p className="text-[8px] font-black uppercase text-blue-300/60 tracking-widest">{myColor === 'w' ? 'Black' : 'White'}</p>
               </div>
            </div>
-           <div className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest", gameState?.turn !== myColor ? "bg-green-500/20 text-green-400" : "bg-zinc-800 text-zinc-500")}>
+           <div className={cn("px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest", gameState?.turn !== myColor ? "bg-green-500/20 text-green-400" : "bg-white/5 text-zinc-400")}>
               {gameState?.turn !== myColor ? "Thinking..." : "Idle"}
            </div>
         </div>
 
         {/* The Chess Board */}
-        <div className="relative w-full aspect-square bg-zinc-900 p-1 rounded-xl shadow-2xl border-4 border-zinc-900">
+        <div className="relative w-full aspect-square bg-zinc-900/50 p-1 rounded-xl shadow-2xl border-4 border-zinc-900/80">
            <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
               {rows.map((row, i) => cols.map((col, j) => {
                 const square = `${col}${row}`;
@@ -230,7 +248,7 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
            {/* Overlays */}
            <AnimatePresence>
              {gameState?.status === 'checkmate' && (
-                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-lg">
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} className="absolute inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center rounded-lg">
                    <div className="bg-zinc-900 p-8 rounded-3xl border border-yellow-500/50 shadow-2xl flex flex-col items-center gap-4 text-center">
                       <Trophy className="w-16 h-16 text-yellow-500 animate-bounce" />
                       <h2 className="text-2xl font-black italic">CHECKMATE!</h2>
@@ -243,7 +261,7 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
         </div>
 
         {/* My Account Panel */}
-        <div className="w-full flex items-center justify-between bg-zinc-900 p-3 rounded-2xl border border-white/10 shadow-lg">
+        <div className="w-full flex items-center justify-between bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 shadow-lg mb-2">
            <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border border-primary/20">
                 <AvatarImage src={userProfile?.avatarUrl} />
@@ -253,7 +271,7 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
                 <p className="text-xs font-bold text-white uppercase italic truncate max-w-[100px]">{userProfile?.username || 'You'}</p>
                 <div className="flex items-center gap-1.5">
                    <div className={cn("w-1.5 h-1.5 rounded-full", isMyTurn ? "bg-green-500" : "bg-zinc-700")} />
-                   <p className="text-[8px] text-zinc-500 font-bold uppercase">{isMyTurn ? "Your Turn" : "Wait"}</p>
+                   <p className="text-[8px] text-zinc-400 font-bold uppercase">{isMyTurn ? "Your Turn" : "Wait"}</p>
                 </div>
               </div>
            </div>
@@ -262,31 +280,16 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
            </div>
         </div>
 
-        {/* Controls / Match Info */}
+        {/* Controls Logic */}
         <div className="space-y-4">
-           {!gameState || gameState.status === 'lobby' ? (
-             <div className="bg-zinc-900/50 rounded-2xl p-6 border border-zinc-800 flex flex-col items-center gap-4">
-                <Shield className="text-blue-500 w-8 h-8 opacity-40" />
+           {(!gameState || gameState.status === 'lobby') && (
+             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 flex flex-col items-center gap-4">
+                <Shield className="text-blue-400 w-8 h-8 opacity-40" />
                 {(!gameState) ? (
-                   <button onClick={() => startMatch(userProfile)} className="w-full h-14 bg-blue-600 text-white rounded-2xl font-black italic uppercase text-sm shadow-lg">START MATCH</button>
+                   <button onClick={() => startMatch(userProfile)} className="w-full h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black italic uppercase text-sm shadow-lg transition-colors">START MATCH</button>
                 ) : (
-                   <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest text-center animate-pulse">Waiting for opponent...</p>
+                   <p className="text-blue-200/50 text-[10px] uppercase font-bold tracking-widest text-center animate-pulse">Waiting for opponent...</p>
                 )}
-             </div>
-           ) : (
-             <div className="grid grid-cols-2 gap-3">
-                <div className="bg-zinc-900 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-                   <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest mb-1">Status</span>
-                   <span className={cn("text-xs font-black", game.isCheck() ? "text-yellow-500 animate-pulse" : "text-white/60")}>
-                      {game.isCheck() ? "⚠️ CHECK!" : "STEADY"}
-                   </span>
-                </div>
-                <button onClick={() => window.location.reload()} className="bg-zinc-900 p-4 rounded-2xl border border-white/5 flex flex-col items-center hover:bg-zinc-800 transition-colors">
-                   <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest mb-1">Action</span>
-                   <div className="flex items-center gap-2 text-white/60 text-xs font-black uppercase">
-                      <RotateCcw size={12} /> Sync
-                   </div>
-                </button>
              </div>
            )}
         </div>
