@@ -1,22 +1,19 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
-import { ItemPreview } from '@/components/item-preview';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
@@ -74,7 +71,7 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
-// --- STORE ITEMS (UPDATED WITH NEW WAVES) ---
+// --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 30, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 30, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -83,12 +80,13 @@ const STATIC_STORE_ITEMS = [
   { id: 'elite-mythic-gold', name: 'Mythic Gold Elite', type: 'Frame', price: 5000000, durationDays: 30, description: 'Ultimate multi-tiered golden aura.', icon: Crown, color: 'text-yellow-400' },
   { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 30, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
   { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 30, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
-  { id: 'w1', name: 'Ocean Waves', type: 'Wave', price: 5000, durationDays: 7, description: 'Dynamic blue voice frequency.', icon: Mic2, color: 'text-cyan-500' },
   
-  // --- NEW WAVES ADDED HERE ---
-  { id: 'w-sky', name: 'Sky Voice Wave', type: 'Wave', price: 9999, durationDays: 7, description: 'Premium blue circular voice frequency.', icon: Circle, color: 'text-blue-500' },
-  { id: 'w-butterfly', name: 'Butterfly Waves', type: 'Wave', price: 7999, durationDays: 7, description: 'Elegant purple rhythmic wave.', icon: Circle, color: 'text-purple-500' },
-  { id: 'w-wing', name: 'Wing', type: 'Wave', price: 49999, durationDays: 7, description: 'Elite pink wing pattern frequency.', icon: Circle, color: 'text-pink-500' },
+  // --- UPDATED NEW WAVES (3D GLOSSY DESIGN) ---
+  { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
+  { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
+  { id: 'w-vox', name: 'Vox', type: 'Wave', price: 30500, durationDays: 7, description: 'Crystal blue 3D glossy voice wave.', icon: Activity, color: 'text-blue-500' },
+  { id: 'w-reso', name: 'Reso', type: 'Wave', price: 20000, durationDays: 7, description: 'Neon green resonance 3D glossy wave.', icon: Activity, color: 'text-green-500' },
+  { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
 
 export default function StorePage() {
@@ -115,7 +113,6 @@ export default function StorePage() {
   }, [dbThemes]);
 
   const frameItems = useMemo(() => {
-    // 1. None Option
     const frames = [{
       id: 'None',
       name: 'Identity Cleanse',
@@ -126,12 +123,11 @@ export default function StorePage() {
       color: 'text-slate-400'
     }];
 
-    // 2. Map all items from registry
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({
         ...f,
         type: 'Frame',
-        price: 0, // In this version, all frames are listed as owned/available if they are in registry
+        price: 0,
         description: `Premium ${f.tier} identity frame.`
       } as any);
     });
@@ -176,31 +172,25 @@ export default function StorePage() {
   if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-black"><Loader className="animate-spin text-white" /></div>;
 
   return (
-    // Updated Background Theme to Glossy Black/Dark
     <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe">
       <div className="space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-6 pb-24">
         
-        {/* Header UI Update */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
-              <ChevronLeft />
-            </button>
-            <h1 className="text-3xl font-black tracking-tight flex items-center gap-2 text-white">
-              Store
-            </h1>
-          </div>
-          <div className="bg-[#182229] border border-white/10 px-6 py-3 rounded-full flex items-center gap-3 shadow-lg">
-            <GoldCoinIcon className="h-6 w-6" />
-            <span className="text-xl font-bold text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-          </div>
+        <header className="relative flex items-center justify-center border-b border-white/10 pb-6 min-h-[48px]">
+          <button 
+            onClick={() => router.back()} 
+            className="absolute left-0 p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full"
+          >
+            <ChevronLeft />
+          </button>
+          <h1 className="text-3xl font-black tracking-tight text-white">
+            Store
+          </h1>
         </header>
 
-        {/* TABS LIST: Styled to match image */}
         <Tabs defaultValue="Frame" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-              {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave', 'IDs' ].map(cat => (
+              {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave'].map(cat => (
                 <TabsTrigger 
                   key={cat} 
                   value={cat} 
@@ -212,18 +202,14 @@ export default function StorePage() {
             </TabsList>
           </div>
 
-          {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave'].map(category => (
+          {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave', 'IDs' ].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => {
-                  const isOwned = userProfile?.inventory?.ownedItems?.includes(item.id);
-                  const isActive = userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
-                  
                   return (
                     <Card 
                       key={item.id} 
                       onClick={() => setPreviewItem(item)}
-                      // Updated Card UI matching the image exactly
                       className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white"
                     >
                       <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
@@ -246,11 +232,12 @@ export default function StorePage() {
                           <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
                         ) : item.type === 'Theme' ? (
                           <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
+                        ) : item.type === 'Wave' ? (
+                           <Activity className={cn("h-12 w-12 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]", item.color)} />
                         ) : item.icon ? (
                           <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                         ) : null}
                         
-                        {/* Play Icon mimicking image */}
                         <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm">
                            <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent ml-0.5"></div>
                         </div>
@@ -261,30 +248,13 @@ export default function StorePage() {
                       </CardHeader>
                       
                       <CardFooter className="flex flex-col gap-3 p-3 pt-1">
-                        {/* Image Style Pricing format */}
                         <div className="flex items-center justify-center gap-1.5 text-sm w-full">
                           <GoldCoinIcon className="h-4 w-4" />
                           <div className="flex items-baseline gap-1">
                             <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
-                            <span className="text-gray-500 text-[10px]">/{item.durationDays || 3} Days</span>
+                            <span className="text-gray-500 text-[10px]">/{item.durationDays || 7} Days</span>
                           </div>
                         </div>
-
-                        {/* Kept your logic buttons, styled cleanly for dark mode */}
-                        <Button 
-                          onClick={(e) => { e.stopPropagation(); isOwned ? handleEquip(item) : handlePurchase(item); }} 
-                          variant={isOwned ? "secondary" : "default"}
-                          size="sm"
-                          className={cn("w-full rounded-full font-bold uppercase text-[10px] h-7", 
-                            isOwned && isActive 
-                              ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
-                              : isOwned 
-                                ? "bg-white/10 text-white hover:bg-white/20"
-                                : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
-                          )}
-                        >
-                          {isOwned ? (isActive ? 'Equipped' : 'Equip') : 'Purchase'}
-                        </Button>
                       </CardFooter>
                     </Card>
                   );
@@ -293,14 +263,105 @@ export default function StorePage() {
             </TabsContent>
           ))}
         </Tabs>
-        
-        <ItemPreview 
-          isOpen={!!previewItem} 
-          onClose={() => setPreviewItem(null)} 
-          item={previewItem} 
-          avatarUrl={userProfile?.avatarUrl}
-          username={userProfile?.username}
-        />
+
+        {/* --- CUSTOM BOTTOM SHEET PREVIEW --- */}
+        {previewItem && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm transition-opacity"
+              onClick={() => setPreviewItem(null)}
+            />
+            
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[55vh] max-h-[600px] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+              
+              <button 
+                onClick={() => setPreviewItem(null)}
+                className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-10 pb-6 px-4">
+                
+                <div className="mb-6 scale-[1.3] flex items-center justify-center h-32 w-32">
+                  {previewItem.type === 'Frame' ? (
+                    previewItem.id === 'None' ? (
+                      <X className="h-16 w-16 text-slate-500" />
+                    ) : (
+                      <AvatarFrame frameId={previewItem.id} size="xl">
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
+                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
+                        </Avatar>
+                      </AvatarFrame>
+                    )
+                  ) : previewItem.type === 'Bubble' ? (
+                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
+                  ) : previewItem.type === 'Theme' ? (
+                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
+                  ) : previewItem.type === 'Wave' ? (
+                    <Activity className={cn("h-20 w-20 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]", previewItem.color)} />
+                  ) : previewItem.icon ? (
+                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
+                  ) : null}
+                </div>
+
+                {/* Stars Removed as requested */}
+                <div className="mb-2 h-4"></div> 
+                
+                <h2 className="text-2xl font-medium text-white tracking-wide">{previewItem.name}</h2>
+
+                <div className="flex gap-4 mt-8 w-full justify-center">
+                  <button className="relative border border-[#FCD535] bg-[#313131] rounded-[10px] w-36 py-4 flex items-center justify-center transition-all">
+                    <span className="text-gray-200 text-[15px]">{previewItem.durationDays || 7} Days</span>
+                    <div className="absolute -bottom-1.5 -right-1.5 bg-[#FCD535] rounded-tl-lg rounded-br-[10px] p-0.5">
+                      <Check size={14} strokeWidth={3} className="text-black" />
+                    </div>
+                  </button>
+                  <button className="border border-transparent bg-[#313131] rounded-[10px] w-36 py-4 flex items-center justify-center transition-all opacity-80">
+                    <span className="text-gray-200 text-[15px]">30 Days</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#222222] rounded-t-[20px] p-5 pb-8 flex items-center justify-between">
+                
+                <div className="flex flex-col justify-center">
+                  <div className="flex items-center gap-2">
+                    <GoldCoinIcon className="w-6 h-6" />
+                    <span className="text-[#FCD535] font-bold text-2xl tracking-wide">
+                      {previewItem.price.toLocaleString()}
+                    </span>
+                  </div>
+                  {previewItem.price > 0 && (
+                    <span className="text-[#a58231] text-[15px] line-through pl-8 font-medium opacity-80">
+                      {Math.floor(previewItem.price * 1.6).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={() => {
+                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
+                    isOwned ? handleEquip(previewItem) : handlePurchase(previewItem);
+                  }}
+                  className={cn(
+                    "rounded-full px-16 py-7 text-lg font-medium tracking-wide shadow-lg",
+                    userProfile?.inventory?.ownedItems?.includes(previewItem.id)
+                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                        ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                        : "bg-white/20 text-white hover:bg-white/30"
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
+                  )}
+                >
+                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
+                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Equipped' : 'Equip') 
+                    : 'Buy'}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
