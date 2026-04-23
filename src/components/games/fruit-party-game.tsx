@@ -23,27 +23,6 @@ const LoadingPage = () => (
   </motion.div>
 );
 
-const Cloud = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#ffffff" />
-        <stop offset="100%" stopColor="#e2e8f0" />
-      </linearGradient>
-      <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-        <feOffset dx="1" dy="2" result="offsetblur" />
-        <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
-        <feMerge>
-          <feMergeNode />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </defs>
-    <path filter="url(#shadow)" d="M15 40C6.71573 40 0 33.2843 0 25C0 17.0784 6.13601 10.597 13.9213 10.0536C15.8236 4.25686 21.2825 0 27.75 0C33.8643 0 39.055 3.84365 41.229 9.30907C42.433 8.46914 43.9142 8 45.5 8C49.6421 8 53 11.3579 53 15.5C53 16.0337 52.9443 16.5544 52.8385 17.0567C58.5539 18.0645 63 22.9734 63 29C63 35.0751 58.0751 40 52 40H15Z" fill="url(#cloudGrad)" />
-  </svg>
-);
-
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
@@ -62,7 +41,6 @@ const ITEMS = [
   { id: 'orange', icon: '🍊', multiplier: 5 },
 ];
 
-// UPDATED CHIPS DATA WITH ZEBRA COLORS
 const CHIPS_DATA = [
   { value: 100, label: '100', color: 'bg-blue-600' },
   { value: 1000, label: '1K', color: 'bg-orange-500' },
@@ -314,8 +292,9 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 </div>
 
                 <div className="flex items-center gap-2 relative">
-                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                     <Cloud className="w-28 h-auto" />
+                   {/* Top Right Cloud Replaced with ☁️ */}
+                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)] text-xl">
+                     ☁️
                   </div>
                   {[ 
                     { icon: Clock, action: () => setShowHistoryPage(true) }, 
@@ -334,11 +313,13 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
                   <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
+                {/* Cloud below Trophy */}
+                <div className="absolute -bottom-4 left-6 text-sm opacity-80 pointer-events-none">☁️</div>
               </div>
             </div>
 
             {/* BOARD AREA */}
-            <div className="relative w-full flex-1 flex items-center justify-center scale-90 -translate-y-4" style={{ perspective: '1000px' }}>
+            <div className="relative w-full flex-1 flex items-center justify-center scale-90 translate-y-2" style={{ perspective: '1000px' }}>
               <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
                 <defs>
                   <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -415,18 +396,26 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             {/* BOTTOM UI */}
             <div className="w-full px-4 mb-2 z-20 relative">
                <div className="flex justify-between px-1 mb-1 items-end relative">
-                <span className={cn(
-                  "text-4xl transition-all duration-500",
-                  shineType === 'salad' ? "scale-150 drop-shadow-[0_0_15px_rgba(34,197,94,0.8)] brightness-125" : ""
-                )}>
-                  🥗
-                </span>
-                <span className={cn(
-                  "text-4xl transition-all duration-500",
-                  shineType === 'pizza' ? "scale-150 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] brightness-125" : ""
-                )}>
-                  🍕
-                </span>
+                {/* Cloud above Salad */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] mb-[-4px] pointer-events-none opacity-80">☁️</span>
+                  <span className={cn(
+                    "text-4xl transition-all duration-500",
+                    shineType === 'salad' ? "scale-150 drop-shadow-[0_0_15px_rgba(34,197,94,0.8)] brightness-125" : ""
+                  )}>
+                    🥗
+                  </span>
+                </div>
+                {/* Cloud above Pizza */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] mb-[-4px] pointer-events-none opacity-80">☁️</span>
+                  <span className={cn(
+                    "text-4xl transition-all duration-500",
+                    shineType === 'pizza' ? "scale-150 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] brightness-125" : ""
+                  )}>
+                    🍕
+                  </span>
+                </div>
               </div>
               <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar">
                  <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
@@ -436,7 +425,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               </div>
             </div>
 
-            {/* CHIPS AREA - HORIZONTAL SCROLL WITH ZEBRA DESIGN */}
+            {/* CHIPS AREA */}
             <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] pt-6 pb-8 z-20 border-t-4 border-[#f5d0a9] overflow-hidden">
                <div className="flex overflow-x-auto no-scrollbar px-6 gap-4 snap-x snap-mandatory">
                 {CHIPS_DATA.map(chip => (
@@ -444,21 +433,19 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                     key={chip.value}
                     onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "min-w-[64px] h-16 rounded-full flex items-center justify-center text-[10px] font-black transition-all relative shadow-[0_5px_0_rgba(0,0,0,0.6)] snap-center",
+                      "w-14 h-14 min-w-[56px] rounded-full flex items-center justify-center text-[10px] font-black transition-all relative shadow-[0_5px_0_rgba(0,0,0,0.6)] snap-center",
                       selectedChip === chip.value ? "scale-110 -translate-y-2 opacity-100 ring-2 ring-white/50" : "opacity-80"
                     )}
                   >
-                    {/* ZEBRA BORDER PATTERN */}
                     <div 
                       className={cn("absolute inset-0 rounded-full", chip.color)} 
                       style={{ 
-                        backgroundImage: `repeating-conic-gradient(from 0deg, transparent 0deg 30deg, rgba(255,255,255,0.4) 30deg 60deg)` 
+                        backgroundImage: `repeating-conic-gradient(from 0deg, transparent 0deg 30deg, #ffffff 30deg 60deg)` 
                       }} 
                     />
                     
-                    {/* INNER CIRCLE */}
                     <div className="absolute inset-2.5 rounded-full border-2 border-dashed border-white/30 bg-inherit flex items-center justify-center overflow-hidden">
-                       <div className={cn("absolute inset-0 opacity-90", chip.color)} />
+                       <div className={cn("absolute inset-0 opacity-100", chip.color)} />
                        <span className="relative text-white drop-shadow-md z-10">{chip.label}</span>
                     </div>
                   </button>
@@ -525,3 +512,4 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     </div>
   );
 }
+
