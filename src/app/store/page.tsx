@@ -173,35 +173,46 @@ export default function StorePage() {
     toast({ title: item.id === 'None' ? 'Frame Removed' : 'Item Equipped' });
   };
 
-  if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
+  if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-black"><Loader className="animate-spin text-white" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#f3e5f5] pb-safe">
+    // Updated Background Theme to Glossy Black/Dark
+    <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe">
       <div className="space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-6 pb-24">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-6">
+        
+        {/* Header UI Update */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 bg-white rounded-full"><ChevronLeft /></button>
-            <h1 className="text-3xl font-black uppercase tracking-tight flex items-center gap-2">
-              <ShoppingBag className="text-primary" /> Ummy Boutique
+            <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
+              <ChevronLeft />
+            </button>
+            <h1 className="text-3xl font-black tracking-tight flex items-center gap-2 text-white">
+              Store
             </h1>
           </div>
-          <div className="bg-white px-6 py-3 rounded-2xl flex items-center gap-4 shadow-sm">
-            <GoldCoinIcon className="h-8 w-8" />
-            <span className="text-2xl font-black text-primary">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+          <div className="bg-[#182229] border border-white/10 px-6 py-3 rounded-full flex items-center gap-3 shadow-lg">
+            <GoldCoinIcon className="h-6 w-6" />
+            <span className="text-xl font-bold text-white">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
           </div>
         </header>
 
-        {/* TABS LIST: Scrollable functionality added here */}
-        <Tabs defaultValue="All" className="w-full">
+        {/* TABS LIST: Styled to match image */}
+        <Tabs defaultValue="Frame" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
-            <TabsList className="bg-white/60 p-1 rounded-full inline-flex min-w-full md:min-w-0">
-              {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(cat => (
-                <TabsTrigger key={cat} value={cat} className="rounded-full px-8 font-bold whitespace-nowrap">{cat}</TabsTrigger>
+            <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
+              {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave', 'IDs' ].map(cat => (
+                <TabsTrigger 
+                  key={cat} 
+                  value={cat} 
+                  className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] data-[state=active]:shadow-none relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
+                >
+                  {cat}
+                </TabsTrigger>
               ))}
             </TabsList>
           </div>
 
-          {['All', 'Frame', 'Theme', 'Bubble', 'Wave'].map(category => (
+          {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave'].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => {
@@ -212,20 +223,21 @@ export default function StorePage() {
                     <Card 
                       key={item.id} 
                       onClick={() => setPreviewItem(item)}
-                      className="overflow-hidden rounded-[1.5rem] bg-white border-none shadow-sm cursor-pointer hover:scale-[1.02] active:scale-95 transition-all"
+                      // Updated Card UI matching the image exactly
+                      className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white"
                     >
-                      <div className="aspect-square bg-slate-50 flex items-center justify-center p-4 relative">
+                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                         {item.type === 'Frame' ? (
                           <div className="scale-110">
                             {item.id === 'None' ? (
-                              <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center">
-                                <X className="h-10 w-10 text-slate-300" />
+                              <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center">
+                                <X className="h-10 w-10 text-slate-500" />
                               </div>
                             ) : (
                               <AvatarFrame frameId={item.id} size="md">
                                 <Avatar className="h-16 w-16">
                                   <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
-                                  <AvatarFallback>U</AvatarFallback>
+                                  <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                                 </Avatar>
                               </AvatarFrame>
                             )}
@@ -233,27 +245,45 @@ export default function StorePage() {
                         ) : item.type === 'Bubble' ? (
                           <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
                         ) : item.type === 'Theme' ? (
-                          <Palette className={cn("h-12 w-12 opacity-30", item.color || "text-purple-500")} />
+                          <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
                         ) : item.icon ? (
-                          <item.icon className={cn("h-12 w-12 opacity-30", item.color)} />
+                          <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                         ) : null}
                         
-                        <Badge className="absolute top-2 right-2">{item.type}</Badge>
+                        {/* Play Icon mimicking image */}
+                        <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                           <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent ml-0.5"></div>
+                        </div>
                       </div>
                       
-                      <CardHeader className="text-center p-3">
-                        <CardTitle className="text-sm font-black uppercase truncate">{item.name}</CardTitle>
+                      <CardHeader className="text-center p-3 pb-1">
+                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
                       </CardHeader>
                       
-                      <CardFooter className="flex flex-col gap-2 p-3 pt-0">
-                        <div className="flex items-center gap-1 font-black text-primary">
-                          <GoldCoinIcon className="h-4 w-4" /> {item.price.toLocaleString()}
+                      <CardFooter className="flex flex-col gap-3 p-3 pt-1">
+                        {/* Image Style Pricing format */}
+                        <div className="flex items-center justify-center gap-1.5 text-sm w-full">
+                          <GoldCoinIcon className="h-4 w-4" />
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                            <span className="text-gray-500 text-[10px]">/{item.durationDays || 3} Days</span>
+                          </div>
                         </div>
+
+                        {/* Kept your logic buttons, styled cleanly for dark mode */}
                         <Button 
-                          onClick={() => isOwned ? handleEquip(item) : handlePurchase(item)} 
-                          className={cn("w-full rounded-xl font-black uppercase text-[10px]", isOwned && isActive ? "bg-green-500 hover:bg-green-600" : "bg-primary hover:bg-primary/90")}
+                          onClick={(e) => { e.stopPropagation(); isOwned ? handleEquip(item) : handlePurchase(item); }} 
+                          variant={isOwned ? "secondary" : "default"}
+                          size="sm"
+                          className={cn("w-full rounded-full font-bold uppercase text-[10px] h-7", 
+                            isOwned && isActive 
+                              ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
+                              : isOwned 
+                                ? "bg-white/10 text-white hover:bg-white/20"
+                                : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
+                          )}
                         >
-                          {isOwned ? (isActive ? 'Active' : 'Equip') : 'Purchase'}
+                          {isOwned ? (isActive ? 'Equipped' : 'Equip') : 'Purchase'}
                         </Button>
                       </CardFooter>
                     </Card>
