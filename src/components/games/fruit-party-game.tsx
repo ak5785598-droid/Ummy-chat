@@ -64,11 +64,11 @@ const ITEMS = [
 ];
 
 const CHIPS_DATA = [
-  { value: 1000, label: '1k', color: 'from-blue-500 to-blue-700' },
-  { value: 5000, label: '5K', color: 'from-green-500 to-green-700' },
-  { value: 50000, label: '50K', color: 'from-purple-500 to-purple-700' },
-  { value: 500000, label: '500K', color: 'from-red-500 to-red-700' },
-  { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
+ { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' }, 
+ { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, 
+ { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, 
+ { value: 1000000, label: '1M', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, 
+ { value: 100000000, label: '100M', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, 
 ];
 
 const floatingVariants = {
