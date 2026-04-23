@@ -5,19 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
-  ChevronLeft, 
   Volume2, 
   VolumeX, 
   Trophy, 
   X,
   Plus,
-  Move,
-  Maximize2
+  Move
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCarromEngine } from '@/hooks/use-carrom-engine';
-import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 
 interface CarromGameContentProps {
   roomId?: string;
@@ -44,8 +42,6 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
   const [isSplashing, setIsSplashing] = useState(true);
   const [power, setPower] = useState(0);
-  const [angle, setAngle] = useState(0);
-  const [isStriking, setIsStriking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
@@ -122,85 +118,20 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     );
   }
 
-  // --- PREMIUM LOBBY VIEW ---
-  if (gameState.status === 'lobby') {
-    return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-[#01091A] overflow-hidden relative p-4 min-h-[400px]">
-        {/* Decorative Grid */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 10px 10px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+  // NOTE: Lobby View removed as requested to show Board directly.
 
-        <motion.div 
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="relative z-10 w-full max-w-[400px] bg-gradient-to-b from-blue-600 to-indigo-900 rounded-[40px] p-8 shadow-[0_30px_70px_rgba(0,0,0,0.7)] border-4 border-white/10"
-        >
-          <div className="flex flex-col items-center mb-8">
-             <h2 className="text-2xl font-black text-white italic tracking-tight uppercase">Carrom Arena</h2>
-             <span className="px-3 py-1 bg-black/30 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest mt-2">{gameState.mode} Mode</span>
-          </div>
-
-          {/* Player Slots */}
-          <div className="grid grid-cols-4 gap-2 mb-10">
-            {[0, 1, 2, 3].map(i => {
-              const p = gameState.players[i];
-              return (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <div className="relative h-14 w-14 rounded-full bg-black/20 border-2 border-white/20 flex items-center justify-center p-0.5 shadow-inner">
-                    {p ? (
-                      <Avatar className="h-full w-full">
-                        <AvatarImage src={p.avatarUrl} />
-                        <AvatarFallback className="bg-slate-700 text-white text-[10px]">{p.username[0]}</AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <button 
-                        onClick={() => !isJoined && userProfile && joinArena(userProfile)}
-                        className="h-10 w-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                      >
-                        <Plus className="h-5 w-5 text-white/40" />
-                      </button>
-                    )}
-                  </div>
-                  <span className="text-[8px] font-black text-white/50 uppercase truncate max-w-full">
-                    {p?.uid === currentUser?.uid ? 'You' : p?.username || `...`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col items-center gap-6">
-            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] animate-pulse">Waiting for contenders..</p>
-            
-            {!isJoined ? (
-              <button
-                onClick={() => userProfile && joinArena(userProfile)}
-                className="w-full h-16 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full border-b-8 border-blue-800 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all group"
-              >
-                <span className="text-2xl font-black text-white italic tracking-tighter uppercase group-hover:scale-110 transition-transform">JOIN ARENA</span>
-              </button>
-            ) : (
-              gameState.players.length >= 2 ? (
-                <button
-                  onClick={startMatch}
-                  className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full border-b-8 border-orange-700 shadow-2xl flex items-center justify-center active:translate-y-1 active:border-b-4 transition-all"
-                >
-                  <span className="text-2xl font-black text-black italic tracking-tighter uppercase">START MATCH</span>
-                </button>
-              ) : (
-                <div className="h-16 w-full opacity-50 bg-black/20 rounded-full flex items-center justify-center border-2 border-white/5">
-                   <span className="text-sm font-black text-white/30 uppercase tracking-[0.5em]">Waiting</span>
-                </div>
-              )
-            )}
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
   const handleBack = () => {
     if (onClose) onClose();
     else router.back();
   };
+
+  // Corners Array for the 4 Plus Icons
+  const corners = [
+    { pos: 'top-2 left-2', index: 0 },
+    { pos: 'top-2 right-2', index: 1 },
+    { pos: 'bottom-2 left-2', index: 2 },
+    { pos: 'bottom-2 right-2', index: 3 },
+  ];
 
   return (
     <motion.div 
@@ -249,6 +180,28 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
              alt="Board"
            />
 
+           {/* Corner Join Icons */}
+           {corners.map((corner) => {
+             const player = gameState.players[corner.index];
+             return (
+               <div key={corner.pos} className={cn("absolute z-50", corner.pos)}>
+                 {player ? (
+                   <Avatar className="h-8 w-8 border-2 border-black shadow-md">
+                     <AvatarImage src={player.avatarUrl} />
+                     <AvatarFallback className="bg-slate-700 text-[8px] text-white">{player.username[0]}</AvatarFallback>
+                   </Avatar>
+                 ) : (
+                   <button 
+                     onClick={() => !isJoined && userProfile && joinArena(userProfile)}
+                     className="h-7 w-7 rounded-full bg-yellow-500 border-2 border-black flex items-center justify-center shadow-lg active:scale-90 transition-transform"
+                   >
+                     <Plus className="h-4 w-4 text-black stroke-[4px]" />
+                   </button>
+                 )}
+               </div>
+             );
+           })}
+
            <div className="relative w-full h-full z-10 pointer-events-none">
               {gameState.pieces.map(piece => {
                 if (piece.isPocketed) return null;
@@ -276,35 +229,55 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
       {/* Controls */}
       <div className="p-6 bg-black/20 backdrop-blur-md rounded-t-3xl border-t border-white/5 flex flex-col gap-4 mt-auto">
         <div className="flex items-center justify-between">
-           <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Contender's Turn</span>
+           <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">
+             {gameState.status === 'lobby' ? 'Waiting for players' : "Contender's Turn"}
+           </span>
            <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6 border border-white/20">
                 <AvatarImage src={gameState.players.find(p => p.uid === gameState.turn)?.avatarUrl} />
                 <AvatarFallback className="text-[8px] bg-slate-800">U</AvatarFallback>
               </Avatar>
-              <span className="text-sm font-black uppercase italic">{gameState.players.find(p => p.uid === gameState.turn)?.username}</span>
+              <span className="text-sm font-black uppercase italic">
+                {gameState.players.find(p => p.uid === gameState.turn)?.username || 'No Player'}
+              </span>
            </div>
         </div>
 
-        <div className="space-y-2">
-           <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic">
-              <span>Strike Intensity</span>
-              <span>{Math.round(power)}%</span>
-           </div>
-           <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
-                style={{ width: `${power}%` }}
-              />
-           </div>
-        </div>
+        {gameState.status === 'lobby' && isJoined && gameState.players.length >= 2 ? (
+          <button
+            onClick={startMatch}
+            className="w-full h-16 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-2xl border-b-8 border-orange-700 flex items-center justify-center active:scale-95 active:translate-y-1 active:border-b-4 transition-all"
+          >
+            <span className="text-xl font-black text-black italic uppercase tracking-tighter">START MATCH</span>
+          </button>
+        ) : (
+          <>
+            <div className="space-y-2">
+               <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic">
+                  <span>Strike Intensity</span>
+                  <span>{Math.round(power)}%</span>
+               </div>
+               <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+                    style={{ width: `${power}%` }}
+                  />
+               </div>
+            </div>
 
-        <button 
-          className="h-16 w-full bg-gradient-to-b from-blue-500 to-blue-700 rounded-2xl border-b-8 border-blue-900 flex items-center justify-center active:scale-95 active:translate-y-1 active:border-b-4 transition-all"
-        >
-          <span className="text-xl font-black text-white italic uppercase tracking-tighter">STRIKE</span>
-        </button>
+            <button 
+              disabled={gameState.status === 'lobby'}
+              onClick={() => strike(power)}
+              className={cn(
+                "h-16 w-full bg-gradient-to-b from-blue-500 to-blue-700 rounded-2xl border-b-8 border-blue-900 flex items-center justify-center active:scale-95 active:translate-y-1 active:border-b-4 transition-all",
+                gameState.status === 'lobby' && "opacity-50 grayscale cursor-not-allowed"
+              )}
+            >
+              <span className="text-xl font-black text-white italic uppercase tracking-tighter">STRIKE</span>
+            </button>
+          </>
+        )}
       </div>
     </motion.div>
   );
-}
+}q
