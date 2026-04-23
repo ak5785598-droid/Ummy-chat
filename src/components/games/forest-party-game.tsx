@@ -76,7 +76,6 @@ const formatKandM = (num: number) => {
 };
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
- // --- LOADING STATE ---
  const [isLoading, setIsLoading] = useState(true);
  
  const { user: currentUser } = useUser();
@@ -111,14 +110,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Real-time Winner Data logic (UPDATED FOR HIGHEST COINS WINNER)
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'globalGameWins'), 
       where('gameId', '==', 'forest-party'), 
       orderBy('timestamp', 'desc'),           
-      limit(20) // Fetch recent records to determine top 3 of the current/recent round                               
+      limit(20)                               
     );
  }, [firestore]);
   
@@ -127,10 +125,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const winnersList = useMemo(() => {
     if (!liveWins) return [];
 
-    // 1. Sort recent wins by highest amount first
     const sortedByAmount = [...liveWins].sort((a, b) => b.amount - a.amount);
-
-    // 2. Extract Top 3 Unique Winners (so same user doesn't occupy multiple spots)
     const uniqueTopWinners: any[] = [];
     const seenUsers = new Set();
 
@@ -143,7 +138,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
            avatar: win.avatarUrl,
            isMe: win.userId === currentUser?.uid
          });
-         if (uniqueTopWinners.length === 3) break; // Humko sirf 1st, 2nd, 3rd chahiye
+         if (uniqueTopWinners.length === 3) break;
       }
     }
 
@@ -165,7 +160,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     myBetsRef.current = myBets;
  }, [myBets]);
 
- // Loader timer
  useEffect(() => {
     const timer = setTimeout(() => {
         setIsLoading(false);
@@ -329,7 +323,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
   if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
   
-  // Modal pop-up set karna har baar
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
 
@@ -475,12 +468,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    <motion.div
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
    >
+       {/* Background Tree Height Updated */}
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
           <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
-          <div className="absolute bottom-[5%] left-[10%] text-6xl drop-shadow-xl opacity-60 select-none">🌲</div>
-          <div className="absolute bottom-[2%] right-[15%] text-7xl drop-shadow-xl opacity-50 select-none">🌳</div>
-          <div className="absolute bottom-[10%] right-[5%] text-5xl drop-shadow-xl opacity-40 select-none">🌲</div>
+          <div className="absolute bottom-[-5%] left-[-5%] text-[66vh] leading-[1] drop-shadow-2xl opacity-40 select-none">🌲</div>
+          <div className="absolute bottom-[-5%] right-[-5%] text-[66vh] leading-[1] drop-shadow-2xl opacity-30 select-none">🌳</div>
        </div>
 
        <AnimatePresence mode="wait">
@@ -540,7 +533,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                  <span className="text-[10px] font-black text-[#4a2511]/60 uppercase tracking-widest mb-3">Top Winners</span>
                  
                  <div className="flex items-end justify-center gap-6 w-full h-[90px]">
-                    {/* #2 Winner Slot */}
                     {winnersList[1] ? (
                        <div className="flex flex-col items-center relative pb-2 opacity-90">
                           <div className="absolute -top-2.5 z-10 bg-gradient-to-r from-gray-300 to-gray-400 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#2</div>
@@ -552,7 +544,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                        </div>
                     ) : <div className="w-12" />}
 
-                    {/* #1 Winner Slot */}
                     {winnersList[0] ? (
                        <div className="flex flex-col items-center relative z-20">
                           <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4a2511] text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md border border-white/50">#1</div>
@@ -564,7 +555,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                        </div>
                     ) : <div className="w-16" />}
 
-                    {/* #3 Winner Slot */}
                     {winnersList[2] ? (
                        <div className="flex flex-col items-center relative pb-3 opacity-80">
                           <div className="absolute -top-2 z-10 bg-gradient-to-r from-[#CD7F32] to-[#A0522D] text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
@@ -680,7 +670,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
-        {/* Left Mix shining */}
         <div className={cn(
             "absolute top-[3.5%] left-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
@@ -697,7 +686,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
-        {/* Right Mix shining */}
         <div className={cn(
             "absolute top-[3.5%] right-[6%] z-30 w-[46px] h-[46px] rounded-full flex flex-col items-center justify-center border-[2px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
@@ -707,7 +695,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/50 to-white/5 rounded-full pointer-events-none z-0" />
             <div className="grid grid-cols-2 gap-x-0.5 gap-y-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐰</span>
-                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐻‍❄️a</span>
+                <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🦝</span>
                 <span className="text-[8px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
@@ -715,6 +703,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
 
         <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
+          {/* YAHAN PE UPDATES HUE HAIN - SIRF SVG KO MODIFY KIYA HAI */}
           <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
             <defs>
                 <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
@@ -723,15 +712,50 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             </defs>
             {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
               <g key={deg} transform={`rotate(${deg} 50 50)`}>
+                {/* Original Connecting Lines */}
                 <line x1="50" y1="50" x2="50" y2="13" stroke="#b37c54" strokeWidth="8" strokeLinecap="round" filter="url(#shadow3D)" />
                 <line x1="50" y1="50" x2="50" y2="13" stroke="#eebb99" strokeWidth="4" strokeLinecap="round" />
+                
+                {/* Lipti hui dark green bel (Vine wrapping) */}
+                <path 
+                   d="M 50 48 Q 42 43 50 38 T 50 28 T 50 18 T 50 13" 
+                   fill="none" 
+                   stroke="#14532d" 
+                   strokeWidth="2.5" 
+                   strokeLinecap="round" 
+                   filter="url(#shadow3D)"
+                />
+                <path 
+                   d="M 50 45 Q 58 40 50 35 T 50 25 T 50 15 T 50 12" 
+                   fill="none" 
+                   stroke="#166534" 
+                   strokeWidth="1.5" 
+                   strokeLinecap="round" 
+                />
+
+                {/* Chhote chhote leaves (Tiny Patte) */}
+                <path d="M 46 43 Q 42 40 46 37 Q 49 40 46 43 Z" fill="#22c55e" />
+                <path d="M 54 30 Q 58 27 54 24 Q 51 27 54 30 Z" fill="#4ade80" />
+                <path d="M 46 20 Q 42 17 46 14 Q 49 17 46 20 Z" fill="#15803d" />
               </g>
             ))}
           </svg>
+          {/* UPDATES END YAHAN */}
 
-          <div className={cn("relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300", gameState === 'spinning' ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl border-[4px] border-[#ffe885]" : "bg-gradient-to-br from-[#6b361a] to-[#3a1c0d] border-[4px] border-[#eebb99]")}>
-            <p className="text-[7px] font-black uppercase text-[#eebb99]">{gameState === 'betting' ? 'Time' : '🔥'}</p>
-            <span className="text-2xl font-black text-[#eebb99]">{gameState === 'betting' ? timeLeft : '!!!'}</span>
+          {/* 3D Glossy Shining Countdown Updated */}
+          <div className={cn(
+            "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 overflow-hidden", 
+            gameState === 'spinning' 
+              ? "bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#b45309] shadow-[0_10px_20px_rgba(0,0,0,0.7),inset_0_4px_10px_rgba(255,255,255,0.8),inset_0_-4px_10px_rgba(0,0,0,0.5)] border-[3px] border-[#fde68a]" 
+              : "bg-gradient-to-b from-[#8a4622] via-[#5a2a14] to-[#2a1309] shadow-[0_10px_20px_rgba(0,0,0,0.7),inset_0_4px_10px_rgba(255,255,255,0.4),inset_0_-4px_10px_rgba(0,0,0,0.6)] border-[3px] border-[#f4d4b8]"
+          )}>
+            <div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/70 to-transparent rounded-full pointer-events-none z-0" />
+            <p className="relative z-10 text-[8px] font-black uppercase text-[#ffe4b5] filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
+                {gameState === 'betting' ? 'Time' : '🔥'}
+            </p>
+            <span className="relative z-10 text-2xl font-black text-white filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                {gameState === 'betting' ? timeLeft : '!!!'}
+            </span>
           </div>
 
           {ANIMALS.map((item, idx) => {
@@ -830,4 +854,3 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
-
