@@ -12,7 +12,7 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[70vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
+    className="h-[75vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-12 rounded-t-none rounded-b-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
@@ -42,14 +42,14 @@ const ITEMS = [
 ];
 
 const CHIPS_DATA = [
-  { value: 100, label: '100', color: 'bg-blue-600' },
-  { value: 1000, label: '1K', color: 'bg-orange-500' },
-  { value: 50000, label: '50K', color: 'bg-red-600' },
-  { value: 100000, label: '100K', color: 'bg-purple-600' },
-  { value: 500000, label: '500K', color: 'bg-cyan-500' },
-  { value: 1000000, label: '1M', color: 'bg-black' },
-  { value: 50000000, label: '50M', color: 'bg-emerald-900' },
-  { value: 100000000, label: '100M', color: 'bg-yellow-500' },
+  { value: 100, label: '100', color: 'bg-blue-600', shadow: 'shadow-blue-900' },
+  { value: 1000, label: '1K', color: 'bg-orange-500', shadow: 'shadow-orange-900' },
+  { value: 50000, label: '50K', color: 'bg-red-600', shadow: 'shadow-red-900' },
+  { value: 100000, label: '100K', color: 'bg-purple-600', shadow: 'shadow-purple-900' },
+  { value: 500000, label: '500K', color: 'bg-cyan-500', shadow: 'shadow-cyan-900' },
+  { value: 1000000, label: '1M', color: 'bg-black', shadow: 'shadow-gray-900' },
+  { value: 50000000, label: '50M', color: 'bg-emerald-900', shadow: 'shadow-black' },
+  { value: 100000000, label: '100M', color: 'bg-yellow-500', shadow: 'shadow-yellow-900' },
 ];
 
 const floatingVariants = {
@@ -260,8 +260,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             animate="animate"
             whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
             className={cn(
-              "h-[70vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-t-none rounded-b-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
-              !isOverlay && "min-h-[70vh]"
+              "h-[75vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-t-none rounded-b-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+              !isOverlay && "min-h-[75vh]"
             )}
             style={{ 
               backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)',
@@ -281,6 +281,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                   </button>
 
                   <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[105px] ml-2">
+                    <div className="absolute -top-6 -left-2 text-2xl drop-shadow-lg z-[60]">☁️</div>
+                    
                     <div className="absolute -left-1 w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg border-2 border-[#181a4a]">
                       <span className="text-lg drop-shadow-md">🪙</span>
                     </div>
@@ -292,7 +294,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 </div>
 
                 <div className="flex items-center gap-2 relative">
-                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)] text-4xl">
+                   <div className="absolute -top-12 -right-2 z-10 pointer-events-none drop-shadow-xl text-5xl">
                      ☁️
                   </div>
                   {[ 
@@ -312,12 +314,12 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                 <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
                   <span className="text-base">🏆</span> {todayWins.toLocaleString()}
                 </div>
-                <div className="absolute -bottom-6 left-6 text-3xl opacity-80 pointer-events-none">☁️</div>
               </div>
             </div>
 
             {/* BOARD AREA */}
-            <div className="relative w-full flex-1 flex items-center justify-center scale-90 translate-y-12" style={{ perspective: '1000px' }}>
+            <div className="relative w-full flex-1 flex items-center justify-center scale-90 translate-y-2" style={{ perspective: '1000px' }}>
+              {/* --- UPDATED SUPPORTING LEGS (WOODEN STAND) --- */}
               <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
                 <defs>
                   <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -325,11 +327,18 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                     <stop offset="100%" stopColor="#1a0801" />
                   </linearGradient>
                 </defs>
+                {/* Logic: Start from center (0, 40) behind countdown. 
+                   End at wide coordinates to create 'A' shape down to chips bar.
+                   Right leg (150, 480) precisely passes between Corn (idx 3) and Tomato (idx 4).
+                */}
                 <g transform="translate(175, 175)">
-                  <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
+                  {/* Left Leg */}
+                  <line x1="0" y1="40" x2="-150" y2="480" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+                  <line x1="0" y1="40" x2="-150" y2="480" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
+                  
+                  {/* Right Leg - Pass between Tomato & Corn */}
+                  <line x1="0" y1="40" x2="150" y2="480" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
+                  <line x1="0" y1="40" x2="150" y2="480" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
                 </g>
               </svg>
 
@@ -394,20 +403,30 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             {/* BOTTOM UI */}
             <div className="w-full px-4 mb-2 z-20 relative">
                <div className="flex justify-between px-1 mb-1 items-end relative">
-                {/* UPGRADED CLOUDS: Moved higher with -translate-y-2 */}
-                <div className="flex flex-col items-center -translate-y-2">
-                  <span className="text-3xl mb-[-4px] pointer-events-none opacity-80">☁️</span>
+                <div className="flex flex-col items-center">
                   <span className={cn(
-                    "text-4xl transition-all duration-500",
+                    "text-4xl transition-all duration-500 drop-shadow-md",
+                    shineType === 'salad' ? "scale-150 brightness-125" : ""
+                  )}>
+                    ☁️
+                  </span>
+                  <span className={cn(
+                    "text-4xl mt-[-10px] transition-all duration-500",
                     shineType === 'salad' ? "scale-150 drop-shadow-[0_0_15px_rgba(34,197,94,0.8)] brightness-125" : ""
                   )}>
                     🥗
                   </span>
                 </div>
-                <div className="flex flex-col items-center -translate-y-2">
-                  <span className="text-3xl mb-[-4px] pointer-events-none opacity-80">☁️</span>
+
+                <div className="flex flex-col items-center">
+                   <span className={cn(
+                    "text-4xl transition-all duration-500 drop-shadow-md",
+                    shineType === 'pizza' ? "scale-150 brightness-125" : ""
+                  )}>
+                    ☁️
+                  </span>
                   <span className={cn(
-                    "text-4xl transition-all duration-500",
+                    "text-4xl mt-[-10px] transition-all duration-500",
                     shineType === 'pizza' ? "scale-150 drop-shadow-[0_0_15px_rgba(234,179,8,0.8)] brightness-125" : ""
                   )}>
                     🍕
@@ -422,29 +441,39 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               </div>
             </div>
 
-            {/* CHIPS AREA: Fixed Perfectly Circular Shape */}
-            <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] pt-6 pb-8 z-20 border-t-4 border-[#f5d0a9] overflow-hidden">
-               <div className="flex overflow-x-auto no-scrollbar px-6 gap-4 snap-x snap-mandatory">
+            {/* 3D CHIPS AREA */}
+            <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] pt-6 pb-10 z-20 border-t-4 border-[#f5d0a9] overflow-hidden">
+               <div className="flex overflow-x-auto no-scrollbar px-6 gap-5 snap-x snap-mandatory">
                 {CHIPS_DATA.map(chip => (
                   <button 
                     key={chip.value}
                     onClick={() => setSelectedChip(chip.value)}
                     className={cn(
-                      "w-14 h-14 min-w-[56px] min-h-[56px] flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-black transition-all relative shadow-[0_5px_0_rgba(0,0,0,0.6)] snap-center aspect-square overflow-hidden",
-                      selectedChip === chip.value ? "scale-110 -translate-y-2 opacity-100 ring-2 ring-white/50" : "opacity-80"
+                      "group relative w-16 h-16 min-w-[64px] rounded-full transition-all duration-200 snap-center",
+                      selectedChip === chip.value ? "scale-110 -translate-y-3" : "hover:-translate-y-1"
                     )}
                   >
-                    <div 
-                      className={cn("absolute inset-0 rounded-full", chip.color)} 
-                      style={{ 
-                        backgroundImage: `repeating-conic-gradient(from 0deg, transparent 0deg 30deg, #ffffff 30deg 60deg)` 
-                      }} 
-                    />
+                    <div className={cn(
+                      "absolute inset-0 rounded-full translate-y-2 scale-105 opacity-80 blur-[1px]",
+                      chip.shadow
+                    )} />
                     
-                    <div className="absolute inset-2.5 rounded-full border-2 border-dashed border-white/30 bg-inherit flex items-center justify-center overflow-hidden">
-                       <div className={cn("absolute inset-0 opacity-100", chip.color)} />
-                       <span className="relative text-white drop-shadow-md z-10">{chip.label}</span>
+                    <div className={cn(
+                      "absolute inset-0 rounded-full border-b-[6px] border-black/30 shadow-xl",
+                      chip.color
+                    )} style={{ 
+                      backgroundImage: `repeating-conic-gradient(from 0deg, rgba(255,255,255,0.2) 0deg 20deg, transparent 20deg 40deg)` 
+                    }} />
+
+                    <div className="absolute inset-[4px] rounded-full bg-inherit flex items-center justify-center border-2 border-dashed border-white/20">
+                      <div className="w-full h-full rounded-full flex items-center justify-center bg-black/10 backdrop-blur-sm">
+                         <span className="text-white font-black text-xs drop-shadow-md">{chip.label}</span>
+                      </div>
                     </div>
+
+                    {selectedChip === chip.value && (
+                      <div className="absolute -inset-2 border-2 border-yellow-400 rounded-full animate-pulse" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -510,3 +539,4 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     </div>
   );
 }
+
