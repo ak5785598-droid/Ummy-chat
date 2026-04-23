@@ -64,11 +64,11 @@ const ITEMS = [
 ];
 
 const CHIPS_DATA = [
- { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' }, 
- { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, 
- { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, 
- { value: 1000000, label: '1M', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, 
- { value: 100000000, label: '100M', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, 
+  { value: 1000, label: '1k', color: 'from-blue-500 to-blue-700' },
+  { value: 5000, label: '5K', color: 'from-green-500 to-green-700' },
+  { value: 50000, label: '50K', color: 'from-purple-500 to-purple-700' },
+  { value: 500000, label: '500K', color: 'from-red-500 to-red-700' },
+  { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
 const floatingVariants = {
@@ -187,7 +187,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     }
 
     let currentStep = 0;
-    const totalSteps = 40 + visualTargetIdx;
+    const totalSteps = 40 + visualTargetIdx; // Ensures it lands exactly on the targeted fruit
 
     const run = () => {
       setHighlightIdxs([currentStep % ITEMS.length]);
@@ -279,8 +279,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
             animate="animate"
             whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
             className={cn(
-              // YAHAN CHANGE KIYA HAI: rounded-t-none (top se square) aur rounded-b-[2.8rem] (bottom se rounded)
-              "h-[80vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-t-none rounded-b-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+              "h-[80vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
               !isOverlay && "min-h-[80vh]"
             )}
             style={{ 
@@ -446,14 +445,13 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                   key={chip.value}
                   onClick={() => setSelectedChip(chip.value)}
                   className={cn(
-                    // YAHAN CHIPS PE ZEBRA DESIGN KIYA HAI: border-[6px] border-dashed border-white
-                    "w-16 h-16 rounded-full border-[6px] border-dashed border-white flex items-center justify-center text-[11px] font-black transition-all relative bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
+                    "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
                     chip.color,
-                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 opacity-100" : "opacity-80"
+                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
                   )}
                 >
-                  <div className="absolute inset-1.5 rounded-full border-2 border-white/40 bg-black/20 flex items-center justify-center">
-                    <span className="text-white drop-shadow-md">{chip.label}</span>
+                  <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
+                    <span className="text-white">{chip.label}</span>
                   </div>
                 </button>
               ))}
@@ -469,6 +467,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                        <span className="text-7xl">{winnerData.icon}</span>
                        {winnerData.isGroup && <span className="text-2xl self-end font-black text-yellow-500 animate-bounce">GROUP WIN!</span>}
                     </div>
+                    {/* Added Bet and Win texts clearly for the winner page as requested */}
                     <span className="text-gray-800 font-black text-xl">Bet: 🪙 {(winnerData.myBet || 0).toLocaleString()}</span>
                     <div className="mt-2 bg-green-100 px-6 py-2 rounded-2xl border-2 border-green-500">
                       <span className="text-green-600 font-black text-3xl">Win: +{winnerData.win.toLocaleString()}</span>
@@ -485,11 +484,10 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
                   <h2 className="text-white font-black text-2xl">RULES</h2>
                 </div>
                 <div className="text-white/95 font-semibold text-sm space-y-4">
-                  <p>1. Select Chip and put your Bet amount</p>
-                  <p>2. Put bets on Fruit Items Crad</p>
+                  <p>1. Select Chip amount</p>
+                  <p>2. Put bets on Items</p>
                   <p>3. Win Amount = Bet × Multiplier</p>
-                  <p className="text-yellow-200 font-bold">4. Special: If Salad Shine So all 5time will be winner (Low Mix)!</p>
-                  <p className="text-yellow-200 font-bold">5. Special: If Pizza Shine So 10,15,25,45 time will be winner (High Mix)!</p>                       
+                  <p className="text-yellow-200 font-bold">4. Special: Groups have a 2.5% chance to win together!</p>
                 </div>
               </motion.div>
             )}
@@ -518,4 +516,4 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       </AnimatePresence>
     </div>
   );
-}a
+}
