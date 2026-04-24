@@ -2613,6 +2613,18 @@ function AdminPageContent() {
                     </div>
                   </div>
 
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleBulkRestoreGifts}
+                      disabled={isAddingGift}
+                      variant="outline"
+                      className="w-full h-14 rounded-2xl border-2 border-dashed border-indigo-200 text-indigo-600 font-bold uppercase hover:bg-indigo-50 flex items-center justify-center gap-2"
+                    >
+                      <Zap className="h-5 w-5 fill-current" />
+                      Bulk Restore Premium (100 Gifts)
+                    </Button>
+                  </div>
+
                   {/* INVENTORY SECTION */}
                   <div className="space-y-4">
                     <h3 className="text-sm font-bold uppercase text-slate-400">Current Inventory</h3>
