@@ -1864,6 +1864,49 @@ function AdminPageContent() {
     }
   };
 
+  const handleBulkRestoreGifts = async () => {
+    if (!firestore || !isAuthorized) return;
+    setIsAddingGift(true);
+    try {
+      const gifts = [
+        {"name": "Red Rose", "price": 10, "emoji": "🌹", "category": "Hot", "animationId": "rose_anim"},
+        {"name": "Chocolate Box", "price": 99, "emoji": "🍫", "category": "Hot", "animationId": "chocolate_anim"},
+        {"name": "Teddy Bear", "price": 799, "emoji": "🧸", "category": "Hot", "animationId": "teddy_anim"},
+        {"name": "Sports Car", "price": 150000, "emoji": "🏎️", "category": "Luxury", "animationId": "car_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/744/744465.png"},
+        {"name": "Private Jet", "price": 500000, "emoji": "🛩️", "category": "Luxury", "animationId": "plane_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2830/2830312.png"},
+        {"name": "Diamond Ring", "price": 50000, "emoji": "💍", "category": "Luxury", "animationId": "ring_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2622/2622115.png"},
+        {"name": "Golden Crown", "price": 100000, "emoji": "👑", "category": "Luxury", "animationId": "crown_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/6941/6941697.png"},
+        {"name": "Space Rocket", "price": 2000000, "emoji": "🚀", "category": "Luxury", "animationId": "rocket_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/1067/1067357.png"},
+        {"name": "Lucky Apple", "price": 100, "emoji": "🍎", "category": "Lucky", "animationId": "apple_svga_3d", "isLucky": true},
+        {"name": "Fireworks", "price": 2500, "emoji": "🎆", "category": "Event", "animationId": "fireworks_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/3421/3421696.png"}
+      ];
+
+      const batch = writeBatch(firestore);
+      gifts.forEach(gift => {
+        const newGiftRef = doc(collection(firestore, "giftList"));
+        batch.set(newGiftRef, {
+          ...gift,
+          createdAt: serverTimestamp()
+        });
+      });
+      await batch.commit();
+
+      toast({
+        title: "Bulk Gifts Restored",
+        description: `${gifts.length} premium gifts added to your inventory.`,
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Bulk Add Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsAddingGift(false);
+    }
+  };
+
   const handleBannerImageUpload = async (index: number, f: File) => {
     if (!storage || !bannerConfigRef) return;
     setIsUploadingBanner(index);

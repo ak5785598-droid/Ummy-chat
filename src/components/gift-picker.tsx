@@ -5,9 +5,9 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Loader, Check, Zap } from 'lucide-react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection, writeBatch } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,29 +21,19 @@ const GoldenDollar = () => (
   </div>
 );
 
-// --- GIFTS DATA ---
-const GIFTS: Record<string, any[]> = {
- 'Hot': [
-  { id: 'heart', name: 'Heart', price: 99, emoji: '❤️', animationId: 'heart_anim' },
-  { id: 'cake', name: 'Cake', price: 499, emoji: '🍰', animationId: 'cake_anim' },
-  { id: 'popcorn', name: 'Popcorn', price: 799, emoji: '🍿', animationId: 'popcorn_anim' },
-  { id: 'donut', name: 'Donut', price: 299, emoji: '🍩', animationId: 'donut_anim' },
-  { id: 'lollipop', name: 'Lollipop', price: 199, emoji: '🍭', animationId: 'lollipop_anim' },
-  { id: 'rose', name: 'Rose', price: 10, emoji: '🧸', animationId: 'rose_anim' },
-  ], 
- 'Lucky': [
-    { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationId: 'apple_svga_3d', isLucky: true },
-    { id: 'watermelon', name: 'Watermelon', price: 499, emoji: '🍉', animationId: 'watermelon_svga_3d', isLucky: true },
-    { id: 'mango', name: 'Mango', price: 999, emoji: '🥭', animationId: 'mango_svga_3d', isLucky: true },
-    { id: 'strawberry', name: 'Strawberry', price: 2999, emoji: '🍓', animationId: 'strawberry_svga_3d', isLucky: true },
-    { id: 'cherry', name: 'Cherry', price: 5000, emoji: '🍒', animationId: 'cherry_svga_3d', isLucky: true },
-    { id: 'Coconut', name: 'Coconut', price: 8999, emoji: '🥥', animationId: 'coconut_svga_3d', isLucky: true },
-    ], 
- 'Luxury': [
-    { id: 'dm', name: 'Guitar', price: 700000, emoji: '🎸', animationId: 'diamond' },
-    { id: 'tp', name: 'Ball', price: 999999, emoji: '🎳', animationId: 'trophy' },
- ]
-};
+// Fallback gifts if Firestore is empty
+const FALLBACK_GIFTS: Record<string, any[]> = {
+  'Hot': [
+   { id: 'heart', name: 'Heart', price: 99, emoji: '❤️', animationId: 'heart_anim' },
+   { id: 'rose', name: 'Rose', price: 10, emoji: '🌹', animationId: 'rose_anim' },
+   ], 
+  'Lucky': [
+     { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationId: 'apple_svga_3d', isLucky: true },
+     ], 
+  'Luxury': [
+     { id: 'dm', name: 'Guitar', price: 700000, emoji: '🎸', animationId: 'diamond' },
+  ]
+ };
 
 const MULTIPLIERS = [1, 2, 5, 10, 50, 100, 499, 999];
 
@@ -71,6 +61,41 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
 
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+ // --- DYNAMIC GIFTS FETCH ---
+ const giftsQuery = useMemoFirebase(() => {
+   if (!firestore) return null;
+   return query(collection(firestore, "giftList"), orderBy("createdAt", "desc"));
+ }, [firestore]);
+
+ const { data: dbGifts, isLoading: isGiftsLoading } = useCollection(giftsQuery);
+
+ const GIFTS = useMemo(() => {
+   if (!dbGifts || dbGifts.length === 0) return FALLBACK_GIFTS;
+   
+   const groups: Record<string, any[]> = {
+     'Hot': [],
+     'Lucky': [],
+     'Luxury': [],
+     'Event': []
+   };
+
+   dbGifts.forEach((g: any) => {
+     const cat = g.category || 'Hot';
+     if (groups[cat]) {
+       groups[cat].push({
+         ...g,
+         id: g.id || g.giftId // ensure we have an ID
+       });
+     } else {
+       // Fallback for custom categories
+       if (!groups['Event']) groups['Event'] = [];
+       groups['Event'].push(g);
+     }
+   });
+
+   return groups;
+ }, [dbGifts]);
 
  const seatedParticipants = useMemo(() => {
   return participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
@@ -267,23 +292,40 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        ))}
       </TabsList>
       
-      <div className="h-[210px] overflow-y-auto no-scrollbar px-4 pt-3 pb-20 grid grid-cols-4 gap-x-2 gap-y-4">
-       {Object.entries(GIFTS).map(([cat, items]) => (
-        <TabsContent key={cat} value={cat} className="contents">
-         {items.map(gift => (
-          <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-           <div className="text-3xl mb-0 filter drop-shadow-md">{gift.emoji}</div>
-           <span className="text-[10px] font-bold text-white/90 truncate w-full text-center mt-1">{gift.name}</span>
-           <div className="flex items-center gap-1 mt-0">
-             <GoldenDollar /> 
-             <span className="text-[10px] text-yellow-500 font-black">{gift.price}</span>
-           </div>
-           {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
-          </button>
-         ))}
-        </TabsContent>
-       ))}
-      </div>
+       <div className="h-[210px] overflow-y-auto no-scrollbar px-4 pt-3 pb-20 grid grid-cols-4 gap-x-2 gap-y-4">
+        {isGiftsLoading ? (
+          <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
+            <Loader className="animate-spin text-cyan-400 h-6 w-6" />
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span>
+          </div>
+        ) : (
+          Object.entries(GIFTS).map(([cat, items]) => (
+            <TabsContent key={cat} value={cat} className="contents">
+            {items.length === 0 ? (
+               <div className="col-span-4 py-10 text-center opacity-30 text-[10px] font-bold uppercase tracking-widest">No Gifts in {cat}</div>
+            ) : (
+              items.map(gift => (
+                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
+                <div className="h-10 w-10 flex items-center justify-center mb-1 filter drop-shadow-md">
+                  {gift.imageUrl ? (
+                    <img src={gift.imageUrl} alt={gift.name} className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-3xl">{gift.emoji}</span>
+                  )}
+                </div>
+                <span className="text-[10px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <GoldenDollar /> 
+                  <span className="text-[10px] text-yellow-500 font-black">{gift.price}</span>
+                </div>
+                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+                </button>
+              ))
+            )}
+            </TabsContent>
+          ))
+        )}
+       </div>
      </Tabs>
 
      <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl">
