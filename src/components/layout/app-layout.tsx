@@ -181,6 +181,9 @@ function AppLayoutClassic(props: {
       (isRoom || pathname === '/rooms') ? "bg-transparent shadow-none" : ""
     )} style={{ backgroundColor: (isRoom || pathname === '/rooms') ? 'transparent' : 'hsl(var(--background))' }}>
       
+      {/* ADDED: Top 20vh Purple Mixing with White Gradient */}
+      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-500/40 via-white/20 to-transparent pointer-events-none z-0" />
+
       {/* THE VISIBLE SHELL */}
       {(!showRealContent) && (
         <div className={cn(
@@ -195,7 +198,7 @@ function AppLayoutClassic(props: {
       {/* MAIN CONTENT AREA */}
       <div 
         className={cn(
-          "flex-1 flex flex-col transition-opacity duration-700",
+          "flex-1 flex flex-col transition-opacity duration-700 relative z-10",
           !hideBottomNav && !isRoom ? "pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0" : "pb-safe",
           !showRealContent ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
