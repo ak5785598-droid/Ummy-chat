@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { 
   Loader, 
   ChevronLeft,
+  Wallet, 
+  Disc3, 
+  Heart, 
+  Ticket, 
+  Theater, 
+  Shirt, 
+  CircleDollarSign, 
   MoreHorizontal,
   Pencil,
   MessageCircle,
@@ -19,8 +26,10 @@ import {
   Phone,
   Camera,
   ShieldAlert,
+  Medal as MedalIcon,
+  DollarSign,
   HelpCircle,
-  Heart
+  Check
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -58,9 +67,247 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// --- REMOVED SVGA, USING EMOJI INSTEAD ---
-const Emoji_GoldDollar = () => (
-  <span className="text-2xl drop-shadow-md">🪙</span>
+// --- CUSTOM 3D SVGA GOLD COIN ICON ---
+const SVGA_GoldDollar = () => (
+  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
+    <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
+    <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY CROWN (LEVEL) ICON ---
+const SVGA_LevelCrown = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="crownGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFC837" />
+          <stop offset="50%" stopColor="#FF8008" />
+          <stop offset="100%" stopColor="#FF6A00" />
+        </linearGradient>
+      </defs>
+      <path 
+        fill="url(#crownGradient)" 
+        d="M5,16 L3,5 L8.5,10 L12,4 L15.5,10 L21,5 L19,16 L5,16 Z M5,19 L19,19 C19,20.1 18.1,21 17,21 L7,21 C5.9,21 5,20.1 5,19 Z" 
+      />
+      <rect x="9" y="13" width="6" height="1.5" rx="0.75" fill="white" fillOpacity="0.4" />
+    </svg>
+    <div className="absolute top-1 right-2 w-1.5 h-1 bg-white/60 rounded-full blur-[1px] rotate-[20deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY STORE CART ICON ---
+const SVGA_StoreCart = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="cartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#00D2FF" />
+          <stop offset="100%" stopColor="#3a7bd5" />
+        </linearGradient>
+      </defs>
+      <path 
+        fill="url(#cartGradient)" 
+        d="M7,18 C5.9,18 5.01,18.9 5.01,20 C5.01,21.1 5.9,22 7,22 C8.1,22 9,21.1 9,20 C9,18.9 8.1,18.1 7,18 Z M1,2 L1,4 L3,4 L6.6,11.59 L5.25,14.04 C5.09,14.32 5,14.65 5,15 C5,16.1 5.9,17 7,17 L19,17 L19,15 L7.42,15 C7.28,15 7.17,14.89 7.17,14.75 L7.2,14.63 L8.1,13 L15.55,13 C16.3,13 16.96,12.59 17.3,11.97 L20.88,5.48 C21.05,5.17 21,4.82 21,4.5 C21,4.22 20.78,4 20.5,4 L5.21,4 L4.27,2 L1,2 Z M17,18 C15.9,18 15.01,18.9 15.01,20 C15.01,21.1 15.9,22 17,22 C18.1,22 19,21.1 19,20 C19,18.9 18.1,18.1 17,18 Z" 
+      />
+    </svg>
+    <div className="absolute top-2 left-2 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY PURPLE MEDAL ICON ---
+const SVGA_MedalStar = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-lg">
+      <defs>
+        <linearGradient id="medalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#C084FC" />
+          <stop offset="100%" stopColor="#9333EA" />
+        </linearGradient>
+      </defs>
+      <path d="M8,2 L16,2 L15,5 L9,5 Z" fill="#7E22CE" />
+      <circle cx="12" cy="13" r="8" fill="url(#medalGradient)" />
+      <path 
+        fill="white" 
+        fillOpacity="0.9"
+        d="M12,9.5 L13.2,12.1 L16,12.4 L13.9,14.2 L14.5,17 L12,15.5 L9.5,17 L10.1,14.2 L8,12.4 L10.8,12.1 Z" 
+      />
+      <path 
+        d="M7,10 A6,6 0 0 1 17,10" 
+        fill="none" 
+        stroke="white" 
+        strokeWidth="0.5" 
+        strokeLinecap="round" 
+        className="opacity-40" 
+      />
+    </svg>
+    <div className="absolute top-3 left-3 w-3 h-1.5 bg-white/30 rounded-full blur-[2px] rotate-[-25deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY TASK CLIPBOARD ICON ---
+const SVGA_TaskClipboard = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="boardGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FDE047" />
+          <stop offset="100%" stopColor="#EAB308" />
+        </linearGradient>
+      </defs>
+      <rect x="5" y="4" width="12" height="16" rx="2" fill="url(#boardGradient)" stroke="#CA8A04" strokeWidth="0.5" />
+      <rect x="7" y="6" width="8" height="12" rx="1" fill="white" />
+      <rect x="9" y="3" width="4" height="2" rx="0.5" fill="#94A3B8" />
+      <path d="M8,9 L9,10 L11,8" fill="none" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8,13 L9,14 L11,12" fill="none" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <g transform="translate(14, 10) rotate(15)">
+        <rect x="0" y="0" width="3" height="10" rx="1.5" fill="#334155" />
+        <rect x="0" y="4" width="3" height="1" fill="#FDE047" />
+        <path d="M0,0 L1.5,-2 L3,0 Z" fill="#334155" />
+      </g>
+    </svg>
+    <div className="absolute top-5 left-6 w-3 h-1.5 bg-white/50 rounded-full blur-[1px] rotate-[-10deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY INVITE FRIENDS (PINK ENVELOPE HEART) ---
+const SVGA_InviteHeart = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="pinkBg" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF9EB5" />
+          <stop offset="100%" stopColor="#FF5C8A" />
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="32" height="32" rx="10" fill="url(#pinkBg)" />
+      <path d="M8,14 L20,24 L32,14 V28 C32,29.1 31.1,30 30,30 H10 C8.9,30 8,29.1 8,28 V14 Z" fill="white" />
+      <path d="M20,24 L8,14 H32 L20,24 Z" fill="#FFD1DC" />
+      <path 
+        fill="#FF5C8A" 
+        d="M20,22 C20,22 18.5,20.5 17.5,20.5 C16.5,20.5 15.5,21.3 15.5,22.5 C15.5,24 18,26 20,27 C22,26 24.5,24 24.5,22.5 C24.5,21.3 23.5,20.5 22.5,20.5 C21.5,20.5 20,22 20,22 Z" 
+      />
+    </svg>
+    <div className="absolute top-2 right-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[25deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY FAMILY SHIELD ---
+const SVGA_FamilyShield = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="bronzeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#CD7F32" />
+          <stop offset="100%" stopColor="#8B4513" />
+        </linearGradient>
+      </defs>
+      <path 
+        fill="url(#bronzeGradient)" 
+        d="M10,6 H30 V26 C30,26 20,34 20,34 C20,34 10,26 10,26 V6 Z" 
+        stroke="#5D2E0A" 
+        strokeWidth="1"
+      />
+      <rect x="8" y="4" width="24" height="4" rx="2" fill="#5D2E0A" />
+      <circle cx="20" cy="16" r="3.5" fill="#FFE4D1" />
+      <circle cx="14" cy="19" r="3.5" fill="#FFE4D1" opacity="0.8" />
+      <circle cx="26" cy="19" r="3.5" fill="#FFE4D1" opacity="0.8" />
+      <path d="M20,20 Q20,26 26,26 H14 Q20,26 20,20" fill="#FFE4D1" />
+    </svg>
+    <div className="absolute top-8 left-10 w-2 h-1 bg-white/30 rounded-full blur-[1px]" />
+  </div>
+);
+
+// --- 3D GLOSSY BAG/SHIRT ICON ---
+const SVGA_BagShirt = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="purpleShirt" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#B678FF" />
+          <stop offset="100%" stopColor="#7E22CE" />
+        </linearGradient>
+      </defs>
+      <path 
+        d="M10,12 L16,8 L24,8 L30,12 L34,22 L28,26 L28,34 C28,35.1 27.1,36 26,36 L14,36 C12.9,36 12,35.1 12,34 L12,26 L6,22 Z" 
+        fill="url(#purpleShirt)" 
+      />
+      <path 
+        d="M22,18 C22,18 26,18 26,22 C26,24 24,26 24,26 C24,26 22,24 22,22 Z" 
+        fill="white" 
+        opacity="0.8" 
+      />
+    </svg>
+    <div className="absolute top-2 left-3 w-4 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-15deg]" />
+  </div>
+);
+
+// --- 3D GLOSSY CP HEART ICON ---
+const SVGA_CpHeart = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="cpPink" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF6B9E" />
+          <stop offset="100%" stopColor="#FF1463" />
+        </linearGradient>
+      </defs>
+      <path 
+        d="M20,34 C20,34 6,24 6,14 C6,8.5 10.5,4 16,4 C18.5,4 20,6 20,6 C20,6 21.5,4 24,4 C29.5,4 34,8.5 34,14 C34,24 20,34 20,34 Z" 
+        fill="url(#cpPink)" 
+      />
+      <path 
+        d="M12,18 L18,14 C19,13 21,13 22,14 L24,16 M14,22 L22,16 M16,26 L24,20 M18,30 L26,24" 
+        stroke="white" 
+        strokeWidth="2.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        fill="none" 
+        opacity="0.9" 
+      />
+    </svg>
+    <div className="absolute top-3 right-4 w-4 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[30deg]" />
+  </div>
+);
+
+// --- NEW 3D GLOSSY SELLER BAG (RED) ---
+const SVGA_SellerBag = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="sellerRed" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FF8B8B" />
+          <stop offset="100%" stopColor="#E63946" />
+        </linearGradient>
+      </defs>
+      <path 
+        d="M20,6 C16,6 14,8 14,10 L12,16 C10,16 8,18 8,20 L8,32 C8,34 10,36 12,36 L28,36 C30,36 32,34 32,32 L32,20 C32,18 30,16 28,16 L26,10 C26,8 24,6 20,6 Z" 
+        fill="url(#sellerRed)" 
+      />
+      <text x="20" y="29" fontSize="14" fontWeight="900" fill="white" textAnchor="middle" style={{ fontFamily: 'sans-serif' }}>$</text>
+    </svg>
+    <div className="absolute top-2 left-3 w-4 h-1.5 bg-white/30 rounded-full blur-[1px] rotate-[-15deg]" />
+  </div>
+);
+
+// --- NEW 3D GLOSSY OFFICIAL USER (ORANGE) ---
+const SVGA_OfficialUser = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="officialOrange" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFB347" />
+          <stop offset="100%" stopColor="#FF8C00" />
+        </linearGradient>
+      </defs>
+      <rect x="5" y="5" width="30" height="30" rx="10" fill="url(#officialOrange)" />
+      <circle cx="20" cy="16" r="6" fill="white" />
+      <path d="M10,30 C10,25 14,23 20,23 C26,23 30,25 30,30 V32 H10 V30 Z" fill="white" />
+      <circle cx="30" cy="30" r="5" fill="#4ADE80" stroke="#FF8C00" strokeWidth="1.5" />
+      <path d="M30,27 V33 M27,30 H33" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+    <div className="absolute top-3 left-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
+  </div>
 );
 
 const GIFT_REGISTRY: Record<string, any> = {
@@ -142,28 +389,24 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
   </button>
 );
 
-const IconButton = ({ icon: IconOrEmoji, label, iconColor, onClick }: { icon: any, label: string, iconColor?: string, onClick: () => void }) => (
+const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomIcon }: { icon?: any, label: string, iconColor?: string, onClick: () => void, customIcon?: any }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
     <div className="flex items-center justify-center py-1">
-      {typeof IconOrEmoji === 'string' ? (
-        <span className={cn("text-[26px] transition-all group-hover:scale-110", iconColor)}>{IconOrEmoji}</span>
+      {CustomIcon ? (
+        <CustomIcon className="transition-all group-hover:scale-110" />
       ) : (
-        <IconOrEmoji className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
+        <Icon className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
       )}
     </div>
     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
   </button>
 );
 
-const ProfileMenuItem = ({ icon: IconOrEmoji, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
+const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor, customIcon: CustomIcon }: { icon?: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string, customIcon?: any }) => (
   <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group">
     <div className="flex items-center gap-4">
-      <div className={cn("p-2 rounded-xl transition-colors flex items-center justify-center", iconColor || "bg-slate-100 text-slate-400")}>
-        {typeof IconOrEmoji === 'string' ? (
-           <span className="text-[18px] leading-none">{IconOrEmoji}</span>
-        ) : (
-           <IconOrEmoji className="h-5 w-5" />
-        )}
+      <div className={cn("p-2 rounded-xl transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
+        {CustomIcon ? <CustomIcon className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
       </div>
       <span className={cn("font-medium text-[16px]", destructive ? "text-red-500" : "text-[#1F2937]")}>{label}</span>
     </div>
@@ -546,11 +789,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
-                {/* 3D GLOSSY COIN CARD */}
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
-                    <Emoji_GoldDollar />
+                    <SVGA_GoldDollar />
                     <span className="text-[10px] font-black text-[#5C4000] uppercase tracking-widest opacity-90">Coins</span>
                   </div>
                   <p className="font-black text-[20px] text-[#422E00] tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-sm">
@@ -558,7 +800,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   </p>
                 </div>
 
-                {/* 3D GLOSSY DIAMOND CARD */}
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
@@ -573,58 +814,87 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             )}
 
             <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group mt-3">
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all">
-                   <span className="text-xl">👑</span>
-                </div>
-                <span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span>
-              </div>
+              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all">
+                <SVGA_LevelCrown className="h-6 w-6" />
+              </div><span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span></div>
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
             <div className="flex justify-between items-center px-4 mt-6">
-              {/* NOW USING EMOJIS DIRECTLY */}
               <IconButton 
-                icon="👑" 
+                customIcon={SVGA_LevelCrown} 
                 label="Level" 
-                iconColor="drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]" 
                 onClick={() => router.push('/level')} 
               />
               <IconButton 
-                icon="👜" 
+                customIcon={SVGA_StoreCart} 
                 label="Store" 
-                iconColor="drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" 
                 onClick={() => router.push('/store')} 
               />
               <IconButton 
-                icon="🪩" 
+                customIcon={SVGA_MedalStar} 
                 label="Medal" 
-                iconColor="drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" 
                 onClick={() => router.push('/medals')} 
               />
               <IconButton 
-                icon="🎫" 
+                customIcon={SVGA_TaskClipboard} 
                 label="Task" 
-                iconColor="drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
                 onClick={() => router.push('/tasks')} 
               />
             </div>
 
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                {/* MENU EMOJIS PLACED HERE */}
-                <ProfileMenuItem icon="👛" label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
-                <ProfileMenuItem icon="🎭" label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-                <ProfileMenuItem icon="👔" label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
-                <ProfileMenuItem icon="🩷" label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                <ProfileMenuItem 
+                  customIcon={SVGA_InviteHeart} 
+                  label="Invite friends" 
+                  iconColor="bg-pink-50" 
+                  onClick={() => {}}
+                />
+                <ProfileMenuItem 
+                  customIcon={SVGA_FamilyShield} 
+                  label="Family" 
+                  extra="TRIBAL UNITY" 
+                  extraColor="text-indigo-500" 
+                  iconColor="bg-orange-50" 
+                  onClick={() => router.push('/families')} 
+                />
+                <ProfileMenuItem 
+                  customIcon={SVGA_BagShirt} 
+                  label="Bag" 
+                  extra="INVENTORY" 
+                  extraColor="text-purple-500" 
+                  iconColor="bg-purple-50" 
+                  onClick={() => router.push('/store')} 
+                />
+                <ProfileMenuItem 
+                  customIcon={SVGA_CpHeart} 
+                  label="Cp/friends" 
+                  iconColor="bg-pink-50" 
+                  onClick={() => router.push('/cp-house')} 
+                />
                 
                 {isCertifiedSeller && (
                    <SellerTransferDialog trigger={
-                     <ProfileMenuItem icon="💰" label="Seller center" iconColor="bg-amber-50 text-amber-600" onClick={() => {}} />
+                     <ProfileMenuItem 
+                        customIcon={SVGA_SellerBag} 
+                        label="Seller center" 
+                        iconColor="bg-red-50" 
+                        onClick={() => {}} 
+                      />
                    } />
                 )}
 
-                {isAuthorizedAdmin && <ProfileMenuItem icon="👑" label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/official-center')} />}
+                {isAuthorizedAdmin && (
+                  <ProfileMenuItem 
+                    customIcon={SVGA_OfficialUser} 
+                    label="Official Centre" 
+                    extra="Supreme Authority" 
+                    extraColor="text-orange-600" 
+                    iconColor="bg-orange-50" 
+                    onClick={() => router.push('/official-center')} 
+                  />
+                )}
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
