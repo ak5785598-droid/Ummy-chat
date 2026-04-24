@@ -345,113 +345,116 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10 z-10" />
           </div>
 
+          {/* User's public profile container with max-w constraint for "size chote" effect */}
           <div className="flex-1 mt-[-40px] relative z-20 bg-white rounded-t-[40px] px-6 pt-0 overflow-y-auto no-scrollbar pb-32">
-            <div className="flex flex-col items-center">
-              <div className="relative -mt-4 mb-1 z-30">
-                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <Avatar className="h-28 w-28 border-4 border-white shadow-2xl relative">
-                    <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="text-4xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </AvatarFrame>
-              </div>
-              <div className="text-center space-y-2.5 w-full">
-                <div className="flex items-center justify-center gap-2.5 flex-wrap">
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
-                  <span className="text-xl">🇮🇳</span>
-                  <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
+            <div className="max-w-[440px] mx-auto">
+              <div className="flex flex-col items-center">
+                <div className="relative -mt-4 mb-1 z-30">
+                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <Avatar className="h-28 w-28 border-4 border-white shadow-2xl relative">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-4xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
                 </div>
-                <div className="flex items-center justify-center gap-2">
-                  <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} />
-                </div>
-                <div className="flex justify-center items-center gap-2 h-8">
-                  <BudgetTag variant="diamond" label={`ID: ${profile.accountNumber || profile.id.substring(0, 6)}`} size="sm" />
-                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                  {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center py-5 mb-0 mx-[-24px]">
-              <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }}>
-                <span className="text-xl font-bold text-slate-900 leading-none">{stats.fans}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fans</span>
-              </div>
-              <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
-              <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('following'); setSocialOpen(true); }}>
-                <span className="text-xl font-bold text-slate-900 leading-none">{stats.following}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Following</span>
-              </div>
-              <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
-              <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('friends'); setSocialOpen(true); }}>
-                <span className="text-xl font-bold text-slate-900 leading-none">{stats.friends}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Friend</span>
-              </div>
-               <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
-              <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }}>
-                <span className="text-xl font-bold text-slate-900 leading-none">{stats.visitors}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visitors</span>
-              </div>
-            </div>
-
-            <div className="h-[1px] w-full bg-slate-50 my-2" />
-            <div className="mt-2 mb-4">
-              <h3 className="text-[9px] font-black text-slate-900 uppercase tracking-widest px-1 opacity-70 mb-2">Signature Bio</h3>
-              <div className="px-1"><p className="text-[13px] font-medium text-slate-500 leading-relaxed">{profile.bio || "Synchronized with the Ummy frequency."}</p></div>
-            </div>
-            <div className="h-[1px] w-full bg-slate-50 my-2" />
-
-            <ProfileSection title="Medal" isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
-              {medals.map((medalId: string) => {
-                const medal = MEDAL_REGISTRY[medalId];
-                if (!medal) return null;
-                return (
-                  <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group transition-all">
-                    <img src={medal.imageUrl} alt={medal.name} className="h-12 w-12 object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
-                    <span className="text-[8px] font-bold text-slate-500 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
+                <div className="text-center space-y-2.5 w-full">
+                  <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
+                    <span className="text-xl">🇮🇳</span>
+                    <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                   </div>
-                );
-              })}
-            </ProfileSection>
+                  <div className="flex items-center justify-center gap-2">
+                    <RichLevelBadge level={profile.level?.rich || 1} />
+                    <CharmLevelBadge level={profile.level?.charm || 1} />
+                  </div>
+                  <div className="flex justify-center items-center gap-2 h-8">
+                    <BudgetTag variant="diamond" label={`ID: ${profile.accountNumber || profile.id.substring(0, 6)}`} size="sm" />
+                    {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
+                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                  </div>
+                </div>
+              </div>
 
-            <ProfileSection title="Vehicle" isEmpty={ownedVehicles.length === 0} emptyLabel="No Vehicle Owned">
-              {ownedVehicles.map((id: string) => {
-                const vehicle = VEHICLE_REGISTRY[id];
-                if (!vehicle) return null;
-                const isActive = profile.inventory?.activeVehicle === id;
-                return (
-                  <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
-                    <div className="text-4xl filter drop-shadow-md py-1 animate-float">{vehicle.icon}</div>
-                    <div className="flex flex-col items-center gap-1 w-full">
-                      <span className="text-[8px] font-black text-slate-600 truncate uppercase tracking-tighter">{vehicle.name}</span>
-                      <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>{isActive ? 'Active' : 'Permanent'}</button>
+              <div className="flex justify-between items-center py-5 mb-0 mx-[-24px]">
+                <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('followers'); setSocialOpen(true); }}>
+                  <span className="text-xl font-bold text-slate-900 leading-none">{stats.fans}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fans</span>
+                </div>
+                <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
+                <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('following'); setSocialOpen(true); }}>
+                  <span className="text-xl font-bold text-slate-900 leading-none">{stats.following}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Following</span>
+                </div>
+                <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
+                <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('friends'); setSocialOpen(true); }}>
+                  <span className="text-xl font-bold text-slate-900 leading-none">{stats.friends}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Friend</span>
+                </div>
+                 <div className="flex flex-col items-center text-slate-400/20 text-2xl font-thin opacity-50">|</div>
+                <div className="flex flex-col items-center flex-1" onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }}>
+                  <span className="text-xl font-bold text-slate-900 leading-none">{stats.visitors}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visitors</span>
+                </div>
+              </div>
+
+              <div className="h-[1px] w-full bg-slate-50 my-2" />
+              <div className="mt-2 mb-4">
+                <h3 className="text-[9px] font-black text-slate-900 uppercase tracking-widest px-1 opacity-70 mb-2">Signature Bio</h3>
+                <div className="px-1"><p className="text-[13px] font-medium text-slate-500 leading-relaxed">{profile.bio || "Synchronized with the Ummy frequency."}</p></div>
+              </div>
+              <div className="h-[1px] w-full bg-slate-50 my-2" />
+
+              <ProfileSection title="Medal" isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
+                {medals.map((medalId: string) => {
+                  const medal = MEDAL_REGISTRY[medalId];
+                  if (!medal) return null;
+                  return (
+                    <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group transition-all">
+                      <img src={medal.imageUrl} alt={medal.name} className="h-12 w-12 object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
+                      <span className="text-[8px] font-bold text-slate-500 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
                     </div>
-                  </div>
-                );
-              })}
-            </ProfileSection>
+                  );
+                })}
+              </ProfileSection>
 
-            <ProfileSection title="Gift" isEmpty={Object.keys(receivedGifts).length === 0} emptyLabel="No Gift Received">
-              {Object.entries(receivedGifts).map(([giftId, count]: [string, any]) => {
-                const gift = GIFT_REGISTRY[giftId];
-                if (!gift) return null;
-                return (
-                  <div key={giftId} className="flex flex-col items-center gap-1 p-1 relative">
-                    <div className="absolute top-1 right-2 text-[10px] font-black text-primary italic drop-shadow-sm">x{count}</div>
-                    <div className="text-3xl filter drop-shadow-md py-1">{gift.emoji}</div>
-                    <div className="flex items-center gap-0.5 bg-slate-50 px-2 rounded-full border border-slate-100">
-                      <GoldCoinIcon className="h-2 w-2" />
-                      <span className="text-[9px] font-black text-slate-900">{gift.price}</span>
+              <ProfileSection title="Vehicle" isEmpty={ownedVehicles.length === 0} emptyLabel="No Vehicle Owned">
+                {ownedVehicles.map((id: string) => {
+                  const vehicle = VEHICLE_REGISTRY[id];
+                  if (!vehicle) return null;
+                  const isActive = profile.inventory?.activeVehicle === id;
+                  return (
+                    <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
+                      <div className="text-4xl filter drop-shadow-md py-1 animate-float">{vehicle.icon}</div>
+                      <div className="flex flex-col items-center gap-1 w-full">
+                        <span className="text-[8px] font-black text-slate-600 truncate uppercase tracking-tighter">{vehicle.name}</span>
+                        <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>{isActive ? 'Active' : 'Permanent'}</button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </ProfileSection>
+                  );
+                })}
+              </ProfileSection>
+
+              <ProfileSection title="Gift" isEmpty={Object.keys(receivedGifts).length === 0} emptyLabel="No Gift Received">
+                {Object.entries(receivedGifts).map(([giftId, count]: [string, any]) => {
+                  const gift = GIFT_REGISTRY[giftId];
+                  if (!gift) return null;
+                  return (
+                    <div key={giftId} className="flex flex-col items-center gap-1 p-1 relative">
+                      <div className="absolute top-1 right-2 text-[10px] font-black text-primary italic drop-shadow-sm">x{count}</div>
+                      <div className="text-3xl filter drop-shadow-md py-1">{gift.emoji}</div>
+                      <div className="flex items-center gap-0.5 bg-slate-50 px-2 rounded-full border border-slate-100">
+                        <GoldCoinIcon className="h-2 w-2" />
+                        <span className="text-[9px] font-black text-slate-900">{gift.price}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </ProfileSection>
+            </div>
           </div>
 
           <footer className="fixed bottom-0 left-0 right-0 p-6 pb-10 bg-white/80 backdrop-blur-3xl z-[110] border-t border-slate-100 shadow-2xl">
-            <div className="max-w-lg mx-auto flex gap-4 w-full">
+            <div className="max-w-[440px] mx-auto flex gap-4 w-full">
               <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-14 bg-slate-900 text-white rounded-3xl font-outfit font-black uppercase text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 px-8">
                  {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
                    <><Heart className={cn("h-5 w-5", followData && "fill-current text-rose-500")} />{followData ? "Joined" : "Join"}</>
@@ -481,12 +484,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
-        
-        {/* Added: 15vh Light Purple Top Gradient Background */}
-        <div className="absolute top-0 left-0 right-0 h-[15vh] bg-gradient-to-b from-purple-100/70 to-white z-0 pointer-events-none" />
+        {/* TOP SCREEN: 15Vh Purple mixing with white */}
+        <div className="absolute top-0 left-0 right-0 h-[15vh] bg-gradient-to-b from-[#b28dff]/80 via-purple-100 to-white z-0 pointer-events-none" />
 
-        <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-12 pb-0">
-          <div className="flex items-center justify-end max-w-lg mx-auto">
+        <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-14 pb-0">
+          <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
                  <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-5 w-5 text-slate-700" strokeWidth={2.5} /></button>
@@ -495,9 +497,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </header>
 
-        {/* Added: pt-[12vh] to move content down & scale-[0.98] with max-w-[420px] to make the page size smaller */}
-        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-[12vh] relative z-10">
-          <div className="max-w-[420px] mx-auto px-5 pb-8 scale-[0.98] origin-top">
+        {/* PROFILE PAGE THORA NICHE: mt-2 and pt-14 */}
+        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
+          {/* SIZE CHOTA: max-w-[440px] instead of max-w-lg */}
+          <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
@@ -591,3 +594,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
