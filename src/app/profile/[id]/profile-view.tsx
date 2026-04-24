@@ -5,22 +5,20 @@ import { useRouter } from 'next/navigation';
 import { 
   Loader, 
   ChevronLeft,
-  Crown,
-  UserPlus,
-  Star,
-  Heart,
-  ShoppingBag,
-  ShoppingCart,
+  Crown, // Level / Official Centre 👑
+  Wallet, // Invite Friends 👛
+  Disc3, // Medal 🪩
+  Heart, // Cp/Friend 🩷
+  ShoppingBag, // Store 👜
+  Ticket, // Task 🎫
+  Theater, // Family 🎭
+  Shirt, // Bag 👔
+  CircleDollarSign, // Seller Center 💰
   MoreHorizontal,
   Pencil,
   MessageCircle,
-  ClipboardList,
-  HelpCircle,
   ChevronRight,
   Sparkles,
-  History,
-  Trophy,
-  Info,
   Settings as SettingsIcon,
   LogOut,
   Users,
@@ -30,8 +28,8 @@ import {
   Phone,
   Camera,
   ShieldAlert,
-  Medal,
-  DollarSign 
+  Medal as MedalIcon,
+  DollarSign
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -77,69 +75,6 @@ const SVGA_GoldDollar = () => (
   </div>
 );
 
-// --- CUSTOM IMAGE REFERENCE ICONS ---
-const CustomIconInvite = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M11 6L16 2L21 6H11Z" fill="#FCA5A5"/>
-    <path d="M6 12C6 8 10 6 16 6C22 6 26 8 26 12V24C26 27.3137 23.3137 30 20 30H12C8.68629 30 6 27.3137 6 24V12Z" fill="#EF4444"/>
-    <text x="16" y="23" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">$</text>
-  </svg>
-);
-
-const CustomIconMedal = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="16" cy="16" r="14" fill="#8B5CF6"/>
-    <path d="M16 8L18.47 13.01L24 13.82L20 17.72L20.94 23.23L16 20.63L11.06 23.23L12 17.72L8 13.82L13.53 13.01L16 8Z" fill="white"/>
-  </svg>
-);
-
-const CustomIconSVIP = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 2L4 8V18C4 24 16 30 16 30C16 30 28 24 28 18V8L16 2Z" fill="#1A1D23"/>
-    <path d="M10 12L16 22L22 12" stroke="#FBBF24" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const CustomIconLevel = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 26H29V30H3V26ZM4 23L7 8L16 16L25 8L28 23H4Z" fill="#F97316"/>
-  </svg>
-);
-
-const CustomIconCP = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 29C16 29 3 20.5 3 11.5C3 6.8 6.8 3 11.5 3C14.2 3 16 5 16 5C16 5 17.8 3 20.5 3C25.2 3 29 6.8 29 11.5C29 20.5 16 29 16 29Z" fill="#F472B6"/>
-    <path d="M10 16L15 21L22 14" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M13 13L18 18" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const CustomIconFamily = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 2L4 8V18C4 24 16 30 16 30C16 30 28 24 28 18V8L16 2Z" fill="#B45309"/>
-    <circle cx="16" cy="13" r="3" fill="white"/>
-    <circle cx="10" cy="16" r="2.5" fill="white"/>
-    <circle cx="22" cy="16" r="2.5" fill="white"/>
-    <path d="M16 18C13 18 10 20 10 23V24H22V23C22 20 19 18 16 18Z" fill="white"/>
-  </svg>
-);
-
-const CustomIconStore = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4 4H7L9 12M9 12L11 22H25L28 12H9ZM9 12H28" fill="#06B6D4" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="13" cy="27" r="2.5" fill="#06B6D4"/>
-    <circle cx="23" cy="27" r="2.5" fill="#06B6D4"/>
-  </svg>
-);
-
-const CustomIconMyItems = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 6L16 2L24 6V28C24 29.1 23.1 30 22 30H10C8.9 30 8 29.1 8 28V6Z" fill="#8B5CF6"/>
-    <path d="M12 6L16 10L20 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M18 14H22V18C22 19 21 20 20 20C19 20 18 19 18 18V14Z" fill="#A78BFA"/>
-  </svg>
-);
-
 const GIFT_REGISTRY: Record<string, any> = {
   'heart': { id: 'heart', name: 'Heart', price: 99, emoji: '❤️' },
   'cake': { id: 'cake', name: 'Cake', price: 499, emoji: '🍰' },
@@ -172,9 +107,13 @@ const formatCompactNumber = (num: number) => {
 const RichLevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
-    <Star className="h-2 w-2 fill-white text-white" />
+    <StarIcon className="h-2 w-2 fill-white text-white" />
     <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.{level}</span>
   </div>
+);
+
+const StarIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 );
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
@@ -608,9 +547,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {isOwnProfile && (
-              <div className="flex flex-col gap-3 mt-2 px-1">
-                {/* 3D GLOSSY COIN CARD - NOW WIDE */}
-                <div onClick={() => router.push('/wallet')} className="h-[85px] w-full bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3),inset_0_2px_4px_rgba(255,255,255,0.6)] cursor-pointer relative overflow-hidden group border-t border-white/50 active:scale-95 transition-all">
+              <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
+                {/* 3D GLOSSY COIN CARD */}
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3),inset_0_2px_4px_rgba(255,255,255,0.6)] cursor-pointer relative overflow-hidden group border-t border-white/50 active:scale-95 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <SVGA_GoldDollar />
@@ -621,8 +560,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   </p>
                 </div>
 
-                {/* 3D GLOSSY DIAMOND CARD - NOW WIDE */}
-                <div onClick={() => router.push('/wallet')} className="h-[85px] w-full bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3),inset_0_2px_4px_rgba(255,255,255,0.4)] cursor-pointer relative overflow-hidden group border-t border-white/40 active:scale-95 transition-all">
+                {/* 3D GLOSSY DIAMOND CARD */}
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3),inset_0_2px_4px_rgba(255,255,255,0.4)] cursor-pointer relative overflow-hidden group border-t border-white/40 active:scale-95 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[14px]">💎</div>
@@ -636,39 +575,32 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             )}
 
             <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group relative overflow-hidden mt-2">
-              <div className="flex items-center gap-4 relative z-10">
-                <div className="flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <CustomIconSVIP className="h-8 w-8" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-[16px] font-bold text-white uppercase tracking-tight leading-tight">VIP Premium™</h3>
-                  <p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p>
-                </div>
-              </div>
+              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><Crown className="h-5 w-5 text-black fill-current" /></div><div className="flex flex-col"><h3 className="text-[16px] font-bold text-white uppercase tracking-tight leading-tight">VIP Premium™</h3><p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p></div></div>
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
             <div className="flex justify-between items-center px-4 mt-6">
+              {/* UPDATED ICON BUTTONS 👑, 👜, 🪩, 🎫 */}
               <IconButton 
-                icon={CustomIconLevel} 
+                icon={Crown} 
                 label="Level" 
-                iconColor="" 
+                iconColor="text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]" 
                 onClick={() => router.push('/level')} 
               />
               <IconButton 
-                icon={CustomIconStore} 
+                icon={ShoppingBag} 
                 label="Store" 
-                iconColor="" 
+                iconColor="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" 
                 onClick={() => router.push('/store')} 
               />
               <IconButton 
-                icon={CustomIconMedal} 
+                icon={Disc3} 
                 label="Medal" 
-                iconColor="" 
+                iconColor="text-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" 
                 onClick={() => router.push('/medals')} 
               />
               <IconButton 
-                icon={ClipboardList} 
+                icon={Ticket} 
                 label="Task" 
                 iconColor="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
                 onClick={() => router.push('/tasks')} 
@@ -677,12 +609,19 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <ProfileMenuItem icon={CustomIconInvite} label="Invite Friends" iconColor="bg-transparent" onClick={() => {}}/>
-                <ProfileMenuItem icon={CustomIconFamily} label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-transparent" onClick={() => router.push('/families')} />
-                <ProfileMenuItem icon={CustomIconMyItems} label="My Items" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-transparent" onClick={() => router.push('/store')} />
-                <ProfileMenuItem icon={CustomIconCP} label="CP / Friend" iconColor="bg-transparent" onClick={() => router.push('/cp-house')} />
-                {isCertifiedSeller && <SellerTransferDialog />}
-                {isAuthorizedAdmin && <ProfileMenuItem icon={CustomIconLevel} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-transparent" onClick={() => router.push('/admin')} />}
+                {/* UPDATED MENU ICONS 👛, 🎭, 👔, 🩷, 💰, 👑 */}
+                <ProfileMenuItem icon={Wallet} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
+                <ProfileMenuItem icon={Theater} label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                <ProfileMenuItem icon={Shirt} label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                
+                {isCertifiedSeller && (
+                   <SellerTransferDialog trigger={
+                     <ProfileMenuItem icon={CircleDollarSign} label="Seller center" iconColor="bg-amber-50 text-amber-600" onClick={() => {}} />
+                   } />
+                )}
+
+                {isAuthorizedAdmin && <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/admin')} />}
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
@@ -707,4 +646,3 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
-
