@@ -69,15 +69,15 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // --- CUSTOM 3D SVGA GOLD COIN ICON ---
 const SVGA_GoldDollar = () => (
-  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
-    <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
+  <div className="relative h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
+    <DollarSign className="h-5 w-5 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
     <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
 );
 
 // --- 3D GLOSSY CROWN (LEVEL) ICON ---
 const SVGA_LevelCrown = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
+  <div className={cn("relative h-10 w-10 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="crownGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -98,7 +98,7 @@ const SVGA_LevelCrown = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY STORE CART ICON ---
 const SVGA_StoreCart = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
+  <div className={cn("relative h-10 w-10 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="cartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -108,7 +108,7 @@ const SVGA_StoreCart = ({ className }: { className?: string }) => (
       </defs>
       <path 
         fill="url(#cartGradient)" 
-        d="M7,18 C5.9,18 5.01,18.9 5.01,20 C5.01,21.1 5.9,22 7,22 C8.1,22 9,21.1 9,20 C9,18.9 8.1,18.1 7,18 Z M1,2 L1,4 L3,4 L6.6,11.59 L5.25,14.04 C5.09,14.32 5,14.65 5,15 C5,16.1 5.9,17 7,17 L19,17 L19,15 L7.42,15 C7.28,15 7.17,14.89 7.17,14.75 L7.2,14.63 L8.1,13 L15.55,13 C16.3,13 16.96,12.59 17.3,11.97 L20.88,5.48 C21.05,5.17 21,4.82 21,4.5 C21,4.22 20.78,4 20.5,4 L5.21,4 L4.27,2 L1,2 Z M17,18 C15.9,18 15.01,18.9 15.01,20 C15.01,21.1 15.9,22 17,22 C18.1,22 19,21.1 19,20 C19,18.9 18.1,18.1 17,18 Z" 
+        d="M7,18 C5.9,18 5.01,18.9 5.01,20 C5.01,21.1 5.9,22 7,22 C8.1,22 9,21.1 9,20 C9,18.9 8.1,18.1 7,18 Z M1,2 L1,4 L3,4 L6.6,11.59 L5.25,14.04 C5.09,14.32 5,14.65 5,15 C5,16.1 5.9,17 7,17 L19,17 L19,15 L7.42,15 C7.26,15 7.15,14.85 7.15,14.7 L7.16,14.63 L8.1,13 L15.55,13 C16.3,13 16.96,12.59 17.3,11.97 L20.88,5.5 C20.95,5.34 21,5.17 21,5 C21,4.45 20.55,4 20,4 L5.21,4 L4.27,2 Z M17,18 C15.9,18 15.01,18.9 15.01,20 C15.01,21.1 15.9,22 17,22 C18.1,22 19,21.1 19,20 C19,18.9 18.1,18 17,18 Z" 
       />
     </svg>
     <div className="absolute top-2 left-2 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
@@ -117,7 +117,7 @@ const SVGA_StoreCart = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY PURPLE MEDAL ICON ---
 const SVGA_MedalStar = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-lg">
       <defs>
         <linearGradient id="medalGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -147,7 +147,7 @@ const SVGA_MedalStar = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY TASK CLIPBOARD ICON ---
 const SVGA_TaskClipboard = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="boardGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -172,7 +172,7 @@ const SVGA_TaskClipboard = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY INVITE FRIENDS (PINK ENVELOPE HEART) ---
 const SVGA_InviteHeart = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="pinkBg" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -194,7 +194,7 @@ const SVGA_InviteHeart = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY FAMILY SHIELD ---
 const SVGA_FamilyShield = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="bronzeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -220,7 +220,7 @@ const SVGA_FamilyShield = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY BAG/SHIRT ICON ---
 const SVGA_BagShirt = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="purpleShirt" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -244,7 +244,7 @@ const SVGA_BagShirt = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY CP HEART ICON ---
 const SVGA_CpHeart = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="cpPink" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -272,7 +272,7 @@ const SVGA_CpHeart = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY SELLER BAG (RED) ---
 const SVGA_SellerBag = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-xl">
       <defs>
         <linearGradient id="sellerRed" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -301,7 +301,7 @@ const SVGA_SellerBag = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY SETTINGS (HEXAGON) ---
 const SVGA_Settings = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-lg">
       <defs>
         <linearGradient id="settingsBlue" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -326,9 +326,9 @@ const SVGA_Settings = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- 3D GLOSSY HELP CENTER (BLUE BUBBLE) - UPDATED TO MATCH IMAGE ---
+// --- 3D GLOSSY HELP CENTER (BLUE BUBBLE) ---
 const SVGA_HelpCenter = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="helpBlue" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -359,7 +359,7 @@ const SVGA_HelpCenter = ({ className }: { className?: string }) => (
 
 // --- 3D GLOSSY OFFICIAL USER (ORANGE) ---
 const SVGA_OfficialUser = ({ className }: { className?: string }) => (
-  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+  <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
         <linearGradient id="officialOrange" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -415,7 +415,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
 );
 
 const StarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 6.91 14.14 1.86 9.27 8.91 8.26 12 2" /></svg>
 );
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
@@ -462,7 +462,7 @@ const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomI
       {CustomIcon ? (
         <CustomIcon className="transition-all group-hover:scale-110" />
       ) : (
-        <Icon className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
+        <Icon className={cn("h-8 w-8 transition-all group-hover:scale-110", iconColor)} />
       )}
     </div>
     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
@@ -629,7 +629,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
             )}
             <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
-              <button onClick={() => router.back()} className="h-10 w-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/10">
+              <button onClick={() => router.back()} className="h-10 w-10 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/10 outline-none">
                 <ChevronLeft className="h-6 w-6" />
               </button>
               
@@ -745,7 +745,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <div className="text-4xl filter drop-shadow-md py-1 animate-float">{vehicle.icon}</div>
                       <div className="flex flex-col items-center gap-1 w-full">
                         <span className="text-[8px] font-black text-slate-600 truncate uppercase tracking-tighter">{vehicle.name}</span>
-                        <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>Set</button>
+                        <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>
+                          {isActive ? '✓' : 'Equip'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -773,7 +775,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
           <footer className="fixed bottom-0 left-0 right-0 p-6 pb-10 bg-white/80 backdrop-blur-3xl z-[110] border-t border-slate-100 shadow-2xl">
             <div className="max-w-[440px] mx-auto flex gap-4 w-full">
-              <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-14 bg-slate-900 text-white rounded-3xl font-outfit font-black uppercase text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+              <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-14 bg-slate-900 text-white rounded-3xl font-outfit font-black uppercase text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                  {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
                    <><Heart className={cn("h-5 w-5", followData && "fill-current text-rose-500")} />{followData ? "Joined" : "Join"}</>
                  )}
@@ -810,7 +812,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
-                 <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-4 w-4 text-slate-600" /></button>
+                 <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-5 w-5 text-slate-600" /></button>
                }/>
              )}
           </div>
@@ -855,39 +857,42 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {isOwnProfile && (
-              <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div onClick={() => router.push('/wallet')} className="h-32 bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-3xl p-6 shadow-[0_10px_20px_rgba(253,185,49,0.3)] cursor-pointer active:scale-95 transition-all group relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
-                  <div className="flex items-center gap-2 relative z-10">
+                  <div className="flex items-center gap-2 relative z-10 mb-4">
                     <SVGA_GoldDollar />
                     <span className="text-[10px] font-black text-[#5C4000] uppercase tracking-widest opacity-90">Coins</span>
                   </div>
-                  <p className="font-black text-[20px] text-[#422E00] tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-sm">
+                  <p className="font-black text-[24px] text-[#422E00] tracking-tighter leading-none drop-shadow-sm">
                     {profile.wallet?.coins?.toFixed(1) || '0.0'}
                   </p>
                 </div>
 
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
+                <div onClick={() => router.push('/wallet')} className="h-32 bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-3xl p-6 shadow-[0_10px_20px_rgba(58,123,213,0.3)] cursor-pointer active:scale-95 transition-all group relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
-                  <div className="flex items-center gap-2 relative z-10">
-                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[14px]">💎</div>
+                  <div className="flex items-center gap-2 relative z-10 mb-4">
+                    <div className="h-9 w-9 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[16px]">💎</div>
                     <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span>
                   </div>
-                  <p className="font-black text-[20px] text-white tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-md">
+                  <p className="font-black text-[24px] text-white tracking-tighter leading-none drop-shadow-md">
                     {profile.wallet?.diamonds?.toFixed(1) || '0.0'}
                   </p>
                 </div>
               </div>
             )}
 
-            <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group mt-3">
-              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all">
-                <SVGA_LevelCrown className="h-6 w-6" />
-              </div><span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span></div>
+            <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all mt-4 group">
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <SVGA_LevelCrown className="h-6 w-6" />
+                </div>
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span>
+              </div>
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
-            <div className="flex justify-between items-center px-4 mt-6">
+            <div className="flex justify-between items-center px-4 mt-8 mb-2">
               <IconButton 
                 customIcon={SVGA_LevelCrown} 
                 label="Level" 
@@ -970,7 +975,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   iconColor="bg-slate-50" 
                   onClick={() => router.push('/settings')} 
                 />
-                {/* Updated Help Center Icon to match Image UI */}
                 <ProfileMenuItem 
                   customIcon={SVGA_HelpCenter} 
                   label="Help center" 
@@ -996,5 +1000,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
-
+      }
