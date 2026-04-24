@@ -699,6 +699,7 @@ function AdminPageContent() {
   const [giftPrice, setGiftPrice] = useState("");
   const [giftCategory, setGiftCategory] = useState("Hot");
   const [isUploadingGift, setIsUploadingGift] = useState(false);
+  const [isAddingGift, setIsAddingGift] = useState(false);
   const giftFileInputRef = useRef<HTMLInputElement>(null);
 
   const giftsQuery = useMemoFirebase(() => {
