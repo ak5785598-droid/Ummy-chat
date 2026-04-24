@@ -96,8 +96,8 @@ export default function DiscoverView() {
         DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-white"
       )}>
         
-        {/* --- NEW: Top 20Vh Purple & White Mix --- */}
-        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-100 via-purple-50/30 to-transparent pointer-events-none z-0" />
+        {/* --- FIXED: Top 20Vh Purple & White Mix Gradient --- */}
+        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-200 via-white/80 to-transparent pointer-events-none z-10" />
 
         {/* Subtle Background Elements */}
         {DESIGN_TOKENS.appBackground !== '#FF91B5' && (
@@ -154,7 +154,7 @@ export default function DiscoverView() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto no-scrollbar relative z-10 px-2 py-4 pb-40">
+        <main className="flex-1 overflow-y-auto no-scrollbar relative z-20 px-2 py-4 pb-40">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
               <div className="relative">
@@ -191,7 +191,7 @@ export default function DiscoverView() {
           )}
         </main>
 
-        {/* --- NEW: Glossy 3D Post Button at Bottom 10Vh --- */}
+        {/* --- Glossy 3D Post Button --- */}
         <motion.button 
           initial={{ scale: 0, rotate: -20 }}
           animate={{ scale: 1, rotate: 0 }}
