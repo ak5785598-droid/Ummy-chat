@@ -270,27 +270,94 @@ const SVGA_CpHeart = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- NEW 3D GLOSSY SELLER BAG (RED) ---
+// --- 3D GLOSSY SELLER BAG (RED) ---
 const SVGA_SellerBag = ({ className }: { className?: string }) => (
   <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
-    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-xl">
       <defs>
         <linearGradient id="sellerRed" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#FF8B8B" />
-          <stop offset="100%" stopColor="#E63946" />
+          <stop offset="0%" stopColor="#FF5F5F" />
+          <stop offset="100%" stopColor="#B91C1C" />
         </linearGradient>
+        <radialGradient id="bagGloss" cx="30%" cy="30%" r="50%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </radialGradient>
       </defs>
       <path 
-        d="M20,6 C16,6 14,8 14,10 L12,16 C10,16 8,18 8,20 L8,32 C8,34 10,36 12,36 L28,36 C30,36 32,34 32,32 L32,20 C32,18 30,16 28,16 L26,10 C26,8 24,6 20,6 Z" 
+        d="M20,6 C16,6 14,9 14,12 C14,14 16,15 18,15 L22,15 C24,15 26,14 26,12 C26,9 24,6 20,6 Z" 
+        fill="#991B1B" 
+      />
+      <path 
+        d="M10,16 C10,16 6,20 6,28 C6,34 10,36 20,36 C30,36 34,34 34,28 C34,20 30,16 30,16 L10,16 Z" 
         fill="url(#sellerRed)" 
       />
-      <text x="20" y="29" fontSize="14" fontWeight="900" fill="white" textAnchor="middle" style={{ fontFamily: 'sans-serif' }}>$</text>
+      <circle cx="20" cy="27" r="6" fill="white" fillOpacity="0.2" />
+      <text x="20" y="31" fontSize="14" fontWeight="900" fill="white" textAnchor="middle" style={{ fontFamily: 'sans-serif' }}>$</text>
+      <ellipse cx="14" cy="22" rx="4" ry="2" fill="url(#bagGloss)" transform="rotate(-20, 14, 22)" />
     </svg>
-    <div className="absolute top-2 left-3 w-4 h-1.5 bg-white/30 rounded-full blur-[1px] rotate-[-15deg]" />
   </div>
 );
 
-// --- NEW 3D GLOSSY OFFICIAL USER (ORANGE) ---
+// --- 3D GLOSSY SETTINGS (HEXAGON) ---
+const SVGA_Settings = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-lg">
+      <defs>
+        <linearGradient id="settingsBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#C7D2FE" />
+          <stop offset="100%" stopColor="#818CF8" />
+        </linearGradient>
+      </defs>
+      <path 
+        d="M20,6 L32.99,13.5 V28.5 L20,36 L7.01,28.5 V13.5 L20,6 Z" 
+        fill="url(#settingsBlue)" 
+      />
+      <circle cx="20" cy="21" r="5" fill="white" />
+      <path 
+        d="M12,14 Q20,10 28,14" 
+        stroke="white" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeOpacity="0.4" 
+        fill="none" 
+      />
+    </svg>
+  </div>
+);
+
+// --- 3D GLOSSY HELP CENTER (BLUE BUBBLE) - UPDATED TO MATCH IMAGE ---
+const SVGA_HelpCenter = ({ className }: { className?: string }) => (
+  <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
+    <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
+      <defs>
+        <linearGradient id="helpBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="100%" stopColor="#0EA5E9" />
+        </linearGradient>
+      </defs>
+      {/* Speech Bubble Shape */}
+      <path 
+        d="M10,8 H30 C32.2,8 34,9.8 34,12 V26 C34,28.2 32.2,30 30,30 H22 L20,33 L18,30 H10 C7.8,30 6,28.2 6,26 V12 C6,9.8 7.8,8 10,8 Z" 
+        fill="url(#helpBlue)" 
+      />
+      {/* Exclamation Mark */}
+      <rect x="18.5" y="13" width="3" height="9" rx="1.5" fill="white" />
+      <circle cx="20" cy="26" r="2" fill="white" />
+      {/* Glossy Reflection */}
+      <path 
+        d="M10,12 Q20,9 30,12" 
+        stroke="white" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeOpacity="0.5" 
+        fill="none" 
+      />
+    </svg>
+  </div>
+);
+
+// --- 3D GLOSSY OFFICIAL USER (ORANGE) ---
 const SVGA_OfficialUser = ({ className }: { className?: string }) => (
   <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
@@ -897,8 +964,19 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 )}
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
-                <ProfileMenuItem icon={HelpCircle} label="Help center" iconColor="bg-orange-50 text-orange-500" onClick={() => router.push('/help-center')} />
+                <ProfileMenuItem 
+                  customIcon={SVGA_Settings} 
+                  label="Settings" 
+                  iconColor="bg-slate-50" 
+                  onClick={() => router.push('/settings')} 
+                />
+                {/* Updated Help Center Icon to match Image UI */}
+                <ProfileMenuItem 
+                  customIcon={SVGA_HelpCenter} 
+                  label="Help center" 
+                  iconColor="bg-sky-50" 
+                  onClick={() => router.push('/help-center')} 
+                />
               </div>
             </div>
           </div>
