@@ -803,7 +803,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     extra="Supreme Authority" 
                     extraColor="text-orange-600" 
                     iconColor="bg-orange-50" 
-                    onClick={() => router.push('/official-center')} 
+                    onClick={() => router.push('/admin')} 
                   />
                 )}
               </div>
