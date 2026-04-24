@@ -18,8 +18,31 @@ import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames
 import { AvatarFrame } from '@/components/avatar-frame';
 
 // --- CUSTOM WAVE CIRCLE UI ---
-const WaveCircleIcon = ({ colorClass, size = "h-14 w-14" }) => {
+const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }) => {
   const borderColor = colorClass.replace('text-', 'border-');
+  
+  if (isLovelyShine) {
+    return (
+      <div className={cn("relative flex items-center justify-center rounded-full", size)}>
+        {/* Main Outer Glow */}
+        <div className="absolute inset-0 rounded-full border-[2px] border-blue-400/50 blur-[2px] animate-pulse" />
+        <div className="absolute inset-1 rounded-full border-[4px] border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.6)]" />
+        
+        {/* Inner Ornate Ring */}
+        <div className="absolute inset-3 rounded-full border border-blue-200/20 border-dashed animate-[spin_10s_linear_infinite]" />
+        
+        {/* Floating Hearts */}
+        <Heart className="absolute -top-1 -right-1 h-4 w-4 text-blue-400 fill-blue-400/40 animate-bounce" />
+        <Heart className="absolute top-1/2 -left-2 h-3 w-3 text-blue-300 fill-blue-300/40" />
+        <Heart className="absolute bottom-0 right-2 h-3 w-3 text-white fill-white/20 animate-pulse" />
+        <Sparkles className="absolute top-2 left-2 h-3 w-3 text-white animate-pulse" />
+        
+        {/* Core Circle */}
+        <div className="absolute inset-[14px] rounded-full border-[1px] border-blue-400/60" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative flex items-center justify-center rounded-full", size)}>
       <div className={cn("absolute inset-0 rounded-full border-[6px] opacity-30 blur-[1px]", borderColor)} />
@@ -92,6 +115,7 @@ const STATIC_STORE_ITEMS = [
   { id: 'elite-mythic-gold', name: 'Mythic Gold Elite', type: 'Frame', price: 5000000, durationDays: 7, description: 'Ultimate multi-tiered golden aura.', icon: Crown, color: 'text-yellow-400' },
   { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 7, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
   { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 7, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
+  { id: 'w-lovelyshine', name: 'Lovely Shine', type: 'Wave', price: 59999, durationDays: 7, description: 'Magical blue glow with floating hearts.', icon: Activity, color: 'text-blue-400' },
   { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
   { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
   { id: 'w-vox', name: 'Vox', type: 'Wave', price: 30500, durationDays: 7, description: 'Crystal blue 3D glossy voice wave.', icon: Activity, color: 'text-blue-500' },
@@ -106,11 +130,9 @@ export default function StorePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // States for Preview and selection
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
 
-  // Reset selected duration when item changes
   useEffect(() => {
     if (previewItem) {
       setSelectedDuration(7);
@@ -150,10 +172,8 @@ export default function StorePage() {
 
   const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes, ...frameItems];
 
-  // Calculate price based on duration (3 days or 7 days)
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
-    // For 3 days, we approximate price (e.g., 45% of 7-day price)
     return Math.floor((basePrice / 7) * 3);
   };
 
@@ -200,14 +220,25 @@ export default function StorePage() {
   if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-black"><Loader className="animate-spin text-white" /></div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe">
-      <div className="space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
+      
+      {/* --- TOP GLOSSY PURPLE MIXING EFFECT (15vh) --- */}
+      <div className="absolute top-0 left-0 right-0 h-[15vh] pointer-events-none z-0 overflow-hidden">
+        {/* Main Purple Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-600/25 via-purple-900/5 to-transparent" />
+        {/* Central Glossy Glow */}
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/10 blur-[80px] rounded-[100%]" />
+        {/* Top Edge Shine */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-400/30 to-transparent" />
+      </div>
+
+      <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
         
         <header className="relative flex items-center justify-center border-b border-white/10 pb-6 min-h-[48px]">
           <button onClick={() => router.back()} className="absolute left-0 p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
             <ChevronLeft />
           </button>
-          <h1 className="text-3xl font-black tracking-tight text-white">Store</h1>
+          <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">Store</h1>
         </header>
 
         <Tabs defaultValue="Frame" className="w-full">
@@ -249,7 +280,7 @@ export default function StorePage() {
                       ) : item.type === 'Theme' ? (
                         <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
                       ) : item.type === 'Wave' ? (
-                         <WaveCircleIcon colorClass={item.color} size="h-14 w-14" />
+                         <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -273,7 +304,8 @@ export default function StorePage() {
         {/* --- BOTTOM SHEET PREVIEW --- */}
         {previewItem && (
           <>
-            <div className="fixed inset-0 bg-black/70 z-40 backdrop-blur-sm transition-opacity" onClick={() => setPreviewItem(null)} />
+            {/* REMOVED: backdrop-blur-sm from the overlay div below */}
+            <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
             
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[55vh] max-h-[600px] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
               
@@ -297,7 +329,7 @@ export default function StorePage() {
                   ) : previewItem.type === 'Theme' ? (
                     <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-24 w-24" />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.icon ? (
                     <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
                   ) : null}
@@ -305,7 +337,6 @@ export default function StorePage() {
 
                 <h2 className="text-2xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
-                {/* --- DAYS SELECTION (3 & 7 DAYS) --- */}
                 <div className="flex gap-4 mt-8 w-full justify-center">
                   <button 
                     onClick={() => setSelectedDuration(3)}
