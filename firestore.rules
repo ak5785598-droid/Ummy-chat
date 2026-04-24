@@ -240,5 +240,11 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read, delete, update: if isAdmin();
     }
+
+    // --- GIFTS ---
+    match /giftList/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
