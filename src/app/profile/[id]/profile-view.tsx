@@ -5,15 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
   Loader, 
   ChevronLeft,
-  Crown, // Level / Official Centre 👑
-  Wallet, // Invite Friends 👛
-  Disc3, // Medal 🪩
-  Heart, // Cp/Friend 🩷
-  ShoppingBag, // Store 👜
-  Ticket, // Task 🎫
-  Theater, // Family 🎭
-  Shirt, // Bag 👔
-  CircleDollarSign, // Seller Center 💰
   MoreHorizontal,
   Pencil,
   MessageCircle,
@@ -28,9 +19,8 @@ import {
   Phone,
   Camera,
   ShieldAlert,
-  Medal as MedalIcon,
-  DollarSign,
-  HelpCircle
+  HelpCircle,
+  Heart
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -68,12 +58,9 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// --- CUSTOM 3D SVGA GOLD COIN ICON ---
-const SVGA_GoldDollar = () => (
-  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
-    <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
-    <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
-  </div>
+// --- REMOVED SVGA, USING EMOJI INSTEAD ---
+const Emoji_GoldDollar = () => (
+  <span className="text-2xl drop-shadow-md">🪙</span>
 );
 
 const GIFT_REGISTRY: Record<string, any> = {
@@ -155,20 +142,28 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
   </button>
 );
 
-const IconButton = ({ icon: Icon, label, iconColor, onClick }: { icon: any, label: string, iconColor: string, onClick: () => void }) => (
+const IconButton = ({ icon: IconOrEmoji, label, iconColor, onClick }: { icon: any, label: string, iconColor?: string, onClick: () => void }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
     <div className="flex items-center justify-center py-1">
-      <Icon className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
+      {typeof IconOrEmoji === 'string' ? (
+        <span className={cn("text-[26px] transition-all group-hover:scale-110", iconColor)}>{IconOrEmoji}</span>
+      ) : (
+        <IconOrEmoji className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
+      )}
     </div>
     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
   </button>
 );
 
-const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
+const ProfileMenuItem = ({ icon: IconOrEmoji, label, extra, iconColor, onClick, destructive, extraColor }: { icon: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string }) => (
   <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group">
     <div className="flex items-center gap-4">
-      <div className={cn("p-2 rounded-xl transition-colors", iconColor || "bg-slate-100 text-slate-400")}>
-        <Icon className="h-5 w-5" />
+      <div className={cn("p-2 rounded-xl transition-colors flex items-center justify-center", iconColor || "bg-slate-100 text-slate-400")}>
+        {typeof IconOrEmoji === 'string' ? (
+           <span className="text-[18px] leading-none">{IconOrEmoji}</span>
+        ) : (
+           <IconOrEmoji className="h-5 w-5" />
+        )}
       </div>
       <span className={cn("font-medium text-[16px]", destructive ? "text-red-500" : "text-[#1F2937]")}>{label}</span>
     </div>
@@ -555,7 +550,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
-                    <SVGA_GoldDollar />
+                    <Emoji_GoldDollar />
                     <span className="text-[10px] font-black text-[#5C4000] uppercase tracking-widest opacity-90">Coins</span>
                   </div>
                   <p className="font-black text-[20px] text-[#422E00] tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-sm">
@@ -578,53 +573,58 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             )}
 
             <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group mt-3">
-              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all"><Crown className="h-5 w-5 text-[#5C4000]" /></div><span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span></div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all">
+                   <span className="text-xl">👑</span>
+                </div>
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span>
+              </div>
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
             <div className="flex justify-between items-center px-4 mt-6">
-              {/* UPDATED ICON BUTTONS 👑, 👜, 🪩, 🎫 */}
+              {/* NOW USING EMOJIS DIRECTLY */}
               <IconButton 
-                icon={Crown} 
+                icon="👑" 
                 label="Level" 
-                iconColor="text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]" 
+                iconColor="drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]" 
                 onClick={() => router.push('/level')} 
               />
               <IconButton 
-                icon={ShoppingBag} 
+                icon="👜" 
                 label="Store" 
-                iconColor="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" 
+                iconColor="drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" 
                 onClick={() => router.push('/store')} 
               />
               <IconButton 
-                icon={Disc3} 
+                icon="🪩" 
                 label="Medal" 
-                iconColor="text-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" 
+                iconColor="drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" 
                 onClick={() => router.push('/medals')} 
               />
               <IconButton 
-                icon={Ticket} 
+                icon="🎫" 
                 label="Task" 
-                iconColor="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
+                iconColor="drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
                 onClick={() => router.push('/tasks')} 
               />
             </div>
 
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                {/* UPDATED MENU ICONS 👛, 🎭, 👔, 🩷, 💰, 👑 */}
-                <ProfileMenuItem icon={Wallet} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
-                <ProfileMenuItem icon={Theater} label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
-                <ProfileMenuItem icon={Shirt} label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
-                <ProfileMenuItem icon={Heart} label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
+                {/* MENU EMOJIS PLACED HERE */}
+                <ProfileMenuItem icon="👛" label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
+                <ProfileMenuItem icon="🎭" label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
+                <ProfileMenuItem icon="👔" label="Bag" extra="INVENTORY" extraColor="text-purple-500" iconColor="bg-purple-50 text-purple-500" onClick={() => router.push('/store')} />
+                <ProfileMenuItem icon="🩷" label="Cp/friends" iconColor="bg-pink-50 text-pink-500" onClick={() => router.push('/cp-house')} />
                 
                 {isCertifiedSeller && (
                    <SellerTransferDialog trigger={
-                     <ProfileMenuItem icon={CircleDollarSign} label="Seller center" iconColor="bg-amber-50 text-amber-600" onClick={() => {}} />
+                     <ProfileMenuItem icon="💰" label="Seller center" iconColor="bg-amber-50 text-amber-600" onClick={() => {}} />
                    } />
                 )}
 
-                {isAuthorizedAdmin && <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/official-center')} />}
+                {isAuthorizedAdmin && <ProfileMenuItem icon="👑" label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/official-center')} />}
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
@@ -649,3 +649,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
