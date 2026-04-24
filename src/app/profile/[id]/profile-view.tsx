@@ -29,7 +29,8 @@ import {
   Camera,
   ShieldAlert,
   Medal as MedalIcon,
-  DollarSign
+  DollarSign,
+  HelpCircle
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -69,7 +70,7 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // --- CUSTOM 3D SVGA GOLD COIN ICON ---
 const SVGA_GoldDollar = () => (
-  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.3)] border border-[#B8860B]">
+  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
     <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
     <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
@@ -113,7 +114,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
 );
 
 const StarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
 );
 
 const CharmLevelBadge = ({ level }: { level: number }) => (
@@ -439,7 +440,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <div className="text-4xl filter drop-shadow-md py-1 animate-float">{vehicle.icon}</div>
                       <div className="flex flex-col items-center gap-1 w-full">
                         <span className="text-[8px] font-black text-slate-600 truncate uppercase tracking-tighter">{vehicle.name}</span>
-                        <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>{isActive ? 'Active' : 'Permanent'}</button>
+                        <button className={cn("w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm", isActive ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400")}>Set</button>
                       </div>
                     </div>
                   );
@@ -467,13 +468,15 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
           <footer className="fixed bottom-0 left-0 right-0 p-6 pb-10 bg-white/80 backdrop-blur-3xl z-[110] border-t border-slate-100 shadow-2xl">
             <div className="max-w-[440px] mx-auto flex gap-4 w-full">
-              <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-14 bg-slate-900 text-white rounded-3xl font-outfit font-black uppercase text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 px-8">
+              <button onClick={handleFollow} disabled={isProcessingFollow} className="flex-2 h-14 bg-slate-900 text-white rounded-3xl font-outfit font-black uppercase text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
                  {isProcessingFollow ? <Loader className="animate-spin h-5 w-5" /> : (
                    <><Heart className={cn("h-5 w-5", followData && "fill-current text-rose-500")} />{followData ? "Joined" : "Join"}</>
                  )}
               </button>
               <DirectMessageDialog recipient={{ uid: profile.id, username: profile.username, avatarUrl: profile.avatarUrl || '' }} trigger={
-                <button className="flex-1 h-14 bg-white text-slate-900 border-2 border-slate-900 rounded-3xl font-outfit font-black uppercase text-sm active:scale-95 transition-all flex items-center justify-center gap-3"><MessageCircle className="h-5 w-5" />Vibe</button>
+                <button className="flex-1 h-14 bg-white text-slate-900 border-2 border-slate-900 rounded-3xl font-outfit font-black uppercase text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <MessageCircle className="h-5 w-5" />Chat
+                </button>
               }/>
             </div>
           </footer>
@@ -502,7 +505,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
-                 <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-5 w-5 text-slate-700" strokeWidth={2.5} /></button>
+                 <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-4 w-4 text-slate-600" /></button>
                }/>
              )}
           </div>
@@ -549,7 +552,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
                 {/* 3D GLOSSY COIN CARD */}
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3),inset_0_2px_4px_rgba(255,255,255,0.6)] cursor-pointer relative overflow-hidden group border-t border-white/50 active:scale-95 transition-all">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <SVGA_GoldDollar />
@@ -561,7 +564,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
 
                 {/* 3D GLOSSY DIAMOND CARD */}
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3),inset_0_2px_4px_rgba(255,255,255,0.4)] cursor-pointer relative overflow-hidden group border-t border-white/40 active:scale-95 transition-all">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[14px]">💎</div>
@@ -574,8 +577,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
             )}
 
-            <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group relative overflow-hidden mt-2">
-              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform"><Crown className="h-5 w-5 text-black fill-current" /></div><div className="flex flex-col"><h3 className="text-[16px] font-bold text-white uppercase tracking-tight leading-tight">VIP Premium™</h3><p className="text-[9px] font-medium text-slate-500 uppercase tracking-widest mt-0.5">Secret card get rewards</p></div></div>
+            <div onClick={() => router.push('/vips')} className="bg-[#0F1115] rounded-3xl p-4 shadow-2xl flex items-center justify-between cursor-pointer border border-[#1A1D23] active:scale-[0.98] transition-all group mt-3">
+              <div className="flex items-center gap-4 relative z-10"><div className="h-10 w-10 bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all"><Crown className="h-5 w-5 text-[#5C4000]" /></div><span className="text-[11px] font-black text-white uppercase tracking-widest">VIP Members</span></div>
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
@@ -621,7 +624,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                    } />
                 )}
 
-                {isAuthorizedAdmin && <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/admin')} />}
+                {isAuthorizedAdmin && <ProfileMenuItem icon={Crown} label="Official Centre" extra="Supreme Authority" extraColor="text-blue-600" iconColor="bg-blue-50 text-blue-600" onClick={() => router.push('/official-center')} />}
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={SettingsIcon} label="Settings" iconColor="bg-slate-50 text-slate-500" onClick={() => router.push('/settings')} />
