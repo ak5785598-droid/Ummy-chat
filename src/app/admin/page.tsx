@@ -105,6 +105,7 @@ import {
   Waves,
   Cloud,
   ArrowLeft,
+  Rocket,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -1696,15 +1697,22 @@ function AdminPageContent() {
       targetUserForCenter.id,
     );
     let newTags;
+    let newIsAdmin;
     if (isCurrentlyActive) {
       newTags = tags.filter((t: string) => !adminTags.includes(t));
+      newIsAdmin = false;
     } else {
       newTags = [...tags, "Official center"];
+      newIsAdmin = true;
     }
-    const updateData = { tags: newTags, updatedAt: serverTimestamp() };
+    const updateData = { 
+      tags: newTags, 
+      isAdmin: newIsAdmin,
+      updatedAt: serverTimestamp() 
+    };
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
-    setTargetUserForCenter((prev: any) => ({ ...prev, tags: newTags }));
+    setTargetUserForCenter((prev: any) => ({ ...prev, ...updateData }));
     if (targetUserForTags?.id === targetUserForCenter.id)
       setTargetUserForTags((prev: any) => ({ ...prev, tags: newTags }));
     setFoundUsers((prev) =>

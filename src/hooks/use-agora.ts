@@ -14,11 +14,18 @@ const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 // Dynamic import of Agora to prevent SSR window errors
 let AgoraRTC: any = null;
 if (typeof window !== 'undefined') {
-  try {
-    const agoraModule = require('agora-rtc-sdk-ng');
-    AgoraRTC = agoraModule.default || agoraModule;
-  } catch (err) {
-    console.error('[Agora] SDK load FAILED:', err);
+  // GUARD: Only load Agora in secure contexts (HTTPS or Localhost)
+  // This prevents the SDK from throwing WEB_SECURITY_RESTRICT errors 
+  // when testing on local IP addresses from mobile devices.
+  if (window.isSecureContext) {
+    try {
+      const agoraModule = require('agora-rtc-sdk-ng');
+      AgoraRTC = agoraModule.default || agoraModule;
+    } catch (err) {
+      console.error('[Agora] SDK load FAILED:', err);
+    }
+  } else {
+    console.warn('[Agora] SDK load SKIPPED: Insecure context detected (HTTP over IP). Use HTTPS or Localhost for calling features.');
   }
 }
 
