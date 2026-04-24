@@ -95,6 +95,10 @@ export default function DiscoverView() {
         "h-[100dvh] flex flex-col relative overflow-hidden text-slate-800 font-sans",
         DESIGN_TOKENS.appBackground === '#FF91B5' ? "bg-[#FF91B5]" : "bg-white"
       )}>
+        
+        {/* --- NEW: Top 20Vh Purple & White Mix --- */}
+        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-100 via-purple-50/30 to-transparent pointer-events-none z-0" />
+
         {/* Subtle Background Elements */}
         {DESIGN_TOKENS.appBackground !== '#FF91B5' && (
           <div className="fixed inset-0 z-0">
@@ -105,12 +109,12 @@ export default function DiscoverView() {
 
         {/* Discovery Header - Fixed Height & Tabs */}
         <header className={cn(
-          "shrink-0 pt-12 pb-4 px-6 z-50 border-b border-black/5 bg-white/80 backdrop-blur-xl",
-          DESIGN_TOKENS.appBackground === '#FF91B5' && "bg-[#FF91B5] border-white/10"
+          "shrink-0 pt-12 pb-4 px-6 z-50 border-b border-black/5 bg-white/40 backdrop-blur-xl",
+          DESIGN_TOKENS.appBackground === '#FF91B5' && "bg-[#FF91B5]/40 border-white/10"
         )}>
-          <div className="flex items-center justify-between max-w-2xl mx-auto relative h-10">
+          <div className="flex items-center justify-center max-w-2xl mx-auto relative h-10">
             {/* Tabs Container */}
-            <div className="flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
+            <div className="flex items-center gap-6">
               <button 
                 onClick={() => setActiveTab('recommend')}
                 className="relative group py-2"
@@ -147,14 +151,6 @@ export default function DiscoverView() {
                 )}
               </button>
             </div>
-
-            {/* Post Button (Top Right) */}
-            <button 
-              onClick={() => setShowPublish(true)}
-              className="ml-auto h-10 w-10 flex items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 active:scale-95 transition-all shadow-sm"
-            >
-              <Camera className="h-5 w-5 fill-primary" />
-            </button>
           </div>
         </header>
 
@@ -194,6 +190,20 @@ export default function DiscoverView() {
             </div>
           )}
         </main>
+
+        {/* --- NEW: Glossy 3D Post Button at Bottom 10Vh --- */}
+        <motion.button 
+          initial={{ scale: 0, rotate: -20 }}
+          animate={{ scale: 1, rotate: 0 }}
+          whileTap={{ scale: 0.9, y: 5 }}
+          onClick={() => setShowPublish(true)}
+          className="fixed bottom-[10vh] right-6 z-[60] h-16 w-16 flex items-center justify-center rounded-2xl 
+                     bg-gradient-to-br from-purple-400 to-purple-600 
+                     text-white shadow-[0_8px_0_rgb(126,34,206),0_15px_20px_rgba(0,0,0,0.3)] 
+                     border-t border-white/40 backdrop-blur-md transition-all active:shadow-none"
+        >
+          <Camera className="h-7 w-7 drop-shadow-md" />
+        </motion.button>
 
         <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
 
