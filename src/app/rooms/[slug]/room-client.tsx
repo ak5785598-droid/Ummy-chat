@@ -282,7 +282,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
-  const [activeGift, setActiveGift] = useState<{giftId: string, senderName: string, targetSeat?: number} | null>(null);
+  const [activeGift, setActiveGift] = useState<{giftId: string, animationId?: string, imageUrl?: string, senderName: string, targetSeat?: number} | null>(null);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [portalDefaultView, setPortalDefaultView] = useState<'grid' | 'music'>('grid');
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
@@ -1396,6 +1396,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 // TRIGGER LOCAL ANIMATION:
                 setActiveGift({
                   giftId: msg.giftId,
+                  animationId: msg.animationId,
+                  imageUrl: msg.imageUrl,
                   senderName: msg.senderName,
                   targetSeat: msg.recipientSeat || 1
                 });

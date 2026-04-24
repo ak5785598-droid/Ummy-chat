@@ -10,6 +10,7 @@ interface FloatingGift {
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
+  imageUrl?: string | null;
   onComplete: () => void;
   targetSeat?: number;
   recipientElement?: HTMLElement | null;
@@ -17,11 +18,12 @@ interface GiftAnimationOverlayProps {
 
 export function GiftAnimationOverlay({ 
   giftId, 
+  imageUrl,
   onComplete, 
   targetSeat = 1,
   recipientElement = null
 }: GiftAnimationOverlayProps) {
-  const [activeGift, setActiveGift] = useState<FloatingGift | null>(null);
+  const [activeGift, setActiveGift] = useState<(FloatingGift & { imageUrl?: string | null }) | null>(null);
   const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
   const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,18 +103,19 @@ export function GiftAnimationOverlay({
       setActiveGift({
         id: Date.now(),
         emoji: getEmoji(giftId),
+        imageUrl: imageUrl
       });
       setHasAnimated(true);
 
-      // Clear animation after 1.6 seconds
+      // Clear animation after 1.8 seconds (increased for premium feel)
       const finishTimer = setTimeout(() => {
         setActiveGift(null);
         onComplete();
-      }, 1600);
+      }, 1800);
 
       return () => clearTimeout(finishTimer);
     }
-  }, [giftId, getEmoji, onComplete, hasAnimated]);
+  }, [giftId, imageUrl, getEmoji, onComplete, hasAnimated]);
 
   // Reset animation flag when giftId changes
   useEffect(() => {
@@ -133,56 +136,57 @@ export function GiftAnimationOverlay({
               opacity: 0, 
               scale: 0.3, 
               x: 0, 
-              y: 0
+              y: 0,
+              rotate: -20
             }}
             animate={{ 
               opacity: [0, 1, 1, 0.9, 0],
-              scale: [0.3, 1.5, 1.8, 1.2, 0.1],
+              scale: [0.3, 1.6, 1.8, 1.3, 0.1],
               x: [0, targetCoords.x, targetCoords.x, targetCoords.x],
               y: [0, targetCoords.y, targetCoords.y, targetCoords.y],
+              rotate: [ -20, 10, 0, 0, 15 ]
             }}
             exit={{ opacity: 0, scale: 0 }}
             transition={{ 
-              duration: 1.6,
-              times: [0, 0.1, 0.7, 0.9, 1],
+              duration: 1.8,
+              times: [0, 0.15, 0.7, 0.9, 1],
               ease: "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
             }}
             className="absolute will-change-transform"
           >
-            <div className="relative">
-              {/* Glow effect behind emoji */}
+            <div className="relative flex items-center justify-center">
+              {/* Premium Glow effect behind gift */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-orange-300 to-red-400 blur-3xl rounded-full scale-150"
+                className={cn(
+                  "absolute inset-0 blur-[40px] rounded-full scale-150",
+                  activeGift.imageUrl ? "bg-cyan-400/40" : "bg-gradient-to-r from-yellow-400 via-orange-300 to-red-400"
+                )}
                 animate={{
-                  opacity: [0.6, 0.8, 0.4],
-                  scale: [1.5, 1.8, 1.2]
+                  opacity: [0, 0.8, 0.9, 0.5, 0],
+                  scale: [1, 2, 2.2, 1.8, 1],
+                  rotate: 360
                 }}
                 transition={{
-                  duration: 1.6,
-                  times: [0, 0.5, 1],
-                  ease: "easeInOut"
+                  duration: 1.8,
+                  ease: "linear"
                 }}
               />
               
               {/* Sparkle particles */}
-              {[...Array(6)].map((_, i) => (
+              {[...Array(8)].map((_, i) => (
                 <motion.div
                   key={`sparkle-${i}`}
-                  className="absolute text-lg"
-                  initial={{
-                    x: 0,
-                    y: 0,
-                    opacity: 1,
-                    scale: 1
-                  }}
+                  className="absolute text-2xl"
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
                   animate={{
-                    x: Math.cos((i / 6) * Math.PI * 2) * 80,
-                    y: Math.sin((i / 6) * Math.PI * 2) * 80,
+                    x: Math.cos((i / 8) * Math.PI * 2) * 120,
+                    y: Math.sin((i / 8) * Math.PI * 2) * 120,
                     opacity: 0,
-                    scale: 0
+                    scale: 0,
+                    rotate: 180
                   }}
                   transition={{
-                    duration: 1.6,
+                    duration: 1.8,
                     ease: "easeOut"
                   }}
                 >
@@ -190,11 +194,17 @@ export function GiftAnimationOverlay({
                 </motion.div>
               ))}
 
-              <span 
-                className="text-7xl select-none leading-none block font-bold drop-shadow-[0_0_30px_rgba(255,215,0,0.8)]"
-              >
-                {activeGift.emoji}
-              </span>
+              {activeGift.imageUrl ? (
+                <div className="relative h-40 w-40 drop-shadow-[0_0_40px_rgba(34,211,238,0.6)]">
+                  <img src={activeGift.imageUrl} alt="gift" className="h-full w-full object-contain" />
+                </div>
+              ) : (
+                <span 
+                  className="text-8xl select-none leading-none block font-bold drop-shadow-[0_0_30px_rgba(255,215,0,0.8)]"
+                >
+                  {activeGift.emoji}
+                </span>
+              )}
             </div>
           </motion.div>
         )}

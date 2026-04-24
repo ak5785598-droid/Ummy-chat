@@ -698,6 +698,7 @@ function AdminPageContent() {
   const [giftName, setGiftName] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
   const [giftCategory, setGiftCategory] = useState("Hot");
+  const [giftAnimationId, setGiftAnimationId] = useState("");
   const [isUploadingGift, setIsUploadingGift] = useState(false);
   const [isAddingGift, setIsAddingGift] = useState(false);
   const giftFileInputRef = useRef<HTMLInputElement>(null);
@@ -1830,11 +1831,13 @@ function AdminPageContent() {
         price: parseInt(giftPrice),
         category: giftCategory,
         imageUrl: url,
+        animationId: giftAnimationId,
         createdAt: serverTimestamp(),
       });
 
       setGiftName("");
       setGiftPrice("");
+      setGiftAnimationId("");
       toast({
         title: "Gift Uploaded",
         description: `${giftName} has been added to the tribe boutique.`,
@@ -1870,15 +1873,16 @@ function AdminPageContent() {
     setIsAddingGift(true);
     try {
       const gifts = [
-        {"name": "Red Rose", "price": 10, "emoji": "🌹", "category": "Hot", "animationId": "rose_anim"},
-        {"name": "Chocolate Box", "price": 99, "emoji": "🍫", "category": "Hot", "animationId": "chocolate_anim"},
-        {"name": "Teddy Bear", "price": 799, "emoji": "🧸", "category": "Hot", "animationId": "teddy_anim"},
+        {"name": "Red Rose", "price": 10, "emoji": "🌹", "category": "Hot", "animationId": "rose_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/5903/5903501.png"},
+        {"name": "Chocolate", "price": 99, "emoji": "🍫", "category": "Hot", "animationId": "chocolate_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2311/2311991.png"},
+        {"name": "Teddy Bear", "price": 799, "emoji": "🧸", "category": "Hot", "animationId": "teddy_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/3241/3241285.png"},
         {"name": "Sports Car", "price": 150000, "emoji": "🏎️", "category": "Luxury", "animationId": "car_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/744/744465.png"},
         {"name": "Private Jet", "price": 500000, "emoji": "🛩️", "category": "Luxury", "animationId": "plane_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2830/2830312.png"},
-        {"name": "Diamond Ring", "price": 50000, "emoji": "💍", "category": "Luxury", "animationId": "ring_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2622/2622115.png"},
         {"name": "Golden Crown", "price": 100000, "emoji": "👑", "category": "Luxury", "animationId": "crown_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/6941/6941697.png"},
+        {"name": "Diamond Ring", "price": 50000, "emoji": "💍", "category": "Luxury", "animationId": "ring_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2622/2622115.png"},
         {"name": "Space Rocket", "price": 2000000, "emoji": "🚀", "category": "Luxury", "animationId": "rocket_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/1067/1067357.png"},
-        {"name": "Lucky Apple", "price": 100, "emoji": "🍎", "category": "Lucky", "animationId": "apple_svga_3d", "isLucky": true},
+        {"name": "Lucky Apple", "price": 100, "emoji": "🍎", "category": "Lucky", "animationId": "apple_svga_3d", "imageUrl": "https://cdn-icons-png.flaticon.com/512/415/415682.png", "isLucky": true},
+        {"name": "Golden Tree", "price": 30000, "emoji": "🌳", "category": "Event", "animationId": "tree_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/2454/2454261.png"},
         {"name": "Fireworks", "price": 2500, "emoji": "🎆", "category": "Event", "animationId": "fireworks_anim", "imageUrl": "https://cdn-icons-png.flaticon.com/512/3421/3421696.png"}
       ];
 
@@ -2586,6 +2590,15 @@ function AdminPageContent() {
                             <SelectItem value="Lucky">Lucky</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-orange-400">Animation ID</Label>
+                        <Input 
+                          value={giftAnimationId} 
+                          onChange={e => setGiftAnimationId(e.target.value)} 
+                          placeholder="e.g. car_anim" 
+                          className="rounded-xl border-orange-200"
+                        />
                       </div>
                     </div>
 
