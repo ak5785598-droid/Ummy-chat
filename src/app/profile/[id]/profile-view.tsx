@@ -10,6 +10,7 @@ import {
   Star,
   Heart,
   ShoppingBag,
+  ShoppingCart,
   MoreHorizontal,
   Pencil,
   MessageCircle,
@@ -28,7 +29,9 @@ import {
   Globe,
   Phone,
   Camera,
-  ShieldAlert
+  ShieldAlert,
+  Medal,
+  DollarSign // Added for SVGA look
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -65,6 +68,15 @@ import {
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
+
+// --- CUSTOM 3D SVGA GOLD COIN ICON ---
+const SVGA_GoldDollar = () => (
+  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.3)] border border-[#B8860B]">
+    <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
+    {/* Shine effect */}
+    <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
+  </div>
+);
 
 const GIFT_REGISTRY: Record<string, any> = {
   'heart': { id: 'heart', name: 'Heart', price: 99, emoji: '❤️' },
@@ -141,12 +153,12 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
   </button>
 );
 
-const IconButton = ({ icon: Icon, label, colorClass, onClick }: { icon: any, label: string, colorClass: string, onClick: () => void }) => (
+const IconButton = ({ icon: Icon, label, iconColor, onClick }: { icon: any, label: string, iconColor: string, onClick: () => void }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
-    <div className={cn("h-[44px] w-[44px] rounded-2xl flex items-center justify-center shadow-lg transition-all group-hover:shadow-md", colorClass)}>
-      <Icon className="h-4 w-4 text-white" />
+    <div className="flex items-center justify-center py-1">
+      <Icon className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
     </div>
-    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
   </button>
 );
 
@@ -345,7 +357,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10 z-10" />
           </div>
 
-          {/* User's public profile container with max-w constraint for "size chote" effect */}
           <div className="flex-1 mt-[-40px] relative z-20 bg-white rounded-t-[40px] px-6 pt-0 overflow-y-auto no-scrollbar pb-32">
             <div className="max-w-[440px] mx-auto">
               <div className="flex flex-col items-center">
@@ -484,10 +495,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
-        {/* TOP SCREEN: 15Vh Purple mixing with white */}
-        <div className="absolute top-0 left-0 right-0 h-[15vh] bg-gradient-to-b from-[#b28dff]/80 via-purple-100 to-white z-0 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#b28dff]/80 via-purple-100 to-white z-0 pointer-events-none" />
 
-        <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-14 pb-0">
+        <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-10 pb-0">
           <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
@@ -497,9 +507,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </header>
 
-        {/* PROFILE PAGE THORA NICHE: mt-2 and pt-14 */}
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
-          {/* SIZE CHOTA: max-w-[440px] instead of max-w-lg */}
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
@@ -538,14 +546,29 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {isOwnProfile && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <div onClick={() => router.push('/wallet')} className="h-[80px] bg-gradient-to-br from-[#FF9D2E] to-[#FFBB33] rounded-3xl p-4 shadow-lg shadow-orange-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                  <div className="flex items-center gap-2 relative z-10"><div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30"><GoldCoinIcon className="h-4 w-4" /></div><span className="text-[9px] font-black text-white uppercase tracking-widest opacity-90">Coins</span></div>
-                  <p className="font-bold text-[18px] text-white tracking-tighter leading-none absolute bottom-4 left-6">{profile.wallet?.coins?.toFixed(1) || '0.0'}</p>
+              <div className="grid grid-cols-2 gap-3 mt-2 px-1">
+                {/* 3D GLOSSY COIN CARD */}
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3),inset_0_2px_4px_rgba(255,255,255,0.6)] cursor-pointer relative overflow-hidden group border-t border-white/50 active:scale-95 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
+                  <div className="flex items-center gap-2 relative z-10">
+                    <SVGA_GoldDollar />
+                    <span className="text-[10px] font-black text-[#5C4000] uppercase tracking-widest opacity-90">Coins</span>
+                  </div>
+                  <p className="font-black text-[20px] text-[#422E00] tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-sm">
+                    {profile.wallet?.coins?.toFixed(1) || '0.0'}
+                  </p>
                 </div>
-                <div onClick={() => router.push('/wallet')} className="h-[80px] bg-gradient-to-br from-[#4AB9FF] to-[#2E86FF] rounded-3xl p-4 shadow-lg shadow-blue-500/10 cursor-pointer relative overflow-hidden group border border-white/20 active:scale-95 transition-all">
-                  <div className="flex items-center gap-2 relative z-10"><div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30"><Gem className="h-4 w-4 text-white" /></div><span className="text-[9px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span></div>
-                  <p className="font-bold text-[18px] text-white tracking-tighter leading-none absolute bottom-4 left-6">{profile.wallet?.diamonds?.toFixed(1) || '0.0'}</p>
+
+                {/* 3D GLOSSY DIAMOND CARD */}
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-[32px] p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3),inset_0_2px_4px_rgba(255,255,255,0.4)] cursor-pointer relative overflow-hidden group border-t border-white/40 active:scale-95 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
+                  <div className="flex items-center gap-2 relative z-10">
+                    <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[14px]">💎</div>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest opacity-90">Diamonds</span>
+                  </div>
+                  <p className="font-black text-[20px] text-white tracking-tighter leading-none absolute bottom-4 left-5 drop-shadow-md">
+                    {profile.wallet?.diamonds?.toFixed(1) || '0.0'}
+                  </p>
                 </div>
               </div>
             )}
@@ -555,14 +578,34 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white transition-all" />
             </div>
 
-            <div className="flex justify-between items-center px-1 mt-3">
-              <IconButton icon={Trophy} label="Level" colorClass="bg-orange-400" onClick={() => router.push('/level')} />
-              <IconButton icon={ShoppingBag} label="Store" colorClass="bg-pink-500" onClick={() => router.push('/store')} />
-              <IconButton icon={History} label="Budget" colorClass="bg-blue-500" onClick={() => router.push('/wallet')} />
-              <IconButton icon={ClipboardList} label="Task" colorClass="bg-green-500" onClick={() => router.push('/tasks')} />
+            <div className="flex justify-between items-center px-4 mt-6">
+              <IconButton 
+                icon={Crown} 
+                label="Level" 
+                iconColor="text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]" 
+                onClick={() => router.push('/level')} 
+              />
+              <IconButton 
+                icon={ShoppingCart} 
+                label="Store" 
+                iconColor="text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]" 
+                onClick={() => router.push('/store')} 
+              />
+              <IconButton 
+                icon={Medal} 
+                label="Medal" 
+                iconColor="text-purple-500 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]" 
+                onClick={() => router.push('/medals')} 
+              />
+              <IconButton 
+                icon={ClipboardList} 
+                label="Task" 
+                iconColor="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
+                onClick={() => router.push('/tasks')} 
+              />
             </div>
 
-            <div className="space-y-2 pt-2 pb-32">
+            <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem icon={UserPlus} label="Invite friends" iconColor="bg-blue-50 text-blue-500" onClick={() => {}}/>
                 <ProfileMenuItem icon={Users} label="Family" extra="TRIBAL UNITY" extraColor="text-indigo-500" iconColor="bg-indigo-50 text-indigo-500" onClick={() => router.push('/families')} />
@@ -594,4 +637,3 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
-
