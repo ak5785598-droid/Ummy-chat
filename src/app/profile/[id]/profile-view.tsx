@@ -481,6 +481,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
+        
+        {/* Added: 15vh Light Purple Top Gradient Background */}
+        <div className="absolute top-0 left-0 right-0 h-[15vh] bg-gradient-to-b from-purple-100/70 to-white z-0 pointer-events-none" />
+
         <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-12 pb-0">
           <div className="flex items-center justify-end max-w-lg mx-auto">
              {isOwnProfile && (
@@ -491,8 +495,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-10">
-          <div className="max-w-lg mx-auto px-5">
+        {/* Added: pt-[12vh] to move content down & scale-[0.98] with max-w-[420px] to make the page size smaller */}
+        <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-[12vh] relative z-10">
+          <div className="max-w-[420px] mx-auto px-5 pb-8 scale-[0.98] origin-top">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
