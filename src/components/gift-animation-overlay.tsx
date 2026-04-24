@@ -12,7 +12,7 @@ interface GiftAnimationOverlayProps {
   giftId: string | null;
   onComplete: () => void;
   targetSeat?: number;
-  recipientElement?: HTMLElement | null; // Profile/avatar element to target
+  recipientElement?: HTMLElement | null;
 }
 
 export function GiftAnimationOverlay({ 
@@ -22,7 +22,8 @@ export function GiftAnimationOverlay({
   recipientElement = null
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<FloatingGift | null>(null);
-  const [targetCoords, setTargetCoords] = useState({ x: '0vw', y: '0vh' });
+  const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
+  const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const getEmoji = useCallback((id: string) => {
@@ -36,54 +37,55 @@ export function GiftAnimationOverlay({
     return map[normalizedId] || '🎁';
   }, []);
 
+  // 3x3 Grid Layout - Each seat position with pixel coordinates
   const getSeatTarget = (seat: number) => {
-    const positions: Record<number, { x: string; y: string }> = {
-      1: { x: '0vw',   y: '-30vh' }, 
-      2: { x: '-35vw', y: '-15vh' },
-      3: { x: '-15vw', y: '-15vh' },
-      4: { x: '15vw',  y: '-15vh' },
-      5: { x: '35vw',  y: '-15vh' },
-      6: { x: '-35vw', y: '10vh'  },
-      7: { x: '-15vw', y: '10vh'  },
-      8: { x: '15vw',  y: '10vh'  },
-      9: { x: '35vw',  y: '10vh'  },
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    if (!containerRect) return { x: 0, y: 0 };
+
+    const centerX = containerRect.width / 2;
+    const centerY = containerRect.height / 2;
+
+    const positions: Record<number, { x: number; y: number }> = {
+      1: { x: centerX - 280, y: centerY - 280 },   // Top-left
+      2: { x: centerX,       y: centerY - 280 },   // Top-center
+      3: { x: centerX + 280, y: centerY - 280 },   // Top-right
+      4: { x: centerX - 280, y: centerY },         // Middle-left
+      5: { x: centerX,       y: centerY },         // Center
+      6: { x: centerX + 280, y: centerY },         // Middle-right
+      7: { x: centerX - 280, y: centerY + 280 },   // Bottom-left
+      8: { x: centerX,       y: centerY + 280 },   // Bottom-center
+      9: { x: centerX + 280, y: centerY + 280 },   // Bottom-right
     };
-    return positions[seat] || { x: '0vw', y: '0vh' };
+
+    return positions[seat] || { x: centerX, y: centerY };
   };
 
-  // Calculate target position from recipient element or use seat-based position
+  // Calculate target from recipientElement or seat
   const calculateTargetCoords = useCallback(() => {
     if (recipientElement && containerRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
       const elementRect = recipientElement.getBoundingClientRect();
       
-      // Calculate center of the element relative to container
-      const centerX = elementRect.left + elementRect.width / 2;
-      const centerY = elementRect.top + elementRect.height / 2;
+      const elementCenterX = elementRect.left + elementRect.width / 2;
+      const elementCenterY = elementRect.top + elementRect.height / 2;
       
-      const containerCenterX = containerRect.width / 2;
-      const containerCenterY = containerRect.height / 2;
-      
-      // Convert to viewport-relative coordinates
-      const relativeX = ((centerX - containerCenterX) / containerRect.width) * 100;
-      const relativeY = ((centerY - containerCenterY) / containerRect.height) * 100;
+      const containerLeft = containerRect.left;
+      const containerTop = containerRect.top;
       
       return {
-        x: `${relativeX}vw`,
-        y: `${relativeY}vh`
+        x: elementCenterX - containerLeft,
+        y: elementCenterY - containerTop
       };
     }
     
-    // Fallback to seat-based positioning
     return getSeatTarget(targetSeat);
   }, [recipientElement, targetSeat]);
 
+  // Recalculate coords on resize
   useEffect(() => {
-    // Recalculate target coords when recipientElement changes or on mount
     const newTargetCoords = calculateTargetCoords();
     setTargetCoords(newTargetCoords);
 
-    // Listen for window resize to update target position
     const handleResize = () => {
       const updated = calculateTargetCoords();
       setTargetCoords(updated);
@@ -93,30 +95,30 @@ export function GiftAnimationOverlay({
     return () => window.removeEventListener('resize', handleResize);
   }, [recipientElement, calculateTargetCoords]);
 
+  // Animation trigger - ONE TIME ONLY per giftId
   useEffect(() => {
-    if (giftId) {
-      // Clear existing and trigger new animation cycle
-      setActiveGift(null); 
-      
-      const triggerTimer = setTimeout(() => {
-        setActiveGift({
-          id: Date.now(),
-          emoji: getEmoji(giftId),
-        });
-      }, 50);
+    if (giftId && !hasAnimated) {
+      setActiveGift({
+        id: Date.now(),
+        emoji: getEmoji(giftId),
+      });
+      setHasAnimated(true);
 
-      // Smooth animation duration: 1.6s for flight
+      // Clear animation after 1.6 seconds
       const finishTimer = setTimeout(() => {
         setActiveGift(null);
         onComplete();
-      }, 1650);
+      }, 1600);
 
-      return () => {
-        clearTimeout(triggerTimer);
-        clearTimeout(finishTimer);
-      };
+      return () => clearTimeout(finishTimer);
     }
-  }, [giftId, getEmoji, onComplete]);
+  }, [giftId, getEmoji, onComplete, hasAnimated]);
+
+  // Reset animation flag when giftId changes
+  useEffect(() => {
+    setHasAnimated(false);
+    setActiveGift(null);
+  }, [giftId]);
 
   return (
     <div 
