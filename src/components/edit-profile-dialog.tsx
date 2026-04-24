@@ -93,7 +93,6 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
       setShowBirthday(profile.showBirthday !== false);
       setShowWhatsapp(profile.showWhatsapp !== false);
       
-      // Handle spaceImages (Ensure we have 8 slots)
       const images = profile.spaceImages || [];
       setSpaceImages([...images, ...Array(8 - images.length).fill(null)].slice(0, 8));
     }
@@ -125,7 +124,6 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
     if (!isGenderFixed && gender) updateData.gender = gender;
 
     try {
-      // Update Summary (Critical for quick access)
       await setDocumentNonBlocking(userSummaryRef, {
         username: name,
         whatsapp: whatsapp,
@@ -133,7 +131,6 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      // Update Detailed Profile
       await setDocumentNonBlocking(userProfileRef, updateData, { merge: true });
       
       toast({ title: 'Persona Saved', description: 'Your updates are now live.' });
@@ -206,9 +203,13 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
           )}
         </DialogTrigger>
         <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white text-black p-0 border-none m-0 rounded-none z-[100] flex flex-col font-sans data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0">
-          <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden bg-white">
-            <header className="px-5 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-[110] border-b border-gray-50 pt-safe shrink-0">
-              <button type="button" onClick={() => setOpen(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+          
+          {/* Top 15vh Purple Gradient Section */}
+          <div className="h-[15vh] w-full bg-gradient-to-b from-purple-100 via-purple-50 to-white shrink-0 absolute top-0 left-0 z-0" />
+
+          <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden bg-transparent z-10">
+            <header className="px-5 pt-10 pb-4 flex items-center justify-between bg-transparent sticky top-0 z-[110] shrink-0">
+              <button type="button" onClick={() => setOpen(false)} className="p-2 -ml-2 bg-white/50 backdrop-blur-md hover:bg-white/80 rounded-full transition-all">
                 <ChevronLeft className="h-6 w-6 text-gray-800" />
               </button>
               
@@ -224,12 +225,13 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
             </header>
 
             <ScrollArea className="flex-1">
-              <div className="px-6 pt-0 pb-10 space-y-4 focus-visible:outline-none">
+              {/* Content wrap to decrease size and push down */}
+              <div className="max-w-lg mx-auto px-6 pt-[8vh] pb-10 space-y-6 focus-visible:outline-none">
                 
-                <div className="flex flex-col items-center gap-2 -mt-4">
+                <div className="flex flex-col items-center gap-2">
                   <div className="relative group">
                     <AvatarFrame frameId={profile?.inventory?.activeFrame} size="xl" className="h-44 w-44 translate-y-2 translate-x-2">
-                      <Avatar className="h-36 w-36 border-4 border-primary/20 shadow-2xl">
+                      <Avatar className="h-36 w-36 border-4 border-white shadow-2xl">
                         <AvatarImage key={profile?.avatarUrl} src={profile?.avatarUrl || undefined} alt={name} />
                         <AvatarFallback className="text-4xl font-bold bg-slate-50">{(name || 'U').charAt(0)}</AvatarFallback>
                       </Avatar>
@@ -241,7 +243,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     )}
                   </div>
                   
-                  <div className="flex gap-2 mt-0">
+                  <div className="flex gap-2 mt-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="rounded-2xl h-10 px-6 text-[10px] font-bold uppercase border-2 bg-yellow-400 text-black border-yellow-400 shadow-md">
                       <Upload className="h-3 w-3 mr-2" /> Change photo
                     </Button>
@@ -251,7 +253,8 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Inputs and other fields */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <div className="flex justify-between items-center ml-1">
                       <Label htmlFor="edit-name" className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Tribe Display Name</Label>
@@ -416,3 +419,4 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
     </>
   );
 }
+
