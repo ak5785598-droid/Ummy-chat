@@ -28,10 +28,12 @@ import {
   ShieldAlert,
   Medal as MedalIcon,
   DollarSign,
-  HelpCircle
+  HelpCircle,
+  Check
 } from 'lucide-react';
+import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking, setDocumentNonBlocking, useFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -242,9 +244,12 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
         </svg>
       </div>
 
+      {/* Top Glossy Reflection for Main Pill */}
+      <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
+
       {/* ID Number Text */}
       <span className="relative z-10 text-[11px] font-bold text-white ml-2 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-        {label}
+        {idNum}
       </span>
     </div>
   );
@@ -804,19 +809,20 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 
                 {/* --- MODIFIED ID SECTION HERE --- */}
-                <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                  {profile.tags?.includes('Official') ? (
-                    <SVGA_GlossyID 
-                      variant={getBudgetVariant(profile)} 
-                      label={(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber} 
-                    />
-                  ) : (
-                    <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-2">
-                      ID: {(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}
-                    </span>
-                  )}
-                </div>
+                {/* mt-1.5 and -ml-0.5 to move it a bit down and left */}
+                <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
+                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                    {profile.tags?.includes('Official') ? (
+                      <SVGA_GlossyID 
+                        variant={getBudgetVariant(profile)} 
+                        label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
+                      />
+                    ) : (
+                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-2">
+                        ID: {(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}
+                      </span>
+                    )}
+                  </div>
                   
                   {/* Calling New SVGA Tags Here */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
