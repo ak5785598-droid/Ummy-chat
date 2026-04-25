@@ -204,18 +204,12 @@ function RoomsExplorerClassic() {
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
   return (
     <div className="h-[100dvh] flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
-      <ThemeColorMeta color="#f5f0ff" />
+      <ThemeColorMeta color="#d8b4fe" />
       
-      {/* 20VH PURPLE MIXING WITH WHITE BACKGROUND */}
-      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#e9d5ff] via-[#f5f0ff] to-white z-0 overflow-hidden pointer-events-none">
-         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
-         {/* Minimal Soft Mountain Detail to keep the vibe */}
-         <div className="absolute bottom-0 left-0 right-0 h-24 opacity-[0.1]">
-             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-purple-400">
-                <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
-             </svg>
-          </div>
-       </div>
+      {/* 20VH PURPLE SECTION - UPDATED VISIBILITY & REMOVED MOUNTAINS */}
+      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#d8b4fe] via-[#f5f0ff] to-white z-0 overflow-hidden pointer-events-none">
+         <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
+      </div>
 
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
@@ -296,8 +290,6 @@ function RoomsExplorerClassic() {
                 </CarouselContent>
               </Carousel>
             </div>
-
-
 
             <div className="px-2 mb-1.5">
               <div className="flex gap-1.5">
