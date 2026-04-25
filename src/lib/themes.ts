@@ -80,5 +80,6 @@ export const ROOM_THEMES: RoomTheme[] = [
   { id: 'user_diwali_diyas', name: 'Diwali Golden Diyas', url: '/themes/user_diwali_diyas.jpg', seatColor: 'rgba(251, 191, 36, 0.2)', accentColor: '#fbbf24', category: 'user_choice' },
   { id: 'user_shiva_glow', name: 'Golden Shiva Glow', url: '/themes/user_shiva_glow.jpg', seatColor: 'rgba(251, 146, 60, 0.2)', accentColor: '#fb923c', category: 'user_choice', animationId: 'stars' },
   { id: 'user_divine_ascension', name: 'Divine Spirit Ascension', url: '/themes/user_divine_ascension.jpg', seatColor: 'rgba(255, 255, 255, 0.2)', accentColor: '#ffffff', category: 'user_choice' },
-  { id: 'user_mosque_night', name: 'Mosque Night Spirit', url: '/themes/user_mosque_night.jpg', seatColor: 'rgba(30, 58, 138, 0.2)', accentColor: '#1e3a8a', category: 'islamic', animationId: 'stars' }
+  { id: 'user_mosque_night', name: 'Mosque Night Spirit', url: '/themes/user_mosque_night.jpg', seatColor: 'rgba(30, 58, 138, 0.2)', accentColor: '#1e3a8a', category: 'islamic', animationId: 'stars' },
+  { id: 'user_shiva_dark_art', name: 'Shiva Dark Meditation', url: '/themes/user_shiva_dark_art.png', seatColor: 'rgba(255, 255, 255, 0.1)', accentColor: '#ffffff', category: 'user_choice', animationId: 'stars' }
 ];
