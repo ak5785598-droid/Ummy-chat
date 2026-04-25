@@ -142,58 +142,41 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
   </div>
 );
 
-// --- NEW GLOSSY 3D ID/BUDGET BADGE (Replaced BudgetTag) ---
+// --- UPDATED GLOSSY 3D ID/BUDGET BADGE MATCHING YOUR IMAGE ---
 const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
-  const isPink = variant === 'pink' || variant === 'female';
-  const isRainbow = variant === 'rainbow';
-
-  const idNumber = label.replace('ID: ', '');
-
-  let bgClassRight = "bg-gradient-to-r from-[#7AB0FF] to-[#9BC4FF]";
-  let bgClassLeft = "bg-gradient-to-b from-[#4A7DFF] to-[#3066FF] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
-  let leftPillBorder = "border-[#6B9CFF]";
-
-  if (isPink) {
-    bgClassRight = "bg-gradient-to-r from-[#FF7BB8] to-[#FF9ECE]";
-    bgClassLeft = "bg-gradient-to-b from-[#FF4C94] to-[#FF2A7A] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
-    leftPillBorder = "border-[#FF6BA8]";
-  } else if (isRainbow) {
-    bgClassRight = "bg-gradient-to-r from-[#FF9033] to-[#C933FF]";
-    bgClassLeft = "bg-gradient-to-b from-[#FF4B4B] to-[#FF9033] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
-    leftPillBorder = "border-[#FF6B6B]";
-  }
+  // Parsing out any existing 'ID: ' text so we only render the pure number
+  const idNum = label.replace('ID: ', '').trim();
 
   return (
-    <div className={cn("relative flex items-center h-[28px] rounded-full shrink-0 shadow-sm pr-3 pl-[32px]", bgClassRight)}>
-      {/* Top Glossy Reflection for Main Pill */}
-      <div className="absolute top-0 left-[15%] right-[10%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
+    <div className="relative flex items-center h-[26px] rounded-full bg-gradient-to-r from-[#FF9D00] to-[#FFD233] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_2px_rgba(255,255,255,0.7)] ml-3 pr-4 pl-[26px]">
 
-      {/* Left Pill (Absolute) */}
-      <div className={cn("absolute left-0 top-0 bottom-0 w-[34px] rounded-full flex flex-col items-center justify-center z-10 border", leftPillBorder, bgClassLeft)}>
-        <div className="absolute top-0 left-[10%] right-[10%] h-[30%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
-        <span className="relative z-10 text-white font-black text-[12px] leading-none mt-[2px] tracking-tight" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>ID</span>
-        <div className="relative z-10 bg-white/20 rounded-full px-1.5 mt-[1px] shadow-[inset_0_1px_1px_rgba(0,0,0,0.1)]">
-          <span className="text-white font-bold text-[8px] leading-none" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>SS</span>
-        </div>
-        {/* Left Sparkle */}
-        <svg className="absolute -left-[3px] top-[3px] opacity-90 drop-shadow-sm" width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Left 3D Squircle Badge (ID + sss) */}
+      <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-[12px] bg-gradient-to-br from-[#FFC247] via-[#FF9100] to-[#D96B00] shadow-[0_2px_6px_rgba(255,145,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-2px_4px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center border-[1.5px] border-white/40 z-10">
+
+        {/* Sparkle Top Right */}
+        <svg className="absolute top-[2px] right-[2px] w-3 h-3 drop-shadow-sm" viewBox="0 0 24 24" fill="none">
           <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
         </svg>
+        {/* Sparkle Bottom Left */}
+        <svg className="absolute bottom-[2px] left-[2px] w-2.5 h-2.5 drop-shadow-sm" viewBox="0 0 24 24" fill="none">
+          <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
+        </svg>
+
+        {/* Texts inside the badge */}
+        <span className="text-[13px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] mt-1">ID</span>
+        <span className="text-[8px] font-black text-[#FFF0C2] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] mb-1">sss</span>
       </div>
 
-      {/* Right Text */}
-      <span className="relative z-10 text-[16px] font-semibold text-white leading-none ml-1.5" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
-        {idNumber}
+      {/* Top Glossy Reflection for Main Pill */}
+      <div className="absolute top-[1px] left-[20%] right-[10%] h-[35%] bg-gradient-to-b from-white/90 to-transparent rounded-full blur-[0.5px]" />
+
+      {/* ID Number Text */}
+      <span className="relative z-10 text-[15px] font-black text-white/95 ml-2 tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" style={{ textShadow: '0px 1px 2px rgba(200, 100, 0, 0.5)' }}>
+        {idNum}
       </span>
-      
-      {/* Right Sparkle */}
-      <svg className="absolute right-1 top-1 opacity-90 drop-shadow-sm" width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-         <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
-      </svg>
     </div>
   );
 };
-
 
 // --- UPDATED SVGA COMPONENTS WITH INCREASED SIZES (H-11 W-11) ---
 
@@ -751,6 +734,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
+                    {/* Yahan par wahi glossy icon lagaya gaya hai jo bilkul image jaisa hai */}
                     <SVGA_GlossyID 
                       variant={getBudgetVariant(profile)} 
                       label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
@@ -770,7 +754,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section */}
+            {/* Wallet Section (Updated to rounded-2xl) */}
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
@@ -808,7 +792,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/tasks')} />
             </div>
 
-            {/* Main Menu List */}
+            {/* Main Menu List (Updated Icon Sizes) */}
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem 
@@ -898,4 +882,3 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
-
