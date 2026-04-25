@@ -204,19 +204,15 @@ function RoomsExplorerClassic() {
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
   return (
     <div className="h-[100dvh] flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
-      <ThemeColorMeta color="#eef9ff" />
+      <ThemeColorMeta color="#f5f0ff" />
       
-      {/* SEAMLESS MOUNTAIN BACKGROUND (Screenshot 2 fix) */}
-      <div className="absolute top-0 left-0 right-0 h-[260px] bg-gradient-to-b from-[#eef9ff] via-[#f7f0ff] to-white z-0 overflow-hidden pointer-events-none">
-         <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
-         <div className="absolute bottom-0 left-0 right-0 h-40 opacity-[0.15]">
-             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-blue-400">
+      {/* 20VH PURPLE MIXING WITH WHITE BACKGROUND */}
+      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#e9d5ff] via-[#f5f0ff] to-white z-0 overflow-hidden pointer-events-none">
+         <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
+         {/* Minimal Soft Mountain Detail to keep the vibe */}
+         <div className="absolute bottom-0 left-0 right-0 h-24 opacity-[0.1]">
+             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-purple-400">
                 <path d="M0,300 L0,150 L150,220 L300,100 L500,200 L700,50 L850,180 L1000,120 L1000,300 Z" />
-             </svg>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 h-32 opacity-[0.1]">
-             <svg viewBox="0 0 1000 300" preserveAspectRatio="none" className="h-full w-full fill-indigo-400">
-                <path d="M0,300 L0,200 L200,100 L400,220 L600,150 L800,250 L1000,180 L1000,300 Z" />
              </svg>
           </div>
        </div>
@@ -509,7 +505,7 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION (Vibrant Indigo Rebuild) */}
+      {/* MOBILE BOTTOM NAVIGATION */}
       {isHydrated && (
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/90 backdrop-blur-xl border-t border-white"
