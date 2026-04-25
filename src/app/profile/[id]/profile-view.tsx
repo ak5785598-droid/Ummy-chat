@@ -804,7 +804,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 
                 {/* --- MODIFIED ID SECTION HERE --- */}
-<<<<<<< HEAD
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                 <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
                   {profile.tags?.includes('Official') ? (
@@ -818,22 +817,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     </span>
                   )}
                 </div>
-=======
-                {/* mt-1.5 and -ml-0.5 to move it a bit down and left */}
-                <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
-                  <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    {profile.tags?.includes('Official') ? (
-                      <SVGA_GlossyID 
-                        variant={getBudgetVariant(profile)} 
-                        label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
-                      />
-                    ) : (
-                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-2">
-                        ID: {(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}
-                      </span>
-                    )}
-                  </div>
->>>>>>> 61bcee7e8822aea18242db584d22e0131c37765a
                   
                   {/* Calling New SVGA Tags Here */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
