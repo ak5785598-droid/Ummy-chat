@@ -47,7 +47,6 @@ import { doc, serverTimestamp, collection, query, orderBy, limit, where } from '
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { SellerTransferDialog } from "@/components/seller-transfer-dialog";
-import { BudgetTag } from "@/components/budget-tag";
 import { FullProfileDialog } from '@/components/full-profile-dialog';
 import { ReportUserDialog } from '@/components/report-user-dialog';
 import {
@@ -142,6 +141,59 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
     </div>
   </div>
 );
+
+// --- NEW GLOSSY 3D ID/BUDGET BADGE (Replaced BudgetTag) ---
+const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
+  const isPink = variant === 'pink' || variant === 'female';
+  const isRainbow = variant === 'rainbow';
+
+  const idNumber = label.replace('ID: ', '');
+
+  let bgClassRight = "bg-gradient-to-r from-[#7AB0FF] to-[#9BC4FF]";
+  let bgClassLeft = "bg-gradient-to-b from-[#4A7DFF] to-[#3066FF] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
+  let leftPillBorder = "border-[#6B9CFF]";
+
+  if (isPink) {
+    bgClassRight = "bg-gradient-to-r from-[#FF7BB8] to-[#FF9ECE]";
+    bgClassLeft = "bg-gradient-to-b from-[#FF4C94] to-[#FF2A7A] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
+    leftPillBorder = "border-[#FF6BA8]";
+  } else if (isRainbow) {
+    bgClassRight = "bg-gradient-to-r from-[#FF9033] to-[#C933FF]";
+    bgClassLeft = "bg-gradient-to-b from-[#FF4B4B] to-[#FF9033] shadow-[inset_0_1px_3px_rgba(255,255,255,0.7),2px_0_4px_rgba(0,0,0,0.2)]";
+    leftPillBorder = "border-[#FF6B6B]";
+  }
+
+  return (
+    <div className={cn("relative flex items-center h-[28px] rounded-full shrink-0 shadow-sm pr-3 pl-[32px]", bgClassRight)}>
+      {/* Top Glossy Reflection for Main Pill */}
+      <div className="absolute top-0 left-[15%] right-[10%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
+
+      {/* Left Pill (Absolute) */}
+      <div className={cn("absolute left-0 top-0 bottom-0 w-[34px] rounded-full flex flex-col items-center justify-center z-10 border", leftPillBorder, bgClassLeft)}>
+        <div className="absolute top-0 left-[10%] right-[10%] h-[30%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
+        <span className="relative z-10 text-white font-black text-[12px] leading-none mt-[2px] tracking-tight" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>ID</span>
+        <div className="relative z-10 bg-white/20 rounded-full px-1.5 mt-[1px] shadow-[inset_0_1px_1px_rgba(0,0,0,0.1)]">
+          <span className="text-white font-bold text-[8px] leading-none" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.2)' }}>SS</span>
+        </div>
+        {/* Left Sparkle */}
+        <svg className="absolute -left-[3px] top-[3px] opacity-90 drop-shadow-sm" width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
+        </svg>
+      </div>
+
+      {/* Right Text */}
+      <span className="relative z-10 text-[16px] font-semibold text-white leading-none ml-1.5" style={{ textShadow: '0 1px 1px rgba(0,0,0,0.1)' }}>
+        {idNumber}
+      </span>
+      
+      {/* Right Sparkle */}
+      <svg className="absolute right-1 top-1 opacity-90 drop-shadow-sm" width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
+      </svg>
+    </div>
+  );
+};
+
 
 // --- UPDATED SVGA COMPONENTS WITH INCREASED SIZES (H-11 W-11) ---
 
@@ -699,7 +751,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    <BudgetTag variant={getBudgetVariant(profile)} label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} size="sm" />
+                    <SVGA_GlossyID 
+                      variant={getBudgetVariant(profile)} 
+                      label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
+                    />
                   </div>
                   {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
@@ -715,7 +770,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section (Updated to rounded-2xl) */}
+            {/* Wallet Section */}
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
@@ -753,7 +808,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/tasks')} />
             </div>
 
-            {/* Main Menu List (Updated Icon Sizes) */}
+            {/* Main Menu List */}
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem 
