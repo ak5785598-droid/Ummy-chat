@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -18,26 +18,19 @@ import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames
 import { AvatarFrame } from '@/components/avatar-frame';
 
 // --- CUSTOM WAVE CIRCLE UI ---
-const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }) => {
+const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
   if (isLovelyShine) {
     return (
       <div className={cn("relative flex items-center justify-center rounded-full", size)}>
-        {/* Main Outer Glow */}
-        <div className="absolute inset-0 rounded-full border-[2px] border-blue-400/50 blur-[2px] animate-pulse" />
+        <div className="absolute inset-0 rounded-full border-[2px] border-blue-400/50 animate-pulse" />
         <div className="absolute inset-1 rounded-full border-[4px] border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.6)]" />
-        
-        {/* Inner Ornate Ring */}
         <div className="absolute inset-3 rounded-full border border-blue-200/20 border-dashed animate-[spin_10s_linear_infinite]" />
-        
-        {/* Floating Hearts */}
         <Heart className="absolute -top-1 -right-1 h-4 w-4 text-blue-400 fill-blue-400/40 animate-bounce" />
         <Heart className="absolute top-1/2 -left-2 h-3 w-3 text-blue-300 fill-blue-300/40" />
         <Heart className="absolute bottom-0 right-2 h-3 w-3 text-white fill-white/20 animate-pulse" />
         <Sparkles className="absolute top-2 left-2 h-3 w-3 text-white animate-pulse" />
-        
-        {/* Core Circle */}
         <div className="absolute inset-[14px] rounded-full border-[1px] border-blue-400/60" />
       </div>
     );
@@ -45,7 +38,7 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
 
   return (
     <div className={cn("relative flex items-center justify-center rounded-full", size)}>
-      <div className={cn("absolute inset-0 rounded-full border-[6px] opacity-30 blur-[1px]", borderColor)} />
+      <div className={cn("absolute inset-0 rounded-full border-[6px] opacity-30", borderColor)} />
       <div className={cn("absolute inset-[3px] rounded-full border-[8px] shadow-inner", borderColor)} />
       <div className={cn("absolute inset-[10px] rounded-full border-[1px] opacity-50", borderColor)} />
     </div>
@@ -93,9 +86,9 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
           <path d="M160 280 Q200 350 240 280 L230 265 Q200 280 170 265 Z" fill="url(#premiumGold)" stroke="#4a3700" />
         </g>
         <g className="animate-pulse">
-          <circle cx="200" cy="15" r="4" fill="white" className="blur-[2px]" />
-          <circle cx="105" cy="40" r="2" fill="white" className="blur-[1px]" />
-          <circle cx="295" cy="40" r="2" fill="white" className="blur-[1px]" />
+          <circle cx="200" cy="15" r="4" fill="white" />
+          <circle cx="105" cy="40" r="2" fill="white" />
+          <circle cx="295" cy="40" r="2" fill="white" />
         </g>
       </svg>
       <div className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0" style={{ width: '43%', height: '43%' }}>
@@ -105,6 +98,32 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
     </div>
   );
 };
+
+// --- CUSTOM ID BADGE COMPONENT ---
+const IDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
+    <div className="h-[32px] pl-[35px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+    </div>
+    <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF1AA" />
+            <stop offset="25%" stopColor="#FFD335" />
+            <stop offset="50%" stopColor="#C98B13" />
+            <stop offset="75%" stopColor="#FFD335" />
+            <stop offset="100%" stopColor="#9E6100" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="url(#goldGrad)" stroke="#FFE373" strokeWidth="3" />
+        <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#750600" />
+        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
+        <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
+      </svg>
+    </div>
+  </div>
+);
 
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
@@ -147,11 +166,15 @@ export default function StorePage() {
   const { data: dbThemes } = useCollection(themesQuery);
 
   const dynamicThemes = useMemo(() => {
-    return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
+    const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
       type: 'Theme',
       description: t.description || `High-fidelity ${t.name} background.`
     }));
+    return [
+      { id: 'None-Theme', name: 'Default Theme', type: 'Theme', price: 0, description: 'Restore default background.', icon: X, color: 'text-slate-400' },
+      ...baseThemes
+    ];
   }, [dbThemes]);
 
   const frameItems = useMemo(() => {
@@ -170,7 +193,25 @@ export default function StorePage() {
     return frames;
   }, []);
 
-  const allItems = [...STATIC_STORE_ITEMS, ...dynamicThemes, ...frameItems];
+  const bubbleItems = useMemo(() => [
+    { id: 'None-Bubble', name: 'Default Bubble', type: 'Bubble', price: 0, description: 'Standard chat bubble.', icon: X, color: 'text-slate-400' },
+    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
+  ], []);
+
+  const waveItems = useMemo(() => [
+    { id: 'None-Wave', name: 'No Wave', type: 'Wave', price: 0, description: 'Remove voice wave effect.', icon: X, color: 'text-slate-400' },
+    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
+  ], []);
+
+  // YAHAN PE ADD KIYE HAIN NAYE ID CARDS BINA KISI AUR CHEEZ KO CHHEDE
+  const idItems = useMemo(() => [
+    { id: 'None-ID', name: 'Unequip ID', type: 'ID', price: 0, description: 'Remove current ID badge.', icon: X, color: 'text-slate-400' },
+    { id: 'id-888888', name: 'VIP SSS ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888' },
+    { id: 'id-666666', name: 'VIP Elite ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666' },
+    { id: 'id-676767', name: 'VIP Royal ID', type: 'ID', price: 5999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767' },
+  ], []);
+
+  const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
 
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
@@ -210,10 +251,11 @@ export default function StorePage() {
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
-    const updateData = { [field]: item.id === 'None' ? 'None' : item.id, updatedAt: serverTimestamp() };
+    const isRemoving = item.id.startsWith('None');
+    const updateData = { [field]: isRemoving ? 'None' : item.id, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-    toast({ title: item.id === 'None' ? 'Frame Removed' : 'Item Equipped' });
+    toast({ title: isRemoving ? `${item.type} Removed` : 'Item Equipped' });
     setPreviewItem(null);
   };
 
@@ -222,14 +264,9 @@ export default function StorePage() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
       
-      {/* --- TOP GLOSSY PURPLE MIXING EFFECT (15vh) --- */}
       <div className="absolute top-0 left-0 right-0 h-[15vh] pointer-events-none z-0 overflow-hidden">
-        {/* Main Purple Gradient */}
         <div className="absolute inset-0 bg-gradient-to-b from-purple-600/25 via-purple-900/5 to-transparent" />
-        {/* Central Glossy Glow */}
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/10 blur-[80px] rounded-[100%]" />
-        {/* Top Edge Shine */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-400/30 to-transparent" />
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/10 rounded-[100%]" />
       </div>
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
@@ -244,11 +281,11 @@ export default function StorePage() {
         <Tabs defaultValue="Frame" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-              {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave'].map(cat => (
+              {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID'].map(cat => (
                 <TabsTrigger 
                   key={cat} 
                   value={cat} 
-                  className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] data-[state=active]:shadow-none relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
+                  className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
                 >
                   {cat}
                 </TabsTrigger>
@@ -256,24 +293,22 @@ export default function StorePage() {
             </TabsList>
           </div>
 
-          {['All', 'Frame', 'Theme', 'Bubble', 'Vehicle', 'Wave'].map(category => (
+          {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID'].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                      {item.type === 'Frame' ? (
+                      {item.id.startsWith('None') ? (
+                         <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center"><X className="h-10 w-10 text-slate-500" /></div>
+                      ) : item.type === 'Frame' ? (
                         <div className="scale-110">
-                          {item.id === 'None' ? (
-                            <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center"><X className="h-10 w-10 text-slate-500" /></div>
-                          ) : (
                             <AvatarFrame frameId={item.id} size="md">
                               <Avatar className="h-16 w-16">
                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
                                 <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                               </Avatar>
                             </AvatarFrame>
-                          )}
                         </div>
                       ) : item.type === 'Bubble' ? (
                         <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
@@ -281,6 +316,8 @@ export default function StorePage() {
                         <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
+                      ) : item.type === 'ID' ? (
+                           <IDBadgeIcon number={item.displayId || ''} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -301,106 +338,92 @@ export default function StorePage() {
           ))}
         </Tabs>
 
-        {/* --- BOTTOM SHEET PREVIEW --- */}
+        {/* --- BOTTOM SHEET PREVIEW (40VH & NO BLUR) --- */}
         {previewItem && (
           <>
-            {/* REMOVED: backdrop-blur-sm from the overlay div below */}
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
             
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[55vh] max-h-[600px] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
               
               <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
-              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-10 pb-6 px-4">
-                <div className="mb-6 scale-[1.3] flex items-center justify-center h-32 w-32">
-                  {previewItem.type === 'Frame' ? (
-                    previewItem.id === 'None' ? <X className="h-16 w-16 text-slate-500" /> : (
+              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
+                <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
+                  {previewItem.id.startsWith('None') ? (
+                    <X className="h-16 w-16 text-slate-500" />
+                  ) : previewItem.type === 'Frame' ? (
                       <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-24 w-24">
+                        <Avatar className="h-20 w-20">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                       </AvatarFrame>
-                    )
                   ) : previewItem.type === 'Bubble' ? (
                     <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                   ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
+                    <Palette className={cn("h-16 w-16 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                  ) : previewItem.type === 'ID' ? (
+                      <div className="scale-110 pt-2">
+                        <IDBadgeIcon number={previewItem.displayId || ''} />
+                      </div>
                   ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
+                    <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
 
-                <h2 className="text-2xl font-medium text-white tracking-wide">{previewItem.name}</h2>
+                <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
-                <div className="flex gap-4 mt-8 w-full justify-center">
-                  <button 
-                    onClick={() => setSelectedDuration(3)}
-                    className={cn(
-                      "relative border rounded-[10px] w-36 py-4 flex items-center justify-center transition-all",
-                      selectedDuration === 3 ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222222]"
-                    )}
-                  >
-                    <span className={cn("text-[15px]", selectedDuration === 3 ? "text-white" : "text-gray-400")}>3 Days</span>
-                    {selectedDuration === 3 && (
-                      <div className="absolute -bottom-1.5 -right-1.5 bg-[#FCD535] rounded-tl-lg rounded-br-[10px] p-0.5">
-                        <Check size={14} strokeWidth={3} className="text-black" />
-                      </div>
-                    )}
-                  </button>
-
-                  <button 
-                    onClick={() => setSelectedDuration(7)}
-                    className={cn(
-                      "relative border rounded-[10px] w-36 py-4 flex items-center justify-center transition-all",
-                      selectedDuration === 7 ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222222]"
-                    )}
-                  >
-                    <span className={cn("text-[15px]", selectedDuration === 7 ? "text-white" : "text-gray-400")}>7 Days</span>
-                    {selectedDuration === 7 && (
-                      <div className="absolute -bottom-1.5 -right-1.5 bg-[#FCD535] rounded-tl-lg rounded-br-[10px] p-0.5">
-                        <Check size={14} strokeWidth={3} className="text-black" />
-                      </div>
-                    )}
-                  </button>
+                <div className="flex gap-4 mt-4 w-full justify-center">
+                  {[3, 7].map(days => (
+                    <button 
+                      key={days}
+                      onClick={() => setSelectedDuration(days)}
+                      className={cn(
+                        "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222222]"
+                      )}
+                    >
+                      <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                      {selectedDuration === days && (
+                        <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                          <Check size={12} strokeWidth={3} className="text-black" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <div className="bg-[#222222] rounded-t-[20px] p-5 pb-8 flex items-center justify-between">
+              <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
                   <div className="flex items-center gap-2">
-                    <GoldCoinIcon className="w-6 h-6" />
-                    <span className="text-[#FCD535] font-bold text-2xl tracking-wide">
+                    <GoldCoinIcon className="w-5 h-5" />
+                    <span className="text-[#FCD535] font-bold text-xl tracking-wide">
                       {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
                     </span>
                   </div>
-                  {previewItem.price > 0 && (
-                    <span className="text-[#a58231] text-[15px] line-through pl-8 font-medium opacity-80">
-                      {Math.floor(getCalculatedPrice(previewItem.price, selectedDuration) * 1.6).toLocaleString()}
-                    </span>
-                  )}
                 </div>
 
                 <Button 
                   onClick={() => {
-                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
+                    const isOwned = previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id);
                     isOwned ? handleEquip(previewItem) : handlePurchase(previewItem, selectedDuration);
                   }}
                   className={cn(
-                    "rounded-full px-16 py-7 text-lg font-medium tracking-wide shadow-lg",
-                    userProfile?.inventory?.ownedItems?.includes(previewItem.id)
-                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg",
+                    (previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id))
+                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === (previewItem.id.startsWith('None') ? 'None' : previewItem.id)
                         ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
                         : "bg-white/20 text-white hover:bg-white/30"
                       : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
                   )}
                 >
-                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
-                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Equipped' : 'Equip') 
+                  {(previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id)) 
+                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === (previewItem.id.startsWith('None') ? 'None' : previewItem.id) ? 'Equipped' : 'Equip') 
                     : 'Buy'}
                 </Button>
               </div>
