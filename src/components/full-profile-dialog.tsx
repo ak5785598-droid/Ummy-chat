@@ -158,7 +158,7 @@ export function FullProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-[#12141d] p-0 border-none m-0 rounded-none z-[150] flex flex-col font-outfit overflow-hidden">
+      <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-[#12141d] p-0 border-none m-0 rounded-none z-[150] flex flex-col font-outfit">
         
         {/* TOP SECTION (Image jaisa layout) */}
         <div className="relative w-full shrink-0 bg-slate-900 pb-8 pt-12 px-6 shadow-md">
@@ -420,7 +420,7 @@ export function FullProfileDialog({
              <button 
                onClick={onFollow}
                disabled={isProcessingFollow}
-               className="flex-1 h-14 bg-white border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-xl shadow-pink-500/10 active:scale-95 transition-all"
+               className="flex-1 h-14 bg-white border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-xl shadow-pink-500/10 active:scale-95 transition-transform"
              >
                {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin" /> : (
                  <>
@@ -429,7 +429,7 @@ export function FullProfileDialog({
                  </>
                )}
              </button>
-             <button className="flex-1 h-14 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-xl shadow-blue-500/10 active:scale-95 transition-all">
+             <button className="flex-1 h-14 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-transform">
                <MessageCircle className="h-5 w-5" />
                Chat
              </button>
@@ -439,4 +439,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-}a
+}
