@@ -144,34 +144,72 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
 
 // --- UPDATED GLOSSY 3D ID/BUDGET BADGE MATCHING YOUR IMAGE ---
 const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
-  // Parsing out any existing 'ID: ' text so we only render the pure number
   const idNum = label.replace('ID: ', '').trim();
 
   return (
-    <div className="relative flex items-center h-[26px] rounded-full bg-gradient-to-r from-[#FF9D00] to-[#FFD233] shadow-[0_2px_4px_rgba(0,0,0,0.15),inset_0_1px_2px_rgba(255,255,255,0.7)] ml-3 pr-4 pl-[26px]">
+    <div className="relative flex items-center h-[32px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-5 pr-5 pl-[32px] border border-[#c157a8]">
 
-      {/* Left 3D Squircle Badge (ID + sss) */}
-      <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-[12px] bg-gradient-to-br from-[#FFC247] via-[#FF9100] to-[#D96B00] shadow-[0_2px_6px_rgba(255,145,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-2px_4px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center border-[1.5px] border-white/40 z-10">
+      {/* Left 3D Jewel Badge (ID + S) */}
+      <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-[54px] h-[54px] z-10 flex items-center justify-center">
+        <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+          <defs>
+            <linearGradient id="goldFrame" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FBE3A4" />
+              <stop offset="40%" stopColor="#D2923A" />
+              <stop offset="60%" stopColor="#F9D479" />
+              <stop offset="100%" stopColor="#B37322" />
+            </linearGradient>
+            <linearGradient id="purpleGem" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#D57EEB" />
+              <stop offset="50%" stopColor="#8A2387" />
+              <stop offset="100%" stopColor="#4A00E0" />
+            </linearGradient>
+            <linearGradient id="textGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" />
+              <stop offset="50%" stopColor="#F3E5F5" />
+              <stop offset="100%" stopColor="#D1A3D8" />
+            </linearGradient>
+            <linearGradient id="goldS" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFF1AA" />
+              <stop offset="100%" stopColor="#F3A92A" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
 
-        {/* Sparkle Top Right */}
-        <svg className="absolute top-[2px] right-[2px] w-3 h-3 drop-shadow-sm" viewBox="0 0 24 24" fill="none">
-          <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
+          {/* Base Hexagon Gold Frame */}
+          <path d="M30 4 L54 18 L54 42 L30 56 L6 42 L6 18 Z" fill="url(#goldFrame)" />
+          
+          {/* Inner Purple Gem */}
+          <path d="M30 8 L50 20 L50 40 L30 52 L10 40 L10 20 Z" fill="url(#purpleGem)" />
+          <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" /> {/* Top facet highlight */}
+
+          {/* ID Text */}
+          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>ID</text>
+
+          {/* Bottom Gold Flourish for 'S' */}
+          <path d="M18 45 C 24 58, 36 58, 42 45 C 36 52, 24 52, 18 45 Z" fill="url(#goldFrame)" />
+          <path d="M22 43 L38 43 L34 54 L26 54 Z" fill="url(#goldFrame)" />
+          
+          {/* 'S' Character */}
+          <text x="30" y="52" fontFamily="sans-serif" fontWeight="900" fontSize="13" fill="url(#goldS)" textAnchor="middle" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)' }}>S</text>
+
+          {/* Sparkles */}
+          <path d="M 45 10 Q 48 10 48 7 Q 48 10 51 10 Q 48 10 48 13 Q 48 10 45 10 Z" fill="white" filter="url(#glow)"/>
+          <path d="M 12 38 Q 14 38 14 36 Q 14 38 16 38 Q 14 38 14 40 Q 14 38 12 38 Z" fill="white" filter="url(#glow)"/>
         </svg>
-        {/* Sparkle Bottom Left */}
-        <svg className="absolute bottom-[2px] left-[2px] w-2.5 h-2.5 drop-shadow-sm" viewBox="0 0 24 24" fill="none">
-          <path d="M12 0C12 7.5 16.5 12 24 12C16.5 12 12 16.5 12 24C12 16.5 7.5 12 0 12C7.5 12 12 7.5 12 0Z" fill="white"/>
-        </svg>
-
-        {/* Texts inside the badge */}
-        <span className="text-[13px] font-black text-white leading-none tracking-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] mt-1">ID</span>
-        <span className="text-[8px] font-black text-[#FFF0C2] leading-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)] mb-1">sss</span>
       </div>
 
       {/* Top Glossy Reflection for Main Pill */}
-      <div className="absolute top-[1px] left-[20%] right-[10%] h-[35%] bg-gradient-to-b from-white/90 to-transparent rounded-full blur-[0.5px]" />
+      <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
 
       {/* ID Number Text */}
-      <span className="relative z-10 text-[15px] font-black text-white/95 ml-2 tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]" style={{ textShadow: '0px 1px 2px rgba(200, 100, 0, 0.5)' }}>
+      <span className="relative z-10 text-[15px] font-bold text-white ml-2 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {idNum}
       </span>
     </div>
