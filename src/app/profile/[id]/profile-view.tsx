@@ -185,7 +185,8 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   const idNum = label.replace('ID: ', '').trim();
 
   return (
-    <div className="relative flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-4 pr-3 pl-[24px] border border-[#c157a8]">
+    // Changed ml-4 to ml-2 for slight left shift
+    <div className="relative flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-2 pr-3 pl-[24px] border border-[#c157a8]">
 
       {/* Left 3D Jewel Badge (ID + S) */}
       <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-[38px] h-[38px] z-10 flex items-center justify-center">
@@ -808,7 +809,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 
                 {/* --- MODIFIED ID SECTION HERE --- */}
-                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                {/* mt-1.5 and -ml-0.5 to move it a bit down and left */}
+                <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
                     {profile.tags?.includes('Official') ? (
                       <SVGA_GlossyID 
@@ -867,7 +869,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             )}
 
             {/* VIP Banner */}
-            <SVGA_VIPBanner onClick={() => router.push('/vips')} />
+            <div className="-mx-2">
+              <SVGA_VIPBanner onClick={() => router.push('/vips')} />
+            </div>
 
             {/* Quick Actions */}
             <div className="flex justify-between items-center px-4 mt-6">
