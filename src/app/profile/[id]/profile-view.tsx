@@ -41,8 +41,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
-import { OfficialTag } from '@/components/official-tag';
-import { SellerTag } from '@/components/seller-tag';
 import { doc, serverTimestamp, collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { useTranslation } from '@/hooks/use-translation';
@@ -65,6 +63,46 @@ import {
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
+
+// --- NEW 3D GLOSSY OFFICIAL & SELLER TAGS ---
+
+const SVGA_OfficialTag = () => (
+  <div className="relative inline-flex items-center h-[22px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2 border border-[#1DA1F2]/50 ml-1 overflow-hidden">
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-sm blur-[0.5px]" />
+    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 relative z-10 drop-shadow-sm mr-1" fill="none">
+       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
+    </svg>
+    <span className="relative z-10 text-[10px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
+  </div>
+);
+
+const SVGA_SellerTag = () => (
+  <div className="relative inline-flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_4px_rgba(255,149,0,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2.5 border border-[#FFE1A8] ml-1 overflow-hidden">
+    {/* Top Glossy Reflection */}
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
+    
+    {/* Red Money Bag (Image 2) */}
+    <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[16px] h-[16px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <defs>
+          <linearGradient id="redBag" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FF5F5F" />
+            <stop offset="100%" stopColor="#C81E1E" />
+          </linearGradient>
+        </defs>
+        <path d="M20 8 C16 8 14 11 14 13 L26 13 C26 11 24 8 20 8 Z" fill="#991B1B" />
+        <path d="M12 14 C12 14 8 20 8 28 C8 34 12 36 20 36 C28 36 32 34 32 28 C32 20 28 14 28 14 Z" fill="url(#redBag)" />
+        <text x="20" y="30" fontSize="15" fontWeight="900" fill="white" textAnchor="middle" style={{ fontFamily: 'sans-serif' }}>$</text>
+        <ellipse cx="14" cy="22" rx="3" ry="1.5" fill="white" fillOpacity="0.4" transform="rotate(-20 14 22)" />
+      </svg>
+    </div>
+
+    {/* Seller Text */}
+    <span className="relative z-10 text-[11px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      Seller
+    </span>
+  </div>
+);
 
 // --- NEW 3D GLOSSY VIP BANNER COMPONENT ---
 const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
@@ -147,11 +185,11 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   const idNum = label.replace('ID: ', '').trim();
 
   return (
-    <div className="relative flex items-center h-[32px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-5 pr-5 pl-[32px] border border-[#c157a8]">
+    <div className="relative flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-4 pr-3 pl-[24px] border border-[#c157a8]">
 
       {/* Left 3D Jewel Badge (ID + S) */}
-      <div className="absolute -left-5 top-1/2 -translate-y-1/2 w-[54px] h-[54px] z-10 flex items-center justify-center">
-        <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+      <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-[38px] h-[38px] z-10 flex items-center justify-center">
+        <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
             <linearGradient id="goldFrame" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FBE3A4" />
@@ -209,7 +247,7 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
       <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
 
       {/* ID Number Text */}
-      <span className="relative z-10 text-[15px] font-bold text-white ml-2 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      <span className="relative z-10 text-[11px] font-bold text-white ml-2 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {idNum}
       </span>
     </div>
@@ -596,7 +634,6 @@ const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomI
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor, customIcon: CustomIcon }: { icon?: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string, customIcon?: any }) => (
   <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group">
     <div className="flex items-center gap-4">
-      {/* Icon size logic updated here */}
       <div className={cn("p-1.5 rounded-xl transition-colors shrink-0", iconColor || "bg-slate-100 text-slate-400")}>
         {CustomIcon ? <CustomIcon /> : <Icon className="h-6 w-6" />}
       </div>
@@ -711,7 +748,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 
-  // If not Own Profile, show Public View (Simplified for structure)
+  // If not Own Profile, show Public View
   if (!isOwnProfile) {
      return (
        <AppLayout>
@@ -723,7 +760,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
             </header>
             <div className="flex-1 overflow-y-auto pt-16 px-5">
-                {/* Public View Details Here */}
                 <h1 className="text-2xl font-bold">{profile.username}</h1>
                 <p className="text-slate-500">Public Profile Content</p>
             </div>
@@ -772,14 +808,16 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    {/* Yahan par wahi glossy icon lagaya gaya hai jo bilkul image jaisa hai */}
                     <SVGA_GlossyID 
                       variant={getBudgetVariant(profile)} 
                       label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
                     />
                   </div>
-                  {profile.tags?.includes('Official') && <OfficialTag size="sm" />}
-                  {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SellerTag size="sm" />}
+                  
+                  {/* UPDATED: Calling New SVGA Tags Here */}
+                  {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
+                  {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
+
                 </div>
               </div>
             </div>
@@ -792,7 +830,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section (Updated to rounded-2xl) */}
+            {/* Wallet Section */}
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
@@ -830,7 +868,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/tasks')} />
             </div>
 
-            {/* Main Menu List (Updated Icon Sizes) */}
+            {/* Main Menu List */}
             <div className="space-y-2 pt-6 pb-32">
               <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem 
