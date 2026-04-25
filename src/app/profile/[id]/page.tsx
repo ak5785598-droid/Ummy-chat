@@ -26,7 +26,9 @@ export default function ProfileGatewayPage({ params }: { params: any }) {
   );
 }
 
+import { use } from 'react';
+
 function ProfileGateway({ params }: { params: any }) {
-  const resolvedParams = typeof params === 'function' ? params() : params;
+  const resolvedParams = use(params) as any;
   return <ProfileView profileId={resolvedParams.id} mode="public" />;
 }
