@@ -709,6 +709,45 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     recordVisit();
   }, [firestore, currentUser, profileId, isOwnProfile]);
 
+  // --- NEW LOGIC: Generate and Save 8-Digit Unique ID ---
+  useEffect(() => {
+    const assignPermanentUniqueId = async () => {
+      if (isOwnProfile && profile && firestore && profileId) {
+        // Agar ID nahi hai ya string 'undefined' hai, tabhi naya banayega
+        if (!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') {
+          
+          // Helper: 8 alag digits generate karne ke liye (No repeats)
+          const generateUnique8DigitId = () => {
+            const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            // Fisher-Yates shuffle algorithm
+            for (let i = digits.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [digits[i], digits[j]] = [digits[j], digits[i]];
+            }
+            // Agar pehla digit '0' aa jaye, toh usko second se swap kar do takki number valid dikhe
+            if (digits[0] === '0') {
+              [digits[0], digits[1]] = [digits[1], digits[0]];
+            }
+            return digits.slice(0, 8).join('');
+          };
+
+          const newUniqueId = generateUnique8DigitId();
+
+          try {
+            const userRef = doc(firestore, 'users', profileId);
+            // Firebase me permanent save kar dega
+            await setDocumentNonBlocking(userRef, { accountNumber: newUniqueId }, { merge: true });
+          } catch (error) {
+            console.error("Error assigning permanent unique ID:", error);
+          }
+        }
+      }
+    };
+
+    assignPermanentUniqueId();
+  }, [isOwnProfile, profile, firestore, profileId]);
+  // --------------------------------------------------------
+
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
@@ -971,3 +1010,5 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
+
