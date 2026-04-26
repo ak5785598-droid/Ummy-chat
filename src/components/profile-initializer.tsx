@@ -143,8 +143,11 @@ export function ProfileInitializer() {
           console.log(`✅ Strictly 6-Digit Number ID Synced: ${user.uid}`);
         }
       } catch (e: any) {
+        const isAssignedIdsError = e?.message?.includes('assigned_ids');
         if (e?.code === 'permission-denied') {
-          console.warn("[Identity Sync] ID access restricted (403). Profile using defaults.");
+          if (!isAssignedIdsError) {
+            console.warn("[Identity Sync] ID access restricted (403). Profile using defaults.");
+          }
         } else {
           console.error("[Identity Sync] User ID Error:", e);
         }

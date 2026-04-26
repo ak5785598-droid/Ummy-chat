@@ -182,7 +182,7 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
 
 // --- UPDATED GLOSSY 3D ID/BUDGET BADGE MATCHING YOUR IMAGE ---
 const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
-  const idNum = label.replace('ID: ', '').trim();
+  const idNum = label ? label.replace('ID: ', '').trim() : '000000';
 
   return (
     // Changed ml-4 to ml-2 for slight left shift

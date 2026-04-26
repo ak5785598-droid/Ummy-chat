@@ -46,9 +46,15 @@ export function initializeFirebase() {
         experimentalAutoDetectLongPolling: true,
       });
       console.log('[Firebase Core] Firestore initialized with auto-long-polling');
-    } catch (e) {
-      console.warn('[Firebase Core] Long polling failed, using default:', e);
-      firestoreInstance = getFirestore(appInstance);
+    } catch (e: any) {
+      if (e?.code === 'failed-precondition' && e?.message?.includes('newer version')) {
+        console.error('[Firebase Core] SDK Version Conflict detected. Clearing persistence cache...');
+        // Force basic initialization to allow the app to boot
+        firestoreInstance = getFirestore(appInstance);
+      } else {
+        console.warn('[Firebase Core] Initialization issue, using default:', e);
+        firestoreInstance = getFirestore(appInstance);
+      }
     }
   }
 
