@@ -45,6 +45,25 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
+// --- NAYA BUDGET ID BADGE (IMAGE BASED) ---
+const BudgetIDBadge = ({ number }: { number: string }) => (
+  <div className="relative flex items-center justify-center scale-90 md:scale-100">
+    <div className="h-[38px] min-w-[150px] flex items-center bg-gradient-to-r from-[#FF4D8D] to-[#FF8CB0] rounded-full pl-1.5 pr-4 shadow-[0_4px_10px_rgba(255,77,141,0.3)] border border-white/20">
+      <div className="h-8 w-8 rounded-full bg-gradient-to-b from-[#FF1F6D] to-[#D6145B] flex flex-col items-center justify-center border border-white/30 shadow-inner relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/10" />
+        <span className="text-[11px] font-black leading-none text-white italic drop-shadow-sm z-10">ID</span>
+        <span className="text-[8px] font-bold leading-none text-white/90 z-10">SS</span>
+      </div>
+      <span className="flex-1 text-center text-white font-bold text-[22px] tracking-tight ml-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
+        {number}
+      </span>
+      <div className="absolute -top-1 -right-1">
+        <Sparkles className="h-3 w-3 text-white/60 animate-pulse" />
+      </div>
+    </div>
+  </div>
+);
+
 // --- PREMIUM AVATAR FRAME COMPONENT ---
 interface PremiumAvatarFrameProps {
   imageUrl: string;
@@ -203,9 +222,9 @@ export default function StorePage() {
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
   ], []);
 
-  // YAHAN PE ADD KIYE HAIN NAYE ID CARDS BINA KISI AUR CHEEZ KO CHHEDE
   const idItems = useMemo(() => [
     { id: 'None-ID', name: 'Unequip ID', type: 'ID', price: 0, description: 'Remove current ID badge.', icon: X, color: 'text-slate-400' },
+    { id: 'id-222444', name: 'Budget Pink SS', type: 'ID', price: 99999, durationDays: 7, description: 'Exclusive Budget Pink ID 222444 Badge.', displayId: '222444', isBudget: true },
     { id: 'id-888888', name: 'VIP SSS ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888' },
     { id: 'id-666666', name: 'VIP Elite ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666' },
     { id: 'id-676767', name: 'VIP Royal ID', type: 'ID', price: 5999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767' },
@@ -317,7 +336,7 @@ export default function StorePage() {
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                           <IDBadgeIcon number={item.displayId || ''} />
+                         item.isBudget ? <BudgetIDBadge number={item.displayId || ''} /> : <IDBadgeIcon number={item.displayId || ''} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -338,7 +357,7 @@ export default function StorePage() {
           ))}
         </Tabs>
 
-        {/* --- BOTTOM SHEET PREVIEW (40VH & NO BLUR) --- */}
+        {/* --- BOTTOM SHEET PREVIEW --- */}
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
@@ -367,8 +386,8 @@ export default function StorePage() {
                   ) : previewItem.type === 'Wave' ? (
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-110 pt-2">
-                        <IDBadgeIcon number={previewItem.displayId || ''} />
+                      <div className="scale-125 pt-2">
+                        {previewItem.isBudget ? <BudgetIDBadge number={previewItem.displayId || ''} /> : <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
                     <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
