@@ -771,8 +771,15 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               transaction.update(pRef, { accountNumber: finalNumber });
             });
             console.log("✅ ID Successfully Converted to:", finalNumber);
-          } catch (err) {
-            console.error("❌ ID Sync Error:", err);
+          } catch (err: any) {
+            const isAssignedIdsError = err?.message?.includes('assigned_ids');
+            if (err?.code === 'permission-denied') {
+              if (!isAssignedIdsError) {
+                console.warn("❌ ID Sync Access Restricted (403). Using defaults.");
+              }
+            } else {
+              console.error("❌ ID Sync Error:", err);
+            }
           }
         }
       }
@@ -1044,4 +1051,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}a
+}
