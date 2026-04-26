@@ -22,8 +22,6 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
-
-
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -63,7 +61,6 @@ export default function LoginPage() {
     { name: 'Egypt', code: '+20', flag: '🇪🇬', id: 'EG' },
     { name: 'Jordan', code: '+962', flag: '🇯🇴', id: 'JO' },
     { name: 'Palestine', code: '+970', flag: '🇵🇸', id: 'PS' },
-    { name: 'Pakistan', code: '+92', flag: '🇵🇰', id: 'PK' },
     { name: 'Bahrain', code: '+973', flag: '🇧🇭', id: 'BH' },
     { name: 'Kuwait', code: '+965', flag: '🇰🇼', id: 'KW' },
     { name: 'Oman', code: '+968', flag: '🇴🇲', id: 'OM' },
@@ -252,7 +249,6 @@ export default function LoginPage() {
 
     const userRef = doc(firestore, 'users', uid);
     const profileRef = doc(firestore, 'users', uid, 'profile', uid);
-    const counterRef = doc(firestore, 'appConfig', 'counters');
 
     try {
       const userSnap = await getDoc(userRef);
@@ -267,26 +263,59 @@ export default function LoginPage() {
           }
         }
       } else {
-        // Create new user with sequential ID
+        // Create new user with 6-Digit Unique ID Logic
         const accountNumber: string = await runTransaction(firestore, async (transaction) => {
-          const counterDoc = await transaction.get(counterRef);
-          let nextUserId = 1;
+          let newId = '';
+          let idFound = false;
 
+          // Creator specific custom ID handling to ensure it remains valid
           if (uid === CREATOR_ID) {
-            nextUserId = 0;
-          } else {
-            const lastId = counterDoc.data()?.lastUserId || 0;
-            nextUserId = lastId + 1;
+            const creatorId = '123456'; // 6 unique digits
+            const creatorRef = doc(firestore, 'assigned_ids', creatorId);
+            const docSnap = await transaction.get(creatorRef);
+            if (!docSnap.exists()) {
+              transaction.set(creatorRef, { uid: uid, assignedAt: serverTimestamp() });
+            }
+            return creatorId;
           }
 
-          transaction.set(counterRef, { lastUserId: nextUserId }, { merge: true });
-          const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
-          return paddedId;
+          // Loop until we generate and secure a unique 6-digit ID
+          while (!idFound) {
+            let availableDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            let tempId = '';
+
+            // Ensure the first digit is never '0' so it's a proper 6-digit number
+            const firstOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            const firstDigit = firstOptions[Math.floor(Math.random() * firstOptions.length)];
+            tempId += firstDigit;
+            availableDigits = availableDigits.filter(d => d !== firstDigit);
+
+            // Generate remaining 5 digits making sure none repeat
+            for (let i = 0; i < 5; i++) {
+              const rIndex = Math.floor(Math.random() * availableDigits.length);
+              const digit = availableDigits[rIndex];
+              tempId += digit;
+              availableDigits = availableDigits.filter(d => d !== digit);
+            }
+
+            // Verify with Firestore if this ID was ever assigned to anyone
+            const idRef = doc(firestore, 'assigned_ids', tempId);
+            const idDoc = await transaction.get(idRef);
+
+            // If completely unused, lock it permanently for this user
+            if (!idDoc.exists()) {
+              transaction.set(idRef, { uid: uid, assignedAt: serverTimestamp() });
+              newId = tempId;
+              idFound = true;
+            }
+          }
+
+          return newId;
         });
 
         const baseData = {
           id: uid,
-          username: displayName || `Tribe_${accountNumber.slice(-4)}`,
+          username: displayName || `Tribe_${accountNumber}`,
           accountNumber,
           avatarUrl: '',
           wallet: {
