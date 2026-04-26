@@ -101,9 +101,13 @@ export function ProfileInitializer() {
      await batch.commit();
 
       try {
-        const currentAccNum = userData.accountNumber;
-        // Creator ki ID update karke '123456' check kar rahe hain instead of '0000'
-        const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '123456');
+        const currentAccNum = String(userData.accountNumber || '');
+        
+        // STRICT CHECK: Sirf wahi IDs allow hongi jo exactly 6 digits ki numeric ho
+        const isStrictlySixDigits = /^\d{6}$/.test(currentAccNum);
+        
+        // Agar ID exist nahi karti, ya usme alphabets hain, ya Creator ID update honi hai, toh sync trigger hoga
+        const needsUserSync = !currentAccNum || !isStrictlySixDigits || (user.uid === CREATOR_ID && currentAccNum !== '123456');
 
         if (needsUserSync) {
           await runTransaction(firestore, async (transaction) => {
@@ -118,28 +122,9 @@ export function ProfileInitializer() {
                 transaction.set(creatorRef, { uid: user.uid, assignedAt: serverTimestamp() });
               }
             } else {
-              // ULTRA-FAST 6-Digit Random & Unique Logic using Fisher-Yates Shuffle
+              // ULTRA-FAST STRICT 6-DIGIT GENERATOR (100000 se 999999 ke beech)
               while (!idFound) {
-                const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-                
-                // Array ko fast shuffle kar rahe hain
-                for (let i = digits.length - 1; i > 0; i--) {
-                  const j = Math.floor(Math.random() * (i + 1));
-                  const temp = digits[i];
-                  digits[i] = digits[j];
-                  digits[j] = temp;
-                }
-
-                // Pehla digit 0 nahi ho sakta, agar 0 hai toh kisi aur index (1-5) se swap kar do
-                if (digits[0] === 0) {
-                  const swapIdx = Math.floor(Math.random() * 5) + 1;
-                  const temp = digits[0];
-                  digits[0] = digits[swapIdx];
-                  digits[swapIdx] = temp;
-                }
-
-                // Shuru ke 6 digits le lo (koi repeat nahi hoga aur sirf numbers honge)
-                const tempId = digits.slice(0, 6).join('');
+                const tempId = Math.floor(100000 + Math.random() * 900000).toString();
 
                 const idRef = doc(firestore, 'assigned_ids', tempId);
                 const idDoc = await transaction.get(idRef);
@@ -155,7 +140,7 @@ export function ProfileInitializer() {
             transaction.set(userRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
             transaction.set(profileRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
           });
-          console.log(`✅ Super-Fast 6-Digit Unique User ID Synced: ${user.uid}`);
+          console.log(`✅ Strictly 6-Digit Number ID Synced: ${user.uid}`);
         }
       } catch (e: any) {
         if (e?.code === 'permission-denied') {
@@ -165,7 +150,7 @@ export function ProfileInitializer() {
         }
       }
 
-      // Room ID logic ko bilkul change nahi kiya gaya hai
+      // Room ID logic bilkul waisa hi hai jaisa tha
       try {
         const roomRef = doc(firestore, 'chatRooms', user.uid);
         const roomSnap = await getDoc(roomRef);
