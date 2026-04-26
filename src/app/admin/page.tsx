@@ -1088,19 +1088,21 @@ function AdminPageContent() {
 
       for (const d of usersSnap.docs) {
         const data = d.data();
+        const isStrictlySixDigits = /^\d{6}$/.test(data.accountNumber || '');
         const needsSync =
           !data.accountNumber ||
-          data.accountNumber.length !== 4 ||
-          isNaN(parseInt(data.accountNumber)) ||
+          (!isStrictlySixDigits && !(d.id === CREATOR_ID && data.accountNumber === "0000")) ||
           (d.id === CREATOR_ID && data.accountNumber !== "0000");
+
         if (needsSync) {
-          let newId;
-          if (d.id === CREATOR_ID) newId = 0;
-          else {
-            lastUserId++;
-            newId = lastUserId;
+          let paddedId;
+          if (d.id === CREATOR_ID) {
+            paddedId = "0000";
+          } else {
+            // Random 6-digit generator for Admin Sync
+            paddedId = Math.floor(100000 + Math.random() * 900000).toString();
           }
-          const paddedId = newId.toString().padStart(4, "0");
+
           batch.update(doc(firestore, "users", d.id), {
             accountNumber: paddedId,
             updatedAt: serverTimestamp(),

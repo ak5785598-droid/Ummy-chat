@@ -732,13 +732,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         const currentID = liveID || profile.accountNumber;
         
         // Check: Kya ID pehle se 6-digit number hai?
-        const isCorrectFormat = /^\d{6}$/.test(String(currentID));
+        // EXCEPTION: Creator ke liye 0000 allow hai
+        const isCorrectFormat = /^\d{6}$/.test(String(currentID)) || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && String(currentID) === '0000');
         
         // Update kab karna hai:
         // - Agar ID missing hai
         // - Agar ID number nahi hai (alphanumeric hai)
-        // - Agar aap Creator ho aur ID '123456' nahi hai
-        const needsUpdate = !currentID || !isCorrectFormat || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '123456');
+        // - Agar aap Creator ho aur ID '0000' nahi hai
+        const needsUpdate = !currentID || !isCorrectFormat || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '0000');
 
         if (needsUpdate) {
           try {
@@ -746,7 +747,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               let finalNumber = '';
 
               if (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
-                finalNumber = '123456'; // Creator Fix
+                finalNumber = '0000'; // Creator Fix
               } else {
                 // Unique 6-Digit generate karne ka loop
                 let isUnique = false;
