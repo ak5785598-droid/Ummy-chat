@@ -263,42 +263,35 @@ export default function LoginPage() {
           }
         }
       } else {
-        // Create new user with STRICT 6-Digit Number Logic
-        const accountNumber: string = await runTransaction(firestore, async (transaction) => {
-          let newId = '';
-          let idFound = false;
+// Create new user with STRICT 6-Digit Number Logic
 
-          // Creator specific custom ID handling
-          if (uid === CREATOR_ID) {
-            const creatorId = '123456'; 
-            const creatorRef = doc(firestore, 'assigned_ids', creatorId);
-            const docSnap = await transaction.get(creatorRef);
-            if (!docSnap.exists()) {
-              transaction.set(creatorRef, { uid: uid, assignedAt: serverTimestamp() });
-            }
-            return creatorId;
-          }
+const generateNumericID = async (firestore: any, uid: string) => {
+  return await runTransaction(firestore, async (transaction) => {
+    let newId = '';
+    let found = false;
 
-          // Generate strict 6-digit numeric ID (FAST & SECURE)
-          while (!idFound) {
-            // Yahan change kiya hai: Ye ensure karega ki purely 6-digit number hi mile 100000 se 999999 ke beech mein
-            const tempId = Math.floor(100000 + Math.random() * 900000).toString();
+    while (!found) {
+      const tempId = Math.floor(100000 + Math.random() * 900000).toString();
 
-            // Verify with Firestore if this numeric ID was ever assigned
-            const idRef = doc(firestore, 'assigned_ids', tempId);
-            const idDoc = await transaction.get(idRef);
+      const idRef = doc(firestore, 'assigned_ids', tempId);
+      const snap = await transaction.get(idRef);
 
-            // If completely unused, lock it permanently for this user
-            if (!idDoc.exists()) {
-              transaction.set(idRef, { uid: uid, assignedAt: serverTimestamp() });
-              newId = tempId;
-              idFound = true;
-            }
-          }
-
-          return newId;
+      if (!snap.exists()) {
+        transaction.set(idRef, {
+          uid,
+          assignedAt: serverTimestamp(),
         });
+        newId = tempId;
+        found = true;
+      }
+    }
 
+    return newId;
+  });
+};
+
+// ✅ YEH IMPORTANT LINE
+const accountNumber = await generateNumericID(firestore, uid);
         const baseData = {
           id: uid,
           username: displayName || `Tribe_${accountNumber}`,
