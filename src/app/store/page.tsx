@@ -45,25 +45,6 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- NAYA BUDGET ID BADGE (IMAGE BASED) ---
-const BudgetIDBadge = ({ number }: { number: string }) => (
-  <div className="relative flex items-center justify-center scale-90 md:scale-100">
-    <div className="h-[38px] min-w-[150px] flex items-center bg-gradient-to-r from-[#FF4D8D] to-[#FF8CB0] rounded-full pl-1.5 pr-4 shadow-[0_4px_10px_rgba(255,77,141,0.3)] border border-white/20">
-      <div className="h-8 w-8 rounded-full bg-gradient-to-b from-[#FF1F6D] to-[#D6145B] flex flex-col items-center justify-center border border-white/30 shadow-inner relative overflow-hidden">
-        <div className="absolute inset-0 bg-white/10" />
-        <span className="text-[11px] font-black leading-none text-white italic drop-shadow-sm z-10">ID</span>
-        <span className="text-[8px] font-bold leading-none text-white/90 z-10">SS</span>
-      </div>
-      <span className="flex-1 text-center text-white font-bold text-[22px] tracking-tight ml-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]">
-        {number}
-      </span>
-      <div className="absolute -top-1 -right-1">
-        <Sparkles className="h-3 w-3 text-white/60 animate-pulse" />
-      </div>
-    </div>
-  </div>
-);
-
 // --- PREMIUM AVATAR FRAME COMPONENT ---
 interface PremiumAvatarFrameProps {
   imageUrl: string;
@@ -149,10 +130,6 @@ const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
   { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 7, description: 'Exclusive premium gold trimmed bubble.', icon: Crown, color: 'text-yellow-400' },
-  { id: 'supreme-king', name: 'Legendary King', type: 'Frame', price: 1250000, durationDays: 7, description: 'The absolute ruler with 24k Gold Glow.', icon: Crown, color: 'text-yellow-500' },
-  { id: 'elite-mythic-gold', name: 'Mythic Gold Elite', type: 'Frame', price: 5000000, durationDays: 7, description: 'Ultimate multi-tiered golden aura.', icon: Crown, color: 'text-yellow-400' },
-  { id: 'angel-wings', name: 'Angel Wings', type: 'Frame', price: 325000, durationDays: 7, description: 'Divine golden heavenly wings.', icon: Sparkles, color: 'text-yellow-200' },
-  { id: 'ruby-crown', name: 'Ruby Crown', type: 'Frame', price: 150000, durationDays: 7, description: 'Imperial red gem sovereignty.', icon: Crown, color: 'text-red-600' },
   { id: 'w-lovelyshine', name: 'Lovely Shine', type: 'Wave', price: 59999, durationDays: 7, description: 'Magical blue glow with floating hearts.', icon: Activity, color: 'text-blue-400' },
   { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
   { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
@@ -184,50 +161,47 @@ export default function StorePage() {
 
   const { data: dbThemes } = useCollection(themesQuery);
 
+  // Removed None-Theme
   const dynamicThemes = useMemo(() => {
     const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
       type: 'Theme',
       description: t.description || `High-fidelity ${t.name} background.`
     }));
-    return [
-      { id: 'None-Theme', name: 'Default Theme', type: 'Theme', price: 0, description: 'Restore default background.', icon: X, color: 'text-slate-400' },
-      ...baseThemes
-    ];
+    return baseThemes;
   }, [dbThemes]);
 
+  // Removed None-Frame
   const frameItems = useMemo(() => {
-    const frames = [{
-      id: 'None',
-      name: 'Identity Cleanse',
-      type: 'Frame',
-      price: 0,
-      description: 'Remove current frame and show default avatar aura.',
-      icon: X,
-      color: 'text-slate-400'
-    }];
+    const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
     });
     return frames;
   }, []);
 
+  // Removed None-Bubble
   const bubbleItems = useMemo(() => [
-    { id: 'None-Bubble', name: 'Default Bubble', type: 'Bubble', price: 0, description: 'Standard chat bubble.', icon: X, color: 'text-slate-400' },
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
   ], []);
 
+  // Removed None-Wave
   const waveItems = useMemo(() => [
-    { id: 'None-Wave', name: 'No Wave', type: 'Wave', price: 0, description: 'Remove voice wave effect.', icon: X, color: 'text-slate-400' },
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
   ], []);
 
+  // Removed None-ID & Added 4 new VIP IDs
   const idItems = useMemo(() => [
-    { id: 'None-ID', name: 'Unequip ID', type: 'ID', price: 0, description: 'Remove current ID badge.', icon: X, color: 'text-slate-400' },
-    { id: 'id-222444', name: 'Budget Pink SS', type: 'ID', price: 99999, durationDays: 7, description: 'Exclusive Budget Pink ID 222444 Badge.', displayId: '222444', isBudget: true },
     { id: 'id-888888', name: 'VIP SSS ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888' },
     { id: 'id-666666', name: 'VIP Elite ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666' },
     { id: 'id-676767', name: 'VIP Royal ID', type: 'ID', price: 5999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767' },
+    { id: 'id-111111', name: 'VIP Legend ID', type: 'ID', price: 6500000, durationDays: 7, description: 'Exclusive VIP ID Number 111111 Badge.', displayId: '111111' },
+    { id: 'id-999999', name: 'VIP Supreme ID', type: 'ID', price: 7000000, durationDays: 7, description: 'Exclusive VIP ID Number 999999 Badge.', displayId: '999999' },
+    { id: 'id-777777', name: 'VIP Lucky ID', type: 'ID', price: 5500000, durationDays: 7, description: 'Exclusive VIP ID Number 777777 Badge.', displayId: '777777' },
+    { id: 'id-123456', name: 'VIP Classic ID', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 123456 Badge.', displayId: '123456' },
+    { id: 'id-989898', name: 'VIP Supreme ID', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 989898 Badge.', displayId: '989898' },
+    { id: 'id-232323', name: 'VIP Lucky ID', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 232323 Badge.', displayId: '232323' },
+    { id: 'id-111222', name: 'VIP Classic ID', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111222 Badge.', displayId: '111222' },
   ], []);
 
   const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
@@ -265,16 +239,22 @@ export default function StorePage() {
     setPreviewItem(null);
   };
 
-  const handleEquip = (item: any) => {
+  // Naya Handle Equip / Unequip Toggle logic
+  const handleEquipToggle = (item: any) => {
     if (!userProfile || !user || !firestore) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
-    const isRemoving = item.id.startsWith('None');
-    const updateData = { [field]: isRemoving ? 'None' : item.id, updatedAt: serverTimestamp() };
+    
+    // Check if the item is already equipped
+    const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
+    
+    // Toggle logic: If active, unequip it (set to 'None'), otherwise equip it (set to item.id)
+    const updateData = { [field]: isActive ? 'None' : item.id, updatedAt: serverTimestamp() };
+    
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-    toast({ title: isRemoving ? `${item.type} Removed` : 'Item Equipped' });
+    toast({ title: isActive ? `${item.type} Unequipped` : 'Item Equipped' });
     setPreviewItem(null);
   };
 
@@ -318,9 +298,7 @@ export default function StorePage() {
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                      {item.id.startsWith('None') ? (
-                         <div className="h-20 w-20 rounded-full border-2 border-dashed border-slate-600 flex items-center justify-center"><X className="h-10 w-10 text-slate-500" /></div>
-                      ) : item.type === 'Frame' ? (
+                      {item.type === 'Frame' ? (
                         <div className="scale-110">
                             <AvatarFrame frameId={item.id} size="md">
                               <Avatar className="h-16 w-16">
@@ -336,7 +314,7 @@ export default function StorePage() {
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                         item.isBudget ? <BudgetIDBadge number={item.displayId || ''} /> : <IDBadgeIcon number={item.displayId || ''} />
+                           <IDBadgeIcon number={item.displayId || ''} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -357,7 +335,7 @@ export default function StorePage() {
           ))}
         </Tabs>
 
-        {/* --- BOTTOM SHEET PREVIEW --- */}
+        {/* --- BOTTOM SHEET PREVIEW (40VH & NO BLUR) --- */}
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
@@ -370,9 +348,7 @@ export default function StorePage() {
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
-                  {previewItem.id.startsWith('None') ? (
-                    <X className="h-16 w-16 text-slate-500" />
-                  ) : previewItem.type === 'Frame' ? (
+                  {previewItem.type === 'Frame' ? (
                       <AvatarFrame frameId={previewItem.id} size="xl">
                         <Avatar className="h-20 w-20">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
@@ -386,8 +362,8 @@ export default function StorePage() {
                   ) : previewItem.type === 'Wave' ? (
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-125 pt-2">
-                        {previewItem.isBudget ? <BudgetIDBadge number={previewItem.displayId || ''} /> : <IDBadgeIcon number={previewItem.displayId || ''} />}
+                      <div className="scale-110 pt-2">
+                        <IDBadgeIcon number={previewItem.displayId || ''} />
                       </div>
                   ) : previewItem.icon ? (
                     <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
@@ -429,20 +405,20 @@ export default function StorePage() {
 
                 <Button 
                   onClick={() => {
-                    const isOwned = previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    isOwned ? handleEquip(previewItem) : handlePurchase(previewItem, selectedDuration);
+                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
+                    isOwned ? handleEquipToggle(previewItem) : handlePurchase(previewItem, selectedDuration);
                   }}
                   className={cn(
-                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg",
-                    (previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id))
-                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === (previewItem.id.startsWith('None') ? 'None' : previewItem.id)
-                        ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                        : "bg-white/20 text-white hover:bg-white/30"
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
+                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                    userProfile?.inventory?.ownedItems?.includes(previewItem.id)
+                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" // Unequip Styling
+                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" // Equip Styling
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" // Buy Styling
                   )}
                 >
-                  {(previewItem.id.startsWith('None') || userProfile?.inventory?.ownedItems?.includes(previewItem.id)) 
-                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === (previewItem.id.startsWith('None') ? 'None' : previewItem.id) ? 'Equipped' : 'Equip') 
+                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
+                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip') 
                     : 'Buy'}
                 </Button>
               </div>
@@ -453,3 +429,4 @@ export default function StorePage() {
     </div>
   );
 }
+
