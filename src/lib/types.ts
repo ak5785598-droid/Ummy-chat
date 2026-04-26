@@ -1,6 +1,6 @@
 export type User = {
  id: string;
- accountNumber: string; // Sequential numeric ID
+ accountNumber: string; // STRICT 6-digit numeric ID (e.g., 482910)
  name: string;
  username?: string;
  avatarUrl: string;
@@ -113,7 +113,7 @@ export type RoomParticipant = {
  activeBubble?: string;
  activeEmoji?: string | null;
  sessionGifts?: number; // REAL-TIME CALCULATOR SYNC
- accountNumber?: string;
+ accountNumber?: string; // STRICT 6-digit numeric ID
  lastSeen?: any;
 };
 
