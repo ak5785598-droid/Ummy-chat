@@ -102,37 +102,66 @@ export function ProfileInitializer() {
 
       try {
         const currentAccNum = userData.accountNumber;
-        const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '0000');
+        // Creator ki ID update karke '123456' check kar rahe hain instead of '0000'
+        const needsUserSync = !currentAccNum || (user.uid === CREATOR_ID && currentAccNum !== '123456');
 
         if (needsUserSync) {
-          const counterRef = doc(firestore, 'appConfig', 'counters');
           await runTransaction(firestore, async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-            let nextUserId = 1;
+            let newId = '';
+            let idFound = false;
 
-             if (user.uid === CREATOR_ID) {
-               nextUserId = 0;
-             } else {
-               const lastId = counterDoc.data()?.lastUserId || 0;
-               nextUserId = lastId + 1;
-             }
+            if (user.uid === CREATOR_ID) {
+              newId = '123456';
+              const creatorRef = doc(firestore, 'assigned_ids', newId);
+              const docSnap = await transaction.get(creatorRef);
+              if (!docSnap.exists()) {
+                transaction.set(creatorRef, { uid: user.uid, assignedAt: serverTimestamp() });
+              }
+            } else {
+              // 6-Digit Random & Unique Logic
+              while (!idFound) {
+                let availableDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                let tempId = '';
 
-             const paddedId = nextUserId < 10000 ? nextUserId.toString().padStart(4, '0') : nextUserId.toString();
-             const newCounterValue = user.uid === CREATOR_ID ? (counterDoc.data()?.lastUserId || 0) : nextUserId;
-            transaction.set(counterRef, { lastUserId: newCounterValue }, { merge: true });
-            transaction.set(userRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
-            transaction.set(profileRef, { accountNumber: paddedId, updatedAt: serverTimestamp() }, { merge: true });
+                // Pehla digit 0 nahi ho sakta
+                const firstOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                const firstDigit = firstOptions[Math.floor(Math.random() * firstOptions.length)];
+                tempId += firstDigit;
+                availableDigits = availableDigits.filter(d => d !== firstDigit);
+
+                // Baaki ke 5 digits (koi repeat nahi hoga)
+                for (let i = 0; i < 5; i++) {
+                  const rIndex = Math.floor(Math.random() * availableDigits.length);
+                  const digit = availableDigits[rIndex];
+                  tempId += digit;
+                  availableDigits = availableDigits.filter(d => d !== digit);
+                }
+
+                const idRef = doc(firestore, 'assigned_ids', tempId);
+                const idDoc = await transaction.get(idRef);
+
+                if (!idDoc.exists()) {
+                  transaction.set(idRef, { uid: user.uid, assignedAt: serverTimestamp() });
+                  newId = tempId;
+                  idFound = true;
+                }
+              }
+            }
+
+            transaction.set(userRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
+            transaction.set(profileRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
           });
-          console.log(`✅ Sequential User ID Synced: ${user.uid}`);
+          console.log(`✅ 6-Digit Unique User ID Synced: ${user.uid}`);
         }
       } catch (e: any) {
         if (e?.code === 'permission-denied') {
-          console.warn("[Identity Sync] Sequential ID access restricted (403). Profile using defaults.");
+          console.warn("[Identity Sync] ID access restricted (403). Profile using defaults.");
         } else {
           console.error("[Identity Sync] User ID Error:", e);
         }
       }
 
+      // Room ID logic ko bilkul change nahi kiya gaya hai
       try {
         const roomRef = doc(firestore, 'chatRooms', user.uid);
         const roomSnap = await getDoc(roomRef);
