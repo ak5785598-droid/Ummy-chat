@@ -359,6 +359,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // AI Voice refs
   const recognitionRef = useRef<any>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Image upload ref
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -1223,6 +1224,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
     const hasHindi = /[\u0900-\u097F]/.test(cleanText);
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    currentUtteranceRef.current = utterance; // KEEP REFERENCE TO PREVENT GC
 
     // Pre-set language to guide the voice selection engine
     utterance.lang = hasHindi ? 'hi-IN' : 'en-US';
@@ -1257,6 +1259,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     utterance.onerror = (e) => {
       console.error("Speech Synthesis Error:", e);
       setIsAISpeaking(false);
+      currentUtteranceRef.current = null;
       // Retry once if it was a 'not-allowed' or 'interrupted' error
       if (e.error === 'not-allowed') {
         window.speechSynthesis.resume();
@@ -1265,9 +1268,20 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     utterance.onend = () => {
       setIsAISpeaking(false);
+      currentUtteranceRef.current = null;
     };
 
-    window.speechSynthesis.speak(utterance);
+    // FINAL RESILIENCE: Cancel any stuck speech before starting new one
+    window.speechSynthesis.cancel();
+    
+    // Tiny delay after cancel helps engines prepare
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+      // FORCE RESUME: Essential for Android Chrome
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }, 10);
   };
 
   // AI VOICE INTERACTION (STT)
