@@ -263,14 +263,14 @@ export default function LoginPage() {
           }
         }
       } else {
-        // Create new user with 6-Digit Unique ID Logic
+        // Create new user with STRICT 6-Digit Number Logic
         const accountNumber: string = await runTransaction(firestore, async (transaction) => {
           let newId = '';
           let idFound = false;
 
-          // Creator specific custom ID handling to ensure it remains valid
+          // Creator specific custom ID handling
           if (uid === CREATOR_ID) {
-            const creatorId = '123456'; // 6 unique digits
+            const creatorId = '123456'; 
             const creatorRef = doc(firestore, 'assigned_ids', creatorId);
             const docSnap = await transaction.get(creatorRef);
             if (!docSnap.exists()) {
@@ -279,26 +279,12 @@ export default function LoginPage() {
             return creatorId;
           }
 
-          // Loop until we generate and secure a unique 6-digit ID
+          // Generate strict 6-digit numeric ID (FAST & SECURE)
           while (!idFound) {
-            let availableDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            let tempId = '';
+            // Yahan change kiya hai: Ye ensure karega ki purely 6-digit number hi mile 100000 se 999999 ke beech mein
+            const tempId = Math.floor(100000 + Math.random() * 900000).toString();
 
-            // Ensure the first digit is never '0' so it's a proper 6-digit number
-            const firstOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            const firstDigit = firstOptions[Math.floor(Math.random() * firstOptions.length)];
-            tempId += firstDigit;
-            availableDigits = availableDigits.filter(d => d !== firstDigit);
-
-            // Generate remaining 5 digits making sure none repeat
-            for (let i = 0; i < 5; i++) {
-              const rIndex = Math.floor(Math.random() * availableDigits.length);
-              const digit = availableDigits[rIndex];
-              tempId += digit;
-              availableDigits = availableDigits.filter(d => d !== digit);
-            }
-
-            // Verify with Firestore if this ID was ever assigned to anyone
+            // Verify with Firestore if this numeric ID was ever assigned
             const idRef = doc(firestore, 'assigned_ids', tempId);
             const idDoc = await transaction.get(idRef);
 
@@ -316,7 +302,7 @@ export default function LoginPage() {
         const baseData = {
           id: uid,
           username: displayName || `Tribe_${accountNumber}`,
-          accountNumber,
+          accountNumber: accountNumber, // Will now purely be a number like "482910"
           avatarUrl: '',
           wallet: {
             coins: 0,
@@ -355,7 +341,7 @@ export default function LoginPage() {
             following: 0
           }
         });
-        console.log(`✅ Profile created with Internal ID: ${accountNumber}`);
+        console.log(`✅ Profile created with STRICT Numeric Internal ID: ${accountNumber}`);
       }
     } catch (err) {
       console.error("[Identity Sync] Error:", err);
@@ -763,3 +749,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
