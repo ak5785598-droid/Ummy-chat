@@ -41,7 +41,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { DirectMessageDialog } from '@/components/direct-message-dialog';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
-import { doc, serverTimestamp, collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { doc, serverTimestamp, collection, query, orderBy, limit, where, onSnapshot, runTransaction } from 'firebase/firestore';
 import { SocialRelationsDialog } from '@/components/social-relations-dialog';
 import { useTranslation } from '@/hooks/use-translation';
 import { SellerTransferDialog } from "@/components/seller-transfer-dialog";
@@ -656,6 +656,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
+  // 1. Live ID ke liye state (NEW)
+  const [liveID, setLiveID] = useState<string | null>(null);
+
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
   const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
@@ -709,44 +712,77 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     recordVisit();
   }, [firestore, currentUser, profileId, isOwnProfile]);
 
-  // --- NEW LOGIC: Generate and Save 8-Digit Unique ID ---
+  // 2. Real-time Listener: Database se connect rehne ke liye (NEW)
   useEffect(() => {
-    const assignPermanentUniqueId = async () => {
+    if (!firestore || !profileId) return;
+    const userRef = doc(firestore, 'users', profileId);
+    const unsubscribe = onSnapshot(userRef, (snap) => {
+      if (snap.exists()) {
+        setLiveID(snap.data().accountNumber || null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, profileId]);
+
+  // 3. Sync and Transaction Logic (NEW)
+  useEffect(() => {
+    const syncUserID = async () => {
+      // Sirf tabhi chale jab user apni profile dekh raha ho aur data load ho chuka ho
       if (isOwnProfile && profile && firestore && profileId) {
-        // Agar ID nahi hai ya string 'undefined' hai, tabhi naya banayega
-        if (!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') {
-          
-          // Helper: 8 alag digits generate karne ke liye (No repeats)
-          const generateUnique8DigitId = () => {
-            const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-            // Fisher-Yates shuffle algorithm
-            for (let i = digits.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [digits[i], digits[j]] = [digits[j], digits[i]];
-            }
-            // Agar pehla digit '0' aa jaye, toh usko second se swap kar do takki number valid dikhe
-            if (digits[0] === '0') {
-              [digits[0], digits[1]] = [digits[1], digits[0]];
-            }
-            return digits.slice(0, 8).join('');
-          };
+        const currentID = liveID || profile.accountNumber;
+        
+        // Check: Kya ID pehle se 6-digit number hai?
+        const isCorrectFormat = /^\d{6}$/.test(String(currentID));
+        
+        // Update kab karna hai:
+        // - Agar ID missing hai
+        // - Agar ID number nahi hai (alphanumeric hai)
+        // - Agar aap Creator ho aur ID '123456' nahi hai
+        const needsUpdate = !currentID || !isCorrectFormat || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '123456');
 
-          const newUniqueId = generateUnique8DigitId();
-
+        if (needsUpdate) {
           try {
-            const userRef = doc(firestore, 'users', profileId);
-            // Firebase me permanent save kar dega
-            await setDocumentNonBlocking(userRef, { accountNumber: newUniqueId }, { merge: true });
-          } catch (error) {
-            console.error("Error assigning permanent unique ID:", error);
+            await runTransaction(firestore, async (transaction) => {
+              let finalNumber = '';
+
+              if (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
+                finalNumber = '123456'; // Creator Fix
+              } else {
+                // Unique 6-Digit generate karne ka loop
+                let isUnique = false;
+                while (!isUnique) {
+                  const randomID = Math.floor(100000 + Math.random() * 900000).toString();
+                  const idRef = doc(firestore, 'assigned_ids', randomID);
+                  const idSnap = await transaction.get(idRef);
+                  
+                  if (!idSnap.exists()) {
+                    transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
+                    finalNumber = randomID;
+                    isUnique = true;
+                  }
+                }
+              }
+
+              // Database ke dono folders (users aur profile) mein update
+              const uRef = doc(firestore, 'users', profileId);
+              const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+              
+              transaction.update(uRef, { accountNumber: finalNumber });
+              transaction.update(pRef, { accountNumber: finalNumber });
+            });
+            console.log("✅ ID Successfully Converted to:", finalNumber);
+          } catch (err) {
+            console.error("❌ ID Sync Error:", err);
           }
         }
       }
     };
 
-    assignPermanentUniqueId();
-  }, [isOwnProfile, profile, firestore, profileId]);
-  // --------------------------------------------------------
+    syncUserID();
+  }, [isOwnProfile, profile, firestore, profileId, liveID]);
+
+  // Display ke liye variable (NEW)
+  const displayID = liveID || profile?.accountNumber || "Syncing...";
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -770,10 +806,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   };
 
   const handleCopyId = () => {
-    const idToCopy = (!profile?.accountNumber || profile?.accountNumber === 'undefined' || profile?.accountNumber === 'UNDEFINED') ? (profile?.id || '') : profile?.accountNumber;
-    if (!idToCopy) return;
+    if (!displayID || displayID === "Syncing...") return;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(idToCopy).then(() => {
+      navigator.clipboard.writeText(displayID).then(() => {
         toast({ title: 'ID Copied' });
       }).catch(() => {});
     }
@@ -854,11 +889,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     {profile.tags?.includes('Official') ? (
                       <SVGA_GlossyID 
                         variant={getBudgetVariant(profile)} 
-                        label={`ID: ${(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}`} 
+                        label={`ID: ${displayID}`} 
                       />
                     ) : (
                       <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-2">
-                        ID: {(!profile.accountNumber || profile.accountNumber === 'undefined' || profile.accountNumber === 'UNDEFINED') ? profile.id.substring(0, 6) : profile.accountNumber}
+                        ID: {displayID}
                       </span>
                     )}
                   </div>
@@ -1003,12 +1038,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           targetUser={{ 
             uid: profile.id, 
             username: profile.username, 
-            accountNumber: profile.accountNumber || profile.id.substring(0, 6) 
+            accountNumber: displayID 
           }} 
         />
       </div>
     </AppLayout>
   );
-}
-
-
+}a
