@@ -62,23 +62,17 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
   const spaceInputRef = useRef<HTMLInputElement>(null);
   const { isUploading, uploadProfilePicture } = useProfilePictureUpload();
 
-  // Main Fields
+  // --- States ---
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState<string | undefined>(undefined);
   const [country, setCountry] = useState<string | undefined>(undefined);
   const [birthday, setBirthday] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  
-  // Privacy Controls
   const [showBirthday, setShowBirthday] = useState(true);
   const [showWhatsapp, setShowWhatsapp] = useState(true);
-
-  // Space Background (8 Slots)
   const [spaceImages, setSpaceImages] = useState<(string | null)[]>(Array(8).fill(null));
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
-
-  // DP Cropping
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
 
@@ -100,6 +94,10 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
 
   const isGenderFixed = !!profile?.gender;
 
+  // Find selected country object to show flag in trigger
+  const selectedCountry = COUNTRIES.find(c => c.name === country);
+
+  // --- STRICT SAVE LOGIC ---
   const handleSave = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!user || !firestore) return;
@@ -109,6 +107,8 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
     const userSummaryRef = doc(firestore, 'users', user.uid);
     const userProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     
+    const filteredSpaceImages = spaceImages.filter(img => img !== null);
+
     const updateData: any = {
       username: name,
       bio: bio,
@@ -117,7 +117,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
       country: country,
       showBirthday: showBirthday,
       showWhatsapp: showWhatsapp,
-      spaceImages: spaceImages.filter(img => img !== null),
+      spaceImages: filteredSpaceImages,
       updatedAt: serverTimestamp()
     };
 
@@ -204,8 +204,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
         </DialogTrigger>
         <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white text-black p-0 border-none m-0 rounded-none z-[100] flex flex-col font-sans data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-100 data-[state=open]:zoom-in-100 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-top-0">
           
-          {/* Top 15vh Purple Gradient Section */}
-          <div className="h-[15vh] w-full bg-gradient-to-b from-purple-100 via-purple-50 to-white shrink-0 absolute top-0 left-0 z-0" />
+          <div className="h-[12vh] w-full bg-gradient-to-b from-purple-100 via-purple-50 to-white shrink-0 absolute top-0 left-0 z-0" />
 
           <form onSubmit={handleSave} className="flex flex-col h-full overflow-hidden bg-transparent z-10">
             <header className="px-5 pt-10 pb-4 flex items-center justify-between bg-transparent sticky top-0 z-[110] shrink-0">
@@ -225,8 +224,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
             </header>
 
             <ScrollArea className="flex-1">
-              {/* Content wrap to decrease size and push down */}
-              <div className="max-w-lg mx-auto px-6 pt-[8vh] pb-10 space-y-6 focus-visible:outline-none">
+              <div className="max-w-lg mx-auto px-6 pt-[4vh] pb-10 space-y-6 focus-visible:outline-none">
                 
                 <div className="flex flex-col items-center gap-2">
                   <div className="relative group">
@@ -254,7 +252,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                 </div>
 
                 <div className="space-y-6">
-                  {/* Inputs and other fields */}
+                  {/* Name */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <div className="flex justify-between items-center ml-1">
                       <Label htmlFor="edit-name" className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Tribe Display Name</Label>
@@ -270,6 +268,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     />
                   </div>
 
+                  {/* Gender */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <Label className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Gender</Label>
                     <Select value={gender} onValueChange={setGender} disabled={isGenderFixed || isSubmitting}>
@@ -283,6 +282,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     </Select>
                   </div>
 
+                  {/* Birthday */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <div className="flex justify-between items-center ml-1">
                       <Label className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">Birthday</Label>
@@ -302,25 +302,31 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     </div>
                   </div>
 
+                  {/* Country - UPDATED FOR FLAGS */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <Label className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Country / Region</Label>
                     <Select value={country} onValueChange={setCountry} disabled={isSubmitting}>
                       <SelectTrigger className="h-10 border-none bg-transparent shadow-none focus:ring-0 px-1 font-bold text-slate-900">
                         <div className="flex items-center gap-2">
-                          <Globe className="h-4 w-4 text-slate-300" />
+                          {selectedCountry ? (
+                            <span className="text-lg">{selectedCountry.flag}</span>
+                          ) : (
+                            <Globe className="h-4 w-4 text-slate-300" />
+                          )}
                           <SelectValue placeholder="Select Country" />
                         </div>
                       </SelectTrigger>
                       <SelectContent className="bg-white border-none shadow-2xl rounded-2xl max-h-60">
                         {COUNTRIES.map((c) => (
                           <SelectItem key={c.code} value={c.name} className="font-bold">
-                            {c.flag} {c.name}
+                            <span className="mr-2">{c.flag}</span> {c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* WhatsApp */}
                   <div className="grid gap-1 border-b border-slate-100 pb-1">
                     <div className="flex justify-between items-center ml-1">
                       <Label className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">WhatsApp ID</Label>
@@ -340,6 +346,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     </div>
                   </div>
 
+                  {/* Bio */}
                   <div className="grid gap-1 border-b border-slate-100 pb-0">
                     <Label htmlFor="edit-bio" className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400 ml-1">Personality Signature (Bio)</Label>
                     <Textarea
@@ -351,6 +358,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     />
                   </div>
 
+                  {/* Space Background Slots */}
                   <div className="pt-4 pb-2">
                     <div className="flex items-center justify-between mb-3 px-1">
                         <Label className="text-[11px] font-black uppercase tracking-[0.1em] text-blue-500">
@@ -419,4 +427,3 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
     </>
   );
 }
-
