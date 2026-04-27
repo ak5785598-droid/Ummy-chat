@@ -104,11 +104,11 @@ export function ProfileInitializer() {
         const currentAccNum = String(userData.accountNumber || '');
         
         // STRICT CHECK: Sirf wahi IDs allow hongi jo exactly 6 digits ki numeric ho
-        // EXCEPTION: Creator ke liye 0000 allow hai
-        const isStrictlySixDigits = /^\d{6}$/.test(currentAccNum) || (user.uid === CREATOR_ID && currentAccNum === '0000');
+        // EXCEPTION: Creator ke liye 0000 ID mandatory hai
+        const isStrictlySixDigits = /^\d{6}$/.test(currentAccNum);
         
-        // Agar ID exist nahi karti, ya usme alphabets hain, ya Creator ID update honi hai, toh sync trigger hoga
-        const needsUserSync = !currentAccNum || !isStrictlySixDigits || (user.uid === CREATOR_ID && currentAccNum !== '0000');
+        // Agar ID exist nahi karti, ya usme alphabets hain, ya Creator ID '0000' nahi hai, toh sync trigger hoga
+        const needsUserSync = (user.uid === CREATOR_ID && currentAccNum !== '0000') || (user.uid !== CREATOR_ID && (!currentAccNum || !isStrictlySixDigits));
 
         if (needsUserSync) {
           await runTransaction(firestore, async (transaction) => {

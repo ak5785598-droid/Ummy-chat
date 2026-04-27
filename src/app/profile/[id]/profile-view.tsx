@@ -731,15 +731,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       if (isOwnProfile && profile && firestore && profileId) {
         const currentID = liveID || profile.accountNumber;
         
-        // Check: Kya ID pehle se 6-digit number hai?
-        // EXCEPTION: Creator ke liye 0000 allow hai
-        const isCorrectFormat = /^\d{6}$/.test(String(currentID)) || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && String(currentID) === '0000');
+        // STRICT CHECK: Sirf wahi IDs allow hongi jo exactly 6 digits ki numeric ho
+        // EXCEPTION: Creator ke liye 0000 ID mandatory hai
+        const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
         
         // Update kab karna hai:
-        // - Agar ID missing hai
-        // - Agar ID number nahi hai (alphanumeric hai)
         // - Agar aap Creator ho aur ID '0000' nahi hai
-        const needsUpdate = !currentID || !isCorrectFormat || (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '0000');
+        // - Agar normal user ho aur ID 6-digit number nahi hai
+        const needsUpdate = (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '0000') || (profileId !== '901piBzTQ0VzCtAvlyyobwvAaTs1' && (!currentID || !isStrictlySixDigits));
 
         if (needsUpdate) {
           try {

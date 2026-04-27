@@ -270,6 +270,20 @@ const generateNumericID = async (firestore: any, uid: string) => {
     let newId = '';
     let found = false;
 
+    // MASTER FIX: Creator hamesha 0000 ID payega
+    if (uid === CREATOR_ID) {
+      newId = '0000';
+      const idRef = doc(firestore, 'assigned_ids', newId);
+      const snap = await transaction.get(idRef);
+      if (!snap.exists()) {
+        transaction.set(idRef, {
+          uid,
+          assignedAt: serverTimestamp(),
+        });
+      }
+      return newId;
+    }
+
     while (!found) {
       const tempId = Math.floor(100000 + Math.random() * 900000).toString();
 
