@@ -849,23 +849,21 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 
-  // If not Own Profile, show Public View
+  // If not Own Profile, show Public View (Standalone Premium Page)
   if (!isOwnProfile) {
      return (
-       <AppLayout>
-         <div className="flex flex-col h-full overflow-hidden bg-white">
-            <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 h-14 bg-white/80 backdrop-blur-md">
-                <button onClick={() => router.back()}><ChevronLeft className="h-6 w-6" /></button>
-                <div className="flex items-center gap-3">
-                   <button onClick={() => setReportOpen(true)}><ShieldAlert className="h-5 w-5 text-slate-400" /></button>
-                </div>
-            </header>
-            <div className="flex-1 overflow-y-auto pt-16 px-5">
-                <h1 className="text-2xl font-bold">{profile.username}</h1>
-                <p className="text-slate-500">Public Profile Content</p>
-            </div>
-         </div>
-       </AppLayout>
+       <div className="fixed inset-0 bg-black z-[1000] overflow-hidden">
+         <FullProfileDialog 
+           open={true} 
+           onOpenChange={(open) => { if (!open) router.back(); }} 
+           profile={profile} 
+           stats={stats} 
+           followData={followData} 
+           onFollow={handleFollow} 
+           isProcessingFollow={isProcessingFollow} 
+           isOwnProfile={false} 
+         />
+       </div>
      );
   }
 

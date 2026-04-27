@@ -119,6 +119,7 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
    }
 
    if (result.type === 'user') {
+    // This will now open the Standalone Premium Page (FullProfileDialog)
     router.push(`/profile/${result.id}`);
    } else {
     router.push(`/rooms/${result.id}`);
