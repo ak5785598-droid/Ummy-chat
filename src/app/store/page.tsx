@@ -99,43 +99,71 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
-// --- CUSTOM ID BADGE COMPONENT ---
-// Updated to support Pink Variant
-const IDBadgeIcon = ({ number, variant = 'red' }: { number: string, variant?: 'red' | 'pink' }) => {
-  const isPink = variant === 'pink';
-  
-  return (
-    <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
-      <div className={cn(
-        "h-[32px] pl-[35px] pr-[20px] rounded-r-full border-[1.5px] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0",
-        isPink 
-          ? "bg-gradient-to-r from-[#E91E63] to-[#F06292] border-t-[#FF80AB] border-b-[#880E4F] border-r-[#FF80AB]" 
-          : "bg-gradient-to-r from-[#D91B10] to-[#F13A24] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55]"
-      )}>
-        <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
-      </div>
-      <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
-        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
-          <defs>
-            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FFF1AA" />
-              <stop offset="25%" stopColor="#FFD335" />
-              <stop offset="50%" stopColor="#C98B13" />
-              <stop offset="75%" stopColor="#FFD335" />
-              <stop offset="100%" stopColor="#9E6100" />
-            </linearGradient>
-          </defs>
-          {/* Outer Border: If Pink, use White border as requested */}
-          <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} stroke={isPink ? "#FF80AB" : "#FFE373"} strokeWidth="3" />
-          {/* Inner Hexagon: If Pink, use Pink BG as requested */}
-          <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill={isPink ? "#C2185B" : "#750600"} />
-          <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
-          <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
-        </svg>
-      </div>
+// --- CUSTOM ID BADGE COMPONENT (ORIGINAL GOLD/RED) ---
+const IDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
+    <div className="h-[32px] pl-[35px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
     </div>
-  );
-};
+    <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF1AA" />
+            <stop offset="25%" stopColor="#FFD335" />
+            <stop offset="50%" stopColor="#C98B13" />
+            <stop offset="75%" stopColor="#FFD335" />
+            <stop offset="100%" stopColor="#9E6100" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="url(#goldGrad)" stroke="#FFE373" strokeWidth="3" />
+        <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#750600" />
+        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
+        <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
+      </svg>
+    </div>
+  </div>
+);
+
+// --- NEW CUSTOM SILVER/BLUE ID BADGE COMPONENT ---
+const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
+    <div className="h-[36px] pl-[40px] pr-[20px] bg-gradient-to-r from-[#0C3E8A] to-[#1D5DC2] rounded-r-full border-[1px] border-t-[#4A85E6] border-b-[#072456] border-r-[#4A85E6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+    </div>
+    <div className="absolute left-[-20px] z-10 w-[65px] h-[65px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
+        <defs>
+          <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="30%" stopColor="#E2E8F0" />
+            <stop offset="50%" stopColor="#94A3B8" />
+            <stop offset="70%" stopColor="#CBD5E1" />
+            <stop offset="100%" stopColor="#64748B" />
+          </linearGradient>
+          <linearGradient id="gemInnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#60A5FA" />
+            <stop offset="50%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1E3A8A" />
+          </linearGradient>
+        </defs>
+        {/* Outer Silver Diamond/Hexagon Base */}
+        <polygon points="50,2 96,28 86,78 50,96 14,78 4,28" fill="url(#silverGrad)" stroke="#F8FAFC" strokeWidth="2.5" />
+        {/* Inner Gem Area */}
+        <polygon points="50,14 84,34 76,72 50,84 24,72 16,34" fill="url(#gemInnerGrad)" stroke="#93C5FD" strokeWidth="1" />
+        {/* Geometric highlights for 3D crystal effect */}
+        <path d="M50,14 L84,34 L50,50 Z" fill="rgba(255,255,255,0.3)" />
+        <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
+        {/* 3D ID Text */}
+        <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#silverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
+        {/* Sparkles matching the image */}
+        <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
+      </svg>
+    </div>
+  </div>
+);
 
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
@@ -173,6 +201,7 @@ export default function StorePage() {
 
   const { data: dbThemes } = useCollection(themesQuery);
 
+  // Removed None-Theme
   const dynamicThemes = useMemo(() => {
     const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
@@ -182,6 +211,7 @@ export default function StorePage() {
     return baseThemes;
   }, [dbThemes]);
 
+  // Removed None-Frame
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
@@ -190,19 +220,19 @@ export default function StorePage() {
     return frames;
   }, []);
 
+  // Removed None-Bubble
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
   ], []);
 
+  // Removed None-Wave
   const waveItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
   ], []);
 
+  // Removed None-ID & Added 4 new VIP IDs + NEW SILVER ID
   const idItems = useMemo(() => [
-    // Naya Pink VIP ID Card
-    { id: 'id-189904', name: 'VIP Pink ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Pink VIP ID Number 189904 Badge.', displayId: '189904', variant: 'pink' },
-    
-    // Baaki Purane IDs
+    { id: 'id-189904', name: 'Premium Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
     { id: 'id-888888', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888', variant: 'red' },
     { id: 'id-666666', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666', variant: 'red' },
     { id: 'id-676767', name: 'sss', type: 'ID', price: 6999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767', variant: 'red' },
@@ -254,13 +284,19 @@ export default function StorePage() {
     setPreviewItem(null);
   };
 
+  // Naya Handle Equip / Unequip Toggle logic
   const handleEquipToggle = (item: any) => {
     if (!userProfile || !user || !firestore) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
+    
+    // Check if the item is already equipped
     const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
+    
+    // Toggle logic: If active, unequip it (set to 'None'), otherwise equip it (set to item.id)
     const updateData = { [field]: isActive ? 'None' : item.id, updatedAt: serverTimestamp() };
+    
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
     toast({ title: isActive ? `${item.type} Unequipped` : 'Item Equipped' });
@@ -323,7 +359,7 @@ export default function StorePage() {
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                           <IDBadgeIcon number={item.displayId || ''} variant={item.variant} />
+                           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : <IDBadgeIcon number={item.displayId || ''} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -344,6 +380,7 @@ export default function StorePage() {
           ))}
         </Tabs>
 
+        {/* --- BOTTOM SHEET PREVIEW (40VH & NO BLUR) --- */}
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
@@ -371,7 +408,7 @@ export default function StorePage() {
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
                       <div className="scale-110 pt-2">
-                        <IDBadgeIcon number={previewItem.displayId || ''} variant={previewItem.variant} />
+                        {previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
                     <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
@@ -420,9 +457,9 @@ export default function StorePage() {
                     "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
                     userProfile?.inventory?.ownedItems?.includes(previewItem.id)
                       ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
+                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" // Unequip Styling
+                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" // Equip Styling
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" // Buy Styling
                   )}
                 >
                   {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
@@ -437,3 +474,4 @@ export default function StorePage() {
     </div>
   );
 }
+
