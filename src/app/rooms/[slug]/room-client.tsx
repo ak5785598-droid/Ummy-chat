@@ -491,6 +491,18 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [isAIListening, setIsAIListening] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const { toast } = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (localStorage.getItem('ummy_ai_voice_enabled') === 'true') {
+      setIsAIVoiceEnabled(true);
+    }
+  }, []);
 
   // ROOM THEMES & SYNC
   const themesQuery = useMemoFirebase(() => {
@@ -765,21 +777,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     };
   }, [roomMusicLibrary, room?.id, room?.currentMusicId, isRepeatEnabled]);
 
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isAIVoiceEnabled, setIsAIVoiceEnabled] = useState<boolean>(false);
-  useEffect(() => {
-    if (localStorage.getItem('ummy_ai_voice_enabled') === 'true') {
-      setIsAIVoiceEnabled(true);
-    }
-  }, []);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
-
-  const { toast } = useToast();
-  const router = useRouter();
   const { userProfile } = useUserProfile(currentUser?.uid);
 
-  // --- DERIVE PARTICIPANTS & SEAT STATUS (Moved Up for Logic Flow) ---
+  // --- DERIVE PARTICIPANTS & SEAT STATUS ---
   const participantsQuery = useMemoFirebase(() => {
     if (!firestore || !room?.id) return null;
     try {
@@ -1288,26 +1288,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     // toast({ title: 'AI: Opening Music Player 🎵✨' });
   };
 
-  // AI VOICE ENGINE (TTS)
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
-  useEffect(() => {
-    try {
-      if (typeof window === 'undefined' || !window.speechSynthesis) return;
-      
-      const loadVoices = () => {
-        if (!window.speechSynthesis) return;
-        const v = window.speechSynthesis.getVoices();
-        if (v.length > 0) setVoicesLoaded(true);
-      };
-      
-      if (window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-      }
-      loadVoices();
-    } catch (e) {
-      console.warn('SpeechSynthesis initialization failed:', e);
-    }
-  }, []);
+  // AI VOICE ENGINE (TTS) logic
 
   const speakAIText = (text: string) => {
     if (!isAIVoiceEnabled || isSpeakerMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -1422,8 +1403,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   };
 
   // AI VOICE INTERACTION (STT)
-  const [isAIListening, setIsAIListening] = useState(false);
-
   const toggleAIListening = () => {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
