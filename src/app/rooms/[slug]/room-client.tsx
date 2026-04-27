@@ -952,6 +952,144 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     );
   }
 
+  // ============================================================
+  // MUSIC CONTROL HANDLERS (Master/Mod Only)
+  // ============================================================
+  const handleToggleMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    
+    // If no music is currently set, open the library
+    if (!room.currentMusicUrl) {
+      setIsRoomPlayOpen(true);
+      return;
+    }
+
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    const newPlayingState = !room.isMusicPlaying;
+    
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        isMusicPlaying: newPlayingState,
+        musicUpdatedBy: currentUser?.uid || '',
+        // When resuming, reset the start timestamp to 'Now' but keep the offset
+        musicStartedAt: newPlayingState ? serverTimestamp() : null,
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {}
+  };
+
+  const handleStopMusic = async () => {
+    if (!canManageRoom || !firestore || !room.id) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: '',
+        currentMusicTitle: '',
+        currentMusicId: '',
+        isMusicPlaying: false,
+        musicStartedAt: null,
+        musicStartOffset: 0,
+        musicUpdatedBy: '',
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: '⏹️ Music Stopped' });
+    } catch (e) {}
+  };
+
+  const handleNextMusic = async () => {
+    if (!firestore || !room.id) return;
+    if (roomMusicLibrary.length === 0) {
+      toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
+      return;
+    }
+    const currentId = room?.currentMusicId;
+    const curIdx = roomMusicLibrary.findIndex(t => t.id === currentId);
+    let nextIdx = 0;
+    if (curIdx !== -1) {
+      nextIdx = (curIdx + 1) % roomMusicLibrary.length;
+    }
+    const nextTrack = roomMusicLibrary[nextIdx];
+    if (nextTrack) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: nextTrack.url,
+        currentMusicTitle: nextTrack.name,
+        currentMusicId: nextTrack.id,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        musicUpdatedBy: currentUser?.uid || '',
+        updatedAt: serverTimestamp()
+      });
+    }
+  };
+
+  const handlePreviousMusic = async () => {
+    if (!firestore || !room.id) return;
+    if (roomMusicLibrary.length === 0) {
+      toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
+      return;
+    }
+    const curIdx = roomMusicLibrary.findIndex(t => t.id === room?.currentMusicId);
+    let prevIdx = curIdx === -1 ? roomMusicLibrary.length - 1 : curIdx - 1;
+    if (prevIdx < 0) prevIdx = roomMusicLibrary.length - 1;
+    const prevTrack = roomMusicLibrary[prevIdx];
+    if (prevTrack) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      await updateDocumentNonBlocking(roomRef, {
+        currentMusicUrl: prevTrack.url,
+        currentMusicTitle: prevTrack.name,
+        currentMusicId: prevTrack.id,
+        isMusicPlaying: true,
+        musicStartedAt: serverTimestamp(),
+        musicStartOffset: 0,
+        musicUpdatedBy: currentUser?.uid || '',
+        updatedAt: serverTimestamp()
+      });
+    }
+  };
+
+  const handleSeekMusic = async (seconds: number) => {
+    if (!canManageRoom && !isAppCreator || !firestore || !room.id || !musicAudioRef.current) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    try {
+      await updateDocumentNonBlocking(roomRef, {
+        musicStartOffset: seconds,
+        musicStartedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) {}
+  };
+
+  const handleFollowRoom = () => {
+    if (!firestore || !currentUser || !room.id) return;
+    const userFollowRef = doc(firestore, 'users', currentUser.uid, 'followedRooms', room.id);
+    const roomFollowRef = doc(firestore, 'chatRooms', room.id, 'followers', currentUser.uid);
+
+    if (followData) {
+      deleteDocumentNonBlocking(userFollowRef);
+      deleteDocumentNonBlocking(roomFollowRef);
+      toast({ title: 'Unfollowed Frequency' });
+    } else {
+      const followObj = {
+        id: room.id,
+        title: room.title || 'Frequency',
+        coverUrl: room.coverUrl || '',
+        roomNumber: room.roomNumber || '0000',
+        ownerId: room.ownerId || '',
+        followedAt: serverTimestamp()
+      };
+      setDocumentNonBlocking(userFollowRef, followObj, { merge: true });
+      setDocumentNonBlocking(roomFollowRef, {
+        uid: currentUser.uid,
+        followedAt: serverTimestamp()
+      }, { merge: true });
+      toast({ title: 'Frequency Followed' });
+      triggerTask('follow_1');
+      triggerTask('follow_10');
+    }
+  };
+
   // AI MODERATION ACTIONS (GRAND MANAGER)
   const handleAIClearChat = async () => {
     if (!firestore || !room.id || !canManageRoom) return;
