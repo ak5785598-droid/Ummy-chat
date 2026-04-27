@@ -712,7 +712,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     recordVisit();
   }, [firestore, currentUser, profileId, isOwnProfile]);
 
-  // 2. Real-time Listener: Database se connect rehne ke liye (NEW)
+  // 2. Real-time Listener: Database se connect rehne ke liye
   useEffect(() => {
     if (!firestore || !profileId) return;
     const userRef = doc(firestore, 'users', profileId);
@@ -746,69 +746,67 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   // NEVER show "Syncing..." or undefined. Always show DB ID or Fallback.
   const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
 
-  // 3. Sync and Transaction Logic (NEW)
+  // 3. Sync and Transaction Logic (STRICTLY LOCKED)
   useEffect(() => {
     const syncUserID = async () => {
-      // Sirf tabhi chale jab user apni profile dekh raha ho aur data load ho chuka ho
-      if (isOwnProfile && profile && firestore && profileId) {
-        const currentID = liveID || profile.accountNumber;
-        
-        // STRICT CHECK: Sirf wahi IDs allow hongi jo exactly 6 digits ki numeric ho
-        // EXCEPTION: Creator ke liye 0000 ID mandatory hai
-        const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
-        
-        // Update kab karna hai:
-        // - Agar aap Creator ho aur ID '0000' nahi hai
-        // - Agar normal user ho aur ID 6-digit number nahi hai
-        const needsUpdate = (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1' && currentID !== '0000') || (profileId !== '901piBzTQ0VzCtAvlyyobwvAaTs1' && (!currentID || !isStrictlySixDigits));
+      if (!isOwnProfile || !profile || !firestore || !profileId) return;
 
-        if (needsUpdate) {
-          try {
-            await runTransaction(firestore, async (transaction) => {
-              let finalNumber = '';
+      const currentID = profile.accountNumber; // Sirf profile state par rely karenge shuru mein
+      const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
+      const isCreator = profileId === CREATOR_ID;
 
-              if (profileId === '901piBzTQ0VzCtAvlyyobwvAaTs1') {
-                finalNumber = '0000'; // Creator Fix
-              } else {
-                // Unique 6-Digit generate karne ka loop
-                let isUnique = false;
-                while (!isUnique) {
-                  const randomID = Math.floor(100000 + Math.random() * 900000).toString();
-                  const idRef = doc(firestore, 'assigned_ids', randomID);
-                  const idSnap = await transaction.get(idRef);
-                  
-                  if (!idSnap.exists()) {
-                    transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
-                    finalNumber = randomID;
-                    isUnique = true;
-                  }
-                }
-              }
+      // 🛑 PERMANENT LOCK CHECK 1: Agar ek baar valid ID mil chuki hai, toh aage transaction karne ki zarurat hi nahi.
+      if ((isCreator && currentID === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
+        return;
+      }
 
-              // Database ke dono folders (users aur profile) mein update
-              const uRef = doc(firestore, 'users', profileId);
-              const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-              
-              transaction.update(uRef, { accountNumber: finalNumber });
-              transaction.update(pRef, { accountNumber: finalNumber });
-            });
-            console.log("✅ ID Successfully Converted to:", finalNumber);
-          } catch (err: any) {
-            const isAssignedIdsError = err?.message?.includes('assigned_ids');
-            if (err?.code === 'permission-denied') {
-              if (!isAssignedIdsError) {
-                console.warn("❌ ID Sync Access Restricted (403). Using defaults.");
-              }
-            } else {
-              console.error("❌ ID Sync Error:", err);
+      try {
+        await runTransaction(firestore, async (transaction) => {
+          const uRef = doc(firestore, 'users', profileId);
+          const userSnap = await transaction.get(uRef);
+
+          // 🛑 PERMANENT LOCK CHECK 2: Agar backend database me pehle se assign ho gaya hai, toh yahi lock kar do.
+          if (userSnap.exists()) {
+            const dbID = userSnap.data().accountNumber;
+            const isDbIdValid = /^\d{6}$/.test(String(dbID));
+            
+            if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
+              return; // ID already exist aur valid hai, naya generate nahi hoga
             }
           }
-        }
+
+          let finalNumber = '';
+
+          if (isCreator) {
+            finalNumber = '0000'; 
+          } else {
+            // Unique 6-Digit generate karne ka loop
+            let isUnique = false;
+            while (!isUnique) {
+              const randomID = Math.floor(100000 + Math.random() * 900000).toString();
+              const idRef = doc(firestore, 'assigned_ids', randomID);
+              const idSnap = await transaction.get(idRef);
+              
+              if (!idSnap.exists()) {
+                transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
+                finalNumber = randomID;
+                isUnique = true;
+              }
+            }
+          }
+
+          // Database ke dono folders (users aur profile) mein update
+          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+          transaction.update(uRef, { accountNumber: finalNumber });
+          transaction.update(pRef, { accountNumber: finalNumber });
+        });
+      } catch (err: any) {
+        console.warn("❌ ID Generation me error aaya ya access denied: ", err);
       }
     };
 
     syncUserID();
-  }, [isOwnProfile, profile, firestore, profileId, liveID]);
+  }, [isOwnProfile, profile, firestore, profileId]); // Isme se `liveID` hata diya taaki infinite loop band ho jaye.
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
@@ -1170,3 +1168,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
