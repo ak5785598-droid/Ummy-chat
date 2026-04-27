@@ -478,6 +478,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [isMusicPlaying, hasBluetooth, hasWired, isSpeaker, forceEarbuds]);
 
   // ============================================================
+  // AUTHORITY & STATE DERIVATION (Top-level for hook consumption)
+  // ============================================================
+  const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+  const isOwner = currentUser?.uid === room?.ownerId;
+  const isModerator = room?.moderatorIds?.includes(currentUser?.uid || '') || false;
+  const canManageRoom = isOwner || isModerator;
+  const isChatMuted = room?.isChatMuted || false;
+  const maxMics = room?.maxActiveMics || 9;
+
+  // ============================================================
   // MUSIC SYNC ENGINE - High-Fidelity Multi-user Sync
   // Uses Virtual Clock (musicStartedAt) to handle seek/sync
   // ============================================================
