@@ -113,64 +113,36 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
-// --- PINK GLOSSY VIP ID BADGE (NEW IMAGE STYLE) ---
-const PinkIDBadgeIcon = ({ number }: { number: string }) => (
+// --- NEW PINK DIAMOND ID BADGE (Based on SilverBlue format) ---
+const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
-    {/* Right Number Section */}
-    <div className="h-[34px] pl-[46px] pr-[24px] bg-gradient-to-r from-[#FF7AAB] to-[#FF9EBF] rounded-r-full border-[1.5px] border-t-[#FFC2DB] border-b-[#E04B82] border-r-[#FFC2DB] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)] z-0 relative">
-      <span className="text-white font-bold text-xl tracking-[0.1em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)] leading-none pt-[2px]">{number}</span>
-      {/* Sparkle on the right pill */}
-      <div className="absolute -top-1 -right-1 z-20">
-        <svg width="12" height="12" viewBox="0 0 20 20" className="animate-pulse drop-shadow-md">
-          <path d="M10 0 Q10 10 20 10 Q10 10 10 20 Q10 10 0 10 Q10 10 10 0 Z" fill="white" />
-        </svg>
-      </div>
+    <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
     </div>
-    {/* Left ID Shield Section */}
-    <div className="absolute left-[-15px] z-10 w-[58px] h-[58px]">
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_4px_6px_rgba(224,75,130,0.6)]">
+    <div className="absolute left-[-20px] z-10 w-[65px] h-[65px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
         <defs>
-          <linearGradient id="pinkShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FF9DC1" />
-            <stop offset="30%" stopColor="#FF5C97" />
-            <stop offset="100%" stopColor="#D82566" />
+          <linearGradient id="roseSilverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="30%" stopColor="#FCE7F3" />
+            <stop offset="50%" stopColor="#F9A8D4" />
+            <stop offset="70%" stopColor="#F472B6" />
+            <stop offset="100%" stopColor="#DB2777" />
+          </linearGradient>
+          <linearGradient id="pinkGemInnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F472B6" />
+            <stop offset="50%" stopColor="#EC4899" />
+            <stop offset="100%" stopColor="#9D174D" />
           </linearGradient>
         </defs>
-        <rect x="5" y="10" width="90" height="80" rx="25" fill="url(#pinkShieldGrad)" stroke="#FFB6D3" strokeWidth="2.5" />
-        <rect x="25" y="65" width="50" height="22" rx="11" fill="#C21A56" />
-        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="46" fill="white" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.3))">ID</text>
-        <text x="50" y="81" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="16" fill="white" textAnchor="middle">ss</text>
-        
-        {/* Sparkles on the shield */}
-        <path d="M 85 15 Q 85 25 95 25 Q 85 25 85 35 Q 85 25 75 25 Q 85 25 85 15 Z" fill="white" className="animate-pulse" />
-        <path d="M 20 70 Q 20 76 26 76 Q 20 76 20 82 Q 20 76 14 76 Q 20 76 20 70 Z" fill="white" className="animate-pulse" />
-      </svg>
-    </div>
-  </div>
-);
-
-const OrangeGoldIDBadgeIcon = ({ number }: { number: string }) => (
-  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
-    <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#E67E22] to-[#F39C12] rounded-r-full border-[1.5px] border-t-[#FFC085] border-b-[#8E4400] border-r-[#FFC085] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] z-0">
-      <span className="text-white font-bold text-xl tracking-[0.1em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.6)] leading-none pt-[2px]">{number}</span>
-    </div>
-    <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
-        <defs>
-          <linearGradient id="goldGradPremium" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF9E3" />
-            <stop offset="25%" stopColor="#FFD700" />
-            <stop offset="50%" stopColor="#B8860B" />
-            <stop offset="75%" stopColor="#FFD700" />
-            <stop offset="100%" stopColor="#8B6508" />
-          </linearGradient>
-        </defs>
-        <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="url(#goldGradPremium)" stroke="#FFF1AA" strokeWidth="2.5" />
-        <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#4B2C00" />
-        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill="url(#goldGradPremium)" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
-        <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill="url(#goldGradPremium)" textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
-        <circle cx="85" cy="20" r="1.5" fill="white" className="animate-pulse" />
-        <circle cx="15" cy="80" r="1" fill="white" className="animate-pulse" />
+        <polygon points="50,2 96,28 86,78 50,96 14,78 4,28" fill="url(#roseSilverGrad)" stroke="#FFF1F2" strokeWidth="2.5" />
+        <polygon points="50,14 84,34 76,72 50,84 24,72 16,34" fill="url(#pinkGemInnerGrad)" stroke="#FBCFE8" strokeWidth="1" />
+        <path d="M50,14 L84,34 L50,50 Z" fill="rgba(255,255,255,0.3)" />
+        <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
+        <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#roseSilverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
+        <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
   </div>
@@ -297,11 +269,27 @@ export default function StorePage() {
   ], []);
 
   const idItems = useMemo(() => [
-    // --- BRAND NEW PINK VIP ID ---
-    { id: 'id-322774', name: 'sss', type: 'ID', price: 750000, durationDays: 7, description: 'Exclusive Pink VIP ID Number 322774 Badge.', displayId: '322774', variant: 'pink' },
-    
-    { id: 'id-682636', name: 'sss', type: 'ID', price: 3999999, durationDays: 7, description: 'Exclusive VIP ID Number 682636 Badge.', displayId: '682636', variant: 'orange' },
-    { id: 'id-189904', name: 'Premium Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
+    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-189904', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
+    { id: 'id-122234', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 122234 Badge.', displayId: '122234', isSilver: true },
+    { id: 'id-189990', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189990 Badge.', displayId: '189990', isSilver: true },
+    { id: 'id-162972', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 162972 Badge.', displayId: '162972', isSilver: true },
+    { id: 'id-000222', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 000222 Badge.', displayId: '000222', isSilver: true },
+    { id: 'id-234555', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 234555 Badge.', displayId: '234555', isSilver: true },
+    { id: 'id-897633', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 897633 Badge.', displayId: '897633', isSilver: true },
+    { id: 'id-144672', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 144672 Badge.', displayId: '144672', isSilver: true },
+    { id: 'id-666892', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 666892 Badge.', displayId: '666892', isSilver: true },
+    { id: 'id-111263', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 111263 Badge.', displayId: '111263', isSilver: true },
+    { id: 'id-182910', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 182910 Badge.', displayId: '182910', isSilver: true },
+    { id: 'id-188889', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188889 Badge.', displayId: '188889', isSilver: true },
+    { id: 'id-105577', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 105577 Badge.', displayId: '105577', isSilver: true },
+    { id: 'id-977777', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 977777 Badge.', displayId: '977777', isSilver: true },
+    { id: 'id-233455', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 233455 Badge.', displayId: '233455', isSilver: true },
+    { id: 'id-778855', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 778855 Badge.', displayId: '778855', isSilver: true },
+    { id: 'id-982201', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 982201 Badge.', displayId: '982201', isSilver: true },
+    { id: 'id-721111', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 721111 Badge.', displayId: '721111', isSilver: true },
+    { id: 'id-188899', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188899 Badge.', displayId: '188899', isSilver: true },
+    { id: 'id-888882', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 888882 Badge.', displayId: '888882', isSilver: true },
     { id: 'id-888888', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888', variant: 'red' },
     { id: 'id-666666', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666', variant: 'red' },
     { id: 'id-676767', name: 'sss', type: 'ID', price: 6999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767', variant: 'red' },
@@ -316,6 +304,16 @@ export default function StorePage() {
     { id: 'id-987449', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 987449 Badge.', displayId: '987449', variant: 'red' },
     { id: 'id-234787', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 234787 Badge.', displayId: '234787', variant: 'red' },
     { id: 'id-111333', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111333 Badge.', displayId: '111333', variant: 'red' },
+    { id: 'id-999999', name: 'sss', type: 'ID', price: 7000000, durationDays: 7, description: 'Exclusive VIP ID Number 999999 Badge.', displayId: '999999', variant: 'red' },
+    { id: 'id-777777', name: 'sss', type: 'ID', price: 5500000, durationDays: 7, description: 'Exclusive VIP ID Number 777777 Badge.', displayId: '777777', variant: 'red' },
+    { id: 'id-122334', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 122334 Badge.', displayId: '122334', variant: 'red' },
+    { id: 'id-989898', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 989898 Badge.', displayId: '989898', variant: 'red' },
+    { id: 'id-242424', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 242424 Badge.', displayId: '242424', variant: 'red' },
+    { id: 'id-111333', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111333 Badge.', displayId: '111333', variant: 'red' },
+    { id: 'id-124455', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 124455 Badge.', displayId: '124455', variant: 'red' },
+    { id: 'id-977789', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 977789 Badge.', displayId: '977789', variant: 'red' },
+    { id: 'id-234578', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 234578 Badge.', displayId: '234578', variant: 'red' },
+    { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
   const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
@@ -422,8 +420,7 @@ export default function StorePage() {
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                           item.variant === 'pink' ? <PinkIDBadgeIcon number={item.displayId || ''} /> :
-                           item.variant === 'orange' ? <OrangeGoldIDBadgeIcon number={item.displayId || ''} /> :
+                           item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
                            item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
                            <IDBadgeIcon number={item.displayId || ''} />
                       ) : item.icon ? (
@@ -473,8 +470,7 @@ export default function StorePage() {
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
                       <div className="scale-110 pt-2">
-                        {previewItem.variant === 'pink' ? <PinkIDBadgeIcon number={previewItem.displayId || ''} /> :
-                         previewItem.variant === 'orange' ? <OrangeGoldIDBadgeIcon number={previewItem.displayId || ''} /> :
+                        {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
                          previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
@@ -492,7 +488,7 @@ export default function StorePage() {
                       onClick={() => setSelectedDuration(days)}
                       className={cn(
                         "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222222]"
+                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222 calculations]"
                       )}
                     >
                       <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
