@@ -529,6 +529,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return ROOM_THEMES[0];
   }, [room?.roomThemeId, room?.backgroundUrl, dbThemes]);
 
+  const bgUrl = currentTheme.url;
+
   useEffect(() => {
     if (currentTheme?.animationId) {
       setActiveLiveTheme(currentTheme.animationId as any);
@@ -584,79 +586,178 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => { window.removeEventListener('popstate', handlePopState); };
   }, []);
 
-  // GIFT & EVENT SYNC ENGINE
+  // GIFT & EVENT SYNC ENGINE - OPTIMIZED with throttling
   useEffect(() => {
-    if (!firestoreMessages || firestoreMessages.length === 0 || !room?.id) return;
-    if (messageProcessTimeoutRef.current) clearTimeout(messageProcessTimeoutRef.current);
+    if (!firestoreMessages || firestoreMessages.length === 0) return;
+
+    // Clear existing timeout to throttle processing
+    if (messageProcessTimeoutRef.current) {
+      clearTimeout(messageProcessTimeoutRef.current);
+    }
 
     messageProcessTimeoutRef.current = setTimeout(() => {
+      // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
+      const onlineMods = (participantsData || [])
+        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+
       const sortedParticipants = [...(participantsData || [])]
         .filter(p => p && p.uid)
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
       const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-      const onlineMods = (participantsData || [])
-        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
-        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
 
       let electedLeaderUid = sortedParticipants[0]?.uid;
       if (ownerOnline) electedLeaderUid = room.ownerId;
       else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
 
       const isAIProcessor = currentUser?.uid === electedLeaderUid || (!electedLeaderUid && isOwner);
-      const startIndex = lastProcessedId.current ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1 : 0;
+
+      // Identify the starting point for the new delta
+      const startIndex = lastProcessedId.current
+        ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
+        : 0;
+
       const newBatch = firestoreMessages.slice(startIndex);
 
-      newBatch.forEach(msg => {
-        if (msg.type === 'gift' && msg.giftId) {
-          setActiveGift({
-            giftId: msg.giftId,
-            animationId: msg.animationId,
-            imageUrl: msg.imageUrl,
-            senderName: msg.senderName,
-            targetSeat: msg.recipientSeat || 1
+      // Process in smaller chunks to prevent blocking
+      const processChunk = (batch: any[], chunkSize = 5) => {
+        for (let i = 0; i < batch.length; i += chunkSize) {
+          const chunk = batch.slice(i, i + chunkSize);
+          requestAnimationFrame(() => {
+            chunk.forEach(msg => {
+              if (msg.type === 'gift' && msg.giftId) {
+                // TRIGGER LOCAL ANIMATION:
+                setActiveGift({
+                  giftId: msg.giftId,
+                  animationId: msg.animationId,
+                  imageUrl: msg.imageUrl,
+                  senderName: msg.senderName,
+                  targetSeat: msg.recipientSeat || 1
+                });
+                
+                // Haptic feedback for sender/recipient
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  const isRecipient = msg.recipientId === currentUser?.uid;
+                  const isSender = msg.senderId === currentUser?.uid;
+                  if (isRecipient || isSender) {
+                    navigator.vibrate(100);
+                  }
+                }
+              } else if (msg.type === 'lucky-rain') {
+                setIsLuckyRainActive(true);
+              } else if (msg.type === 'entrance' && isAIProcessor) {
+                // High-Priority: Use direct call to avoid idle callback latency
+                handleAIWelcome(msg.senderName);
+              } else if (msg.type === 'emoji' && (msg as any).isSfx) {
+                playLocalSfx((msg as any).sfxId);
+              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
+                // High-Priority: Use direct call to avoid idle callback latency
+                handleAIEngine(msg);
+              } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
+                // Show invitation dialog to the invited user
+                setMicInviteData({
+                  inviterName: msg.inviterName,
+                  inviterAvatar: msg.inviterAvatar,
+                  targetSeatIndex: msg.targetSeatIndex
+                });
+                setShowMicInviteDialog(true);
+                // Haptic feedback
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  navigator.vibrate([50, 100, 50]);
+                }
+              }
+
+              // VOICE SYNC: Trigger local TTS if it's an AI message
+              if (msg.senderId === 'SYSTEM_BOT') {
+                speakAIText(msg.content);
+              }
+            });
           });
-        } else if (msg.type === 'lucky-rain') {
-          setIsLuckyRainActive(true);
-        } else if (msg.type === 'entrance' && isAIProcessor) {
-          handleAIWelcome(msg.senderName);
-        } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-          handleAIEngine(msg);
         }
-        if (msg.senderId === 'SYSTEM_BOT') speakAIText(msg.content);
-      });
+      };
 
-      if (newBatch.length > 0) lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
-    }, 100);
+      processChunk(newBatch);
 
-    return () => { if (messageProcessTimeoutRef.current) clearTimeout(messageProcessTimeoutRef.current); };
-  }, [firestoreMessages, currentUser?.uid, isOwner, room?.ownerId, participantsData, room?.id, room?.moderatorIds]);
+      if (newBatch.length > 0) {
+        lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+      }
+    }, 100); // 100ms throttle
 
-  // ROCKET SYSTEM ENGINE
+    return () => {
+      if (messageProcessTimeoutRef.current) {
+        clearTimeout(messageProcessTimeoutRef.current);
+      }
+    };
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participantsData]);
+
+  // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
   useEffect(() => {
-    if (!firestore || !room?.id) return;
-    const sortedParticipants = [...(participantsData || [])].filter(p => p && p.uid).sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+    if (!firestore || !room.id) return;
+
+    // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
+    const sortedParticipants = [...(participantsData || [])]
+      .filter(p => p && p.uid)
+      .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
     const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
     let electedLeaderUid = sortedParticipants[0]?.uid;
     if (ownerOnline) electedLeaderUid = room.ownerId;
-    if (currentUser?.uid !== electedLeaderUid) return;
+    const isAIProcessor = currentUser?.uid === electedLeaderUid;
+
+    if (!isAIProcessor) return;
 
     const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
     const now = Date.now();
+
+    // 0. DAILY RESET: Check if 24 hours have passed since last reset
     const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
-    if ((now - lastReset.getTime()) / (1000 * 60 * 60) >= 24 && !hasResetRocketRef.current) {
+    const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
+
+    if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
       hasResetRocketRef.current = true;
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.progress': 0, 'rocket.countdownUntil': null, 'rocket.lastReset': Timestamp.fromDate(new Date()), 'dailyWealth': 0 });
-      return;
+      console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        'rocket.progress': 0,
+        'rocket.countdownUntil': null,
+        'rocket.lastReset': Timestamp.fromDate(new Date()),
+        'dailyWealth': 0 // RESET ROOM CUP COINS
+      });
+      return; // Exit early, reset will trigger re-render
     }
+
+    // TRIGGER 1: Start Countdown when goal reached
     if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.countdownUntil': Timestamp.fromDate(new Date(now + 60000)) });
+      console.log('[Rocket] Goal reached! Starting 60s countdown...');
+      const launchTime = new Date(now + 60000);
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+        'rocket.countdownUntil': Timestamp.fromDate(launchTime)
+      });
     }
-    if (rocket.countdownUntil && now >= rocket.countdownUntil.toDate().getTime()) {
-      const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
-      setDocumentNonBlocking(msgRef, { type: 'lucky-rain', content: '🚀 ROCKET LAUNCHED!', senderId: 'SYSTEM_BOT', senderName: 'Ummy AI', timestamp: serverTimestamp() });
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.progress': 0, 'rocket.countdownUntil': null });
+
+    // TRIGGER 2: Launch Rocket when countdown finishes
+    if (rocket.countdownUntil) {
+      const launchTime = rocket.countdownUntil.toDate().getTime();
+      if (now >= launchTime) {
+        console.log('[Rocket] Launching! Firing Lucky Rain...');
+
+        // Dispatch Lucky Rain Message
+        const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
+        setDocumentNonBlocking(msgRef, {
+          type: 'lucky-rain',
+          content: '🚀 ROOM ROCKET LAUNCHED! COLLECT YOUR REWARDS! 💰✨',
+          senderId: 'SYSTEM_BOT',
+          senderName: 'Ummy AI',
+          senderAvatar: 'https://img.icons8.com/isometric/512/rocket.png',
+          timestamp: serverTimestamp()
+        }, { merge: true });
+
+        // Reset Rocket State
+        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
+          'rocket.progress': 0,
+          'rocket.countdownUntil': null
+        });
+      }
     }
-  }, [room?.rocket, participantsData, currentUser?.uid, room?.ownerId, firestore, room?.id]);
+  }, [room.rocket, participantsData, currentUser?.uid, room.ownerId, firestore, room.id]);
 
   // ============================================================
   // MUSIC SYNC ENGINE - High-Fidelity Multi-user Sync
@@ -1483,178 +1584,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     }
   };
 
-  // GIFT & EVENT SYNC ENGINE - OPTIMIZED with throttling
-  useEffect(() => {
-    if (!firestoreMessages || firestoreMessages.length === 0) return;
-
-    // Clear existing timeout to throttle processing
-    if (messageProcessTimeoutRef.current) {
-      clearTimeout(messageProcessTimeoutRef.current);
-    }
-
-    messageProcessTimeoutRef.current = setTimeout(() => {
-      // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-      const onlineMods = (participantsData || [])
-        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
-        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-
-      const sortedParticipants = [...(participantsData || [])]
-        .filter(p => p && p.uid)
-        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-
-      let electedLeaderUid = sortedParticipants[0]?.uid;
-      if (ownerOnline) electedLeaderUid = room.ownerId;
-      else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
-
-      const isAIProcessor = currentUser?.uid === electedLeaderUid || (!electedLeaderUid && isOwner);
-
-      // Identify the starting point for the new delta
-      const startIndex = lastProcessedId.current
-        ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1
-        : 0;
-
-      const newBatch = firestoreMessages.slice(startIndex);
-
-      // Process in smaller chunks to prevent blocking
-      const processChunk = (batch: any[], chunkSize = 5) => {
-        for (let i = 0; i < batch.length; i += chunkSize) {
-          const chunk = batch.slice(i, i + chunkSize);
-          requestAnimationFrame(() => {
-            chunk.forEach(msg => {
-              if (msg.type === 'gift' && msg.giftId) {
-                // TRIGGER LOCAL ANIMATION:
-                setActiveGift({
-                  giftId: msg.giftId,
-                  animationId: msg.animationId,
-                  imageUrl: msg.imageUrl,
-                  senderName: msg.senderName,
-                  targetSeat: msg.recipientSeat || 1
-                });
-                
-                // Haptic feedback for sender/recipient
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                  const isRecipient = msg.recipientId === currentUser?.uid;
-                  const isSender = msg.senderId === currentUser?.uid;
-                  if (isRecipient || isSender) {
-                    navigator.vibrate(100);
-                  }
-                }
-              } else if (msg.type === 'lucky-rain') {
-                setIsLuckyRainActive(true);
-              } else if (msg.type === 'entrance' && isAIProcessor) {
-                // High-Priority: Use direct call to avoid idle callback latency
-                handleAIWelcome(msg.senderName);
-              } else if (msg.type === 'emoji' && (msg as any).isSfx) {
-                playLocalSfx((msg as any).sfxId);
-              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-                // High-Priority: Use direct call to avoid idle callback latency
-                handleAIEngine(msg);
-              } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
-                // Show invitation dialog to the invited user
-                setMicInviteData({
-                  inviterName: msg.inviterName,
-                  inviterAvatar: msg.inviterAvatar,
-                  targetSeatIndex: msg.targetSeatIndex
-                });
-                setShowMicInviteDialog(true);
-                // Haptic feedback
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                  navigator.vibrate([50, 100, 50]);
-                }
-              }
-
-              // VOICE SYNC: Trigger local TTS if it's an AI message
-              if (msg.senderId === 'SYSTEM_BOT') {
-                speakAIText(msg.content);
-              }
-            });
-          });
-        }
-      };
-
-      processChunk(newBatch);
-
-      if (newBatch.length > 0) {
-        lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
-      }
-    }, 100); // 100ms throttle
-
-    return () => {
-      if (messageProcessTimeoutRef.current) {
-        clearTimeout(messageProcessTimeoutRef.current);
-      }
-    };
-  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participantsData]);
-
-  // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
-  useEffect(() => {
-    if (!firestore || !room.id) return;
-
-    // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
-    const sortedParticipants = [...(participantsData || [])]
-      .filter(p => p && p.uid)
-      .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-    let electedLeaderUid = sortedParticipants[0]?.uid;
-    if (ownerOnline) electedLeaderUid = room.ownerId;
-    const isAIProcessor = currentUser?.uid === electedLeaderUid;
-
-    if (!isAIProcessor) return;
-
-    const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
-    const now = Date.now();
-
-    // 0. DAILY RESET: Check if 24 hours have passed since last reset
-    const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
-    const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
-
-    if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
-      hasResetRocketRef.current = true;
-      console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
-        'rocket.progress': 0,
-        'rocket.countdownUntil': null,
-        'rocket.lastReset': Timestamp.fromDate(new Date()),
-        'dailyWealth': 0 // RESET ROOM CUP COINS
-      });
-      return; // Exit early, reset will trigger re-render
-    }
-
-    // TRIGGER 1: Start Countdown when goal reached
-    if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
-      console.log('[Rocket] Goal reached! Starting 60s countdown...');
-      const launchTime = new Date(now + 60000);
-      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
-        'rocket.countdownUntil': Timestamp.fromDate(launchTime)
-      });
-    }
-
-    // TRIGGER 2: Launch Rocket when countdown finishes
-    if (rocket.countdownUntil) {
-      const launchTime = rocket.countdownUntil.toDate().getTime();
-      if (now >= launchTime) {
-        console.log('[Rocket] Launching! Firing Lucky Rain...');
-
-        // Dispatch Lucky Rain Message
-        const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
-        setDocumentNonBlocking(msgRef, {
-          type: 'lucky-rain',
-          content: '🚀 ROOM ROCKET LAUNCHED! COLLECT YOUR REWARDS! 💰✨',
-          senderId: 'SYSTEM_BOT',
-          senderName: 'Ummy AI',
-          senderAvatar: 'https://img.icons8.com/isometric/512/rocket.png',
-          timestamp: serverTimestamp()
-        }, { merge: true });
-
-        // Reset Rocket State
-        updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
-          'rocket.progress': 0,
-          'rocket.countdownUntil': null
-        });
-      }
-    }
-  }, [room.rocket, participantsData, currentUser?.uid, room.ownerId, firestore, room.id]);
 
   // CHAT AUTO-SCROLL LOGIC - REMOVED DUPLICATE IN FAVOR OF LINE 365
 
@@ -1881,87 +1810,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (window.navigator?.vibrate) window.navigator.vibrate(50);
   };
 
-  /**
-   * NAVIGATION & BACK BUTTON INTERCEPTION
-   */
-  useEffect(() => {
-    // Add a dummy entry to history to intercept back
-    window.history.pushState(null, '', window.location.href);
-  }, [room.id]);
-
-  // CAPACITOR HARDWARE BACK BUTTON INTERCEPTION
-  useEffect(() => {
-    let backListener: any = null;
-    
-    const initListener = async () => {
-      try {
-        const { App } = await import('@capacitor/app');
-        backListener = await App.addListener('backButton', ({ canGoBack }) => {
-          // If a dialog is open (other than exit dialog), we should close that first
-          // But for simplicity in Haza, we show the Exit prompt to give the user control
-          setShowExitDialog(true);
-        });
-      } catch (e) {
-        // Fallback for web - handled by popstate below
-      }
-    };
-
-    initListener();
-    return () => {
-      if (backListener) backListener.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    // WEB BACK BUTTON INTERCEPTION (Popstate)
-    const handlePopState = (event: PopStateEvent) => {
-      // Re-push to keep user on same URL while dialog is open
-      window.history.pushState(null, '', window.location.href);
-      setShowExitDialog(true);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  const themesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'roomThemes'));
-  }, [firestore]);
-  const { data: dbThemes } = useCollection<any>(themesQuery);
-
-  const currentTheme = useMemo(() => {
-    if (room.backgroundUrl) {
-      return {
-        id: 'custom',
-        url: room.backgroundUrl,
-        accentColor: '#FFCC00',
-        seatColor: 'rgba(255, 255, 255, 0.1)',
-        name: 'Custom'
-      };
-    }
-
-    const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
-    if (staticTheme) return staticTheme;
-
-    const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
-    if (dbTheme) return dbTheme;
-
-    return ROOM_THEMES[0];
-  }, [room.roomThemeId, room.backgroundUrl, dbThemes]);
-
-  // Sync activeLiveTheme with the current theme's animationId
-  useEffect(() => {
-    if (currentTheme.animationId) {
-      setActiveLiveTheme(currentTheme.animationId as any);
-    } else {
-      setActiveLiveTheme('none');
-    }
-  }, [currentTheme.animationId]);
-
-  const bgUrl = currentTheme.url;
 
   const handleSendMessage = async (e?: React.FormEvent, imageUrl?: string, transcription?: string) => {
     if (e) e.preventDefault();
