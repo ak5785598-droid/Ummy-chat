@@ -100,30 +100,42 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
 };
 
 // --- CUSTOM ID BADGE COMPONENT ---
-const IDBadgeIcon = ({ number }: { number: string }) => (
-  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
-    <div className="h-[32px] pl-[35px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
-      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+// Updated to support Pink Variant
+const IDBadgeIcon = ({ number, variant = 'red' }: { number: string, variant?: 'red' | 'pink' }) => {
+  const isPink = variant === 'pink';
+  
+  return (
+    <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-10px] translate-x-[-5px]">
+      <div className={cn(
+        "h-[32px] pl-[35px] pr-[20px] rounded-r-full border-[1.5px] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0",
+        isPink 
+          ? "bg-gradient-to-r from-[#E91E63] to-[#F06292] border-t-[#FF80AB] border-b-[#880E4F] border-r-[#FF80AB]" 
+          : "bg-gradient-to-r from-[#D91B10] to-[#F13A24] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55]"
+      )}>
+        <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+      </div>
+      <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
+        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
+          <defs>
+            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFF1AA" />
+              <stop offset="25%" stopColor="#FFD335" />
+              <stop offset="50%" stopColor="#C98B13" />
+              <stop offset="75%" stopColor="#FFD335" />
+              <stop offset="100%" stopColor="#9E6100" />
+            </linearGradient>
+          </defs>
+          {/* Outer Border: If Pink, use White border as requested */}
+          <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} stroke={isPink ? "#FF80AB" : "#FFE373"} strokeWidth="3" />
+          {/* Inner Hexagon: If Pink, use Pink BG as requested */}
+          <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill={isPink ? "#C2185B" : "#750600"} />
+          <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
+          <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill={isPink ? "#FFFFFF" : "url(#goldGrad)"} textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
+        </svg>
+      </div>
     </div>
-    <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
-      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
-        <defs>
-          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF1AA" />
-            <stop offset="25%" stopColor="#FFD335" />
-            <stop offset="50%" stopColor="#C98B13" />
-            <stop offset="75%" stopColor="#FFD335" />
-            <stop offset="100%" stopColor="#9E6100" />
-          </linearGradient>
-        </defs>
-        <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="url(#goldGrad)" stroke="#FFE373" strokeWidth="3" />
-        <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#750600" />
-        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
-        <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
-      </svg>
-    </div>
-  </div>
-);
+  );
+};
 
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
@@ -161,7 +173,6 @@ export default function StorePage() {
 
   const { data: dbThemes } = useCollection(themesQuery);
 
-  // Removed None-Theme
   const dynamicThemes = useMemo(() => {
     const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
@@ -171,7 +182,6 @@ export default function StorePage() {
     return baseThemes;
   }, [dbThemes]);
 
-  // Removed None-Frame
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
@@ -180,28 +190,33 @@ export default function StorePage() {
     return frames;
   }, []);
 
-  // Removed None-Bubble
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
   ], []);
 
-  // Removed None-Wave
   const waveItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
   ], []);
 
-  // Removed None-ID & Added 4 new VIP IDs
   const idItems = useMemo(() => [
-    { id: 'id-888888', name: 'VIP SSS ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888' },
-    { id: 'id-666666', name: 'VIP Elite ID', type: 'ID', price: 5000000, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666' },
-    { id: 'id-676767', name: 'VIP Royal ID', type: 'ID', price: 5999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767' },
-    { id: 'id-111111', name: 'VIP Legend ID', type: 'ID', price: 6500000, durationDays: 7, description: 'Exclusive VIP ID Number 111111 Badge.', displayId: '111111' },
-    { id: 'id-999999', name: 'VIP Supreme ID', type: 'ID', price: 7000000, durationDays: 7, description: 'Exclusive VIP ID Number 999999 Badge.', displayId: '999999' },
-    { id: 'id-777777', name: 'VIP Lucky ID', type: 'ID', price: 5500000, durationDays: 7, description: 'Exclusive VIP ID Number 777777 Badge.', displayId: '777777' },
-    { id: 'id-123456', name: 'VIP Classic ID', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 123456 Badge.', displayId: '123456' },
-    { id: 'id-989898', name: 'VIP Supreme ID', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 989898 Badge.', displayId: '989898' },
-    { id: 'id-232323', name: 'VIP Lucky ID', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 232323 Badge.', displayId: '232323' },
-    { id: 'id-111222', name: 'VIP Classic ID', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111222 Badge.', displayId: '111222' },
+    // Naya Pink VIP ID Card
+    { id: 'id-189904', name: 'VIP Pink ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Pink VIP ID Number 189904 Badge.', displayId: '189904', variant: 'pink' },
+    
+    // Baaki Purane IDs
+    { id: 'id-888888', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888', variant: 'red' },
+    { id: 'id-666666', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666', variant: 'red' },
+    { id: 'id-676767', name: 'sss', type: 'ID', price: 6999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767', variant: 'red' },
+    { id: 'id-111111', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 111111 Badge.', displayId: '111111', variant: 'red' },
+    { id: 'id-999999', name: 'sss', type: 'ID', price: 7000000, durationDays: 7, description: 'Exclusive VIP ID Number 999999 Badge.', displayId: '999999', variant: 'red' },
+    { id: 'id-777777', name: 'sss', type: 'ID', price: 5500000, durationDays: 7, description: 'Exclusive VIP ID Number 777777 Badge.', displayId: '777777', variant: 'red' },
+    { id: 'id-122334', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 122334 Badge.', displayId: '122334', variant: 'red' },
+    { id: 'id-989898', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 989898 Badge.', displayId: '989898', variant: 'red' },
+    { id: 'id-232323', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 232323 Badge.', displayId: '232323', variant: 'red' },
+    { id: 'id-111222', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111222 Badge.', displayId: '111222', variant: 'red' },
+    { id: 'id-124456', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 124456 Badge.', displayId: '124456', variant: 'red' },
+    { id: 'id-987449', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 987449 Badge.', displayId: '987449', variant: 'red' },
+    { id: 'id-234787', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 234787 Badge.', displayId: '234787', variant: 'red' },
+    { id: 'id-111333', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111333 Badge.', displayId: '111333', variant: 'red' },
   ], []);
 
   const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
@@ -239,19 +254,13 @@ export default function StorePage() {
     setPreviewItem(null);
   };
 
-  // Naya Handle Equip / Unequip Toggle logic
   const handleEquipToggle = (item: any) => {
     if (!userProfile || !user || !firestore) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
-    
-    // Check if the item is already equipped
     const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
-    
-    // Toggle logic: If active, unequip it (set to 'None'), otherwise equip it (set to item.id)
     const updateData = { [field]: isActive ? 'None' : item.id, updatedAt: serverTimestamp() };
-    
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
     toast({ title: isActive ? `${item.type} Unequipped` : 'Item Equipped' });
@@ -314,7 +323,7 @@ export default function StorePage() {
                       ) : item.type === 'Wave' ? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                           <IDBadgeIcon number={item.displayId || ''} />
+                           <IDBadgeIcon number={item.displayId || ''} variant={item.variant} />
                       ) : item.icon ? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
@@ -335,7 +344,6 @@ export default function StorePage() {
           ))}
         </Tabs>
 
-        {/* --- BOTTOM SHEET PREVIEW (40VH & NO BLUR) --- */}
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
@@ -363,7 +371,7 @@ export default function StorePage() {
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
                       <div className="scale-110 pt-2">
-                        <IDBadgeIcon number={previewItem.displayId || ''} />
+                        <IDBadgeIcon number={previewItem.displayId || ''} variant={previewItem.variant} />
                       </div>
                   ) : previewItem.icon ? (
                     <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
@@ -412,9 +420,9 @@ export default function StorePage() {
                     "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
                     userProfile?.inventory?.ownedItems?.includes(previewItem.id)
                       ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" // Unequip Styling
-                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" // Equip Styling
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" // Buy Styling
+                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
                   )}
                 >
                   {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
@@ -429,4 +437,3 @@ export default function StorePage() {
     </div>
   );
 }
-
