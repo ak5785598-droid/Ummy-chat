@@ -150,6 +150,24 @@ export function RoomProfileMain({
   const isCS = profile?.tags?.includes('Customer Service');
   const isCSLeader = profile?.tags?.includes('CS Leader');
   const isBudget = profile?.isBudgetId;
+
+  // 1. Force Creator ID to 0000 instantly in Room View
+  const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+  
+  // 2. Deterministic Fallback ID (Instant)
+  const fallbackID = React.useMemo(() => {
+    if (userId === CREATOR_ID) return '0000';
+    let hash = 0;
+    const str = userId || 'fallback';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return (Math.abs(hash % 900000) + 100000).toString();
+  }, [userId]);
+
+  const currentDBId = profile?.accountNumber;
+  const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (userId === CREATOR_ID && String(currentDBId) === '0000');
+  const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
   
   // Clean multi-line variable declaration to avoid parsing errors
   const isRoomMod = roomModeratorIds.includes(userId || '');
@@ -261,7 +279,7 @@ export function RoomProfileMain({
               <div onClick={handleCopyId} className="cursor-pointer active:scale-95 transition-transform">
                 <BudgetTag 
                   variant={idStatusVariant} 
-                  label={`ID:${profile.accountNumber}`} 
+                  label={`ID:${displayID}`} 
                   size="sm" 
                   className="scale-110" 
                 />

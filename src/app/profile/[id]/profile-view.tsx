@@ -724,6 +724,28 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return () => unsubscribe();
   }, [firestore, profileId]);
 
+  // 2. Deterministic Fallback ID (Instant)
+  const [fallbackID] = useState(() => {
+    // Force Creator ID to 0000 instantly
+    if (profileId === CREATOR_ID) return '0000';
+    
+    // Generate a consistent 6-digit number from the profileId
+    let hash = 0;
+    const str = profileId || 'fallback';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return (Math.abs(hash % 900000) + 100000).toString();
+  });
+
+  const currentDBId = liveID || profile?.accountNumber;
+  
+  // Strict check for 6-digit numbers or Creator's 0000
+  const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
+  
+  // NEVER show "Syncing..." or undefined. Always show DB ID or Fallback.
+  const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
+
   // 3. Sync and Transaction Logic (NEW)
   useEffect(() => {
     const syncUserID = async () => {

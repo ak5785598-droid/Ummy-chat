@@ -103,7 +103,7 @@ export default function BannedPage() {
          </Avatar>
          <div className="text-left">
            <p className="font-bold text-sm uppercase truncate">{userProfile?.username}</p>
-           <p className="text-[8px] font-bold text-white/40 uppercase">ID: {userProfile?.accountNumber || 'Syncing...'}</p>
+           <p className="text-[8px] font-bold text-white/40 uppercase">ID: {userProfile?.accountNumber || '000000'}</p>
          </div>
         </div>
       </div>
