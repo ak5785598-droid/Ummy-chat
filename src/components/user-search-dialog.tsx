@@ -49,49 +49,53 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
  };
 
  // LIVE SEARCH SYNC: Debounced frequency lookup
- useEffect(() => {
-  const performLiveSearch = async () => {
-   if (!firestore || searchId.length < 1) {
-    setResult(null);
-    return;
-   }
+  useEffect(() => {
+    const performLiveSearch = async () => {
+      if (!firestore || searchId.length < 1) {
+        setResult(null);
+        return;
+      }
 
-   setIsSearching(true);
-   try {
-    const inputId = searchId.trim();
-    
-    if (activeTab === 'user') {
-     // IDENTITY SYNC: Look for Account Number in main users collection
-     const userQ = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
-     const uSnap = await getDocs(userQ);
-     const foundDoc = uSnap.docs[0];
-     
-     if (foundDoc) {
-      setResult({ ...foundDoc.data(), id: foundDoc.id, type: 'user' });
-     } else {
-      setResult(null);
-     }
-    } else {
-     // ROOM SYNC: Target roomNumber identifier
-     const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
-     const rSnap = await getDocs(roomQ);
-     
-     if (!rSnap.empty) {
-      setResult({ ...rSnap.docs[0].data(), id: rSnap.docs[0].id, type: 'room' });
-     } else {
-      setResult(null);
-     }
-    }
-   } catch (e) {
-    console.error("[Search Sync] Live lookup failed:", e);
-   } finally {
-    setIsSearching(false);
-   }
-  };
+      setIsSearching(true);
+      try {
+        const inputId = searchId.trim();
+        
+        if (activeTab === 'user') {
+          // 1. Search by ID
+          const idQuery = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+          const idSnap = await getDocs(idQuery);
+          
+          if (!idSnap.empty) {
+            setResult({ ...idSnap.docs[0].data(), id: idSnap.docs[0].id, type: 'user' });
+          } else {
+            // 2. Search by Username
+            const nameQuery = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
+            const nameSnap = await getDocs(nameQuery);
+            if (!nameSnap.empty) {
+              setResult({ ...nameSnap.docs[0].data(), id: nameSnap.docs[0].id, type: 'user' });
+            } else {
+              setResult(null);
+            }
+          }
+        } else {
+          const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
+          const rSnap = await getDocs(roomQ);
+          if (!rSnap.empty) {
+            setResult({ ...rSnap.docs[0].data(), id: rSnap.docs[0].id, type: 'room' });
+          } else {
+            setResult(null);
+          }
+        }
+      } catch (e) {
+        console.error("[Search Sync] Live lookup failed:", e);
+      } finally {
+        setIsSearching(false);
+      }
+    };
 
-  const timer = setTimeout(performLiveSearch, 400);
-  return () => clearTimeout(timer);
- }, [searchId, activeTab, firestore]);
+    const timer = setTimeout(performLiveSearch, 400);
+    return () => clearTimeout(timer);
+  }, [searchId, activeTab, firestore]);
 
   const navigateToResult = () => {
    if (!result) return;
@@ -146,7 +150,7 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
         className="h-10 pl-10 pr-10 rounded-full border-none bg-slate-100/80 focus:ring-0 text-[15px] font-medium placeholder:text-slate-400 "
         value={searchId}
         autoFocus
-        onChange={(e) => setSearchId(e.target.value.replace(/\D/g, ''))}
+        onChange={(e) => setSearchId(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && !!result && navigateToResult()}
        />
        {searchId && (
