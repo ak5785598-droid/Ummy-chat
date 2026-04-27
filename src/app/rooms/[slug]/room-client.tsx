@@ -511,6 +511,41 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [firestore]);
   const { data: dbThemes } = useCollection<any>(themesQuery);
 
+  // --- DERIVE PARTICIPANTS & SEAT STATUS ---
+  const participantsQuery = useMemoFirebase(() => {
+    if (!firestore || !room?.id) return null;
+    try {
+      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
+    } catch (e) {
+      console.error('[Room] Failed to create participants query:', e);
+      return null;
+    }
+  }, [firestore, room?.id]);
+
+  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
+
+  const participants = useMemo(() => {
+    if (!participantsData) return [];
+    return participantsData;
+  }, [participantsData]);
+
+  const messagesQuery = useMemoFirebase(() => {
+    if (!firestore || !room.id || !sessionJoinTime) return null;
+    try {
+      return query(
+        collection(firestore, 'chatRooms', room.id, 'messages'),
+        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
+        orderBy('timestamp', 'asc'),
+        limitToLast(50)
+      );
+    } catch (e) {
+      console.error('[Room] Failed to create messages query:', e);
+      return null;
+    }
+  }, [firestore, room.id, sessionJoinTime]);
+
+  const { data: firestoreMessages } = useCollection(messagesQuery);
+
   const currentTheme = useMemo(() => {
     if (!room) return ROOM_THEMES[0];
     if (room.backgroundUrl) {
@@ -880,23 +915,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const { userProfile } = useUserProfile(currentUser?.uid);
 
-  // --- DERIVE PARTICIPANTS & SEAT STATUS ---
-  const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !room?.id) return null;
-    try {
-      return query(collection(firestore, 'chatRooms', room.id, 'participants'));
-    } catch (e) {
-      console.error('[Room] Failed to create participants query:', e);
-      return null;
-    }
-  }, [firestore, room?.id]);
-
-  const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
-
-  const participants = useMemo(() => {
-    if (!participantsData) return [];
-    return participantsData;
-  }, [participantsData]);
 
   const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
@@ -1129,22 +1147,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     recordVisit();
   }, [firestore, currentUser?.uid, room.id, room.title, room.coverUrl, room.roomNumber, room.ownerId, onlineCount]);
 
-  const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !room.id || !sessionJoinTime) return null;
-    try {
-      return query(
-        collection(firestore, 'chatRooms', room.id, 'messages'),
-        where('timestamp', '>', Timestamp.fromDate(sessionJoinTime)),
-        orderBy('timestamp', 'asc'),
-        limitToLast(50)
-      );
-    } catch (e) {
-      console.error('[Room] Failed to create messages query:', e);
-      return null;
-    }
-  }, [firestore, room.id, sessionJoinTime]);
-
-  const { data: firestoreMessages } = useCollection(messagesQuery);
 
   // AUTO-SCROLL SYNC
   useEffect(() => {
