@@ -810,9 +810,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     syncUserID();
   }, [isOwnProfile, profile, firestore, profileId, liveID]);
 
-  // Display ke liye variable (NEW)
-  const displayID = liveID || profile?.accountNumber || "Syncing...";
-
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
     return doc(firestore, 'followers', `${currentUser.uid}_${profileId}`);
