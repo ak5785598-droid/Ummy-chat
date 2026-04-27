@@ -488,6 +488,175 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const maxMics = room?.maxActiveMics || 9;
 
   // ============================================================
+  // AUTHORITY & STATE DERIVATION (Top-level for hook consumption)
+  // ============================================================
+  const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+  const isOwner = currentUser?.uid === room?.ownerId;
+  const isModerator = room?.moderatorIds?.includes(currentUser?.uid || '') || false;
+  const canManageRoom = isOwner || isModerator;
+  const isChatMuted = room?.isChatMuted || false;
+  const maxMics = room?.maxActiveMics || 9;
+
+  // AI VOICE & INTERACTION STATES
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const [isAIListening, setIsAIListening] = useState(false);
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
+
+  // ROOM THEMES & SYNC
+  const themesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'roomThemes'));
+  }, [firestore]);
+  const { data: dbThemes } = useCollection<any>(themesQuery);
+
+  const currentTheme = useMemo(() => {
+    if (!room) return ROOM_THEMES[0];
+    if (room.backgroundUrl) {
+      return {
+        id: 'custom',
+        url: room.backgroundUrl,
+        accentColor: '#FFCC00',
+        seatColor: 'rgba(255, 255, 255, 0.1)',
+        name: 'Custom'
+      };
+    }
+    const staticTheme = ROOM_THEMES.find(t => t.id === room.roomThemeId);
+    if (staticTheme) return staticTheme;
+    const dbTheme = dbThemes?.find(t => t.id === room.roomThemeId);
+    if (dbTheme) return dbTheme;
+    return ROOM_THEMES[0];
+  }, [room?.roomThemeId, room?.backgroundUrl, dbThemes]);
+
+  useEffect(() => {
+    if (currentTheme?.animationId) {
+      setActiveLiveTheme(currentTheme.animationId as any);
+    } else {
+      setActiveLiveTheme('none');
+    }
+  }, [currentTheme?.animationId, setActiveLiveTheme]);
+
+  // AI VOICE ENGINE INIT
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined' || !window.speechSynthesis) return;
+      const loadVoices = () => {
+        if (!window.speechSynthesis) return;
+        const v = window.speechSynthesis.getVoices();
+        if (v.length > 0) setVoicesLoaded(true);
+      };
+      if (window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      loadVoices();
+    } catch (e) {
+      console.warn('SpeechSynthesis initialization failed:', e);
+    }
+  }, []);
+
+  // NAVIGATION INTERCEPTION
+  useEffect(() => {
+    if (!room?.id) return;
+    window.history.pushState(null, '', window.location.href);
+  }, [room?.id]);
+
+  useEffect(() => {
+    let backListener: any = null;
+    const initListener = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        backListener = await App.addListener('backButton', ({ canGoBack }) => {
+          setShowExitDialog(true);
+        });
+      } catch (e) {}
+    };
+    initListener();
+    return () => { if (backListener) backListener.remove(); };
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      window.history.pushState(null, '', window.location.href);
+      setShowExitDialog(true);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => { window.removeEventListener('popstate', handlePopState); };
+  }, []);
+
+  // GIFT & EVENT SYNC ENGINE
+  useEffect(() => {
+    if (!firestoreMessages || firestoreMessages.length === 0 || !room?.id) return;
+    if (messageProcessTimeoutRef.current) clearTimeout(messageProcessTimeoutRef.current);
+
+    messageProcessTimeoutRef.current = setTimeout(() => {
+      const sortedParticipants = [...(participantsData || [])]
+        .filter(p => p && p.uid)
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+      const onlineMods = (participantsData || [])
+        .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
+        .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+
+      let electedLeaderUid = sortedParticipants[0]?.uid;
+      if (ownerOnline) electedLeaderUid = room.ownerId;
+      else if (onlineMods.length > 0) electedLeaderUid = onlineMods[0].uid;
+
+      const isAIProcessor = currentUser?.uid === electedLeaderUid || (!electedLeaderUid && isOwner);
+      const startIndex = lastProcessedId.current ? firestoreMessages.findIndex(m => m.id === lastProcessedId.current) + 1 : 0;
+      const newBatch = firestoreMessages.slice(startIndex);
+
+      newBatch.forEach(msg => {
+        if (msg.type === 'gift' && msg.giftId) {
+          setActiveGift({
+            giftId: msg.giftId,
+            animationId: msg.animationId,
+            imageUrl: msg.imageUrl,
+            senderName: msg.senderName,
+            targetSeat: msg.recipientSeat || 1
+          });
+        } else if (msg.type === 'lucky-rain') {
+          setIsLuckyRainActive(true);
+        } else if (msg.type === 'entrance' && isAIProcessor) {
+          handleAIWelcome(msg.senderName);
+        } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
+          handleAIEngine(msg);
+        }
+        if (msg.senderId === 'SYSTEM_BOT') speakAIText(msg.content);
+      });
+
+      if (newBatch.length > 0) lastProcessedId.current = firestoreMessages[firestoreMessages.length - 1].id;
+    }, 100);
+
+    return () => { if (messageProcessTimeoutRef.current) clearTimeout(messageProcessTimeoutRef.current); };
+  }, [firestoreMessages, currentUser?.uid, isOwner, room?.ownerId, participantsData, room?.id, room?.moderatorIds]);
+
+  // ROCKET SYSTEM ENGINE
+  useEffect(() => {
+    if (!firestore || !room?.id) return;
+    const sortedParticipants = [...(participantsData || [])].filter(p => p && p.uid).sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
+    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+    let electedLeaderUid = sortedParticipants[0]?.uid;
+    if (ownerOnline) electedLeaderUid = room.ownerId;
+    if (currentUser?.uid !== electedLeaderUid) return;
+
+    const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
+    const now = Date.now();
+    const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
+    if ((now - lastReset.getTime()) / (1000 * 60 * 60) >= 24 && !hasResetRocketRef.current) {
+      hasResetRocketRef.current = true;
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.progress': 0, 'rocket.countdownUntil': null, 'rocket.lastReset': Timestamp.fromDate(new Date()), 'dailyWealth': 0 });
+      return;
+    }
+    if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.countdownUntil': Timestamp.fromDate(new Date(now + 60000)) });
+    }
+    if (rocket.countdownUntil && now >= rocket.countdownUntil.toDate().getTime()) {
+      const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
+      setDocumentNonBlocking(msgRef, { type: 'lucky-rain', content: '🚀 ROCKET LAUNCHED!', senderId: 'SYSTEM_BOT', senderName: 'Ummy AI', timestamp: serverTimestamp() });
+      updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), { 'rocket.progress': 0, 'rocket.countdownUntil': null });
+    }
+  }, [room?.rocket, participantsData, currentUser?.uid, room?.ownerId, firestore, room?.id]);
+
+  // ============================================================
   // MUSIC SYNC ENGINE - High-Fidelity Multi-user Sync
   // Uses Virtual Clock (musicStartedAt) to handle seek/sync
   // ============================================================
