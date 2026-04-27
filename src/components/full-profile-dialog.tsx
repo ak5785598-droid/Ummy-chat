@@ -33,12 +33,11 @@ import {
 } from "@/components/ui/carousel";
 import { GoldCoinIcon } from '@/components/icons';
 
-// Registries
+// Registries (Same as before)
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// Flattened Gifts Registry
 const GIFT_REGISTRY: Record<string, any> = {
   'heart': { id: 'heart', name: 'Heart', price: 99, emoji: '❤️' },
   'cake': { id: 'cake', name: 'Cake', price: 499, emoji: '🍰' },
@@ -81,7 +80,7 @@ const GenderAgeTag = ({ gender, birthday }: { gender: string | null | undefined,
   const age = calculateAge(birthday || '');
   return (
     <div className={cn(
-      "flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-md shrink-0",
+      "flex items-center gap-1.5 px-2.5 py-1 rounded-full shadow-sm shrink-0",
       gender === 'Female' ? "bg-pink-500" : "bg-blue-500"
     )}>
       <span className="text-[11px] font-bold text-white leading-none">{gender === 'Female' ? '♀' : '♂'}</span>
@@ -106,13 +105,12 @@ const CharmLevelBadge = ({ level }: { level: number }) => (
   </div>
 );
 
-// Updated ProfileSection to remove default title since tabs will handle navigation
 const ProfileSection = ({ children, isEmpty, emptyLabel }: { children: React.ReactNode, isEmpty: boolean, emptyLabel: string }) => (
   <div className="mt-4">
     {isEmpty ? (
-      <div className="py-12 flex flex-col items-center justify-center gap-2 opacity-60">
-        <Sparkles className="h-6 w-6 text-white/40" />
-        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{emptyLabel}</span>
+      <div className="py-12 flex flex-col items-center justify-center gap-2 opacity-40">
+        <Sparkles className="h-6 w-6 text-slate-400" />
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{emptyLabel}</span>
       </div>
     ) : (
       <div className="grid grid-cols-4 gap-4">
@@ -155,13 +153,12 @@ export function FullProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-black p-0 border-none m-0 rounded-none z-[150] overflow-hidden">
+      <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white p-0 border-none m-0 rounded-none z-[150] overflow-hidden">
         
-        {/* Main Scrollable Container for both Background and Content */}
         <div className="w-full h-full overflow-y-auto no-scrollbar relative flex flex-col font-outfit">
           
-          {/* Top Section with Background Carousel/Avatar Fallback */}
-          <div className="relative h-[30vh] w-full shrink-0 bg-slate-900 overflow-hidden">
+          {/* Top Section - Background */}
+          <div className="relative h-[35vh] w-full shrink-0 bg-slate-900 overflow-hidden">
             {images.filter(Boolean).length > 0 ? (
               <Carousel setApi={setApi} className="h-full w-full" opts={{ loop: true }}>
                 <CarouselContent className="h-full ml-0">
@@ -173,7 +170,6 @@ export function FullProfileDialog({
                 </CarouselContent>
               </Carousel>
             ) : (
-              /* Fallback: Clear background without blur or extra opacity layer */
               <div className="h-full w-full relative">
                  <img 
                    src={profile.avatarUrl} 
@@ -183,36 +179,35 @@ export function FullProfileDialog({
               </div>
             )}
             
-            {/* Header Controls */}
             <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
-              <button onClick={() => onOpenChange(false)} className="h-10 w-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/20">
+              <button onClick={() => onOpenChange(false)} className="h-10 w-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20">
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <button className="h-10 w-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/20">
+              <button className="h-10 w-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20">
                 <MoreHorizontal className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
           </div>
 
-          {/* Content Section (GLOSSY BLACK GLOWING CARD) */}
-          <div className="relative z-20 bg-gradient-to-b from-[#1a1a1a] via-[#0a0a0a] to-black rounded-t-[2rem] px-6 pt-0 pb-32 mt-[-40px] shadow-[0_-15px_40px_rgba(255,255,255,0.08),inset_0_2px_5px_rgba(255,255,255,0.15)] border-t border-white/10 ring-1 ring-white/5 backdrop-blur-2xl">
+          {/* Content Section - WHITE SQUARE CARD */}
+          <div className="relative z-20 bg-white rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] border-t border-slate-100 min-h-[70vh]">
             
             {/* Identity Part */}
             <div className="flex flex-col items-center">
-              <div className="relative -mt-4 mb-1 z-30 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+              <div className="relative -mt-10 mb-1 z-30">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <Avatar className="h-28 w-28 border-4 border-[#222] shadow-2xl relative">
+                  <Avatar className="h-28 w-28 border-4 border-white shadow-xl relative">
                     <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="text-4xl font-bold bg-slate-800 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="text-4xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
                 </AvatarFrame>
               </div>
 
               <div className="text-center space-y-2.5 w-full">
                 <div className="flex items-center justify-center gap-2.5 flex-wrap">
-                  <h2 className="text-2xl font-bold text-white tracking-tight leading-none truncate max-w-[200px] drop-shadow-md">{profile.username}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
                   <span className="text-xl leading-none">🇮🇳</span>
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                 </div>
@@ -233,116 +228,78 @@ export function FullProfileDialog({
             {/* Stats Bar */}
             <div className="flex justify-between items-center py-5 mb-0 mx-[-24px]">
               <div className="flex flex-col items-center flex-1">
-                <span className="text-xl font-bold text-white leading-none">{stats.fans}</span>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Fans</span>
+                <span className="text-xl font-bold text-slate-900 leading-none">{stats.fans}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fans</span>
               </div>
-              <div className="flex flex-col items-center text-white/10 text-2xl font-thin opacity-50">|</div>
+              <div className="flex flex-col items-center text-slate-200 text-2xl font-thin">|</div>
               <div className="flex flex-col items-center flex-1">
-                <span className="text-xl font-bold text-white leading-none">{stats.following}</span>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Following</span>
+                <span className="text-xl font-bold text-slate-900 leading-none">{stats.following}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Following</span>
               </div>
-              <div className="flex flex-col items-center text-white/10 text-2xl font-thin opacity-50">|</div>
+              <div className="flex flex-col items-center text-slate-200 text-2xl font-thin">|</div>
               <div className="flex flex-col items-center flex-1">
-                <span className="text-xl font-bold text-white leading-none">{stats.friends}</span>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Friend</span>
+                <span className="text-xl font-bold text-slate-900 leading-none">{stats.friends}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Friend</span>
               </div>
-               <div className="flex flex-col items-center text-white/10 text-2xl font-thin opacity-50">|</div>
+               <div className="flex flex-col items-center text-slate-200 text-2xl font-thin">|</div>
               <div className="flex flex-col items-center flex-1">
-                <span className="text-xl font-bold text-white leading-none">{stats.visitors}</span>
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Visitors</span>
+                <span className="text-xl font-bold text-slate-900 leading-none">{stats.visitors}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visitors</span>
               </div>
             </div>
 
-            <div className="h-[1px] w-full bg-white/10 my-2" />
+            <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Top Contribution Section */}
+            {/* Top Contribution */}
             <div className="mt-2 mb-4">
-              <h3 className="text-[9px] font-black text-white/80 uppercase tracking-widest px-1 opacity-70 mb-2">Top Contribution</h3>
-              
+              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Top Contribution</h3>
               <div className="flex items-end justify-center gap-4 mt-5">
-                {/* Left Chair - Silver */}
+                {/* Left Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5">
                   <div className="relative inline-block">
-                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] pointer-events-none">👑</div>
-                    <div 
-                      className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#C0C0C0]"
-                      style={{
-                        background: 'linear-gradient(135deg, #7A7A7A 0%, #2E2E2E 100%)',
-                        boxShadow: 'inset 0 4px 6px rgba(255,255,255,0.3), inset 0 -4px 6px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)'
-                      }}
-                    >
-                      <div className="absolute top-0 left-0 w-full h-[45%] bg-gradient-to-b from-white/30 to-transparent rounded-t-full z-20"></div>
-                      <Armchair 
-                        className="w-4 h-4 text-[#E8E8E8] relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" 
-                        fill="#C0C0C0" 
-                        strokeWidth={1} 
-                        stroke="#5A5A5A" 
-                      />
+                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
+                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#C0C0C0] bg-slate-100 shadow-inner">
+                      <Armchair className="w-4 h-4 text-slate-300" fill="#C0C0C0" strokeWidth={1} />
                     </div>
                   </div>
-                  <span className="text-[8px] font-bold text-white/50 uppercase tracking-tight">Empty</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">Empty</span>
                 </div>
 
-                {/* Center Chair - Gold */}
+                {/* Center Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5 -mb-2">
                   <div className="relative inline-block">
-                    <div className="absolute -top-4 -left-2.5 z-30 -rotate-[22deg] text-xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] pointer-events-none">👑</div>
-                    <div 
-                      className="relative w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#F2D06B]"
-                      style={{
-                        background: 'linear-gradient(135deg, #3F4724 0%, #1A2010 100%)',
-                        boxShadow: 'inset 0 4px 6px rgba(255,255,255,0.3), inset 0 -4px 6px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)'
-                      }}
-                    >
-                      <div className="absolute top-0 left-0 w-full h-[45%] bg-gradient-to-b from-white/30 to-transparent rounded-t-full z-20"></div>
-                      
+                    <div className="absolute -top-4 -left-2.5 z-30 -rotate-[22deg] text-xl drop-shadow-md">👑</div>
+                    <div className="relative w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#F2D06B] bg-slate-50 shadow-md">
                       {profile?.avatarUrl ? (
-                        <img src={profile.avatarUrl} className="w-full h-full object-cover relative z-10" alt="top-user" />
+                        <img src={profile.avatarUrl} className="w-full h-full object-cover" alt="" />
                       ) : (
-                        <Armchair 
-                          className="w-5 h-5 text-[#F6E199] relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" 
-                          fill="#F4D368" 
-                          strokeWidth={1} 
-                          stroke="#996515" 
-                        />
+                        <Armchair className="w-5 h-5 text-amber-200" fill="#F4D368" strokeWidth={1} />
                       )}
                     </div>
                   </div>
-                  <span className="text-[9px] font-bold text-white/50 uppercase tracking-tight">{profile.username || 'Empty'}</span>
+                  <span className="text-[9px] font-bold text-slate-600 uppercase">{profile.username || 'Empty'}</span>
                 </div>
 
-                {/* Right Chair - Brown */}
+                {/* Right Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5">
                   <div className="relative inline-block">
-                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] pointer-events-none">👑</div>
-                    <div 
-                      className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#8B4513]"
-                      style={{
-                        background: 'linear-gradient(135deg, #5C2E0B 0%, #291404 100%)',
-                        boxShadow: 'inset 0 4px 6px rgba(255,255,255,0.3), inset 0 -4px 6px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)'
-                      }}
-                    >
-                      <div className="absolute top-0 left-0 w-full h-[45%] bg-gradient-to-b from-white/30 to-transparent rounded-t-full z-20"></div>
-                      <Armchair 
-                        className="w-4 h-4 text-[#CD853F] relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" 
-                        fill="#A0522D" 
-                        strokeWidth={1} 
-                        stroke="#4A2509" 
-                      />
+                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
+                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#8B4513] bg-slate-100 shadow-inner">
+                      <Armchair className="w-4 h-4 text-slate-300" fill="#A0522D" strokeWidth={1} />
                     </div>
                   </div>
-                  <span className="text-[8px] font-bold text-white/50 uppercase tracking-tight">Empty</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase">Empty</span>
                 </div>
               </div>
             </div>
 
-            <div className="h-[1px] w-full bg-white/10 my-2" />
+            <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Signature Bio Section */}
+            {/* Signature Bio */}
             <div className="mt-2 mb-4">
-              <h3 className="text-[9px] font-black text-white/80 uppercase tracking-widest px-1 opacity-70 mb-2">Signature Bio</h3>
+              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
-                 <p className="text-[13px] font-medium text-white/70 leading-relaxed">
+                 <p className="text-[13px] font-medium text-slate-600 leading-relaxed">
                    {profile.bio || "Synchronized with the Ummy frequency."}
                  </p>
               </div>
@@ -350,29 +307,23 @@ export function FullProfileDialog({
               <div className="flex flex-wrap gap-4 px-1 mt-6">
                  {profile.country && (
                    <div className="flex items-center gap-1.5">
-                     <Globe className="h-3 w-3 text-white/30" />
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{profile.country}</span>
+                     <Globe className="h-3 w-3 text-slate-300" />
+                     <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight">{profile.country}</span>
                    </div>
                  )}
                  {(profile.showBirthday !== false && !!profile.birthday) && (
                    <div className="flex items-center gap-1.5">
-                     <Calendar className="h-3 w-3 text-white/30" />
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{profile.birthday}</span>
-                   </div>
-                 )}
-                 {(profile.showWhatsapp !== false && !!profile.whatsapp) && (
-                   <div className="flex items-center gap-1.5">
-                     <Phone className="h-3 w-3 text-white/30" />
-                     <span className="text-[10px] font-black uppercase text-white/60 tracking-tight">{profile.whatsapp}</span>
+                     <Calendar className="h-3 w-3 text-slate-300" />
+                     <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight">{profile.birthday}</span>
                    </div>
                  )}
               </div>
             </div>
 
-            <div className="h-[1px] w-full bg-white/10 my-2" />
+            <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* TABS NAVIGATION */}
-            <div className="flex items-center justify-between mt-6 border-b border-white/10 pb-0">
+            {/* TABS */}
+            <div className="flex items-center justify-between mt-6 border-b border-slate-100 pb-0">
               {['medal', 'vehicle', 'frame', 'gift'].map((tab) => (
                 <button
                   key={tab}
@@ -380,30 +331,29 @@ export function FullProfileDialog({
                   className={cn(
                     "text-[11px] font-black uppercase tracking-wider transition-all px-3 py-3 relative w-full text-center",
                     activeTab === tab
-                      ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                      : "text-white/40 hover:text-white/70"
+                      ? "text-blue-600"
+                      : "text-slate-400 hover:text-slate-600"
                   )}
                 >
                   {tab}
                   {activeTab === tab && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white shadow-[0_0_10px_rgba(255,255,255,1)] rounded-t-md" />
+                    <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-blue-600 rounded-t-md" />
                   )}
                 </button>
               ))}
             </div>
 
-            {/* 60VH SCROLL AREA FOR ACTIVE TAB CONTENT */}
-            <div className="min-h-[60vh] mt-4 w-full">
-              
+            {/* TAB CONTENT */}
+            <div className="min-h-[50vh] mt-4 w-full">
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
                   {medals.map((medalId: string) => {
                     const medal = MEDAL_REGISTRY[medalId];
                     if (!medal) return null;
                     return (
-                      <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group transition-all">
-                        <img src={medal.imageUrl} alt={medal.name} className="h-12 w-12 object-contain drop-shadow-sm group-hover:scale-110 transition-transform" />
-                        <span className="text-[8px] font-bold text-white/70 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
+                      <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group">
+                        <img src={medal.imageUrl} alt={medal.name} className="h-12 w-12 object-contain group-hover:scale-110 transition-transform" />
+                        <span className="text-[8px] font-bold text-slate-500 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
                       </div>
                     );
                   })}
@@ -418,12 +368,12 @@ export function FullProfileDialog({
                     const isActive = profile.inventory?.activeVehicle === id;
                     return (
                       <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
-                        <div className="text-4xl filter drop-shadow-md py-1 animate-float">{vehicle.icon}</div>
+                        <div className="text-4xl py-1 animate-float">{vehicle.icon}</div>
                         <div className="flex flex-col items-center gap-1 w-full">
-                          <span className="text-[8px] font-black text-white/80 truncate uppercase tracking-tighter">{vehicle.name}</span>
+                          <span className="text-[8px] font-black text-slate-700 truncate uppercase tracking-tighter">{vehicle.name}</span>
                           <button className={cn(
-                            "w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm border border-white/5",
-                            isActive ? "bg-emerald-500 text-white" : "bg-white/10 text-white/50"
+                            "w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm border",
+                            isActive ? "bg-emerald-500 text-white border-emerald-600" : "bg-slate-100 text-slate-400 border-slate-200"
                           )}>
                             {isActive ? 'Active' : (isOwnProfile ? 'Use' : 'Permanent')}
                           </button>
@@ -442,7 +392,7 @@ export function FullProfileDialog({
                     const isActive = profile.inventory?.activeFrame === id;
                     return (
                       <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
-                        <div className="h-12 w-12 rounded-full border border-white/10 bg-[#111] flex items-center justify-center overflow-hidden relative shadow-sm">
+                        <div className="h-12 w-12 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden relative shadow-sm">
                           {frame.imageUrl ? (
                             <img src={frame.imageUrl} className="w-full h-full object-cover scale-150" alt="" />
                           ) : (
@@ -450,10 +400,10 @@ export function FullProfileDialog({
                           )}
                         </div>
                         <div className="flex flex-col items-center gap-1 w-full">
-                          <span className="text-[8px] font-black text-white/80 truncate uppercase tracking-tighter">{frame.name}</span>
+                          <span className="text-[8px] font-black text-slate-700 truncate uppercase tracking-tighter">{frame.name}</span>
                           <button className={cn(
-                            "w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm border border-white/5",
-                            isActive ? "bg-emerald-500 text-white" : "bg-white/10 text-white/50"
+                            "w-full h-5 rounded-full text-[8px] font-black uppercase transition-all shadow-sm border",
+                            isActive ? "bg-emerald-500 text-white border-emerald-600" : "bg-slate-100 text-slate-400 border-slate-200"
                           )}>
                             {isActive ? 'Active' : (isOwnProfile ? 'Use' : 'Permanent')}
                           </button>
@@ -471,38 +421,37 @@ export function FullProfileDialog({
                     if (!gift) return null;
                     return (
                       <div key={giftId} className="flex flex-col items-center gap-1 p-1 relative">
-                        <div className="absolute top-1 right-2 text-[10px] font-black text-pink-500 italic drop-shadow-sm">x{count}</div>
-                        <div className="text-3xl filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] py-1">{gift.emoji}</div>
-                        <div className="flex items-center gap-0.5 bg-white/10 px-2 rounded-full border border-white/5">
+                        <div className="absolute top-1 right-2 text-[10px] font-black text-pink-500 italic">x{count}</div>
+                        <div className="text-3xl py-1">{gift.emoji}</div>
+                        <div className="flex items-center gap-0.5 bg-slate-50 px-2 rounded-full border border-slate-100">
                           <GoldCoinIcon className="h-2 w-2" />
-                          <span className="text-[9px] font-black text-white">{gift.price}</span>
+                          <span className="text-[9px] font-black text-slate-600">{gift.price}</span>
                         </div>
                       </div>
                     );
                   })}
                 </ProfileSection>
               )}
-
             </div>
           </div>
         </div>
 
-        {/* Sticky Footer Actions - Darkened to match Glossy Black Theme */}
+        {/* Footer Actions */}
         {!isOwnProfile && (
-          <footer className="absolute bottom-0 left-0 right-0 p-6 pb-12 bg-black/80 backdrop-blur-xl border-t border-white/10 flex gap-4 z-[160]">
+          <footer className="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-white/95 backdrop-blur-md border-t border-slate-100 flex gap-4 z-[160]">
              <button 
                onClick={onFollow}
                disabled={isProcessingFollow}
-               className="flex-1 h-14 bg-[#111] border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-[0_0_20px_rgba(236,72,153,0.2)] active:scale-95 transition-all"
+               className="flex-1 h-14 border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm active:scale-95 transition-all"
              >
-               {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin text-pink-500" /> : (
+               {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin" /> : (
                  <>
                    <Heart className={cn("h-5 w-5", followData && "fill-current")} />
                    {followData ? "Joined" : "Follow"}
                  </>
                )}
              </button>
-             <button className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-[0_0_20px_rgba(59,130,246,0.3)] active:scale-95 transition-all border border-white/10">
+             <button className="flex-1 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all">
                <MessageCircle className="h-5 w-5" />
                Chat
              </button>
@@ -513,3 +462,4 @@ export function FullProfileDialog({
     </Dialog>
   );
 }
+
