@@ -63,13 +63,12 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
         if (activeTab === 'user') {
           const inputId = searchId.trim();
           
-          // 1. Search by ID (Try String format)
+          // 1. Search by ID (Try String format first)
           const idQueryStr = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
           const idSnapStr = await getDocs(idQueryStr);
-          
           let foundUser = !idSnapStr.empty ? { ...idSnapStr.docs[0].data(), id: idSnapStr.docs[0].id, type: 'user' } : null;
 
-          // 2. If not found, try Number format (in case some were saved as numbers)
+          // 2. Try Number format if not found and input is numeric
           if (!foundUser && /^\d+$/.test(inputId)) {
             const idQueryNum = query(collection(firestore, 'users'), where('accountNumber', '==', Number(inputId)), limit(1));
             const idSnapNum = await getDocs(idQueryNum);
@@ -78,7 +77,7 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
             }
           }
 
-          // 3. If still not found, try Username (Priority: Exact Match)
+          // 3. Try Username fallback
           if (!foundUser) {
             const nameQuery = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
             const nameSnap = await getDocs(nameQuery);
