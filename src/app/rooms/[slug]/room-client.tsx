@@ -487,16 +487,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const isChatMuted = room?.isChatMuted || false;
   const maxMics = room?.maxActiveMics || 9;
 
-  // ============================================================
-  // AUTHORITY & STATE DERIVATION (Top-level for hook consumption)
-  // ============================================================
-  const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
-  const isOwner = currentUser?.uid === room?.ownerId;
-  const isModerator = room?.moderatorIds?.includes(currentUser?.uid || '') || false;
-  const canManageRoom = isOwner || isModerator;
-  const isChatMuted = room?.isChatMuted || false;
-  const maxMics = room?.maxActiveMics || 9;
-
   // AI VOICE & INTERACTION STATES
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [isAIListening, setIsAIListening] = useState(false);
