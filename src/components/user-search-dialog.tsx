@@ -61,22 +61,33 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
         const inputId = searchId.trim();
         
         if (activeTab === 'user') {
-          // 1. Search by ID
-          const idQuery = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
-          const idSnap = await getDocs(idQuery);
+          const inputId = searchId.trim();
           
-          if (!idSnap.empty) {
-            setResult({ ...idSnap.docs[0].data(), id: idSnap.docs[0].id, type: 'user' });
-          } else {
-            // 2. Search by Username
+          // 1. Search by ID (Try String format)
+          const idQueryStr = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
+          const idSnapStr = await getDocs(idQueryStr);
+          
+          let foundUser = !idSnapStr.empty ? { ...idSnapStr.docs[0].data(), id: idSnapStr.docs[0].id, type: 'user' } : null;
+
+          // 2. If not found, try Number format (in case some were saved as numbers)
+          if (!foundUser && /^\d+$/.test(inputId)) {
+            const idQueryNum = query(collection(firestore, 'users'), where('accountNumber', '==', Number(inputId)), limit(1));
+            const idSnapNum = await getDocs(idQueryNum);
+            if (!idSnapNum.empty) {
+              foundUser = { ...idSnapNum.docs[0].data(), id: idSnapNum.docs[0].id, type: 'user' };
+            }
+          }
+
+          // 3. If still not found, try Username (Priority: Exact Match)
+          if (!foundUser) {
             const nameQuery = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
             const nameSnap = await getDocs(nameQuery);
             if (!nameSnap.empty) {
-              setResult({ ...nameSnap.docs[0].data(), id: nameSnap.docs[0].id, type: 'user' });
-            } else {
-              setResult(null);
+              foundUser = { ...nameSnap.docs[0].data(), id: nameSnap.docs[0].id, type: 'user' };
             }
           }
+
+          setResult(foundUser);
         } else {
           const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
           const rSnap = await getDocs(roomQ);
