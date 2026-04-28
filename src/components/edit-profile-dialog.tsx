@@ -114,12 +114,13 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
       bio: bio,
       birthday: birthday,
       whatsapp: whatsapp,
-      country: country,
       showBirthday: showBirthday,
       showWhatsapp: showWhatsapp,
       spaceImages: filteredSpaceImages,
       updatedAt: serverTimestamp()
     };
+
+    if (country !== undefined) updateData.country = country;
 
     if (!isGenderFixed && gender) updateData.gender = gender;
 
@@ -261,7 +262,7 @@ export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) 
                     <Input
                       id="edit-name"
                       value={name}
-                      onChange={(e) => setName(e.target.value.slice(0, 24))}
+                      onChange={(e) => setName(Array.from(e.target.value).slice(0, 24).join(''))}
                       required
                       placeholder="Enter your name"
                       className="h-10 text-base border-none bg-transparent focus-visible:ring-0 px-1 font-bold text-slate-900 placeholder:text-slate-200"
