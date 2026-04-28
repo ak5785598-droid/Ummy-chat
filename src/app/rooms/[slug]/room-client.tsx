@@ -1406,7 +1406,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       .trim();
 
     const hasHindi = /[\u0900-\u097F]/.test(cleanText);
-    const lang = hasHindi ? 'hi-IN' : 'en-US';
+    // Use hi-IN for Devanagari, and en-IN for Hinglish/English (better Indian accent)
+    const lang = hasHindi ? 'hi-IN' : 'en-IN';
 
     // NATIVE CAPACITOR TTS
     if (Capacitor.isNativePlatform()) {
@@ -1464,7 +1465,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const processSpeech = () => {
     const cleanText = (window as any)._pendingSpeechText || "";
-    const lang = (window as any)._pendingSpeechLang || 'en-US';
+    const lang = (window as any)._pendingSpeechLang || 'en-IN';
     if (!cleanText) return;
 
     setIsAISpeaking(true);
