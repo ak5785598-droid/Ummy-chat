@@ -60,7 +60,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     return () => clearTimeout(timer);
   }, []);
 
-
+  if (!gameState) return null;
   const isJoined = gameState.players.some(p => p.uid === currentUser?.uid);
 
   if (!gameState.mode) {
