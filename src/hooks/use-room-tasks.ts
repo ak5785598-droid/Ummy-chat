@@ -73,6 +73,7 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
       current: currentVal,
       target: task.target,
       isCompleted: isNowComplete,
+      isClaimed: claimedTasks.includes(taskId), // This ensures yesterday's 'true' is overwritten to 'false' today
       updatedAt: serverTimestamp()
     }, { merge: true });
   };
