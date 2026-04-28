@@ -601,23 +601,57 @@ const formatCompactNumber = (num: number) => {
   return formatter.format(num);
 };
 
+// --- UPDATED GLOSSY 3D RICH LEVEL BADGE (MATCHING IMAGE VIBES) ---
 const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0">
+  <div className="relative flex items-center gap-0.5 bg-gradient-to-r from-[#FFD700] via-[#FF8C00] to-[#FF4500] pl-1 pr-2 py-[2px] rounded-full border border-white/40 shadow-[0_1px_2px_rgba(255,140,0,0.4)] overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
-    <StarIcon className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">{level}</span>
+    {/* Added top glossy reflection */}
+    <div className="absolute top-0 left-[10%] right-[10%] h-[40%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
+    
+    <div className="relative z-10 flex items-center justify-center">
+      <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
+        <defs>
+          <linearGradient id="richStarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#FFE066" />
+          </linearGradient>
+        </defs>
+        <path d="M12 1L15 9L23 9L16.5 14L19 22L12 17L5 22L7.5 14L1 9L9 9L12 1Z" fill="url(#richStarGrad)" />
+      </svg>
+    </div>
+    <span className="relative z-10 text-[10px] font-outfit font-black text-white leading-none italic drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] ml-[1px]">
+      {level}
+    </span>
   </div>
 );
 
-const StarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-);
 
-const CharmLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0">
-    <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
-    <Sparkles className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">{level}</span>
+
+// --- NEW GLOSSY 3D CHARM LEVEL BADGE (LEVEL 0 FIXED) ---
+const CharmLevelBadge = () => (
+  <div className="relative flex items-center gap-0.5 bg-gradient-to-r from-[#D57EEB] via-[#8A2387] to-[#D57EEB] pl-1 pr-2.5 py-[2px] rounded-full border border-white/30 shadow-[0_2px_4px_rgba(138,35,135,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)] overflow-hidden shrink-0">
+    {/* Top Gloss Reflection */}
+    <div className="absolute top-0 left-[10%] right-[10%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
+    
+    {/* Animation Shine */}
+    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] animate-shine"></div>
+    
+    <div className="relative z-10 flex items-center justify-center mr-[1px]">
+      <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
+        <defs>
+          <linearGradient id="charmSparkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#FFD1DC" />
+          </linearGradient>
+        </defs>
+        <path d="M12,2 L14.5,9 L22,9 L16,14 L18,22 L12,17 L6,22 L8,14 L2,9 L9.5,9 Z" fill="url(#charmSparkGrad)" />
+      </svg>
+    </div>
+
+    {/* Fixed Number 0 as per requirement */}
+    <span className="relative z-10 text-[10px] font-outfit font-black text-white leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      0
+    </span>
   </div>
 );
 
@@ -878,22 +912,125 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-if (!isOwnProfile) {
-  return (
-    <FullProfileDialog
-      open={true}
-      onOpenChange={(open) => {
-        if (!open) router.back();
-      }}
-      profile={profile}
-      stats={stats}
-      followData={followData}
-      onFollow={handleFollow}
-      isProcessingFollow={isProcessingFollow}
-      isOwnProfile={false}
-    />
-  );
-}
+
+  // If not Own Profile, show Public View (Standalone Premium Page)
+  if (!isOwnProfile) {
+     return (
+       <div className="fixed inset-0 bg-black z-[1000] overflow-hidden flex flex-col font-outfit">
+          {/* Main Content Wrapper (Mirroring FullProfileDialog UI but as a page) */}
+          <div className="w-full h-full overflow-y-auto no-scrollbar relative flex flex-col">
+            
+            {/* Top Banner Area */}
+            <div className="relative h-[30vh] w-full shrink-0 bg-slate-900 overflow-hidden">
+               <img 
+                 src={profile.avatarUrl} 
+                 className="h-full w-full object-cover" 
+                 alt="background-avatar" 
+               />
+               <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
+                 <button onClick={() => router.back()} className="h-10 w-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white active:scale-90 transition-all border border-white/20">
+                   <ChevronLeft className="h-6 w-6" />
+                 </button>
+               </div>
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 z-10" />
+            </div>
+
+            {/* Content Card */}
+            <div className="relative z-20 bg-gradient-to-b from-[#1a1a1a] via-[#0a0a0a] to-black rounded-t-[2rem] px-6 pt-0 pb-32 mt-[-40px] shadow-[0_-15px_40px_rgba(255,255,255,0.08)] border-t border-white/10 ring-1 ring-white/5 backdrop-blur-2xl min-h-screen">
+              
+              {/* Identity Part */}
+              <div className="flex flex-col items-center">
+                <div className="relative -mt-4 mb-1 z-30 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <Avatar className="h-28 w-28 border-4 border-[#222] shadow-2xl relative">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-4xl font-bold bg-slate-800 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+                </div>
+
+                <div className="text-center space-y-2.5 w-full">
+                  <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                    <h2 className="text-2xl font-bold text-white tracking-tight leading-none truncate max-w-[200px] drop-shadow-md">{profile.username}</h2>
+                    <span className="text-xl leading-none">🇮🇳</span>
+                    <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2">
+                    <RichLevelBadge level={profile.level?.rich || 1} />
+                    <CharmLevelBadge level={profile.level?.charm || 1} />
+                  </div>
+
+                  <div className="flex justify-center items-center gap-2 h-8">
+                    <div className="relative flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] px-3 pr-4 shadow-sm border border-white/20">
+                      <span className="text-[10px] font-bold text-white uppercase tracking-wider">ID: {displayID}</span>
+                    </div>
+                    {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
+                    {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Bar */}
+              <div className="flex justify-between items-center py-8 mb-0 mx-[-24px]">
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-xl font-bold text-white leading-none">{stats.fans}</span>
+                  <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Fans</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-xl font-bold text-white leading-none">{stats.following}</span>
+                  <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Following</span>
+                </div>
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-xl font-bold text-white leading-none">{stats.friends}</span>
+                  <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Friend</span>
+                </div>
+              </div>
+
+              {/* Action Buttons Section */}
+              <div className="flex gap-4 mt-6">
+                <button 
+                   onClick={handleFollow}
+                   disabled={isProcessingFollow}
+                   className="flex-1 h-14 bg-[#111] border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-[0_0_20px_rgba(236,72,153,0.2)] active:scale-95 transition-all"
+                >
+                   {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin text-pink-500" /> : (
+                     <>
+                       <Heart className={cn("h-5 w-5", followData && "fill-current")} />
+                       {followData ? "Joined" : "Follow"}
+                     </>
+                   )}
+                </button>
+                <button 
+                  onClick={() => router.push(`/messages/${profileId}`)}
+                  className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-[0_0_20px_rgba(59,130,246,0.3)] active:scale-95 transition-all border border-white/10"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Chat
+                </button>
+              </div>
+
+              {/* Signature Bio Section */}
+              <div className="mt-12 mb-4">
+                <h3 className="text-[9px] font-black text-white/80 uppercase tracking-widest px-1 opacity-70 mb-2">Signature Bio</h3>
+                <div className="px-1">
+                   <p className="text-[14px] font-medium text-white/70 leading-relaxed">
+                     {profile.bio || "Synchronized with the Ummy frequency."}
+                   </p>
+                </div>
+              </div>
+
+              {/* Inventory Placeholder - Will match tabs later */}
+              <div className="mt-8 py-12 flex flex-col items-center justify-center gap-2 border-t border-white/5">
+                <Sparkles className="h-8 w-8 text-white/20" />
+                <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Inventory Index Synchronized</p>
+              </div>
+
+            </div>
+          </div>
+       </div>
+     );
+  }
 
   // --- OWN PROFILE VIEW ---
   return (
@@ -1097,4 +1234,6 @@ if (!isOwnProfile) {
     </AppLayout>
   );
 }
+
+
 
