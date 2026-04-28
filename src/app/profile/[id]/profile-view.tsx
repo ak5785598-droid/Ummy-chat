@@ -67,12 +67,44 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 // --- NEW 3D GLOSSY OFFICIAL & SELLER TAGS ---
 
 const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[22px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2 border border-[#1DA1F2]/50 ml-1 overflow-hidden">
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-sm blur-[0.5px]" />
-    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 relative z-10 drop-shadow-sm mr-1" fill="none">
-       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
-    </svg>
-    <span className="relative z-10 text-[10px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
+  <div className="relative inline-flex items-center h-[22px] rounded-full bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.4),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2.5 border border-[#1DA1F2]/50 ml-1 overflow-hidden">
+    {/* Glossy Reflection */}
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
+    
+    {/* Winged Badge Icon matching your image style */}
+    <div className="relative z-10 flex items-center justify-center mr-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)] w-[16px] h-[16px]">
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <defs>
+          <linearGradient id="goldBadge" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFE770" />
+            <stop offset="50%" stopColor="#FDB931" />
+            <stop offset="100%" stopColor="#9E7302" />
+          </linearGradient>
+          <linearGradient id="whiteWing" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="#E2E8F0" />
+          </linearGradient>
+        </defs>
+        {/* Left Wings */}
+        <path d="M12 18 C6 18, 2 12, 2 12 C4 18, 8 24, 14 28 C10 24, 12 20, 12 18 Z" fill="url(#whiteWing)" />
+        <path d="M14 12 C8 12, 4 6, 4 6 C6 12, 10 18, 16 22 C12 18, 14 14, 14 12 Z" fill="url(#whiteWing)" opacity="0.8" />
+        
+        {/* Right Wings */}
+        <path d="M28 18 C34 18, 38 12, 38 12 C36 18, 32 24, 26 28 C30 24, 28 20, 28 18 Z" fill="url(#whiteWing)" />
+        <path d="M26 12 C32 12, 36 6, 36 6 C34 12, 30 18, 24 22 C28 18, 26 14, 26 12 Z" fill="url(#whiteWing)" opacity="0.8" />
+        
+        {/* Center Shield */}
+        <path d="M20 4 L28 10 L28 20 C28 26, 20 34, 20 34 C20 34, 12 26, 12 20 L12 10 Z" fill="url(#goldBadge)" />
+        
+        {/* Center Checkmark */}
+        <path d="M15 18 L19 22 L26 13" stroke="#0052CC" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    </div>
+
+    {/* Text */}
+    <span className="relative z-10 text-[11px] font-black italic text-white tracking-wide uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+      Official
+    </span>
   </div>
 );
 
@@ -573,7 +605,7 @@ const RichLevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-1 bg-gradient-to-r from-blue-400 via-cyan-500 to-blue-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
     <StarIcon className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.{level}</span>
+    <span className="text-[10px] font-outfit font-black text-white leading-none">{level}</span>
   </div>
 );
 
@@ -585,7 +617,7 @@ const CharmLevelBadge = ({ level }: { level: number }) => (
   <div className="flex items-center gap-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/20 -skew-x-[30deg] animate-shine"></div>
     <Sparkles className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.{level}</span>
+    <span className="text-[10px] font-outfit font-black text-white leading-none">{level}</span>
   </div>
 );
 
