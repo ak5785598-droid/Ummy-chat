@@ -20,7 +20,7 @@ import {
  Heart,
  Home
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { MessagesViewGlossy } from './messages-view-glossy';
 import { 
@@ -494,6 +494,20 @@ export default function MessagesView() {
  const [showRequests, setShowRequests] = useState(false);
  const [activeChatId, setActiveChatId] = useState<string | null>(null);
  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+ const searchParams = useSearchParams();
+ const userIdFromUrl = searchParams.get('userId');
+ const { userProfile: otherUserFromUrl } = useUserProfile(userIdFromUrl || undefined);
+
+ // 🔄 AUTO-SYNC: If coming from a profile page, open the chat immediately
+ useEffect(() => {
+   if (userIdFromUrl && otherUserFromUrl && user?.uid) {
+     const participantIds = [user.uid, userIdFromUrl].sort();
+     const chatId = participantIds.join('_');
+     
+     setActiveChatId(chatId);
+     setSelectedRecipient(otherUserFromUrl);
+   }
+ }, [userIdFromUrl, otherUserFromUrl, user?.uid]);
 
  // 🔔 RED DOT SYNC: Check for pending requests
  const requestsQuery = useMemoFirebase(() => {

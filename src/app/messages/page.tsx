@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { Loader } from 'lucide-react';
 import { UmmyLogoIcon } from '@/components/icons';
+import { Suspense } from 'react';
 
 /**
  * THE MESSAGES GATEWAY.
@@ -27,7 +28,9 @@ const MessagesView = dynamic(() => import('./messages-view'), {
 export default function MessagesGatewayPage() {
   return (
     <main className="min-h-screen bg-[#f3e5f5]">
-      <MessagesGateway />
+      <Suspense fallback={null}>
+        <MessagesGateway />
+      </Suspense>
     </main>
   );
 }

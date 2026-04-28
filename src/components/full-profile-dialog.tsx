@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ChevronLeft, 
   Heart, 
@@ -129,6 +130,7 @@ export function FullProfileDialog({
   isOwnProfile
 }: FullProfileDialogProps) {
   const [api, setApi] = useState<CarouselApi>();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const images = profile?.spaceImages || [];
 
