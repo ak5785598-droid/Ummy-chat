@@ -1,7 +1,8 @@
 'use client';
 
 import { Capacitor } from '@capacitor/core';
-import { TextToSpeech } from '@capacitor-community/text-to-speech';import { useState, useEffect, useRef, useMemo } from 'react';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Mic,

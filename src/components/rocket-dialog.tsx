@@ -91,6 +91,10 @@ export function RocketDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[385px] p-0 bg-[#050810] border-none rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Rocket Status</DialogTitle>
+          <DialogDescription>View the current rocket evolution level and progress in {roomName}.</DialogDescription>
+        </DialogHeader>
         
         {/* HEADER AREA - BLUE SPACE THEME */}
         <div className="relative h-[280px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">

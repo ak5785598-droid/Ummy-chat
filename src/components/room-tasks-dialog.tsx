@@ -103,6 +103,10 @@ export function RoomTasksDialog({
         hideClose={true}
         className="w-full h-full max-w-none bg-gradient-to-br from-[#1c011e] via-[#4d0246] to-[#0d011c] border-none text-white rounded-none p-0 overflow-hidden shadow-none z-[2000]"
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Room Missions</DialogTitle>
+          <DialogDescription>Complete daily missions to earn rewards in the room jar.</DialogDescription>
+        </DialogHeader>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none" />
         
         {/* Floating Back Button (Top Left) */}
