@@ -467,14 +467,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return highlightIdx === idx;
  };
 
- if (isLoading) {
-    return (
-        <div className="h-[66dvh] my-auto w-full flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
-            <div className="w-12 h-12 border-4 border-gray-100 border-t-orange-500 rounded-full animate-spin mb-4 shadow-sm" />
-            <h2 className="text-2xl font-black text-gray-800 tracking-widest uppercase">Ummy</h2>
-        </div>
-    );
- }
 
  return (
   <motion.div 

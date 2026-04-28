@@ -10,17 +10,7 @@ import { Loader } from 'lucide-react';
  */
 const DiscoverView = dynamic(() => import('./discover-view'), {
   ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 z-[9999] bg-[#FF91B5] flex flex-col items-center justify-center gap-4">
-      <div className="relative">
-        <div className="h-16 w-16 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-        <Loader className="absolute inset-0 m-auto h-6 w-6 text-white animate-pulse" />
-      </div>
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/60">
-        Syncing Discovery Frequencies...
-      </p>
-    </div>
-  )
+  loading: () => null
 });
 
 export default function DiscoverGatewayPage() {

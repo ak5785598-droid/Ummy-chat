@@ -136,26 +136,7 @@ export default function RoomPage({ params }: { params: Promise<{ slug: string }>
  }
 
  if (isUserLoading || isBanLoading || (!!roomDocRef && isDocLoading) || !isMounted) {
-  return (
-   <AppLayout fullScreen>
-    <div className="flex h-[100dvh] w-full flex-col items-center justify-center space-y-4 bg-black relative">
-     
-     <div className="absolute inset-0 z-0">
-       {(activeBg && isMounted) ? (
-        <Image src={activeBg} fill className="object-cover opacity-60 animate-in fade-in duration-1000" alt="Loading" priority unoptimized />
-       ) : (
-        <div className="absolute inset-0 bg-ummy-gradient opacity-20" />
-       )}
-       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-     </div>
-
-     <Loader className="h-10 w-10 animate-spin text-primary relative z-10" />
-     <p className="text-[10px] text-white/60 animate-pulse font-bold uppercase tracking-wider relative z-10">
-      Tuning Frequency...
-     </p>
-    </div>
-   </AppLayout>
-  );
+  return null;
  }
 
  if (!activeRoom) {

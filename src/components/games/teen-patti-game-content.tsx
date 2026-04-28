@@ -159,14 +159,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     else router.back();
   };
 
-  if (isLaunching) {
-    return (
-      <div className="h-full w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 min-h-[400px]">
-        <UmmyLogoIcon className="h-20 w-20 animate-bounce" />
-        <h1 className="text-5xl font-bold text-yellow-500 uppercase tracking-tight">Teen Patti</h1>
-      </div>
-    );
-  }
 
   const winnerBanner = winnerId ? FACTIONS.find(f => f.id === winnerId)?.bannerUrl : null;
 

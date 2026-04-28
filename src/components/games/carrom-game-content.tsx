@@ -60,26 +60,6 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     return () => clearTimeout(timer);
   }, []);
 
-  if (isSplashing) {
-    return (
-      <div className="h-full w-full bg-[#01091A] flex flex-col items-center justify-center space-y-8 min-h-[400px]">
-        <div className="relative h-48 w-48 animate-pulse shadow-[0_0_100px_rgba(59,130,246,0.3)] rounded-full flex items-center justify-center">
-            <Trophy className="h-24 w-24 text-blue-500 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]" />
-        </div>
-        <div className="flex flex-col items-center gap-2">
-           <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase drop-shadow-2xl">Carrom Arena</h1>
-           <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
-             <motion.div 
-               initial={{ width: 0 }}
-               animate={{ width: "100%" }}
-               transition={{ duration: 2.5 }}
-               className="h-full bg-blue-500"
-             />
-           </div>
-        </div>
-      </div>
-    );
-  }
 
   const isJoined = gameState.players.some(p => p.uid === currentUser?.uid);
 

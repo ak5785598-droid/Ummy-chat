@@ -155,14 +155,7 @@ export default function DiscoverView() {
         </header>
 
         <main className="flex-1 overflow-y-auto no-scrollbar relative z-20 px-2 py-4 pb-40">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
-              <div className="relative">
-                <Loader className="h-10 w-10 text-slate-200 animate-spin" />
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Syncing Frequencies...</p>
-            </div>
-          ) : (
+          {isLoading ? null : (
             <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
               {activeMoments?.map((moment: any, idx: number) => (
                 <GridMomentCard 

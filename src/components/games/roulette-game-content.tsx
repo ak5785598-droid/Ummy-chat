@@ -246,22 +246,6 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
     else router.back();
   };
 
-  if (isLaunching) {
-   const loadingBg = (gameData as any)?.loadingBackgroundUrl;
-   return (
-    <div 
-     className="h-full w-full bg-[#1a0a2e] flex flex-col items-center justify-center space-y-6 font-sans text-white relative overflow-hidden min-h-[400px]"
-     style={loadingBg ? { backgroundImage: `url(${loadingBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-    >
-     {loadingBg && <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />}
-     <div className="relative z-10 flex flex-col items-center justify-center space-y-6">
-       <div className="text-8xl animate-bounce">🎡</div>
-       <h1 className="text-6xl font-bold text-yellow-500 uppercase tracking-tight drop-shadow-2xl">Roulette</h1>
-       <p className="text-white/40 uppercase tracking-wider text-[10px] animate-pulse">Synchronizing Wheel...</p>
-     </div>
-    </div>
-   );
-  }
 
   const winningNumberBadge = winningNumber !== null ? (
    <div className={cn(

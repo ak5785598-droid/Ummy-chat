@@ -151,7 +151,6 @@ export function ChessGameContent({ isOverlay, roomId: propsRoomId, onClose }: Ch
     </button>
   );
 
-  if (isLoading) return <div className="h-40 flex items-center justify-center bg-[#061635] text-white text-xs">Loading Arena...</div>;
 
   return (
     <motion.div 

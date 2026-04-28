@@ -118,7 +118,7 @@ export default function FamilyHQPage() {
     }
   };
 
-  if (isFamilyLoading) return <AppLayout><div className="flex h-screen items-center justify-center bg-ummy-gradient"><Loader className="animate-spin text-primary h-8 w-8" /></div></AppLayout>;
+  if (isFamilyLoading) return null;
   if (!family) return <AppLayout><div className="flex h-screen items-center justify-center bg-ummy-gradient text-white">Family Registry Not Found</div></AppLayout>;
 
   return (

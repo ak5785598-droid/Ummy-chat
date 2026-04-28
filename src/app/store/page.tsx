@@ -364,7 +364,7 @@ export default function StorePage() {
     setPreviewItem(null);
   };
 
-  if (isProfileLoading) return <div className="flex min-h-screen items-center justify-center bg-black"><Loader className="animate-spin text-white" /></div>;
+  if (isProfileLoading) return null;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">

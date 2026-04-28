@@ -143,13 +143,6 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
     else router.back();
   };
 
-  if (isLoading && !gameState) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-[#1A0B2E]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
 
   return (
     <motion.div 
@@ -201,47 +194,6 @@ export function LudoGameContent({ isOverlay, roomId: propRoomId, onClose }: Ludo
 
       <main className="flex-1 relative flex flex-col items-center justify-start p-1.5 pt-0.5 overflow-y-auto">
         
-        {/* --- SPLASH SCREEN VIEW --- */}
-        <AnimatePresence>
-          {isSplashing && (
-            <motion.div 
-              exit={{ opacity: 0, scale: 1.1 }}
-              className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#1A0B2E]/40 backdrop-blur-3xl"
-            >
-              <div className="relative w-48 h-48 mb-6 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                <img 
-                  src="/images/premium_3d_ludo_game_icon_1775544459753.png" 
-                  className="w-full h-full object-contain"
-                  alt="Ludo Master"
-                />
-              </div>
-              <div className="flex gap-1 mb-8">
-                {['L', 'U', 'D', 'O'].map((char, i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 + (i * 0.1) }}
-                    className={cn(
-                      "text-5xl font-black italic tracking-tighter drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]",
-                      i === 0 && "text-red-500", i === 1 && "text-yellow-400", i === 2 && "text-blue-500", i === 3 && "text-green-500"
-                    )}
-                  >
-                    {char}
-                  </motion.span>
-                ))}
-              </div>
-              <div className="w-64 h-2 bg-white/5 rounded-full border border-white/10 overflow-hidden relative">
-                 <motion.div 
-                   initial={{ width: "0%" }}
-                   animate={{ width: "100%" }}
-                   transition={{ duration: 4, ease: "easeInOut" }}
-                   className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]"
-                 />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* --- LOBBY / JOIN VIEW --- */}
         {/* Show this if user hasn't joined YET. This satisfies "Har bar Join dikhe" */}

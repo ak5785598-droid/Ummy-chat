@@ -265,10 +265,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       <div className="flex-1" onClick={onClose} />
 
       <AnimatePresence mode="wait">
-        {isLoading ? (
-          <LoadingPage key="loader" />
-        ) : (
-          <motion.div 
+        <motion.div 
             key="game"
             drag
             dragControls={dragControls}
@@ -512,7 +509,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
               </motion.div>
             )}
           </motion.div>
-        )}
       </AnimatePresence>
     </div>
   );
