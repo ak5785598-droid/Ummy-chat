@@ -445,7 +445,10 @@ export function FullProfileDialog({
                  </>
                )}
              </button>
-             <button className="flex-1 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all">
+             <button 
+               onClick={() => router.push(`/messages?userId=${profile?.id || profile?.uid}`)}
+               className="flex-1 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all"
+             >
                <MessageCircle className="h-5 w-5" />
                Chat
              </button>
