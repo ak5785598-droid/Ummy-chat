@@ -221,7 +221,10 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
   addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), messageData);
 
+  const participantIds = [currentUser.uid, otherUser.id].sort();
   setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
+   id: chatId,
+   participantIds,
    lastMessage: imageUrl ? 'Sent an image' : text.trim(),
    lastSenderId: currentUser.uid,
    lastMessageReadBy: [currentUser.uid], // Reset read status to only sender
@@ -506,8 +509,16 @@ export default function MessagesView() {
      
      setActiveChatId(chatId);
      setSelectedRecipient(otherUserFromUrl);
+     
+     // Initialize chat document if it doesn't exist so it appears in lists
+     const chatRef = doc(firestore, 'privateChats', chatId);
+     setDocumentNonBlocking(chatRef, {
+       id: chatId,
+       participantIds,
+       updatedAt: serverTimestamp()
+     }, { merge: true });
    }
- }, [userIdFromUrl, otherUserFromUrl, user?.uid]);
+ }, [userIdFromUrl, otherUserFromUrl, user?.uid, firestore]);
 
  // 🔔 RED DOT SYNC: Check for pending requests
  const requestsQuery = useMemoFirebase(() => {

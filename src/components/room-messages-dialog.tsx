@@ -135,7 +135,10 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
 
   addDocumentNonBlocking(collection(firestore, 'privateChats', chatId, 'messages'), messageData);
 
+  const participantIds = [currentUser.uid, otherUser.id].sort();
   setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
+   id: chatId,
+   participantIds,
    lastMessage: imageUrl ? 'Sent an image' : text.trim(),
    lastSenderId: currentUser.uid,
    updatedAt: serverTimestamp()
