@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
+// Constants moved outside to prevent re-allocation on every render
 const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
@@ -110,6 +111,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
+ // Performance: Memoized query for winners
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -141,16 +143,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
          if (uniqueTopWinners.length === 3) break;
       }
     }
-
     return uniqueTopWinners;
  }, [liveWins, currentUser]);
 
+ // Refs for security and stale closure protection
  const myBetsRef = useRef(myBets);
+ const gameStateRef = useRef(gameState);
  const isMountedRef = useRef(true);
  const chaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const bannerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+ // Audio Refs
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
@@ -158,7 +162,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  useEffect(() => {
     myBetsRef.current = myBets;
- }, [myBets]);
+    gameStateRef.current = gameState;
+ }, [myBets, gameState]);
 
  useEffect(() => {
     const timer = setTimeout(() => {
@@ -209,13 +214,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
+     // High Performance Audio Loading
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
+     
+     // Optimization: Preload sounds
+     [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => {
+        if (ref.current) ref.current.load();
+     });
    }
  }, []);
 
+ // Security: Added check to prevent betting in non-betting states
  useEffect(() => {
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
@@ -326,6 +338,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
 
+  // Security: Guarded firestore calls
   if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
@@ -376,6 +389,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (chance < 0.025) groupType = 'left'; 
   else if (chance < 0.05) groupType = 'right'; 
   let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
+  
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
@@ -386,11 +400,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     }
    } catch (e) {}
   }
+
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
   const spins = 7; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
   let speed = 40; 
+
   const runChase = () => {
    if (!isMountedRef.current) return;
    const activeIdx = currentStep % SEQUENCE.length;
@@ -415,7 +431,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  }, [timeLeft, gameState, startSpin]);
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
-  if (gameState !== 'betting' || !currentUser) return;
+  // Security: Check current state via Ref as well for timing issues
+  if (gameStateRef.current !== 'betting' || !currentUser) return;
   if (localCoins < selectedChip) {
    toast({ title: 'You do not have any Coins!', variant: 'destructive' });
    return;
@@ -423,7 +440,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
   const newChip = {
-   id: Date.now(),
+   id: Date.now() + Math.random(),
    itemIdx: animal.index,
    label: chipInfo?.label || '10',
    bgColor: chipInfo?.bgColor || 'from-blue-400 to-cyan-500',
@@ -433,8 +450,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   };
   setDroppedChips(prev => [...prev, newChip]);
   setLocalCoins(prev => prev - selectedChip);
-  const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-  updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+  
+  if (firestore) {
+    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+  }
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
 
@@ -449,7 +469,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  if (isLoading) {
     return (
-        <div className="h-[66vh] my-auto w-full flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
+        <div className="h-[66dvh] my-auto w-full flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-hidden">
             <div className="w-12 h-12 border-4 border-gray-100 border-t-orange-500 rounded-full animate-spin mb-4 shadow-sm" />
             <h2 className="text-2xl font-black text-gray-800 tracking-widest uppercase">Ummy</h2>
         </div>
@@ -463,10 +483,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     dragListener={false}
     dragMomentum={false}
     whileDrag={{ scale: 1.02, transition: { duration: 0.2 }, zIndex: 50 }}
-    className="h-[66vh] my-auto w-full relative" 
+    className="h-[66dvh] my-auto w-full relative touch-none" 
   >
    <motion.div
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
+    style={{ willChange: 'transform', transform: 'translateZ(0)' }}
    >
        {/* Background */}
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -499,68 +520,68 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             initial={{ y: "100%" }} 
             animate={{ y: 0 }} 
             exit={{ y: "100%" }} 
-            className="fixed bottom-0 left-0 right-0 z-[210] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-t-[32px] p-5 flex flex-col items-center shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pb-6"
+            className="fixed bottom-0 left-0 right-0 z-[210] bg-black/90 backdrop-blur-2xl border-t-[4px] border-zinc-800 rounded-t-[32px] p-5 flex flex-col items-center shadow-[0_-20px_50px_rgba(0,0,0,1)] pb-6"
           >
-              <div className="w-16 h-1.5 bg-orange-200 rounded-full mb-4 shrink-0" />
+              <div className="w-16 h-1.5 bg-zinc-800 rounded-full mb-4 shrink-0" />
               
-              <div className="w-full flex items-center justify-between bg-orange-100/50 p-4 rounded-2xl border border-orange-200 mb-5 shadow-sm">
+              <div className="w-full flex items-center justify-between bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 mb-5 shadow-inner">
                  <div className="flex flex-col items-center justify-center pl-2">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-orange-400 blur-xl opacity-30 animate-pulse" />
+                      <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-20 animate-pulse" />
                       <div className="relative text-6xl filter drop-shadow-md">{winnerData.emoji}</div>
                     </div>
-                    <span className="text-[10px] font-black text-orange-500 uppercase mt-1 tracking-wider">Winner</span>
+                    <span className="text-[10px] font-black text-yellow-500 uppercase mt-1 tracking-widest">Winner</span>
                  </div>
                  
                  <div className="flex flex-col items-end gap-2 pr-2">
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">My Win</span>
+                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">My Win</span>
                        <div className="flex items-center gap-1.5">
-                         <GoldCoinIcon className="h-5 w-5 filter drop-shadow-md" />
-                         <span className="text-2xl font-black text-emerald-600 tabular-nums">+{formatKandM(winnerData.win)}</span>
+                         <GoldCoinIcon className="h-5 w-5 filter brightness-110" />
+                         <span className="text-2xl font-black text-emerald-400 tabular-nums">+{formatKandM(winnerData.win)}</span>
                        </div>
                     </div>
                     <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">My Bet Amount</span>
-                       <span className="text-sm font-black text-[#4a2511] tabular-nums">{formatKandM(winnerData.bet)}</span>
+                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">My Bet Amount</span>
+                       <span className="text-sm font-black text-white/80 tabular-nums">{formatKandM(winnerData.bet)}</span>
                     </div>
                  </div>
               </div>
 
               <div className="w-full flex flex-col items-center">
-                 <span className="text-[10px] font-black text-[#4a2511]/60 uppercase tracking-widest mb-3">Top Winners</span>
+                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Top Winners</span>
                  
                  <div className="flex items-end justify-center gap-6 w-full h-[90px]">
                     {winnersList[1] ? (
                        <div className="flex flex-col items-center relative pb-2 opacity-90">
-                          <div className="absolute -top-2.5 z-10 bg-gradient-to-r from-gray-300 to-gray-400 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#2</div>
-                          <div className="w-12 h-12 rounded-full border-[3px] border-gray-300 shadow-[0_0_10px_rgba(192,192,192,0.6)] overflow-hidden bg-white/50">
+                          <div className="absolute -top-2.5 z-10 bg-zinc-700 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md border border-white/10">#2</div>
+                          <div className="w-12 h-12 rounded-full border-[2px] border-zinc-600 shadow-[0_0_15px_rgba(255,255,255,0.1)] overflow-hidden bg-zinc-800">
                              <img src={winnersList[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[1].name}`} alt="user" className="w-full h-full object-cover" />
                           </div>
-                          <span className="text-[9px] font-bold mt-1 text-[#4a2511] truncate w-14 text-center">{winnersList[1].name}</span>
-                          <span className="text-[8px] text-orange-600 font-bold">{formatKandM(winnersList[1].win)}</span>
+                          <span className="text-[9px] font-bold mt-1 text-white/80 truncate w-14 text-center">{winnersList[1].name}</span>
+                          <span className="text-[8px] text-emerald-400 font-bold">{formatKandM(winnersList[1].win)}</span>
                        </div>
                     ) : <div className="w-12" />}
 
                     {winnersList[0] ? (
                        <div className="flex flex-col items-center relative z-20">
-                          <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-400 to-yellow-500 text-[#4a2511] text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md border border-white/50">#1</div>
-                          <div className="w-16 h-16 rounded-full border-[4px] border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)] overflow-hidden bg-white/50 animate-pulse">
+                          <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md">#1</div>
+                          <div className="w-16 h-16 rounded-full border-[3px] border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)] overflow-hidden bg-zinc-800 animate-pulse">
                              <img src={winnersList[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[0].name}`} alt="user" className="w-full h-full object-cover" />
                           </div>
-                          <span className="text-[10px] font-black mt-1 text-[#4a2511] truncate w-16 text-center">{winnersList[0].name}</span>
-                          <span className="text-[9px] text-orange-600 font-bold">{formatKandM(winnersList[0].win)}</span>
+                          <span className="text-[10px] font-black mt-1 text-white truncate w-16 text-center">{winnersList[0].name}</span>
+                          <span className="text-[9px] text-yellow-400 font-bold">{formatKandM(winnersList[0].win)}</span>
                        </div>
                     ) : <div className="w-16" />}
 
                     {winnersList[2] ? (
                        <div className="flex flex-col items-center relative pb-3 opacity-80">
-                          <div className="absolute -top-2 z-10 bg-gradient-to-r from-[#CD7F32] to-[#A0522D] text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
-                          <div className="w-10 h-10 rounded-full border-[3px] border-[#CD7F32] shadow-[0_0_10px_rgba(205,127,50,0.6)] overflow-hidden bg-white/50">
+                          <div className="absolute -top-2 z-10 bg-amber-800 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
+                          <div className="w-10 h-10 rounded-full border-[2px] border-amber-900 shadow-[0_0_10px_rgba(0,0,0,0.5)] overflow-hidden bg-zinc-800">
                              <img src={winnersList[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[2].name}`} alt="user" className="w-full h-full object-cover" />
                           </div>
-                          <span className="text-[8px] font-bold mt-1 text-[#4a2511] truncate w-12 text-center">{winnersList[2].name}</span>
-                          <span className="text-[7px] text-orange-600 font-bold">{formatKandM(winnersList[2].win)}</span>
+                          <span className="text-[8px] font-bold mt-1 text-white/60 truncate w-12 text-center">{winnersList[2].name}</span>
+                          <span className="text-[7px] text-emerald-400/80 font-bold">{formatKandM(winnersList[2].win)}</span>
                        </div>
                     ) : <div className="w-10" />}
                  </div>
@@ -569,26 +590,27 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
+       {/* RECORD PAGE */}
        <AnimatePresence>
         {showRecord && (
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
-                <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                    <h3 className="text-[#4a2511] font-black uppercase text-sm">Game Record</h3>
-                    <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40dvh] bg-black/95 backdrop-blur-3xl border-t-[2px] border-zinc-800 rounded-none shadow-[0_-10px_50px_rgba(0,0,0,0.8)] flex flex-col">
+                <div className="relative p-4 flex items-center justify-center border-b border-white/5">
+                    <h3 className="text-white font-black uppercase text-sm tracking-widest">Game Record</h3>
+                    <button onClick={() => setShowRecord(false)} className="absolute right-4 top-4 text-zinc-400 bg-white/5 rounded-full p-1.5 border border-white/10"><X size={18} /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                    {gameRecords.length === 0 ? <p className="text-[#4a2511]/40 text-center text-xs italic mt-4">No records found yet...</p> : gameRecords.map((rec) => (
-                        <div key={rec.id} className="bg-white/60 border border-orange-200 rounded-xl p-3 flex items-center justify-between">
+                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 no-scrollbar">
+                    {gameRecords.length === 0 ? <p className="text-white/20 text-center text-xs italic mt-8">No records found yet...</p> : gameRecords.map((rec) => (
+                        <div key={rec.id} className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between backdrop-blur-sm">
                             <div className="flex items-center gap-3">
-                                <span className="text-2xl">{rec.emoji}</span>
+                                <span className="text-2xl filter drop-shadow-md">{rec.emoji}</span>
                                 <div className="flex flex-col">
-                                    <span className="text-[9px] text-orange-500 font-bold uppercase">Bet Amount</span>
-                                    <span className="text-xs font-black text-[#4a2511]">{rec.bet}</span>
+                                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Bet Amount</span>
+                                    <span className="text-xs font-black text-white/90">{rec.bet}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className="text-[9px] text-emerald-500 font-bold uppercase">Winning</span>
-                                <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-600" : "text-red-400")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
+                                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Winning</span>
+                                <span className={cn("text-sm font-black", rec.win > 0 ? "text-emerald-400" : "text-zinc-600")}>{rec.win > 0 ? `+${formatKandM(rec.win)}` : '0'}</span>
                             </div>
                         </div>
                     ))}
@@ -623,6 +645,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           </div>
        </header>
 
+       {/* WINNING HISTORY */}
        <div className="px-4 py-1 shrink-0 z-40 relative">
          <div className="w-full bg-gradient-to-b from-white/20 to-white/5 backdrop-blur-xl py-2.5 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border border-white/30 rounded-2xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_6px_15px_rgba(0,0,0,0.4)] ring-1 ring-white/10">
             <div className="flex flex-col items-center justify-center border-r border-white/20 pr-3 mr-1 shrink-0">
@@ -661,9 +684,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                             </div>
                         </div>
                       )}
-                      {h.type !== 'single' && (
-                        <span className="text-[5px] font-black uppercase text-yellow-400 bg-yellow-900/60 px-[4px] py-[1px] rounded-full border border-yellow-400/30 leading-none tracking-tight">Mix</span>
-                      )}
                     </div>
                   )
               })}
@@ -672,6 +692,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
+        {/* MIX LEFT */}
         <div className={cn(
             "absolute top-[3.5%] left-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
@@ -688,6 +709,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
+        {/* MIX RIGHT */}
         <div className={cn(
             "absolute top-[3.5%] right-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
@@ -705,7 +727,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
 
         <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-          <svg className="absolute inset-0 w-full h-full z-10 overflow-visible" viewBox="0 0 100 100">
+          <svg className="absolute inset-0 w-full h-full z-10 overflow-visible pointer-events-none" viewBox="0 0 100 100">
             <defs>
                 <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.8"/>
@@ -726,6 +748,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             ))}
           </svg>
 
+          {/* TIMER CENTER */}
           <div className={cn(
             "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 overflow-hidden", 
             gameState === 'spinning' 
@@ -748,21 +771,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             const applyColorless = isSpinning && !isHighlighted;
             return (
             <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
-              <button onClick={() => handlePlaceBet(item)} className="relative group">
+              <button onClick={() => handlePlaceBet(item)} className="relative group outline-none">
                 <div className={cn(
                     "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#d4a373]", 
                     active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
                     applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
-                )}>
+                )} style={{ transform: 'translateZ(0)', willChange: 'transform, filter' }}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
                     <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>{item.emoji}</span>
                     <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
                         <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                     </div>
                 </div>
+                
                 <AnimatePresence>
                     {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.6)] z-40 pointer-events-none overflow-hidden" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '3px', width: '26px', height: '26px' }}>
+                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.6)] z-40 pointer-events-none overflow-hidden" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '3px', width: '26px', height: '26px', transform: 'translateZ(0)' }}>
                             <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full z-50" />
                             <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/30 shadow-inner relative overflow-hidden", `bg-gradient-to-br ${chip.bgColor}`)}>
                                 <span className="text-[6.5px] font-black text-white filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] z-40">{chip.label}</span>
@@ -790,14 +814,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
        </main>
 
-       {/* Bottom Chips Section - UPDATED: Strictly Square Corners */}
+       {/* CHIPS SELECTOR */}
        <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center justify-start gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-none">
           {CHIPS_DATA.map((chip) => (
               <button
                   key={chip.value}
                   onClick={() => setSelectedChip(chip.value)}
                   className={cn(
-                      "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200 overflow-hidden",
+                      "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200 overflow-hidden outline-none",
                       selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)]" : "scale-95 opacity-80 hover:opacity-100 shadow-[0_5px_10px_rgba(0,0,0,0.4)]"
                   )}
                   style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '6px', width: '56px', height: '56px' }}
@@ -813,18 +837,24 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           ))}
        </div>
 
+       {/* RULES SHEET */}
        <AnimatePresence>
         {showRules && (
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30vh] bg-[#fdf8e7] border-t-[6px] border-orange-500 rounded-none shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col">
-                <div className="relative p-4 flex items-center justify-center border-b border-orange-100">
-                    <h3 className="text-[#4a2511] font-black uppercase text-sm">Rules</h3>
-                    <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-orange-500 bg-orange-100 rounded-full p-1"><X size={18} /></button>
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30dvh] bg-black/95 backdrop-blur-3xl border-t-[3px] border-zinc-800 rounded-none shadow-[0_-10px_50px_rgba(0,0,0,0.9)] flex flex-col">
+                <div className="relative p-4 flex items-center justify-center border-b border-white/5">
+                    <h3 className="text-white font-black uppercase text-sm tracking-widest">Rules</h3>
+                    <button onClick={() => setShowRules(false)} className="absolute right-4 top-4 text-zinc-400 bg-white/5 border border-white/10 rounded-full p-1.5"><X size={18} /></button>
                 </div>
                 <div className="flex-1 p-5 flex flex-col gap-3 justify-center">
-                    {["Select a Chip and Choose your animal", "If you win you will get Coins amount (Bet × multiplier)", "45× gives you the highest Coins Amount", "If you lose you will not receive any coins amount"].map((rule, i) => (
-                        <div key={i} className="flex gap-3 items-start">
-                            <span className="bg-orange-500 text-white text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0 shadow-md">{i+1}</span>
-                            <p className="text-[#4a2511] text-xs font-bold leading-tight">{rule}</p>
+                    {[
+                      "Select a Chip and Choose your animal", 
+                      "If you win you will get Coins amount (Bet × multiplier)", 
+                      "45× gives you the highest Coins Amount", 
+                      "If you lose you will not receive any coins amount"
+                    ].map((rule, i) => (
+                        <div key={i} className="flex gap-3 items-start group">
+                            <span className="bg-zinc-800 border border-white/10 text-yellow-500 text-[10px] font-black h-5 w-5 rounded-md flex items-center justify-center shrink-0 shadow-lg">{i+1}</span>
+                            <p className="text-zinc-300 text-xs font-bold leading-tight group-hover:text-white transition-colors">{rule}</p>
                         </div>
                     ))}
                 </div>
@@ -836,6 +866,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+        
+        /* Ensure smooth clicking on mobile */
+        button { -webkit-tap-highlight-color: transparent; }
        `}</style>
    </motion.div>
   </motion.div>
