@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@capacitor-community/text-to-speech':
+        specifier: ^6.1.0
+        version: 6.1.0(@capacitor/core@7.0.0)
       '@capacitor-firebase/authentication':
         specifier: 7.1.0
         version: 7.1.0(@capacitor/core@7.0.0)(firebase@11.2.0)
@@ -258,6 +261,11 @@ packages:
 
   '@bufbuild/protobuf@2.11.0':
     resolution: {integrity: sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==}
+
+  '@capacitor-community/text-to-speech@6.1.0':
+    resolution: {integrity: sha512-K9kbQm7BEkUGhZQYMrPaLfHTbOjQPtXZyQTtZxR+lNJyl1pbSFWwRmK3PCIa5C5M2HLf3iPgj/vTaMvMxlk1Ag==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor-firebase/authentication@7.1.0':
     resolution: {integrity: sha512-vPcWd3pjiMNF6qEylR9zxko/BnHT1MD9abbsu421r+grkKndqSvnC3THJQ38yXhk9opoZEV+FlvjocvwyiV8iw==}
@@ -5827,6 +5835,10 @@ snapshots:
   '@babel/runtime@7.29.2': {}
 
   '@bufbuild/protobuf@2.11.0': {}
+
+  '@capacitor-community/text-to-speech@6.1.0(@capacitor/core@7.0.0)':
+    dependencies:
+      '@capacitor/core': 7.0.0
 
   '@capacitor-firebase/authentication@7.1.0(@capacitor/core@7.0.0)(firebase@11.2.0)':
     dependencies:

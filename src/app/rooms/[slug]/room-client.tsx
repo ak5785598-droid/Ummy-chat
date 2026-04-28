@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Mic,
@@ -1393,11 +1394,46 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // AI VOICE ENGINE (TTS) logic
 
-  const speakAIText = (text: string) => {
-    if (!isAIVoiceEnabled || isSpeakerMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+  const speakAIText = async (text: string) => {
+    if (!isAIVoiceEnabled || isSpeakerMuted || typeof window === 'undefined') return;
+
+    const cleanText = text
+      .replace(/\[CMD:.*?\]/g, '')
+      .replace(/UMMY/gi, 'Ummy') // Normal case for smooth reading
+      .replace(/COINS/gi, 'Coins') 
+      .replace(/JAR/gi, 'Jar') 
+      .replace(/TASK/gi, 'Task')
+      .replace(/\s([A-Z])\s/g, (match: string, p1: string) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
+      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
+
+    const hasHindi = /[\u0900-\u097F]/.test(cleanText);
+    const lang = hasHindi ? 'hi-IN' : 'en-US';
+
+    // NATIVE CAPACITOR TTS
+    if (Capacitor.isNativePlatform()) {
+      try {
+        setIsAISpeaking(true);
+        await TextToSpeech.speak({
+          text: cleanText,
+          lang: lang,
+          rate: 1.0,
+          pitch: 1.0,
+          volume: 1.0,
+        });
+        setIsAISpeaking(false);
+      } catch (e) {
+        console.error("Native TTS Failed:", e);
+        setIsAISpeaking(false);
+      }
+      return;
+    }
+
+    // BROWSER TTS FALLBACK
+    if (!window.speechSynthesis) return;
 
     // Store text for the post-handshake process
-    (window as any)._pendingSpeechText = text;
+    (window as any)._pendingSpeechText = cleanText;
+    (window as any)._pendingSpeechLang = lang;
 
     // AUDIO CONTEXT CHECK: Ensure it's active
     if (audioContextRef.current?.state === 'suspended') {
@@ -1428,27 +1464,18 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   };
 
   const processSpeech = () => {
-    const text = (window as any)._pendingSpeechText || "";
-    if (!text) return;
+    const cleanText = (window as any)._pendingSpeechText || "";
+    const lang = (window as any)._pendingSpeechLang || 'en-US';
+    if (!cleanText) return;
 
     setIsAISpeaking(true);
+    const hasHindi = lang === 'hi-IN';
 
-    const cleanText = text
-      .replace(/\[CMD:.*?\]/g, '')
-      .replace(/UMMY/gi, 'Ummy') // Normal case for smooth reading
-      .replace(/COINS/gi, 'Coins') 
-      .replace(/JAR/gi, 'Jar') 
-      .replace(/TASK/gi, 'Task')
-      .replace(/\s([A-Z])\s/g, (match: string, p1: string) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
-      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
-
-    // DYNAMIC LANGUAGE DETECTION: Robust regex for Devanagari (Hindi/Sanskrit)
-    const hasHindi = /[\u0900-\u097F]/.test(cleanText);
     const utterance = new SpeechSynthesisUtterance(cleanText);
     currentUtteranceRef.current = utterance; // KEEP REFERENCE TO PREVENT GC
 
     // Pre-set language to guide the voice selection engine
-    utterance.lang = hasHindi ? 'hi-IN' : 'en-US';
+    utterance.lang = lang;
 
     const voices = window.speechSynthesis.getVoices();
 
@@ -1564,6 +1591,22 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     recognition.start();
   };
 
+  const handleAIToggleVoice = () => {
+    const newVal = !isAIVoiceEnabled;
+    setIsAIVoiceEnabled(newVal);
+    toast({ title: `AI Voice ${newVal ? 'Enabled' : 'Muted'} 🎤` });
+    
+    // Instantly kill any ongoing speech
+    if (!newVal) {
+      if (Capacitor.isNativePlatform()) {
+        TextToSpeech.stop().catch(() => {});
+      } else if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setIsAISpeaking(false);
+    }
+  };
+
   const toggleAIVoice = () => {
     const nextValue = !isAIVoiceEnabled;
     setIsAIVoiceEnabled(nextValue);
@@ -1571,17 +1614,24 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     // BROWSER HANDSHAKE: Prime the engine on first interaction
     if (nextValue) {
-      // Robust Warmup: Trigger silent speech first
-      const warmUp = new SpeechSynthesisUtterance("");
-      warmUp.volume = 0;
-      window.speechSynthesis.speak(warmUp);
+      if (!Capacitor.isNativePlatform()) {
+        // Robust Warmup: Trigger silent speech first
+        const warmUp = new SpeechSynthesisUtterance("");
+        warmUp.volume = 0;
+        window.speechSynthesis.speak(warmUp);
+      }
       
       // Delay slightly to ensure browser registers the gesture before real speech
       setTimeout(() => {
         speakAIText("Ummy AI Voice enabled! Main ab bol kar bhi aapki madad karungi! 💖");
       }, 150);
     } else {
-      window.speechSynthesis.cancel();
+      if (Capacitor.isNativePlatform()) {
+        TextToSpeech.stop().catch(() => {});
+      } else if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setIsAISpeaking(false);
       toast({ title: 'AI Voice Disabled' });
     }
   };
