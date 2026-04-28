@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { 
   ChevronLeft, 
   Volume2, 
   VolumeX, 
-  X
+  X,
+  Move
 } from 'lucide-react';
+import { CompactRoomView } from '@/components/compact-room-view';
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';

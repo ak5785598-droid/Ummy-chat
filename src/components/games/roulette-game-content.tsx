@@ -8,6 +8,19 @@ import { doc, increment, serverTimestamp, getDoc, collection, query, where, orde
 import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { GoldCoinIcon } from '@/components/icons';
+import { 
+  Move, 
+  VolumeX, 
+  Volume2, 
+  X, 
+  ChevronDown, 
+  HelpCircle, 
+  Users 
+} from 'lucide-react';
+import { CompactRoomView } from '@/components/compact-room-view';
+import { cn } from '@/lib/utils';
 
 const NUMBERS = [
  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26

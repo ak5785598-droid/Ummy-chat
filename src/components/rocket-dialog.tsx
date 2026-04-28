@@ -13,7 +13,10 @@ import {
 } from 'lucide-react';
 import { 
   Dialog, 
-  DialogContent 
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
