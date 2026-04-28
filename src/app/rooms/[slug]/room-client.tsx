@@ -1399,12 +1399,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const cleanText = text
       .replace(/\[CMD:.*?\]/g, '')
-      .replace(/UMMY/gi, 'Ummy') // Normal case for smooth reading
-      .replace(/COINS/gi, 'Coins') 
-      .replace(/JAR/gi, 'Jar') 
-      .replace(/TASK/gi, 'Task')
-      .replace(/\s([A-Z])\s/g, (match: string, p1: string) => ` ${p1.toLowerCase()} `) // prevent single letter spelling
-      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '');
+      .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDC00-\uDFFF])/g, '')
+      .normalize("NFKD") // Standardize Unicode characters
+      .toLowerCase() // Prevent ALL CAPS spelling
+      .replace(/\s+/g, ' ')
+      .trim();
 
     const hasHindi = /[\u0900-\u097F]/.test(cleanText);
     const lang = hasHindi ? 'hi-IN' : 'en-US';
