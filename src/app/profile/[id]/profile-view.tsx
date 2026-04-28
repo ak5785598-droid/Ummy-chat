@@ -936,7 +936,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                    )}
                 </button>
                 <button
-                  onClick={() => router.push(`/messages/${profileId}`)}
+                  onClick={() => router.push(`/messages?userId=${profileId}`)}
                   className="flex-1 h-14 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-[0_0_20px_rgba(59,130,246,0.3)] active:scale-95 transition-all border border-white/10"
                 >
                   <MessageCircle className="h-5 w-5" />
