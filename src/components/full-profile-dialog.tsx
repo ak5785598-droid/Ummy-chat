@@ -10,9 +10,7 @@ import {
   Sparkles,
   Calendar,
   Globe,
-  Phone,
   Loader,
-  Camera,
   Armchair 
 } from 'lucide-react';
 import {
@@ -33,7 +31,7 @@ import {
 } from "@/components/ui/carousel";
 import { GoldCoinIcon } from '@/components/icons';
 
-// Registries (Same as before)
+// Registries
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
@@ -191,10 +189,9 @@ export function FullProfileDialog({
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
           </div>
 
-          {/* Content Section - WHITE SQUARE CARD */}
+          {/* Content Section - Main Card */}
           <div className="relative z-20 bg-white rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_30px_rgba(0,0,0,0.1)] border-t border-slate-100 min-h-[70vh]">
             
-            {/* Identity Part */}
             <div className="flex flex-col items-center">
               <div className="relative -mt-10 mb-1 z-30">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
@@ -250,11 +247,10 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Top Contribution */}
+            {/* Top Contribution Section */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Top Contribution</h3>
               <div className="flex items-end justify-center gap-4 mt-5">
-                {/* Left Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5">
                   <div className="relative inline-block">
                     <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
@@ -265,7 +261,6 @@ export function FullProfileDialog({
                   <span className="text-[8px] font-bold text-slate-400 uppercase">Empty</span>
                 </div>
 
-                {/* Center Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5 -mb-2">
                   <div className="relative inline-block">
                     <div className="absolute -top-4 -left-2.5 z-30 -rotate-[22deg] text-xl drop-shadow-md">👑</div>
@@ -280,7 +275,6 @@ export function FullProfileDialog({
                   <span className="text-[9px] font-bold text-slate-600 uppercase">{profile.username || 'Empty'}</span>
                 </div>
 
-                {/* Right Chair */}
                 <div className="flex flex-col items-center justify-center space-y-1.5">
                   <div className="relative inline-block">
                     <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
@@ -322,7 +316,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* TABS */}
+            {/* TAB Navigation */}
             <div className="flex items-center justify-between mt-6 border-b border-slate-100 pb-0">
               {['medal', 'vehicle', 'frame', 'gift'].map((tab) => (
                 <button
@@ -330,9 +324,7 @@ export function FullProfileDialog({
                   onClick={() => setActiveTab(tab as any)}
                   className={cn(
                     "text-[11px] font-black uppercase tracking-wider transition-all px-3 py-3 relative w-full text-center",
-                    activeTab === tab
-                      ? "text-blue-600"
-                      : "text-slate-400 hover:text-slate-600"
+                    activeTab === tab ? "text-blue-600" : "text-slate-400 hover:text-slate-600"
                   )}
                 >
                   {tab}
@@ -343,7 +335,7 @@ export function FullProfileDialog({
               ))}
             </div>
 
-            {/* TAB CONTENT */}
+            {/* TAB CONTENT Area */}
             <div className="min-h-[50vh] mt-4 w-full">
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
@@ -436,7 +428,7 @@ export function FullProfileDialog({
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* --- Public View Footer (Follow/Chat) --- */}
         {!isOwnProfile && (
           <footer className="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-white/95 backdrop-blur-md border-t border-slate-100 flex gap-4 z-[160]">
              <button 
