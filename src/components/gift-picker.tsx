@@ -24,14 +24,22 @@ const GoldenDollar = () => (
 // Fallback gifts if Firestore is empty
 const FALLBACK_GIFTS: Record<string, any[]> = {
   'Hot': [
-   { id: 'heart', name: 'Heart', price: 99, emoji: '❤️', animationId: 'heart_anim' },
-   { id: 'rose', name: 'Rose', price: 10, emoji: '🌹', animationId: 'rose_anim' },
+   { id: 'rose', name: 'Rose', price: 10, emoji: '🌹', animationId: 'rose_anim', tier: 'normal' },
+   { id: 'heart', name: 'Heart', price: 99, emoji: '❤️', animationId: 'heart_anim', tier: 'normal' },
+   { id: 'chocolate', name: 'Chocolate', price: 199, emoji: '🍫', animationId: 'chocolate_anim', tier: 'normal' },
+   { id: 'lollipop', name: 'Lollipop', price: 49, emoji: '🍭', animationId: 'lollipop_anim', tier: 'normal' },
    ], 
   'Lucky': [
-     { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationId: 'apple_svga_3d', isLucky: true },
+     { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationUrl: 'https://assets10.lottiefiles.com/packages/lf20_7mshzphk.json', isLucky: true, tier: 'epic' },
+     { id: 'dice', name: 'Lucky Dice', price: 500, emoji: '🎲', animationUrl: 'https://assets3.lottiefiles.com/packages/lf20_p8bfn5to.json', isLucky: true, tier: 'epic' },
      ], 
   'Luxury': [
-     { id: 'dm', name: 'Guitar', price: 700000, emoji: '🎸', animationId: 'diamond' },
+     { id: 'car', name: 'Super Car', price: 150000, emoji: '🏎️', animationUrl: 'https://assets9.lottiefiles.com/packages/lf20_v7v3v6v6.json', tier: 'legendary' },
+     { id: 'rocket', name: 'Space Rocket', price: 2000000, emoji: '🚀', animationUrl: 'https://assets2.lottiefiles.com/packages/lf20_w6v6v6.json', tier: 'legendary' },
+     { id: 'crown', name: 'Golden Crown', price: 100000, emoji: '👑', animationUrl: 'https://assets5.lottiefiles.com/packages/lf20_w6v6v6.json', tier: 'legendary' },
+  ],
+  'Event': [
+    { id: 'fireworks', name: 'Fireworks', price: 2500, emoji: '🎆', animationUrl: 'https://assets1.lottiefiles.com/packages/lf20_w6v6v6.json', tier: 'epic' },
   ]
  };
 
@@ -312,20 +320,28 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
                <div className="col-span-4 py-10 text-center opacity-30 text-[10px] font-bold uppercase tracking-widest">No Gifts in {cat}</div>
             ) : (
               items.map(gift => (
-                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-                <div className="h-10 w-10 flex items-center justify-center mb-1 filter drop-shadow-md">
+                <button 
+                  key={gift.id} 
+                  onClick={() => setSelectedGift(gift)} 
+                  className={cn(
+                    "flex flex-col items-center transition-all duration-300 relative py-2 rounded-2xl", 
+                    selectedGift?.id === gift.id 
+                      ? "bg-gradient-to-b from-blue-600/20 to-cyan-500/10 border border-cyan-400/30 shadow-[0_0_15px_rgba(34,211,238,0.2)] scale-105" 
+                      : "opacity-80 hover:opacity-100 hover:bg-white/5"
+                  )}
+                >
+                <div className="h-12 w-12 flex items-center justify-center mb-1 filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]">
                   {gift.imageUrl ? (
                     <img src={gift.imageUrl} alt={gift.name} className="h-full w-full object-contain" />
                   ) : (
-                    <span className="text-3xl">{gift.emoji}</span>
+                    <span className="text-4xl">{gift.emoji}</span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-                <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-[10px] font-black text-white/90 truncate w-full text-center px-1 uppercase tracking-tighter">{gift.name}</span>
+                <div className="flex items-center gap-1 mt-1 bg-black/20 px-2 py-0.5 rounded-full border border-white/5">
                   <GoldenDollar /> 
-                  <span className="text-[10px] text-yellow-500 font-black">{gift.price}</span>
+                  <span className="text-[9px] text-yellow-500 font-black">{gift.price.toLocaleString()}</span>
                 </div>
-                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
                 </button>
               ))
             )}
