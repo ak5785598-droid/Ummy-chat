@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 
@@ -149,53 +149,68 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
       }
 
-      // 2. Clear Stale Participants (Ghost Removal)
-      // Standardized 10-minute inactivity threshold for ALL users
-      const ghostThreshold = new Date(Date.now() - 600000); // 10 minutes
-      
-      const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
-      
-      if (!snap.empty) {
-       const purgeBatch = writeBatch(firestore);
-       let activeCount = 0;
-       snap.docs.forEach(d => {
-        const p = d.data();
-        const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-        
-        // Remove ANY user (seated or audience) if they are inactive for > 10 mins
-        // This handles cases where the user killed the app or lost connection
-        if (lastSeen < ghostThreshold && d.id !== uid) {
-          purgeBatch.delete(d.ref);
-          console.warn(`[Presence-Purge] Ghost user removed: ${d.id} (${p.name})`);
-        } else {
-          activeCount++;
-        }
-       });
-       purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
-       purgeBatch.commit().catch(() => {});
-      }
-     }, 30000); 
-    }
-   };
-
-   performJoin();
-
-   // Visibility Listener: Instant refresh upon returning to app
-   const handleVisibility = () => {
-     if (document.visibilityState === 'visible' && user?.uid && activeRoom?.id) {
-       const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
-       setDocumentNonBlocking(pRef, { lastSeen: serverTimestamp() }, { merge: true });
+       // 2. Clear Stale Participants (Ghost Removal)
+       // Standardized 2-minute inactivity threshold for ALL users
+       const ghostThreshold = new Date(Date.now() - 120000); // 2 minutes
+       
+       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
+       
+       if (!snap.empty) {
+        const purgeBatch = writeBatch(firestore);
+        let activeCount = 0;
+        snap.docs.forEach(d => {
+         const p = d.data();
+         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
+         
+         // Remove ANY user (seated or audience) if they are inactive for > 2 mins
+         // This handles cases where the user killed the app or lost connection
+         if (lastSeen < ghostThreshold && d.id !== uid) {
+           purgeBatch.delete(d.ref);
+           console.warn(`[Presence-Purge] Ghost user removed: ${d.id} (${p.name})`);
+         } else {
+           activeCount++;
+         }
+        });
+        purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
+        purgeBatch.commit().catch(() => {});
+       }
+      }, 15000); 
      }
-   };
-   document.addEventListener('visibilitychange', handleVisibility);
+    };
+ 
+    performJoin();
+ 
+    // Visibility Listener: Instant refresh upon returning to app
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && user?.uid && activeRoom?.id) {
+        const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
+        setDocumentNonBlocking(pRef, { lastSeen: serverTimestamp() }, { merge: true });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+ 
+    return () => {
+     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
+     if (cleanupInterval.current) clearInterval(cleanupInterval.current);
+     document.removeEventListener('visibilitychange', handleVisibility);
+     
+     // 🚀 INSTANT LEAVE: Try to remove participant document immediately when navigating away
+     if (firestore && user?.uid && activeRoom?.id) {
+       const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
+       const rRef = doc(firestore, 'chatRooms', activeRoom.id);
+       const uRef = doc(firestore, 'users', user.uid);
+       const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+       
+       // Non-blocking cleanup
+       deleteDocumentNonBlocking(pRef);
+       updateDocumentNonBlocking(rRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+       updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+       updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+     }
 
-   return () => {
-    if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
-    if (cleanupInterval.current) clearInterval(cleanupInterval.current);
-    document.removeEventListener('visibilitychange', handleVisibility);
-    cleanupInterval.current = null;
-    heartbeatInterval.current = null;
-   };
+     cleanupInterval.current = null;
+     heartbeatInterval.current = null;
+    };
   }, [firestore, activeRoom?.id, user?.uid, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
 
   const lastSyncMetadata = useRef<string>('');
