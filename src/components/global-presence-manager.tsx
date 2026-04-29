@@ -21,8 +21,8 @@ export function GlobalPresenceManager() {
   const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
 
   const setPresence = (online: boolean) => {
-   // PERMISSION GUARD: Ensure auth is active before background write
-   if (!auth.currentUser) return;
+   // STABILITY GUARD: Ensure auth and network are active
+   if (!auth.currentUser || !navigator.onLine) return;
 
    const data = { 
     isOnline: online, 
@@ -34,12 +34,17 @@ export function GlobalPresenceManager() {
    setDocumentNonBlocking(profileRef, data, { merge: true });
   };
 
+  // INITIAL PULSE
   setPresence(true);
 
-  if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-  heartbeatTimer.current = setInterval(() => {
-   setPresence(true);
-  }, 20000);
+  const startHeartbeat = () => {
+   if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
+   heartbeatTimer.current = setInterval(() => {
+    setPresence(true);
+   }, 30000); // OPTIMIZED: 30s for battery health
+  };
+
+  startHeartbeat();
 
   const handleVisibilityChange = () => {
    if (document.visibilityState === 'hidden') {
@@ -47,10 +52,7 @@ export function GlobalPresenceManager() {
     setPresence(false);
    } else {
     setPresence(true);
-    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-    heartbeatTimer.current = setInterval(() => {
-     setPresence(true);
-    }, 20000);
+    startHeartbeat();
    }
   };
 

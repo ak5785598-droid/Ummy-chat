@@ -176,12 +176,14 @@ function AppLayoutClassic(props: {
       {/* MAIN CONTENT AREA */}
       <div 
         className={cn(
-          "flex-1 flex flex-col transition-opacity duration-700 relative z-10",
-          !hideBottomNav && !isRoom ? "pb-[calc(4rem+env(safe-area-inset-bottom,0px))] md:pb-0" : "pb-safe",
+          "flex-1 flex flex-col transition-opacity duration-700",
+          !hideBottomNav && !isRoom ? "pb-20 md:pb-0" : "pb-0",
           !showRealContent ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       >
-        {children}
+        <Suspense fallback={null}>
+          {children}
+        </Suspense>
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION (Atomic Shielded Rebuild) */}

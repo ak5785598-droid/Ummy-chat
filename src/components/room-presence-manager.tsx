@@ -100,14 +100,14 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       console.error('[Presence] Join failed:', err);
     }
 
-    // HEARTBEAT: Standardized at 10s for mobile responsiveness
+    // HEARTBEAT: Standardized at 15s for mobile data efficiency
     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
     heartbeatInterval.current = setInterval(() => {
      setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
      
      // ⚡ QUEST TRACKING: Stay 15 Mins
      if (!hasStayAwarded.current) {
-       stayTimeRef.current += 10;
+       stayTimeRef.current += 15;
        if (stayTimeRef.current >= 900) { // 15 minutes
          console.log('[Missions] Stay time reached! Awarding progress...');
          const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
@@ -115,13 +115,12 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
          hasStayAwarded.current = true;
        }
      }
-    }, 10000);
+    }, 15000);
 
     // CLEANUP: Admin-only task to purge stale sessions
-    // Re-engineered for mobile resilience (Seated users get 5 min grace)
     if (canCleanup && !cleanupInterval.current) {
      cleanupInterval.current = setInterval(async () => {
-      // 1. Periodic IST Resets
+      // 1. Periodic IST Resets (Once every 60s)
       const roomSnap = await getDoc(roomDocRef);
       if (roomSnap.exists()) {
        const now = new Date();
@@ -149,32 +148,30 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
       }
 
-       // 2. Clear Stale Participants (Ghost Removal)
-       // Standardized 2-minute inactivity threshold for ALL users
-       const ghostThreshold = new Date(Date.now() - 120000); // 2 minutes
-       
-       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
-       
-       if (!snap.empty) {
-        const purgeBatch = writeBatch(firestore);
-        let activeCount = 0;
-        snap.docs.forEach(d => {
-         const p = d.data();
-         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-         
-         // Remove ANY user (seated or audience) if they are inactive for > 2 mins
-         // This handles cases where the user killed the app or lost connection
-         if (lastSeen < ghostThreshold && d.id !== uid) {
-           purgeBatch.delete(d.ref);
-           console.warn(`[Presence-Purge] Ghost user removed: ${d.id} (${p.name})`);
-         } else {
-           activeCount++;
-         }
-        });
-        purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
-        purgeBatch.commit().catch(() => {});
+      // 2. Clear Stale Participants (Ghost Removal)
+      const ghostThreshold = new Date(Date.now() - 120000); // 2 minutes
+      const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
+      
+      if (!snap.empty) {
+       const purgeBatch = writeBatch(firestore);
+       let activeCount = 0;
+       let purgeCount = 0;
+       snap.docs.forEach(d => {
+        const p = d.data();
+        const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
+        if (lastSeen < ghostThreshold && d.id !== uid) {
+          purgeBatch.delete(d.ref);
+          purgeCount++;
+        } else {
+          activeCount++;
+        }
+       });
+       if (purgeCount > 0) {
+         purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
+         purgeBatch.commit().catch(() => {});
        }
-      }, 15000); 
+      }
+      }, 30000); 
      }
     };
  

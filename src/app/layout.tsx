@@ -26,6 +26,9 @@ export const metadata: Metadata = {
   capable: true,
   statusBarStyle: 'black-translucent',
   title: 'Ummy',
+  startupImage: [
+    '/apple-touch-icon.png',
+  ],
  },
  formatDetection: {
   telephone: false,
@@ -35,9 +38,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
  width: 'device-width',
  initialScale: 1,
- maximumScale: 5,
- userScalable: true,
+ maximumScale: 1,
+ userScalable: false,
  viewportFit: 'cover',
+ themeColor: '#ffffff',
  interactiveWidget: 'resizes-content',
 };
 
