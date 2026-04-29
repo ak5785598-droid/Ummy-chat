@@ -266,6 +266,7 @@ const Seat = memo(({
     </div>
   );
 });
+Seat.displayName = 'Seat';
 
 interface RoomClientProps {
   room: Room;
@@ -1206,6 +1207,29 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return activeRoomTheme?.accentColor || '#030014';
   }, [activeRoomTheme]);
 
+  const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
+    setSelectedSeatIdx(index);
+    if (occupant) {
+      setSelectedParticipantUid(occupant.uid);
+      setIsUserProfileCardOpen(true);
+    } else {
+      setSelectedParticipantUid(null);
+      setIsSeatMenuOpen(true);
+    }
+  }, []);
+
+  const extraSeats = useMemo(() => {
+    const count = (room.maxActiveMics || 9) - 1;
+    return Array.from({ length: count }, (_, i) => i + 2);
+  }, [room.maxActiveMics]);
+
+  const chatConfig = useMemo(() => {
+    const mics = room.maxActiveMics || 9;
+    if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
+    if (mics === 13) return { height: 'h-48', padding: 'pb-48' };
+    return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
+  }, [room.maxActiveMics]);
+
   // ALL HOOKS ABOVE THIS LINE - NO CONDITIONAL RETURNS BEFORE THIS
   // --- DEFENSIVE GUARD: If room is not yet fully available, show loader ---
   if (!room || !room.id) {
@@ -1954,16 +1978,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     router.push('/rooms'); // Exit should also go to Home (/rooms)
   };
 
-  const handleSeatClick = useCallback((index: number, occupant?: RoomParticipant) => {
-    setSelectedSeatIdx(index);
-    if (occupant) {
-      setSelectedParticipantUid(occupant.uid);
-      setIsUserProfileCardOpen(true);
-    } else {
-      setSelectedParticipantUid(null);
-      setIsSeatMenuOpen(true);
-    }
-  }, []);
 
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
@@ -2173,16 +2187,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // Music management functions and progress tracking removed
 
-  const extraSeats = useMemo(() => {
-    const count = (room.maxActiveMics || 9) - 1;
-    return Array.from({ length: count }, (_, i) => i + 2);
-  }, [room.maxActiveMics]);
-  const chatConfig = useMemo(() => {
-    const mics = room.maxActiveMics || 9;
-    if (mics === 5) return { height: 'h-80', padding: 'pb-80' };
-    if (mics === 13) return { height: 'h-48', padding: 'pb-48' };
-    return { height: 'h-64', padding: 'pb-64' }; // Default 9 seats
-  }, [room.maxActiveMics]);
 
   function formatTime(seconds: number) {
     const mins = Math.floor(seconds / 60);
