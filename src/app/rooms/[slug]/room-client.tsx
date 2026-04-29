@@ -1939,6 +1939,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
     }
 
+    setActiveRoom(null);
+    setMinimizedRoom(null);
+    router.push('/rooms');
+
     // NATIVE ROUTE RESET: Restore normal audio focus on exit
     const AudioRoute = (window as any).Capacitor?.Plugins?.AudioRoute;
     if (AudioRoute) {

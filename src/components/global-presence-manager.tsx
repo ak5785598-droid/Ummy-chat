@@ -47,10 +47,7 @@ export function GlobalPresenceManager() {
   startHeartbeat();
 
   const handleVisibilityChange = () => {
-   if (document.visibilityState === 'hidden') {
-    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-    setPresence(false);
-   } else {
+   if (document.visibilityState === 'visible') {
     setPresence(true);
     startHeartbeat();
    }

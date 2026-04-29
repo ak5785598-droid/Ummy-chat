@@ -11,8 +11,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
  * Re-engineered for high-fidelity cleanup and IST (GMT+5:30) Periodic Reset logic.
  * Feature: Anti-Kick backgrounding resilience for seated users.
  */
- export function RoomPresenceManager() {
-  const { activeRoom } = useRoomContext();
+  export function RoomPresenceManager() {
+  const { activeRoom, minimizedRoom } = useRoomContext();
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -35,12 +35,16 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
 
   // EFFECT 1: JOIN & CLEANUP & BACKGROUND RESILIENCE
   useEffect(() => {
-   if (!firestore || !activeRoom?.id || !user) return;
+   if (!firestore || !user) return;
+   
+   // Session logic: Keep alive if EITHER active OR minimized
+   const sessionRoom = activeRoom || minimizedRoom;
+   if (!sessionRoom?.id) return;
 
-   const roomId = activeRoom.id;
+   const roomId = sessionRoom.id;
    const uid = user.uid;
-   const isOwner = uid === activeRoom.ownerId;
-   const isMod = activeRoom.moderatorIds?.includes(uid);
+   const isOwner = uid === sessionRoom.ownerId;
+   const isMod = sessionRoom.moderatorIds?.includes(uid);
    const canCleanup = isOwner || isMod;
 
    const performJoin = async () => {
@@ -179,8 +183,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
  
     // Visibility Listener: Instant refresh upon returning to app
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && user?.uid && activeRoom?.id) {
-        const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
+      if (document.visibilityState === 'visible' && user?.uid && roomId) {
+        const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
         setDocumentNonBlocking(pRef, { lastSeen: serverTimestamp() }, { merge: true });
       }
     };
@@ -191,24 +195,28 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      if (cleanupInterval.current) clearInterval(cleanupInterval.current);
      document.removeEventListener('visibilitychange', handleVisibility);
      
-     // 🚀 INSTANT LEAVE: Try to remove participant document immediately when navigating away
-     if (firestore && user?.uid && activeRoom?.id) {
-       const pRef = doc(firestore, 'chatRooms', activeRoom.id, 'participants', user.uid);
-       const rRef = doc(firestore, 'chatRooms', activeRoom.id);
+     // 🚀 PERSISTENT CLEANUP: Only remove if we are REALLY leaving (no minimized room)
+     // This is the core fix for "Keep" mode
+     const sessionEnded = !activeRoom?.id && !minimizedRoom?.id;
+     
+     if (sessionEnded && firestore && user?.uid && roomId) {
+       const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
+       const rRef = doc(firestore, 'chatRooms', roomId);
        const uRef = doc(firestore, 'users', user.uid);
        const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
        
-       // Non-blocking cleanup
        deleteDocumentNonBlocking(pRef);
        updateDocumentNonBlocking(rRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
        updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
        updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+       hasJoinedRef.current = false;
+       lastRoomId.current = null;
      }
 
      cleanupInterval.current = null;
      heartbeatInterval.current = null;
     };
-  }, [firestore, activeRoom?.id, user?.uid, activeRoom?.ownerId, activeRoom?.moderatorIds]); 
+  }, [firestore, activeRoom?.id, minimizedRoom?.id, user?.uid]); 
 
   const lastSyncMetadata = useRef<string>('');
 
