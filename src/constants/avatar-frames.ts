@@ -48,7 +48,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'rgba(255, 215, 0, 0.8)',
     ornament: Flame,
     animationType: 'sparkle',
-    extraType: 'wings',
+    extraType: 'none',
     particleType: 'fire',
     textureType: 'gold'
   },
