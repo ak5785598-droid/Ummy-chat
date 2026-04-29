@@ -32,14 +32,14 @@ const CHIPS = [
 ];
 
 const FACTIONS = [
- { id: 'Drakthar', label: 'Drakthar' },
- { id: 'Zephyros', label: 'Zephyros' },
- { id: 'Nyxarion', label: 'Nyxarion' },
+ { id: 'WOLF', label: 'Wolf' },
+ { id: 'LION', label: 'Lion' },
+ { id: 'FISH', label: 'Fish' },
 ];
 
 const CARDS = ['A', 'JOKER', 'B', 'K', 'Q', '10', '9'];
 
-// ===== PURANA KALA DRAGON - LEFT KE LIYE SAME =====
+// ===== PURANA KALA DRAGON - LEFT (WOLF) =====
 const DragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
   <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -58,11 +58,6 @@ const DragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
         <stop offset="70%" stopColor="#7ed321"/>
         <stop offset="100%" stopColor="#3d7a00"/>
       </radialGradient>
-      <linearGradient id="dg-gloss" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.45"/>
-        <stop offset="40%" stopColor="#fff" stopOpacity="0.15"/>
-        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-      </linearGradient>
       <filter id="dg-shadow" x="-20%" y="-20%" width="140%" height="140%">
         <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.6"/>
       </filter>
@@ -74,8 +69,6 @@ const DragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
     <ellipse cx="100" cy="178" rx="54" ry="52" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
     <ellipse cx="70" cy="210" rx="22" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
     <ellipse cx="130" cy="210" rx="22" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <ellipse cx="68" cy="185" rx="17" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="2.5"/>
-    <ellipse cx="132" cy="185" rx="17" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="2.5"/>
     <ellipse cx="100" cy="88" rx="74" ry="64" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
     <path d="M42 48 C28 12, 58 2, 78 38 C70 52, 52 58, 42 48 Z" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
     <path d="M158 48 C172 12, 142 2, 122 38 C130 52, 148 58, 158 48 Z" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
@@ -86,7 +79,7 @@ const DragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
   </svg>
 );
 
-// ===== NAYA GREEN 3D GLOSSY DRAGON - MIDDLE KE LIYE =====
+// ===== NAYA GREEN 3D GLOSSY DRAGON - MIDDLE (LION) =====
 const GreenDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
   <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -122,31 +115,14 @@ const GreenDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) =>
       </filter>
     </defs>
     <g filter="url(#gd-shadow)">
-      <path d="M32 158 C18 168, 14 185, 28 198 C40 208, 52 200, 58 188" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M30 172 C22 180, 26 190, 40 194" fill="#ff8a00" stroke="#0b3d2e" strokeWidth="2.5" strokeLinecap="round"/>
       <path d="M58 138 C22 128, 4 152, 20 176 L62 156 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3" strokeLinejoin="round"/>
       <path d="M142 138 C178 128, 196 152, 180 176 L138 156 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3" strokeLinejoin="round"/>
-      <path d="M25 155 Q40 148 58 152" fill="none" stroke="#0b3d2e" strokeWidth="2" opacity="0.7"/>
-      <path d="M175 155 Q160 148 142 152" fill="none" stroke="#0b3d2e" strokeWidth="2" opacity="0.7"/>
     </g>
     <ellipse cx="68" cy="202" rx="23" ry="20" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3"/>
     <ellipse cx="132" cy="202" rx="23" ry="20" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3"/>
     <ellipse cx="100" cy="168" rx="44" ry="52" fill="url(#gd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
     <path d="M72 138 C70 168, 72 198, 100 212 C128 198, 130 168, 128 138 C115 132, 85 132, 72 138 Z" fill="url(#gd-belly)" stroke="#0b3d2e" strokeWidth="2.5"/>
-    <path d="M75 156 Q100 166 125 156" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M74 176 Q100 186 126 176" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M78 194 Q100 202 122 194" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round"/>
-    <ellipse cx="66" cy="178" rx="13" ry="24" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3" transform="rotate(-12 66 178)"/>
-    <ellipse cx="134" cy="178" rx="13" ry="24" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3" transform="rotate(12 134 178)"/>
-    <path d="M50 52 C42 28, 36 12, 52 6 C66 1, 74 14, 70 34 L60 48 Z" fill="url(#gd-horn)" stroke="#0b3d2e" strokeWidth="3"/>
-    <path d="M150 52 C158 28, 164 12, 148 6 C134 1, 126 14, 130 34 L140 48 Z" fill="url(#gd-horn)" stroke="#0b3d2e" strokeWidth="3"/>
-    <path d="M45 22 Q53 27 61 22" fill="none" stroke="#9c8465" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M139 22 Q147 27 155 22" fill="none" stroke="#9c8465" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M90 30 C93 18, 99 12, 105 24" fill="#1db88f" stroke="#0b3d2e" strokeWidth="2.5" strokeLinejoin="round"/>
-    <path d="M106 28 C110 18, 118 15, 123 26" fill="#1db88f" stroke="#0b3d2e" strokeWidth="2.5" strokeLinejoin="round"/>
     <ellipse cx="100" cy="86" rx="68" ry="58" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3.5"/>
-    <path d="M34 78 C20 68, 14 84, 24 98 L40 90 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3"/>
-    <path d="M166 78 C180 68, 186 84, 176 98 L160 90 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3"/>
     <ellipse cx="68" cy="86" rx="23" ry="27" fill="white" stroke="#0b3d2e" strokeWidth="2.5"/>
     <ellipse cx="132" cy="86" rx="23" ry="27" fill="white" stroke="#0b3d2e" strokeWidth="2.5"/>
     <ellipse cx="68" cy="92" rx="16" ry="19" fill="url(#gd-eye)"/>
@@ -155,26 +131,11 @@ const GreenDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) =>
     <ellipse cx="132" cy="96" rx="8" ry="11" fill="black"/>
     <circle cx="62" cy="80" r="4.5" fill="white"/>
     <circle cx="126" cy="80" r="4.5" fill="white"/>
-    <circle cx="72" cy="85" r="2" fill="white" opacity="0.8"/>
-    <circle cx="136" cy="85" r="2" fill="white" opacity="0.8"/>
-    <ellipse cx="100" cy="116" rx="36" ry="24" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="2"/>
-    <ellipse cx="88" cy="112" rx="4" ry="3" fill="#0b3d2e"/>
-    <ellipse cx="112" cy="112" rx="4" ry="3" fill="#0b3d2e"/>
     <path d="M76 120 Q100 134 124 120" fill="none" stroke="#0b3d2e" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M96 126 L100 132 L104 126 Z" fill="white" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="56" cy="218" rx="5" ry="6" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="68" cy="221" rx="5.5" ry="6.5" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="80" cy="218" rx="5" ry="6" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="120" cy="218" rx="5" ry="6" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="132" cy="221" rx="5.5" ry="6.5" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="144" cy="218" rx="5" ry="6" fill="#fbcfe8" stroke="#0b3d2e" strokeWidth="1.5"/>
-    <ellipse cx="76" cy="52" rx="28" ry="14" fill="url(#gd-gloss)" transform="rotate(-22 76 52)"/>
-    <ellipse cx="124" cy="52" rx="22" ry="11" fill="url(#gd-gloss)" opacity="0.6" transform="rotate(18 124 52)"/>
-    <ellipse cx="78" cy="150" rx="10" ry="24" fill="white" opacity="0.12" transform="rotate(-10 78 150)"/>
   </svg>
 );
 
-// ===== NAYA BLUE PINK 3D GLOSSY DRAGON - RIGHT KE LIYE (IMAGE JAISA) =====
+// ===== NAYA BLUE PINK 3D GLOSSY DRAGON - RIGHT (FISH) =====
 const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
   <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -191,10 +152,6 @@ const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string })
         <stop offset="0%" stopColor="#ffb8d1"/>
         <stop offset="100%" stopColor="#ff5a93"/>
       </linearGradient>
-      <linearGradient id="bpd-horn" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffc1d5"/>
-        <stop offset="100%" stopColor="#ff7aa6"/>
-      </linearGradient>
       <linearGradient id="bpd-gloss" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#fff" stopOpacity="0.9"/>
         <stop offset="30%" stopColor="#fff" stopOpacity="0.3"/>
@@ -204,10 +161,7 @@ const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string })
         <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.45"/>
       </filter>
     </defs>
-    <ellipse cx="100" cy="222" rx="50" ry="11" fill="#000" opacity="0.25"/>
     <g filter="url(#bpd-shadow)">
-      <path d="M62 133 C28 117, 10 148, 26 174 C36 188, 52 180, 68 165 L62 133 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5" strokeLinejoin="round"/>
-      <path d="M138 133 C172 117, 190 148, 174 174 C164 188, 148 180, 132 165 L138 133 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5" strokeLinejoin="round"/>
       <path d="M60 138 C38 128, 22 150, 32 168 L60 154 Z" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="2.5"/>
       <path d="M140 138 C162 128, 178 150, 168 168 L140 154 Z" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="2.5"/>
     </g>
@@ -215,30 +169,6 @@ const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string })
     <ellipse cx="62" cy="206" rx="32" ry="22" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
     <ellipse cx="138" cy="206" rx="32" ry="22" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
     <ellipse cx="100" cy="172" rx="30" ry="38" fill="url(#bpd-belly)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <rect x="78" y="148" width="44" height="6" rx="3" fill="#ffabc6"/>
-    <rect x="76" y="160" width="48" height="6" rx="3" fill="#ffabc6"/>
-    <rect x="76" y="172" width="48" height="6" rx="3" fill="#ffabc6"/>
-    <rect x="78" y="184" width="44" height="6" rx="3" fill="#ffabc6"/>
-    <rect x="82" y="196" width="36" height="5" rx="2.5" fill="#ffabc6"/>
-    <ellipse cx="72" cy="162" rx="14" ry="20" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3" transform="rotate(-18 72 162)"/>
-    <ellipse cx="128" cy="162" rx="14" ry="20" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3" transform="rotate(18 128 162)"/>
-    <path d="M60 50 C52 28, 64 16, 78 34 L70 50 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3"/>
-    <path d="M140 50 C148 28, 136 16, 122 34 L130 50 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3"/>
-    <path d="M64 46 C60 32, 68 24, 74 36 L68 44 Z" fill="url(#bpd-horn)" stroke="#0d1f35" strokeWidth="2"/>
-    <path d="M136 46 C140 32, 132 24, 126 36 L132 44 Z" fill="url(#bpd-horn)" stroke="#0d1f35" strokeWidth="2"/>
-    <path d="M94 58 L100 48 L106 58 L100 64 Z" fill="url(#bpd-horn)" stroke="#0d1f35" strokeWidth="2"/>
-    <path d="M48 74 C36 66, 32 78, 42 86 L52 80 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M44 88 C32 84, 28 96, 38 102 L48 94 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M42 102 C32 100, 30 112, 40 116 L48 108 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M152 74 C164 66, 168 78, 158 86 L148 80 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M156 88 C168 84, 172 96, 162 102 L152 94 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M158 102 C168 100, 170 112, 160 116 L152 108 Z" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <path d="M46 76 C40 72, 38 78, 44 82" fill="url(#bpd-wing)"/>
-    <path d="M42 90 C36 88, 34 94, 40 96" fill="url(#bpd-wing)"/>
-    <path d="M42 104 C38 102, 36 108, 42 110" fill="url(#bpd-wing)"/>
-    <path d="M154 76 C160 72, 162 78, 156 82" fill="url(#bpd-wing)"/>
-    <path d="M158 90 C164 88, 166 94, 160 96" fill="url(#bpd-wing)"/>
-    <path d="M158 104 C162 102, 164 108, 158 110" fill="url(#bpd-wing)"/>
     <ellipse cx="100" cy="92" rx="66" ry="56" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
     <ellipse cx="72" cy="90" rx="22" ry="26" fill="white" stroke="#0d1f35" strokeWidth="2.5"/>
     <ellipse cx="128" cy="90" rx="22" ry="26" fill="white" stroke="#0d1f35" strokeWidth="2.5"/>
@@ -246,21 +176,7 @@ const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string })
     <ellipse cx="128" cy="98" rx="12" ry="15" fill="#0d1f35"/>
     <circle cx="66" cy="82" r="5" fill="white"/>
     <circle cx="122" cy="82" r="5" fill="white"/>
-    <circle cx="76" cy="90" r="2.5" fill="white" opacity="0.9"/>
-    <circle cx="132" cy="90" r="2.5" fill="white" opacity="0.9"/>
     <path d="M72 116 Q100 128 128 116" fill="none" stroke="#0d1f35" strokeWidth="2.5" strokeLinecap="round"/>
-    <ellipse cx="100" cy="112" rx="18" ry="8" fill="url(#bpd-body)" stroke="none"/>
-    <ellipse cx="62" cy="214" rx="13" ry="9" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="50" cy="204" r="4" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="60" cy="200" r="4.5" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="70" cy="204" r="4" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <ellipse cx="138" cy="214" rx="13" ry="9" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="150" cy="204" r="4" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="140" cy="200" r="4.5" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <circle cx="130" cy="204" r="4" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="1.5"/>
-    <ellipse cx="74" cy="54" rx="26" ry="12" fill="url(#bpd-gloss)" transform="rotate(-20 74 54)"/>
-    <ellipse cx="126" cy="54" rx="20" ry="10" fill="url(#bpd-gloss)" opacity="0.7" transform="rotate(20 126 54)"/>
-    <ellipse cx="80" cy="148" rx="8" ry="20" fill="white" opacity="0.08" transform="rotate(-12 80 148)"/>
   </svg>
 );
 
@@ -364,12 +280,16 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      amount: Math.floor(winAmount),
      timestamp: serverTimestamp()
     });
-
-    const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
-    updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
    }
 
-   setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
+   setTimeout(() => { 
+    setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); 
+    setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); 
+    setWinnerId(null); 
+    setGameState('betting'); 
+    setTimeLeft(20); 
+    setCardReveal({}); 
+   }, 5000);
   };
 
   const handlePlaceBet = (id: string) => {
@@ -406,7 +326,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     {gameState === 'result' && winnerId && (
      <GameResultOverlay
       gameId="teen-patti"
-      winningSymbol={<DragonIcon className="h-16 w-16" />}
+      winningSymbol={
+        winnerId === 'LION' ? <GreenDragonIcon className="h-16 w-16" /> :
+        winnerId === 'FISH' ? <BluePinkDragonIcon className="h-16 w-16" /> :
+        <DragonIcon className="h-16 w-16" />
+      }
       winAmount={totalWinAmount}
       winners={winners}
      />
@@ -427,12 +351,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           <button onClick={() => setIsMuted(!isMuted)} className={glossyBtn}>
             {isMuted? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
-          <button className={glossyBtn}>
-            <HelpCircle className="w-3.5 h-3.5" />
-          </button>
-          <button className={glossyBtn}>
-            <Trophy className="w-3.5 h-3.5" />
-          </button>
+          <button className={glossyBtn}><HelpCircle className="w-3.5 h-3.5" /></button>
+          <button className={glossyBtn}><Trophy className="w-3.5 h-3.5" /></button>
         </div>
 
         <h1 className="absolute left-1/2 -translate-x-1/2 text-white font-bold text-[20px] tracking-wide" style={{ textShadow: '0 1px 2px #000, 0 0 5px rgba(0,0,0,0.8)' }}>
@@ -440,15 +360,9 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
         </h1>
 
         <div className="flex items-center gap-1.5">
-          <button className={glossyBtn}>
-            <Menu className="w-3.5 h-3.5" />
-          </button>
-          <button className={glossyBtn}>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={handleBack} className={glossyBtn}>
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <button className={glossyBtn}><Menu className="w-3.5 h-3.5" /></button>
+          <button className={glossyBtn}><ChevronDown className="w-3.5 h-3.5" /></button>
+          <button onClick={handleBack} className={glossyBtn}><X className="w-3.5 h-3.5" /></button>
         </div>
       </div>
 
@@ -473,7 +387,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
              ))}
            </div>
           </div>
-          <div className="text-center"><p className="text-[9px] font-bold text-white/60 uppercase">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p><p className="text-[9px] font-bold text-[#ffd700] uppercase ">Me:{(myBets[f.id] || 0).toLocaleString()}</p></div>
+          <div className="text-center">
+            <p className="text-[9px] font-bold text-white/60 uppercase">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p>
+            <p className="text-[9px] font-bold text-[#ffd700] uppercase ">Me:{(myBets[f.id] || 0).toLocaleString()}</p>
+          </div>
         </div>
        ))}
       </div>
@@ -481,10 +398,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       <div className="flex justify-around items-end px-4 flex-1 pb-28">
        {FACTIONS.map((f) => (
         <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState!== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-          {/* LEFT KALA, MIDDLE GREEN, RIGHT BLUE-PINK */}
-          {f.id === 'LION'? (
+          {/* Logic: WOLF (Left) -> Kala, LION (Middle) -> Green, FISH (Right) -> BluePink */}
+          {f.id === 'LION' ? (
             <GreenDragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
-          ) : f.id === 'FISH'? (
+          ) : f.id === 'FISH' ? (
             <BluePinkDragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
           ) : (
             <DragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
@@ -511,4 +428,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
   );
-      }
+}
