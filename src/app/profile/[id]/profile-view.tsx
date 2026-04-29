@@ -64,10 +64,11 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// --- NEW 3D GLOSSY OFFICIAL & SELLER TAGS ---
+// --- NEW 3D GLOSSY OFFICIAL, SELLER, SERVICE & HOST TAGS ---
 
 const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-1.5 border border-[#1DA1F2]/50 ml-1 overflow-hidden">
+  // Moved a little bit left side using -ml-0.5
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
@@ -100,6 +101,70 @@ const SVGA_SellerTag = () => (
     {/* Seller Text */}
     <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
       Seller
+    </span>
+  </div>
+);
+
+// --- NEW SERVICE TAG WITH IMAGE ICON ---
+const SVGA_ServiceTag = () => (
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#17CFB8] via-[#10B9A4] to-[#0D9482] shadow-[0_2px_4px_rgba(23,207,184,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2 border border-[#A7FFF1] ml-1 overflow-hidden">
+    {/* Top Glossy Reflection */}
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
+
+    {/* Cyan Smile Chat Bubble (Based on Image) */}
+    <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <defs>
+          <linearGradient id="tealBubble" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#43F3D8" />
+            <stop offset="100%" stopColor="#0ACAA8" />
+          </linearGradient>
+        </defs>
+        <path d="M20 6 C12.27 6 6 12.27 6 20 C6 23.5 7.3 26.7 9.4 29.2 C9.8 29.7 9.9 30.4 9.7 31.0 L8.5 34.5 L12.2 33.6 C12.8 33.4 13.5 33.6 14.1 33.9 C15.9 34.9 17.9 35.5 20 35.5 C27.73 35.5 34 29.23 34 21.5 C34 13.77 27.73 6 20 6 Z" fill="url(#tealBubble)" />
+        {/* White Smile Line */}
+        <path d="M 13 21 Q 20 27 27 21" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    </div>
+
+    {/* Service Text */}
+    <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      Service
+    </span>
+  </div>
+);
+
+// --- NEW HOST TAG WITH BALLOONS IMAGE ICON ---
+const SVGA_HostTag = () => (
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#B57AFF] via-[#9E60FA] to-[#803AF5] shadow-[0_2px_4px_rgba(158,96,250,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2 border border-[#E0C6FF] ml-1 overflow-hidden">
+    {/* Top Glossy Reflection */}
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
+
+    {/* Purple/Blue Balloons Icon (Based on uploaded Image) */}
+    <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+      <svg viewBox="0 0 40 40" className="w-full h-full">
+        <defs>
+          <linearGradient id="balloonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#A78BFA" />
+            <stop offset="100%" stopColor="#7C3AED" />
+          </linearGradient>
+        </defs>
+        {/* Balloon Strings */}
+        <path d="M 24 24 Q 24 30 22 34" fill="none" stroke="#D8B4FE" strokeWidth="2" strokeLinecap="round" />
+        <path d="M 16 26 Q 16 32 18 36" fill="none" stroke="#D8B4FE" strokeWidth="2.5" strokeLinecap="round" />
+
+        {/* Right smaller balloon */}
+        <circle cx="26" cy="18" r="8" fill="url(#balloonGrad)" />
+        {/* Left larger balloon */}
+        <circle cx="15" cy="16" r="10" fill="url(#balloonGrad)" />
+
+        {/* Glossy highlight on left balloon */}
+        <path d="M 9 13 Q 12 8 16 10" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+    </div>
+
+    {/* Host Text */}
+    <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      Host
     </span>
   </div>
 );
@@ -921,6 +986,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   {/* Calling New SVGA Tags Here */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
+                  {profile.tags?.includes('Service') && <SVGA_ServiceTag />}
+                  {/* Newly added Host Tag */}
+                  {profile.tags?.includes('Host') && <SVGA_HostTag />}
                 </div>
                 {/* --- MODIFIED ID SECTION ENDS --- */}
 
@@ -1064,4 +1132,5 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-    }
+}
+
