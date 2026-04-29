@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { 
-  MoreHorizontal, 
   Copy, 
   MessageCircle, 
   UserPlus, 
@@ -184,7 +183,7 @@ export function RoomProfileMain({
       <SheetContent 
         side="bottom" 
         hideOverlay={true}
-        className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 rounded-t-[3rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-8"
+        className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-8 [&>button]:hidden"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>User Profile</SheetTitle>
@@ -197,18 +196,11 @@ export function RoomProfileMain({
           </div>
         ) : profile ? (
           <div className="flex flex-col items-center">
-            <div className="w-full flex justify-between items-center p-6 pb-0">
-              <button 
-                onClick={() => setShowReport(true)} 
-                className="text-gray-300 hover:text-red-500 transition-colors active:scale-90"
-              >
-                <MoreHorizontal className="h-6 w-6" />
-              </button>
-              <div /> {/* Balancing spacer */}
-            </div>
+            {/* Empty Spacer in place of 3 dots to keep layout spacing exact */}
+            <div className="w-full pt-6"></div>
 
             <div 
-              className="mt-[-60px] mb-1 cursor-pointer active:scale-95 transition-transform relative z-[120]" 
+              className="mt-[-40px] mb-1 cursor-pointer active:scale-95 transition-transform relative z-[120]" 
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewFullProfile();
@@ -335,7 +327,8 @@ export function RoomProfileMain({
             </div>
 
             {isMe && isInSeat && (
-              <div className="w-full px-10 mb-6 flex flex-col gap-3">
+              {/* Px-4 kar diya gaya hai aur side gap kam ho gaya hai */}
+              <div className="w-full px-2 mb-6 flex flex-col gap-3">
                 <button 
                   onClick={() => onLeaveSeat(userId)}
                   className="mx-auto px-12 h-10 rounded-full bg-[#00E676] text-white flex items-center justify-center gap-2 font-bold uppercase text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all"
