@@ -186,18 +186,23 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    const recipientName = recipientObj?.name || 'Someone';
 
    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
-   batch.set(msgRef, {
-     type: 'gift',
-     senderId: user.uid,
-     senderName: userProfile.username,
-     giftId: selectedGift.id,
-     animationId: selectedGift.animationId,
-     imageUrl: selectedGift.imageUrl || null,
-     recipientId: firstRecipientUid,
-     recipientSeat: recipientSeat,
-     text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty} to ${recipientName}`,
-     timestamp: serverTimestamp()
-   });
+    batch.set(msgRef, {
+      type: 'gift',
+      senderId: user.uid,
+      senderName: userProfile.username,
+      giftId: selectedGift.id,
+      giftName: selectedGift.name,
+      animationId: selectedGift.animationId,
+      imageUrl: selectedGift.imageUrl || null,
+      animationUrl: selectedGift.animationUrl || null,
+      soundUrl: selectedGift.soundUrl || null,
+      tier: selectedGift.tier || 'normal',
+      recipientId: firstRecipientUid,
+      receiverName: recipientName,
+      recipientSeat: recipientSeat,
+      text: `sent ${selectedGift.name} x${isComboTrigger ? 1 : qty} to ${recipientName}`,
+      timestamp: serverTimestamp()
+    });
 
    await batch.commit();
 

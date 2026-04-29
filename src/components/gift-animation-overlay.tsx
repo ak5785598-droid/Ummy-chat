@@ -2,42 +2,41 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface FloatingGift {
-  id: number;
-  emoji: string;
-}
+import Lottie from "lottie-react";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
+import { cn } from '@/lib/utils';
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
+  giftName?: string;
+  senderName?: string;
+  receiverName?: string;
   imageUrl?: string | null;
+  animationUrl?: string | null;
+  soundUrl?: string | null;
+  tier?: 'normal' | 'epic' | 'legendary';
   onComplete: () => void;
   targetSeat?: number;
-  recipientElement?: HTMLElement | null;
 }
 
 export function GiftAnimationOverlay({ 
   giftId, 
+  giftName,
+  senderName,
+  receiverName,
   imageUrl,
+  animationUrl,
+  soundUrl,
+  tier = 'normal',
   onComplete, 
   targetSeat = 1,
-  recipientElement = null
 }: GiftAnimationOverlayProps) {
-  const [activeGift, setActiveGift] = useState<(FloatingGift & { imageUrl?: string | null }) | null>(null);
+  const [activeGift, setActiveGift] = useState<any>(null);
+  const [lottieData, setLottieData] = useState<any>(null);
+  const [phase, setPhase] = useState<'center' | 'target'>('center');
   const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
-  const [hasAnimated, setHasAnimated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const getEmoji = useCallback((id: string) => {
-    const map: Record<string, string> = {
-      'heart': '❤️', 'cake': '🍰', 'lollipop': '🍭', 'popcorn': '🍿', 
-      'donut': '🍩', 'rose': '🌹', 'chai': '☕', 'applaud': '👏',
-      'chocolate-box': '🍫', 'ice-cream': '🍦', 'teddy-bear': '🧸',
-      'diamond': '💎', 'trophy': '🏆'
-    };
-    const normalizedId = id.toLowerCase().replace('_anim', '');
-    return map[normalizedId] || '🎁';
-  }, []);
 
   // 3x3 Grid Layout - Each seat position with pixel coordinates
   const getSeatTarget = (seat: number) => {
@@ -47,166 +46,165 @@ export function GiftAnimationOverlay({
     const centerX = containerRect.width / 2;
     const centerY = containerRect.height / 2;
 
+    // Optimized for Mobile (closer seats)
+    const spacing = 120; 
+
     const positions: Record<number, { x: number; y: number }> = {
-      1: { x: centerX - 280, y: centerY - 280 },   // Top-left
-      2: { x: centerX,       y: centerY - 280 },   // Top-center
-      3: { x: centerX + 280, y: centerY - 280 },   // Top-right
-      4: { x: centerX - 280, y: centerY },         // Middle-left
-      5: { x: centerX,       y: centerY },         // Center
-      6: { x: centerX + 280, y: centerY },         // Middle-right
-      7: { x: centerX - 280, y: centerY + 280 },   // Bottom-left
-      8: { x: centerX,       y: centerY + 280 },   // Bottom-center
-      9: { x: centerX + 280, y: centerY + 280 },   // Bottom-right
+      1: { x: -spacing, y: -spacing * 2 },   // Top-left
+      2: { x: 0,        y: -spacing * 2 },   // Top-center
+      3: { x: spacing,  y: -spacing * 2 },   // Top-right
+      4: { x: -spacing, y: -spacing },       // Middle-left
+      5: { x: 0,        y: -spacing },       // Center
+      6: { x: spacing,  y: -spacing },       // Middle-right
+      7: { x: -spacing, y: 0 },              // Bottom-left
+      8: { x: 0,        y: 0 },              // Bottom-center
+      9: { x: spacing,  y: 0 },              // Bottom-right
     };
 
-    return positions[seat] || { x: centerX, y: centerY };
+    return positions[seat] || { x: 0, y: 0 };
   };
 
-  // Calculate target from recipientElement or seat
-  const calculateTargetCoords = useCallback(() => {
-    if (recipientElement && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const elementRect = recipientElement.getBoundingClientRect();
-      
-      const elementCenterX = elementRect.left + elementRect.width / 2;
-      const elementCenterY = elementRect.top + elementRect.height / 2;
-      
-      const containerLeft = containerRect.left;
-      const containerTop = containerRect.top;
-      
-      return {
-        x: elementCenterX - containerLeft,
-        y: elementCenterY - containerTop
-      };
+  // Recalculate target
+  useEffect(() => {
+    if (activeGift) {
+      setTargetCoords(getSeatTarget(targetSeat));
     }
-    
-    return getSeatTarget(targetSeat);
-  }, [recipientElement, targetSeat]);
+  }, [activeGift, targetSeat]);
 
-  // Recalculate coords on resize
+  // Load Lottie Data
   useEffect(() => {
-    const newTargetCoords = calculateTargetCoords();
-    setTargetCoords(newTargetCoords);
+    if (animationUrl) {
+      fetch(animationUrl)
+        .then(res => res.json())
+        .then(data => setLottieData(data))
+        .catch(err => console.error('Lottie Load Failed:', err));
+    } else {
+      setLottieData(null);
+    }
+  }, [animationUrl]);
 
-    const handleResize = () => {
-      const updated = calculateTargetCoords();
-      setTargetCoords(updated);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [recipientElement, calculateTargetCoords]);
-
-  // Animation trigger - ONE TIME ONLY per giftId
+  // Animation trigger
   useEffect(() => {
-    if (giftId && !hasAnimated) {
-      setActiveGift({
-        id: Date.now(),
-        emoji: getEmoji(giftId),
-        imageUrl: imageUrl
-      });
-      setHasAnimated(true);
+    if (giftId) {
+      setActiveGift({ id: Date.now() });
+      setPhase('center');
 
-      // Clear animation after 1.8 seconds (increased for premium feel)
+      // 1. Play Sound
+      if (soundUrl) {
+        const audio = new Audio(soundUrl);
+        audio.play().catch(e => console.log('Audio error:', e));
+      }
+
+      // 2. Haptics
+      if (Capacitor.isNativePlatform()) {
+        Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
+      }
+
+      // 3. Timelines
+      // Show in center for 2 seconds
+      const targetTimer = setTimeout(() => {
+        setPhase('target');
+      }, 2000);
+
+      // Finish after 4 seconds
       const finishTimer = setTimeout(() => {
         setActiveGift(null);
+        setLottieData(null);
         onComplete();
-      }, 1800);
+      }, 4000);
 
-      return () => clearTimeout(finishTimer);
+      return () => {
+        clearTimeout(targetTimer);
+        clearTimeout(finishTimer);
+      };
     }
-  }, [giftId, imageUrl, getEmoji, onComplete, hasAnimated]);
-
-  // Reset animation flag when giftId changes
-  useEffect(() => {
-    setHasAnimated(false);
-    setActiveGift(null);
-  }, [giftId]);
+  }, [giftId, soundUrl, onComplete]);
 
   return (
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden"
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {activeGift && (
           <motion.div
             key={activeGift.id}
-            initial={{ 
-              opacity: 0, 
-              scale: 0.3, 
-              x: 0, 
-              y: 0,
-              rotate: -20
-            }}
+            initial={{ opacity: 0, scale: 0 }}
             animate={{ 
-              opacity: [0, 1, 1, 0.9, 0],
-              scale: [0.3, 1.6, 1.8, 1.3, 0.1],
-              x: [0, targetCoords.x, targetCoords.x, targetCoords.x],
-              y: [0, targetCoords.y, targetCoords.y, targetCoords.y],
-              rotate: [ -20, 10, 0, 0, 15 ]
+              opacity: 1, 
+              scale: phase === 'center' ? 1 : 0.4,
+              x: phase === 'center' ? 0 : targetCoords.x,
+              y: phase === 'center' ? 0 : targetCoords.y,
             }}
             exit={{ opacity: 0, scale: 0 }}
             transition={{ 
-              duration: 1.8,
-              times: [0, 0.15, 0.7, 0.9, 1],
-              ease: "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+              type: "spring",
+              stiffness: 70,
+              damping: 15,
+              mass: 1
             }}
-            className="absolute will-change-transform"
+            className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            <div className="relative flex items-center justify-center">
-              {/* Premium Glow effect behind gift */}
-              <motion.div 
-                className={cn(
-                  "absolute inset-0 blur-[40px] rounded-full scale-150",
-                  activeGift.imageUrl ? "bg-cyan-400/40" : "bg-gradient-to-r from-yellow-400 via-orange-300 to-red-400"
-                )}
-                animate={{
-                  opacity: [0, 0.8, 0.9, 0.5, 0],
-                  scale: [1, 2, 2.2, 1.8, 1],
-                  rotate: 360
-                }}
-                transition={{
-                  duration: 1.8,
-                  ease: "linear"
-                }}
-              />
-              
-              {/* Sparkle particles */}
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={`sparkle-${i}`}
-                  className="absolute text-2xl"
-                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                  animate={{
-                    x: Math.cos((i / 8) * Math.PI * 2) * 120,
-                    y: Math.sin((i / 8) * Math.PI * 2) * 120,
-                    opacity: 0,
-                    scale: 0,
-                    rotate: 180
-                  }}
-                  transition={{
-                    duration: 1.8,
-                    ease: "easeOut"
-                  }}
-                >
-                  ✨
-                </motion.div>
-              ))}
+            {/* NAME BANNER (Only in Center Phase) */}
+            {phase === 'center' && senderName && receiverName && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: -180 }}
+                exit={{ opacity: 0 }}
+                className="absolute text-center w-[300px]"
+              >
+                <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-2xl">
+                  <p className="text-white text-lg font-black tracking-tight leading-tight">
+                    <span className="text-yellow-400">{senderName}</span>
+                  </p>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] my-0.5">sent gift to</p>
+                  <p className="text-white text-lg font-black tracking-tight leading-tight">
+                    <span className="text-cyan-400">{receiverName}</span>
+                  </p>
+                </div>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.4em] mt-3 drop-shadow-lg">
+                  {giftName || 'Special Gift'}
+                </p>
+              </motion.div>
+            )}
 
-              {activeGift.imageUrl ? (
-                <div className="relative h-40 w-40 drop-shadow-[0_0_40px_rgba(34,211,238,0.6)]">
-                  <img src={activeGift.imageUrl} alt="gift" className="h-full w-full object-contain" />
+            {/* THE GIFT ITSELF */}
+            <div className="relative flex items-center justify-center">
+              {/* Premium Glow */}
+              <div className={cn(
+                "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
+                tier === 'legendary' ? "bg-yellow-400" : tier === 'epic' ? "bg-purple-500" : "bg-cyan-400"
+              )} />
+              
+              {lottieData ? (
+                <div className="w-[280px] h-[280px]">
+                  <Lottie 
+                    animationData={lottieData} 
+                    loop={true} 
+                    className="w-full h-full"
+                  />
+                </div>
+              ) : imageUrl ? (
+                <div className="relative h-48 w-48 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]">
+                  <img src={imageUrl} alt="gift" className="h-full w-full object-contain" />
                 </div>
               ) : (
-                <span 
-                  className="text-8xl select-none leading-none block font-bold drop-shadow-[0_0_30px_rgba(255,215,0,0.8)]"
-                >
-                  {activeGift.emoji}
-                </span>
+                <div className="text-9xl animate-bounce">🎁</div>
               )}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FULL SCREEN AMBIANCE (Only for Legendary) */}
+      <AnimatePresence>
+        {activeGift && phase === 'center' && tier === 'legendary' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[900]"
+          />
         )}
       </AnimatePresence>
     </div>

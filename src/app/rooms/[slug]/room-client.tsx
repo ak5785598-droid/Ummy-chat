@@ -285,7 +285,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
-  const [activeGift, setActiveGift] = useState<{giftId: string, animationId?: string, imageUrl?: string, senderName: string, targetSeat?: number} | null>(null);
+  const [activeGift, setActiveGift] = useState<{
+    giftId: string, 
+    giftName?: string,
+    senderName?: string, 
+    receiverName?: string,
+    imageUrl?: string, 
+    animationUrl?: string,
+    soundUrl?: string,
+    tier?: 'normal' | 'epic' | 'legendary',
+    targetSeat?: number
+  } | null>(null);
   const [isRoomPlayOpen, setIsRoomPlayOpen] = useState(false);
   const [portalDefaultView, setPortalDefaultView] = useState<'grid' | 'music'>('grid');
   const [isRoomGamesOpen, setIsRoomGamesOpen] = useState(false);
@@ -667,9 +677,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 // TRIGGER LOCAL ANIMATION:
                 setActiveGift({
                   giftId: msg.giftId,
-                  animationId: msg.animationId,
-                  imageUrl: msg.imageUrl,
+                  giftName: msg.giftName,
                   senderName: msg.senderName,
+                  receiverName: msg.receiverName,
+                  imageUrl: msg.imageUrl,
+                  animationUrl: msg.animationUrl,
+                  soundUrl: msg.soundUrl,
+                  tier: msg.tier,
                   targetSeat: msg.recipientSeat || 1
                 });
                 
@@ -3143,6 +3157,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       <MountOverlay entries={mountEntries} />
       <GiftAnimationOverlay 
         giftId={activeGift?.giftId || null} 
+        giftName={activeGift?.giftName}
+        senderName={activeGift?.senderName}
+        receiverName={activeGift?.receiverName}
+        imageUrl={activeGift?.imageUrl} 
+        animationUrl={activeGift?.animationUrl}
+        soundUrl={activeGift?.soundUrl}
+        tier={activeGift?.tier}
         targetSeat={activeGift?.targetSeat} 
         onComplete={() => setActiveGift(null)} 
       />
