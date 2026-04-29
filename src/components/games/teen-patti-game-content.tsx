@@ -6,13 +6,14 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import {
-  ChevronLeft,
   Volume2,
   VolumeX,
   X,
-  Move
+  Move,
+  Plus,
+  Clock,
+  HelpCircle
 } from 'lucide-react';
-import { CompactRoomView } from '@/components/compact-room-view';
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +29,7 @@ const CHIPS = [
  { value: 5000000, label: '5000k', color: 'bg-[#FFD700] border-[#FFD700]/50 shadow-[#FFD700]/40' },
 ];
 
-// --- 3D GLOSSY SVG BANNERS - IMAGE JAISA ---
+// --- 3D BANNERS (KEEPING EXISTING) ---
 const WolfBanner = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]", className)} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -52,7 +53,6 @@ const WolfBanner = ({ className }: { className?: string }) => (
         <feComposite in="SourceGraphic" in2="s2" operator="arithmetic" k2="1" k3="0.8"/>
       </filter>
     </defs>
-    {/* Pole */}
     <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#wolfPole)"/>
     <rect x="36" y="24" width="20" height="20" fill="url(#wolfGold)"/>
     <rect x="70" y="24" width="20" height="20" fill="url(#wolfGold)"/>
@@ -60,16 +60,13 @@ const WolfBanner = ({ className }: { className?: string }) => (
     <rect x="144" y="24" width="20" height="20" fill="url(#wolfGold)"/>
     <path d="M10 34 L0 28 L10 16 L20 28 Z" fill="url(#wolfGold)"/>
     <path d="M190 34 L200 28 L190 16 L180 28 Z" fill="url(#wolfGold)"/>
-    {/* Straps */}
     <rect x="22" y="44" width="14" height="168" rx="3" fill="#8c8c84" opacity="0.9"/>
     <rect x="164" y="44" width="14" height="168" rx="3" fill="#8c8c84" opacity="0.9"/>
     <ellipse cx="29" cy="216" rx="7" ry="10" fill="url(#wolfGold)"/>
     <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#wolfGold)"/>
-    {/* Banner */}
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfSilver)" stroke="url(#wolfGold)" strokeWidth="3.5"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfShine)"/>
     <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#d4af37" strokeOpacity="0.4" strokeWidth="1.5"/>
-    {/* Wolf */}
     <g transform="translate(100,138) scale(2.3)" filter="url(#wolfEmboss)">
       <path d="M0-20c-5-6-11-8-17-6-1 3-4 6-8 5 1 3 6 8-3 1-4 3-5 6 1 0 2 0 4 1-1 3 0 5 2 0 3-1 4 1 2 1 3 2 4 0-1 0-2 2-3 1 0 2 2 3 3 1-1 1-2 1-3 1 0 2 1 3 1 0-2 0-3-1-4 1-1 3-2 4-1 0-3-2-5-5-5 2-1 4-3 5-5-2 0-5-1-6-3-4-1-9 1-12 6z" fill="url(#wolfGold)" stroke="#5a4100" strokeWidth="0.7"/>
       <path d="M-14-9c-5 2-9 6-10 11 2-1 4 0 5 2-2 2-3 4-2 6 1-1 2-1 4-1 0 2 1 4 3 5 0-2 1-4 2-5 2 1 3 3 4 5 1-1 2-3 2-5 1 0 3 1 4 2 0-2-1-4-2-6 1-1 3-2 5-2-1-5-5-9-10-11-2 3-5 5-8 5s-6-2-8-5z" fill="url(#wolfGold)"/>
@@ -107,13 +104,9 @@ const LionBanner = ({ className }: { className?: string }) => (
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#lionSplit)" stroke="url(#lionGold)" strokeWidth="3.5"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#lionShine)" opacity="0.4"/>
     <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#ffd700" strokeOpacity="0.25" strokeWidth="1.5"/>
-    {/* Stag & Lion Gold */}
     <g transform="translate(100,135) scale(1.9)" fill="url(#lionGold)" stroke="#5a4100" strokeWidth="0.6">
-      {/* Stag left */}
-      <path d="M-2-18c-2-4-5-6-9-5 0 2-2 3-4 2 1 2 3 3 4-1 1-2 2-2 3 1 0 2 0 0 1 0 2 1 0 1 0 2 0 0 1 1 1 1 1 0 0 1-1 1-1 1 0 1 1 1 1 1 0-1 1-2 0 0 1 1 0-2 0-2 1-1 2-1 2-1 0-1-1-2-2-2 1-1 2-2 2-3-1 0-2-1-3-2-2 0-4 1-6 3z M-8-4c-3-1-5-1-7 1-1 3 0 6 2 8-1 1-2 3-1 4 1-1 2-2 3-1 0 2 1 4 3 5-1 3-2 6-1 9 1-2 2-4 4-5 0 3 1 5 2 7 1-3 1-5 0-8 1-2 2-4 4-5-1-2-2-3-4 1-2 1-4 0-6-2-1-4-1-6 0z"/>
-      {/* Lion right */}
-      <path d="M2-18c2-4 5-6 9-5 0 2 2 3 4 2-1 2-3 3-4-1-1-2-2-2-3 1 0 1 0 2 0 0-1 0-2 1 0 1 0 2 0 0-1 1-1 0 0 1 1 1 0 1-1 1 0-1 1-1 1-2 0 0-1 0-1 1 0 1 0 2 0 2-1 1-2 1-2 1 0 1 1 2 2 2-1 1-2 2-2 3 1 0 2 1 3 2 2 0 4-1 6-3z M8-4c3-1 5-1 7 1 1 3 0 6-2 8 1 1 2 3 1 4-1-1-2-2-3-1 0 2-1 4-3 5 1 3 2 6 1 9-1-2-2-4-4-5 0 3-1 5-2 7-1-3-1-5 0-8-1-2-2-4-4-5 1-2 2-3 4-4-1-2-1-4 0-6 2-1 4-1 6 0z"/>
-      {/* Crown top */}
+      <path d="M-14-2c6-7 14-10 22-6 3 2 5 5 9-1 0-2 0-3 0 1 1 3 0 4 1 0 2 0 3 0 0 4-2 7-5 9-7 4 5 1 9-2 12-6 4-13 5-20 2 1 2 1 4 0 5-1-1-2-2-3-1 0 1 1 2 2 3-2 1-4 1-5 0 1-1 1-3 0-4-2 1-3 2-4 4-1-2 0-3 1-5-3 0-6-1-8-3z"/>
+      <path d="M2-18c2-4 5-6 9-5 0 2 2 3 4 2-1 2-3 3-4-1-1-2-2-2-3 1 0 1 0 2 0 0-1 0-2 1 0 1 0 2 0 0-1 1-1 0 0 1 1 1 0 1-1 1 0-1 1-1 1-2 0 0-1 0-1 1 0 1 0 2 0 2-1 1-2 1-2 1 0 1 1 2 2 2-1 1-2 2-2 3 1 0 2 1 3 2 2 0 4-1 6-3z"/>
       <path d="M-6-22l2 3 2-3 2 3 2-3c0 2-1 4-3 5h-2c-2-1-3-3-3-5z"/>
     </g>
   </svg>
@@ -149,7 +142,6 @@ const FishBanner = ({ className }: { className?: string }) => (
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishGreen)" stroke="url(#fishGold)" strokeWidth="3.5"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishShine)"/>
     <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#ffd700" strokeOpacity="0.25" strokeWidth="1.5"/>
-    {/* Fish Gold */}
     <g transform="translate(100,138) scale(2.4)" fill="url(#fishGold)" stroke="#5a4100" strokeWidth="0.6">
       <path d="M-14-2c6-7 14-10 22-6 3 2 5 5 9-1 0-2 0-3 0 1 1 3 0 4 1 0 2 0 3 0 0 4-2 7-5 9-7 4 5 1 9-2 12-6 4-13 5-20 2 1 2 1 4 0 5-1-1-2-2-3-1 0 1 1 2 2 3-2 1-4 1-5 0 1-1 1-3 0-4-2 1-3 2-4 4-1-2 0-3 1-5-3 0-6-1-8-3z"/>
       <circle cx="-9" cy="-1" r="1.2" fill="#5a4100"/>
@@ -232,7 +224,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      }
     } catch (e) {}
    }
-
    setTimeout(() => { finalizeRound(winId); }, 3000);
   };
 
@@ -240,36 +231,14 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setWinnerId(winId); setHistory(prev => [winId,...prev.slice(0, 7)]); setGameState('result');
    const winAmount = (myBets[winId] || 0) * 1.95;
    setTotalWinAmount(winAmount);
-
-   setWinners(liveWins?.map(w => ({
-     name: w.username,
-     win: w.amount,
-     avatar: w.avatarUrl,
-     isMe: w.userId === currentUser?.uid
-   })) || []);
+   setWinners(liveWins?.map(w => ({ name: w.username, win: w.amount, avatar: w.avatarUrl, isMe: w.userId === currentUser?.uid })) || []);
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
-    const updateData = {
-      'wallet.coins': increment(Math.floor(winAmount)),
-      'stats.dailyGameWins': increment(Math.floor(winAmount)),
-      updatedAt: serverTimestamp()
-    };
+    const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-
-    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-     gameId: 'teen-patti',
-     userId: currentUser.uid,
-     username: userProfile?.username || 'Guest',
-     avatarUrl: userProfile?.avatarUrl || null,
-     amount: Math.floor(winAmount),
-     timestamp: serverTimestamp()
-    });
-
-    const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
-    updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
+    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), { gameId: 'teen-patti', userId: currentUser.uid, username: userProfile?.username || 'Guest', avatarUrl: userProfile?.avatarUrl || null, amount: Math.floor(winAmount), timestamp: serverTimestamp() });
    }
-
    setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
   };
 
@@ -283,11 +252,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setTotalPots(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
-  const handleBack = () => {
-    if (onClose) onClose();
-    else router.back();
-  };
-
   const winnerFaction = winnerId? FACTIONS.find(f => f.id === winnerId) : null;
   const WinnerBanner = winnerFaction?.Banner;
 
@@ -297,94 +261,98 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      dragControls={dragControls}
      dragListener={false}
      dragMomentum={false}
-     initial={isOverlay? { y: '35%' } : {}}
+     initial={isOverlay? { y: '10%' } : {}}
      className={cn(
-       "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#581c87] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
-     !isOverlay && "min-h-screen"
+       "h-fit max-h-[88vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
+     !isOverlay && "min-h-[85vh]"
      )}
    >
-    <CompactRoomView />
-
+    {/* GAME RESULT OVERLAY */}
     {gameState === 'result' && winnerId && WinnerBanner && (
-     <GameResultOverlay
-      gameId="teen-patti"
-      winningSymbol={<WinnerBanner className="h-16 w-16" />}
-      winAmount={totalWinAmount}
-      winners={winners}
-     />
+     <GameResultOverlay gameId="teen-patti" winningSymbol={<WinnerBanner className="h-16 w-16" />} winAmount={totalWinAmount} winners={winners} />
     )}
 
-    <header className="relative z-50 flex items-center justify-between p-4 pt-8 shrink-0">
-      <div className="flex items-center gap-2">
-        <button
-          onPointerDown={(e) => dragControls.start(e)}
-          className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90 cursor-grab active:cursor-grabbing text-white/80"
-        >
-          <Move className="h-4.5 w-4.5" />
+    {/* NEW GLOSSY 3D HEADER (As per Image 1) */}
+    <header className="relative z-50 flex items-center justify-between p-3 pt-6 px-4">
+      <div className="flex items-center gap-1.5">
+        <button onPointerDown={(e) => dragControls.start(e)} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90">
+          <Move className="h-5 w-5" />
         </button>
-        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md transition-all active:scale-90">
-          {isMuted? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
-        </button>
+        
+        {/* COIN PILL DISPLAY */}
+        <div className="h-10 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-2 shadow-inner group">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
+            <GoldCoinIcon className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-[13px] font-bold text-white tracking-tight px-1">
+            {(userProfile?.wallet?.coins || 0).toLocaleString()}
+          </span>
+          <button className="w-7 h-7 rounded-full bg-[#34d399] flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
+            <Plus className="h-4 w-4 stroke-[3px]" />
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col items-center">
-       <h1 className="text-xl font-bold uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-lg italic">TEEN PATTI</h1>
-       <div className="bg-black/20 border border-white/10 px-3 py-0.5 rounded-full"><span className="text-[8px] font-bold uppercase tracking-wider text-white">Left {timeLeft}s</span></div>
-      </div>
-
-      <div className="flex items-center gap-1">
-        <button onClick={handleBack} className="bg-red-500/10 p-2 rounded-xl border border-red-500/20 text-red-500 transition-all active:scale-90">
-          <X className="h-4.5 w-4.5 font-bold" />
+      <div className="flex items-center gap-1.5">
+        <button className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90 relative">
+          <Clock className="h-5 w-5 text-white/90" />
+          <div className="absolute -bottom-1 bg-black/60 px-1 rounded text-[7px] font-bold border border-white/10">{timeLeft}s</div>
+        </button>
+        <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+          {isMuted? <VolumeX className="h-5 w-5 text-white/90" /> : <Volume2 className="h-5 w-5 text-white/90" />}
+        </button>
+        <button className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+          <HelpCircle className="h-5 w-5 text-white/90" />
+        </button>
+        <button onClick={() => (onClose? onClose() : router.back())} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90 text-white/90">
+          <X className="h-5 w-5" />
         </button>
       </div>
     </header>
 
-    <main className="flex-1 flex flex-col pt-4 overflow-hidden relative z-10">
-      <div className="grid grid-cols-3 gap-2 px-4 h-44">
+    <main className="flex-1 flex flex-col pt-2 overflow-hidden relative z-10">
+      <div className="grid grid-cols-3 gap-2 px-4 h-40">
        {FACTIONS.map((f) => (
-        <div key={f.id} className="flex flex-col items-center gap-2">
-          <div className={cn("w-full h-28 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/30 backdrop-blur-sm shadow-inner", winnerId === f.id? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5")}>
-           <div className="flex gap-0.5 mb-1 scale-110">
+        <div key={f.id} className="flex flex-col items-center gap-1.5">
+          <div className={cn("w-full h-24 rounded-2xl border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner", winnerId === f.id? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5")}>
+           <div className="flex gap-0.5 scale-100">
              {[0, 1, 2].map((i) => (
-              <div key={i} className={cn("w-8 h-12 rounded border transition-all duration-1000 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", gameState!== 'betting'? "rotate-y-180" : "")}>
-               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded"><span className="text-[10px] font-bold text-black leading-none">{cardReveal[f.id]?.[i] || '?'}</span></div>
-               <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#3730a3] to-[#1e1b4b] rounded border border-[#ffd700]/30 flex items-center justify-center"><UmmyLogoIcon className="h-4 w-4 opacity-40 grayscale brightness-200" /></div>
+              <div key={i} className={cn("w-7 h-10 rounded border transition-all duration-1000 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", gameState!== 'betting'? "rotate-y-180" : "")}>
+               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded"><span className="text-[9px] font-bold text-black">{cardReveal[f.id]?.[i] || '?'}</span></div>
+               <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#3730a3] to-[#1e1b4b] rounded border border-[#ffd700]/30 flex items-center justify-center"><UmmyLogoIcon className="h-3.5 w-3.5 opacity-40 grayscale brightness-200" /></div>
               </div>
              ))}
            </div>
           </div>
-          <div className="text-center"><p className="text-[9px] font-bold text-white/60 uppercase">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p><p className="text-[9px] font-bold text-[#ffd700] uppercase ">Me:{(myBets[f.id] || 0).toLocaleString()}</p></div>
+          <div className="text-center"><p className="text-[8px] font-bold text-white/50 uppercase leading-none">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p><p className="text-[8px] font-bold text-[#ffd700] uppercase leading-tight mt-0.5">Me:{(myBets[f.id] || 0).toLocaleString()}</p></div>
         </div>
        ))}
       </div>
 
-      <div className="flex justify-around items-end px-4 flex-1 pb-28">
+      <div className="flex justify-around items-end px-4 flex-1 pb-16">
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
          <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState!== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-           <Icon className="w-24 h-28" />
+           <Icon className="w-20 h-24" />
          </button>
         )
        })}
       </div>
     </main>
 
-    <footer className="p-4 py-6 bg-gradient-to-t from-black to-transparent mt-auto shrink-0 relative z-50">
-      <div className="w-full flex items-center justify-between gap-3">
-       <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full flex items-center gap-2 pl-2 pr-3 py-1 shadow-2xl text-white">
-        <GoldCoinIcon className="h-6 w-6 text-[#ffd700]" /><span className="text-xs font-bold text-[#ffd700] ">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-       </div>
-       <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+    {/* DECREASED FOOTER SPACING */}
+    <footer className="p-3 py-4 bg-gradient-to-t from-black/40 to-transparent mt-auto shrink-0 relative z-50">
+      <div className="w-full flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
          {CHIPS.map(chip => (
-          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-10 w-10 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value? "scale-110 border-white ring-4 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
-           <span className="text-[8px] font-bold text-white ">{chip.label}</span>
+          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-9 w-9 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value? "scale-110 border-white ring-4 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
+           <span className="text-[7px] font-bold text-white uppercase">{chip.label}</span>
           </button>
          ))}
-       </div>
       </div>
     </footer>
+    
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
   );
-        }
+}
