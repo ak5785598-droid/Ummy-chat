@@ -29,9 +29,9 @@ import {
  X,
  Plus,
  Clock,
- Move,
- DollarSign
+ Move
 } from 'lucide-react';
+import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -77,7 +77,7 @@ const formatKandM = (num: number) => {
 };
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
- const [isLoading, setIsLoading] = useState(true);
+ const [isLoading][setIsLoading] = useState(true);
 
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
@@ -85,28 +85,28 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const { toast } = useToast();
  const dragControls = useDragControls();
 
- const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
- const [timeLeft, setTimeLeft] = useState(25);
- const [selectedChip, setSelectedChip] = useState(100);
- const [myBets, setMyBets] = useState<Record<string, number>>({});
- const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
- const [history, setHistory] = useState<{id: string, type: 'single' | 'left' | 'right'}[]>([
+ const [gameState][setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
+ const [timeLeft][setTimeLeft] = useState(25);
+ const [selectedChip][setSelectedChip] = useState(100);
+ const [myBets][setMyBets] = useState<Record<string, number>>({});
+ const [highlightIdx][setHighlightIdx] = useState<number | null>(null);
+ const [history][setHistory] = useState<{id: string, type: 'single' | 'left' | 'right'}[]>([
     {id: 'panda', type: 'single'}, {id: 'lion', type: 'single'}, {id: 'fox', type: 'single'}
  ]);
- const [isMuted, setIsMuted] = useState(false);
- const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
- const [localCoins, setLocalCoins] = useState(0);
+ const [isMuted][setIsMuted] = useState(false);
+ const [winnerData][setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
+ const [localCoins][setLocalCoins] = useState(0);
 
- const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
- const [fakeDroppedChips, setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number, delay: number}[]>([]);
+ const [droppedChips][setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
+ const [fakeDroppedChips][setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number, delay: number}[]>([]);
 
- const [showRules, setShowRules] = useState(false);
- const [showRecord, setShowRecord] = useState(false);
- const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
+ const [showRules][setShowRules] = useState(false);
+ const [showRecord][setShowRecord] = useState(false);
+ const [gameRecords][setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
 
- const [shiningGroup, setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
- const [dailyWinnings, setDailyWinnings] = useState(0);
- const [bannerMsg, setBannerMsg] = useState<'Start Betting' | 'Betting Over' | null>('Start Betting');
+ const [shiningGroup][setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
+ const [dailyWinnings][setDailyWinnings] = useState(0);
+ const [bannerMsg][setBannerMsg] = useState<'Start Betting' | 'Betting Over' | null>('Start Betting');
 
  const gameDocRef = useMemoFirebase(() =>!firestore? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
@@ -144,7 +144,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       }
     }
     return uniqueTopWinners;
- }, [liveWins, currentUser]);
+ }, [liveWins][currentUser]);
 
  // Refs for security and stale closure protection
  const myBetsRef = useRef(myBets);
@@ -153,7 +153,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const chaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const bannerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
- const lastBetTimeRef = useRef(0);
 
  // Audio Refs
  const chipAudio = useRef<HTMLAudioElement | null>(null);
@@ -164,7 +163,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  useEffect(() => {
     myBetsRef.current = myBets;
     gameStateRef.current = gameState;
- }, [myBets, gameState]);
+ }, [myBets][gameState]);
 
  useEffect(() => {
     const timer = setTimeout(() => {
@@ -222,7 +221,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
 
      // Optimization: Preload sounds
-     [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => {
+     [chipAudio][spinAudio][tickAudio][winAudio].forEach(ref => {
         if (ref.current) ref.current.load();
      });
    }
@@ -237,7 +236,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             const newFakeChips = [];
             for (let i = 0; i < dropCount; i++) {
                 const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
-                const chipOptions = [0, 0, 0, 1, 1, 2, 3, 4, 5];
+                const chipOptions = [0][0][0][1][1][2][3][4][5];
                 const randomChip = CHIPS_DATA[chipOptions[Math.floor(Math.random() * chipOptions.length)]] || CHIPS_DATA[0];
                 newFakeChips.push({
                     id: Date.now() + Math.random() + i,
@@ -319,7 +318,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      });
   }
   setShiningGroup(groupType);
-  const newRoundRecords = Object.entries(currentBets).map(([betId, betAmount]) => {
+  const newRoundRecords = Object.entries(currentBets).map(([betId][betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
      return {
        id: Date.now() + Math.random(),
@@ -334,7 +333,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setHistory(prev => [historyItem,...prev].slice(0, 15));
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔';
+  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔';
 
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setGameState('result');
@@ -374,7 +373,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        if (isMountedRef.current) setBannerMsg(null);
    }, 1500);
   }, 5000);
- }, [currentUser, firestore, playSound, userProfile]);
+ }, [currentUser][firestore][playSound][userProfile]);
 
  const startSpin = useCallback(async () => {
   if (!isMountedRef.current) return;
@@ -425,28 +424,19 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    }
   };
   runChase();
- }, [firestore, playSound, finalizeResult]);
+ }, [firestore][playSound][finalizeResult]);
 
  useEffect(() => {
     if (gameState === 'betting' && timeLeft === 0) startSpin();
- }, [timeLeft, gameState, startSpin]);
+ }, [timeLeft][gameState][startSpin]);
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
-  // --- INSTANT DEDUCT + SECURITY ---
-  if (gameStateRef.current!== 'betting' ||!currentUser ||!firestore) return;
-  const now = Date.now();
-  if (now - lastBetTimeRef.current < 80) return; // anti-spam
-  lastBetTimeRef.current = now;
-
-  if (selectedChip <= 0) return;
+  // Security: Check current state via Ref as well for timing issues
+  if (gameStateRef.current!== 'betting' ||!currentUser) return;
   if (localCoins < selectedChip) {
-   toast({ title: 'You do not have enough Coins!', variant: 'destructive' });
+   toast({ title: 'You do not have any Coins!', variant: 'destructive' });
    return;
   }
-
-  // Ekdam turant local cut
-  setLocalCoins(prev => prev - selectedChip);
-
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
   const newChip = {
@@ -459,16 +449,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    y: (Math.random() * 20) - 10
   };
   setDroppedChips(prev => [...prev, newChip]);
+  // FIX: localCoins ko yahan update nahi karenge, sirf Firestore karega - isse overwrite band
+  // setLocalCoins(prev => prev - selectedChip);
 
-  // Dono wallet se fast deduct
-  try {
+  if (firestore) {
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
-  } catch (e) {
-    // rollback on fail
-    setLocalCoins(prev => prev + selectedChip);
   }
-
   setMyBets(prev => ({...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
 
@@ -542,7 +529,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     <div className="flex flex-col items-end">
                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">My Win</span>
                        <div className="flex items-center gap-1.5">
-                         <DollarSign className="h-5 w-5 filter brightness-110" />
+                         {/* 3D DOLLAR ICON */}
+                         <div className="h-5 w-5 rounded-full bg-gradient-to-b from-emerald-400 to-green-700 flex items-center justify-center border border-yellow-300 shadow-[inset_0_1px_2px_rgba(255,255,255,0.6)]">
+                           <span className="text-[12px] font-black text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">$</span>
+                         </div>
                          <span className="text-2xl font-black text-emerald-400 tabular-nums">+{formatKandM(winnerData.win)}</span>
                        </div>
                     </div>
@@ -636,7 +626,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               </div>
 
               <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1 ml-1">
-                  <div className="bg-yellow-400 rounded-md p-0.5"><DollarSign className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
+                  {/* 3D DOLLAR ICON - YAHAN CHANGE KIYA */}
+                  <div className="bg-gradient-to-b from-emerald-400 to-green-600 rounded-md p-0.5 shadow-inner border border-yellow-200">
+                    <div className="h-5 w-5 flex items-center justify-center text-white font-black text-[13px] drop-shadow-[0_1px_1px_rgba(0,0,0,0.7)]">$</div>
+                  </div>
                   <span className="text-white px-2 font-semibold text-[12px]">{localCoins}</span>
                   <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
               </div>
@@ -743,7 +736,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   <stop offset="100%" stopColor="#8b4513" />
                 </linearGradient>
             </defs>
-            {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
+            {[0][45][90][135][180][225][270][315].map(deg => (
               <g key={deg} transform={`rotate(${deg} 50 50)`}>
                 <line x1="50" y1="50" x2="50" y2="13" stroke="rgba(0,0,0,0.5)" strokeWidth="10" strokeLinecap="round" filter="url(#shadow3D)" />
                 <line x1="50" y1="50" x2="50" y2="13" stroke="#5d2e14" strokeWidth="8" strokeLinecap="round" />
@@ -858,7 +851,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                       "If you lose you will not receive any coins amount"
                     ].map((rule, i) => (
                         <div key={i} className="flex gap-3 items-start group">
-                            <span className="bg-zinc-800 border-white/10 text-yellow-500 text-[10px] font-black h-5 w-5 rounded-md flex items-center justify-center shrink-0 shadow-lg">{i+1}</span>
+                            <span className="bg-zinc-800 border border-white/10 text-yellow-500 text-[10px] font-black h-5 w-5 rounded-md flex items-center justify-center shrink-0 shadow-lg">{i+1}</span>
                             <p className="text-zinc-300 text-xs font-bold leading-tight group-hover:text-white transition-colors">{rule}</p>
                         </div>
                     ))}
