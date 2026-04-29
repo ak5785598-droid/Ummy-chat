@@ -28,73 +28,133 @@ const CHIPS = [
  { value: 5000000, label: '5000k', color: 'bg-[#FFD700] border-[#FFD700]/50 shadow-[#FFD700]/40' },
 ];
 
-// --- 3D GLOSSY SVG BANNERS (URL ki jagah) ---
-const BannerBase = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-  <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]", className)} xmlns="http://www.w3.org/2000/svg">
+// --- 3D GLOSSY SVG BANNERS - IMAGE JAISA ---
+const WolfBanner = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]", className)} xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="pole" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff8d5"/><stop offset="20%" stopColor="#ffd700"/>
-        <stop offset="50%" stopColor="#b8860b"/><stop offset="80%" stopColor="#ffd700"/>
-        <stop offset="100%" stopColor="#fff3a0"/>
+      <linearGradient id="wolfPole" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#f8f5"/><stop offset="50%" stopColor="#b8b8b0"/><stop offset="100%" stopColor="#e9e9e4"/>
       </linearGradient>
-      <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#f0f0f0"/><stop offset="30%" stopColor="#c7c7c7"/>
-        <stop offset="70%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#d8d8d8"/>
+      <linearGradient id="wolfGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff9d0"/><stop offset="20%" stopColor="#ffd700"/><stop offset="50%" stopColor="#c99700"/><stop offset="80%" stopColor="#ffdf5f"/><stop offset="100%" stopColor="#7a5a00"/>
       </linearGradient>
-      <linearGradient id="gold3d" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff6c1"/><stop offset="25%" stopColor="#ffd700"/>
-        <stop offset="55%" stopColor="#d4a017"/><stop offset="85%" stopColor="#ffdf5d"/>
-        <stop offset="100%" stopColor="#8c6b00"/>
+      <linearGradient id="wolfSilver" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#eeede6"/><stop offset="35%" stopColor="#c2c1b8"/><stop offset="70%" stopColor="#8a8982"/><stop offset="100%" stopColor="#b0afa6"/>
       </linearGradient>
-      <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-        <feDropShadow dx="0" dy="6" stdDeviation="8" floodOpacity="0.45"/>
-      </filter>
-      <filter id="emboss">
-        <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
-        <feOffset dy="2" result="off"/><feComposite in="SourceGraphic" in2="off" operator="over"/>
+      <radialGradient id="wolfShine" cx="0.3" cy="0.15" r="0.7">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.45"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+      </radialGradient>
+      <filter id="wolfEmboss">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+        <feOffset dy="2" in="b" result="o"/>
+        <feSpecularLighting in="b" surfaceScale="4" specularConstant="0.9" specularExponent="25" lightingColor="#fff" result="s"><feDistantLight azimuth="45" elevation="55"/></feSpecularLighting>
+        <feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/>
+        <feComposite in="SourceGraphic" in2="s2" operator="arithmetic" k2="1" k3="0.8"/>
       </filter>
     </defs>
-    {/* Top Pole */}
-    <rect x="8" y="18" width="184" height="20" rx="10" fill="url(#pole)" filter="url(#softShadow)"/>
-    <path d="M8 28 L0 28 L12 14 L20 28 Z" fill="url(#pole)"/>
-    <path d="M192 28 L200 28 L188 14 L180 28 Z" fill="url(#pole)"/>
-    {/* Side straps */}
-    <rect x="24" y="38" width="12" height="170" rx="6" fill="#b5b5b5" opacity="0.8"/>
-    <rect x="164" y="38" width="12" height="170" rx="6" fill="#b5b5b5" opacity="0.8"/>
-    {/* Main Banner */}
-    <path d="M32 38 H168 V175 Q168 205 100 242 Q32 205 32 175 Z" fill="url(#silver)" stroke="url(#pole)" strokeWidth="4" filter="url(#softShadow)"/>
-    <path d="M42 48 H158 V170 Q158 195 100 228 Q42 195 42 170 Z" fill="none" stroke="white" strokeOpacity="0.12" strokeWidth="3"/>
-    {/* Bottom gold tips */}
-    <ellipse cx="30" cy="210" rx="7" ry="10" fill="url(#pole)"/>
-    <ellipse cx="170" cy="210" rx="7" ry="10" fill="url(#pole)"/>
-    {children}
+    {/* Pole */}
+    <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#wolfPole)"/>
+    <rect x="36" y="24" width="20" height="20" fill="url(#wolfGold)"/>
+    <rect x="70" y="24" width="20" height="20" fill="url(#wolfGold)"/>
+    <rect x="110" y="24" width="20" height="20" fill="url(#wolfGold)"/>
+    <rect x="144" y="24" width="20" height="20" fill="url(#wolfGold)"/>
+    <path d="M10 34 L0 28 L10 16 L20 28 Z" fill="url(#wolfGold)"/>
+    <path d="M190 34 L200 28 L190 16 L180 28 Z" fill="url(#wolfGold)"/>
+    {/* Straps */}
+    <rect x="22" y="44" width="14" height="168" rx="3" fill="#8c8c84" opacity="0.9"/>
+    <rect x="164" y="44" width="14" height="168" rx="3" fill="#8c8c84" opacity="0.9"/>
+    <ellipse cx="29" cy="216" rx="7" ry="10" fill="url(#wolfGold)"/>
+    <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#wolfGold)"/>
+    {/* Banner */}
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfSilver)" stroke="url(#wolfGold)" strokeWidth="3.5"/>
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfShine)"/>
+    <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#d4af37" strokeOpacity="0.4" strokeWidth="1.5"/>
+    {/* Wolf */}
+    <g transform="translate(100,138) scale(2.3)" filter="url(#wolfEmboss)">
+      <path d="M0-20c-5-6-11-8-17-6-1 3-4 6-8 5 1 3 6 8-3 1-4 3-5 6 1 0 2 0 4 1-1 3 0 5 2 0 3-1 4 1 2 1 3 2 4 0-1 0-2 2-3 1 0 2 2 3 3 1-1 1-2 1-3 1 0 2 1 3 1 0-2 0-3-1-4 1-1 3-2 4-1 0-3-2-5-5-5 2-1 4-3 5-5-2 0-5-1-6-3-4-1-9 1-12 6z" fill="url(#wolfGold)" stroke="#5a4100" strokeWidth="0.7"/>
+      <path d="M-14-9c-5 2-9 6-10 11 2-1 4 0 5 2-2 2-3 4-2 6 1-1 2-1 4-1 0 2 1 4 3 5 0-2 1-4 2-5 2 1 3 3 4 5 1-1 2-3 2-5 1 0 3 1 4 2 0-2-1-4-2-6 1-1 3-2 5-2-1-5-5-9-10-11-2 3-5 5-8 5s-6-2-8-5z" fill="url(#wolfGold)"/>
+    </g>
   </svg>
 );
 
-const WolfBanner = ({ className }: { className?: string }) => (
-  <BannerBase className={className}>
-    <g filter="url(#emboss)" transform="translate(100,135)">
-      {/* 3D Gold Wolf - same as your image */}
-      <path d="M0-48c-5-7-13-11-20-9-2 4-6 7-10 6 1 4 7 8 9-4 1-7 4-7 8 2-1 5 0 7 2-2 5-1 7 2-1 4-1 6 0 0 2 1 4 3 5 0-2 1-4 3-5 2 1 4 3 5 5 1-2 2-4 2-6 2 0 4 1 5 2 1-3 0-5-1-7 2-2 5-3 7-2 0-4-3-7-7-8 4-2 7-5 8-9-4 1-8-2-10-6-7-2-15 2-20 9z M-22-28c-8 2-14 8-16 15 3 0 6 2 8 4-3 3-5 7-4 11 2-2 5-3 8-2 0 4 2 8 5 10-1-4 0-8 2-11 3 2 6 5 7 9 2-3 3-6 3-9 3 0 5 1 7 3 1-4-1-8-4-11 2-2 5-4 8-4-2-7-8-13-16-15-4 6-10 10-17 10-7 0-13-4-17-10z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.5" transform="scale(1.8)"/>
-      <path d="M-36 -18c12-5 24-5 36 0 10 4 18 12 20 22-4-2-9-2-13 0 2 4 2 9 0 13-3-7-4-11-3-1 5-3 10-7 13-2-5-5-9-12-4 3-7 7-9 12-4-3-6-8-7-13-4-1-8 0-11 3-2-4-2-9 0-13-4-2-9-2-13 0 2-10 10-18 20-22z" fill="none" stroke="#fff8c0" strokeOpacity="0.35" strokeWidth="1.2" transform="scale(1.8)"/>
-    </g>
-  </BannerBase>
-);
-
 const LionBanner = ({ className }: { className?: string }) => (
-  <BannerBase className={className}>
-    <g filter="url(#emboss)" transform="translate(100,135) scale(1.7)">
-      <path d="M0-30c-8 0-15 4-18 11-5-1-9 1-11 5 2 1 4 3 5-3 2-5 5-5 9 2 0 4-1 6-1-1 3 0 6 2 8-1 2-1 5 0 7 2-1 4-2 6-2 1 3 3 5 6 6 0-2 1-4 2-5 2 4 4 5 6 1-2 3-4 5-6 1 1 2 3 2 5 3-1 5-3 6-6 2 0 4 1 6 2 1-5 0-7 2-2 3-5 2-8 2 0 4 1 6 1 0-4-2-7-5-9 1-2 3-4 5-5-2-4-6-11-5-3-7-10-11-18-11z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.2"/>
+  <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]", className)} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="lionPole" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#f8f8f5"/><stop offset="50%" stopColor="#b8b8b0"/><stop offset="100%" stopColor="#e9e9e4"/>
+      </linearGradient>
+      <linearGradient id="lionGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff9d0"/><stop offset="20%" stopColor="#ffd700"/><stop offset="50%" stopColor="#c99700"/><stop offset="80%" stopColor="#ffdf5f"/><stop offset="100%" stopColor="#7a5a00"/>
+      </linearGradient>
+      <linearGradient id="lionSplit" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stopColor="#e6b422"/><stop offset="49.8%" stopColor="#b8860b"/><stop offset="50%" stopColor="#a10f0f"/><stop offset="100%" stopColor="#6a0000"/>
+      </linearGradient>
+      <linearGradient id="lionShine" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.35"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#lionPole)"/>
+    <rect x="36" y="24" width="20" height="20" fill="#b71c1c"/>
+    <rect x="70" y="24" width="20" height="20" fill="#b71c1c"/>
+    <rect x="110" y="24" width="20" height="20" fill="#b71c1c"/>
+    <rect x="144" y="24" width="20" height="20" fill="#b71c1c"/>
+    <path d="M10 34 L0 28 L10 16 L20 28 Z" fill="url(#lionGold)"/>
+    <path d="M190 34 L200 28 L190 16 L180 28 Z" fill="url(#lionGold)"/>
+    <rect x="22" y="44" width="14" height="168" rx="3" fill="#5a0a0a" opacity="0.9"/>
+    <rect x="164" y="44" width="14" height="168" rx="3" fill="#5a0a0a" opacity="0.9"/>
+    <ellipse cx="29" cy="216" rx="7" ry="10" fill="url(#lionGold)"/>
+    <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#lionGold)"/>
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#lionSplit)" stroke="url(#lionGold)" strokeWidth="3.5"/>
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#lionShine)" opacity="0.4"/>
+    <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#ffd700" strokeOpacity="0.25" strokeWidth="1.5"/>
+    {/* Stag & Lion Gold */}
+    <g transform="translate(100,135) scale(1.9)" fill="url(#lionGold)" stroke="#5a4100" strokeWidth="0.6">
+      {/* Stag left */}
+      <path d="M-2-18c-2-4-5-6-9-5 0 2-2 3-4 2 1 2 3 3 4-1 1-2 2-2 3 1 0 2 0 0 1 0 2 1 0 1 0 2 0 0 1 1 1 1 1 0 0 1-1 1-1 1 0 1 1 1 1 1 0-1 1-2 0 0 1 1 0-2 0-2 1-1 2-1 2-1 0-1-1-2-2-2 1-1 2-2 2-3-1 0-2-1-3-2-2 0-4 1-6 3z M-8-4c-3-1-5-1-7 1-1 3 0 6 2 8-1 1-2 3-1 4 1-1 2-2 3-1 0 2 1 4 3 5-1 3-2 6-1 9 1-2 2-4 4-5 0 3 1 5 2 7 1-3 1-5 0-8 1-2 2-4 4-5-1-2-2-3-4 1-2 1-4 0-6-2-1-4-1-6 0z"/>
+      {/* Lion right */}
+      <path d="M2-18c2-4 5-6 9-5 0 2 2 3 4 2-1 2-3 3-4-1-1-2-2-2-3 1 0 1 0 2 0 0-1 0-2 1 0 1 0 2 0 0-1 1-1 0 0 1 1 1 0 1-1 1 0-1 1-1 1-2 0 0-1 0-1 1 0 1 0 2 0 2-1 1-2 1-2 1 0 1 1 2 2 2-1 1-2 2-2 3 1 0 2 1 3 2 2 0 4-1 6-3z M8-4c3-1 5-1 7 1 1 3 0 6-2 8 1 1 2 3 1 4-1-1-2-2-3-1 0 2-1 4-3 5 1 3 2 6 1 9-1-2-2-4-4-5 0 3-1 5-2 7-1-3-1-5 0-8-1-2-2-4-4-5 1-2 2-3 4-4-1-2-1-4 0-6 2-1 4-1 6 0z"/>
+      {/* Crown top */}
+      <path d="M-6-22l2 3 2-3 2 3 2-3c0 2-1 4-3 5h-2c-2-1-3-3-3-5z"/>
     </g>
-  </BannerBase>
+  </svg>
 );
 
 const FishBanner = ({ className }: { className?: string }) => (
-  <BannerBase className={className}>
-    <g filter="url(#emboss)" transform="translate(100,135) scale(1.8)">
-      <path d="M-20-5c8-10 20-14 32-8 5 3 8 9 14-2-1-5-1-7 0 1 2 1 5 0 7 2 1 5 1 7 0-1 6-4 11-9 14-12 6-24 2-32-8-4 2-8 2-11 0 1-3 3-5 6-6-3-2-5-4-6-7 3-2 7-2 11 0z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.2"/>
+  <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]", className)} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="fishPole" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#f8f8f5"/><stop offset="50%" stopColor="#b8b8b0"/><stop offset="100%" stopColor="#e9e9e4"/>
+      </linearGradient>
+      <linearGradient id="fishGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff9d0"/><stop offset="20%" stopColor="#ffd700"/><stop offset="50%" stopColor="#c99700"/><stop offset="80%" stopColor="#ffdf5f"/><stop offset="100%" stopColor="#7a5a00"/>
+      </linearGradient>
+      <linearGradient id="fishGreen" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#0e9a4a"/><stop offset="40%" stopColor="#067a38"/><stop offset="100%" stopColor="#004d24"/>
+      </linearGradient>
+      <radialGradient id="fishShine" cx="0.25" cy="0.2" r="0.8">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.3"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#fishPole)"/>
+    <rect x="36" y="24" width="20" height="20" fill="#0a7a3a"/>
+    <rect x="70" y="24" width="20" height="20" fill="#0a7a3a"/>
+    <rect x="110" y="24" width="20" height="20" fill="#0a7a3a"/>
+    <rect x="144" y="24" width="20" height="20" fill="#0a7a3a"/>
+    <path d="M10 34 L0 28 L10 16 L20 28 Z" fill="url(#fishGold)"/>
+    <path d="M190 34 L200 28 L190 16 L180 28 Z" fill="url(#fishGold)"/>
+    <rect x="22" y="44" width="14" height="168" rx="3" fill="#00391b" opacity="0.9"/>
+    <rect x="164" y="44" width="14" height="168" rx="3" fill="#00391b" opacity="0.9"/>
+    <ellipse cx="29" cy="216" rx="7" ry="10" fill="url(#fishGold)"/>
+    <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#fishGold)"/>
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishGreen)" stroke="url(#fishGold)" strokeWidth="3.5"/>
+    <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishShine)"/>
+    <path d="M36 52 H164 V168 Q164 196 100 230 Q36 196 36 168 Z" fill="none" stroke="#ffd700" strokeOpacity="0.25" strokeWidth="1.5"/>
+    {/* Fish Gold */}
+    <g transform="translate(100,138) scale(2.4)" fill="url(#fishGold)" stroke="#5a4100" strokeWidth="0.6">
+      <path d="M-14-2c6-7 14-10 22-6 3 2 5 5 9-1 0-2 0-3 0 1 1 3 0 4 1 0 2 0 3 0 0 4-2 7-5 9-7 4 5 1 9-2 12-6 4-13 5-20 2 1 2 1 4 0 5-1-1-2-2-3-1 0 1 1 2 2 3-2 1-4 1-5 0 1-1 1-3 0-4-2 1-3 2-4 4-1-2 0-3 1-5-3 0-6-1-8-3z"/>
+      <circle cx="-9" cy="-1" r="1.2" fill="#5a4100"/>
     </g>
-  </BannerBase>
+  </svg>
 );
 
 const FACTIONS = [
@@ -240,7 +300,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      initial={isOverlay? { y: '35%' } : {}}
      className={cn(
        "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#581c87] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
-      !isOverlay && "min-h-screen"
+     !isOverlay && "min-h-screen"
      )}
    >
     <CompactRoomView />
@@ -327,4 +387,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
   );
-    }
+        }
