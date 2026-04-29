@@ -106,6 +106,8 @@ import {
   Cloud,
   ArrowLeft,
   Rocket,
+  Video,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -2746,7 +2748,7 @@ function AdminPageContent() {
                                 {req.amount}
                               </p>
                             </div>
-                            <ArrowRightLeft
+                            <ArrowLeftRight
                               className="h-4 w-4 text-slate-300"
                               strokeWidth={3}
                             />
