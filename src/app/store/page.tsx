@@ -113,7 +113,7 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
-// --- NEW PINK DIAMOND ID BADGE (Based on SilverBlue format) ---
+// --- NEW PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -207,6 +207,128 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
+// --- MERGED GLOSSY WINGS SVG COMPONENT ---
+const GlossyWingsSVG = ({ className }: { className?: string }) => (
+  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
+    <style>{`
+      .wing { filter:url(#wingGlow); will-change:transform; }
+      .left-wing { transform-origin:322px 395px; animation:flapL 3s ease-in-out infinite; }
+      .right-wing { transform-origin:478px 395px; animation:flapR 3s ease-in-out infinite; }
+      @keyframes flapL { 0%,100%{transform:rotate(14deg) translateX(10px) scale(0.92)} 50%{transform:rotate(-18deg) translateX(-14px) scale(1.08)} }
+      @keyframes flapR { 0%,100%{transform:rotate(-14deg) translateX(-10px) scale(0.92)} 50%{transform:rotate(18deg) translateX(14px) scale(1.08)} }
+      .charm { animation:float 1.5s ease-in-out infinite; transform-origin:400px 605px; }
+      @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+      .ring-pulse { animation:pulse 3s ease-in-out infinite; }
+      @keyframes pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
+      .sparkle { animation:twinkle 2.2s ease-in-out infinite; }
+      @keyframes twinkle { 0%,100%{opacity:.2; transform:scale(.7)} 50%{opacity:1; transform:scale(1.3)} }
+    `}</style>
+    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-[0_10px_20px_rgba(30,144,255,0.4)]" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="wingGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#4169e1" />
+          <stop offset="45%" stopColor="#1e90ff" />
+          <stop offset="100%" stopColor="#00bfff" />
+        </linearGradient>
+        <linearGradient id="wingGradRev" x1="100%" y1="50%" x2="0%" y2="50%">
+          <stop offset="0%" stopColor="#4169e1" />
+          <stop offset="45%" stopColor="#1e90ff" />
+          <stop offset="100%" stopColor="#00bfff" />
+        </linearGradient>
+        <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#b3e5fc" />
+          <stop offset="30%" stopColor="#00bfff" />
+          <stop offset="70%" stopColor="#1e90ff" />
+          <stop offset="100%" stopColor="#4169e1" />
+        </linearGradient>
+        <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#00bfff" stopOpacity="0.5"/>
+          <stop offset="70%" stopColor="#1e90ff" stopOpacity="0.2"/>
+          <stop offset="100%" stopColor="#4169e1" stopOpacity="0"/>
+        </radialGradient>
+
+        <filter id="wingGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur1"/>
+          <feFlood floodColor="#00bfff" floodOpacity="0.6" result="color1"/>
+          <feComposite in="color1" in2="blur1" operator="in" result="glow1"/>
+          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur2"/>
+          <feFlood floodColor="#1e90ff" floodOpacity="0.9" result="color2"/>
+          <feComposite in="color2" in2="blur2" operator="in" result="glow2"/>
+          <feMerge>
+            <feMergeNode in="glow1"/>
+            <feMergeNode in="glow2"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="18" result="b"/>
+          <feFlood floodColor="#1e90ff" floodOpacity="0.25"/>
+          <feComposite in2="b" operator="in"/>
+        </filter>
+
+        <mask id="centerHole">
+          <rect width="800" height="800" fill="white"/>
+          <circle cx="400" cy="400" r="185" fill="black"/>
+        </mask>
+      </defs>
+
+      <circle cx="400" cy="400" r="280" fill="url(#aura)" opacity="0.3" filter="url(#outerGlow)"/>
+      
+      <g mask="url(#centerHole)">
+        <g className="wing left-wing">
+          <path d="M 323 336 C 260 298 192 268 155 259 C 138 275 152 298 175 312 C 225 335 285 355 319 361 Z" fill="url(#wingGrad)" opacity="0.96"/>
+          <path d="M 319 364 C 235 348 158 335 124 333 C 110 352 120 376 145 389 C 200 395 270 390 317 383 Z" fill="url(#wingGrad)" opacity="0.94"/>
+          <path d="M 317 386 C 228 406 156 425 130 436 C 136 458 152 468 183 456 C 242 434 292 415 319 402 Z" fill="url(#wingGrad)" opacity="0.92"/>
+          <path d="M 317 405 C 250 442 208 478 196 512 C 215 525 238 518 262 496 C 286 472 306 444 319 419 Z" fill="url(#wingGradRev)" opacity="0.88"/>
+          <path d="M 315 428 C 278 462 254 494 248 518 C 264 522 278 512 290 494 C 302 476 310 450 317 434 Z" fill="url(#wingGradRev)" opacity="0.8"/>
+          <path d="M 318 346 C 270 328 224 312 198 306 C 194 314 202 322 214 326 C 248 336 286 348 316 356 Z" fill="#87cefa" opacity="0.65"/>
+          <path d="M 315 372 C 256 362 202 356 172 356 C 170 364 178 370 192 372 C 234 376 282 378 314 380 Z" fill="#b3e5fc" opacity="0.55"/>
+          <path d="M 314 395 C 248 410 196 422 174 430 C 178 436 186 438 198 434 C 238 422 280 410 313 402 Z" fill="#87cefa" opacity="0.5"/>
+        </g>
+        
+        <g className="wing right-wing">
+          <path d="M 477 336 C 540 298 608 268 645 259 C 662 275 648 298 625 312 C 575 335 515 355 481 361 Z" fill="url(#wingGradRev)" opacity="0.96"/>
+          <path d="M 481 364 C 565 348 642 335 676 333 C 690 352 680 376 655 389 C 600 395 530 390 483 383 Z" fill="url(#wingGradRev)" opacity="0.94"/>
+          <path d="M 483 386 C 572 406 644 425 670 436 C 664 458 648 468 617 456 C 558 434 508 415 481 402 Z" fill="url(#wingGradRev)" opacity="0.92"/>
+          <path d="M 483 405 C 550 442 592 478 604 512 C 585 525 562 518 538 496 C 514 472 494 444 481 419 Z" fill="url(#wingGrad)" opacity="0.88"/>
+          <path d="M 485 428 C 522 462 546 494 552 518 C 536 522 522 512 510 494 C 498 476 490 450 483 434 Z" fill="url(#wingGrad)" opacity="0.8"/>
+          <path d="M 482 346 C 530 328 576 312 602 306 C 606 314 598 322 586 326 C 552 336 514 348 484 356 Z" fill="#87cefa" opacity="0.65"/>
+          <path d="M 485 372 C 544 362 598 356 628 356 C 630 364 622 370 608 372 C 566 376 518 378 486 380 Z" fill="#b3e5fc" opacity="0.55"/>
+          <path d="M 486 395 C 552 410 604 422 626 430 C 622 436 614 438 602 434 C 562 422 520 410 487 402 Z" fill="#87cefa" opacity="0.5"/>
+        </g>
+      </g>
+
+      <circle cx="400" cy="400" r="188" fill="none" stroke="url(#wingGrad)" strokeWidth="3" opacity="0.9" filter="url(#softGlow)" className="ring-pulse"/>
+      <circle cx="400" cy="400" r="183" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
+      <circle cx="400" cy="400" r="195" fill="none" stroke="#1e90ff" strokeWidth="0.8" opacity="0.35" strokeDasharray="3 7" transform="rotate(-15 400 400)"/>
+      <circle cx="400" cy="400" r="186" fill="none" stroke="#87cefa" strokeWidth="0.5" opacity="0.8"/>
+
+      <g className="charm" filter="url(#softGlow)">
+        <line x1="400" y1="586" x2="400" y2="575" stroke="#00bfff" strokeWidth="1.5" opacity="0.7"/>
+        <circle cx="400" cy="574" r="4" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
+        <circle cx="400" cy="574" r="2" fill="#b3e5fc" opacity="0.9"/>
+        <path d="M 400 584 L 389 600 L 386 614 L 392 626 L 400 634 L 408 626 L 414 614 L 411 600 Z" fill="url(#crystalGrad)" stroke="#87cefa" strokeWidth="1.2" opacity="0.95"/>
+        <path d="M 400 588 L 393 601 L 392 614 L 400 628 L 408 614 L 407 601 Z" fill="#e0f7ff" opacity="0.4"/>
+        <path d="M 400 590 L 396 603 L 400 622 L 404 603 Z" fill="white" opacity="0.6"/>
+        <path d="M 388 602 Q 376 598 372 606 Q 378 611 388 607 Z" fill="#1e90ff" opacity="0.85"/>
+        <path d="M 412 602 Q 424 598 428 606 Q 422 611 412 607 Z" fill="#1e90ff" opacity="0.85"/>
+      </g>
+
+      <circle cx="268" cy="312" r="2.2" fill="#87cefa" className="sparkle" style={{animationDelay:'0s'}}/>
+      <circle cx="532" cy="308" r="2" fill="#b3e5fc" className="sparkle" style={{animationDelay:'0.5s'}}/>
+      <circle cx="238" cy="438" r="1.6" fill="#00bfff" className="sparkle" style={{animationDelay:'1.1s'}}/>
+      <circle cx="562" cy="442" r="1.8" fill="#00bfff" className="sparkle" style={{animationDelay:'0.8s'}}/>
+      <circle cx="312" cy="528" r="1.4" fill="#87cefa" className="sparkle" style={{animationDelay:'1.4s'}}/>
+      <circle cx="488" cy="532" r="1.4" fill="#87cefa" className="sparkle" style={{animationDelay:'0.3s'}}/>
+      <circle cx="400" cy="658" r="1.7" fill="#e0f7ff" className="sparkle" style={{animationDelay:'0.7s'}}/>
+    </svg>
+  </div>
+);
+
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -257,6 +379,18 @@ export default function StorePage() {
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
     });
+    
+    // --- ADDED MERGED GLOSSY WINGS FRAME HERE ---
+    frames.push({
+      id: 'f-glossy-wings',
+      name: 'Glossy wings',
+      type: 'Frame',
+      price: 500000,
+      durationDays: 7,
+      description: 'Exclusive animated Glossy wings frame.',
+      isCustomSVG: true
+    });
+
     return frames;
   }, []);
 
@@ -304,12 +438,7 @@ export default function StorePage() {
     { id: 'id-987449', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 987449 Badge.', displayId: '987449', variant: 'red' },
     { id: 'id-234787', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 234787 Badge.', displayId: '234787', variant: 'red' },
     { id: 'id-111333', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111333 Badge.', displayId: '111333', variant: 'red' },
-    { id: 'id-999999', name: 'sss', type: 'ID', price: 7000000, durationDays: 7, description: 'Exclusive VIP ID Number 999999 Badge.', displayId: '999999', variant: 'red' },
-    { id: 'id-777777', name: 'sss', type: 'ID', price: 5500000, durationDays: 7, description: 'Exclusive VIP ID Number 777777 Badge.', displayId: '777777', variant: 'red' },
-    { id: 'id-122334', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 122334 Badge.', displayId: '122334', variant: 'red' },
-    { id: 'id-989898', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 989898 Badge.', displayId: '989898', variant: 'red' },
     { id: 'id-242424', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 242424 Badge.', displayId: '242424', variant: 'red' },
-    { id: 'id-111333', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 111333 Badge.', displayId: '111333', variant: 'red' },
     { id: 'id-124455', name: 'sss', type: 'ID', price: 4000000, durationDays: 7, description: 'Exclusive VIP ID Number 124455 Badge.', displayId: '124455', variant: 'red' },
     { id: 'id-977789', name: 'sss', type: 'ID', price: 7900000, durationDays: 7, description: 'Exclusive VIP ID Number 977789 Badge.', displayId: '977789', variant: 'red' },
     { id: 'id-234578', name: 'sss', type: 'ID', price: 6900000, durationDays: 7, description: 'Exclusive VIP ID Number 234578 Badge.', displayId: '234578', variant: 'red' },
@@ -406,12 +535,22 @@ export default function StorePage() {
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
+                          {item.isCustomSVG ? (
+                            <div className="relative flex items-center justify-center h-20 w-20">
+                              <Avatar className="absolute h-[38px] w-[38px]">
+                                <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
+                                <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
+                              </Avatar>
+                              <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                            </div>
+                          ) : (
                             <AvatarFrame frameId={item.id} size="md">
                               <Avatar className="h-16 w-16">
                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
                                 <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                               </Avatar>
                             </AvatarFrame>
+                          )}
                         </div>
                       ) : item.type === 'Bubble' ? (
                         <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
@@ -456,12 +595,22 @@ export default function StorePage() {
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
                   {previewItem.type === 'Frame' ? (
+                    previewItem.isCustomSVG ? (
+                      <div className="relative flex items-center justify-center h-32 w-32 mt-4">
+                        <Avatar className="absolute h-[60px] w-[60px]">
+                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
+                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
+                        </Avatar>
+                        <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                      </div>
+                    ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
                         <Avatar className="h-20 w-20">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                       </AvatarFrame>
+                    )
                   ) : previewItem.type === 'Bubble' ? (
                     <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                   ) : previewItem.type === 'Theme' ? (
@@ -488,7 +637,7 @@ export default function StorePage() {
                       onClick={() => setSelectedDuration(days)}
                       className={cn(
                         "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222 calculations]"
+                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
                       )}
                     >
                       <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
@@ -538,3 +687,4 @@ export default function StorePage() {
     </div>
   );
 }
+
