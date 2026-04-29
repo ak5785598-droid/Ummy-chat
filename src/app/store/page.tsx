@@ -34,7 +34,7 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
 // --- CUSTOM WAVE CIRCLE UI ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
-  
+
   if (isLovelyShine) {
     return (
       <div className={cn("relative flex items-center justify-center rounded-full", size)}>
@@ -109,6 +109,105 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
         <img src={imageUrl} alt="User Avatar" className="w-full h-full object-cover brightness-105" />
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
       </div>
+    </div>
+  );
+};
+
+// --- BUTTERFLIES FRAME (NEW) ---
+const ButterfliesFrame = ({ size = 100, imageUrl }: { size?: number; imageUrl?: string }) => {
+  const img = imageUrl || `https://picsum.photos/seed/butterflies/200`;
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full drop-shadow-[0_0_20px_rgba(139,92,246,0.6)]">
+        <defs>
+          <linearGradient id="bfRing" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8b5cf6" />
+            <stop offset="30%" stopColor="#7c3aed" />
+            <stop offset="70%" stopColor="#6366f1" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#bfdbfe" />
+            <stop offset="40%" stopColor="#c4b5fd" />
+            <stop offset="100%" stopColor="#818cf8" />
+          </linearGradient>
+          <radialGradient id="bfGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
+          </radialGradient>
+          <filter id="softGlow">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <clipPath id="bfAvatarClip">
+          <circle cx="100" cy="100" r="56" />
+        </clipPath>
+        <image href={img} x="44" y="44" width="112" height="112" clipPath="url(#bfAvatarClip)" preserveAspectRatio="xMidYMid slice" />
+
+        {/* LEFT BUTTERFLY */}
+        <g style={{ transformOrigin: '34px 100px', animation: 'flapLeft 1.8s ease-in-out infinite' }}>
+          <path d="M34 100 C12 82, 2 68, 16 58 C26 51, 38 64, 44 76 C49 68, 58 57, 68 63 C76 68, 64 83, 54 93 Z" fill="url(#wingGrad)" opacity="0.95" stroke="#ddd6fe" strokeWidth="0.8" />
+          <path d="M34 100 C12 118, 2 132, 16 142 C26 149, 38 136, 44 124 C49 132, 58 143, 68 137 C76 132, 64 117, 54 107 Z" fill="url(#wingGrad)" opacity="0.9" stroke="#ddd6fe" strokeWidth="0.8" />
+        </g>
+
+        {/* RIGHT BUTTERFLY */}
+        <g style={{ transformOrigin: '166px 100px', animation: 'flapRight 1.8s ease-in-out infinite' }}>
+          <path d="M166 100 C188 82, 198 68, 184 58 C174 51, 162 64, 156 76 C151 68, 142 57, 132 63 C124 68, 136 83, 146 93 Z" fill="url(#wingGrad)" opacity="0.95" stroke="#ddd6fe" strokeWidth="0.8" />
+          <path d="M166 100 C188 118, 198 132, 184 142 C174 149, 162 136, 156 124 C151 132, 142 143, 132 137 C124 132, 136 117, 146 107 Z" fill="url(#wingGrad)" opacity="0.9" stroke="#ddd6fe" strokeWidth="0.8" />
+        </g>
+
+        {/* BOTTOM LEFT BUTTERFLY */}
+        <g style={{ transformOrigin: '58px 158px', animation: 'flapLeft 2.1s ease-in-out infinite 0.3s' }}>
+          <path d="M58 158 C38 172, 24 184, 30 168 C33 158, 46 150, 56 146 C52 138, 50 126, 60 124 C68 122, 74 136, 70 148 Z" fill="url(#wingGrad)" opacity="0.92" stroke="#ddd6fe" strokeWidth="0.7" transform="rotate(-25 58 158)" />
+          <path d="M58 158 C78 172, 92 184, 86 168 C83 158, 70 150, 60 146 C64 138, 66 126, 56 124 C48 122, 42 136, 46 148 Z" fill="url(#wingGrad)" opacity="0.88" stroke="#ddd6fe" strokeWidth="0.7" transform="rotate(-25 58 158)" />
+        </g>
+
+        {/* BOTTOM RIGHT BUTTERFLY */}
+        <g style={{ transformOrigin: '142px 158px', animation: 'flapRight 2.1s ease-in-out infinite 0.4s' }}>
+          <path d="M142 158 C162 172, 176 184, 170 168 C167 158, 154 150, 144 146 C148 138, 150 126, 140 124 C132 122, 126 136, 130 148 Z" fill="url(#wingGrad)" opacity="0.92" stroke="#ddd6fe" strokeWidth="0.7" transform="rotate(25 142 158)" />
+          <path d="M142 158 C122 172, 108 184, 114 168 C117 158, 130 150, 140 146 C136 138, 134 126, 144 124 C152 122, 158 136, 154 148 Z" fill="url(#wingGrad)" opacity="0.88" stroke="#ddd6fe" strokeWidth="0.7" transform="rotate(25 142 158)" />
+        </g>
+
+        {/* MAIN RING */}
+        <circle cx="100" cy="100" r="70" fill="none" stroke="#1e1b4b" strokeWidth="16" opacity="0.5" />
+        <circle cx="100" cy="100" r="70" fill="none" stroke="url(#bfRing)" strokeWidth="11" strokeLinecap="round" filter="url(#softGlow)" />
+
+        {/* FLOWERS */}
+        <g>
+          <g transform="translate(72,52)">
+            <circle r="9" fill="#a855f7" opacity="0.95" />
+            <circle r="3.5" fill="#fef08a" />
+          </g>
+          <g transform="translate(128,52)">
+            <circle r="9" fill="#9333ea" opacity="0.95" />
+            <circle r="3.5" fill="#fef08a" />
+          </g>
+          <g transform="translate(88,156)">
+            <circle r="10" fill="#7c3aed" />
+            <circle r="4" fill="#fde047" />
+          </g>
+          <g transform="translate(112,154)">
+            <circle r="9" fill="#8b5cf6" />
+            <circle r="3.5" fill="#fde047" />
+          </g>
+        </g>
+
+        {/* STARS */}
+        <g fill="#fcd34d">
+          <path d="M92 30 l2.8 5.6 6.2 0.9 -4.5 4.4 1.1 6.2 -5.6 -2.9 -5.6 2.9 1.1 -6.2 -4.5 -4.4 6.2 -0.9z" filter="url(#softGlow)" />
+          <path d="M42 108 l2.5 5 5.5 0.8 -4 3.9 0.9 5.5 -4.9 -2.6 -4.9 2.6 0.9 -5.5 -4 -3.9 5.5 -0.8z" />
+          <path d="M146 138 l3 6 6.6 1 -4.8 4.7 1.1 6.6 -5.9 -3.1 -5.9 3.1 1.1 -6.6 -4.8 -4.7 6.6 -1z" filter="url(#softGlow)" />
+        </g>
+
+        <circle cx="158" cy="84" r="8" fill="url(#bfGlow)" opacity="0.7" />
+        <circle cx="44" cy="110" r="7" fill="url(#bfGlow)" opacity="0.6" />
+      </svg>
+      <style>{`
+        @keyframes flapLeft { 0%,100% { transform: scaleX(1) rotate(-2deg); } 50% { transform: scaleX(0.7) rotate(-10deg); } }
+        @keyframes flapRight { 0%,100% { transform: scaleX(1) rotate(2deg); } 50% { transform: scaleX(0.7) rotate(10deg); } }
+      `}</style>
     </div>
   );
 };
@@ -226,7 +325,7 @@ export default function StorePage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
   const { toast } = useToast();
-  
+
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
 
@@ -245,7 +344,7 @@ export default function StorePage() {
 
   const dynamicThemes = useMemo(() => {
     const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
-      ...t,
+     ...t,
       type: 'Theme',
       description: t.description || `High-fidelity ${t.name} background.`
     }));
@@ -255,17 +354,25 @@ export default function StorePage() {
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
-      frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
+      frames.push({...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
+    });
+    // NEW BUTTERFLIES FRAME
+    frames.unshift({
+      id: 'butterflies',
+      name: 'Butterflies',
+      type: 'Frame',
+      price: 200000,
+      description: 'Magical butterfly wings with glowing flowers and stars.',
     });
     return frames;
   }, []);
 
   const bubbleItems = useMemo(() => [
-    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
+   ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
   ], []);
 
   const waveItems = useMemo(() => [
-    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
+   ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
   ], []);
 
   const idItems = useMemo(() => [
@@ -316,7 +423,7 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
+  const allItems = [...frameItems,...bubbleItems,...dynamicThemes,...waveItems,...idItems];
 
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
@@ -324,7 +431,7 @@ export default function StorePage() {
   };
 
   const handlePurchase = (item: any, duration: number) => {
-    if (!userProfile || !user || !firestore) return;
+    if (!userProfile ||!user ||!firestore) return;
     const finalPrice = getCalculatedPrice(item.price, duration);
 
     if ((userProfile.wallet?.coins || 0) < finalPrice) {
@@ -334,15 +441,15 @@ export default function StorePage() {
 
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + duration);
-    
+
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
-    
-    const updateData = { 
-      'wallet.coins': increment(-finalPrice), 
+
+    const updateData = {
+      'wallet.coins': increment(-finalPrice),
       'inventory.ownedItems': arrayUnion(item.id),
       [`inventory.expiries.${item.id}`]: Timestamp.fromDate(expiryDate),
-      'updatedAt': serverTimestamp() 
+      'updatedAt': serverTimestamp()
     };
 
     updateDocumentNonBlocking(profileRef, updateData);
@@ -352,15 +459,15 @@ export default function StorePage() {
   };
 
   const handleEquipToggle = (item: any) => {
-    if (!userProfile || !user || !firestore) return;
+    if (!userProfile ||!user ||!firestore) return;
     const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
     const userRef = doc(firestore, 'users', user.uid);
     let field = `inventory.active${item.type}`;
     const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
-    const updateData = { [field]: isActive ? 'None' : item.id, updatedAt: serverTimestamp() };
+    const updateData = { [field]: isActive? 'None' : item.id, updatedAt: serverTimestamp() };
     updateDocumentNonBlocking(profileRef, updateData);
     updateDocumentNonBlocking(userRef, updateData);
-    toast({ title: isActive ? `${item.type} Unequipped` : 'Item Equipped' });
+    toast({ title: isActive? `${item.type} Unequipped` : 'Item Equipped' });
     setPreviewItem(null);
   };
 
@@ -368,14 +475,14 @@ export default function StorePage() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
-      
+
       <div className="absolute top-0 left-0 right-0 h-[15vh] pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-purple-600/25 via-purple-900/5 to-transparent" />
         <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/10 rounded-[100%]" />
       </div>
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
-        
+
         <header className="relative flex items-center justify-center border-b border-white/10 pb-6 min-h-[48px]">
           <button onClick={() => router.back()} className="absolute left-0 p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
             <ChevronLeft />
@@ -387,9 +494,9 @@ export default function StorePage() {
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
               {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID'].map(cat => (
-                <TabsTrigger 
-                  key={cat} 
-                  value={cat} 
+                <TabsTrigger
+                  key={cat}
+                  value={cat}
                   className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
                 >
                   {cat}
@@ -404,7 +511,12 @@ export default function StorePage() {
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                      {item.type === 'Frame' ? (
+                      {item.type === 'Frame'? (
+                        item.id === 'butterflies'? (
+                          <div className="scale-110">
+                            <ButterfliesFrame size={72} />
+                          </div>
+                        ) : (
                         <div className="scale-110">
                             <AvatarFrame frameId={item.id} size="md">
                               <Avatar className="h-16 w-16">
@@ -413,17 +525,18 @@ export default function StorePage() {
                               </Avatar>
                             </AvatarFrame>
                         </div>
-                      ) : item.type === 'Bubble' ? (
+                        )
+                      ) : item.type === 'Bubble'? (
                         <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
-                      ) : item.type === 'Theme' ? (
+                      ) : item.type === 'Theme'? (
                         <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
-                      ) : item.type === 'Wave' ? (
+                      ) : item.type === 'Wave'? (
                          <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
-                      ) : item.type === 'ID' ? (
-                           item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
-                           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
+                      ) : item.type === 'ID'? (
+                           item.isPinkDiamond? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
+                           item.isSilver? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> :
                            <IDBadgeIcon number={item.displayId || ''} />
-                      ) : item.icon ? (
+                      ) : item.icon? (
                         <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
                       ) : null}
                     </div>
@@ -433,7 +546,7 @@ export default function StorePage() {
                     <CardFooter className="flex flex-col gap-3 p-3 pt-1">
                       <div className="flex items-center justify-center gap-1.5 text-sm w-full">
                         <DollarCoinIcon className="h-4 w-4" />
-                        <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                        <span className="text-[#FCD535] font-bold">{item.price.toLocaleString('en-IN')}</span>
                       </div>
                     </CardFooter>
                   </Card>
@@ -446,35 +559,39 @@ export default function StorePage() {
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
-            
+
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
-              
+
               <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
-              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
+              <div className="flex-1 overflow-y-auto flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
-                  {previewItem.type === 'Frame' ? (
+                  {previewItem.type === 'Frame'? (
+                    previewItem.id === 'butterflies'? (
+                      <ButterfliesFrame size={110} imageUrl={userProfile?.photoURL || `https://picsum.photos/seed/${user?.uid || 'user'}/200`} />
+                    ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
                         <Avatar className="h-20 w-20">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                       </AvatarFrame>
-                  ) : previewItem.type === 'Bubble' ? (
+                    )
+                  ) : previewItem.type === 'Bubble'? (
                     <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
-                  ) : previewItem.type === 'Theme' ? (
+                  ) : previewItem.type === 'Theme'? (
                     <Palette className={cn("h-16 w-16 opacity-80", previewItem.color || "text-purple-400")} />
-                  ) : previewItem.type === 'Wave' ? (
+                  ) : previewItem.type === 'Wave'? (
                     <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
-                  ) : previewItem.type === 'ID' ? (
+                  ) : previewItem.type === 'ID'? (
                       <div className="scale-110 pt-2">
-                        {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
-                         previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
+                        {previewItem.isPinkDiamond? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
+                         previewItem.isSilver? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> :
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
-                  ) : previewItem.icon ? (
+                  ) : previewItem.icon? (
                     <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
@@ -483,15 +600,15 @@ export default function StorePage() {
 
                 <div className="flex gap-4 mt-4 w-full justify-center">
                   {[3, 7].map(days => (
-                    <button 
+                    <button
                       key={days}
                       onClick={() => setSelectedDuration(days)}
                       className={cn(
                         "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222 calculations]"
+                        selectedDuration === days? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222 calculations]"
                       )}
                     >
-                      <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                      <span className={cn("text-sm", selectedDuration === days? "text-white" : "text-gray-400")}>{days} Days</span>
                       {selectedDuration === days && (
                         <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
                           <Check size={12} strokeWidth={3} className="text-black" />
@@ -507,27 +624,27 @@ export default function StorePage() {
                   <div className="flex items-center gap-2">
                     <DollarCoinIcon className="w-5 h-5" />
                     <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                      {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                      {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString('en-IN')}
                     </span>
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   onClick={() => {
                     const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    isOwned ? handleEquipToggle(previewItem) : handlePurchase(previewItem, selectedDuration);
+                    isOwned? handleEquipToggle(previewItem) : handlePurchase(previewItem, selectedDuration);
                   }}
                   className={cn(
                     "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
                     userProfile?.inventory?.ownedItems?.includes(previewItem.id)
-                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
-                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" 
+                     ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                       ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]"
                   )}
                 >
-                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
-                    ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip') 
+                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id)
+                   ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id? 'Unequip' : 'Equip')
                     : 'Buy'}
                 </Button>
               </div>
@@ -537,4 +654,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
+      }
