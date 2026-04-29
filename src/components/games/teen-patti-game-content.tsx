@@ -6,21 +6,18 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import {
+  ChevronLeft,
   Volume2,
   VolumeX,
   X,
-  Move,
-  HelpCircle,
-  Trophy,
-  Menu,
-  ChevronDown
+  Move
 } from 'lucide-react';
 import { CompactRoomView } from '@/components/compact-room-view';
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { GameResultOverlay, GameWinner } from '@/components/game-result-overlay';
-import { motion, useDragControls } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const CHIPS = [
  { value: 10000, label: '10k', color: 'bg-[#00E5FF] border-[#00E5FF]/50 shadow-[#00E5FF]/40' },
@@ -31,154 +28,82 @@ const CHIPS = [
  { value: 5000000, label: '5000k', color: 'bg-[#FFD700] border-[#FFD700]/50 shadow-[#FFD700]/40' },
 ];
 
+// --- 3D GLOSSY SVG BANNERS (URL ki jagah) ---
+const BannerBase = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+  <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]", className)} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="pole" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff8d5"/><stop offset="20%" stopColor="#ffd700"/>
+        <stop offset="50%" stopColor="#b8860b"/><stop offset="80%" stopColor="#ffd700"/>
+        <stop offset="100%" stopColor="#fff3a0"/>
+      </linearGradient>
+      <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#f0f0f0"/><stop offset="30%" stopColor="#c7c7c7"/>
+        <stop offset="70%" stopColor="#9e9e9e"/><stop offset="100%" stopColor="#d8d8d8"/>
+      </linearGradient>
+      <linearGradient id="gold3d" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff6c1"/><stop offset="25%" stopColor="#ffd700"/>
+        <stop offset="55%" stopColor="#d4a017"/><stop offset="85%" stopColor="#ffdf5d"/>
+        <stop offset="100%" stopColor="#8c6b00"/>
+      </linearGradient>
+      <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="6" stdDeviation="8" floodOpacity="0.45"/>
+      </filter>
+      <filter id="emboss">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+        <feOffset dy="2" result="off"/><feComposite in="SourceGraphic" in2="off" operator="over"/>
+      </filter>
+    </defs>
+    {/* Top Pole */}
+    <rect x="8" y="18" width="184" height="20" rx="10" fill="url(#pole)" filter="url(#softShadow)"/>
+    <path d="M8 28 L0 28 L12 14 L20 28 Z" fill="url(#pole)"/>
+    <path d="M192 28 L200 28 L188 14 L180 28 Z" fill="url(#pole)"/>
+    {/* Side straps */}
+    <rect x="24" y="38" width="12" height="170" rx="6" fill="#b5b5b5" opacity="0.8"/>
+    <rect x="164" y="38" width="12" height="170" rx="6" fill="#b5b5b5" opacity="0.8"/>
+    {/* Main Banner */}
+    <path d="M32 38 H168 V175 Q168 205 100 242 Q32 205 32 175 Z" fill="url(#silver)" stroke="url(#pole)" strokeWidth="4" filter="url(#softShadow)"/>
+    <path d="M42 48 H158 V170 Q158 195 100 228 Q42 195 42 170 Z" fill="none" stroke="white" strokeOpacity="0.12" strokeWidth="3"/>
+    {/* Bottom gold tips */}
+    <ellipse cx="30" cy="210" rx="7" ry="10" fill="url(#pole)"/>
+    <ellipse cx="170" cy="210" rx="7" ry="10" fill="url(#pole)"/>
+    {children}
+  </svg>
+);
+
+const WolfBanner = ({ className }: { className?: string }) => (
+  <BannerBase className={className}>
+    <g filter="url(#emboss)" transform="translate(100,135)">
+      {/* 3D Gold Wolf - same as your image */}
+      <path d="M0-48c-5-7-13-11-20-9-2 4-6 7-10 6 1 4 7 8 9-4 1-7 4-7 8 2-1 5 0 7 2-2 5-1 7 2-1 4-1 6 0 0 2 1 4 3 5 0-2 1-4 3-5 2 1 4 3 5 5 1-2 2-4 2-6 2 0 4 1 5 2 1-3 0-5-1-7 2-2 5-3 7-2 0-4-3-7-7-8 4-2 7-5 8-9-4 1-8-2-10-6-7-2-15 2-20 9z M-22-28c-8 2-14 8-16 15 3 0 6 2 8 4-3 3-5 7-4 11 2-2 5-3 8-2 0 4 2 8 5 10-1-4 0-8 2-11 3 2 6 5 7 9 2-3 3-6 3-9 3 0 5 1 7 3 1-4-1-8-4-11 2-2 5-4 8-4-2-7-8-13-16-15-4 6-10 10-17 10-7 0-13-4-17-10z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.5" transform="scale(1.8)"/>
+      <path d="M-36 -18c12-5 24-5 36 0 10 4 18 12 20 22-4-2-9-2-13 0 2 4 2 9 0 13-3-7-4-11-3-1 5-3 10-7 13-2-5-5-9-12-4 3-7 7-9 12-4-3-6-8-7-13-4-1-8 0-11 3-2-4-2-9 0-13-4-2-9-2-13 0 2-10 10-18 20-22z" fill="none" stroke="#fff8c0" strokeOpacity="0.35" strokeWidth="1.2" transform="scale(1.8)"/>
+    </g>
+  </BannerBase>
+);
+
+const LionBanner = ({ className }: { className?: string }) => (
+  <BannerBase className={className}>
+    <g filter="url(#emboss)" transform="translate(100,135) scale(1.7)">
+      <path d="M0-30c-8 0-15 4-18 11-5-1-9 1-11 5 2 1 4 3 5-3 2-5 5-5 9 2 0 4-1 6-1-1 3 0 6 2 8-1 2-1 5 0 7 2-1 4-2 6-2 1 3 3 5 6 6 0-2 1-4 2-5 2 4 4 5 6 1-2 3-4 5-6 1 1 2 3 2 5 3-1 5-3 6-6 2 0 4 1 6 2 1-5 0-7 2-2 3-5 2-8 2 0 4 1 6 1 0-4-2-7-5-9 1-2 3-4 5-5-2-4-6-11-5-3-7-10-11-18-11z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.2"/>
+    </g>
+  </BannerBase>
+);
+
+const FishBanner = ({ className }: { className?: string }) => (
+  <BannerBase className={className}>
+    <g filter="url(#emboss)" transform="translate(100,135) scale(1.8)">
+      <path d="M-20-5c8-10 20-14 32-8 5 3 8 9 14-2-1-5-1-7 0 1 2 1 5 0 7 2 1 5 1 7 0-1 6-4 11-9 14-12 6-24 2-32-8-4 2-8 2-11 0 1-3 3-5 6-6-3-2-5-4-6-7 3-2 7-2 11 0z" fill="url(#gold3d)" stroke="#7a5c00" strokeWidth="1.2"/>
+    </g>
+  </BannerBase>
+);
+
 const FACTIONS = [
- { id: 'WOLF', label: 'Wolf' },
- { id: 'LION', label: 'Lion' },
- { id: 'FISH', label: 'Fish' },
+ { id: 'WOLF', label: 'Wolf', Banner: WolfBanner },
+ { id: 'LION', label: 'Lion', Banner: LionBanner },
+ { id: 'FISH', label: 'Fish', Banner: FishBanner },
 ];
 
 const CARDS = ['A', 'JOKER', 'B', 'K', 'Q', '10', '9'];
-
-// ===== PURANA KALA DRAGON - LEFT (WOLF) =====
-const DragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
-  <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="dg-body" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#4b4b4f"/>
-        <stop offset="25%" stopColor="#2a2a2e"/>
-        <stop offset="100%" stopColor="#0c0c0e"/>
-      </linearGradient>
-      <linearGradient id="dg-wing" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#5a5a60"/>
-        <stop offset="100%" stopColor="#1f1f22"/>
-      </linearGradient>
-      <radialGradient id="dg-eye" cx="0.5" cy="0.35" r="0.7">
-        <stop offset="0%" stopColor="#e8ffbd"/>
-        <stop offset="30%" stopColor="#b6ff5a"/>
-        <stop offset="70%" stopColor="#7ed321"/>
-        <stop offset="100%" stopColor="#3d7a00"/>
-      </radialGradient>
-      <filter id="dg-shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.6"/>
-      </filter>
-    </defs>
-    <g filter="url(#dg-shadow)">
-      <path d="M45 138 C12 125, 2 155, 28 172 L50 155 Z" fill="url(#dg-wing)" stroke="#000" strokeWidth="2.5" strokeLinejoin="round"/>
-      <path d="M155 138 C188 125, 198 155, 172 172 L150 155 Z" fill="url(#dg-wing)" stroke="#000" strokeWidth="2.5" strokeLinejoin="round"/>
-    </g>
-    <ellipse cx="100" cy="178" rx="54" ry="52" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <ellipse cx="70" cy="210" rx="22" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <ellipse cx="130" cy="210" rx="22" ry="26" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <ellipse cx="100" cy="88" rx="74" ry="64" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <path d="M42 48 C28 12, 58 2, 78 38 C70 52, 52 58, 42 48 Z" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <path d="M158 48 C172 12, 142 2, 122 38 C130 52, 148 58, 158 48 Z" fill="url(#dg-body)" stroke="#000" strokeWidth="3"/>
-    <ellipse cx="65" cy="100" rx="29" ry="32" fill="url(#dg-eye)" stroke="#000" strokeWidth="2.5"/>
-    <ellipse cx="135" cy="100" rx="29" ry="32" fill="url(#dg-eye)" stroke="#000" strokeWidth="2.5"/>
-    <ellipse cx="72" cy="110" rx="16" ry="20" fill="#000"/>
-    <ellipse cx="128" cy="110" rx="16" ry="20" fill="#000"/>
-  </svg>
-);
-
-// ===== NAYA GREEN 3D GLOSSY DRAGON - MIDDLE (LION) =====
-const GreenDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
-  <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="gd-body" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#4de7b7"/>
-        <stop offset="40%" stopColor="#1db88f"/>
-        <stop offset="100%" stopColor="#0a6b50"/>
-      </linearGradient>
-      <linearGradient id="gd-belly" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffeb7a"/>
-        <stop offset="100%" stopColor="#ff9f1c"/>
-      </linearGradient>
-      <linearGradient id="gd-wing" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffcb6b"/>
-        <stop offset="100%" stopColor="#ff8a00"/>
-      </linearGradient>
-      <linearGradient id="gd-horn" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff6e0"/>
-        <stop offset="100%" stopColor="#c2b59a"/>
-      </linearGradient>
-      <radialGradient id="gd-eye" cx="0.5" cy="0.35" r="0.65">
-        <stop offset="0%" stopColor="#c7e2ff"/>
-        <stop offset="45%" stopColor="#3b82f6"/>
-        <stop offset="100%" stopColor="#1e3a8a"/>
-      </radialGradient>
-      <linearGradient id="gd-gloss" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.85"/>
-        <stop offset="30%" stopColor="#fff" stopOpacity="0.3"/>
-        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-      </linearGradient>
-      <filter id="gd-shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.5"/>
-      </filter>
-    </defs>
-    <g filter="url(#gd-shadow)">
-      <path d="M58 138 C22 128, 4 152, 20 176 L62 156 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3" strokeLinejoin="round"/>
-      <path d="M142 138 C178 128, 196 152, 180 176 L138 156 Z" fill="url(#gd-wing)" stroke="#0b3d2e" strokeWidth="3" strokeLinejoin="round"/>
-    </g>
-    <ellipse cx="68" cy="202" rx="23" ry="20" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3"/>
-    <ellipse cx="132" cy="202" rx="23" ry="20" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3"/>
-    <ellipse cx="100" cy="168" rx="44" ry="52" fill="url(#gd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
-    <path d="M72 138 C70 168, 72 198, 100 212 C128 198, 130 168, 128 138 C115 132, 85 132, 72 138 Z" fill="url(#gd-belly)" stroke="#0b3d2e" strokeWidth="2.5"/>
-    <ellipse cx="100" cy="86" rx="68" ry="58" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3.5"/>
-    <ellipse cx="68" cy="86" rx="23" ry="27" fill="white" stroke="#0b3d2e" strokeWidth="2.5"/>
-    <ellipse cx="132" cy="86" rx="23" ry="27" fill="white" stroke="#0b3d2e" strokeWidth="2.5"/>
-    <ellipse cx="68" cy="92" rx="16" ry="19" fill="url(#gd-eye)"/>
-    <ellipse cx="132" cy="92" rx="16" ry="19" fill="url(#gd-eye)"/>
-    <ellipse cx="68" cy="96" rx="8" ry="11" fill="black"/>
-    <ellipse cx="132" cy="96" rx="8" ry="11" fill="black"/>
-    <circle cx="62" cy="80" r="4.5" fill="white"/>
-    <circle cx="126" cy="80" r="4.5" fill="white"/>
-    <path d="M76 120 Q100 134 124 120" fill="none" stroke="#0b3d2e" strokeWidth="2.5" strokeLinecap="round"/>
-  </svg>
-);
-
-// ===== NAYA BLUE PINK 3D GLOSSY DRAGON - RIGHT (FISH) =====
-const BluePinkDragonIcon = ({ className = "w-24 h-28" }: { className?: string }) => (
-  <svg viewBox="0 0 200 240" className={className} xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="bpd-body" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#5a8fc8"/>
-        <stop offset="45%" stopColor="#2c4f7c"/>
-        <stop offset="100%" stopColor="#162e4d"/>
-      </linearGradient>
-      <linearGradient id="bpd-belly" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffe4ec"/>
-        <stop offset="100%" stopColor="#ff9fba"/>
-      </linearGradient>
-      <linearGradient id="bpd-wing" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#ffb8d1"/>
-        <stop offset="100%" stopColor="#ff5a93"/>
-      </linearGradient>
-      <linearGradient id="bpd-gloss" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff" stopOpacity="0.9"/>
-        <stop offset="30%" stopColor="#fff" stopOpacity="0.3"/>
-        <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-      </linearGradient>
-      <filter id="bpd-shadow" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.45"/>
-      </filter>
-    </defs>
-    <g filter="url(#bpd-shadow)">
-      <path d="M60 138 C38 128, 22 150, 32 168 L60 154 Z" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="2.5"/>
-      <path d="M140 138 C162 128, 178 150, 168 168 L140 154 Z" fill="url(#bpd-wing)" stroke="#0d1f35" strokeWidth="2.5"/>
-    </g>
-    <ellipse cx="100" cy="176" rx="46" ry="48" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
-    <ellipse cx="62" cy="206" rx="32" ry="22" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
-    <ellipse cx="138" cy="206" rx="32" ry="22" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
-    <ellipse cx="100" cy="172" rx="30" ry="38" fill="url(#bpd-belly)" stroke="#0d1f35" strokeWidth="2.5"/>
-    <ellipse cx="100" cy="92" rx="66" ry="56" fill="url(#bpd-body)" stroke="#0d1f35" strokeWidth="3.5"/>
-    <ellipse cx="72" cy="90" rx="22" ry="26" fill="white" stroke="#0d1f35" strokeWidth="2.5"/>
-    <ellipse cx="128" cy="90" rx="22" ry="26" fill="white" stroke="#0d1f35" strokeWidth="2.5"/>
-    <ellipse cx="72" cy="98" rx="12" ry="15" fill="#0d1f35"/>
-    <ellipse cx="128" cy="98" rx="12" ry="15" fill="#0d1f35"/>
-    <circle cx="66" cy="82" r="5" fill="white"/>
-    <circle cx="122" cy="82" r="5" fill="white"/>
-    <path d="M72 116 Q100 128 128 116" fill="none" stroke="#0d1f35" strokeWidth="2.5" strokeLinecap="round"/>
-  </svg>
-);
 
 interface TeenPattiGameContentProps {
   isOverlay?: boolean;
@@ -197,7 +122,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [timeLeft, setTimeLeft] = useState(20);
   const [selectedChip, setSelectedChip] = useState(10000);
   const [myBets, setMyBets] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
-  const [totalPots, setTotalPots] = useState<Record<string, number>>({ WOLF: 0, LION: 650000, FISH: 800000 });
+  const [totalPots, setTotalPots] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
   const [history, setHistory] = useState<string[]>(['WOLF', 'LION', 'FISH', 'WOLF']);
   const [isMuted, setIsMuted] = useState(false);
   const [winnerId, setWinnerId] = useState<string | null>(null);
@@ -280,16 +205,12 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      amount: Math.floor(winAmount),
      timestamp: serverTimestamp()
     });
+
+    const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
+    updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
    }
 
-   setTimeout(() => { 
-    setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); 
-    setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); 
-    setWinnerId(null); 
-    setGameState('betting'); 
-    setTimeLeft(20); 
-    setCardReveal({}); 
-   }, 5000);
+   setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 650000, FISH: 800000 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
   };
 
   const handlePlaceBet = (id: string) => {
@@ -307,7 +228,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     else router.back();
   };
 
-  const glossyBtn = "w-8 h-8 rounded-full flex items-center justify-center text-white/90 active:scale-90 transition-all shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),inset_0_-2px_2px_rgba(0,0,0,0.5),0_2px_3px_rgba(0,0,0,0.6)] border border-black/40 bg-gradient-to-b from-[#5d5a85] to-[#2e2b4e]";
+  const winnerFaction = winnerId? FACTIONS.find(f => f.id === winnerId) : null;
+  const WinnerBanner = winnerFaction?.Banner;
 
   return (
    <motion.div
@@ -318,62 +240,46 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      initial={isOverlay? { y: '35%' } : {}}
      className={cn(
        "h-fit max-h-[95vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#581c87] text-white select-none rounded-[2.8rem] border border-white/20 shadow-2xl transition-all duration-300",
-   !isOverlay && "min-h-screen"
+      !isOverlay && "min-h-screen"
      )}
    >
     <CompactRoomView />
 
-    {gameState === 'result' && winnerId && (
+    {gameState === 'result' && winnerId && WinnerBanner && (
      <GameResultOverlay
       gameId="teen-patti"
-      winningSymbol={
-        winnerId === 'LION' ? <GreenDragonIcon className="h-16 w-16" /> :
-        winnerId === 'FISH' ? <BluePinkDragonIcon className="h-16 w-16" /> :
-        <DragonIcon className="h-16 w-16" />
-      }
+      winningSymbol={<WinnerBanner className="h-16 w-16" />}
       winAmount={totalWinAmount}
       winners={winners}
      />
     )}
 
-    <header className="relative z-50 flex flex-col gap-2 p-2 pt-7 shrink-0">
-      <div
-        className="w-full h-[42px] flex items-center justify-between px-2 relative rounded-md border-black/50"
-        style={{
-          background: 'linear-gradient(180deg, #4b476f 0%, #3a365a 45%, #2a2647 100%)',
-          boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.1), 0 3px 0 #1a172f'
-        }}
-      >
-        <div className="flex items-center gap-1.5">
-          <button onPointerDown={(e) => dragControls.start(e)} className={glossyBtn}>
-            <Move className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => setIsMuted(!isMuted)} className={glossyBtn}>
-            {isMuted? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-          </button>
-          <button className={glossyBtn}><HelpCircle className="w-3.5 h-3.5" /></button>
-          <button className={glossyBtn}><Trophy className="w-3.5 h-3.5" /></button>
-        </div>
-
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-white font-bold text-[20px] tracking-wide" style={{ textShadow: '0 1px 2px #000, 0 0 5px rgba(0,0,0,0.8)' }}>
-          Teen patti
-        </h1>
-
-        <div className="flex items-center gap-1.5">
-          <button className={glossyBtn}><Menu className="w-3.5 h-3.5" /></button>
-          <button className={glossyBtn}><ChevronDown className="w-3.5 h-3.5" /></button>
-          <button onClick={handleBack} className={glossyBtn}><X className="w-3.5 h-3.5" /></button>
-        </div>
+    <header className="relative z-50 flex items-center justify-between p-4 pt-8 shrink-0">
+      <div className="flex items-center gap-2">
+        <button
+          onPointerDown={(e) => dragControls.start(e)}
+          className="p-2 hover:bg-white/10 rounded-full transition-all active:scale-90 cursor-grab active:cursor-grabbing text-white/80"
+        >
+          <Move className="h-4.5 w-4.5" />
+        </button>
+        <button onClick={() => setIsMuted(!isMuted)} className="bg-white/10 p-2 rounded-full backdrop-blur-md transition-all active:scale-90">
+          {isMuted? <VolumeX className="h-4.5 w-4.5" /> : <Volume2 className="h-4.5 w-4.5" />}
+        </button>
       </div>
 
-      <div className="flex justify-center -mt-1">
-        <div className="bg-black/20 border border-white/10 px-3 py-0.5 rounded-full">
-          <span className="text-[8px] font-bold uppercase tracking-wider text-white">Left {timeLeft}s</span>
-        </div>
+      <div className="flex flex-col items-center">
+       <h1 className="text-xl font-bold uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-[#ffd700] to-[#b8860b] filter drop-shadow-lg italic">TEEN PATTI</h1>
+       <div className="bg-black/20 border border-white/10 px-3 py-0.5 rounded-full"><span className="text-[8px] font-bold uppercase tracking-wider text-white">Left {timeLeft}s</span></div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button onClick={handleBack} className="bg-red-500/10 p-2 rounded-xl border border-red-500/20 text-red-500 transition-all active:scale-90">
+          <X className="h-4.5 w-4.5 font-bold" />
+        </button>
       </div>
     </header>
 
-    <main className="flex-1 flex flex-col pt-2 overflow-hidden relative z-10">
+    <main className="flex-1 flex flex-col pt-4 overflow-hidden relative z-10">
       <div className="grid grid-cols-3 gap-2 px-4 h-44">
        {FACTIONS.map((f) => (
         <div key={f.id} className="flex flex-col items-center gap-2">
@@ -387,27 +293,20 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
              ))}
            </div>
           </div>
-          <div className="text-center">
-            <p className="text-[9px] font-bold text-white/60 uppercase">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p>
-            <p className="text-[9px] font-bold text-[#ffd700] uppercase ">Me:{(myBets[f.id] || 0).toLocaleString()}</p>
-          </div>
+          <div className="text-center"><p className="text-[9px] font-bold text-white/60 uppercase">Pot:{(totalPots[f.id] || 0).toLocaleString()}</p><p className="text-[9px] font-bold text-[#ffd700] uppercase ">Me:{(myBets[f.id] || 0).toLocaleString()}</p></div>
         </div>
        ))}
       </div>
 
       <div className="flex justify-around items-end px-4 flex-1 pb-28">
-       {FACTIONS.map((f) => (
-        <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState!== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-          {/* Logic: WOLF (Left) -> Kala, LION (Middle) -> Green, FISH (Right) -> BluePink */}
-          {f.id === 'LION' ? (
-            <GreenDragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
-          ) : f.id === 'FISH' ? (
-            <BluePinkDragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
-          ) : (
-            <DragonIcon className="w-24 h-28 object-contain filter drop-shadow-[0_8px_12px_rgba(0,0,0,0.6)]" />
-          )}
-        </button>
-       ))}
+       {FACTIONS.map((f) => {
+        const Icon = f.Banner;
+        return (
+         <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState!== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
+           <Icon className="w-24 h-28" />
+         </button>
+        )
+       })}
       </div>
     </main>
 
@@ -428,4 +327,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
   );
-}
+    }
