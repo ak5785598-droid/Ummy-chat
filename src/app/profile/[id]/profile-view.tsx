@@ -71,7 +71,7 @@ const SVGA_OfficialTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
-       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41L9 16.17z" fill="white" />
+       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
     </svg>
     <span className="relative z-10 text-[9px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
   </div>
@@ -92,7 +92,7 @@ const SVGA_SellerTag = () => (
           </linearGradient>
         </defs>
         <path d="M20 8 C16 8 14 11 14 13 L26 13 C26 11 24 8 20 8 Z" fill="#991B1B" />
-        <path d="M12 14 C12 14 8 20 8 28 C8 34 12 36 20 36 C28 36 32 34 32 28 C32 20 28 14 Z" fill="url(#redBag)" />
+        <path d="M12 14 C12 14 8 20 8 28 C8 34 12 36 20 36 C28 36 32 34 32 28 C32 20 28 14 28 14 Z" fill="url(#redBag)" />
         <text x="20" y="30" fontSize="15" fontWeight="900" fill="white" textAnchor="middle" style={{ fontFamily: 'sans-serif' }}>$</text>
         <ellipse cx="14" cy="22" rx="3" ry="1.5" fill="white" fillOpacity="0.4" transform="rotate(-20 14 22)" />
       </svg>
@@ -250,8 +250,8 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   const idNum = label? label.replace('ID: ', '').trim() : '000000';
 
   return (
-    // Changed ml-4 to ml-2 for slight left shift
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-2 pr-2.5 pl-[20px] border border-[#c157a8]">
+    // Moved slightly more left side with ml-1 instead of ml-2
+    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
 
       {/* Left 3D Jewel Badge (ID + S) */}
       <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
@@ -360,7 +360,7 @@ const SVGA_StoreCart = ({ className }: { className?: string }) => (
       </defs>
       <path
         fill="url(#cartGradient)"
-        d="M7,18 C5.9,18 5.01,18.9 5.01,20 C5.01,21.1 5.9,22 7,22 C8.1,22 9,21.1 9,20 C9,18.9 8.1,18.1 7,18 Z M1,2 L1,4 L3,4 L6.6,11.59 L5.25,14.04 C5.09,14.32 5,14.65 5,15 C5,16.1 5.9,17 7,17 L19,15 L7.42,15 C7.28,15 7.17,14.89 7.17,14.75 L7.2,14.63 L8.1,13 L15.55,13 C16.3,13 16.96,12.59 17.3,11.97 L20.88,5.48 C21.05,5.17 21,4.82 21,4.5 C21,4.22 20.78,4 20.5,4 L5.21,4 L4.27,2 L1,2 Z M17,18 C15.9,18 15.01,18.9 15.01,20 C15.01,21.1 15.9,22 17,22 C18.1,22 19,21.1 19,20 C19,18.9 18.1,18.1 17,18 Z"
+        d="M7,18 C5.9,18 5.01,18.9 5.01,20 C5.01,21.1 5.9,22 7,22 C8.1,22 9,21.1 9,20 C9,18.9 8.1,18.1 7,18 Z M1,2 L1,4 L3,4 L6.6,11.59 L5.25,14.04 C5.09,14.32 5,14.65 5,15 C5,16.1 5.9,17 7,17 L19,17 L19,15 L7.42,15 C7.28,15 7.17,14.89 7.17,14.75 L7.2,14.63 L8.1,13 L15.55,13 C16.3,13 16.96,12.59 17.3,11.97 L20.88,5.48 C21.05,5.17 21,4.82 21,4.5 C21,4.22 20.78,4 20.5,4 L5.21,4 L4.27,2 L1,2 Z M17,18 C15.9,18 15.01,18.9 15.01,20 C15.01,21.1 15.9,22 17,22 C18.1,22 19,21.1 19,20 C19,18.9 18.1,18.1 17,18 Z"
       />
     </svg>
     <div className="absolute top-2 left-2 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
@@ -646,8 +646,8 @@ const StarIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
 );
 
-const CharmLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-slate-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0 grayscale">
+const CharmLevelBadge = ({ level, className }: { level: number, className?: string }) => (
+  <div className={cn("flex items-center gap-1 bg-slate-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0 grayscale", className)}>
     <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
     <Sparkles className="h-2 w-2 fill-white text-white" />
     <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.0</span>
@@ -981,14 +981,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 {/* mt-1.5 and -ml-0.5 to move it a bit down and left */}
                 <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
                   <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} />
+                  {/* Added -ml-1 to Charm Badge to move slightly left */}
+                  <CharmLevelBadge level={profile.level?.charm || 1} className="-ml-1" />
 
                   {/* Calling New SVGA Tags Here */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
-                  {profile.tags?.includes('Official') && profile.tags?.includes('Service') && <SVGA_ServiceTag />}
-                  {/* Newly added Host Tag - Only for Official */}
-                  {profile.tags?.includes('Official') && profile.tags?.includes('Host') && <SVGA_HostTag />}
+                  {profile.tags?.includes('Service') && <SVGA_ServiceTag />}
+                  {profile.tags?.includes('Host') && <SVGA_HostTag />}
                 </div>
                 {/* --- MODIFIED ID SECTION ENDS --- */}
 
@@ -1132,4 +1132,5 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-            }
+}
+
