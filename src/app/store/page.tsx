@@ -377,6 +377,12 @@ export default function StorePage() {
 
   const idItems = useMemo(() => [
     { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-778320', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-888371', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-127777', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
     { id: 'id-189904', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
     { id: 'id-122234', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 122234 Badge.', displayId: '122234', isSilver: true },
     { id: 'id-189990', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189990 Badge.', displayId: '189990', isSilver: true },
