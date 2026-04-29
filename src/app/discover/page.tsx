@@ -15,7 +15,7 @@ const DiscoverView = dynamic(() => import('./discover-view'), {
 
 export default function DiscoverGatewayPage() {
   return (
-    <main className="min-h-screen bg-[#FF91B5]">
+    <main className="min-h-screen bg-white">
       <DiscoverGateway />
     </main>
   );

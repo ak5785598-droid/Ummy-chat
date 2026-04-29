@@ -50,13 +50,9 @@ export function AppLayout(props: {
   const { data: config, isLoading } = useDoc(configRef);
   const { isHydrated } = useFirebase();
 
-  // STABILITY LOCK: Show nothing or a loader until we know the theme
+  // STABILITY LOCK: Removed blocking loader for speed.
   if (!isHydrated || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <Loader className="h-8 w-8 animate-spin text-white opacity-20" />
-      </div>
-    );
+    return null;
   }
 
   const theme = config?.appTheme || 'CLASSIC';
@@ -108,18 +104,10 @@ function AppLayoutClassic(props: {
 
  const showRealContent = mounted && isHydrated && !isFirebaseLoading && (deterministicAuth || userProfile);
 
- // SERVER-SIDE / PRE-MOUNT RENDER (100% Clean Shard).
- if (!mounted) {
-   return (
-    <div className={cn(
-      "min-h-screen flex flex-col items-center justify-center gap-4",
-      isRoom ? "bg-transparent" : ""
-    )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
-      <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
-    </div>
-   );
- }
+  // SERVER-SIDE / PRE-MOUNT RENDER (Clean Shard).
+  if (!mounted) {
+    return null;
+  }
 
  return (
   <SidebarProvider defaultOpen={!deterministicAuth}>
@@ -184,16 +172,6 @@ function AppLayoutClassic(props: {
       {/* ADDED: Top 20vh Purple Mixing with White Gradient */}
       <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-500/40 via-white/20 to-transparent pointer-events-none z-0" />
 
-      {/* THE VISIBLE SHELL */}
-      {(!showRealContent) && (
-        <div className={cn(
-          "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
-          isRoom ? "bg-transparent" : ""
-        )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
-          <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>
-        </div>
-      )}
 
       {/* MAIN CONTENT AREA */}
       <div 

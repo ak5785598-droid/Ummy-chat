@@ -75,15 +75,7 @@ export function AppLayoutGlossy(props: {
 
  // SERVER-SIDE / PRE-MOUNT RENDER
  if (!mounted) {
-   return (
-    <div className={cn(
-      "min-h-screen flex flex-col items-center justify-center gap-4",
-      isRoom ? "bg-transparent" : ""
-    )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
-      <Loader className="h-10 w-10 animate-spin text-primary opacity-20" />
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Locking Reality Shell...</p>
-    </div>
-   );
+   return null;
  }
 
  return (
@@ -146,16 +138,6 @@ export function AppLayoutGlossy(props: {
       (isRoom || pathname === '/rooms') ? "bg-transparent shadow-none" : ""
     )} style={{ backgroundColor: (isRoom || pathname === '/rooms') ? 'transparent' : 'hsl(var(--background))' }}>
       
-      {/* THE VISIBLE SHELL */}
-      {(!showRealContent) && (
-        <div className={cn(
-          "absolute inset-0 z-[9999] flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500",
-          isRoom ? "bg-transparent" : ""
-        )} style={{ backgroundColor: isRoom ? 'transparent' : 'hsl(var(--background))' }}>
-          <Loader className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Synchronizing Reality...</p>
-        </div>
-      )}
 
       {/* MAIN CONTENT AREA */}
       <div 

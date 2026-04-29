@@ -17,7 +17,7 @@ const MessagesView = dynamic(() => import('./messages-view'), {
 
 export default function MessagesGatewayPage() {
   return (
-    <main className="min-h-screen bg-[#f3e5f5]">
+    <main className="min-h-screen bg-white">
       <Suspense fallback={null}>
         <MessagesGateway />
       </Suspense>
