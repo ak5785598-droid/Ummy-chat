@@ -116,7 +116,10 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes custom-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes custom-spin { 
+          from { transform: translate(-50%, -50%) rotate(0deg); } 
+          to { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
         @keyframes custom-particle-float { 
           0%, 100% { transform: translateY(0); opacity: 0; }
           50% { transform: translateY(-10px); opacity: 0.8; }

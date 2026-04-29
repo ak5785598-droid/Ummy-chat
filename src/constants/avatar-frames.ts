@@ -299,17 +299,6 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'none',
     imageUrl: '/images/frames/krishna_pankh.png'
   },
-  'lightning-tiger': {
-    id: 'lightning-tiger',
-    name: 'Lightning Tiger',
-    tier: 'legendary',
-    price: 260000,
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/lightning_tiger.png'
-  },
   'shadow-eclipse': {
     id: 'shadow-eclipse',
     name: 'Shadow Eclipse',
@@ -331,50 +320,6 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'transparent',
     animationType: 'none',
     imageUrl: '/images/frames/blue_energy.png'
-  },
-  'crimson-bolt': {
-    id: 'crimson-bolt',
-    name: 'Crimson Lightning',
-    tier: 'elite',
-    price: 85000,
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/crimson_bolt.png'
-  },
-  'green-cyber-pulse': {
-    id: 'green-cyber-pulse',
-    name: 'Green Cyber Pulse',
-    tier: 'legendary',
-    price: 190000,
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/green_cyber_pulse.png'
-  },
-  'crystal-shard': {
-    id: 'crystal-shard',
-    name: 'Crystal Shard',
-    tier: 'mythic',
-    price: 140000,
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/shadow_eclipse.png'
-  },
-  'shadow-orb': {
-    id: 'shadow-orb',
-    name: 'Shadow Orb',
-    tier: 'luxury',
-    price: 110000,
-    gradient: 'transparent',
-    borderColor: 'transparent',
-    glowColor: 'transparent',
-    animationType: 'none',
-    imageUrl: '/images/frames/shadow_eclipse.png'
   }
 };
 
