@@ -324,7 +324,7 @@ const FishBanner = ({ className }: { className?: string }) => (
     </g>
   </svg>
 );
-a
+
 const FACTIONS = [
  { id: 'WOLF', label: 'Wolf', Banner: WolfBanner },
  { id: 'LION', label: 'Lion', Banner: LionBanner },
