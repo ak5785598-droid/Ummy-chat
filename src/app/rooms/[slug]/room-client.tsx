@@ -99,13 +99,14 @@ import {
   arrayRemove,
   Timestamp,
   where,
-  writeBatch
+  writeBatch,
+  onSnapshot
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
-import { getUmmyAIResponse } from '@/actions/ai-actions';
+import { getUmmyAIResponse, moderateMessage, translateMessage } from '@/actions/ai-actions';
 import { RocketDialog } from '@/components/rocket-dialog';
 import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
@@ -139,6 +140,8 @@ import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
+import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+
 
 
 import { memo, useCallback } from 'react';
@@ -382,6 +385,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // Warning counts ref for AI moderation
   const warningCounts = useRef<Record<string, number>>({});
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translatingId, setTranslatingId] = useState<string | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState('Hindi');
+  const [isLangPickerOpen, setIsLangPickerOpen] = useState(false);
+  const [isCaptionsEnabled, setIsCaptionsEnabled] = useState(false);
+  const [roomCaptions, setRoomCaptions] = useState<Record<string, { text: string, name: string, timestamp: number }>>({});
+
+
+
+
 
   // SYNC: Initialize standard user hook
   const { user: currentUser } = useUser();
@@ -1188,6 +1201,98 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
+  // --- REAL-TIME VOICE CAPTIONS ENGINE ---
+  useEffect(() => {
+    if (!isCaptionsEnabled || !isHydrated) return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('Speech Recognition not supported in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US'; // Default, will be updated based on target or auto
+
+    recognition.onresult = async (event: any) => {
+      if (!firestore || !room.id || !currentUser?.uid || currentUserParticipant?.isMuted) return;
+
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interimTranscript += event.results[i][0].transcript;
+        }
+      }
+
+      const textToShow = finalTranscript || interimTranscript;
+      if (textToShow.trim()) {
+        const captionRef = doc(firestore, 'chatRooms', room.id, 'captions', currentUser.uid);
+        setDocumentNonBlocking(captionRef, {
+          text: textToShow,
+          name: userProfile?.username || 'User',
+          timestamp: Date.now()
+        }, { merge: true });
+      }
+    };
+
+    recognition.onerror = (event: any) => console.error('Speech Recognition Error:', event.error);
+    recognition.onend = () => { if (isCaptionsEnabled && !currentUserParticipant?.isMuted) recognition.start(); };
+
+    recognitionRef.current = recognition;
+    if (isInSeat && !currentUserParticipant?.isMuted) {
+      recognition.start();
+    }
+
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, [isCaptionsEnabled, isHydrated, isInSeat, currentUserParticipant?.isMuted, firestore, room.id, currentUser?.uid, userProfile?.username]);
+
+  // SYNC: Listen for all captions in the room and translate if needed
+  useEffect(() => {
+    if (!firestore || !room.id || !isCaptionsEnabled) return;
+
+    const captionsRef = collection(firestore, 'chatRooms', room.id, 'captions');
+    const unsubscribe = onSnapshot(captionsRef, (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        const data = change.doc.data();
+        const uid = change.doc.id;
+        if (uid === currentUser?.uid) return;
+
+        if (change.type === 'added' || change.type === 'modified') {
+          // Translate to target language
+          const translatedText = await translateMessage(data.text, targetLanguage);
+          setRoomCaptions(prev => ({
+            ...prev,
+            [uid]: {
+              text: translatedText || data.text,
+              name: data.name,
+              timestamp: data.timestamp
+            }
+          }));
+
+          // Clear caption after 5 seconds
+          setTimeout(() => {
+            setRoomCaptions(prev => {
+              const next = { ...prev };
+              if (next[uid]?.timestamp === data.timestamp) delete next[uid];
+              return next;
+            });
+          }, 5000);
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [firestore, room.id, isCaptionsEnabled, currentUser?.uid, targetLanguage]);
+
+
   // ============================================================
   // ROOM LOGIC ENGINE (OWNER ONLY) - Daily stats reset
   // Rocket progression is handled by the Wafa/Haza engine below (line ~1441)
@@ -1682,9 +1787,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (!firestore || !room.id || !msg.content) return;
     const content = msg.content.toLowerCase();
 
-    // 1. PROFANITY SHIELD (Moderation)
-    const slurs = ['abuse1', 'slur2', 'badword3']; // Placeholder for a real slur list
-    const isBad = slurs.some(s => content.includes(s));
+    // 1. AI PROFANITY SHIELD (Moderation - Background Monitoring)
+    const moderation = await moderateMessage(content);
+    const isBad = moderation && !moderation.isSafe;
 
     if (isBad) {
       const currentStrikes = (warningCounts.current[msg.senderId] || 0) + 1;
@@ -1693,7 +1798,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       if (currentStrikes < 3) {
         // Send Warning
         await addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
-          content: `@${msg.senderName}, aapke shabd niyam ke khilaf hain! please sudhar jao. (Warning ${currentStrikes}/3) 🛡️`,
+          content: `@${msg.senderName}, aapke shabd niyam ke khilaf hain! please sudhar jao. (Reason: ${moderation.reason || 'Abusive Content'}) (Warning ${currentStrikes}/3) 🛡️`,
           senderId: 'SYSTEM_BOT',
           senderName: 'Ummy AI Shield',
           senderAvatar: 'https://img.icons8.com/isometric/512/shield.png',
@@ -1912,6 +2017,19 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       return;
     }
 
+    // AI MODERATION CHECK (Proactive)
+    if (content.trim()) {
+      const moderation = await moderateMessage(content);
+      if (moderation && !moderation.isSafe) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Message Blocked 🛡️', 
+          description: moderation.reason || 'Aapka message niyam ke khilaf hai.' 
+        });
+        return;
+      }
+    }
+
     addDocumentNonBlocking(collection(firestore, 'chatRooms', room.id, 'messages'), {
       content: content,
       imageUrl: imageUrl || null,
@@ -1925,6 +2043,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     });
     setMessageText('');
   };
+
+  const handleTranslate = async (messageId: string, text: string) => {
+    if (translatingId) return;
+    setTranslatingId(messageId);
+    try {
+      const result = await translateMessage(text, targetLanguage);
+      if (result) {
+        setTranslations(prev => ({ ...prev, [messageId]: result }));
+      } else {
+        toast({ title: 'Translation Failed', description: 'Kuch galat hua. Phir se koshish karein.' });
+      }
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
+
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2459,6 +2594,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                     )}
                   </div>
                 )}
+              {/* REAL-TIME SUBTITLES OVERLAY */}
+              {isCaptionsEnabled && Object.values(roomCaptions).length > 0 && (
+                <div className="fixed bottom-36 left-0 right-0 z-50 px-6 pointer-events-none flex flex-col gap-2 items-center">
+                  {Object.values(roomCaptions).map((cap, i) => (
+                    <div key={i} className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-full shadow-2xl">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">{cap.name}</p>
+                      <p className="text-[13px] font-medium text-white leading-tight">{cap.text}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* SYSTEM MESSAGES AT THE TOP (Wafa-style, e.g., "Cleared chat") */}
               {firestoreMessages?.filter(m => m.type === 'system').map((msg: any) => (
@@ -2522,7 +2668,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                             <Image src={msg.imageUrl} fill className="object-cover" alt="Sent vibe" unoptimized />
                           </div>
                         )}
-                        {msg.content && <p className="break-words py-0.5">{msg.content}</p>}
+                        {msg.content && (
+                          <div className="flex flex-col gap-0.5">
+                            <p className="break-words py-0.5">{translations[msg.id] || msg.content}</p>
+                            {!translations[msg.id] && msg.content.length > 2 && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTranslate(msg.id, msg.content);
+                                }}
+                                className="text-[8px] font-black text-white/30 uppercase tracking-widest hover:text-white/60 w-fit flex items-center gap-1 mt-0.5 self-end"
+                              >
+                                {translatingId === msg.id ? <Loader className="h-2 w-2 animate-spin" /> : <Sparkles className="h-2 w-2" />}
+                                {translatingId === msg.id ? 'Translating...' : 'Translate'}
+                              </button>
+                            )}
+                          </div>
+                        )}
                         {msg.type === 'gift' && msg.text && (
                           <div className="py-1">
                             <p className="text-yellow-400 font-bold drop-shadow-sm flex items-center gap-1">
@@ -2848,6 +3010,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         </div>
       </footer>
 
+
       {showInput && (
         <div className="fixed inset-0 z-[200] flex flex-col justify-end p-4 pb-safe pb-8 font-headline pointer-events-none">
           <div
@@ -2878,7 +3041,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 className="flex-1 bg-transparent border-none focus:ring-0 px-1 text-white text-[13px] placeholder:text-white/30"
                 placeholder="Type a message..."
               />
+              <button
+                type="button"
+                onClick={() => setIsLangPickerOpen(true)}
+                className="bg-white/10 text-white/70 h-11 px-3 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/5 text-[10px] font-black tracking-widest uppercase"
+              >
+                {SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage)?.code || 'HI'}
+              </button>
               <button type="submit" className="bg-primary hover:bg-primary/90 text-black h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform shrink-0 shadow-lg">
+
+
                 <Mail className="h-5 w-5" />
               </button>
             </form>
@@ -2973,6 +3145,49 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         room={room}
         onShare={() => triggerTask('share_whatsapp')}
       />
+
+      <Dialog open={isLangPickerOpen} onOpenChange={setIsLangPickerOpen}>
+        <DialogContent className="bg-[#030014]/98 border-white/10 text-white max-w-[90vw] rounded-[2rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] z-[500]">
+          <DialogHeader className="p-5 border-b border-white/5 bg-white/5">
+            <DialogTitle className="text-xs font-black uppercase tracking-[0.2em] text-center text-white/90">Choose Your Language</DialogTitle>
+            <DialogDescription className="sr-only">Select a language for real-time chat translation.</DialogDescription>
+          </DialogHeader>
+          
+          <div className="h-[60vh] overflow-y-auto px-4 py-4 custom-scrollbar overscroll-contain">
+            <div className="grid grid-cols-2 gap-2.5">
+              {SUPPORTED_LANGUAGES.map((lang, idx) => (
+                <button
+                  key={`${lang.code}-${idx}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTargetLanguage(lang.name);
+                    setIsLangPickerOpen(false);
+                    toast({ title: `Translation set to ${lang.name} 🌐` });
+                  }}
+                  className={cn(
+                    "flex items-center justify-between px-4 py-4 rounded-2xl transition-all border active:scale-95 touch-manipulation",
+                    targetLanguage === lang.name 
+                      ? "bg-primary border-primary text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                      : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:border-white/10"
+                  )}
+                >
+                  <span className="text-[13px] font-bold tracking-tight">{lang.name}</span>
+                  <span className="text-[9px] opacity-40 font-mono font-black">{lang.code}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="p-4 bg-white/5 border-t border-white/5 flex justify-center">
+             <button 
+               onClick={() => setIsLangPickerOpen(false)}
+               className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+             >
+               Close
+             </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <RoomPlayDialog
         open={isRoomPlayOpen}
         onOpenChange={setIsRoomPlayOpen}
@@ -2987,6 +3202,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setIsRoomPlayOpen(false);
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
+        isCaptionsEnabled={isCaptionsEnabled}
+        onToggleCaptions={() => {
+          setIsCaptionsEnabled(!isCaptionsEnabled);
+          toast({ 
+            title: !isCaptionsEnabled ? 'Live Subtitles ON 🎙️' : 'Live Subtitles OFF 🔇',
+            description: !isCaptionsEnabled ? 'Bolne par translated captions dikhenge.' : 'Voice translation band ho gayi hai.'
+          });
+        }}
         onSyncSharedMusic={(track) => {
           // When music is synced from dialog, play it locally
           if (musicAudioRef.current && track?.url) {

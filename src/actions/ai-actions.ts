@@ -1,6 +1,9 @@
 'use server';
 
 import { roomAssistantFlow } from '@/ai/flows/room-assistant';
+import { chatModeratorFlow } from '@/ai/flows/chat-moderator';
+import { chatTranslatorFlow } from '@/ai/flows/chat-translator';
+
 
 export async function getUmmyAIResponse(userMessage: string, userName: string) {
   // Generate Current IST Time (GTM+5:30) for accurate AI responses
@@ -60,3 +63,24 @@ export async function getUmmyAIResponse(userMessage: string, userName: string) {
     return userFeedback;
   }
 }
+
+export async function moderateMessage(text: string) {
+  try {
+    const result = await chatModeratorFlow({ text });
+    return result;
+  } catch (error) {
+    console.error('Moderation Error:', error);
+    return { isSafe: true };
+  }
+}
+
+export async function translateMessage(text: string, targetLanguage: string = 'Hindi') {
+  try {
+    const result = await chatTranslatorFlow({ text, targetLanguage });
+    return result;
+  } catch (error) {
+    console.error('Translation Error:', error);
+    return null;
+  }
+}
+
