@@ -144,12 +144,20 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             // Accurate pixel-based mask
             maskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
             WebkitMaskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+            mixBlendMode: config.blendMode || 'normal',
+            animation: config.animationType === 'rotate' ? 'custom-spin 8s linear infinite' : 'none',
           }}
         >
           <img 
             src={imageUrl} 
             alt={config.name} 
-            className="w-full h-full object-contain"
+            className={cn(
+              "w-full h-full object-contain",
+              id === 'electro-red' && "animate-pulse brightness-125 contrast-125"
+            )}
+            style={{
+               filter: id === 'electro-red' ? `drop-shadow(0 0 10px ${glowColor})` : 'none'
+            }}
           />
         </div>
       ) : (

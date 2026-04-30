@@ -24,6 +24,7 @@ export interface AvatarFrameConfig {
   holeRatio?: number;
   offsetX?: number;
   offsetY?: number;
+  blendMode?: 'screen' | 'multiply' | 'lighten' | 'normal';
 }
 
 export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
@@ -320,6 +321,20 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     glowColor: 'transparent',
     animationType: 'none',
     imageUrl: '/images/frames/blue_energy.png'
+  },
+  'electro-red': {
+    id: 'electro-red',
+    name: 'Electro Red',
+    tier: 'mythic',
+    price: 180000,
+    gradient: 'transparent',
+    borderColor: '#ff0000',
+    glowColor: 'rgba(255, 0, 0, 0.8)',
+    animationType: 'rotate',
+    imageUrl: '/images/frames/electro-red.png',
+    blendMode: 'screen',
+    scaleMultiplier: 1.8,
+    holeRatio: 0.65
   }
 };
 
