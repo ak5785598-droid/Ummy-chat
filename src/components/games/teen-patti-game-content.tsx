@@ -324,7 +324,7 @@ const FishBanner = ({ className }: { className?: string }) => (
     </g>
   </svg>
 );
-
+a
 const FACTIONS = [
  { id: 'WOLF', label: 'Wolf', Banner: WolfBanner },
  { id: 'LION', label: 'Lion', Banner: LionBanner },
@@ -502,27 +502,70 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </header>
 
-    {/* 3D GLOSSY COUNTDOWN */}
-    <div className="relative z-40 px-3 -mt-1 mb-0.5">
-      <div className="relative mx-auto w-[85%] max-w-[300px]">
-        <div className="absolute -inset-1 bg-[#d946ef]/40 blur-xl rounded-[22px]" />
-        <div className="relative h-[36px] flex items-center justify-center rounded-[16px] overflow-hidden bg-gradient-to-b from-[#c026d3] via-[#a21caf] to-[#701a75] border-[2px] border-[#f5d0fe] shadow-[inset_0_3px_6px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5),0_8px_16px_rgba(0,0,0,0.45)]">
-          <div className="absolute inset-[4px] rounded-[12px] border border-[#f0abfc]/40" />
-          <div className="absolute top-0 inset-x-0 h-[60%] bg-gradient-to-b from-white/30 to-transparent" />
-          <span className="relative text-white text-[18px] font-medium tracking-wide" style={{textShadow:'0 2px 4px rgba(0,0,0,0.8)'}}>
+     {/* COUNTDOWN 3D GLOSSY BANNER - IMAGE JAISA */}
+    <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
+      <div className="relative w-[80%] max-w-[300px]">
+        <svg viewBox="0 0 360 90" className="w-full h-[54px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="cd-bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f472b6"/>
+              <stop offset="12%" stopColor="#d946ef"/>
+              <stop offset="35%" stopColor="#a21caf"/>
+              <stop offset="70%" stopColor="#7e22ce"/>
+              <stop offset="100%" stopColor="#581c87"/>
+            </linearGradient>
+            <linearGradient id="cd-border" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#f5d0fe"/>
+              <stop offset="100%" stopColor="#c026d3"/>
+            </linearGradient>
+            <linearGradient id="cd-neon" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#67e8f9"/>
+              <stop offset="100%" stopColor="#3b82f6"/>
+            </linearGradient>
+            <radialGradient id="cd-shine" cx="0.5" cy="0.05" r="0.9">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0.45"/>
+              <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+            </radialGradient>
+            <filter id="cd-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#a855f7" floodOpacity="0.9"/>
+            </filter>
+          </defs>
+          <ellipse cx="180" cy="78" rx="135" ry="9" fill="#000" opacity="0.3"/>
+          <path d="M18 30 C18 12 32 6 50 6 H310 C328 6 342 12 342 30 V48 C342 66 328 72 310 72 H50 C32 72 18 66 18 48 Z" fill="url(#cd-bg)" stroke="url(#cd-border)" strokeWidth="4" filter="url(#cd-glow)"/>
+          <path d="M24 34 C24 18 36 14 52 14 H308 C324 14 336 18 336 34" fill="none" stroke="url(#cd-neon)" strokeWidth="2.2" opacity="0.95"/>
+          <path d="M24 46 C24 60 36 64 52 64 H308 C324 64 336 60 336 46" fill="none" stroke="#e0f2fe" strokeWidth="1" opacity="0.5"/>
+          <path d="M18 30 C18 12 32 6 50 6 H310 C328 6 342 12 342 30 V36 C342 18 328 12 310 12 H50 C32 12 18 18 18 36 Z" fill="url(#cd-shine)"/>
+          <g>
+            {[...Array(13)].map((_,i)=> {
+              const x = 28 + i*24.5;
+              return <circle key={i} cx={x} cy="14" r="3" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.8"/>
+            })}
+            {[...Array(13)].map((_,i)=> {
+              const x = 28 + i*24.5;
+              return <circle key={i} cx={x} cy="64" r="3" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.8"/>
+            })}
+            <circle cx="20" cy="30" r="2.7" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.7"/>
+            <circle cx="20" cy="48" r="2.7" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.7"/>
+            <circle cx="340" cy="30" r="2.7" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.7"/>
+            <circle cx="340" cy="48" r="2.7" fill="#fffbeb" stroke="#fde68a" strokeWidth="0.7"/>
+          </g>
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-white text-[22px] font-bold tracking-wide" style={{textShadow:'0 2px 3px rgba(0,0,0,0.85), 0 0 10px rgba(255,255,255,0.25)'}}>
             Countdown {timeLeft}s
           </span>
         </div>
       </div>
     </div>
 
+
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
-      {/* CARD GRID - Height Strictly Chota Kiya */}
-      <div className="grid grid-cols-3 gap-2 px-4 h-16 shrink-0">
+      {/* CARD GRID - Card & Grid Size Increased */}
+      <div className="grid grid-cols-3 gap-2 px-4 h-20 shrink-0">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5">
           <div className={cn(
-            "w-full h-14 border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner",
+            "w-full h-16 border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner",
             "rounded-none",
             winnerId === f.id? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5"
           )}>
@@ -536,11 +579,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
                return (
-                <div key={i} className={cn("w-6 h-9 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", isFlipped ? "rotate-y-180" : "")}>
+                <div key={i} className={cn("w-8 h-12 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", isFlipped ? "rotate-y-180" : "")}>
                  
                  {/* CARD FRONT - Real cards jaise number & icons */}
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
-                   <span className={cn("text-[11px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
+                   <span className={cn("text-[14px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
                    </span>
                  </div>
@@ -556,7 +599,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                    }}
                  >
                    <div className="bg-[#dc2626] rounded-full p-[1px] border border-white/40 shadow-sm">
-                     <UmmyLogoIcon className="h-[6px] w-[6px] text-white" />
+                     <UmmyLogoIcon className="h-[8px] w-[8px] text-white" />
                    </div>
                  </div>
 
@@ -574,24 +617,25 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
-         <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[100px]">
+         <div key={f.id} className="flex flex-col items-center w-[30%] max-w-[110px]">
            <div className={cn("relative transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-             <Icon className="w-full h-20 drop-shadow-2xl" />
+             {/* Banner size increased to h-24 */}
+             <Icon className="w-full h-24 drop-shadow-2xl" />
            </div>
            
-           {/* UI Change 1: Ye Table ab perfectly dark-brown background image jaisa hai */}
+           {/* UI Change 1: Table height increased, text fixed at bottom & shrinks on bet */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl py-1.5 flex flex-col items-center justify-center mt-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-1.5 mt-1 transition-all duration-300 cursor-pointer shadow-lg",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
-             <span className="text-[12px] font-bold text-white tracking-wide leading-tight">
+             <span className={cn("font-bold text-white tracking-wide leading-tight transition-all", (myBets[f.id] || 0) > 0 ? "text-[10px]" : "text-[12px]")}>
                Pot: {(totalPots[f.id] || 0)}
              </span>
-             <span className="text-[13px] font-bold text-[#ffd700] tracking-wide leading-tight mt-[1px]">
+             <span className={cn("font-bold text-[#ffd700] tracking-wide leading-tight mt-[1px] transition-all", (myBets[f.id] || 0) > 0 ? "text-[11px]" : "text-[13px]")}>
                You: {(myBets[f.id] || 0)}
              </span>
            </button>
@@ -636,4 +680,3 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
-
