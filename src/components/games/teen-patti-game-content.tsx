@@ -331,6 +331,21 @@ const FACTIONS = [
  { id: 'FISH', label: 'Fish', Banner: FishBanner },
 ];
 
+// NAYA LOGIC: Card sequence check karne ke liye (High, Pair, Sequence)
+const evaluateHand = (cards: string[]) => {
+  if (!cards || cards.length !== 3) return '';
+  // Suit ko remove karke sirf number/letter nikal rahe hain (e.g., '10♠' -> '10')
+  const values = cards.map(c => c.slice(0, -1)); 
+  const counts: Record<string, number> = {};
+  
+  values.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
+  const maxCount = Math.max(...Object.values(counts));
+
+  if (maxCount === 3) return 'Sequence'; 
+  if (maxCount === 2) return 'Pair';
+  return 'High';
+};
+
 interface TeenPattiGameContentProps {
   isOverlay?: boolean;
   onClose?: () => void;
@@ -355,7 +370,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
   
-  // Naya state sequence flip logic ke liye 
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
   const winnersQuery = useMemoFirebase(() => {
@@ -385,7 +399,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   const startReveal = async () => {
    setGameState('reveal');
-   setRevealedCardsCount(0); // Reset flips before sequence
+   setRevealedCardsCount(0); 
 
    const newCards: Record<string, string[]> = {};
    FACTIONS.forEach(f => { 
@@ -397,13 +411,12 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    });
    setCardReveal(newCards);
 
-   // 1 By 1 Card flip logic - Sequence
    let currentFlip = 0;
    const flipInterval = setInterval(() => {
        currentFlip++;
        setRevealedCardsCount(currentFlip);
        if(currentFlip >= 9) clearInterval(flipInterval);
-   }, 250); // Har card palatne ke beech 250ms ka gap
+   }, 250); 
 
    let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
    if (firestore) {
@@ -416,7 +429,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     } catch (e) {}
    }
 
-   // 3500ms wait taaki sb cards ache se reveal ho jaye
    setTimeout(() => { finalizeRound(winId); }, 3500);
   };
 
@@ -424,7 +436,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setWinnerId(winId); 
    setHistory(prev => [winId,...prev.slice(0, 10)]); 
    setGameState('result');
-   setRevealedCardsCount(9); // Ensure sab flips done hai
+   setRevealedCardsCount(9); 
 
    const winAmount = (myBets[winId] || 0) * 1.95;
 
@@ -441,7 +453,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        setGameState('betting'); 
        setTimeLeft(20); 
        setCardReveal({}); 
-       setRevealedCardsCount(0); // Flip back to start state
+       setRevealedCardsCount(0); 
     }, 5000);
   };
 
@@ -466,7 +478,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
      )}
    >
-    {/* SMALL HEADER - Choti Size ki */}
     <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3">
       <div className="flex items-center gap-1.5">
         <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90">
@@ -501,9 +512,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </header>
 
-     {/* COUNTDOWN 3D GLOSSY BANNER - Decreased Size */}
     <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
-      <div className="relative w-[70%] max-w-[220px]">
+      <div className="relative w-[85%] max-w-[280px]">
         <svg viewBox="0 0 360 90" className="w-full h-[40px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="cd-bg" x1="0" y1="0" x2="0" y2="1">
@@ -559,17 +569,15 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
 
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
-      {/* CARD GRID */}
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0">
        {FACTIONS.map((f, factionIndex) => (
-        <div key={f.id} className="flex flex-col items-center gap-1.5">
+        <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
           <div className={cn(
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
             winnerId === f.id ? "scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-10" : ""
           )}>
            <div className="flex -space-x-1.5 scale-100">
              {[0, 1, 2].map((i) => {
-               // Global index to flip them one by one sequentially
                const globalCardIndex = factionIndex * 3 + i;
                const isFlipped = gameState !== 'betting' && revealedCardsCount > globalCardIndex;
                
@@ -579,14 +587,12 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                return (
                 <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg", isFlipped ? "rotate-y-180" : "")}>
                  
-                 {/* CARD FRONT - Real cards jaise number & icons */}
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
                    <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
                    </span>
                  </div>
                  
-                 {/* CARD BACK */}
                  <div 
                    className="absolute inset-0 backface-hidden rounded border border-white/40 flex items-center justify-center shadow-inner" 
                    style={{ 
@@ -606,27 +612,42 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
              })}
            </div>
           </div>
+          
+          {/* NAYA UI: RESULT BADGE UNDER CARDS */}
+          {gameState !== 'betting' && revealedCardsCount >= (factionIndex * 3) + 3 && cardReveal[f.id] && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="absolute -bottom-3 z-20"
+            >
+              <div className="bg-black/60 backdrop-blur-md border border-[#ffd700] px-2 py-[2px] rounded shadow-[0_0_8px_rgba(255,215,0,0.6),inset_0_0_4px_rgba(255,215,0,0.3)] relative overflow-hidden flex items-center justify-center min-w-[50px]">
+                {/* Premium Glossy Layer */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-black/30" />
+                <span className="text-[#ffd700] text-[8.5px] font-extrabold uppercase tracking-widest relative z-10" style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}>
+                  {evaluateHand(cardReveal[f.id])}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
         </div>
        ))}
       </div>
 
-      {/* BANNER SECTION WITH EXACT IMAGE TABLES */}
-      <div className="flex justify-around items-end px-3 flex-1 pb-3 mt-1">
+      <div className="flex justify-center gap-4 items-end px-3 flex-1 pb-3 mt-1">
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
-         <div key={f.id} className="flex flex-col items-center w-[33%] max-w-[130px]">
-           {/* UI Change 2: Banners thoda sa ouper shift ho gaye hain (-mt-5 use karke) */}
+         <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[110px]">
            <div className={cn("relative transition-all duration-300 -mt-5", gameState!== 'betting' && "opacity-60")}>
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
-           {/* UI Change 4: Tables chote kiye hain (h-[38px] aur pb-1 use karke) */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl h-[38px] flex flex-col items-center justify-end pb-1 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[42px] flex flex-col items-center justify-end pb-1.5 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
@@ -644,7 +665,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </main>
 
-    {/* HISTORY BAR - UI Change 3: Thoda sa niche shift hua hai (mt-3) */}
     <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
       <span className="text-[9px] font-bold text-white/50 uppercase whitespace-nowrap">History:</span>
       <div className="flex items-center gap-1.5">
@@ -663,7 +683,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </div>
 
-    {/* FOOTER CHIPS */}
     <footer className="p-2 py-3 bg-gradient-to-t from-black/60 to-transparent shrink-0 relative z-50">
       <div className="w-full flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
          {CHIPS.map(chip => (
