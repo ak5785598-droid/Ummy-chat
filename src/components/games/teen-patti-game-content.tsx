@@ -28,6 +28,14 @@ const CHIPS = [
  { value: 5000000, label: '5000k', color: 'bg-[#FFD700] border-[#FFD700]/50 shadow-[#FFD700]/40' },
 ];
 
+// Realistic Deck for Cards 
+const DECK = [
+  'A♠', '2♠', '3♠', '4♠', '5♠', '6♠', '7♠', '8♠', '9♠', '10♠', 'J♠', 'Q♠', 'K♠',
+  'A♥', '2♥', '3♥', '4♥', '5♥', '6♥', '7♥', '8♥', '9♥', '10♥', 'J♥', 'Q♥', 'K♥',
+  'A♦', '2♦', '3♦', '4♦', '5♦', '6♦', '7♦', '8♦', '9♦', '10♦', 'J♦', 'Q♦', 'K♦',
+  'A♣', '2♣', '3♣', '4♣', '5♣', '6♣', '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', 'K♣'
+];
+
 // --- 3D BANNERS WITH DRAGONS INSIDE ---
 
 const WolfBanner = ({ className }: { className?: string }) => (
@@ -323,8 +331,6 @@ const FACTIONS = [
  { id: 'FISH', label: 'Fish', Banner: FishBanner },
 ];
 
-const CARDS = ['A', 'JOKER', 'B', 'K', 'Q', '10', '9'];
-
 interface TeenPattiGameContentProps {
   isOverlay?: boolean;
   onClose?: () => void;
@@ -348,6 +354,9 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
+  
+  // Naya state sequence flip logic ke liye 
+  const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
   const winnersQuery = useMemoFirebase(() => {
      if (!firestore) return null;
@@ -376,9 +385,25 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   const startReveal = async () => {
    setGameState('reveal');
+   setRevealedCardsCount(0); // Reset flips before sequence
+
    const newCards: Record<string, string[]> = {};
-   FACTIONS.forEach(f => { newCards[f.id] = [CARDS[Math.floor(Math.random() * CARDS.length)], CARDS[Math.floor(Math.random() * CARDS.length)], CARDS[Math.floor(Math.random() * CARDS.length)]]; });
+   FACTIONS.forEach(f => { 
+       newCards[f.id] = [
+           DECK[Math.floor(Math.random() * DECK.length)], 
+           DECK[Math.floor(Math.random() * DECK.length)], 
+           DECK[Math.floor(Math.random() * DECK.length)]
+       ]; 
+   });
    setCardReveal(newCards);
+
+   // 1 By 1 Card flip logic - Sequence
+   let currentFlip = 0;
+   const flipInterval = setInterval(() => {
+       currentFlip++;
+       setRevealedCardsCount(currentFlip);
+       if(currentFlip >= 9) clearInterval(flipInterval);
+   }, 250); // Har card palatne ke beech 250ms ka gap
 
    let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
    if (firestore) {
@@ -390,11 +415,17 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      }
     } catch (e) {}
    }
-   setTimeout(() => { finalizeRound(winId); }, 3000);
+
+   // 3500ms wait taaki sb cards ache se reveal ho jaye
+   setTimeout(() => { finalizeRound(winId); }, 3500);
   };
 
   const finalizeRound = (winId: string) => {
-   setWinnerId(winId); setHistory(prev => [winId,...prev.slice(0, 10)]); setGameState('result');
+   setWinnerId(winId); 
+   setHistory(prev => [winId,...prev.slice(0, 10)]); 
+   setGameState('result');
+   setRevealedCardsCount(9); // Ensure sab flips done hai
+
    const winAmount = (myBets[winId] || 0) * 1.95;
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -403,7 +434,15 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
     addDocumentNonBlocking(collection(firestore, 'globalGameWins'), { gameId: 'teen-patti', userId: currentUser.uid, username: userProfile?.username || 'Guest', avatarUrl: userProfile?.avatarUrl || null, amount: Math.floor(winAmount), timestamp: serverTimestamp() });
    }
-   setTimeout(() => { setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); setTotalPots({ WOLF: 0, LION: 0, FISH: 0 }); setWinnerId(null); setGameState('betting'); setTimeLeft(20); setCardReveal({}); }, 5000);
+   setTimeout(() => { 
+       setMyBets({ WOLF: 0, LION: 0, FISH: 0 }); 
+       setTotalPots({ WOLF: 0, LION: 0, FISH: 0 }); 
+       setWinnerId(null); 
+       setGameState('betting'); 
+       setTimeLeft(20); 
+       setCardReveal({}); 
+       setRevealedCardsCount(0); // Flip back to start state
+    }, 5000);
   };
 
   const handlePlaceBet = (id: string) => {
@@ -424,137 +463,139 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      dragMomentum={false}
      initial={isOverlay? { y: '10%' } : {}}
      className={cn(
-       // UI Change 1: rounded-[2.8rem] hata kar rounded-none kiya gaya hai
-       "h-fit max-h-[82vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300",
-   !isOverlay && "min-h-[80vh]"
+       // UI Change 5: Game height fixed strictly to 50VH
+       "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
      )}
    >
-    {/* HEADER */}
-    <header className="relative z-50 flex items-center justify-between p-3 pt-6 px-4">
+    {/* SMALL HEADER - Choti Size ki */}
+    <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3">
       <div className="flex items-center gap-1.5">
-        <button onPointerDown={(e) => dragControls.start(e)} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90">
-          <Move className="h-5 w-5" />
+        <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90">
+          <Move className="h-4 w-4" />
         </button>
-        <div className="h-8 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-1.5 shadow-inner group">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
-            <GoldCoinIcon className="h-4 w-4 text-white" />
+        <div className="h-6 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-1.5 shadow-inner group">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
+            <GoldCoinIcon className="h-3 w-3 text-white" />
           </div>
-          <span className="text-[11px] font-bold text-white tracking-tight px-1">
+          <span className="text-[10px] font-bold text-white tracking-tight px-1">
             {(userProfile?.wallet?.coins || 0).toLocaleString()}
           </span>
-          <button className="w-6 h-6 rounded-full bg-[#34d399] flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
-            <Plus className="h-3 w-3 stroke-[3px]" />
+          <button className="w-5 h-5 rounded-full bg-[#34d399] flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
+            <Plus className="h-2 w-2 stroke-[3px]" />
           </button>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
-          <Clock className="h-5 w-5 text-white/90" />
+        <button className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+          <Clock className="h-4 w-4 text-white/90" />
         </button>
-        <button onClick={() => setIsMuted(!isMuted)} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
-          {isMuted? <VolumeX className="h-5 w-5 text-white/90" /> : <Volume2 className="h-5 w-5 text-white/90" />}
+        <button onClick={() => setIsMuted(!isMuted)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+          {isMuted? <VolumeX className="h-4 w-4 text-white/90" /> : <Volume2 className="h-4 w-4 text-white/90" />}
         </button>
-        <button className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
-          <HelpCircle className="h-5 w-5 text-white/90" />
+        <button className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+          <HelpCircle className="h-4 w-4 text-white/90" />
         </button>
-        <button onClick={() => (onClose? onClose() : router.back())} className="w-10 h-10 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90 text-white/90">
-          <X className="h-5 w-5" />
+        <button onClick={() => (onClose? onClose() : router.back())} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90 text-white/90">
+          <X className="h-4 w-4" />
         </button>
       </div>
     </header>
 
     {/* 3D GLOSSY COUNTDOWN */}
-    <div className="relative z-40 px-3 -mt-1 mb-1">
-      <div className="relative mx-auto w-[92%] max-w-[340px]">
+    <div className="relative z-40 px-3 -mt-1 mb-0.5">
+      <div className="relative mx-auto w-[85%] max-w-[300px]">
         <div className="absolute -inset-1 bg-[#d946ef]/40 blur-xl rounded-[22px]" />
-        <div className="relative h-[48px] flex items-center justify-center rounded-[20px] overflow-hidden bg-gradient-to-b from-[#c026d3] via-[#a21caf] to-[#701a75] border-[3px] border-[#f5d0fe] shadow-[inset_0_3px_6px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5),0_8px_16px_rgba(0,0,0,0.45)]">
-          <div className="absolute inset-[5px] rounded-[16px] border border-[#f0abfc]/40" />
-          <div className="absolute inset-[8px] rounded-[14px] border border-[#f0abfc]/20" />
+        <div className="relative h-[36px] flex items-center justify-center rounded-[16px] overflow-hidden bg-gradient-to-b from-[#c026d3] via-[#a21caf] to-[#701a75] border-[2px] border-[#f5d0fe] shadow-[inset_0_3px_6px_rgba(255,255,255,0.35),inset_0_-4px_8px_rgba(0,0,0,0.5),0_8px_16px_rgba(0,0,0,0.45)]">
+          <div className="absolute inset-[4px] rounded-[12px] border border-[#f0abfc]/40" />
           <div className="absolute top-0 inset-x-0 h-[60%] bg-gradient-to-b from-white/30 to-transparent" />
-          <div className="absolute top-[5px] left-0 right-0 flex justify-between px-4">
-            {Array.from({length: 8}).map((_,i)=><div key={i} className="w-[5px] h-[5px] rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,0.9)]" />)}
-          </div>
-          <div className="absolute bottom-[5px] left-0 right-0 flex justify-between px-4">
-            {Array.from({length: 8}).map((_,i)=><div key={i} className="w-[5px] h-[5px] rounded-full bg-white shadow-[0_0_6px_1px_rgba(255,255,255,0.9)]" />)}
-          </div>
-          <span className="relative text-white text-[24px] font-medium tracking-wide" style={{textShadow:'0 2px 4px rgba(0,0,0,0.8)'}}>
+          <span className="relative text-white text-[18px] font-medium tracking-wide" style={{textShadow:'0 2px 4px rgba(0,0,0,0.8)'}}>
             Countdown {timeLeft}s
           </span>
         </div>
       </div>
     </div>
 
-    <main className="flex-1 flex flex-col pt-2 overflow-hidden relative z-10">
-      {/* CARD GRID */}
-      <div className="grid grid-cols-3 gap-2 px-4 h-32">
-       {FACTIONS.map((f) => (
+    <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
+      {/* CARD GRID - Height Strictly Chota Kiya */}
+      <div className="grid grid-cols-3 gap-2 px-4 h-16 shrink-0">
+       {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5">
           <div className={cn(
-            "w-full h-24 border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner",
+            "w-full h-14 border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner",
             "rounded-none",
             winnerId === f.id? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5"
           )}>
-           <div className="flex gap-0.5 scale-100">
-             {[0, 1, 2].map((i) => (
-              <div key={i} className={cn("w-7 h-10 rounded border transition-all duration-1000 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", gameState!== 'betting'? "rotate-y-180" : "")}>
-               <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
-                 <span className="text-[9px] font-bold text-black">{cardReveal[f.id]?.[i] || '?'}</span>
-               </div>
+           <div className="flex gap-[2px] scale-100">
+             {[0, 1, 2].map((i) => {
+               // Global index to flip them one by one sequentially
+               const globalCardIndex = factionIndex * 3 + i;
+               const isFlipped = gameState !== 'betting' && revealedCardsCount > globalCardIndex;
                
-               {/* UI Change 3: Card back par red color aur white dot-dot pattern lagaya gaya hai */}
-               <div 
-                 className="absolute inset-0 backface-hidden rounded border border-white/40 flex items-center justify-center shadow-inner" 
-                 style={{ 
-                   backgroundColor: '#dc2626', 
-                   backgroundImage: 'radial-gradient(white 15%, transparent 16%), radial-gradient(white 15%, transparent 16%)', 
-                   backgroundSize: '8px 8px', 
-                   backgroundPosition: '0 0, 4px 4px' 
-                 }}
-               >
-                 <div className="bg-[#dc2626] rounded-full p-[1px] border border-white/40 shadow-sm">
-                   <UmmyLogoIcon className="h-2 w-2 text-white" />
-                 </div>
-               </div>
+               const cardText = cardReveal[f.id]?.[i] || '?';
+               const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
-              </div>
-             ))}
+               return (
+                <div key={i} className={cn("w-6 h-9 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", isFlipped ? "rotate-y-180" : "")}>
+                 
+                 {/* CARD FRONT - Real cards jaise number & icons */}
+                 <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
+                   <span className={cn("text-[11px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
+                     {cardText}
+                   </span>
+                 </div>
+                 
+                 {/* CARD BACK */}
+                 <div 
+                   className="absolute inset-0 backface-hidden rounded border border-white/40 flex items-center justify-center shadow-inner" 
+                   style={{ 
+                     backgroundColor: '#dc2626', 
+                     backgroundImage: 'radial-gradient(white 15%, transparent 16%), radial-gradient(white 15%, transparent 16%)', 
+                     backgroundSize: '6px 6px', 
+                     backgroundPosition: '0 0, 3px 3px' 
+                   }}
+                 >
+                   <div className="bg-[#dc2626] rounded-full p-[1px] border border-white/40 shadow-sm">
+                     <UmmyLogoIcon className="h-[6px] w-[6px] text-white" />
+                   </div>
+                 </div>
+
+                </div>
+               );
+             })}
            </div>
           </div>
         </div>
        ))}
       </div>
 
-      {/* BANNER SECTION WITH DARK BROWN TABLES */}
-      <div className="flex justify-around items-end px-3 flex-1 pb-12 mt-2">
+      {/* BANNER SECTION WITH EXACT IMAGE TABLES */}
+      <div className="flex justify-around items-end px-3 flex-1 pb-3 mt-1">
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
-         <div key={f.id} className="flex flex-col items-center gap-1 w-28">
-           
-           {/* UI Change 2: Banner ab clickable nahi hai */}
+         <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[100px]">
            <div className={cn("relative transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-             <Icon className="w-full h-32 drop-shadow-2xl" />
+             <Icon className="w-full h-20 drop-shadow-2xl" />
            </div>
            
-           {/* UI Change 2: Ye Table ab button ban gaya hai aur bet ispe click karne se lagegi */}
+           {/* UI Change 1: Ye Table ab perfectly dark-brown background image jaisa hai */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#3d2317] border border-[#5d3a2a] rounded-xl p-1.5 shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex flex-col gap-0.5 mt-1 text-left transition-all duration-300 cursor-pointer",
-               gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-60 cursor-not-allowed"
+               "w-full bg-[#481c1c] rounded-xl py-1.5 flex flex-col items-center justify-center mt-1 transition-all duration-300 cursor-pointer shadow-lg",
+               gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
-             <div className="flex justify-between items-center px-1 border-b border-white/5 pb-0.5">
-               <span className="text-[8px] font-bold text-white/40 uppercase tracking-tighter">Pot</span>
-               <span className="text-[9px] font-bold text-white tracking-tight">{(totalPots[f.id] || 0).toLocaleString()}</span>
-             </div>
-             <div className="flex justify-between items-center px-1 pt-0.5">
-               <span className="text-[8px] font-bold text-[#ffd700]/60 uppercase tracking-tighter">Bet</span>
-               <span className="text-[9px] font-bold text-[#ffd700] tracking-tight">{(myBets[f.id] || 0).toLocaleString()}</span>
-             </div>
+             <span className="text-[12px] font-bold text-white tracking-wide leading-tight">
+               Pot: {(totalPots[f.id] || 0)}
+             </span>
+             <span className="text-[13px] font-bold text-[#ffd700] tracking-wide leading-tight mt-[1px]">
+               You: {(myBets[f.id] || 0)}
+             </span>
            </button>
+
          </div>
         )
        })}
@@ -562,7 +603,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     </main>
 
     {/* HISTORY BAR */}
-    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50">
+    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
       <span className="text-[9px] font-bold text-white/50 uppercase whitespace-nowrap">History:</span>
       <div className="flex items-center gap-1.5">
         {history.map((winId, idx) => {
@@ -570,10 +611,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           const Icon = faction?.Banner;
           return (
             <div key={idx} className={cn(
-              "w-7 h-7 rounded bg-black/40 border flex items-center justify-center shrink-0",
+              "w-6 h-6 rounded bg-black/40 border flex items-center justify-center shrink-0",
               idx === 0? "border-[#ffd700] shadow-[0_0_8px_rgba(255,215,0,0.5)]" : "border-white/10 opacity-60"
             )}>
-              {Icon && <Icon className="w-5 h-5" />}
+              {Icon && <Icon className="w-4 h-4" />}
             </div>
           );
         })}
@@ -581,11 +622,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     </div>
 
     {/* FOOTER CHIPS */}
-    <footer className="p-3 py-4 bg-gradient-to-t from-black/60 to-transparent shrink-0 relative z-50">
+    <footer className="p-2 py-3 bg-gradient-to-t from-black/60 to-transparent shrink-0 relative z-50">
       <div className="w-full flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
          {CHIPS.map(chip => (
-          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-9 w-9 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value? "scale-110 border-white ring-4 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
-           <span className="text-[7px] font-bold text-white uppercase">{chip.label}</span>
+          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-8 w-8 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value? "scale-110 border-white ring-2 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
+           <span className="text-[6px] font-bold text-white uppercase">{chip.label}</span>
           </button>
          ))}
       </div>
@@ -595,3 +636,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
+
