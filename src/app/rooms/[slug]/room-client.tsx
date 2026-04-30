@@ -106,7 +106,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL, getBytes } from 'fireba
 import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
-import { getUmmyAIResponse, moderateMessage, translateMessage } from '@/actions/ai-actions';
+import { getUmmyAIResponse, moderateMessage, translateMessage, detectEmotion } from '@/actions/ai-actions';
 import { RocketDialog } from '@/components/rocket-dialog';
 import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
@@ -1266,6 +1266,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         if (uid === currentUser?.uid) return;
 
         if (change.type === 'added' || change.type === 'modified') {
+          // Detect Emotion for Subtitles
+          const moodData = await detectEmotion(data.text);
+          
           // Translate to target language
           const translatedText = await translateMessage(data.text, targetLanguage);
           setRoomCaptions(prev => ({
@@ -1273,7 +1276,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             [uid]: {
               text: translatedText || data.text,
               name: data.name,
-              timestamp: data.timestamp
+              timestamp: data.timestamp,
+              emotion: moodData.emotion,
+              emoji: moodData.emoji
             }
           }));
 
@@ -2597,10 +2602,25 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               {/* REAL-TIME SUBTITLES OVERLAY */}
               {isCaptionsEnabled && Object.values(roomCaptions).length > 0 && (
                 <div className="fixed bottom-36 left-0 right-0 z-50 px-6 pointer-events-none flex flex-col gap-2 items-center">
-                  {Object.values(roomCaptions).map((cap, i) => (
-                    <div key={i} className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-full shadow-2xl">
-                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">{cap.name}</p>
-                      <p className="text-[13px] font-medium text-white leading-tight">{cap.text}</p>
+                  {Object.values(roomCaptions).map((cap: any, i) => (
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "backdrop-blur-md px-4 py-2 rounded-2xl border animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-full shadow-2xl transition-colors",
+                        cap.emotion === 'happy' ? "bg-yellow-500/20 border-yellow-500/40 shadow-[0_0_20px_rgba(234,179,8,0.2)]" :
+                        cap.emotion === 'angry' ? "bg-red-500/20 border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.2)]" :
+                        cap.emotion === 'sad' ? "bg-blue-500/20 border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.2)]" :
+                        cap.emotion === 'surprised' ? "bg-purple-500/20 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.2)]" :
+                        "bg-black/60 border-white/10"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl drop-shadow-md">{cap.emoji}</span>
+                        <div>
+                          <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">{cap.name}</p>
+                          <p className="text-[13px] font-medium text-white leading-tight mt-1">{cap.text}</p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

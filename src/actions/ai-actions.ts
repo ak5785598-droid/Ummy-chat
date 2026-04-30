@@ -3,7 +3,7 @@
 import { roomAssistantFlow } from '@/ai/flows/room-assistant';
 import { chatModeratorFlow } from '@/ai/flows/chat-moderator';
 import { chatTranslatorFlow } from '@/ai/flows/chat-translator';
-
+import { emotionDetectorFlow } from '@/ai/flows/emotion-detector';
 
 export async function getUmmyAIResponse(userMessage: string, userName: string) {
   // Generate Current IST Time (GTM+5:30) for accurate AI responses
@@ -71,6 +71,18 @@ export async function moderateMessage(text: string) {
   } catch (error) {
     console.error('Moderation Error:', error);
     return { isSafe: true };
+  }
+}
+
+/**
+ * Detects the emotional tone of a message.
+ */
+export async function detectEmotion(text: string) {
+  try {
+    const result = await emotionDetectorFlow({ text });
+    return result;
+  } catch (e) {
+    return { emotion: 'normal' as const, emoji: '💬' };
   }
 }
 
