@@ -1,4 +1,4 @@
-'use client';
+'use client'; 
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -560,16 +560,15 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
 
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
-      {/* CARD GRID - Card & Grid Size Increased */}
-      <div className="grid grid-cols-3 gap-2 px-4 h-20 shrink-0">
+      {/* CARD GRID - Card & Grid Size Increased, Squad Box Removed */}
+      <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5">
           <div className={cn(
-            "w-full h-16 border-2 transition-all duration-500 flex flex-col items-center justify-center relative overflow-hidden bg-black/20 backdrop-blur-sm shadow-inner",
-            "rounded-none",
-            winnerId === f.id? "border-[#ffd700] bg-[#ffd700]/10 shadow-2xl" : "border-white/5"
+            "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
+            winnerId === f.id ? "scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-10" : ""
           )}>
-           <div className="flex gap-[2px] scale-100">
+           <div className="flex -space-x-1.5 scale-100">
              {[0, 1, 2].map((i) => {
                // Global index to flip them one by one sequentially
                const globalCardIndex = factionIndex * 3 + i;
@@ -579,11 +578,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
                return (
-                <div key={i} className={cn("w-8 h-12 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black", isFlipped ? "rotate-y-180" : "")}>
+                <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg", isFlipped ? "rotate-y-180" : "")}>
                  
                  {/* CARD FRONT - Real cards jaise number & icons */}
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
-                   <span className={cn("text-[14px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
+                   <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
                    </span>
                  </div>
@@ -598,8 +597,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                      backgroundPosition: '0 0, 3px 3px' 
                    }}
                  >
-                   <div className="bg-[#dc2626] rounded-full p-[1px] border border-white/40 shadow-sm">
-                     <UmmyLogoIcon className="h-[8px] w-[8px] text-white" />
+                   <div className="bg-[#dc2626] rounded-full p-[1.5px] border border-white/40 shadow-sm">
+                     <UmmyLogoIcon className="h-[12px] w-[12px] text-white" />
                    </div>
                  </div>
 
@@ -617,10 +616,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
-         <div key={f.id} className="flex flex-col items-center w-[30%] max-w-[110px]">
+         <div key={f.id} className="flex flex-col items-center w-[33%] max-w-[130px]">
            <div className={cn("relative transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-             {/* Banner size increased to h-24 */}
-             <Icon className="w-full h-24 drop-shadow-2xl" />
+             {/* Banner size increased to h-32 */}
+             <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
            {/* UI Change 1: Table height increased, text fixed at bottom & shrinks on bet */}
@@ -680,3 +679,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
+
