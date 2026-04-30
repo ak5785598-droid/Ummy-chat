@@ -463,7 +463,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      dragMomentum={false}
      initial={isOverlay? { y: '10%' } : {}}
      className={cn(
-       // UI Change 5: Game height fixed strictly to 50VH
        "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
      )}
    >
@@ -502,10 +501,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </header>
 
-     {/* COUNTDOWN 3D GLOSSY BANNER - IMAGE JAISA */}
+     {/* COUNTDOWN 3D GLOSSY BANNER - Decreased Size */}
     <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
-      <div className="relative w-[80%] max-w-[300px]">
-        <svg viewBox="0 0 360 90" className="w-full h-[54px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
+      <div className="relative w-[70%] max-w-[220px]">
+        <svg viewBox="0 0 360 90" className="w-full h-[40px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="cd-bg" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#f472b6"/>
@@ -551,7 +550,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           </g>
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-white text-[22px] font-bold tracking-wide" style={{textShadow:'0 2px 3px rgba(0,0,0,0.85), 0 0 10px rgba(255,255,255,0.25)'}}>
+          <span className="text-white text-[16px] font-bold tracking-wide" style={{textShadow:'0 2px 3px rgba(0,0,0,0.85), 0 0 10px rgba(255,255,255,0.25)'}}>
             Countdown {timeLeft}s
           </span>
         </div>
@@ -560,7 +559,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
 
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
-      {/* CARD GRID - Card & Grid Size Increased, Squad Box Removed */}
+      {/* CARD GRID */}
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5">
@@ -617,17 +616,17 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
         const Icon = f.Banner;
         return (
          <div key={f.id} className="flex flex-col items-center w-[33%] max-w-[130px]">
-           {/* UI Change 1: Banners thoda sa upar shift ho gaye hain (-mt-2 use karke) */}
-           <div className={cn("relative transition-all duration-300 -mt-2", gameState!== 'betting' && "opacity-60")}>
+           {/* UI Change 2: Banners thoda sa ouper shift ho gaye hain (-mt-5 use karke) */}
+           <div className={cn("relative transition-all duration-300 -mt-5", gameState!== 'betting' && "opacity-60")}>
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
-           {/* UI Change 2: Tables thoda sa upar shift kiye hain (-translate-y-1 use karke) */}
+           {/* UI Change 4: Tables chote kiye hain (h-[38px] aur pb-1 use karke) */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-1.5 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[38px] flex flex-col items-center justify-end pb-1 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
@@ -645,8 +644,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </main>
 
-    {/* HISTORY BAR - UI Change 3: Thoda sa niche shift hua hai (mt-1) */}
-    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 mt-1 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
+    {/* HISTORY BAR - UI Change 3: Thoda sa niche shift hua hai (mt-3) */}
+    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 mt-3 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
       <span className="text-[9px] font-bold text-white/50 uppercase whitespace-nowrap">History:</span>
       <div className="flex items-center gap-1.5">
         {history.map((winId, idx) => {
@@ -679,3 +678,4 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
+
