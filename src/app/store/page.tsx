@@ -432,6 +432,50 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
+// --- NEW SHINESHU NEON FRAME COMPONENT ---
+const ShineshuFrame = ({ className }: { className?: string }) => (
+  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
+    <style>{`
+      .neon-ring-shineshu {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: transparent;
+        border: 2px solid #00d4ff;
+        position: absolute;
+        box-shadow: 
+          0 0 5px #00d4ff,
+          0 0 20px #00d4ff,
+          0 0 40px #00d4ff,
+          inset 0 0 5px #00d4ff,
+          inset 0 0 20px #00d4ff,
+          inset 0 0 40px rgba(0, 212, 255, 0.4);
+        animation: neonPulseShineshu 2.5s ease-in-out infinite;
+      }
+      .neon-ring-shineshu::before {
+        content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid #00d4ff; filter: blur(5px); opacity: 0.9; box-shadow: 0 0 20px #00d4ff, 0 0 40px #00d4ff;
+      }
+      .neon-ring-shineshu::after {
+        content: ''; position: absolute; inset: -15px; border-radius: 50%; border: 1px solid #00d4ff; filter: blur(18px); opacity: 0.5;
+      }
+      @keyframes neonPulseShineshu {
+        0%, 100% { filter: brightness(1); }
+        50% { 
+          filter: brightness(1.3);
+          box-shadow: 
+            0 0 8px #00d4ff,
+            0 0 30px #00d4ff,
+            0 0 60px #00d4ff,
+            0 0 80px rgba(0, 212, 255, 0.5),
+            inset 0 0 8px #00d4ff,
+            inset 0 0 30px #00d4ff;
+        }
+      }
+    `}</style>
+    <div className="neon-ring-shineshu" style={{ transform: 'scale(1.2)' }} />
+  </div>
+);
+
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -483,7 +527,6 @@ export default function StorePage() {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
     });
     
-    // --- ADDED MERGED GLOSSY WINGS FRAME HERE ---
     frames.push({
       id: 'f-glossy-wings',
       name: 'Glossy wings',
@@ -494,7 +537,6 @@ export default function StorePage() {
       isCustomSVG: true
     });
 
-    // --- ADDED NEW KITTI FRAME HERE ---
     frames.push({
       id: 'f-kitti',
       name: 'Kitti',
@@ -502,6 +544,17 @@ export default function StorePage() {
       price: 600000,
       durationDays: 7,
       description: 'Exclusive animated Kitti frame.',
+      isCustomSVG: true
+    });
+
+    // --- ADDED NEW SHINESHU FRAME HERE ---
+    frames.push({
+      id: 'f-shineshu',
+      name: 'Shineshu',
+      type: 'Frame',
+      price: 40000,
+      durationDays: 7,
+      description: 'Exclusive animated Shineshu neon frame.',
       isCustomSVG: true
     });
 
@@ -656,9 +709,11 @@ export default function StorePage() {
                                 <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                               </Avatar>
                               {item.id === 'f-kitti' ? (
-                                <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                                <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                              ) : item.id === 'f-shineshu' ? (
+                                <ShineshuFrame className="absolute inset-0 z-10 w-full h-full scale-[1.4]" />
                               ) : (
-                                <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                                <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                               )}
                             </div>
                           ) : (
@@ -720,9 +775,11 @@ export default function StorePage() {
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                         {previewItem.id === 'f-kitti' ? (
-                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                        ) : previewItem.id === 'f-shineshu' ? (
+                          <ShineshuFrame className="absolute inset-0 z-10 w-full h-full scale-[1.4]" />
                         ) : (
-                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                         )}
                       </div>
                     ) : (
