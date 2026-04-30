@@ -145,9 +145,9 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             width: `${imgSize}px`,
             height: `${imgSize}px`,
             transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
-            // Accurate pixel-based mask
-            maskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
-            WebkitMaskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+            // Only apply mask for standard frames, not for special blended ones
+            maskImage: config.blendMode ? 'none' : `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+            WebkitMaskImage: config.blendMode ? 'none' : `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
             mixBlendMode: config.blendMode || 'normal',
             animation: 
               config.animationType === 'rotate' ? 'custom-spin 8s linear infinite' : 
@@ -160,7 +160,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             alt={config.name} 
             className={cn(
               "w-full h-full object-contain",
-              (id === 'electro-red' || id === 'imperial-blue') && "animate-pulse brightness-125 contrast-125"
+              (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-125"
             )}
             style={{
                filter: (id === 'electro-red' || id === 'imperial-blue') ? `drop-shadow(0 0 15px ${glowColor})` : 'none'
