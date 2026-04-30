@@ -329,6 +329,109 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
+// --- KITTI FRAME SVG COMPONENT (CLEANED) ---
+const CatFrameSVG = ({ className }: { className?: string }) => (
+  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
+    <style>{`
+      .cat-wrap svg { width: 100%; height: 100%; overflow: visible; }
+      #cat-tail { transform-origin: 612px 382px; animation: tailWag 2s ease-in-out infinite; }
+      @keyframes tailWag { 0%,100%{transform:rotate(-12deg)} 50%{transform:rotate(12deg)} }
+      #ear-left, #ear-right { transform-box: fill-box; transform-origin: 50% 85%; }
+      #ear-left { animation: earTwitch 4s ease-in-out infinite; }
+      #ear-right { animation: earTwitch 4s ease-in-out infinite; animation-delay: 0.3s; }
+      @keyframes earTwitch { 0%,82%,100%{transform:rotate(0)} 86%{transform:rotate(-6deg)} 90%{transform:rotate(4deg)} 94%{transform:rotate(-2deg)} }
+      #bell-left, #bell-right { transform-box: fill-box; transform-origin: 50% 0%; }
+      #bell-left { animation: bellSwing 2.6s ease-in-out infinite; }
+      #bell-right { animation: bellSwing 2.6s ease-in-out infinite 0.4s; }
+      @keyframes bellSwing { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+    `}</style>
+    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-xl cat-wrap" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="cat-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation={8} floodColor="#B8772F" floodOpacity={0.18} />
+        </filter>
+        <linearGradient id="cat-ringGrad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#EDB15E" />
+          <stop offset="100%" stopColor="#E6A64D" />
+        </linearGradient>
+      </defs>
+
+      <g id="whiskers" stroke="#B8772F" strokeWidth={7} strokeLinecap="round" opacity={0.95} filter="url(#cat-shadow)">
+        <path d="M 176 360 Q 110 342 58 358" />
+        <path d="M 172 395 Q 98 390 52 400" />
+        <path d="M 176 430 Q 110 448 62 438" />
+      </g>
+
+      <g id="cat-tail" filter="url(#cat-shadow)">
+        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z"
+          fill="url(#cat-ringGrad)" stroke="#D1923C" strokeWidth={5} strokeLinejoin="round" />
+        <g fill="none" stroke="#B8772F" strokeLinecap="round" strokeWidth={16} opacity={1}>
+          <path d="M 662 388 Q 690 410 700 438" />
+          <path d="M 690 462 Q 706 482 700 508" />
+          <path d="M 682 536 Q 690 556 676 576" />
+          <path d="M 648 578 Q 654 594 636 608" />
+          <path d="M 602 594 Q 608 606 592 616" />
+          <path d="M 556 604 Q 560 614 546 620" />
+        </g>
+        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z"
+          fill="none" stroke="#B8772F" strokeWidth={2.5} opacity={0.15} />
+      </g>
+
+      <g filter="url(#cat-shadow)">
+        <circle cx="400" cy="400" r="230" fill="none" stroke="url(#cat-ringGrad)" strokeWidth={68} strokeLinecap="round" />
+        <circle cx="400" cy="400" r="230" fill="none" stroke="#B8772F" strokeWidth={68} strokeLinecap="round" opacity={0.08} />
+      </g>
+
+      <g id="ear-left" filter="url(#cat-shadow)">
+        <path d="M 208 242 C 170 176 142 118 212 134 C 252 143 288 176 312 222 C 288 210 252 194 208 242 Z"
+          fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
+        <path d="M 236 218 C 212 180 196 152 230 160 C 252 165 272 183 284 206 C 268 197 250 188 236 218 Z" fill="#B8772F" />
+      </g>
+
+      <g id="ear-right" filter="url(#cat-shadow)">
+        <path d="M 592 242 C 630 176 658 118 588 134 C 548 143 512 176 488 222 C 512 210 548 194 592 242 Z"
+          fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
+        <path d="M 564 218 C 588 180 604 152 570 160 C 548 165 528 183 516 206 C 532 197 550 188 564 218 Z" fill="#B8772F" />
+      </g>
+
+      <g id="paws" filter="url(#cat-shadow)">
+        <g transform="translate(340 615)">
+          <ellipse cx="0" cy="8" rx="42" ry="30" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="-22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="0" cy="-20" r="16" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <ellipse cx="0" cy="10" rx="18" ry="10" fill="#F5E6C8" opacity={0.2} />
+        </g>
+        <g transform="translate(460 615)">
+          <ellipse cx="0" cy="8" rx="42" ry="30" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="-22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="0" cy="-20" r="16" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <circle cx="22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
+          <ellipse cx="0" cy="10" rx="18" ry="10" fill="#F5E6C8" opacity={0.2} />
+        </g>
+      </g>
+
+      <g id="bell-left" transform="translate(368 608)" filter="url(#cat-shadow)">
+        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
+        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
+        <path d="M -15 -2 C -16 -14 16 -14 15 -2 L 12 10 Q 0 20 -12 10 Z" fill="#F5E6C8" stroke="#B8772F" strokeWidth={3} strokeLinejoin="round" />
+        <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
+        <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
+      </g>
+
+      <g id="bell-right" transform="translate(432 608)" filter="url(#cat-shadow)">
+        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
+        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
+        <path d="M -15 -2 C -16 -14 15 -2 L 12 10 Q 0 20 -12 10 Z" fill="#F5E6C8" stroke="#B8772F" strokeWidth={3} strokeLinejoin="round" />
+        <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
+        <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
+      </g>
+
+      <circle cx="400" cy="400" r="196" fill="none" stroke="#F5E6C8" strokeWidth={2} opacity={0.15} />
+    </svg>
+  </div>
+);
+
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -388,6 +491,17 @@ export default function StorePage() {
       price: 500000,
       durationDays: 7,
       description: 'Exclusive animated Glossy wings frame.',
+      isCustomSVG: true
+    });
+
+    // --- ADDED NEW KITTI FRAME HERE ---
+    frames.push({
+      id: 'f-kitti',
+      name: 'Kitti',
+      type: 'Frame',
+      price: 600000,
+      durationDays: 7,
+      description: 'Exclusive animated Kitti frame.',
       isCustomSVG: true
     });
 
@@ -541,7 +655,11 @@ export default function StorePage() {
                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
                                 <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                               </Avatar>
-                              <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                              {item.id === 'f-kitti' ? (
+                                <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                              ) : (
+                                <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                              )}
                             </div>
                           ) : (
                             <AvatarFrame frameId={item.id} size="md">
@@ -601,7 +719,11 @@ export default function StorePage() {
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
-                        <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                        {previewItem.id === 'f-kitti' ? (
+                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                        ) : (
+                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.25]" />
+                        )}
                       </div>
                     ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
