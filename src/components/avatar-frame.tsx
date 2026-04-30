@@ -120,6 +120,10 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           from { transform: translate(-50%, -50%) rotate(0deg); } 
           to { transform: translate(-50%, -50%) rotate(360deg); } 
         }
+        @keyframes custom-float-frame {
+          0%, 100% { transform: translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px)) translateY(0); }
+          50% { transform: translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px)) translateY(-6px); }
+        }
         @keyframes custom-particle-float { 
           0%, 100% { transform: translateY(0); opacity: 0; }
           50% { transform: translateY(-10px); opacity: 0.8; }
@@ -140,12 +144,14 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           style={{
             width: `${imgSize}px`,
             height: `${imgSize}px`,
-            transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
             // Accurate pixel-based mask
             maskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
             WebkitMaskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
             mixBlendMode: config.blendMode || 'normal',
-            animation: config.animationType === 'rotate' ? 'custom-spin 8s linear infinite' : 'none',
+            animation: 
+              config.animationType === 'rotate' ? 'custom-spin 8s linear infinite' : 
+              config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 3s ease-in-out infinite' : 
+              'none',
           }}
         >
           <img 
@@ -153,10 +159,10 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             alt={config.name} 
             className={cn(
               "w-full h-full object-contain",
-              id === 'electro-red' && "animate-pulse brightness-125 contrast-125"
+              (id === 'electro-red' || id === 'imperial-blue') && "animate-pulse brightness-125 contrast-125"
             )}
             style={{
-               filter: id === 'electro-red' ? `drop-shadow(0 0 10px ${glowColor})` : 'none'
+               filter: (id === 'electro-red' || id === 'imperial-blue') ? `drop-shadow(0 0 15px ${glowColor})` : 'none'
             }}
           />
         </div>

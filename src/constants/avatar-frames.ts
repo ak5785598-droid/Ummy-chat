@@ -335,6 +335,21 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     blendMode: 'screen',
     scaleMultiplier: 1.8,
     holeRatio: 0.65
+  },
+  'imperial-blue': {
+    id: 'imperial-blue',
+    name: 'Imperial Blue',
+    tier: 'legendary',
+    price: 350000,
+    gradient: 'transparent',
+    borderColor: '#00ccff',
+    glowColor: 'rgba(0, 204, 255, 0.8)',
+    animationType: 'pulse',
+    imageUrl: '/images/frames/imperial-blue.png',
+    blendMode: 'screen',
+    scaleMultiplier: 2.1,
+    holeRatio: 0.58,
+    offsetY: -5
   }
 };
 
