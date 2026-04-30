@@ -617,17 +617,17 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
         const Icon = f.Banner;
         return (
          <div key={f.id} className="flex flex-col items-center w-[33%] max-w-[130px]">
-           <div className={cn("relative transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-             {/* Banner size increased to h-32 */}
+           {/* UI Change 1: Banners thoda sa upar shift ho gaye hain (-mt-2 use karke) */}
+           <div className={cn("relative transition-all duration-300 -mt-2", gameState!== 'betting' && "opacity-60")}>
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
-           {/* UI Change 1: Table height increased, text fixed at bottom & shrinks on bet */}
+           {/* UI Change 2: Tables thoda sa upar shift kiye hain (-translate-y-1 use karke) */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-1.5 mt-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-1.5 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
@@ -645,8 +645,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </main>
 
-    {/* HISTORY BAR */}
-    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
+    {/* HISTORY BAR - UI Change 3: Thoda sa niche shift hua hai (mt-1) */}
+    <div className="w-full bg-black/30 backdrop-blur-md border-y border-white/10 py-1 px-4 mt-1 flex items-center gap-2 overflow-x-auto no-scrollbar relative z-50 shrink-0">
       <span className="text-[9px] font-bold text-white/50 uppercase whitespace-nowrap">History:</span>
       <div className="flex items-center gap-1.5">
         {history.map((winId, idx) => {
@@ -679,4 +679,3 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
-
