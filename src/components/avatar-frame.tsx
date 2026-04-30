@@ -144,6 +144,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           style={{
             width: `${imgSize}px`,
             height: `${imgSize}px`,
+            transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
             // Accurate pixel-based mask
             maskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
             WebkitMaskImage: `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
