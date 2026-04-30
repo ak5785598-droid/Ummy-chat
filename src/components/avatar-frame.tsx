@@ -137,6 +137,13 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* Background Extras */}
       <BackdropLayer type={extraType} color={extraColor || borderColor} />
 
+      {/* SVG Filter for transparency (converts brightness to alpha) */}
+      <svg style={{ position: 'absolute', width: 0, height: 0 }}>
+        <filter id="remove-black-background">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 1 1 0 -1.5" />
+        </filter>
+      </svg>
+
       {/* 3D Tubelike Frame Body or Image Frame */}
       {imageUrl ? (
         <div 
@@ -145,13 +152,13 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             width: `${imgSize}px`,
             height: `${imgSize}px`,
             transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
-            // Only apply mask for standard frames, not for special blended ones
-            maskImage: config.blendMode ? 'none' : `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
-            WebkitMaskImage: config.blendMode ? 'none' : `radial-gradient(circle at center, transparent ${holeRadius - 0.5}px, black ${holeRadius}px, black ${imgRadius - 1}px, transparent ${imgRadius}px)`,
+            // Disable gradient mask for these special frames to prevent cutting off details
+            maskImage: 'none',
+            WebkitMaskImage: 'none',
             mixBlendMode: config.blendMode || 'normal',
             animation: 
-              config.animationType === 'rotate' ? 'custom-spin 8s linear infinite' : 
-              config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 3s ease-in-out infinite' : 
+              config.animationType === 'rotate' ? 'custom-spin 12s linear infinite' : 
+              config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 4s ease-in-out infinite' : 
               'none',
           }}
         >
@@ -160,10 +167,12 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             alt={config.name} 
             className={cn(
               "w-full h-full object-contain",
-              (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-125"
+              (id === 'electro-red' || id === 'imperial-blue') && "brightness-150 contrast-125"
             )}
             style={{
-               filter: (id === 'electro-red' || id === 'imperial-blue') ? `drop-shadow(0 0 15px ${glowColor})` : 'none'
+               filter: (id === 'electro-red' || id === 'imperial-blue') 
+                 ? `url(#remove-black-background) drop-shadow(0 0 10px ${glowColor})` 
+                 : 'none'
             }}
           />
         </div>

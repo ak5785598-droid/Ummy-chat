@@ -333,7 +333,7 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'rotate',
     imageUrl: '/images/frames/electro-red.png',
     blendMode: 'screen',
-    scaleMultiplier: 1.3,
+    scaleMultiplier: 1.15,
     holeRatio: 0.65
   },
   'imperial-blue': {
@@ -347,9 +347,9 @@ export const AVATAR_FRAMES: Record<string, AvatarFrameConfig> = {
     animationType: 'pulse',
     imageUrl: '/images/frames/imperial-blue.png',
     blendMode: 'screen',
-    scaleMultiplier: 1.35,
+    scaleMultiplier: 1.25,
     holeRatio: 0.58,
-    offsetY: -5
+    offsetY: 0
   }
 };
 
