@@ -140,7 +140,13 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* SVG Filter for transparency (converts brightness to alpha) */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <filter id="remove-black-background">
-          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 1 1 0 -1.5" />
+          {/* Multiply colors to make them pop, and use a more sensitive alpha calculation */}
+          <feColorMatrix type="matrix" values="
+            1.2 0 0 0 0  
+            0 1.2 0 0 0  
+            0 0 1.2 0 0  
+            1.5 1.5 1.5 0 -0.6" 
+          />
         </filter>
       </svg>
 
@@ -155,7 +161,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             // Disable gradient mask for these special frames to prevent cutting off details
             maskImage: 'none',
             WebkitMaskImage: 'none',
-            mixBlendMode: config.blendMode || 'normal',
+            mixBlendMode: 'normal', // Changed from config.blendMode to normal since we handle transparency via filter
             animation: 
               config.animationType === 'rotate' ? 'custom-spin 12s linear infinite' : 
               config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 4s ease-in-out infinite' : 
@@ -167,11 +173,11 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             alt={config.name} 
             className={cn(
               "w-full h-full object-contain",
-              (id === 'electro-red' || id === 'imperial-blue') && "brightness-150 contrast-125"
+              (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-150"
             )}
             style={{
                filter: (id === 'electro-red' || id === 'imperial-blue') 
-                 ? `url(#remove-black-background) drop-shadow(0 0 10px ${glowColor})` 
+                 ? `url(#remove-black-background) drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 5px ${glowColor})` 
                  : 'none'
             }}
           />
