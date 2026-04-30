@@ -17,7 +17,6 @@ import {
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { GameResultOverlay, GameWinner } from '@/components/game-result-overlay';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 const CHIPS = [
@@ -349,8 +348,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
-  const [winners, setWinners] = useState<GameWinner[]>([]);
-  const [totalWinAmount, setTotalWinAmount] = useState(0);
 
   const winnersQuery = useMemoFirebase(() => {
      if (!firestore) return null;
@@ -399,8 +396,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const finalizeRound = (winId: string) => {
    setWinnerId(winId); setHistory(prev => [winId,...prev.slice(0, 7)]); setGameState('result');
    const winAmount = (myBets[winId] || 0) * 1.95;
-   setTotalWinAmount(winAmount);
-   setWinners(liveWins?.map(w => ({ name: w.username, win: w.amount, avatar: w.avatarUrl, isMe: w.userId === currentUser?.uid })) || []);
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
     const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
@@ -421,9 +416,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setTotalPots(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
-  const winnerFaction = winnerId? FACTIONS.find(f => f.id === winnerId) : null;
-  const WinnerBanner = winnerFaction?.Banner;
-
   return (
    <motion.div
      drag
@@ -436,11 +428,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     !isOverlay && "min-h-[85vh]"
      )}
    >
-    {/* GAME RESULT OVERLAY */}
-    {gameState === 'result' && winnerId && WinnerBanner && (
-     <GameResultOverlay gameId="teen-patti" winningSymbol={<WinnerBanner className="h-16 w-16" />} winAmount={totalWinAmount} winners={winners} />
-    )}
-
     {/* HEADER */}
     <header className="relative z-50 flex items-center justify-between p-3 pt-6 px-4">
       <div className="flex items-center gap-1.5">
@@ -448,15 +435,15 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           <Move className="h-5 w-5" />
         </button>
 
-        <div className="h-10 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-2 shadow-inner group">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
-            <GoldCoinIcon className="h-5 w-5 text-white" />
+        <div className="h-8 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-1.5 shadow-inner group">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
+            <GoldCoinIcon className="h-4 w-4 text-white" />
           </div>
-          <span className="text-[13px] font-bold text-white tracking-tight px-1">
+          <span className="text-[11px] font-bold text-white tracking-tight px-1">
             {(userProfile?.wallet?.coins || 0).toLocaleString()}
           </span>
-          <button className="w-7 h-7 rounded-full bg-[#34d399] flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
-            <Plus className="h-4 w-4 stroke-[3px]" />
+          <button className="w-6 h-6 rounded-full bg-[#34d399] flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
+            <Plus className="h-3 w-3 stroke-[3px]" />
           </button>
         </div>
       </div>
@@ -478,6 +465,24 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </header>
 
+    <div className="px-4 py-1 relative z-40 flex items-center justify-end gap-1">
+      <span className="text-[9px] font-bold text-white/50 uppercase mr-1">History:</span>
+      <div className="flex items-center gap-1">
+        {history.slice(0, 6).map((winId, idx) => {
+          const outcomeFaction = FACTIONS.find(f => f.id === winId);
+          const OutcomeIcon = outcomeFaction?.Banner;
+          return (
+            <div key={idx} className={cn(
+              "w-6 h-6 rounded border flex items-center justify-center bg-black/40 backdrop-blur-sm",
+              idx === 0 ? "border-[#ffd700] shadow-[0_0_8px_rgba(255,215,0,0.4)]" : "border-white/10 opacity-70"
+            )}>
+              {OutcomeIcon && <OutcomeIcon className="w-5 h-5" />}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
     <main className="flex-1 flex flex-col pt-2 overflow-hidden relative z-10">
       <div className="grid grid-cols-3 gap-2 px-4 h-40">
        {FACTIONS.map((f) => (
@@ -497,12 +502,12 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        ))}
       </div>
 
-      <div className="flex justify-around items-end px-4 flex-1 pb-16">
+      <div className="flex justify-around items-end px-2 flex-1 pb-16">
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
          <button key={f.id} onClick={() => handlePlaceBet(f.id)} disabled={gameState!== 'betting'} className={cn("relative group active:scale-95 transition-all duration-300", gameState!== 'betting' && "opacity-60")}>
-           <Icon className="w-20 h-24" />
+           <Icon className="w-28 h-36 drop-shadow-2xl" />
          </button>
         )
        })}
