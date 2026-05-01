@@ -513,7 +513,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     </header>
 
     <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
-      <div className="relative w-[85%] max-w-[280px]">
+      {/* 1. Yahan max-w badha diya (280px se 340px) aur w (85% se 95%) kar diya */}
+      <div className="relative w-[95%] max-w-[340px]">
         <svg viewBox="0 0 360 90" className="w-full h-[40px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="cd-bg" x1="0" y1="0" x2="0" y2="1">
@@ -576,7 +577,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
             winnerId === f.id ? "scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-10" : ""
           )}>
-           <div className="flex -space-x-1.5 scale-100">
+           {/* 2. Label ko cards ke exactly upar (beech me) show karne ke liye is relative container me daala */}
+           <div className="flex -space-x-1.5 scale-100 relative">
              {[0, 1, 2].map((i) => {
                const globalCardIndex = factionIndex * 3 + i;
                const isFlipped = gameState !== 'betting' && revealedCardsCount > globalCardIndex;
@@ -610,26 +612,24 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                 </div>
                );
              })}
+             
+             {/* NAYA UI: RESULT BADGE OVER CARDS */}
+             {gameState !== 'betting' && revealedCardsCount >= (factionIndex * 3) + 3 && cardReveal[f.id] && (
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.8 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="absolute inset-0 flex items-center justify-center z-30"
+               >
+                 <div className="bg-black/80 backdrop-blur-md border border-[#ffd700] px-2 py-[4px] rounded-md shadow-[0_0_10px_rgba(255,215,0,0.8),inset_0_0_4px_rgba(255,215,0,0.3)] relative overflow-hidden flex items-center justify-center min-w-[50px]">
+                   <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-black/30" />
+                   <span className="text-[#ffd700] text-[10px] font-extrabold uppercase tracking-widest relative z-10" style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}>
+                     {evaluateHand(cardReveal[f.id])}
+                   </span>
+                 </div>
+               </motion.div>
+             )}
            </div>
           </div>
-          
-          {/* NAYA UI: RESULT BADGE UNDER CARDS */}
-          {gameState !== 'betting' && revealedCardsCount >= (factionIndex * 3) + 3 && cardReveal[f.id] && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8, y: -5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="absolute -bottom-3 z-20"
-            >
-              <div className="bg-black/60 backdrop-blur-md border border-[#ffd700] px-2 py-[2px] rounded shadow-[0_0_8px_rgba(255,215,0,0.6),inset_0_0_4px_rgba(255,215,0,0.3)] relative overflow-hidden flex items-center justify-center min-w-[50px]">
-                {/* Premium Glossy Layer */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-black/30" />
-                <span className="text-[#ffd700] text-[8.5px] font-extrabold uppercase tracking-widest relative z-10" style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}>
-                  {evaluateHand(cardReveal[f.id])}
-                </span>
-              </div>
-            </motion.div>
-          )}
-
         </div>
        ))}
       </div>
@@ -639,15 +639,17 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
         const Icon = f.Banner;
         return (
          <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[110px]">
-           <div className={cn("relative transition-all duration-300 -mt-5", gameState!== 'betting' && "opacity-60")}>
+           {/* 3. Banners ab result ke time transparent nahi honge, opacity-60 hata diya */}
+           <div className="relative transition-all duration-300 -mt-5">
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
+           {/* 4. Betting table button height h-[42px] se h-[48px] kar di hai */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl h-[42px] flex flex-col items-center justify-end pb-1.5 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-2 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
@@ -697,4 +699,3 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    </motion.div>
   );
 }
-
