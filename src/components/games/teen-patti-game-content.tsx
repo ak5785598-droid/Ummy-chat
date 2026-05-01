@@ -1,6 +1,6 @@
 'use client'; 
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -334,7 +334,6 @@ const FACTIONS = [
 // NAYA LOGIC: Card sequence check karne ke liye (High, Pair, Sequence)
 const evaluateHand = (cards: string[]) => {
   if (!cards || cards.length !== 3) return '';
-  // Suit ko remove karke sirf number/letter nikal rahe hain (e.g., '10♠' -> '10')
   const values = cards.map(c => c.slice(0, -1)); 
   const counts: Record<string, number> = {};
   
@@ -346,6 +345,167 @@ const evaluateHand = (cards: string[]) => {
   return 'High';
 };
 
+// WINNER BADGE COMPONENT - YAHAN MERGE KIYA GAYA HAI
+type WinnerBadgeProps = {
+  width?: number | string;
+  className?: string;
+  text?: string;
+};
+
+function WinnerBadge({ 
+  width = 500, 
+  className = '', 
+  text = 'WINNER' 
+}: WinnerBadgeProps) {
+  const id = useId();
+  const goldMain = `goldMain-${id}`;
+  const goldLight = `goldLight-${id}`;
+  const goldDark = `goldDark-${id}`;
+  const goldLeaf = `goldLeaf-${id}`;
+  const goldText = `goldText-${id}`;
+  const redShield = `redShield-${id}`;
+  const redShine = `redShine-${id}`;
+  const redBanner = `redBanner-${id}`;
+  const redVelvet = `redVelvet-${id}`;
+  const shadow = `shadow-${id}`;
+  const sparkleGlow = `sparkleGlow-${id}`;
+  const glossyHighlight = `glossyHighlight-${id}`;
+  const goldBevel = `goldBevel-${id}`;
+  const leaf = `leaf-${id}`;
+  const star4 = `star4-${id}`;
+
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      viewBox="0 0 500 500" 
+      width={width} 
+      height="auto"
+      className={className}
+    >
+      <defs>
+        <linearGradient id={goldMain} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fffce8"/><stop offset="15%" stopColor="#ffe97d"/><stop offset="40%" stopColor="#e6c200"/><stop offset="60%" stopColor="#c49600"/><stop offset="85%" stopColor="#8a6300"/><stop offset="100%" stopColor="#5c4100"/>
+        </linearGradient>
+        <linearGradient id={goldLight} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff"/><stop offset="30%" stopColor="#ffeaa3"/><stop offset="100%" stopColor="#a5721a"/>
+        </linearGradient>
+        <linearGradient id={goldDark} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7a5a12"/><stop offset="100%" stopColor="#3d2806"/>
+        </linearGradient>
+        <linearGradient id={goldLeaf} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fff8c4"/><stop offset="50%" stopColor="#e6c200"/><stop offset="100%" stopColor="#6b510f"/>
+        </linearGradient>
+        <linearGradient id={goldText} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff"/><stop offset="20%" stopColor="#ffe45c"/><stop offset="50%" stopColor="#f0b800"/><stop offset="80%" stopColor="#a66d00"/><stop offset="100%" stopColor="#5a3a00"/>
+        </linearGradient>
+        <linearGradient id={redShield} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff2d2d"/><stop offset="30%" stopColor="#d00000"/><stop offset="70%" stopColor="#8b0000"/><stop offset="100%" stopColor="#4a0000"/>
+        </linearGradient>
+        <radialGradient id={redShine} cx="0.3" cy="0.2" r="0.8">
+          <stop offset="0%" stopColor="#ff8080" stopOpacity="0.8"/><stop offset="40%" stopColor="#e00000" stopOpacity="0.2"/><stop offset="100%" stopColor="#3a0000" stopOpacity="0"/>
+        </radialGradient>
+        <linearGradient id={redBanner} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ff3a45"/><stop offset="50%" stopColor="#d00000"/><stop offset="100%" stopColor="#5a0000"/>
+        </linearGradient>
+        <linearGradient id={redVelvet} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e62b4a"/><stop offset="100%" stopColor="#4a0712"/>
+        </linearGradient>
+        <linearGradient id={glossyHighlight} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.7"/><stop offset="40%" stopColor="#fff" stopOpacity="0.15"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+        </linearGradient>
+        <filter id={shadow} x="-30%" y="-10%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#000" floodOpacity="0.45"/>
+        </filter>
+        <filter id={goldBevel} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+          <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1.2" specularExponent="20" lightingColor="#fff" result="specOut">
+            <fePointLight x="-5000" y="-10000" z="20000"/>
+          </feSpecularLighting>
+          <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut2"/>
+          <feComposite in="SourceGraphic" in2="specOut2" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+        </filter>
+        <filter id={sparkleGlow} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <symbol id={leaf} viewBox="-17 -7 34 14">
+          <ellipse cx="0" cy="0" rx="15.5" ry="6" fill={`url(#${goldLeaf})`} stroke="#7a5a1a" strokeWidth="0.9"/>
+          <path d="M-14 0 Q0 -2 14 0" fill="none" stroke="#5a3f0f" strokeWidth="0.6" opacity="0.8"/>
+        </symbol>
+        <path id={star4} d="M0 -9 2.2 -2.2 9 0 2.2 2.2 0 9 -2.2 2.2 -9 0 -2.2 -2.2Z"/>
+      </defs>
+      <ellipse cx="250" cy="478" rx="120" ry="22" fill="#000" opacity="0.15"/>
+      <g opacity="0.97">
+        <g filter={`url(#${goldBevel})`}>
+          <path d="M175 362 Q138 328 118 270 Q106 220 126 168" fill="none" stroke={`url(#${goldDark})`} strokeWidth="5" strokeLinecap="round"/>
+          <use href={`#${leaf}`} transform="translate(126,168) rotate(-28) scale(0.92)"/>
+          <use href={`#${leaf}`} transform="translate(118,199) rotate(-43) scale(0.96)"/>
+          <use href={`#${leaf}`} transform="translate(116,232) rotate(-58) scale(1)"/>
+          <use href={`#${leaf}`} transform="translate(122,266) rotate(-72) scale(1.02)"/>
+          <use href={`#${leaf}`} transform="translate(136,298) rotate(-85) scale(1)"/>
+          <use href={`#${leaf}`} transform="translate(154,327) rotate(-97) scale(0.95)"/>
+          <use href={`#${leaf}`} transform="translate(174,354) rotate(-108) scale(0.88)"/>
+          <use href={`#${leaf}`} transform="translate(141,184) rotate(-20) scale(0.75)"/>
+          <use href={`#${leaf}`} transform="translate(135,215) rotate(-36) scale(0.8)"/>
+          <use href={`#${leaf}`} transform="translate(136,247) rotate(-52) scale(0.82)"/>
+        </g>
+        <g transform="translate(500,0) scale(-1,1)" filter={`url(#${goldBevel})`}>
+          <path d="M175 362 Q138 328 118 270 Q106 220 126 168" fill="none" stroke={`url(#${goldDark})`} strokeWidth="5" strokeLinecap="round"/>
+          <use href={`#${leaf}`} transform="translate(126,168) rotate(-28) scale(0.92)"/>
+          <use href={`#${leaf}`} transform="translate(118,199) rotate(-43) scale(0.96)"/>
+          <use href={`#${leaf}`} transform="translate(116,232) rotate(-58) scale(1)"/>
+          <use href={`#${leaf}`} transform="translate(122,266) rotate(-72) scale(1.02)"/>
+          <use href={`#${leaf}`} transform="translate(136,298) rotate(-85) scale(1)"/>
+          <use href={`#${leaf}`} transform="translate(154,327) rotate(-97) scale(0.95)"/>
+          <use href={`#${leaf}`} transform="translate(174,354) rotate(-108) scale(0.88)"/>
+          <use href={`#${leaf}`} transform="translate(141,184) rotate(-20) scale(0.75)"/>
+          <use href={`#${leaf}`} transform="translate(135,215) rotate(-36) scale(0.8)"/>
+          <use href={`#${leaf}`} transform="translate(136,247) rotate(-52) scale(0.82)"/>
+        </g>
+      </g>
+      <g filter={`url(#${shadow})`}>
+        <path d="M250 82 L362 113 L413 174 L392 352 L250 478 L108 352 L87 174 L138 113 Z" fill={`url(#${goldMain})`} stroke="#5c3e0a" strokeWidth="2.5" filter={`url(#${goldBevel})`}/>
+        <path d="M250 82 L362 113 L413 174 L392 352 L250 478 L108 352 L87 174 L138 113 Z" fill="none" stroke="#fff" strokeOpacity="0.4" strokeWidth="2" strokeLinejoin="round"/>
+      </g>
+      <path d="M250 101 L348 129 L388 183 L371 340 L250 453 L129 340 L112 183 L152 129 Z" fill={`url(#${redShield})`} stroke="#520000" strokeWidth="2"/>
+      <path d="M250 101 L348 129 L388 183 L371 340 L250 453 L129 340 L112 183 L152 129 Z" fill={`url(#${redShine})`}/>
+      <path d="M250 105 L338 131 L375 185 L362 260 L250 180 Z" fill={`url(#${glossyHighlight})`} opacity="0.6"/>
+      <g fill="#fff" opacity="0.95" filter={`url(#${sparkleGlow})`}>
+        <use href={`#${star4}`} transform="translate(195,192) scale(0.8)"/>
+        <use href={`#${star4}`} transform="translate(308,210) scale(0.65)"/>
+        <use href={`#${star4}`} transform="translate(225,278) scale(0.9)"/>
+        <use href={`#${star4}`} transform="translate(282,340) scale(0.7)"/>
+        <use href={`#${star4}`} transform="translate(250,168) scale(0.55)"/>
+      </g>
+      <g transform="translate(250,111)" filter={`url(#${shadow})`}>
+        <path d="M-68 28 Q-52 5 -34 18 Q-16 -6 0 16 Q16 -6 34 18 Q52 5 68 28 L68 36 Q0 46 -68 36 Z" fill={`url(#${redVelvet})`} stroke="#3d000b" strokeWidth="1.4"/>
+        <path d="M-85 30 C -78 12 -72 -1 -66 2 L -54 24 Q -48 29 -42 22 L -30 6 Q -26 -1 -20 6 L -12 28 Q -6 33 0 20 Q 6 33 12 28 L 20 6 Q 26 -1 30 6 L 42 22 Q 48 29 54 24 L 66 2 C 72 -1 78 12 85 30 L 85 46 Q 55 56 0 56 Q -55 56 -85 46 Z" fill={`url(#${goldMain})`} stroke="#6e4f0f" strokeWidth="1.6" filter={`url(#${goldBevel})`}/>
+        <path d="M-80 35 Q -60 18 -40 26 Q -20 12 0 24 Q 20 12 40 26 Q 60 18 80 35" fill="none" stroke="#fff" strokeOpacity="0.5" strokeWidth="3" strokeLinecap="round"/>
+        <ellipse cx="0" cy="38" rx="6.5" ry="8" fill={`url(#${redShield})`}/>
+        <ellipse cx="-1.8" cy="34.5" rx="2" ry="2.6" fill="#fff" opacity="0.9"/>
+        <circle cx="0" cy="19" r="3.6" fill="#fffef0" stroke="#d4af37" strokeWidth="1"/>
+        <circle cx="-66" cy="2" r="3.2" fill="#fff" stroke="#d4af37" strokeWidth="1"/>
+        <circle cx="66" cy="2" r="3.2" fill="#fff" stroke="#d4af37" strokeWidth="1"/>
+        <g transform="translate(0,-3)">
+          <rect x="-2.6" y="-22" width="5.2" height="17" rx="1.6" fill={`url(#${goldLight})`} stroke="#6e4f0f" strokeWidth="1" filter={`url(#${goldBevel})`}/>
+          <rect x="-7.5" y="-15.5" width="15" height="5" rx="1.6" fill={`url(#${goldLight})`} stroke="#6e4f0f" strokeWidth="1"/>
+          <rect x="-2.6" y="-22" width="5.2" height="8" rx="1.6" fill="#fff" opacity="0.6"/>
+        </g>
+      </g>
+      <g transform="rotate(-6 250 284)" filter={`url(#${shadow})`}>
+        <path d="M60 252 C 110 240 190 233 250 233 C 310 233 390 240 440 252 L 440 312 C 390 324 310 331 250 331 C 190 331 110 324 60 312 Z" fill={`url(#${redBanner})`} stroke="#590000" strokeWidth="2"/>
+        <path d="M60 252 C 110 240 190 233 250 233 C 310 233 390 240 440 252" fill="none" stroke={`url(#${goldMain})`} strokeWidth="9" filter={`url(#${goldBevel})`}/>
+        <path d="M60 312 C 110 324 190 331 250 331 C 310 331 390 324 440 312" fill="none" stroke={`url(#${goldMain})`} strokeWidth="9"/>
+        <path d="M70 258 C 140 250 360 250 430 258 L 430 275 C 360 268 140 268 70 275 Z" fill={`url(#${glossyHighlight})`} opacity="0.5"/>
+        <text x="250" y="303" textAnchor="middle" fontFamily="Impact, 'Arial Black', sans-serif" fontSize="61" fontWeight="900" letterSpacing="1.8" fill="#4a2200" opacity="0.65">{text}</text>
+        <text x="250" y="300" textAnchor="middle" fontFamily="Impact, 'Arial Black', sans-serif" fontSize="61" fontWeight="900" letterSpacing="1.8" fill={`url(#${goldText})`} stroke="#5e3500" strokeWidth="5" strokeLinejoin="round" paintOrder="stroke" filter={`url(#${goldBevel})`}>{text}</text>
+        <text x="250" y="297" textAnchor="middle" fontFamily="Impact, 'Arial Black', sans-serif" fontSize="61" fontWeight="900" letterSpacing="1.8" fill="#fff" opacity="0.35">{text}</text>
+      </g>
+    </svg>
+  );
+}
+
+// MAIN COMPONENT
 interface TeenPattiGameContentProps {
   isOverlay?: boolean;
   onClose?: () => void;
@@ -372,6 +532,16 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
+  // NAYA STATE: Floating Chips layer ke liye
+  const [floatingChips, setFloatingChips] = useState<{
+    id: string;
+    factionId: string;
+    chipDef: typeof CHIPS[0];
+    offsetX: number;
+    offsetY: number;
+    rotation: number;
+  }[]>([]);
+
   const winnersQuery = useMemoFirebase(() => {
      if (!firestore) return null;
      return query(
@@ -386,6 +556,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
 
+  // Timer Effect
   useEffect(() => {
    if (isLaunching) return;
    const interval = setInterval(() => {
@@ -396,6 +567,42 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    }, 1000);
    return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
+
+  // NAYA EFFECT: Fake Chips Spawning animation jab betting open ho
+  useEffect(() => {
+    if (gameState !== 'betting' || isLaunching) return;
+    const interval = setInterval(() => {
+      // 50% chance har interval par fake chip aane ka
+      if (Math.random() > 0.5) { 
+        const randomFaction = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
+        const randomChip = CHIPS[Math.floor(Math.random() * 3)]; // Fake bets chote chips hi use karenge
+        spawnChip(randomFaction, randomChip, true);
+      }
+    }, 600);
+    return () => clearInterval(interval);
+  }, [gameState, isLaunching]);
+
+  // NAYA FUNCTION: Chip stack spawner
+  const spawnChip = (factionId: string, chipDef: typeof CHIPS[0], isFake: boolean) => {
+    const newChip = {
+      id: Math.random().toString(36).substr(2, 9),
+      factionId,
+      chipDef,
+      offsetX: (Math.random() - 0.5) * 45, 
+      offsetY: (Math.random() - 0.5) * 35, 
+      rotation: (Math.random() - 0.5) * 60,
+    };
+    
+    setFloatingChips(prev => {
+      const next = [...prev, newChip];
+      if (next.length > 40) return next.slice(next.length - 40); // Board pe max 40 chips dikhenge 
+      return next;
+    });
+
+    if (isFake) {
+      setTotalPots(prev => ({...prev, [factionId]: (prev[factionId] || 0) + chipDef.value}));
+    }
+  };
 
   const startReveal = async () => {
    setGameState('reveal');
@@ -416,7 +623,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        currentFlip++;
        setRevealedCardsCount(currentFlip);
        if(currentFlip >= 9) clearInterval(flipInterval);
-   }, 250); 
+   }, 2000); 
 
    let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
    if (firestore) {
@@ -429,7 +636,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     } catch (e) {}
    }
 
-   setTimeout(() => { finalizeRound(winId); }, 3500);
+   setTimeout(() => { finalizeRound(winId); }, 19000);
   };
 
   const finalizeRound = (winId: string) => {
@@ -454,6 +661,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        setTimeLeft(20); 
        setCardReveal({}); 
        setRevealedCardsCount(0); 
+       setFloatingChips([]); // Clear chips layer on next round
     }, 5000);
   };
 
@@ -465,6 +673,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
    setMyBets(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
    setTotalPots(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
+   
+   // Spawn real chip jab user bet mare
+   const chipDef = CHIPS.find(c => c.value === selectedChip) || CHIPS[0];
+   spawnChip(id, chipDef, false);
   };
 
   return (
@@ -513,7 +725,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     </header>
 
     <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
-      {/* 1. Yahan max-w badha diya (280px se 340px) aur w (85% se 95%) kar diya */}
       <div className="relative w-[95%] max-w-[340px]">
         <svg viewBox="0 0 360 90" className="w-full h-[40px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -570,14 +781,13 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
 
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
-      <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0">
+      <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
           <div className={cn(
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
             winnerId === f.id ? "scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-10" : ""
           )}>
-           {/* 2. Label ko cards ke exactly upar (beech me) show karne ke liye is relative container me daala */}
            <div className="flex -space-x-1.5 scale-100 relative">
              {[0, 1, 2].map((i) => {
                const globalCardIndex = factionIndex * 3 + i;
@@ -613,14 +823,14 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                );
              })}
              
-             {/* NAYA UI: RESULT BADGE OVER CARDS */}
+             {/* NAYA UI: RESULT BADGE OVER CARDS (Bottom Half, Patti Style) */}
              {gameState !== 'betting' && revealedCardsCount >= (factionIndex * 3) + 3 && cardReveal[f.id] && (
                <motion.div 
                  initial={{ opacity: 0, scale: 0.8 }}
                  animate={{ opacity: 1, scale: 1 }}
-                 className="absolute inset-0 flex items-center justify-center z-30"
+                 className="absolute inset-x-0 bottom-2 flex items-center justify-center z-30 pointer-events-none"
                >
-                 <div className="bg-black/80 backdrop-blur-md border border-[#ffd700] px-2 py-[4px] rounded-md shadow-[0_0_10px_rgba(255,215,0,0.8),inset_0_0_4px_rgba(255,215,0,0.3)] relative overflow-hidden flex items-center justify-center min-w-[50px]">
+                 <div className="bg-black/85 backdrop-blur-md border-t-2 border-b-2 border-[#ffd700] py-[3px] w-full shadow-[0_0_10px_rgba(255,215,0,0.8)] relative flex items-center justify-center">
                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-black/30" />
                    <span className="text-[#ffd700] text-[10px] font-extrabold uppercase tracking-widest relative z-10" style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}>
                      {evaluateHand(cardReveal[f.id])}
@@ -628,37 +838,87 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                  </div>
                </motion.div>
              )}
+
+             {/* WINNER BADGE TOP RIGHT CORNER */}
+             <AnimatePresence>
+               {gameState === 'result' && winnerId === f.id && (
+                 <motion.div
+                   initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+                   animate={{ opacity: 1, scale: 1, rotate: 15 }}
+                   exit={{ opacity: 0, scale: 0 }}
+                   className="absolute -top-6 -right-6 z-50 pointer-events-none drop-shadow-2xl"
+                 >
+                   <WinnerBadge width={75} />
+                 </motion.div>
+               )}
+             </AnimatePresence>
+             
            </div>
           </div>
         </div>
        ))}
       </div>
 
-      <div className="flex justify-center gap-4 items-end px-3 flex-1 pb-3 mt-1">
+      <div className="flex justify-center gap-4 items-end px-3 flex-1 pb-3 mt-1 relative">
+       
+       {/* NAYA UI: FLOATING CHIPS LAYER */}
+       <div className="absolute inset-0 pointer-events-none z-20 flex justify-center gap-4 px-3 pb-3 items-end">
+         {FACTIONS.map(f => (
+            <div key={`chips-${f.id}`} className="w-[28%] max-w-[110px] relative h-full">
+               <AnimatePresence>
+                  {floatingChips.filter(c => c.factionId === f.id).map(chip => (
+                    <motion.div
+                       key={chip.id}
+                       initial={{ opacity: 0, y: 150, scale: 0.3 }}
+                       animate={{ 
+                          opacity: 1, 
+                          y: -55 + chip.offsetY, // Middle Table pe aake ruk jayenge
+                          x: chip.offsetX,
+                          rotate: chip.rotation,
+                          scale: 1 
+                       }}
+                       exit={{ opacity: 0, scale: 0 }}
+                       transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                       className={cn(
+                         "absolute bottom-0 left-1/2 -translate-x-1/2 w-[22px] h-[22px] rounded-full border border-white/30 shadow-2xl flex items-center justify-center",
+                         chip.chipDef.color
+                       )}
+                    >
+                       <span className="text-[5px] font-bold text-white uppercase tracking-tighter" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                         {chip.chipDef.label}
+                       </span>
+                    </motion.div>
+                  ))}
+               </AnimatePresence>
+            </div>
+         ))}
+       </div>
+
        {FACTIONS.map((f) => {
         const Icon = f.Banner;
         return (
-         <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[110px]">
-           {/* 3. Banners ab result ke time transparent nahi honge, opacity-60 hata diya */}
+         <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[110px] relative z-10">
            <div className="relative transition-all duration-300 -mt-5">
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
-           {/* 4. Betting table button height h-[42px] se h-[48px] kar di hai */}
            <button 
              onClick={() => handlePlaceBet(f.id)} 
              disabled={gameState !== 'betting'}
              className={cn(
-               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-2 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg",
+               "w-full bg-[#481c1c] rounded-xl h-[48px] flex flex-col items-center justify-end pb-1.5 -translate-y-1 transition-all duration-300 cursor-pointer shadow-lg relative overflow-hidden",
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
-             <span className={cn("font-bold text-white tracking-wide leading-tight transition-all", (myBets[f.id] || 0) > 0 ? "text-[10px]" : "text-[12px]")}>
-               Pot: {(totalPots[f.id] || 0)}
-             </span>
-             <span className={cn("font-bold text-[#ffd700] tracking-wide leading-tight mt-[1px] transition-all", (myBets[f.id] || 0) > 0 ? "text-[11px]" : "text-[13px]")}>
-               You: {(myBets[f.id] || 0)}
-             </span>
+             {/* NAYA UI: Text ko Bottom-Half aur ekdam chota kar diya gaya hai */}
+             <div className="flex flex-col items-center leading-none mt-auto w-full px-1">
+               <span className="font-semibold text-white/80 tracking-widest text-[7px] mb-[1.5px] truncate max-w-full">
+                 POT: {(totalPots[f.id] || 0)}
+               </span>
+               <span className="font-extrabold text-[#ffd700] tracking-widest text-[8.5px] drop-shadow-md truncate max-w-full">
+                 YOU: {(myBets[f.id] || 0)}
+               </span>
+             </div>
            </button>
 
          </div>
