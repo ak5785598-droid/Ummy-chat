@@ -1,6 +1,6 @@
 'use client'; 
 
-import React, { useState, useEffect, useId } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -19,13 +19,17 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
+// NAYA CHIPS DATA (Zebra Border logic is managed via component styling)
 const CHIPS = [
- { value: 10000, label: '10k', color: 'bg-[#00E5FF] border-[#00E5FF]/50 shadow-[#00E5FF]/40' },
- { value: 100000, label: '100k', color: 'bg-[#2196F3] border-[#2196F3]/50 shadow-[#2196F3]/40' },
- { value: 300000, label: '300k', color: 'bg-[#9C27B0] border-[#9C27B0]/50 shadow-[#9C27B0]/40' },
- { value: 1000000, label: '1000k', color: 'bg-[#F44336] border-[#F44336]/50 shadow-[#F44336]/40' },
- { value: 2000000, label: '2000k', color: 'bg-[#795548] border-[#795548]/50 shadow-[#795548]/40' },
- { value: 5000000, label: '5000k', color: 'bg-[#FFD700] border-[#FFD700]/50 shadow-[#FFD700]/40' },
+ { value: 100, label: '100', hex: '#2563EB' },        // Blue
+ { value: 1000, label: '1K', hex: '#F97316' },        // Orange
+ { value: 50000, label: '50K', hex: '#EF4444' },      // Red
+ { value: 100000, label: '100K', hex: '#0891B2' },    // Sea Blue
+ { value: 500000, label: '500K', hex: '#EAB308' },    // Yellow
+ { value: 1000000, label: '1M', hex: '#000000' },     // Black
+ { value: 50000000, label: '50M', hex: '#166534' },   // Dark Green
+ { value: 100000000, label: '100M', hex: '#7F1D1D' }, // Maroon
+ { value: 500000000, label: '500M', hex: '#6B7280' }, // Grey
 ];
 
 // Realistic Deck for Cards 
@@ -36,8 +40,24 @@ const DECK = [
   'A♣', '2♣', '3♣', '4♣', '5♣', '6♣', '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', 'K♣'
 ];
 
-// --- 3D BANNERS WITH DRAGONS INSIDE ---
+// --- ZEBRA CHIP COMPONENT ---
+const PokerChip = ({ label, hex, isFloating }: { label: string, hex: string, isFloating: boolean }) => (
+  <div 
+    className={cn(
+      "rounded-full flex items-center justify-center shadow-[0_3px_6px_rgba(0,0,0,0.6)] overflow-hidden", 
+      isFloating ? "w-[16px] h-[16px]" : "w-8 h-8"
+    )}
+    style={{ background: `repeating-conic-gradient(${hex} 0 20deg, white 20deg 40deg)` }}
+  >
+    <div className="bg-white rounded-full w-[72%] h-[72%] flex items-center justify-center shadow-inner border border-black/10">
+      <span className="font-extrabold" style={{ color: hex, fontSize: isFloating ? '4px' : '7.5px' }}>
+        {label}
+      </span>
+    </div>
+  </div>
+);
 
+// --- 3D BANNERS ---
 const WolfBanner = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 200 260" className={cn("drop-shadow-[0_12px_24px_rgba(0,0,0,0.55)]", className)} xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -53,8 +73,6 @@ const WolfBanner = ({ className }: { className?: string }) => (
       <radialGradient id="wolfShine" cx="0.3" cy="0.15" r="0.7">
         <stop offset="0%" stopColor="#fff" stopOpacity="0.45"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
       </radialGradient>
-      
-      {/* Black Dragon Defs */}
       <linearGradient id="dg-body" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#4b4b4f"/><stop offset="25%" stopColor="#2a2a2e"/><stop offset="100%" stopColor="#0c0c0e"/>
       </linearGradient>
@@ -68,7 +86,6 @@ const WolfBanner = ({ className }: { className?: string }) => (
         <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.6"/>
       </filter>
     </defs>
-    
     <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#wolfPole)"/>
     <rect x="36" y="24" width="20" height="20" fill="url(#wolfGold)"/>
     <rect x="70" y="24" width="20" height="20" fill="url(#wolfGold)"/>
@@ -82,8 +99,6 @@ const WolfBanner = ({ className }: { className?: string }) => (
     <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#wolfGold)"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfSilver)" stroke="url(#wolfGold)" strokeWidth="3.5"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#wolfShine)"/>
-    
-    {/* PURANA KALA DRAGON INSIDE BANNER */}
     <g transform="translate(35, 60) scale(0.65)">
       <g filter="url(#dg-shadow)">
         <path d="M45 138 C12 125, 2 155, 28 172 L50 155 Z" fill="url(#dg-wing)" stroke="#000" strokeWidth="2.5" strokeLinejoin="round"/>
@@ -117,8 +132,6 @@ const LionBanner = ({ className }: { className?: string }) => (
       <linearGradient id="lionSplit" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0%" stopColor="#e6b422"/><stop offset="49.8%" stopColor="#b8860b"/><stop offset="50%" stopColor="#a10f0f"/><stop offset="100%" stopColor="#6a0000"/>
       </linearGradient>
-      
-      {/* Green Dragon Defs */}
       <linearGradient id="gd-body" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#4de7b7"/><stop offset="40%" stopColor="#1db88f"/><stop offset="100%" stopColor="#0a6b50"/>
       </linearGradient>
@@ -141,7 +154,6 @@ const LionBanner = ({ className }: { className?: string }) => (
         <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.5"/>
       </filter>
     </defs>
-    
     <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#lionPole)"/>
     <rect x="36" y="24" width="20" height="20" fill="#b71c1c"/>
     <rect x="70" y="24" width="20" height="20" fill="#b71c1c"/>
@@ -154,8 +166,6 @@ const LionBanner = ({ className }: { className?: string }) => (
     <ellipse cx="29" cy="216" rx="7" ry="10" fill="url(#lionGold)"/>
     <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#lionGold)"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#lionSplit)" stroke="url(#lionGold)" strokeWidth="3.5"/>
-    
-    {/* NAYA GREEN 3D GLOSSY DRAGON INSIDE BANNER */}
     <g transform="translate(35, 60) scale(0.65)">
       <g filter="url(#gd-shadow)">
         <path d="M32 158 C18 168, 14 185, 28 198 C40 208, 52 200, 58 188" fill="url(#gd-body)" stroke="#0b3d2e" strokeWidth="3" strokeLinecap="round"/>
@@ -226,8 +236,6 @@ const FishBanner = ({ className }: { className?: string }) => (
       <radialGradient id="fishShine" cx="0.25" cy="0.2" r="0.8">
         <stop offset="0%" stopColor="#fff" stopOpacity="0.3"/><stop offset="100%" stopColor="#fff" stopOpacity="0"/>
       </radialGradient>
-      
-      {/* Blue Pink Dragon Defs */}
       <linearGradient id="bpd-body" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#5a8fc8"/><stop offset="45%" stopColor="#2c4f7c"/><stop offset="100%" stopColor="#162e4d"/>
       </linearGradient>
@@ -247,7 +255,6 @@ const FishBanner = ({ className }: { className?: string }) => (
         <feDropShadow dx="0" dy="5" stdDeviation="5" floodColor="#000" floodOpacity="0.45"/>
       </filter>
     </defs>
-    
     <rect x="10" y="24" width="180" height="20" rx="10" fill="url(#fishPole)"/>
     <rect x="36" y="24" width="20" height="20" fill="#0a7a3a"/>
     <rect x="70" y="24" width="20" height="20" fill="#0a7a3a"/>
@@ -261,8 +268,6 @@ const FishBanner = ({ className }: { className?: string }) => (
     <ellipse cx="171" cy="216" rx="7" ry="10" fill="url(#fishGold)"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishGreen)" stroke="url(#fishGold)" strokeWidth="3.5"/>
     <path d="M30 44 H170 V170 Q170 202 100 240 Q30 202 30 170 Z" fill="url(#fishShine)"/>
-    
-    {/* NAYA BLUE PINK 3D GLOSSY DRAGON INSIDE BANNER */}
     <g transform="translate(35, 60) scale(0.65)">
       <ellipse cx="100" cy="222" rx="50" ry="11" fill="#000" opacity="0.25"/>
       <g filter="url(#bpd-shadow)">
@@ -331,19 +336,246 @@ const FACTIONS = [
  { id: 'FISH', label: 'Fish', Banner: FishBanner },
 ];
 
-// NAYA LOGIC: Card sequence check karne ke liye (High, Pair, Sequence)
 const evaluateHand = (cards: string[]) => {
   if (!cards || cards.length !== 3) return '';
   const values = cards.map(c => c.slice(0, -1)); 
   const counts: Record<string, number> = {};
-  
   values.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
   const maxCount = Math.max(...Object.values(counts));
-
   if (maxCount === 3) return 'Sequence'; 
   if (maxCount === 2) return 'Pair';
   return 'High';
 };
+
+// --- NAYA MERGED WINNER OVERLAY COMPONENT ---
+type Player = { rank: 1 | 2 | 3; name: string; prize: number; bet: number; };
+const fallbackPlayers: Player[] = [
+  { rank: 2, name: "Betnarmati Saru", prize: 140, bet: 50 },
+  { rank: 1, name: "pihu", prize: 195, bet: 100 },
+  { rank: 3, name: "Saksham Thakur", prize: 39, bet: 20 },
+];
+
+function ResultOverlay({ finalWinAmount, totalBet }: { finalWinAmount: number, totalBet: number }) {
+  const [yourPrize, setYourPrize] = useState(0);
+  const [yourBet, setYourBet] = useState(0);
+  const [awake, setAwake] = useState(false);
+  const [active, setActive] = useState<number | null>(null);
+  const [prizes, setPrizes] = useState<Record<number, number>>({1:0,2:0,3:0});
+  const confettiRef = useRef<HTMLDivElement>(null);
+
+  const animate = (from: number, to: number, duration: number, onUpdate: (v:number)=>void) => {
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      onUpdate(Math.round(from + (to - from) * eased));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  const burst = () => {
+    const el = confettiRef.current;
+    if (!el) return;
+    el.innerHTML = "";
+    for (let i = 0; i < 26; i++) {
+      const s = document.createElement("i");
+      s.style.left = 5 + Math.random() * 90 + "%";
+      s.style.background = `hsl(${38 + Math.random() * 30}, 100%, ${62 + Math.random() * 18}%)`;
+      s.style.animationDelay = Math.random() * 0.2 + "s";
+      s.style.transform = `rotate(${Math.random() * 360}deg)`;
+      el.appendChild(s);
+      setTimeout(() => s.remove(), 950);
+    }
+    if (navigator.vibrate) navigator.vibrate(30);
+  };
+
+  const handlePlayer = (p: Player) => {
+    setActive(p.rank);
+    // Overriding the static animation to real-time variables passed via props
+    animate(yourPrize, finalWinAmount, 650, setYourPrize);
+    animate(yourBet, totalBet, 650, setYourBet);
+    if (p.rank === 1) burst();
+  };
+
+  useEffect(() => {
+    fallbackPlayers.forEach((p, i) => {
+      setTimeout(() => {
+        animate(0, p.prize, 1100 + i * 150, (v) =>
+          setPrizes(prev => ({ ...prev, [p.rank]: v }))
+        );
+      }, 300);
+    });
+    const winner = fallbackPlayers.find(p => p.rank === 1)!;
+    // Trigger burst & set real-time stats
+    const t = setTimeout(() => {
+        handlePlayer(winner);
+        // Guarantee confetti if you win!
+        if(finalWinAmount > 0) burst();
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [finalWinAmount, totalBet]);
+
+  return (
+    <>
+      <style>{`
+        .result-wrap { width:100%; height:100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .res-card {
+          height:100%; width:100%;
+          background: linear-gradient(180deg, rgba(28,22,34,.98) 0%, rgba(12,10,14,.98) 58%, #050507 100%);
+          border:1px solid rgba(232,200,120,.2); border-radius:18px;
+          padding: clamp(12px,2vh,18px) clamp(14px,3vw,22px);
+          display:flex; flex-direction:column; justify-content:space-between;
+          position:relative; overflow:hidden;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset, 0 24px 70px rgba(0,0,0,.85), 0 4px 12px rgba(0,0,0,.6);
+          isolation:isolate; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Inter, sans-serif; color:#fff;
+        }
+        .res-card::before { content:""; position:absolute; inset:0; background: radial-gradient(400px 120px at 50% 0%, rgba(232,200,120,.18), transparent 70%), radial-gradient(300px 200px at 80% 120%, rgba(255,180,60,.12), transparent 60%); pointer-events:none; z-index:0; }
+        .res-card::after { content:""; position:absolute; inset:-1px; border-radius:18px; background: linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,0) 30%); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite:xor; mask-composite:exclude; padding:1px; pointer-events:none; }
+        .top { display:flex; align-items:center; gap:3.2vw; height:35%; position:relative; z-index:2; }
+        .emoji-box { width:22%; min-width:70px; aspect-ratio:1; position:relative; flex-shrink:0; cursor:pointer; filter: drop-shadow(0 10px 20px rgba(0,0,0,.55)); transition:transform .3s; }
+        .emoji-box:active { transform:scale(.96); }
+        .emoji-box svg { width:100%; height:100%; }
+        .zzz { position:absolute; right:-6px; top:-4px; pointer-events:none; }
+        .zzz span { position:absolute; font-family:'Arial Black', Arial; font-weight:900; color:#5d4e36; opacity:0; animation:zzz 2.6s ease-in-out infinite; text-shadow:0 1px 0 rgba(0,0,0,.3); }
+        .zzz span:nth-child(1){ font-size:22px; left:0; top:0; }
+        .zzz span:nth-child(2){ font-size:15px; left:13px; top:-7px; animation-delay:.35s; }
+        .zzz span:nth-child(3){ font-size:11px; left:23px; top:-14px; animation-delay:.7s; }
+        @keyframes zzz { 0%{opacity:0; transform:translate(0,4px) rotate(-12deg)} 25%{opacity:1} 70%{opacity:.8} 100%{opacity:0; transform:translate(-2px,-16px) rotate(-12deg)} }
+        .tear { animation:tear 2.4s ease-in infinite; transform-origin:70px 60px; }
+        @keyframes tear { 0%,15%{transform:translateY(0); opacity:.95} 70%{opacity:.9} 100%{transform:translateY(7px); opacity:0} }
+        .emoji-box.awake .zzz { display:none; }
+        .emoji-box.awake .tear { animation:none; opacity:0; }
+        .stats { flex:1; display:flex; flex-direction:column; gap:1.1vh; justify-content:center; }
+        .stat-row { display:flex; align-items:center; gap:.7rem; background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.09); padding:.45rem .75rem; border-radius:10px; font-size:clamp(12px,2vh,15px); font-weight:650; box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 8px 18px rgba(0,0,0,.4); transition:transform .2s, border-color .2s; }
+        .stat-row:hover { transform:translateY(-1px); border-color:rgba(232,200,120,.3); }
+        .stat-label { color:#f0eadd; min-width:80px; opacity:.92; letter-spacing:.2px; }
+        .coin-icon { width:2vh; height:2vh; min-width:16px; min-height:16px; flex-shrink:0; }
+        .stat-row .coin-icon { animation:coinSpin 5.5s linear infinite; }
+        @keyframes coinSpin { to { transform:rotateY(360deg) } }
+        .stat-value { color:#fff; font-variant-numeric:tabular-nums; }
+        .divider { height:17%; display:flex; align-items:center; justify-content:center; position:relative; margin:.4vh 0; z-index:2; }
+        .divider-line { position:absolute; width:29%; height:2px; top:50%; background:linear-gradient(90deg, transparent, #e8c878, transparent); filter:drop-shadow(0 0 8px rgba(232,200,120,.45)); overflow:visible; }
+        .divider-line.left { left:0; transform:scaleX(-1); }
+        .divider-line.right { right:0; }
+        .divider-line::after { content:""; position:absolute; width:0; height:0; border-left:7px solid #e8c878; border-top:3.5px solid transparent; border-bottom:3.5px solid transparent; top:-2.5px; right:-6px; filter:drop-shadow(0 0 4px rgba(232,200,120,.7)); animation:arrowPulse 2s ease-in-out infinite; }
+        @keyframes arrowPulse { 0%,100%{opacity:.9; transform:translateX(0)} 50%{opacity:1; transform:translateX(2px)} }
+        .divider-text { color:#e8c878; font-size:clamp(13px,2.2vh,16px); font-weight:800; letter-spacing:1px; text-transform:uppercase; text-shadow:0 1px 2px #000, 0 0 20px rgba(232,200,120,.4); padding:.15rem .7rem; background:radial-gradient(50% 120% at 50% 50%, rgba(232,200,120,.15), transparent 70%); border-radius:8px; }
+        .winners { display:flex; justify-content:space-between; align-items:flex-end; height:48%; gap:2vw; position:relative; z-index:2; padding-bottom: 5px; }
+        .player { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; cursor:pointer; transition:transform .35s cubic-bezier(.2,.8,.2,1); }
+        .player:hover { transform:translateY(-3px); }
+        .player.rank-1 { transform:translateY(-1vh); }
+        .player.rank-3 { transform:translateY(.4vh); }
+        .ring-container { width:86%; max-width:90px; aspect-ratio:1; position:relative; transition:filter .3s; }
+        .ring-container > svg { width:100%; height:100%; overflow:visible; animation:float 4.5s ease-in-out infinite; }
+        .player.rank-1 .ring-container > svg { animation-duration:4s; }
+        .player.rank-2 .ring-container > svg { animation-delay:.3s; }
+        .player.rank-3 .ring-container > svg { animation-delay:.6s; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        .player-name { font-size:clamp(10px,1.6vh,12px); font-weight:650; margin-top:.5vh; color:#f5f3ef; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; max-width:118px; }
+        .player-prize { display:flex; align-items:center; justify-content:center; gap:.25rem; margin-top:.3vh; font-size:clamp(11px,1.7vh,13px); font-weight:700; color:#ffd166; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+        .player-bet { font-size:clamp(9.5px,1.4vh,11px); color:#b9b9c2; margin-top:.2vh; font-weight:500; }
+        .sparkle { position:absolute; width:4px; height:4px; background:#fff3c4; border-radius:50%; box-shadow:0 0 10px #ffd76a, 0 0 18px #ffb300; opacity:0; animation:spark 2.8s ease-in-out infinite; }
+        @keyframes spark { 0%{opacity:0; transform:translateY(8px) scale(.5)} 20%{opacity:1} 80%{opacity:.7} 100%{opacity:0; transform:translateY(-18px) scale(1.1)} }
+        .rank-1 .s1{ left:18%; top:28%; animation-delay:.2s }
+        .rank-1 .s2{ right:14%; top:20%; animation-delay:1s }
+        .rank-1 .s3{ left:25%; bottom:20%; animation-delay:1.7s }
+        .confetti { position:absolute; inset:0; pointer-events:none; z-index:5; overflow:hidden; border-radius:18px; }
+        .confetti i { position:absolute; width:6px; height:10px; border-radius:2px; opacity:0; top:38%; animation:conf 900ms cubic-bezier(.2,.7,.3,1) forwards; }
+        @keyframes conf { 0%{opacity:1; transform:translateY(0) rotate(0) scale(1)} 100%{opacity:0; transform:translateY(90px) rotate(520deg) scale(.8)} }
+      `}</style>
+
+      <svg width="0" height="0" style={{position:'absolute'}}>
+        <defs>
+          <linearGradient id="coinGold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff9c4"/>
+            <stop offset="28%" stopColor="#ffd54f"/>
+            <stop offset="68%" stopColor="#f9a825"/>
+            <stop offset="100%" stopColor="#e65100"/>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div className="result-wrap">
+        <div className="res-card">
+          <div className="confetti" ref={confettiRef} />
+
+          <div className="top">
+            
+            {/* AGAR BET LAGAI HAI TOH WINNER/LOST BANNER, VARNA SOTA HUA EMOJI */}
+            {totalBet > 0 ? (
+              <div className="emoji-box rounded-xl bg-gradient-to-br from-[#ffd700] to-[#b8860b] flex flex-col items-center justify-center p-2 shadow-[0_10px_20px_rgba(0,0,0,0.55)] border-2 border-[#fff9d0] transform transition-transform hover:scale-95 cursor-pointer">
+                <span className="text-[10px] uppercase font-black text-black/60 mb-0.5 tracking-wider">Status</span>
+                <span className="text-[13px] font-extrabold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] text-center leading-none">
+                  {finalWinAmount > 0 ? "WINNER!" : "LOST"}
+                </span>
+              </div>
+            ) : (
+              <div className={`emoji-box ${awake ? 'awake' : ''}`} onClick={()=>{ setAwake(a=>!a); if(navigator.vibrate) navigator.vibrate(10); }}>
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <radialGradient id="faceGrad" cx="0.3" cy="0.25" r="0.8">
+                      <stop offset="0%" stopColor="#ffef9a"/><stop offset="42%" stopColor="#ffd54a"/><stop offset="100%" stopColor="#f9a825"/>
+                    </radialGradient>
+                    <filter id="faceSh"><feDropShadow dx="0" dy="4" stdDeviation="5" floodOpacity="0.5"/></filter>
+                  </defs>
+                  <circle cx="50" cy="52" r="46" fill="url(#faceGrad)" filter="url(#faceSh)"/>
+                  <ellipse cx="50" cy="80" rx="19" ry="6.5" fill="#000" opacity=".14"/>
+                  <path d="M28 45 Q36 53 44 45" stroke="#5d4037" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+                  <path d="M56 45 Q64 53 72 45" stroke="#5d4037" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+                  <path d="M38 64 Q50 56 62 64" stroke="#bf360c" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                  <path className="tear" d="M70 52 C76 58 78 66 72 74 C66 82 58 78 60 70 C62 64 66 58 70 52 Z" fill="#29b6f6" stroke="#0288d1" strokeWidth="1"/>
+                  <ellipse cx="68" cy="62" rx="2.4" ry="3.3" fill="#b3e5fc" opacity=".85"/>
+                </svg>
+                <div className="zzz"><span>Z</span><span>z</span><span>z</span></div>
+              </div>
+            )}
+
+            <div className="stats">
+              <div className="stat-row">
+                <span className="stat-label">Your Prize:</span>
+                <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55"/><text x="16" y="21.5" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
+                <span className="stat-value">{yourPrize}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Your Bet:</span>
+                <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55"/><text x="16" y="21.5" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
+                <span className="stat-value">{yourBet}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="divider">
+            <div className="divider-line left"></div>
+            <div className="divider-text">Top Winner</div>
+            <div className="divider-line right"></div>
+          </div>
+
+          <div className="winners">
+            {fallbackPlayers.sort((a,b)=> a.rank===1?-1: b.rank===1?1: a.rank-b.rank).map(p=>(
+              <div key={p.rank} className={`player rank-${p.rank} ${active===p.rank?'active':''}`} onClick={()=>handlePlayer(p)}>
+                <div className="ring-container">
+                  {p.rank===1 && <><div className="sparkle s1"></div><div className="sparkle s2"></div><div className="sparkle s3"></div></>}
+                  <svg viewBox="0 0 140 160">
+                    <circle cx="70" cy="90" r={p.rank===1?50: p.rank===2?48:46} fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45"/>
+                    <circle cx="70" cy="90" r={p.rank===1?50: p.rank===2?48:46} fill="none" stroke={p.rank===1?"#ffc73a":p.rank===2?"#b6bcc6":"#c76d46"} strokeWidth="12"/>
+                    <g transform="translate(104,124)"><circle r="16" fill={p.rank===1?"#ffc73a":p.rank===2?"#b6bcc6":"#c76d46"} /><text x="0" y="5" textAnchor="middle" fontSize="15" fontWeight="800" fill="white">{p.rank}</text></g>
+                  </svg>
+                </div>
+                <div className="player-name">{p.name}</div>
+                <div className="player-prize">
+                  <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
+                  <span>{prizes[p.rank]}</span>
+                </div>
+                <div className="player-bet">Bet: {p.bet}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // MAIN COMPONENT
 interface TeenPattiGameContentProps {
@@ -361,7 +593,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   const [gameState, setGameState] = useState<'betting' | 'reveal' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(20);
-  const [selectedChip, setSelectedChip] = useState(10000);
+  const [selectedChip, setSelectedChip] = useState(100); 
   const [myBets, setMyBets] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
   const [totalPots, setTotalPots] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
   const [history, setHistory] = useState<string[]>(['WOLF', 'LION', 'FISH', 'WOLF', 'LION']);
@@ -372,7 +604,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
-  // NAYA STATE: Floating Chips layer ke liye
   const [floatingChips, setFloatingChips] = useState<{
     id: string;
     factionId: string;
@@ -396,7 +627,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
 
-  // Timer Effect
   useEffect(() => {
    if (isLaunching) return;
    const interval = setInterval(() => {
@@ -408,34 +638,31 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  // NAYA EFFECT: Fake Chips Spawning animation jab betting open ho
   useEffect(() => {
     if (gameState !== 'betting' || isLaunching) return;
     const interval = setInterval(() => {
-      // 50% chance har interval par fake chip aane ka
       if (Math.random() > 0.5) { 
         const randomFaction = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
-        const randomChip = CHIPS[Math.floor(Math.random() * 3)]; // Fake bets chote chips hi use karenge
+        const randomChip = CHIPS[Math.floor(Math.random() * 3)]; 
         spawnChip(randomFaction, randomChip, true);
       }
     }, 600);
     return () => clearInterval(interval);
   }, [gameState, isLaunching]);
 
-  // NAYA FUNCTION: Chip stack spawner
   const spawnChip = (factionId: string, chipDef: typeof CHIPS[0], isFake: boolean) => {
     const newChip = {
       id: Math.random().toString(36).substr(2, 9),
       factionId,
       chipDef,
-      offsetX: (Math.random() - 0.5) * 30, // Reduced scatter area
-      offsetY: (Math.random() - 0.5) * 20, // Reduced scatter area
+      offsetX: (Math.random() - 0.5) * 30, 
+      offsetY: (Math.random() - 0.5) * 20, 
       rotation: (Math.random() - 0.5) * 60,
     };
     
     setFloatingChips(prev => {
       const next = [...prev, newChip];
-      if (next.length > 40) return next.slice(next.length - 40); // Board pe max 40 chips dikhenge 
+      if (next.length > 40) return next.slice(next.length - 40); 
       return next;
     });
 
@@ -463,7 +690,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        currentFlip++;
        setRevealedCardsCount(currentFlip);
        if(currentFlip >= 9) clearInterval(flipInterval);
-   }, 1000); // Har card 1 sec mein flip hoga
+   }, 1000);
 
    let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
    if (firestore) {
@@ -476,7 +703,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     } catch (e) {}
    }
 
-   setTimeout(() => { finalizeRound(winId); }, 10000); // 9 sec flipping ke baad turant round final
+   setTimeout(() => { finalizeRound(winId); }, 10000);
   };
 
   const finalizeRound = (winId: string) => {
@@ -501,7 +728,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        setTimeLeft(20); 
        setCardReveal({}); 
        setRevealedCardsCount(0); 
-       setFloatingChips([]); // Clear chips layer on next round
+       setFloatingChips([]); 
     }, 5000);
   };
 
@@ -514,10 +741,13 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setMyBets(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
    setTotalPots(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
    
-   // Spawn real chip jab user bet mare
    const chipDef = CHIPS.find(c => c.value === selectedChip) || CHIPS[0];
    spawnChip(id, chipDef, false);
   };
+
+  // NAYA: Real-time calculation jab result show karna ho
+  const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
+  const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
   return (
    <motion.div
@@ -532,7 +762,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    >
     <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3">
       <div className="flex items-center gap-1.5">
-        <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90">
+        <button 
+          onPointerDown={(e) => dragControls.start(e)} 
+          style={{ touchAction: 'none' }}
+          className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg text-white/80 active:scale-90 cursor-grab active:cursor-grabbing"
+        >
           <Move className="h-4 w-4" />
         </button>
         <div className="h-6 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-1.5 shadow-inner group">
@@ -564,8 +798,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </header>
 
-    <div className="relative z-40 flex justify-center -mt-1 px-4 pointer-events-none">
-      <div className="relative w-[95%] max-w-[340px]">
+    <div className="relative z-40 flex justify-center -mt-1 px-1 pointer-events-none">
+      <div className="relative w-full max-w-[420px] px-2">
         <svg viewBox="0 0 360 90" className="w-full h-[40px] drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="cd-bg" x1="0" y1="0" x2="0" y2="1">
@@ -619,11 +853,13 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </div>
 
-
     <main className="flex-1 flex flex-col pt-1 overflow-hidden relative z-10">
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
+          <span className="text-[#ffd700] font-black text-[11px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+            1.95×
+          </span>
           <div className={cn(
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
             winnerId === f.id ? "scale-110 drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] z-10" : ""
@@ -638,13 +874,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
                return (
                 <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg", isFlipped ? "rotate-y-180" : "")}>
-                 
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
                    <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
                    </span>
                  </div>
-                 
                  <div 
                    className="absolute inset-0 backface-hidden rounded border border-white/40 flex items-center justify-center shadow-inner" 
                    style={{ 
@@ -658,12 +892,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                      <UmmyLogoIcon className="h-[12px] w-[12px] text-white" />
                    </div>
                  </div>
-
                 </div>
                );
              })}
              
-             {/* NAYA UI: RESULT BADGE OVER CARDS (Bottom Half, Patti Style) */}
              {gameState !== 'betting' && revealedCardsCount >= (factionIndex * 3) + 3 && cardReveal[f.id] && (
                <motion.div 
                  initial={{ opacity: 0, scale: 0.8 }}
@@ -678,7 +910,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                  </div>
                </motion.div>
              )}
-             
            </div>
           </div>
         </div>
@@ -686,8 +917,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
 
       <div className="flex justify-center gap-4 items-end px-3 flex-1 pb-3 mt-1 relative">
-       
-       {/* NAYA UI: FLOATING CHIPS LAYER */}
        <div className="absolute inset-0 pointer-events-none z-20 flex justify-center gap-4 px-3 pb-3 items-end">
          {FACTIONS.map(f => (
             <div key={`chips-${f.id}`} className="w-[28%] max-w-[110px] relative h-full">
@@ -698,21 +927,16 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                        initial={{ opacity: 0, y: 150, scale: 0.3 }}
                        animate={{ 
                           opacity: 1, 
-                          y: -50 + chip.offsetY, // Pot button ke theek upar cluster ho jayenge
+                          y: -15 + chip.offsetY, 
                           x: chip.offsetX,
                           rotate: chip.rotation,
                           scale: 1 
                        }}
                        exit={{ opacity: 0, scale: 0 }}
                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                       className={cn(
-                         "absolute bottom-0 left-1/2 -translate-x-1/2 w-[14px] h-[14px] rounded-full border border-white/30 shadow-xl flex items-center justify-center",
-                         chip.chipDef.color
-                       )}
+                       className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center justify-center"
                     >
-                       <span className="text-[4px] font-bold text-white uppercase tracking-tighter" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                         {chip.chipDef.label}
-                       </span>
+                       <PokerChip label={chip.chipDef.label} hex={chip.chipDef.hex} isFloating={true} />
                     </motion.div>
                   ))}
                </AnimatePresence>
@@ -724,7 +948,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
         const Icon = f.Banner;
         return (
          <div key={f.id} className="flex flex-col items-center w-[28%] max-w-[110px] relative z-10">
-           <div className="relative transition-all duration-300 -mt-5">
+           <div className="relative transition-all duration-300 -mt-5 pointer-events-none">
              <Icon className="w-full h-32 drop-shadow-2xl" />
            </div>
            
@@ -736,7 +960,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                gameState === 'betting' ? "active:scale-95 hover:brightness-110" : "opacity-80 cursor-not-allowed"
              )}
            >
-             {/* NAYA UI: Text ko Bottom-Half aur ekdam chota kar diya gaya hai */}
              <div className="flex flex-col items-center leading-none mt-auto w-full px-1">
                <span className="font-semibold text-white/80 tracking-widest text-[7px] mb-[1.5px] truncate max-w-full">
                  POT: {(totalPots[f.id] || 0)}
@@ -746,7 +969,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                </span>
              </div>
            </button>
-
          </div>
         )
        })}
@@ -774,12 +996,34 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <footer className="p-2 py-3 bg-gradient-to-t from-black/60 to-transparent shrink-0 relative z-50">
       <div className="w-full flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
          {CHIPS.map(chip => (
-          <button key={chip.value} onClick={() => setSelectedChip(chip.value)} className={cn("h-8 w-8 rounded-full flex flex-col items-center justify-center transition-all border-2 border-white/10 shrink-0 shadow-xl relative group overflow-hidden", chip.color, selectedChip === chip.value? "scale-110 border-white ring-2 ring-white/20 z-10" : "opacity-70 grayscale-[0.2]")}>
-           <span className="text-[6px] font-bold text-white uppercase">{chip.label}</span>
+          <button 
+             key={chip.value} 
+             onClick={() => setSelectedChip(chip.value)} 
+             className={cn(
+               "transition-all shrink-0 rounded-full relative group", 
+               selectedChip === chip.value? "scale-110 ring-2 ring-white z-10 shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "opacity-80 grayscale-[0.2]"
+             )}
+          >
+             <PokerChip label={chip.label} hex={chip.hex} isFloating={false} />
           </button>
          ))}
       </div>
     </footer>
+
+    {/* NAYA UI: RESULT OVERLAY MAPPING */}
+    <AnimatePresence>
+      {gameState === 'result' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+          className="absolute inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3"
+        >
+          <ResultOverlay finalWinAmount={finalWinAmount} totalBet={totalBetAmount} />
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
