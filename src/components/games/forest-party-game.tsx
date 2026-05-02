@@ -31,7 +31,6 @@ import {
  Clock,
  Move 
 } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -85,18 +84,6 @@ const CoinIcon2 = ({ className = '' }: { className?: string }) => (
     <circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1" />
     <circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55" />
     <text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text>
-  </svg>
-);
-
-// Sleeping SVG (No WhatsApp Emoji)
-const SleepingEmojiSVG = () => (
-  <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-    <circle cx="50" cy="50" r="46" fill="#1e293b" stroke="#475569" strokeWidth="4"/>
-    <path d="M 30 45 Q 40 35 48 45" fill="none" stroke="#64748b" strokeWidth="5" strokeLinecap="round"/>
-    <path d="M 52 45 Q 60 35 70 45" fill="none" stroke="#64748b" strokeWidth="5" strokeLinecap="round"/>
-    <circle cx="50" cy="65" r="6" fill="#475569" className="animate-pulse"/>
-    <text x="65" y="35" fontSize="20" fill="#94a3b8" fontWeight="bold" style={{ animation: 'float 3s ease-in-out infinite' }}>Z</text>
-    <text x="80" y="20" fontSize="14" fill="#94a3b8" fontWeight="bold" style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}>z</text>
   </svg>
 );
 
@@ -416,17 +403,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
+ // --- GLOBAL TIME SYNC TIMER ---
  useEffect(() => {
   let interval: NodeJS.Timeout;
+  const ROUND_DUR = 40000; // 40 Seconds Total Cycle
+  const BET_DUR = 25000;   // 25 Seconds Betting
+  
   if (gameState === 'betting') {
       interval = setInterval(() => {
-          setTimeLeft((prev) => {
-              if (prev <= 1) {
-                  clearInterval(interval);
-                  return 0;
-              }
-              return prev - 1;
-          });
+          const now = Date.now();
+          const elapsed = now % ROUND_DUR;
+          
+          if (elapsed < BET_DUR) {
+              setTimeLeft(Math.ceil((BET_DUR - elapsed) / 1000));
+          } else {
+              setTimeLeft(0);
+          }
       }, 1000);
   }
   return () => clearInterval(interval);
@@ -517,7 +509,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    setHighlightIdx(null);
    setShiningGroup('none'); 
    setGameState('betting');
-   setTimeLeft(25);
    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
    setBannerMsg('Start Betting');
    bannerTimeoutRef.current = setTimeout(() => {
@@ -535,12 +526,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   bannerTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) setBannerMsg(null);
   }, 1000);
+  
+  // --- SYNC RESULT FOR ALL USERS WITHOUT BACKEND ---
+  const currentRoundId = Math.floor(Date.now() / 40000);
+  const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+  };
+
   let groupType: 'none' | 'left' | 'right' = 'none';
-  const chance = Math.random();
+  const chance = seededRandom(currentRoundId + 1);
   if (chance < 0.025) groupType = 'left'; 
   else if (chance < 0.05) groupType = 'right'; 
-  let winningId = ANIMALS[Math.floor(Math.random() * ANIMALS.length)].id;
   
+  let winningId = ANIMALS[Math.floor(seededRandom(currentRoundId + 2) * ANIMALS.length)].id;
+  
+  // Admin Oracle override if any
   if (firestore) {
    try {
     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
@@ -669,10 +670,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   
                   <div className="tw-top">
                     <div className="tw-emoji-box" onClick={() => navigator.vibrate?.(10)}>
-                        {/* NO BET -> SLEEPING SVG | BET PLACED -> ANIMAL EMOJI */}
+                        {/* NO BET -> SLEEPING EMOJI | BET PLACED -> ANIMAL EMOJI */}
                         {winnerData.bet === 0 ? (
                             <div className="flex items-center justify-center w-full h-full bg-slate-800 rounded-full border-4 border-slate-600 shadow-inner">
-                                <SleepingEmojiSVG />
+                                <span className="text-[50px] filter drop-shadow-md">😴</span>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center w-full h-full text-6xl filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full border-4 border-yellow-200">
@@ -716,13 +717,25 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         }}
                         style={{ opacity: p.data ? 1 : 0.4 }}
                       >
-                        <div className="tw-ring-container">
+                        <div className="tw-ring-container relative flex items-center justify-center">
                           {p.rank === 1 && <>
                             <div className="tw-sparkle tw-s1"></div>
                             <div className="tw-sparkle tw-s2"></div>
                             <div className="tw-sparkle tw-s3"></div>
                           </>}
-                          <Crown rank={p.rank as 1|2|3} />
+                          
+                          {/* AVATAR IMAGE INSIDE RINGS */}
+                          <div className="absolute top-[56%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] rounded-full overflow-hidden bg-slate-800 z-0 border border-white/10 shadow-inner flex items-center justify-center">
+                            {p.data?.avatar ? (
+                                <img src={p.data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-[20px] text-white/50">😴</span>
+                            )}
+                          </div>
+
+                          <div className="relative z-10 w-full h-full">
+                            <Crown rank={p.rank as 1|2|3} />
+                          </div>
                         </div>
                         <div className="tw-player-name">{p.data ? p.data.name : 'Waiting...'}</div>
                         <div className="tw-player-prize">
@@ -780,7 +793,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               
               <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1 ml-1">
                   <div className="bg-yellow-400 rounded-md p-0.5">
-                      {/* ONLY $ COIN ICON HERE */}
                       <CoinIcon2 className="h-5 w-5 filter brightness-110 drop-shadow-md" />
                   </div>
                   <span className="text-white px-2 font-semibold text-[12px]">{localCoins}</span>
@@ -828,7 +840,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                                     <>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐰</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐻‍❄️</span>
-                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐼a</span>
+                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐼</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐔</span>
                                     </>
                                 )}
@@ -1013,7 +1025,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
-       {/* --- NAYA CSS YAHAN ADD KIYA GAYA HAI BAQI THEME KO BINA CHHEDE --- */}
+       {/* CSS STYLES */}
        <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -1021,7 +1033,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         
         button { -webkit-tap-highlight-color: transparent; }
 
-        /* TopWinner UI CSS Scoped for Bottom Popup */
         .winning-card {
           height: 40vh;
           min-height: 320px;
@@ -1151,3 +1162,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
