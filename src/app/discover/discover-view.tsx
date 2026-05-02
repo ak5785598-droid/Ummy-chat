@@ -39,6 +39,7 @@ export default function DiscoverView() {
   const [showPublish, setShowPublish] = useState(false);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
   const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
+  // Defaulting to recommend logic as before, without changing the core functionality
   const [activeTab, setActiveTab] = useState<'recommend' | 'following'>('recommend');
   
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
@@ -97,7 +98,8 @@ export default function DiscoverView() {
       )}>
         
         {/* --- FIXED: Top 20Vh Purple & White Mix Gradient --- */}
-        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-200 via-white/80 to-transparent pointer-events-none z-10" />
+        {/* Iski transparency aur opacity ko waisa hi rakha hai taaki header ke through achhe se dikhe */}
+        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-300 via-purple-100/80 to-transparent pointer-events-none z-10" />
 
         {/* Subtle Background Elements */}
         {DESIGN_TOKENS.appBackground !== '#FF91B5' && (
@@ -107,50 +109,31 @@ export default function DiscoverView() {
           </div>
         )}
 
-        {/* Discovery Header - Fixed Height & Tabs */}
+        {/* Discovery Header - Fixed Height & Title with Top Right Button */}
+        {/* bg-white/20 kiya gaya hai taaki upar wala purple color achhe se shine kare */}
         <header className={cn(
-          "shrink-0 pt-12 pb-4 px-6 z-50 border-b border-black/5 bg-white/40 backdrop-blur-xl",
+          "shrink-0 pt-12 pb-4 px-6 z-50 border-b border-black/5 bg-white/20 backdrop-blur-xl",
           DESIGN_TOKENS.appBackground === '#FF91B5' && "bg-[#FF91B5]/40 border-white/10"
         )}>
-          <div className="flex items-center justify-center max-w-2xl mx-auto relative h-10">
-            {/* Tabs Container */}
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setActiveTab('recommend')}
-                className="relative group py-2"
-              >
-                <span className={cn(
-                  "text-lg font-black tracking-tight transition-colors",
-                  activeTab === 'recommend' ? "text-slate-900" : "text-slate-400"
-                )}>
-                  Recommend
-                </span>
-                {activeTab === 'recommend' && (
-                  <motion.div 
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" 
-                  />
-                )}
-              </button>
-              
-              <button 
-                onClick={() => setActiveTab('following')}
-                className="relative group py-2"
-              >
-                <span className={cn(
-                  "text-lg font-black tracking-tight transition-colors",
-                  activeTab === 'following' ? "text-slate-900" : "text-slate-400"
-                )}>
-                  Following
-                </span>
-                {activeTab === 'following' && (
-                  <motion.div 
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full" 
-                  />
-                )}
-              </button>
-            </div>
+          <div className="flex items-center justify-between max-w-2xl mx-auto relative h-10">
+            {/* Title */}
+            <span className="text-sm md:text-base font-black tracking-tight text-slate-800 uppercase drop-shadow-sm">
+              Post a Day with Ummy
+            </span>
+            
+            {/* Glossy 3D Post Button Moved to Top Right */}
+            <motion.button 
+              initial={{ scale: 0, rotate: -20 }}
+              animate={{ scale: 1, rotate: 0 }}
+              whileTap={{ scale: 0.9, y: 2 }}
+              onClick={() => setShowPublish(true)}
+              className="h-10 w-10 flex items-center justify-center rounded-xl 
+                         bg-gradient-to-br from-purple-400 to-purple-600 
+                         text-white shadow-[0_4px_0_rgb(126,34,206),0_8px_15px_rgba(0,0,0,0.2)] 
+                         border-t border-white/40 backdrop-blur-md transition-all active:shadow-none"
+            >
+              <Camera className="h-5 w-5 drop-shadow-md" />
+            </motion.button>
           </div>
         </header>
 
@@ -175,7 +158,7 @@ export default function DiscoverView() {
                   <div className="space-y-1">
                     <p className="font-headline font-black uppercase text-lg">Silence in the Galaxy</p>
                     <p className="text-[10px] font-bold uppercase tracking-widest">
-                      {activeTab === 'following' ? 'Connect with users to see their vibes' : 'Share the first moment of the day'}
+                      Share the first moment of the day
                     </p>
                   </div>
                 </div>
@@ -184,20 +167,7 @@ export default function DiscoverView() {
           )}
         </main>
 
-        {/* --- Glossy 3D Post Button --- */}
-        <motion.button 
-          initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
-          whileTap={{ scale: 0.9, y: 5 }}
-          onClick={() => setShowPublish(true)}
-          className="fixed bottom-[10vh] right-6 z-[60] h-16 w-16 flex items-center justify-center rounded-2xl 
-                     bg-gradient-to-br from-purple-400 to-purple-600 
-                     text-white shadow-[0_8px_0_rgb(126,34,206),0_15px_20px_rgba(0,0,0,0.3)] 
-                     border-t border-white/40 backdrop-blur-md transition-all active:shadow-none"
-        >
-          <Camera className="h-7 w-7 drop-shadow-md" />
-        </motion.button>
-
+        {/* Dialogs & Sheets */}
         <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
 
         <MomentCommentsSheet 
