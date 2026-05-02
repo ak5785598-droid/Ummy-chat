@@ -524,8 +524,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
                   let groupType: 'none' | 'left' | 'right' = 'none';
                   const chance = seededRandom(currentRoundId + 1);
-                  if (chance < 0.025) groupType = 'left'; 
-                  else if (chance < 0.05) groupType = 'right'; 
+                  if (chance < 0.25) groupType = 'left'; 
+                  else if (chance < 0.5) groupType = 'right'; 
                   
                   let winningId = ANIMALS[Math.floor(seededRandom(currentRoundId + 2) * ANIMALS.length)].id;
 
