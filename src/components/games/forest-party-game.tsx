@@ -295,6 +295,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const chaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const bannerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+ const chaseStartedRef = useRef(false);
 
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
@@ -403,27 +404,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
- // --- GLOBAL TIME SYNC TIMER ---
- useEffect(() => {
-  let interval: NodeJS.Timeout;
-  const ROUND_DUR = 40000; // 40 Seconds Total Cycle
-  const BET_DUR = 25000;   // 25 Seconds Betting
-  
-  if (gameState === 'betting') {
-      interval = setInterval(() => {
-          const now = Date.now();
-          const elapsed = now % ROUND_DUR;
-          
-          if (elapsed < BET_DUR) {
-              setTimeLeft(Math.ceil((BET_DUR - elapsed) / 1000));
-          } else {
-              setTimeLeft(0);
-          }
-      }, 1000);
-  }
-  return () => clearInterval(interval);
- }, [gameState]);
-
  const playSound = useCallback((type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
@@ -476,7 +456,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setHistory(prev => [historyItem, ...prev].slice(0, 15));
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
+  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔'; 
   
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
   setActiveWinnerIdx(1); 
@@ -517,15 +497,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 6500); 
  }, [currentUser, firestore, playSound, userProfile]);
 
- const startSpin = useCallback(async () => {
+ // Function to calculate winner when countdown ends
+ const calculateWinnerAndStop = useCallback(async () => {
   if (!isMountedRef.current) return;
-  if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-  setBannerMsg('Betting Over');
-  setGameState('spinning');
-  playSound('spin'); 
-  bannerTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) setBannerMsg(null);
-  }, 1000);
   
   // --- SYNC RESULT FOR ALL USERS WITHOUT BACKEND ---
   const currentRoundId = Math.floor(Date.now() / 40000);
@@ -555,7 +529,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
   const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
   let currentStep = 0;
-  const spins = 7; 
+  const spins = 5; 
   const totalSteps = (SEQUENCE.length * spins) + targetIdx;
   let speed = 40; 
 
@@ -578,9 +552,73 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   runChase();
  }, [firestore, playSound, finalizeResult]);
 
+ // --- FIXED TIMER LOGIC WITH 10S SPINNING COUNTDOWN ---
  useEffect(() => {
-    if (gameState === 'betting' && timeLeft === 0) startSpin();
- }, [timeLeft, gameState, startSpin]);
+  let interval: NodeJS.Timeout;
+  
+  if (gameState === 'betting') {
+      setTimeLeft(25);
+      interval = setInterval(() => {
+          setTimeLeft((prev) => {
+              if (prev <= 1) {
+                  clearInterval(interval);
+                  return 0;
+              }
+              return prev - 1;
+          });
+      }, 1000);
+  } else if (gameState === 'spinning') {
+      setTimeLeft(10); // 10 Second countdown during spin!
+      interval = setInterval(() => {
+          setTimeLeft((prev) => {
+              if (prev <= 1) {
+                  clearInterval(interval);
+                  return 0;
+              }
+              return prev - 1;
+          });
+      }, 1000);
+  }
+  return () => {
+      if (interval) clearInterval(interval);
+  };
+ }, [gameState]);
+
+ // Trigger Spinning State when Betting is 0
+ useEffect(() => {
+    if (gameState === 'betting' && timeLeft === 0) {
+        if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+        setBannerMsg('Betting Over');
+        setGameState('spinning');
+        chaseStartedRef.current = false;
+        playSound('spin'); 
+        bannerTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) setBannerMsg(null);
+        }, 1000);
+    }
+ }, [timeLeft, gameState, playSound]);
+
+ // Continuous fast spin visuals during the 10 seconds
+ useEffect(() => {
+    let spinInterval: NodeJS.Timeout;
+    if (gameState === 'spinning' && timeLeft > 0) {
+        spinInterval = setInterval(() => {
+            setHighlightIdx((prev) => prev === null ? 0 : (prev + 1) % SEQUENCE.length);
+        }, 100);
+    }
+    return () => {
+        if (spinInterval) clearInterval(spinInterval);
+    };
+ }, [gameState, timeLeft]);
+
+ // When spinning timer hits 0, finally calculate winner and stop
+ useEffect(() => {
+    if (gameState === 'spinning' && timeLeft === 0 && !chaseStartedRef.current) {
+        chaseStartedRef.current = true;
+        calculateWinnerAndStop();
+    }
+ }, [timeLeft, gameState, calculateWinnerAndStop]);
+
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameStateRef.current !== 'betting' || !currentUser) return;
@@ -672,11 +710,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     <div className="tw-emoji-box" onClick={() => navigator.vibrate?.(10)}>
                         {/* NO BET -> SLEEPING EMOJI | BET PLACED -> ANIMAL EMOJI */}
                         {winnerData.bet === 0 ? (
-                            <div className="flex items-center justify-center w-full h-full bg-slate-800 rounded-full border-4 border-slate-600 shadow-inner">
+                            <div className="flex items-center justify-center w-full h-full">
                                 <span className="text-[50px] filter drop-shadow-md">😴</span>
                             </div>
                         ) : (
-                            <div className="flex items-center justify-center w-full h-full text-6xl filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full border-4 border-yellow-200">
+                            <div className="flex items-center justify-center w-full h-full text-[75px] filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                                {winnerData.emoji}
                             </div>
                         )}
@@ -840,7 +878,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                                     <>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐰</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐻‍❄️</span>
-                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🦝</span>
+                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐼</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐔</span>
                                     </>
                                 )}
@@ -883,7 +921,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐰</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🦝</span>
+                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐼</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'right' ? "text-yellow-200" : "text-white/90")}>Mix</span>
@@ -920,10 +958,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           )}>
             <div className="absolute top-[2%] left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/70 to-transparent rounded-full pointer-events-none z-0" />
             <p className="relative z-10 text-[8px] font-black uppercase text-[#ffe4b5] filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">
-                {gameState === 'betting' ? 'Time' : '🔥'}
+                {gameState === 'result' ? '🔥' : 'Time'}
             </p>
             <span className="relative z-10 text-2xl font-black text-white filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                {gameState === 'betting' ? timeLeft : '!!!'}
+                {gameState === 'result' ? '!!!' : timeLeft}
             </span>
           </div>
 
@@ -1034,11 +1072,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         button { -webkit-tap-highlight-color: transparent; }
 
         .winning-card {
-          height: 40vh;
-          min-height: 320px;
-          max-height: 420px;
-          width: 100%;
-          max-width: 440px;
+          height: 38vh;
+          min-height: 300px;
+          max-height: 400px;
+          width: 95%;
+          max-width: 420px;
           background: linear-gradient(180deg, rgba(28,22,34,.95) 0%, rgba(12,10,14,.98) 58%, #050507 100%);
           border: 1px solid rgba(232,200,120,.18);
           border-radius: 28px 28px 12px 12px;
@@ -1087,7 +1125,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         @keyframes coinSpin { to { transform: rotateY(360deg) } }
         .tw-stat-value { color: #fff; font-variant-numeric: tabular-nums; }
         
-        .tw-divider { height: 17%; display: flex; align-items: center; justify-content: center; position: relative; margin: .4vh 0; z-index: 2; }
+        .tw-divider { height: 15%; display: flex; align-items: center; justify-content: center; position: relative; margin: 0 0 .5vh 0; transform: translateY(-5px); z-index: 2; }
         .tw-divider-line {
           position: absolute; width: 29%; height: 2px; top: 50%;
           background: linear-gradient(90deg, transparent, #e8c878, transparent);
@@ -1162,3 +1200,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
