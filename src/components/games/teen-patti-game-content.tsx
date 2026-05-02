@@ -20,17 +20,17 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
-// NAYA CHIPS DATA (Zebra Border logic is managed via component styling)
+// NAYA CHIPS DATA
 const CHIPS = [
- { value: 100, label: '100', hex: '#2563EB' },        // Blue
- { value: 1000, label: '1K', hex: '#F97316' },        // Orange
- { value: 50000, label: '50K', hex: '#EF4444' },      // Red
- { value: 100000, label: '100K', hex: '#0891B2' },    // Sea Blue
- { value: 500000, label: '500K', hex: '#EAB308' },    // Yellow
- { value: 1000000, label: '1M', hex: '#000000' },     // Black
- { value: 50000000, label: '50M', hex: '#166534' },   // Dark Green
- { value: 100000000, label: '100M', hex: '#7F1D1D' }, // Maroon
- { value: 500000000, label: '500M', hex: '#6B7280' }, // Grey
+ { value: 100, label: '100', hex: '#2563EB' },        
+ { value: 1000, label: '1K', hex: '#F97316' },        
+ { value: 50000, label: '50K', hex: '#EF4444' },      
+ { value: 100000, label: '100K', hex: '#0891B2' },    
+ { value: 500000, label: '500K', hex: '#EAB308' },    
+ { value: 1000000, label: '1M', hex: '#000000' },     
+ { value: 50000000, label: '50M', hex: '#166534' },   
+ { value: 100000000, label: '100M', hex: '#7F1D1D' }, 
+ { value: 500000000, label: '500M', hex: '#6B7280' }, 
 ];
 
 // Realistic Deck for Cards 
@@ -40,6 +40,13 @@ const DECK = [
   'A♦', '2♦', '3♦', '4♦', '5♦', '6♦', '7♦', '8♦', '9♦', '10♦', 'J♦', 'Q♦', 'K♦',
   'A♣', '2♣', '3♣', '4♣', '5♣', '6♣', '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', 'K♣'
 ];
+
+// --- NUMBER FORMATTER HELPERS ---
+const formatCoins = (num: number) => {
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return num.toString();
+};
 
 // --- ZEBRA CHIP COMPONENT ---
 const PokerChip = ({ label, hex, isFloating }: { label: string, hex: string, isFloating: boolean }) => (
@@ -536,12 +543,12 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
               <div className="stat-row">
                 <span className="stat-label">Your Prize:</span>
                 <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55"/><text x="16" y="21.5" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
-                <span className="stat-value">{yourPrize}</span>
+                <span className="stat-value">{formatCoins(yourPrize)}</span>
               </div>
               <div className="stat-row">
                 <span className="stat-label">Your Bet:</span>
                 <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55"/><text x="16" y="21.5" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
-                <span className="stat-value">{yourBet}</span>
+                <span className="stat-value">{formatCoins(yourBet)}</span>
               </div>
             </div>
           </div>
@@ -566,9 +573,9 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
                 <div className="player-name">{p.name}</div>
                 <div className="player-prize">
                   <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
-                  <span>{prizes[p.rank]}</span>
+                  <span>{formatCoins(prizes[p.rank] || 0)}</span>
                 </div>
-                <div className="player-bet">Bet: {p.bet}</div>
+                <div className="player-bet">Bet: {formatCoins(p.bet)}</div>
               </div>
             ))}
           </div>
@@ -603,8 +610,19 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isHistorySheetOpen, setIsHistorySheetOpen] = useState(false); // Naya state sheet ke liye
   
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
+
+  // NAYA: Detailed history array to show rounds with 6-digit numbers
+  const [currentRoundNumber, setCurrentRoundNumber] = useState(456201); 
+  const [detailedHistory, setDetailedHistory] = useState<{round: number, winner: string}[]>([
+    { round: 456196, winner: 'WOLF' },
+    { round: 456197, winner: 'LION' },
+    { round: 456198, winner: 'FISH' },
+    { round: 456199, winner: 'WOLF' },
+    { round: 456200, winner: 'LION' },
+  ]);
 
   const [floatingChips, setFloatingChips] = useState<{
     id: string;
@@ -626,6 +644,20 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    }, [firestore]);
 
    const { data: liveWins } = useCollection(winnersQuery);
+
+  // NAYA: 5:30 AM Clear Logic (IST Time Check)
+  useEffect(() => {
+    const checkReset = setInterval(() => {
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istDate = new Date(utc + (3600000 * 5.5)); // GMT +5:30
+      if (istDate.getHours() === 5 && istDate.getMinutes() === 30) {
+        setDetailedHistory([]);
+        setHistory([]);
+      }
+    }, 60000);
+    return () => clearInterval(checkReset);
+  }, []);
 
   useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
 
@@ -654,11 +686,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
 
   const spawnChip = (factionId: string, chipDef: typeof CHIPS[0], isFake: boolean) => {
     const newChip = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.floor(100000 + Math.random() * 900000).toString(),
       factionId,
       chipDef,
-      offsetX: (Math.random() - 0.5) * 20, // Offset reduced to keep inside the button
-      offsetY: (Math.random() - 0.5) * 12, // Offset reduced
+      offsetX: (Math.random() - 0.5) * 20, 
+      offsetY: (Math.random() - 0.5) * 12, 
       rotation: (Math.random() - 0.5) * 60,
     };
     
@@ -711,10 +743,14 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const finalizeRound = (winId: string) => {
    setWinnerId(winId); 
    setHistory(prev => [winId,...prev.slice(0, 10)]); 
+   
+   // NAYA: Append to detailed history and increment 6-digit round
+   setDetailedHistory(prev => [{ round: currentRoundNumber, winner: winId }, ...prev]);
+   setCurrentRoundNumber(prev => prev + 1);
+
    setGameState('result');
    setRevealedCardsCount(9); 
 
-   // 1.95x LOGIC UPDATED
    const winAmount = (myBets[winId] || 0) * 1.95;
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
@@ -748,7 +784,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    spawnChip(id, chipDef, false);
   };
 
-  // 1.95x LOGIC UPDATED
   const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
@@ -760,12 +795,11 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      dragMomentum={false}
      initial={isOverlay? { y: '10%' } : {}}
      className={cn(
-       "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
+       "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden text-white select-none rounded-none shadow-2xl transition-all duration-300 border-none"
      )}
-     // CUSTOM GRADIENT BACKGROUND APPLIED HERE
-     style={{ background: 'linear-gradient(to bottom, #3A0A2A, #5A0F7A, #8A2BE2, #C03FD6)' }}
+     style={{ background: 'linear-gradient(to bottom, #5A0F7A, #8A2BE2, #C03FD6)' }}
    >
-    <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3">
+    <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3 border-none">
       <div className="flex items-center gap-1.5">
         <button 
           onPointerDown={(e) => dragControls.start(e)} 
@@ -798,13 +832,14 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button onClick={() => setIsRulesOpen(true)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+        {/* NAYA: Clock Icon on click logic handled here */}
+        <button onClick={() => setIsHistorySheetOpen(true)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
           <Clock className="h-4 w-4 text-white/90" />
         </button>
         <button onClick={() => setIsMuted(!isMuted)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
           {isMuted? <VolumeX className="h-4 w-4 text-white/90" /> : <Volume2 className="h-4 w-4 text-white/90" />}
         </button>
-        <button className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+        <button onClick={() => setIsRulesOpen(true)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
           <HelpCircle className="h-4 w-4 text-white/90" />
         </button>
         <button onClick={() => (onClose? onClose() : router.back())} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90 text-white/90">
@@ -872,7 +907,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
-          {/* TEXT UPDATED TO 1.95x */}
           <span className="text-[#ffd700] font-black text-[9px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
             1.95×
           </span>
@@ -1043,10 +1077,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <AnimatePresence>
       {gameState === 'result' && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, y: '100%' }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: '100%' }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
           className="absolute inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3"
         >
           <ResultOverlay finalWinAmount={finalWinAmount} totalBet={totalBetAmount} winnerId={winnerId} />
@@ -1064,7 +1098,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
           className="absolute inset-x-0 bottom-0 h-[30vh] min-h-[250px] bg-black border-t border-white/20 rounded-t-2xl z-[150] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.9)]"
         >
-          {/* Header */}
           <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 shrink-0">
             <button 
               onClick={() => setIsRulesOpen(false)} 
@@ -1078,7 +1111,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
             <div className="w-8" />
           </div>
 
-          {/* Body */}
           <div className="p-4 overflow-y-auto no-scrollbar flex-1 text-white/80 space-y-4 text-[12px] font-medium leading-relaxed pb-6">
             <p>1. At the start of each round, A, B and C will each be dealt a hand of 3 cards.</p>
             <p>2. If the dragon you bet on has the biggest hand, you will win a reward of x1.95 of your bet amount.</p>
@@ -1086,6 +1118,77 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
             <p>4. When the types are the same, compare the largest of the 3 cards.</p>
             <p>5. When the numbers are the same, compare the order of colour and size.</p>
             <p>6. Spades &gt; Hearts &gt; Plums &gt; Diamonds</p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* NAYA: Winning History Sheet (40vh) */}
+    <AnimatePresence>
+      {isHistorySheetOpen && (
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="absolute inset-x-0 bottom-0 h-[40vh] min-h-[300px] bg-black border-t border-white/20 rounded-t-2xl z-[150] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.9)]"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 shrink-0">
+            <button 
+              onClick={() => setIsHistorySheetOpen(false)} 
+              className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full active:scale-90 transition-transform"
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </button>
+            <h2 className="text-white font-bold tracking-widest uppercase absolute left-1/2 -translate-x-1/2">
+              Winning History
+            </h2>
+            <div className="w-8" />
+          </div>
+
+          {/* Table Content */}
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Table Header (Rounds + 3 Banners) */}
+            <div className="grid grid-cols-4 px-4 py-2 border-b border-white/10 shrink-0 items-center justify-items-center bg-white/5">
+              <div className="text-white/60 text-[10px] font-bold uppercase justify-self-start">Rounds</div>
+              {FACTIONS.map(f => {
+                const Icon = f.Banner;
+                return (
+                  <div key={f.id} className="w-6 relative">
+                    <Icon className="w-full h-auto drop-shadow-md" />
+                  </div>
+                )
+              })}
+            </div>
+            
+            {/* Scrollable History List */}
+            <div className="overflow-y-auto no-scrollbar flex-1 pb-4">
+              {detailedHistory.map((item, index) => (
+                <div key={`${item.round}-${index}`} className="grid grid-cols-4 px-4 py-2.5 border-b border-white/5 items-center justify-items-center">
+                  <div className="text-white/90 text-[11px] font-mono justify-self-start tracking-wider">
+                    {item.round}
+                  </div>
+                  {FACTIONS.map(f => {
+                    const isWin = item.winner === f.id;
+                    return (
+                      <div key={f.id} className={cn(
+                        "w-[26px] h-[26px] rounded-full flex items-center justify-center text-[7.5px] font-bold tracking-wider transition-all",
+                        isWin ? "bg-green-500 text-white shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-white/10 text-white/30"
+                      )}>
+                        {isWin ? "WIN" : "FAIL"}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+              
+              {detailedHistory.length === 0 && (
+                 <div className="flex justify-center items-center h-20 text-white/40 text-[10px] uppercase tracking-widest">
+                   No History Available
+                 </div>
+              )}
+            </div>
           </div>
         </motion.div>
       )}
