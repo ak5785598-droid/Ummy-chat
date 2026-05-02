@@ -888,7 +888,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             ))}
           </svg>
 
-          {/* TIMER CENTER - EMOJIS REMOVED FOR SPIN STATE */}
+          {/* TIMER CENTER - UPDATED TO SHOW REAL-TIME COUNTDOWN DURING SPIN */}
           <div className={cn(
             "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 overflow-hidden", 
             gameState === 'spinning' 
@@ -900,7 +900,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 {gameState === 'betting' ? 'Time' : 'SPIN'}
             </p>
             <span className="relative z-10 text-2xl font-black text-white filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                {gameState === 'betting' ? timeLeft : '...'}
+                {gameState === 'result' ? '0' : timeLeft}
             </span>
           </div>
 
@@ -1139,4 +1139,3 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
-
