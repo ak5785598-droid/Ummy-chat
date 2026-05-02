@@ -36,7 +36,167 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
-// Constants moved outside to prevent re-allocation on every render
+// --- NAYE UI KE HELPERS AUR COMPONENTS YAHAN HAIN ---
+const useCountUp = (to: number, duration = 900) => {
+  const [value, setValue] = useState(0);
+  const rafRef = useRef<number>();
+
+  useEffect(() => {
+    const start = value;
+    const t0 = performance.now();
+    
+    const tick = (t: number) => {
+      const p = Math.min((t - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(Math.round(start + (to - start) * eased));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    };
+    
+    rafRef.current = requestAnimationFrame(tick);
+    return () => rafRef.current && cancelAnimationFrame(rafRef.current);
+  }, [to, duration]);
+
+  return value;
+};
+
+// K/M Formatter function
+const formatKandM = (num: number) => {
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return num.toString();
+};
+
+// Modified to show K/M dynamically on Winner Page
+const CountUpDisplay = ({ amount, duration = 900 }: { amount: number, duration?: number }) => {
+  const val = useCountUp(amount, duration);
+  return <span>{formatKandM(val)}</span>;
+};
+
+const CoinIcon2 = ({ className = '' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 32 32">
+    <defs>
+      <linearGradient id="coinGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff9c4" />
+        <stop offset="28%" stopColor="#ffd54f" />
+        <stop offset="68%" stopColor="#f9a825" />
+        <stop offset="100%" stopColor="#e65100" />
+      </linearGradient>
+    </defs>
+    <circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1" />
+    <circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55" />
+    <text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text>
+  </svg>
+);
+
+// Sleeping SVG (No WhatsApp Emoji)
+const SleepingEmojiSVG = () => (
+  <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+    <circle cx="50" cy="50" r="46" fill="#1e293b" stroke="#475569" strokeWidth="4"/>
+    <path d="M 30 45 Q 40 35 48 45" fill="none" stroke="#64748b" strokeWidth="5" strokeLinecap="round"/>
+    <path d="M 52 45 Q 60 35 70 45" fill="none" stroke="#64748b" strokeWidth="5" strokeLinecap="round"/>
+    <circle cx="50" cy="65" r="6" fill="#475569" className="animate-pulse"/>
+    <text x="65" y="35" fontSize="20" fill="#94a3b8" fontWeight="bold" style={{ animation: 'float 3s ease-in-out infinite' }}>Z</text>
+    <text x="80" y="20" fontSize="14" fill="#94a3b8" fontWeight="bold" style={{ animation: 'float 3s ease-in-out infinite 0.5s' }}>z</text>
+  </svg>
+);
+
+const Crown = ({ rank }: { rank: 1 | 2 | 3 }) => {
+  if (rank === 1) return (
+    <svg viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="goldRingGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fff6d6" /><stop offset="22%" stopColor="#ffe08a" />
+          <stop offset="52%" stopColor="#ffc73a" /><stop offset="78%" stopColor="#f19e1a" />
+          <stop offset="100%" stopColor="#d87607" />
+        </linearGradient>
+        <filter id="goldShadow">
+          <feDropShadow dx="0" dy="6" stdDeviation="5" floodColor="#ff9d00" floodOpacity=".5" />
+          <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity=".7" />
+        </filter>
+      </defs>
+      <g transform="translate(70,22) scale(1.1)" filter="url(#goldShadow)">
+        <path d="M-24 -2 L-15 -18 L-6 -4 L0 -20 L6 -4 L15 -18 L24 -2 L24 9 L-24 9 Z" fill="url(#goldRingGrad)" stroke="#b26a00" strokeWidth="1.5" />
+        <path d="M-24 -2 L-15 -18 L-6 -4 L0 -20 L6 -4 L15 -18 L24 -2" fill="none" stroke="#fff7dc" strokeWidth="1.1" opacity=".85" />
+        <circle cx="0" cy="-13" r="3.8" fill="#ffdf76" stroke="#b26a00" strokeWidth="1" />
+        <rect x="-24" y="9" width="48" height="6.5" rx="2.2" fill="#c78212" />
+      </g>
+      <circle cx="70" cy="90" r="50" fill="none" stroke="#3e2805" strokeWidth="15" opacity=".5" />
+      <circle cx="70" cy="90" r="50" fill="none" stroke="url(#goldRingGrad)" strokeWidth="13" filter="url(#goldShadow)" />
+      <g transform="translate(104,126)">
+        <circle r="17" fill="url(#goldRingGrad)" stroke="#9c5e06" strokeWidth="2.4" filter="url(#goldShadow)" />
+        <text x="0" y="6" textAnchor="middle" fontSize="16.5" fontWeight="900" fill="white" fontFamily="Arial" style={{ paintOrder: 'stroke', stroke: '#000', strokeWidth: '.6px' }}>1</text>
+      </g>
+    </svg>
+  );
+  if (rank === 2) return (
+    <svg viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="silverRingGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffffff" /><stop offset="30%" stopColor="#e6e8ee" />
+          <stop offset="60%" stopColor="#b6bcc6" /><stop offset="100%" stopColor="#7a8290" />
+        </linearGradient>
+        <linearGradient id="silverInnerGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5e6570" /><stop offset="100%" stopColor="#dfe3e8" />
+        </linearGradient>
+        <filter id="silverShadow"><feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity=".55" /></filter>
+      </defs>
+      <g transform="translate(70,28)" filter="url(#silverShadow)">
+        <path d="M-22 -2 L-14 -16 L-6 -4 L0 -18 L6 -4 L14 -16 L22 -2 L22 8 L-22 8 Z" fill="url(#silverRingGrad)" stroke="#7c8491" strokeWidth="1.4" />
+        <circle cx="0" cy="-12" r="3.3" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
+        <circle cx="-14" cy="-10" r="2.7" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
+        <circle cx="14" cy="-10" r="2.7" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
+        <rect x="-22" y="8" width="44" height="5.5" rx="2" fill="#9aa2ae" />
+      </g>
+      <circle cx="70" cy="90" r="48" fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45" />
+      <circle cx="70" cy="90" r="48" fill="none" stroke="url(#silverRingGrad)" strokeWidth="11.5" filter="url(#silverShadow)" />
+      <circle cx="70" cy="90" r="42" fill="none" stroke="url(#silverInnerGrad)" strokeWidth="1.4" opacity=".85" />
+      <g transform="translate(104,124)">
+        <circle r="15.5" fill="url(#silverRingGrad)" stroke="#5a6270" strokeWidth="2" filter="url(#silverShadow)" />
+        <text x="0" y="5.5" textAnchor="middle" fontSize="15.5" fontWeight="800" fill="white" fontFamily="Arial">2</text>
+      </g>
+    </svg>
+  );
+  return (
+    <svg viewBox="0 0 140 160" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bronzeRingGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffe2d1" /><stop offset="30%" stopColor="#e9a17d" />
+          <stop offset="65%" stopColor="#c76d46" /><stop offset="100%" stopColor="#8f4a2e" />
+        </linearGradient>
+        <filter id="bronzeShadow"><feDropShadow dx="0" dy="4.5" stdDeviation="4" floodOpacity=".55" /></filter>
+      </defs>
+      <g transform="translate(70,28)" filter="url(#bronzeShadow)">
+        <path d="M-22 -2 L-14 -16 L-6 -4 L0 -18 L6 -4 L14 -16 L22 -2 L22 8 L-22 8 Z" fill="url(#bronzeRingGrad)" stroke="#7a3e26" strokeWidth="1.4" />
+        <circle cx="0" cy="-12" r="3.2" fill="#f0b599" stroke="#7a3e26" strokeWidth="1" />
+        <rect x="-22" y="8" width="44" height="5.5" rx="2" fill="#8a4f35" />
+      </g>
+      <circle cx="70" cy="90" r="46" fill="none" stroke="#2a1510" strokeWidth="13.5" opacity=".45" />
+      <circle cx="70" cy="90" r="46" fill="none" stroke="url(#bronzeRingGrad)" strokeWidth="11" filter="url(#bronzeShadow)" />
+      <g transform="translate(102,122)">
+        <circle r="15" fill="url(#bronzeRingGrad)" stroke="#5c2c1a" strokeWidth="2" filter="url(#bronzeShadow)" />
+        <text x="0" y="5" textAnchor="middle" fontSize="14.5" fontWeight="800" fill="white" fontFamily="Arial">3</text>
+      </g>
+    </svg>
+  );
+};
+
+const Confetti = ({ show }: { show: boolean }) => {
+  if (!show) return null;
+  return (
+    <div className="confetti">
+      {Array.from({ length: 26 }).map((_, i) => (
+        <i key={i} style={{
+          left: `${5 + Math.random() * 90}%`,
+          background: `hsl(${38 + Math.random() * 30}, 100%, ${62 + Math.random() * 18}%)`,
+          animationDelay: `${Math.random() * 0.2}s`,
+          transform: `rotate(${Math.random() * 360}deg)`
+        }} />
+      ))}
+    </div>
+  );
+};
+
+// --- TUMHARE GAME KE CONSTANTS ---
 const ANIMALS = [
   { id: 'panda', emoji: '🐰', multiplier: 5, label: 'x5', pos: 'top', index: 0 },
   { id: 'rabbit', emoji: '🐔', multiplier: 5, label: 'x5', pos: 'top-right', index: 1 },
@@ -68,12 +228,6 @@ const getGameDay = () => {
   resetTime.setHours(5, 30, 0, 0); 
   if (now < resetTime) now.setDate(now.getDate() - 1);
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-};
-
-const formatKandM = (num: number) => {
-  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-  return num.toString();
 };
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
@@ -108,10 +262,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [dailyWinnings, setDailyWinnings] = useState(0);
  const [bannerMsg, setBannerMsg] = useState<'Start Betting' | 'Betting Over' | null>('Start Betting');
 
+ const [activeWinnerIdx, setActiveWinnerIdx] = useState<number | null>(null);
+
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
- // Performance: Memoized query for winners
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -138,6 +293,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
            name: win.username,
            win: win.amount,
            avatar: win.avatarUrl,
+           bet: Math.floor(win.amount / 5), // rough estimation for display if bet is unknown
            isMe: win.userId === currentUser?.uid
          });
          if (uniqueTopWinners.length === 3) break;
@@ -146,7 +302,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return uniqueTopWinners;
  }, [liveWins, currentUser]);
 
- // Refs for security and stale closure protection
  const myBetsRef = useRef(myBets);
  const gameStateRef = useRef(gameState);
  const isMountedRef = useRef(true);
@@ -154,7 +309,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const bannerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
- // Audio Refs
  const chipAudio = useRef<HTMLAudioElement | null>(null);
  const spinAudio = useRef<HTMLAudioElement | null>(null);
  const tickAudio = useRef<HTMLAudioElement | null>(null);
@@ -214,20 +368,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     // High Performance Audio Loading
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
      
-     // Optimization: Preload sounds
      [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => {
         if (ref.current) ref.current.load();
      });
    }
  }, []);
 
- // Security: Added check to prevent betting in non-betting states
  useEffect(() => {
     if (gameState !== 'betting') return;
     const interval = setInterval(() => {
@@ -333,12 +484,12 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setHistory(prev => [historyItem, ...prev].slice(0, 15));
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
+  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔'; 
   
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
+  setActiveWinnerIdx(1); 
   setGameState('result');
 
-  // Security: Guarded firestore calls
   if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
@@ -372,7 +523,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    bannerTimeoutRef.current = setTimeout(() => {
        if (isMountedRef.current) setBannerMsg(null);
    }, 1500);
-  }, 5000);
+  }, 6500); 
  }, [currentUser, firestore, playSound, userProfile]);
 
  const startSpin = useCallback(async () => {
@@ -431,7 +582,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  }, [timeLeft, gameState, startSpin]);
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
-  // Security: Check current state via Ref as well for timing issues
   if (gameStateRef.current !== 'betting' || !currentUser) return;
   if (localCoins < selectedChip) {
    toast({ title: 'You do not have any Coins!', variant: 'destructive' });
@@ -466,7 +616,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     }
     return highlightIdx === idx;
  };
-
 
  return (
   <motion.div 
@@ -505,78 +654,85 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
-       {/* WINNING PAGE */}
+       {/* --- WINNING PAGE FROM BOTTOM --- */}
        <AnimatePresence>
         {winnerData && (
           <motion.div 
             initial={{ y: "100%" }} 
             animate={{ y: 0 }} 
             exit={{ y: "100%" }} 
-            className="fixed bottom-0 left-0 right-0 z-[210] bg-black/90 backdrop-blur-2xl border-t-[4px] border-zinc-800 rounded-t-[32px] p-5 flex flex-col items-center shadow-[0_-20px_50px_rgba(0,0,0,1)] pb-6"
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed bottom-0 left-0 right-0 z-[210] flex justify-center pb-4 px-2"
           >
-              <div className="w-16 h-1.5 bg-zinc-800 rounded-full mb-4 shrink-0" />
-              
-              <div className="w-full flex items-center justify-between bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 mb-5 shadow-inner">
-                 <div className="flex flex-col items-center justify-center pl-2">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-yellow-400 blur-2xl opacity-20 animate-pulse" />
-                      <div className="relative text-6xl filter drop-shadow-md">{winnerData.emoji}</div>
+              <div className="winning-card">
+                  <Confetti show={true} />
+                  
+                  <div className="tw-top">
+                    <div className="tw-emoji-box" onClick={() => navigator.vibrate?.(10)}>
+                        {/* NO BET -> SLEEPING SVG | BET PLACED -> ANIMAL EMOJI */}
+                        {winnerData.bet === 0 ? (
+                            <div className="flex items-center justify-center w-full h-full bg-slate-800 rounded-full border-4 border-slate-600 shadow-inner">
+                                <SleepingEmojiSVG />
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center w-full h-full text-6xl filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full border-4 border-yellow-200">
+                               {winnerData.emoji}
+                            </div>
+                        )}
                     </div>
-                    <span className="text-[10px] font-black text-yellow-500 uppercase mt-1 tracking-widest">Winner</span>
-                 </div>
-                 
-                 <div className="flex flex-col items-end gap-2 pr-2">
-                    <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">My Win</span>
-                       <div className="flex items-center gap-1.5">
-                         <GoldCoinIcon className="h-5 w-5 filter brightness-110" />
-                         <span className="text-2xl font-black text-emerald-400 tabular-nums">+{formatKandM(winnerData.win)}</span>
-                       </div>
+                    
+                    <div className="tw-stats">
+                      <div className="tw-stat-row">
+                        <span className="tw-stat-label">Your Prize:</span>
+                        <CoinIcon2 className="tw-coin-icon" />
+                        <span className="tw-stat-value"><CountUpDisplay amount={winnerData.win} /></span>
+                      </div>
+                      <div className="tw-stat-row">
+                        <span className="tw-stat-label">Your Bet:</span>
+                        <CoinIcon2 className="tw-coin-icon" />
+                        <span className="tw-stat-value"><CountUpDisplay amount={winnerData.bet} /></span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">My Bet Amount</span>
-                       <span className="text-sm font-black text-white/80 tabular-nums">{formatKandM(winnerData.bet)}</span>
-                    </div>
-                 </div>
-              </div>
+                  </div>
 
-              <div className="w-full flex flex-col items-center">
-                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Top Winners</span>
-                 
-                 <div className="flex items-end justify-center gap-6 w-full h-[90px]">
-                    {winnersList[1] ? (
-                       <div className="flex flex-col items-center relative pb-2 opacity-90">
-                          <div className="absolute -top-2.5 z-10 bg-zinc-700 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md border border-white/10">#2</div>
-                          <div className="w-12 h-12 rounded-full border-[2px] border-zinc-600 shadow-[0_0_15px_rgba(255,255,255,0.1)] overflow-hidden bg-zinc-800">
-                             <img src={winnersList[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[1].name}`} alt="user" className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-[9px] font-bold mt-1 text-white/80 truncate w-14 text-center">{winnersList[1].name}</span>
-                          <span className="text-[8px] text-emerald-400 font-bold">{formatKandM(winnersList[1].win)}</span>
-                       </div>
-                    ) : <div className="w-12" />}
+                  <div className="tw-divider">
+                    <div className="tw-divider-line tw-left"></div>
+                    <div className="tw-divider-text">Top Winner</div>
+                    <div className="tw-divider-line tw-right"></div>
+                  </div>
 
-                    {winnersList[0] ? (
-                       <div className="flex flex-col items-center relative z-20">
-                          <div className="absolute -top-3 z-10 bg-gradient-to-r from-yellow-500 to-amber-600 text-black text-[10px] font-black px-2 py-0.5 rounded-sm shadow-md">#1</div>
-                          <div className="w-16 h-16 rounded-full border-[3px] border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)] overflow-hidden bg-zinc-800 animate-pulse">
-                             <img src={winnersList[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[0].name}`} alt="user" className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-[10px] font-black mt-1 text-white truncate w-16 text-center">{winnersList[0].name}</span>
-                          <span className="text-[9px] text-yellow-400 font-bold">{formatKandM(winnersList[0].win)}</span>
-                       </div>
-                    ) : <div className="w-16" />}
-
-                    {winnersList[2] ? (
-                       <div className="flex flex-col items-center relative pb-3 opacity-80">
-                          <div className="absolute -top-2 z-10 bg-amber-800 text-white text-[9px] font-bold px-1.5 rounded-sm shadow-md">#3</div>
-                          <div className="w-10 h-10 rounded-full border-[2px] border-amber-900 shadow-[0_0_10px_rgba(0,0,0,0.5)] overflow-hidden bg-zinc-800">
-                             <img src={winnersList[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${winnersList[2].name}`} alt="user" className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-[8px] font-bold mt-1 text-white/60 truncate w-12 text-center">{winnersList[2].name}</span>
-                          <span className="text-[7px] text-emerald-400/80 font-bold">{formatKandM(winnersList[2].win)}</span>
-                       </div>
-                    ) : <div className="w-10" />}
-                 </div>
+                  <div className="tw-winners">
+                    {[
+                      { rank: 2, data: winnersList[1], idx: 1 },
+                      { rank: 1, data: winnersList[0], idx: 0 },
+                      { rank: 3, data: winnersList[2], idx: 2 }
+                    ].map((p) => (
+                      <div
+                        key={`rank-${p.rank}`}
+                        className={`tw-player tw-rank-${p.rank} ${activeWinnerIdx === p.idx ? 'tw-active' : ''}`}
+                        onClick={() => {
+                          setActiveWinnerIdx(p.idx);
+                          if(p.rank === 1) navigator.vibrate?.(30);
+                        }}
+                        style={{ opacity: p.data ? 1 : 0.4 }}
+                      >
+                        <div className="tw-ring-container">
+                          {p.rank === 1 && <>
+                            <div className="tw-sparkle tw-s1"></div>
+                            <div className="tw-sparkle tw-s2"></div>
+                            <div className="tw-sparkle tw-s3"></div>
+                          </>}
+                          <Crown rank={p.rank as 1|2|3} />
+                        </div>
+                        <div className="tw-player-name">{p.data ? p.data.name : 'Waiting...'}</div>
+                        <div className="tw-player-prize">
+                          <CoinIcon2 className="tw-coin-icon" />
+                          <span><CountUpDisplay amount={p.data ? p.data.win : 0} duration={1100 + p.idx * 150} /></span>
+                        </div>
+                        <div className="tw-player-bet">Bet: {p.data ? formatKandM(p.data.bet || 0) : 0}</div>
+                      </div>
+                    ))}
+                  </div>
               </div>
           </motion.div>
         )}
@@ -623,7 +779,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               </div>
               
               <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1 ml-1">
-                  <div className="bg-yellow-400 rounded-md p-0.5"><GoldCoinIcon className="h-5 w-5 text-yellow-600 filter brightness-110 drop-shadow-md" /></div>
+                  <div className="bg-yellow-400 rounded-md p-0.5">
+                      {/* ONLY $ COIN ICON HERE */}
+                      <CoinIcon2 className="h-5 w-5 filter brightness-110 drop-shadow-md" />
+                  </div>
                   <span className="text-white px-2 font-semibold text-[12px]">{localCoins}</span>
                   <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
               </div>
@@ -669,7 +828,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                                     <>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐰</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐻‍❄️</span>
-                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🦝</span>
+                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐼a</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐔</span>
                                     </>
                                 )}
@@ -712,7 +871,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐰</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🦝</span>
+                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐼</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'right' ? "text-yellow-200" : "text-white/90")}>Mix</span>
@@ -854,13 +1013,139 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
+       {/* --- NAYA CSS YAHAN ADD KIYA GAYA HAI BAQI THEME KO BINA CHHEDE --- */}
        <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .animate-spin-slow { animation: spin-slow 8s linear infinite; }
         
-        /* Ensure smooth clicking on mobile */
         button { -webkit-tap-highlight-color: transparent; }
+
+        /* TopWinner UI CSS Scoped for Bottom Popup */
+        .winning-card {
+          height: 40vh;
+          min-height: 320px;
+          max-height: 420px;
+          width: 100%;
+          max-width: 440px;
+          background: linear-gradient(180deg, rgba(28,22,34,.95) 0%, rgba(12,10,14,.98) 58%, #050507 100%);
+          border: 1px solid rgba(232,200,120,.18);
+          border-radius: 28px 28px 12px 12px;
+          padding: clamp(12px,2vh,18px) clamp(14px,3vw,22px);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset, 0 -15px 40px rgba(0,0,0,0.8), 0 -5px 15px rgba(0,0,0,0.6);
+          isolation: isolate;
+        }
+        .winning-card::before {
+          content: ""; position: absolute; inset: 0;
+          background: radial-gradient(400px 120px at 50% 0%, rgba(232,200,120,.14), transparent 70%),
+                      radial-gradient(300px 200px at 80% 120%, rgba(255,180,60,.08), transparent 60%);
+          pointer-events: none; z-index: 0;
+        }
+        .winning-card::after {
+          content: ""; position: absolute; inset: -1px; border-radius: 28px 28px 12px 12px;
+          background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0) 30%);
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor; mask-composite: exclude;
+          padding: 1px; pointer-events: none;
+        }
+        
+        .tw-top { display: flex; align-items: center; gap: 3.2vw; height: 35%; position: relative; z-index: 2; }
+        .tw-emoji-box {
+          width: 25%; min-width: 75px; aspect-ratio: 1; position: relative; flex-shrink: 0; cursor: pointer;
+          filter: drop-shadow(0 10px 20px rgba(0,0,0,.55)); transition: transform .3s;
+        }
+        .tw-emoji-box:active { transform: scale(.96); }
+        .tw-stats { flex: 1; display: flex; flex-direction: column; gap: 1.1vh; justify-content: center; }
+        .tw-stat-row {
+          display: flex; align-items: center; gap: .7rem;
+          background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+          border: 1px solid rgba(255,255,255,.09); padding: .55rem .75rem; border-radius: 13px;
+          font-size: clamp(13px, 2.25vh, 16px); font-weight: 650;
+          box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 8px 18px rgba(0,0,0,.4);
+          transition: transform .2s, border-color .2s;
+        }
+        .tw-stat-row:hover { transform: translateY(-1px); border-color: rgba(232,200,120,.3); }
+        .tw-stat-label { color: #f0eadd; min-width: 88px; opacity: .92; letter-spacing: .2px; }
+        .tw-coin-icon { width: 2.4vh; height: 2.4vh; min-width: 18px; min-height: 18px; flex-shrink: 0; }
+        .tw-stat-row .tw-coin-icon { animation: coinSpin 5.5s linear infinite; }
+        @keyframes coinSpin { to { transform: rotateY(360deg) } }
+        .tw-stat-value { color: #fff; font-variant-numeric: tabular-nums; }
+        
+        .tw-divider { height: 17%; display: flex; align-items: center; justify-content: center; position: relative; margin: .4vh 0; z-index: 2; }
+        .tw-divider-line {
+          position: absolute; width: 29%; height: 2px; top: 50%;
+          background: linear-gradient(90deg, transparent, #e8c878, transparent);
+          filter: drop-shadow(0 0 8px rgba(232,200,120,.45)); overflow: visible;
+        }
+        .tw-divider-line.tw-left { left: 0; transform: scaleX(-1); }
+        .tw-divider-line.tw-right { right: 0; }
+        .tw-divider-line::after {
+          content: ""; position: absolute; width: 0; height: 0;
+          border-left: 7px solid #e8c878; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
+          top: -2.5px; right: -6px; filter: drop-shadow(0 0 4px rgba(232,200,120,.7));
+          animation: arrowPulse 2s ease-in-out infinite;
+        }
+        @keyframes arrowPulse { 0%,100%{opacity:.9; transform:translateX(0)} 50%{opacity:1; transform:translateX(2px)} }
+        .tw-divider-text {
+          color: #e8c878; font-size: clamp(14px,2.4vh,18px); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+          text-shadow: 0 1px 2px #000, 0 0 20px rgba(232,200,120,.4), 0 0 40px rgba(232,200,120,.15);
+          padding: .15rem .7rem; background: radial-gradient(50% 120% at 50% 50%, rgba(232,200,120,.15), transparent 70%);
+          border-radius: 8px;
+        }
+        
+        .tw-winners { display: flex; justify-content: space-between; align-items: flex-end; height: 48%; gap: 2vw; position: relative; z-index: 2; }
+        .tw-player {
+          flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;
+          transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity 0.3s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .tw-player:hover { transform: translateY(-3px); }
+        .tw-player:active { transform: translateY(-1px) scale(.97); }
+        .tw-player.tw-rank-1 { transform: translateY(-1.1vh); }
+        .tw-player.tw-rank-1:hover { transform: translateY(-1.1vh) translateY(-3px); }
+        .tw-player.tw-rank-3 { transform: translateY(.45vh); }
+        .tw-player.tw-rank-3:hover { transform: translateY(.45vh) translateY(-3px); }
+        
+        .tw-ring-container { width: 86%; max-width: 110px; aspect-ratio: 1; position: relative; transition: filter .3s; }
+        .tw-ring-container > svg { width: 100%; height: 100%; overflow: visible; animation: float 4.5s ease-in-out infinite; }
+        .tw-player.tw-rank-1 .tw-ring-container > svg { animation-duration: 4s; }
+        .tw-player.tw-rank-2 .tw-ring-container > svg { animation-delay: .3s; }
+        .tw-player.tw-rank-3 .tw-ring-container > svg { animation-delay: .6s; }
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        .tw-player:hover .tw-ring-container { filter: brightness(1.12) drop-shadow(0 6px 16px rgba(255,200,80,.15)); }
+        
+        .tw-player-name {
+          font-size: clamp(11px,1.8vh,14px); font-weight: 650; margin-top: .7vh; color: #f5f3ef;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 118px; transition: color .2s;
+        }
+        .tw-player:hover .tw-player-name { color: #fff; }
+        .tw-player-prize { display: flex; align-items: center; justify-content: center; gap: .35rem; margin-top: .4vh; font-size: clamp(12px,1.85vh,15px); font-weight: 700; color: #ffd166; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+        .tw-player-prize .tw-coin-icon { width: 1.95vh; height: 1.95vh; min-width: 14px; min-height: 14px; }
+        .tw-player-bet { font-size: clamp(10.5px,1.6vh,12.5px); color: #b9b9c2; margin-top: .2vh; font-weight: 500; }
+        
+        .tw-player.tw-active .tw-ring-container > svg { animation: pulseUi .6s; }
+        @keyframes pulseUi { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+        
+        .tw-sparkle { position: absolute; width: 4px; height: 4px; background: #fff3c4; border-radius: 50%; box-shadow: 0 0 10px #ffd76a, 0 0 18px #ffb300; opacity: 0; animation: spark 2.8s ease-in-out infinite; }
+        @keyframes spark { 0%{opacity:0; transform:translateY(8px) scale(.5)} 20%{opacity:1} 80%{opacity:.7} 100%{opacity:0; transform:translateY(-18px) scale(1.1)} }
+        .tw-rank-1 .tw-s1 { left: 18%; top: 28%; animation-delay: .2s }
+        .tw-rank-1 .tw-s2 { right: 14%; top: 20%; animation-delay: 1s }
+        .tw-rank-1 .tw-s3 { left: 25%; bottom: 20%; animation-delay: 1.7s }
+        
+        .confetti { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; border-radius: 28px; }
+        .confetti i { position: absolute; width: 6px; height: 10px; border-radius: 2px; opacity: 0; top: 38%; animation: conf 900ms cubic-bezier(.2,.7,.3,1) forwards; }
+        @keyframes conf { 0%{opacity:1; transform:translateY(0) rotate(0) scale(1)} 100%{opacity:0; transform:translateY(90px) rotate(520deg) scale(.8)} }
+        
+        @media (max-width:380px){
+          .winning-card { border-radius: 22px; padding: 11px 13px; }
+          .tw-stat-label { min-width: 76px; }
+          .tw-divider-line { width: 26%; }
+        }
        `}</style>
    </motion.div>
   </motion.div>
