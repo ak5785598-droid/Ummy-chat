@@ -14,7 +14,7 @@ import {
   Clock,
   HelpCircle
 } from 'lucide-react';
-import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
+import { UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -355,7 +355,6 @@ const fallbackPlayers: Player[] = [
   { rank: 3, name: "Saksham Thakur", prize: 39, bet: 20 },
 ];
 
-// NAYA UPDATE: Isme winnerId ko props me le aate hain
 function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount: number, totalBet: number, winnerId: string | null }) {
   const [yourPrize, setYourPrize] = useState(0);
   const [yourBet, setYourBet] = useState(0);
@@ -364,7 +363,6 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
   const [prizes, setPrizes] = useState<Record<number, number>>({1:0,2:0,3:0});
   const confettiRef = useRef<HTMLDivElement>(null);
 
-  // Jo faction jeeta hai uska Banner dhundo
   const winnerFaction = FACTIONS.find(f => f.id === winnerId);
   const WinnerBanner = winnerFaction?.Banner;
 
@@ -397,7 +395,6 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
 
   const handlePlayer = (p: Player) => {
     setActive(p.rank);
-    // Overriding the static animation to real-time variables passed via props
     animate(yourPrize, finalWinAmount, 650, setYourPrize);
     animate(yourBet, totalBet, 650, setYourBet);
     if (p.rank === 1) burst();
@@ -412,10 +409,8 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
       }, 300);
     });
     const winner = fallbackPlayers.find(p => p.rank === 1)!;
-    // Trigger burst & set real-time stats
     const t = setTimeout(() => {
         handlePlayer(winner);
-        // Guarantee confetti if you win!
         if(finalWinAmount > 0) burst();
     }, 1400);
     return () => clearTimeout(t);
@@ -506,14 +501,9 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
           <div className="confetti" ref={confettiRef} />
 
           <div className="top">
-            
-            {/* AGAR BET LAGAI HAI TOH WINNING BANNER DIKHEGA, WARNA SOTA HUA EMOJI */}
             {totalBet > 0 ? (
               <div className="emoji-box flex items-center justify-center transform transition-transform hover:scale-95 cursor-pointer relative">
-                {/* Ab ye purana wala 'WINNER' div hatakar bas winning faction ka banner render kar rahe hain */}
                 {WinnerBanner && <WinnerBanner className="w-[140%] h-[140%] drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] -mt-4 z-10" />}
-                
-                {/* Ek chota sa indicator bas samajhne ke liye ki aap jeete ya hare */}
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap bg-black/80 backdrop-blur-md border border-white/20 px-2.5 py-[2px] rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                   <span className={cn("text-[9px] font-black uppercase tracking-wider drop-shadow-md", finalWinAmount > 0 ? "text-[#4ade80]" : "text-[#f87171]")}>
                     {finalWinAmount > 0 ? "WINNER" : "LOST"}
@@ -755,7 +745,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    spawnChip(id, chipDef, false);
   };
 
-  // NAYA: Real-time calculation jab result show karna ho
   const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
@@ -780,9 +769,19 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           <Move className="h-4 w-4" />
         </button>
         <div className="h-6 pl-1 pr-1 py-1 bg-black/50 backdrop-blur-xl border border-white/20 rounded-full flex items-center gap-1.5 shadow-inner group">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-600 flex items-center justify-center shadow-lg">
-            <GoldCoinIcon className="h-3 w-3 text-white" />
-          </div>
+          <svg viewBox="0 0 32 32" className="w-5 h-5 drop-shadow-md">
+            <defs>
+              <linearGradient id="topFloatingCoinGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fff9c4"/>
+                <stop offset="28%" stopColor="#ffd54f"/>
+                <stop offset="68%" stopColor="#f9a825"/>
+                <stop offset="100%" stopColor="#e65100"/>
+              </linearGradient>
+            </defs>
+            <circle cx="16" cy="16" r="15" fill="url(#topFloatingCoinGrad)" stroke="#b26a00" strokeWidth="1"/>
+            <circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55"/>
+            <text x="16" y="21.5" textAnchor="middle" fontSize="16" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text>
+          </svg>
           <span className="text-[10px] font-bold text-white tracking-tight px-1">
             {(userProfile?.wallet?.coins || 0).toLocaleString()}
           </span>
@@ -867,7 +866,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
-          <span className="text-[#ffd700] font-black text-[11px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
+          <span className="text-[#ffd700] font-black text-[9px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
             1.95×
           </span>
           <div className={cn(
@@ -883,7 +882,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
                return (
-                <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg relative", isFlipped ? "rotate-y-180" : "", isRedCard ? "-top-1" : "")}>
+                <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg relative", isFlipped ? "rotate-y-180" : "", isRedCard ? "-top-2.5" : "")}>
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
                    <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
@@ -947,14 +946,14 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                        initial={{ opacity: 0, y: 150, scale: 0.3 }}
                        animate={{ 
                           opacity: 1, 
-                          y: -15 + chip.offsetY, 
+                          y: -75 + chip.offsetY, 
                           x: chip.offsetX,
                           rotate: chip.rotation,
-                          scale: 1 
+                          scale: 0.65 
                        }}
                        exit={{ opacity: 0, scale: 0 }}
                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                       className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center justify-center"
+                       className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none"
                     >
                        <svg viewBox="0 0 32 32" className="w-[20px] h-[20px] drop-shadow-md">
                          <circle cx="16" cy="16" r="15" fill="url(#floatingCoinGrad)" stroke="#b26a00" strokeWidth="1"/>
@@ -1034,7 +1033,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
     </footer>
 
-    {/* NAYA UI: RESULT OVERLAY MAPPING */}
     <AnimatePresence>
       {gameState === 'result' && (
         <motion.div
@@ -1044,7 +1042,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           transition={{ duration: 0.3 }}
           className="absolute inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3"
         >
-          {/* winnerId ab yahan ResultOverlay me pass ho raha hai */}
           <ResultOverlay finalWinAmount={finalWinAmount} totalBet={totalBetAmount} winnerId={winnerId} />
         </motion.div>
       )}
