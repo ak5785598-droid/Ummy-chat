@@ -12,7 +12,8 @@ import {
   Move,
   Plus,
   Clock,
-  HelpCircle
+  HelpCircle,
+  ChevronLeft
 } from 'lucide-react';
 import { UmmyLogoIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
@@ -601,6 +602,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(true);
   const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
   
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
@@ -712,8 +714,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setGameState('result');
    setRevealedCardsCount(9); 
 
-   // 2.95x LOGIC UPDATED
-   const winAmount = (myBets[winId] || 0) * 2.95;
+   // 1.95x LOGIC UPDATED
+   const winAmount = (myBets[winId] || 0) * 1.95;
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
     const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
@@ -746,8 +748,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    spawnChip(id, chipDef, false);
   };
 
-  // 2.95x LOGIC UPDATED
-  const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 2.95) : 0;
+  // 1.95x LOGIC UPDATED
+  const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
   return (
@@ -796,7 +798,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
+        <button onClick={() => setIsRulesOpen(true)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
           <Clock className="h-4 w-4 text-white/90" />
         </button>
         <button onClick={() => setIsMuted(!isMuted)} className="w-8 h-8 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-full border border-white/10 shadow-lg active:scale-90">
@@ -842,7 +844,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           <path d="M18 30 C18 12 32 6 50 6 H310 C328 6 342 12 342 30 V48 C342 66 328 72 310 72 H50 C32 72 18 66 18 48 Z" fill="url(#cd-bg)" stroke="url(#cd-border)" strokeWidth="4" filter="url(#cd-glow)"/>
           <path d="M24 34 C24 18 36 14 52 14 H308 C324 14 336 18 336 34" fill="none" stroke="url(#cd-neon)" strokeWidth="2.2" opacity="0.95"/>
           <path d="M24 46 C24 60 36 64 52 64 H308 C324 64 336 60 336 46" fill="none" stroke="#e0f2fe" strokeWidth="1" opacity="0.5"/>
-          <path d="M18 30 C18 12 32 6 50 6 H310 C328 6 342 12 342 30 V36 C342 18 328 12 310 12 H50 C32 12 18 18 18 36 Z" fill="url(#cd-shine)"/>
+          <path d="M18 30 C18 12 32 6 50 6 H310 C328 6 342 12 342 30 V36 C342 18 328 12 310 12 H50 C32 12 18 36 Z" fill="url(#cd-shine)"/>
           <g>
             {[...Array(13)].map((_,i)=> {
               const x = 28 + i*24.5;
@@ -870,9 +872,9 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
-          {/* TEXT UPDATED TO 2.95x */}
+          {/* TEXT UPDATED TO 1.95x */}
           <span className="text-[#ffd700] font-black text-[9px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-            2.95×
+            1.95×
           </span>
           <div className={cn(
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
@@ -887,7 +889,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
                return (
-                {/* Updated: Sabhi cards ke liye fix -top-2.5 apply kiya hai taki koi jump na ho */}
                 <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg relative -top-2.5", isFlipped ? "rotate-y-180" : "")}>
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
                    <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
@@ -950,7 +951,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                     <motion.div
                        key={chip.id}
                        initial={{ opacity: 0, y: 150, scale: 0.3 }}
-                       {/* Updated: Chips ke flying area ko button box mein restrict kar diya gya hai */}
                        animate={{ 
                           opacity: 1, 
                           y: -32 + chip.offsetY, 
@@ -1050,6 +1050,43 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
           className="absolute inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-3"
         >
           <ResultOverlay finalWinAmount={finalWinAmount} totalBet={totalBetAmount} winnerId={winnerId} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Rules Sheet */}
+    <AnimatePresence>
+      {isRulesOpen && (
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="absolute inset-x-0 bottom-0 h-[30vh] min-h-[250px] bg-black border-t border-white/20 rounded-t-2xl z-[150] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.9)]"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-3 py-3 border-b border-white/10 shrink-0">
+            <button 
+              onClick={() => setIsRulesOpen(false)} 
+              className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-full active:scale-90 transition-transform"
+            >
+              <ChevronLeft className="w-5 h-5 text-white" />
+            </button>
+            <h2 className="text-white font-bold tracking-widest uppercase absolute left-1/2 -translate-x-1/2">
+              Rules
+            </h2>
+            <div className="w-8" />
+          </div>
+
+          {/* Body */}
+          <div className="p-4 overflow-y-auto no-scrollbar flex-1 text-white/80 space-y-4 text-[12px] font-medium leading-relaxed pb-6">
+            <p>1. At the start of each round, A, B and C will each be dealt a hand of 3 cards.</p>
+            <p>2. If the dragon you bet on has the biggest hand, you will win a reward of x1.95 of your bet amount.</p>
+            <p>3. Hand Rankings: Set &gt; Pure Sequence &gt; Colour &gt; Sequence &gt; Pair &gt; High Card</p>
+            <p>4. When the types are the same, compare the largest of the 3 cards.</p>
+            <p>5. When the numbers are the same, compare the order of colour and size.</p>
+            <p>6. Spades &gt; Hearts &gt; Plums &gt; Diamonds</p>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
