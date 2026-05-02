@@ -351,8 +351,8 @@ const evaluateHand = (cards: string[]) => {
 type Player = { rank: 1 | 2 | 3; name: string; prize: number; bet: number; };
 const fallbackPlayers: Player[] = [
   { rank: 2, name: "Betnarmati Saru", prize: 140, bet: 50 },
-  { rank: 1, name: "pihu", prize: 195, bet: 100 },
-  { rank: 3, name: "Saksham Thakur", prize: 39, bet: 20 },
+  { rank: 1, name: "pihu", prize: 295, bet: 100 },
+  { rank: 3, name: "Saksham Thakur", prize: 59, bet: 20 },
 ];
 
 function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount: number, totalBet: number, winnerId: string | null }) {
@@ -655,8 +655,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       id: Math.random().toString(36).substr(2, 9),
       factionId,
       chipDef,
-      offsetX: (Math.random() - 0.5) * 30, 
-      offsetY: (Math.random() - 0.5) * 20, 
+      offsetX: (Math.random() - 0.5) * 20, // Offset reduced to keep inside the button
+      offsetY: (Math.random() - 0.5) * 12, // Offset reduced
       rotation: (Math.random() - 0.5) * 60,
     };
     
@@ -712,7 +712,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    setGameState('result');
    setRevealedCardsCount(9); 
 
-   const winAmount = (myBets[winId] || 0) * 1.95;
+   // 2.95x LOGIC UPDATED
+   const winAmount = (myBets[winId] || 0) * 2.95;
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
     const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
@@ -745,7 +746,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    spawnChip(id, chipDef, false);
   };
 
-  const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
+  // 2.95x LOGIC UPDATED
+  const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 2.95) : 0;
   const totalBetAmount = Object.values(myBets).reduce((a, b) => a + b, 0);
 
   return (
@@ -756,8 +758,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
      dragMomentum={false}
      initial={isOverlay? { y: '10%' } : {}}
      className={cn(
-       "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#a22bb8] text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
+       "h-[50vh] min-h-[50vh] max-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden text-white select-none rounded-none border border-white/20 shadow-2xl transition-all duration-300"
      )}
+     // CUSTOM GRADIENT BACKGROUND APPLIED HERE
+     style={{ background: 'linear-gradient(to bottom, #3A0A2A, #5A0F7A, #8A2BE2, #C03FD6)' }}
    >
     <header className="relative z-50 flex items-center justify-between p-2 pt-3 px-3">
       <div className="flex items-center gap-1.5">
@@ -866,8 +870,9 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       <div className="grid grid-cols-3 gap-2 px-4 h-24 shrink-0 relative z-10">
        {FACTIONS.map((f, factionIndex) => (
         <div key={f.id} className="flex flex-col items-center gap-1.5 relative">
+          {/* TEXT UPDATED TO 2.95x */}
           <span className="text-[#ffd700] font-black text-[9px] mb-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]">
-            1.95×
+            2.95×
           </span>
           <div className={cn(
             "w-full h-20 transition-all duration-500 flex flex-col items-center justify-center relative",
@@ -882,7 +887,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                const isRedCard = cardText.includes('♥') || cardText.includes('♦');
 
                return (
-                <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg relative", isFlipped ? "rotate-y-180" : "", isRedCard ? "-top-2.5" : "")}>
+                {/* Updated: Sabhi cards ke liye fix -top-2.5 apply kiya hai taki koi jump na ho */}
+                <div key={i} className={cn("w-10 h-16 rounded border border-white/10 transition-transform duration-300 transform-gpu preserve-3d flex items-center justify-center bg-gradient-to-br from-[#1e1b4b] to-black shadow-lg relative -top-2.5", isFlipped ? "rotate-y-180" : "")}>
                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white flex flex-col items-center justify-center rounded">
                    <span className={cn("text-[18px] font-bold leading-none tracking-tighter", isRedCard ? "text-[#ef4444]" : "text-black")}>
                      {cardText}
@@ -944,9 +950,10 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                     <motion.div
                        key={chip.id}
                        initial={{ opacity: 0, y: 150, scale: 0.3 }}
+                       {/* Updated: Chips ke flying area ko button box mein restrict kar diya gya hai */}
                        animate={{ 
                           opacity: 1, 
-                          y: -75 + chip.offsetY, 
+                          y: -32 + chip.offsetY, 
                           x: chip.offsetX,
                           rotate: chip.rotation,
                           scale: 0.65 
