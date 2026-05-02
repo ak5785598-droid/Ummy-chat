@@ -1,35 +1,35 @@
-  'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
- useUser,
- useFirestore,
- updateDocumentNonBlocking,
- useDoc,
- useMemoFirebase,
+import { 
+ useUser, 
+ useFirestore, 
+ updateDocumentNonBlocking, 
+ useDoc, 
+ useMemoFirebase, 
  addDocumentNonBlocking,
- useCollection
+ useCollection 
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import {
-  doc,
-  increment,
-  serverTimestamp,
-  getDoc,
+import { 
+  doc, 
+  increment, 
+  serverTimestamp, 
+  getDoc, 
   collection,
-  query,
-  where,
-  orderBy,
-  limit
+  query, 
+  where, 
+  orderBy, 
+  limit 
 } from 'firebase/firestore';
-import {
- Volume2,
- VolumeX,
- HelpCircle,
+import { 
+ Volume2, 
+ VolumeX, 
+ HelpCircle, 
  X,
  Plus,
  Clock,
- Move
+ Move 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -43,14 +43,14 @@ const useCountUp = (to: number, duration = 900) => {
   useEffect(() => {
     const start = value;
     const t0 = performance.now();
-
+    
     const tick = (t: number) => {
       const p = Math.min((t - t0) / duration, 1);
       const eased = 1 - Math.pow(1 - p, 3);
       setValue(Math.round(start + (to - start) * eased));
       if (p < 1) rafRef.current = requestAnimationFrame(tick);
     };
-
+    
     rafRef.current = requestAnimationFrame(tick);
     return () => rafRef.current && cancelAnimationFrame(rafRef.current);
   }, [to, duration]);
@@ -196,15 +196,15 @@ const ANIMALS = [
 ];
 
 const CHIPS_DATA = [
- { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' },
- { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' },
- { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' },
- { value: 100000, label: '100k', color: '#ef4444', bgColor: 'from-red-400 to-red-600' },
- { value: 500000, label: '500k', color: '#22c55e', bgColor: 'from-green-400 to-green-600' },
- { value: 1000000, label: '1M', color: '#06b6d4', bgColor: 'from-cyan-400 to-cyan-600' },
- { value: 5000000, label: '5M', color: '#fef3c7', bgColor: 'from-amber-100 to-amber-200' },
- { value: 10000000, label: '10M', color: '#581c87', bgColor: 'from-purple-800 to-purple-950' },
- { value: 100000000, label: '100M', color: '#eab308', bgColor: 'from-yellow-400 to-yellow-600' },
+ { value: 100, label: '100', color: '#3b82f6', bgColor: 'from-blue-400 to-blue-600' }, 
+ { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, 
+ { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, 
+ { value: 100000, label: '100k', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, 
+ { value: 500000, label: '500k', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, 
+ { value: 1000000, label: '1M', color: '#06b6d4', bgColor: 'from-cyan-400 to-cyan-600' }, 
+ { value: 5000000, label: '5M', color: '#fef3c7', bgColor: 'from-amber-100 to-amber-200' }, 
+ { value: 10000000, label: '10M', color: '#581c87', bgColor: 'from-purple-800 to-purple-950' }, 
+ { value: 100000000, label: '100M', color: '#eab308', bgColor: 'from-yellow-400 to-yellow-600' }, 
 ];
 
 const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -212,14 +212,14 @@ const SEQUENCE = [0, 1, 2, 3, 4, 5, 6, 7];
 const getGameDay = () => {
   const now = new Date();
   const resetTime = new Date(now);
-  resetTime.setHours(5, 30, 0, 0);
+  resetTime.setHours(5, 30, 0, 0); 
   if (now < resetTime) now.setDate(now.getDate() - 1);
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const [isLoading, setIsLoading] = useState(true);
-
+ 
  const { user: currentUser } = useUser();
  const { userProfile } = useUserProfile(currentUser?.uid);
  const firestore = useFirestore();
@@ -237,40 +237,42 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [isMuted, setIsMuted] = useState(false);
  const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
-
+ 
  const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
  const [fakeDroppedChips, setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number, delay: number}[]>([]);
-
+ 
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
  const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
-
+ 
  const [shiningGroup, setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
  const [dailyWinnings, setDailyWinnings] = useState(0);
  const [bannerMsg, setBannerMsg] = useState<'Start Betting' | 'Betting Over' | null>('Start Betting');
 
  const [activeWinnerIdx, setActiveWinnerIdx] = useState<number | null>(null);
 
- const gameDocRef = useMemoFirebase(() =>!firestore? null : doc(firestore, 'games', 'forest-party'), [firestore]);
+ const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
 
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
-      collection(firestore, 'globalGameWins'),
-      where('gameId', '==', 'forest-party'),
-      orderBy('timestamp', 'desc'),
-      limit(20)
+      collection(firestore, 'globalGameWins'), 
+      where('gameId', '==', 'forest-party'), 
+      orderBy('timestamp', 'desc'),           
+      limit(20)                               
     );
  }, [firestore]);
-
+  
  const { data: liveWins } = useCollection(winnersQuery);
-
+  
  const winnersList = useMemo(() => {
     if (!liveWins) return [];
+
     const sortedByAmount = [...liveWins].sort((a, b) => b.amount - a.amount);
     const uniqueTopWinners: any[] = [];
     const seenUsers = new Set();
+
     for (const win of sortedByAmount) {
       if (!seenUsers.has(win.userId)) {
          seenUsers.add(win.userId);
@@ -278,7 +280,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
            name: win.username,
            win: win.amount,
            avatar: win.avatarUrl,
-           bet: Math.floor(win.amount / 5),
+           bet: Math.floor(win.amount / 5), // rough estimation for display if bet is unknown
            isMe: win.userId === currentUser?.uid
          });
          if (uniqueTopWinners.length === 3) break;
@@ -305,7 +307,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  }, [myBets, gameState]);
 
  useEffect(() => {
-    const timer = setTimeout(() => { setIsLoading(false); }, 2000);
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 2000); 
     return () => clearTimeout(timer);
  }, []);
 
@@ -324,34 +328,49 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     bannerTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current) setBannerMsg(null);
     }, 1500);
-    return () => { if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current); };
+    return () => {
+        if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+    };
  }, []);
 
  useEffect(() => {
-   if (typeof window!== 'undefined') {
+   if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
-     if (saved) { try { setGameRecords(JSON.parse(saved)); } catch (e) {} }
+     if (saved) {
+       try { setGameRecords(JSON.parse(saved)); } catch (e) {}
+     }
+
      const savedDaily = localStorage.getItem('forestPartyDailyWin');
      if (savedDaily) {
        try {
          const parsed = JSON.parse(savedDaily);
-         if (parsed.gameDay === getGameDay()) { setDailyWinnings(parsed.amount); }
-         else { setDailyWinnings(0); localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 })); }
+         if (parsed.gameDay === getGameDay()) {
+           setDailyWinnings(parsed.amount);
+         } else {
+           setDailyWinnings(0);
+           localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
+         }
        } catch (e) {}
-     } else { localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 })); }
-     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3');
+     } else {
+       localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
+     }
+
+     chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
-     winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-     [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => { if (ref.current) ref.current.load(); });
+     winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
+     
+     [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => {
+        if (ref.current) ref.current.load();
+     });
    }
  }, []);
 
  useEffect(() => {
-    if (gameState!== 'betting') return;
+    if (gameState !== 'betting') return;
     const interval = setInterval(() => {
-        if (Math.random() > 0.2) {
-            const dropCount = Math.floor(Math.random() * 6) + 10;
+        if (Math.random() > 0.2) { 
+            const dropCount = Math.floor(Math.random() * 6) + 10; 
             const newFakeChips = [];
             for (let i = 0; i < dropCount; i++) {
                 const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
@@ -365,38 +384,43 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     color: randomChip.color,
                     x: (Math.random() * 40) - 20,
                     y: (Math.random() * 30) - 15,
-                    delay: Math.random() * 0.8
+                    delay: Math.random() * 0.8 
                 });
             }
-            setFakeDroppedChips(prev => [...prev.slice(-60),...newFakeChips]);
+            setFakeDroppedChips(prev => [...prev.slice(-60), ...newFakeChips]);
         }
-    }, 2000);
+    }, 2000); 
     return () => clearInterval(interval);
  }, [gameState]);
 
  useEffect(() => {
-   if (typeof window!== 'undefined') {
-     localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20)));
+   if (typeof window !== 'undefined') {
+     localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); 
    }
  }, [gameRecords]);
 
  useEffect(() => {
-  if (userProfile?.wallet?.coins!== undefined) setLocalCoins(userProfile.wallet.coins);
+  if (userProfile?.wallet?.coins !== undefined) setLocalCoins(userProfile.wallet.coins);
  }, [userProfile?.wallet?.coins]);
 
- // --- FIXED TIMER: SIMPLE 25 SEC COUNTDOWN ---
+ // --- GLOBAL TIME SYNC TIMER ---
  useEffect(() => {
-  if (gameState!== 'betting') return;
-  setTimeLeft(25); // har round me pura 25 sec
-  const interval = setInterval(() => {
-    setTimeLeft(prev => {
-      if (prev <= 1) {
-        clearInterval(interval);
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
+  let interval: NodeJS.Timeout;
+  const ROUND_DUR = 40000; // 40 Seconds Total Cycle
+  const BET_DUR = 25000;   // 25 Seconds Betting
+  
+  if (gameState === 'betting') {
+      interval = setInterval(() => {
+          const now = Date.now();
+          const elapsed = now % ROUND_DUR;
+          
+          if (elapsed < BET_DUR) {
+              setTimeLeft(Math.ceil((BET_DUR - elapsed) / 1000));
+          } else {
+              setTimeLeft(0);
+          }
+      }, 1000);
+  }
   return () => clearInterval(interval);
  }, [gameState]);
 
@@ -405,124 +429,104 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   try {
     const audios = { bet: chipAudio.current, tick: tickAudio.current, spin: spinAudio.current, win: winAudio.current };
     const audio = audios[type as keyof typeof audios];
-    if (audio) { audio.currentTime = 0; const playPromise = audio.play(); if (playPromise!== undefined) playPromise.catch(() => {}); }
+    if (audio) {
+        audio.currentTime = 0;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) playPromise.catch(() => {});
+    }
     if (type === 'stop') spinAudio.current?.pause();
   } catch (error) {}
  }, [isMuted]);
 
  const finalizeResult = useCallback((id: string, groupType: 'none' | 'left' | 'right') => {
   if (!isMountedRef.current) return;
-  setDroppedChips([]); setFakeDroppedChips([]);
+  setDroppedChips([]);
+  setFakeDroppedChips([]);
   let winningIds = [id];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
   let winAmount = 0;
   const currentBets = myBetsRef.current;
-  winningIds.forEach(wId => { const winItem = ANIMALS.find(i => i.id === wId); winAmount += (currentBets[wId] || 0) * (winItem?.multiplier || 0); });
+  winningIds.forEach(wId => {
+      const winItem = ANIMALS.find(i => i.id === wId);
+      winAmount += (currentBets[wId] || 0) * (winItem?.multiplier || 0);
+  });
   const totalBetAmount = Object.values(currentBets).reduce((a, b) => a + b, 0);
   if (winAmount > 0) {
-     playSound('win');
-     setDailyWinnings(prev => { const newAmount = prev + winAmount; localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount })); return newAmount; });
+     playSound('win'); 
+     setDailyWinnings(prev => {
+        const newAmount = prev + winAmount;
+        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount }));
+        return newAmount;
+     });
   }
-  setShiningGroup(groupType);
+  setShiningGroup(groupType); 
   const newRoundRecords = Object.entries(currentBets).map(([betId, betAmount]) => {
      const animal = ANIMALS.find(a => a.id === betId);
-     return { id: Date.now() + Math.random(), emoji: animal?.emoji || '❓', bet: betAmount as number, win: winningIds.includes(betId)? (betAmount as number) * (animal?.multiplier || 0) : 0, timestamp: Date.now() };
+     return {
+       id: Date.now() + Math.random(),
+       emoji: animal?.emoji || '❓',
+       bet: betAmount as number,
+       win: winningIds.includes(betId) ? (betAmount as number) * (animal?.multiplier || 0) : 0,
+       timestamp: Date.now()
+     };
   });
-  if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords,...prev]);
-  const historyItem = { id: id, type: groupType === 'none'? 'single' as const : groupType as 'left' | 'right' };
-  setHistory(prev => [historyItem,...prev].slice(0, 15));
+  if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
+  const historyItem = { id: id, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
+  setHistory(prev => [historyItem, ...prev].slice(0, 15));
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔';
+  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🦝🐔'; 
+  
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
-  setActiveWinnerIdx(1);
+  setActiveWinnerIdx(1); 
   setGameState('result');
 
   if (winAmount > 0 && currentUser && firestore) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
-   addDocumentNonBlocking(collection(firestore, 'globalGameWins'), { gameId: 'forest-party', userId: currentUser.uid, username: userProfile?.username || 'Guest', avatarUrl: userProfile?.avatarUrl || null, amount: winAmount, timestamp: serverTimestamp() });
+   
+   addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+    gameId: 'forest-party', 
+    userId: currentUser.uid,
+    username: userProfile?.username || 'Guest',
+    avatarUrl: userProfile?.avatarUrl || null,
+    amount: winAmount,
+    timestamp: serverTimestamp()
+   });
+
    const userRef = doc(firestore, 'users', currentUser.uid);
-   updateDocumentNonBlocking(userRef, { 'stats.totalWins': increment(winAmount), updatedAt: serverTimestamp() });
+   updateDocumentNonBlocking(userRef, {
+     'stats.totalWins': increment(winAmount),
+     updatedAt: serverTimestamp()
+   });
   }
 
   winnerTimeoutRef.current = setTimeout(() => {
    if (!isMountedRef.current) return;
-   setWinnerData(null); setMyBets({}); setHighlightIdx(null); setShiningGroup('none');
+   setWinnerData(null);
+   setMyBets({});
+   setHighlightIdx(null);
+   setShiningGroup('none'); 
    setGameState('betting');
    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
    setBannerMsg('Start Betting');
-   bannerTimeoutRef.current = setTimeout(() => { if (isMountedRef.current) setBannerMsg(null); }, 1500);
-  }, 6500);
+   bannerTimeoutRef.current = setTimeout(() => {
+       if (isMountedRef.current) setBannerMsg(null);
+   }, 1500);
+  }, 6500); 
  }, [currentUser, firestore, playSound, userProfile]);
 
  const startSpin = useCallback(async () => {
   if (!isMountedRef.current) return;
   if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-  setBannerMsg('Betting Over'); setGameState('spinning'); playSound('spin');
-  bannerTimeoutRef.current = setTimeout(() => { if (isMountedRef.current) setBannerMsg(null); }, 1000);
-
-  const currentRoundId = Math.floor(Date.now() / 40000);
-  const seededRandom = (seed: number) => { const x = Math.sin(seed) * 10000; return x - Math.floor(x); };
-  let groupType: 'none' | 'left' | 'right' = 'none';
-  const chance = seededRandom(currentRoundId + 1);
-  if (chance < 0.025) groupType = 'left';
-  else if (chance < 0.05) groupType = 'right';
-  let winningId = ANIMALS[Math.floor(seededRandom(currentRoundId + 2) * ANIMALS.length)].id;
-
-  if (firestore) {
-   try {
-    const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
-    if (oracleSnap.exists() && oracleSnap.data().isActive) {
-     const forced = oracleSnap.data().forcedResult;
-     if (ANIMALS.some(a => a.id === forced)) { winningId = forced; groupType = 'none'; }
-     updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
-    }
-   } catch (e) {}
-  }
-
-  const targetIdx = ANIMALS.findIndex(a => a.id === winningId);
-  let currentStep = 0; const spins = 7; const totalSteps = (SEQUENCE.length * spins) + targetIdx; let speed = 40;
-  const runChase = () => {
-   if (!isMountedRef.current) return;
-   const activeIdx = currentStep % SEQUENCE.length; setHighlightIdx(activeIdx);
-   if (currentStep % 2 === 0) playSound('tick');
-   if (currentStep < totalSteps) {
-    const remaining = totalSteps - currentStep;
-    if (remaining < 25) speed += 20;
-    else if (remaining < 45) speed += 4;
-    currentStep++; chaseTimeoutRef.current = setTimeout(runChase, speed);
-   } else { playSound('stop'); chaseTimeoutRef.current = setTimeout(() => finalizeResult(winningId, groupType), 500); }
-  };
-  runChase();
- }, [firestore, playSound, finalizeResult]);
-
- useEffect(() => {
-    if (gameState === 'betting' && timeLeft === 0) startSpin();
- }, [timeLeft, gameState, startSpin]);
-
- const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
-  if (gameStateRef.current!== 'betting' ||!currentUser) return;
-  if (localCoins < selectedChip) { toast({ title: 'You do not have any Coins!', variant: 'destructive' }); return; }
-  playSound('bet');
-  const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
-  const newChip = { id: Date.now() + Math.random(), itemIdx: animal.index, label: chipInfo?.label || '10', bgColor: chipInfo?.bgColor || 'from-blue-400 to-cyan-500', color: chipInfo?.color || '#3b82f6', x: (Math.random() * 30) - 15, y: (Math.random() * 20) - 10 };
-  setDroppedChips(prev => [...prev, newChip]);
-  setLocalCoins(prev => prev - selectedChip);
-  if (firestore) { const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid); updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) }); }
-  setMyBets(prev => ({...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
- };
-
- const isWinningAnimal = (idx: number, itemId: string) => {
-    if (gameState === 'result') {
-        if (shiningGroup === 'left' && ['lion','tiger','fox','bear'].includes(itemId)) return true;
-        if (shiningGroup === 'right' && ['panda','rabbit','cow','dog'].includes(itemId)) return true;
-        return highlightIdx === idx;
-    }
-    return highlightIdx === idx;
- };
-
+  setBannerMsg('Betting Over');
+  setGameState('spinning');
+  playSound('spin'); 
+  bannerTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) setBannerMsg(null);
+  }, 1000);
+  
   // --- SYNC RESULT FOR ALL USERS WITHOUT BACKEND ---
   const currentRoundId = Math.floor(Date.now() / 40000);
   const seededRandom = (seed: number) => {
@@ -836,7 +840,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                                     <>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐰</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐻‍❄️</span>
-                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐼</span>
+                                        <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🦝</span>
                                         <span className="text-[6px] filter drop-shadow-sm leading-none text-center">🐔</span>
                                     </>
                                 )}
@@ -879,7 +883,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐰</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐼</span>
+                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🦝</span>
                 <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐔</span>
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'right' ? "text-yellow-200" : "text-white/90")}>Mix</span>
@@ -1158,4 +1162,3 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
-
