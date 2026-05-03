@@ -432,47 +432,129 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- NEW SHINESHU NEON FRAME COMPONENT ---
-const ShineshuFrame = ({ className }: { className?: string }) => (
+// --- NEW ARISE BUBBLE SVG COMPONENT ---
+const AriseBubbleSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <style>{`
-      .neon-ring-shineshu {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: transparent;
-        border: 2px solid #00d4ff;
-        position: absolute;
-        box-shadow: 
-          0 0 5px #00d4ff,
-          0 0 20px #00d4ff,
-          0 0 40px #00d4ff,
-          inset 0 0 5px #00d4ff,
-          inset 0 0 20px #00d4ff,
-          inset 0 0 40px rgba(0, 212, 255, 0.4);
-        animation: neonPulseShineshu 2.5s ease-in-out infinite;
-      }
-      .neon-ring-shineshu::before {
-        content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid #00d4ff; filter: blur(5px); opacity: 0.9; box-shadow: 0 0 20px #00d4ff, 0 0 40px #00d4ff;
-      }
-      .neon-ring-shineshu::after {
-        content: ''; position: absolute; inset: -15px; border-radius: 50%; border: 1px solid #00d4ff; filter: blur(18px); opacity: 0.5;
-      }
-      @keyframes neonPulseShineshu {
-        0%, 100% { filter: brightness(1); }
-        50% { 
-          filter: brightness(1.3);
-          box-shadow: 
-            0 0 8px #00d4ff,
-            0 0 30px #00d4ff,
-            0 0 60px #00d4ff,
-            0 0 80px rgba(0, 212, 255, 0.5),
-            inset 0 0 8px #00d4ff,
-            inset 0 0 30px #00d4ff;
-        }
-      }
-    `}</style>
-    <div className="neon-ring-shineshu" style={{ transform: 'scale(1.2)' }} />
+    <svg viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FF3B3B"/>
+          <stop offset="48%" stopColor="#D31212"/>
+          <stop offset="100%" stopColor="#8B0000"/>
+        </linearGradient>
+        <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#B8860B"/>
+          <stop offset="22%" stopColor="#FFD700"/>
+          <stop offset="48%" stopColor="#FFF4B3"/>
+          <stop offset="74%" stopColor="#D4AF37"/>
+          <stop offset="100%" stopColor="#8B6914"/>
+        </linearGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6"/>
+          <stop offset="30%" stopColor="#FFFFFF" stopOpacity="0.28"/>
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+        </linearGradient>
+        <filter id="outerShadow">
+          <feDropShadow dx="0" dy="16" stdDeviation="14" floodOpacity="0.34"/>
+        </filter>
+        <filter id="innerDepth">
+          <feOffset dy="5"/><feGaussianBlur stdDeviation="7"/>
+          <feComposite in2="SourceAlpha" operator="out"/>
+          <feFlood floodOpacity="0.38"/><feComposite operator="in"/>
+          <feComposite in="SourceGraphic" operator="over"/>
+        </filter>
+        <filter id="textGlow">
+          <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.5"/>
+          <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#FFD700" floodOpacity="0.65"/>
+        </filter>
+        <path id="bubbleShape" d="M180 30 H710 A50 50 0 0 1 760 80 V170 A50 50 0 0 1 710 220 H265 C235 220 200 240 185 260 C165 285 140 300 115 285 C140 275 170 245 165 225 H180 A50 50 0 0 1 130 170 V80 A50 50 0 0 1 180 30 Z"/>
+      </defs>
+
+      <g filter="url(#outerShadow)">
+        <use href="#bubbleShape" fill="url(#redFill)" stroke="url(#goldBorder)" strokeWidth="16"/>
+        <use href="#bubbleShape" fill="url(#redFill)" filter="url(#innerDepth)"/>
+      </g>
+
+      <ellipse cx="444" cy="68" rx="285" ry="72" fill="url(#gloss)"/>
+
+      <g fill="none" stroke="#5E3A05" strokeOpacity="0.58" strokeWidth="1.3">
+        <path d="M155 55 c-11 0 -18 7 -16 16 2 8 11 11 17 6"/>
+        <path d="M735 55 c11 0 18 7 16 16 -2 8 -11 11 -17 6"/>
+        <path d="M735 195 c11 0 18 -7 16 -16 -2 -8 -11 -11 -17 -6"/>
+        <path d="M235 195 c-11 0 -18 -7 -16 -16 2 -8 11 -11 17 -6"/>
+      </g>
+
+      <text x="444" y="147" textAnchor="middle" fontFamily="Georgia, serif" 
+            fontSize="70" fontStyle="italic" fontWeight="600" 
+            fill="#FFFFFF" filter="url(#textGlow)">Hey ummy</text>
+    </svg>
+  </div>
+);
+
+// --- NEW BLUE CB BUBBLE SVG COMPONENT ---
+const BlueCbBubbleSVG = ({ className }: { className?: string }) => (
+  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl">
+      <defs>
+        <linearGradient id="blueFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#00BFFF"/>
+          <stop offset="45%" stopColor="#1E90FF"/>
+          <stop offset="100%" stopColor="#003A8C"/>
+        </linearGradient>
+        <linearGradient id="goldBorderBlue" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#B8860B"/>
+          <stop offset="25%" stopColor="#FFD700"/>
+          <stop offset="50%" stopColor="#FFF4B3"/>
+          <stop offset="75%" stopColor="#FFD700"/>
+          <stop offset="100%" stopColor="#D4AF37"/>
+        </linearGradient>
+        <linearGradient id="glossBlue" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9"/>
+          <stop offset="35%" stopColor="#FFFFFF" stopOpacity="0.35"/>
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+        </linearGradient>
+        <filter id="outerBlue">
+          <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#00183a" floodOpacity="0.5"/>
+        </filter>
+        <filter id="innerDepthBlue">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+          <feOffset dy="4"/>
+          <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix type="matrix" values="0 0 0  0 0 0  0 0 0  0 0 0 0.45 0"/>
+          <feBlend in2="SourceGraphic" mode="multiply"/>
+        </filter>
+        <filter id="textGlowBlue">
+          <feGaussianBlur stdDeviation="3"/>
+          <feFlood floodColor="#FFD700" floodOpacity="0.75"/>
+          <feComposite operator="in" in2="SourceGraphic"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <path id="filigreeBlue" d="M0 0 C-14 1 -22 9 -20 18 C-18 25 -10 29 -2 27 C-8 28 -14 24 -15 17 C-16 11 -12 5 -6 4 M-8 7 C-13 9 -16 14 -14 19 M-4 11 C-7 12 -9 16 -7 19"/>
+      </defs>
+
+      <g filter="url(#outerBlue)">
+        <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" 
+              fill="url(#blueFill)" stroke="url(#goldBorderBlue)" strokeWidth="16" strokeLinejoin="round"/>
+      </g>
+      <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" 
+            fill="url(#blueFill)" filter="url(#innerDepthBlue)" opacity="0.9"/>
+
+      <ellipse cx="400" cy="65" rx="280" ry="70" fill="url(#glossBlue)"/>
+
+      <g fill="none" stroke="#7A5208" strokeOpacity="0.7" strokeWidth="1.4">
+        <use href="#filigreeBlue" transform="translate(155 55)"/>
+        <use href="#filigreeBlue" transform="translate(645 55) scale(-1 1)"/>
+        <use href="#filigreeBlue" transform="translate(645 175) scale(-1 -1)"/>
+        <use href="#filigreeBlue" transform="translate(155 175) scale(1 -1)"/>
+      </g>
+
+      <circle cx="385" cy="19" r="2.6" fill="#FFD700" fillOpacity="0.9"/>
+
+      <text x="400" y="128" textAnchor="middle" fontFamily="Georgia, serif" 
+            fontStyle="italic" fontSize="64" fill="#FFFFFF" filter="url(#textGlowBlue)">
+        Hey ummy
+      </text>
+    </svg>
   </div>
 );
 
@@ -547,22 +629,29 @@ export default function StorePage() {
       isCustomSVG: true
     });
 
-    // --- ADDED NEW SHINESHU FRAME HERE ---
-    frames.push({
-      id: 'f-shineshu',
-      name: 'Shineshu',
-      type: 'Frame',
-      price: 40000,
-      durationDays: 7,
-      description: 'Exclusive animated Shineshu neon frame.',
-      isCustomSVG: true
-    });
-
     return frames;
   }, []);
 
   const bubbleItems = useMemo(() => [
-    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble')
+    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
+    { 
+      id: 'b-arise', 
+      name: 'Arise', 
+      type: 'Bubble', 
+      price: 50999, 
+      durationDays: 7, 
+      description: 'Premium red glossy bubble with golden borders.', 
+      isCustomSVG: true 
+    },
+    {
+      id: 'b-blue-cb',
+      name: 'Blue Cb',
+      type: 'Bubble',
+      price: 49599,
+      durationDays: 7,
+      description: 'Premium blue glossy bubble with golden borders.',
+      isCustomSVG: true
+    }
   ], []);
 
   const waveItems = useMemo(() => [
@@ -570,27 +659,38 @@ export default function StorePage() {
   ], []);
 
   const idItems = useMemo(() => [
-    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
-    { id: 'id-189904', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
-    { id: 'id-122234', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 122234 Badge.', displayId: '122234', isSilver: true },
-    { id: 'id-189990', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189990 Badge.', displayId: '189990', isSilver: true },
-    { id: 'id-162972', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 162972 Badge.', displayId: '162972', isSilver: true },
-    { id: 'id-000222', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 000222 Badge.', displayId: '000222', isSilver: true },
-    { id: 'id-234555', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 234555 Badge.', displayId: '234555', isSilver: true },
-    { id: 'id-897633', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 897633 Badge.', displayId: '897633', isSilver: true },
-    { id: 'id-144672', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 144672 Badge.', displayId: '144672', isSilver: true },
-    { id: 'id-666892', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 666892 Badge.', displayId: '666892', isSilver: true },
-    { id: 'id-111263', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 111263 Badge.', displayId: '111263', isSilver: true },
-    { id: 'id-182910', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 182910 Badge.', displayId: '182910', isSilver: true },
-    { id: 'id-188889', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188889 Badge.', displayId: '188889', isSilver: true },
-    { id: 'id-105577', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 105577 Badge.', displayId: '105577', isSilver: true },
-    { id: 'id-977777', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 977777 Badge.', displayId: '977777', isSilver: true },
-    { id: 'id-233455', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 233455 Badge.', displayId: '233455', isSilver: true },
-    { id: 'id-778855', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 778855 Badge.', displayId: '778855', isSilver: true },
-    { id: 'id-982201', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 982201 Badge.', displayId: '982201', isSilver: true },
-    { id: 'id-721111', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 721111 Badge.', displayId: '721111', isSilver: true },
-    { id: 'id-188899', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188899 Badge.', displayId: '188899', isSilver: true },
-    { id: 'id-888882', name: 'Silver ID', type: 'ID', price: 130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 888882 Badge.', displayId: '888882', isSilver: true },
+    { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 3999999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
+    { id: 'id-779261', name: 'Pink ID', type: 'ID', price: 1099999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 779261 Badge.', displayId: '779261', isPinkDiamond: true },
+    { id: 'id-667788', name: 'Pink ID', type: 'ID', price: 2009999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667788 Badge.', displayId: '667788', isPinkDiamond: true },
+    { id: 'id-688992', name: 'Pink ID', type: 'ID', price: 7399999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 688992 Badge.', displayId: '688992', isPinkDiamond: true },
+    { id: 'id-779999', name: 'Pink ID', type: 'ID', price: 7099999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 779999 Badge.', displayId: '779999', isPinkDiamond: true },
+    { id: 'id-445500', name: 'Pink ID', type: 'ID', price: 6959999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 445500 Badge.', displayId: '445500', isPinkDiamond: true },
+    { id: 'id-113377', name: 'Pink ID', type: 'ID', price: 9020555, durationDays: 7, description: 'Exclusive Premium Pink ID Number 113377 Badge.', displayId: '113377', isPinkDiamond: true },
+    { id: 'id-117676', name: 'Pink ID', type: 'ID', price: 6089999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 117676 Badge.', displayId: '117676', isPinkDiamond: true },
+    { id: 'id-223434', name: 'Pink ID', type: 'ID', price: 7999877, durationDays: 7, description: 'Exclusive Premium Pink ID Number 223434 Badge.', displayId: '223434', isPinkDiamond: true },
+    { id: 'id-102020', name: 'Pink ID', type: 'ID', price: 2899999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 102020 Badge.', displayId: '102020', isPinkDiamond: true },
+    { id: 'id-800232', name: 'Pink ID', type: 'ID', price: 9750000, durationDays: 7, description: 'Exclusive Premium Pink ID Number 800232 Badge.', displayId: '800232', isPinkDiamond: true },
+    { id: 'id-675747', name: 'Pink ID', type: 'ID', price: 1000599, durationDays: 7, description: 'Exclusive Premium Pink ID Number 675747 Badge.', displayId: '675747', isPinkDiamond: true },
+    { id: 'id-189904', name: 'Silver ID', type: 'ID', price: 1500999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189904 Badge.', displayId: '189904', isSilver: true },
+    { id: 'id-122234', name: 'Silver ID', type: 'ID', price: 1990999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 122234 Badge.', displayId: '122234', isSilver: true },
+    { id: 'id-189990', name: 'Silver ID', type: 'ID', price: 9030999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 189990 Badge.', displayId: '189990', isSilver: true },
+    { id: 'id-162972', name: 'Silver ID', type: 'ID', price: 7130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 162972 Badge.', displayId: '162972', isSilver: true },
+    { id: 'id-000222', name: 'Silver ID', type: 'ID', price: 5130999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 000222 Badge.', displayId: '000222', isSilver: true },
+    { id: 'id-234555', name: 'Silver ID', type: 'ID', price: 9230999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 234555 Badge.', displayId: '234555', isSilver: true },
+    { id: 'id-897633', name: 'Silver ID', type: 'ID', price: 9930999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 897633 Badge.', displayId: '897633', isSilver: true },
+    { id: 'id-144672', name: 'Silver ID', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 144672 Badge.', displayId: '144672', isSilver: true },
+    { id: 'id-666892', name: 'Silver ID', type: 'ID', price: 9899999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 666892 Badge.', displayId: '666892', isSilver: true },
+    { id: 'id-111263', name: 'Silver ID', type: 'ID', price: 2099900, durationDays: 7, description: 'Exclusive Premium Silver ID Number 111263 Badge.', displayId: '111263', isSilver: true },
+    { id: 'id-182910', name: 'Silver ID', type: 'ID', price: 3999999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 182910 Badge.', displayId: '182910', isSilver: true },
+    { id: 'id-188889', name: 'Silver ID', type: 'ID', price: 4555990, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188889 Badge.', displayId: '188889', isSilver: true },
+    { id: 'id-105577', name: 'Silver ID', type: 'ID', price: 3057999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 105577 Badge.', displayId: '105577', isSilver: true },
+    { id: 'id-977777', name: 'Silver ID', type: 'ID', price: 1059999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 977777 Badge.', displayId: '977777', isSilver: true },
+    { id: 'id-233455', name: 'Silver ID', type: 'ID', price: 7089999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 233455 Badge.', displayId: '233455', isSilver: true },
+    { id: 'id-778855', name: 'Silver ID', type: 'ID', price: 8999999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 778855 Badge.', displayId: '778855', isSilver: true },
+    { id: 'id-982201', name: 'Silver ID', type: 'ID', price: 6999999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 982201 Badge.', displayId: '982201', isSilver: true },
+    { id: 'id-721111', name: 'Silver ID', type: 'ID', price: 1399999, durationDays: 7, description: 'Exclusive Premium Silver ID Number 721111 Badge.', displayId: '721111', isSilver: true },
+    { id: 'id-188899', name: 'Silver ID', type: 'ID', price: 1359998, durationDays: 7, description: 'Exclusive Premium Silver ID Number 188899 Badge.', displayId: '188899', isSilver: true },
+    { id: 'id-888882', name: 'Silver ID', type: 'ID', price: 8888000, durationDays: 7, description: 'Exclusive Premium Silver ID Number 888882 Badge.', displayId: '888882', isSilver: true },
     { id: 'id-888888', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 888888 Badge.', displayId: '888888', variant: 'red' },
     { id: 'id-666666', name: 'sss', type: 'ID', price: 9999999, durationDays: 7, description: 'Exclusive VIP ID Number 666666 Badge.', displayId: '666666', variant: 'red' },
     { id: 'id-676767', name: 'sss', type: 'ID', price: 6999999, durationDays: 7, description: 'Exclusive VIP ID Number 676767 Badge.', displayId: '676767', variant: 'red' },
@@ -710,8 +810,6 @@ export default function StorePage() {
                               </Avatar>
                               {item.id === 'f-kitti' ? (
                                 <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
-                              ) : item.id === 'f-shineshu' ? (
-                                <ShineshuFrame className="absolute inset-0 z-10 w-full h-full scale-[1.4]" />
                               ) : (
                                 <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                               )}
@@ -726,7 +824,17 @@ export default function StorePage() {
                           )}
                         </div>
                       ) : item.type === 'Bubble' ? (
-                        <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
+                        item.isCustomSVG && item.id === 'b-arise' ? (
+                          <div className="w-[120px]">
+                            <AriseBubbleSVG />
+                          </div>
+                        ) : item.isCustomSVG && item.id === 'b-blue-cb' ? (
+                          <div className="w-[120px]">
+                            <BlueCbBubbleSVG />
+                          </div>
+                        ) : (
+                          <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
+                        )
                       ) : item.type === 'Theme' ? (
                         <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
                       ) : item.type === 'Wave' ? (
@@ -776,8 +884,6 @@ export default function StorePage() {
                         </Avatar>
                         {previewItem.id === 'f-kitti' ? (
                           <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
-                        ) : previewItem.id === 'f-shineshu' ? (
-                          <ShineshuFrame className="absolute inset-0 z-10 w-full h-full scale-[1.4]" />
                         ) : (
                           <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                         )}
@@ -791,7 +897,17 @@ export default function StorePage() {
                       </AvatarFrame>
                     )
                   ) : previewItem.type === 'Bubble' ? (
-                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
+                    previewItem.isCustomSVG && previewItem.id === 'b-arise' ? (
+                      <div className="w-[200px]">
+                        <AriseBubbleSVG />
+                      </div>
+                    ) : previewItem.isCustomSVG && previewItem.id === 'b-blue-cb' ? (
+                      <div className="w-[200px]">
+                        <BlueCbBubbleSVG />
+                      </div>
+                    ) : (
+                      <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
+                    )
                   ) : previewItem.type === 'Theme' ? (
                     <Palette className={cn("h-16 w-16 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
