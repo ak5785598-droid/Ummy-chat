@@ -214,13 +214,13 @@ export function SellerTransferDialog() {
     </button>
    </DialogTrigger>
    
-   {/* 50vh Square Bottom Sheet Styling */}
-   <DialogContent className="sm:max-w-[425px] !rounded-none !mb-0 !bottom-0 !absolute !translate-y-0 !top-auto h-[50vh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden data-[state=open]:animate-in slide-in-from-bottom-full duration-300">
+   {/* Sirf yaha fixed aur max-h-[85dvh] lgaya hai taaki keyboard aane par ui upar push ho jaye */}
+   <DialogContent className="sm:max-w-[425px] !rounded-none !mb-0 !bottom-0 !fixed !translate-y-0 !top-auto h-[50vh] max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden data-[state=open]:animate-in slide-in-from-bottom-full duration-300 z-[100]">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
-     {/* 1st Row: Top Header (Reduced Height) */}
-     <div className="h-[8vh] min-h-[45px] bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
-      <h2 className="font-sans text-lg font-bold uppercase tracking-widest">Offline Recharge</h2>
+     {/* 1st Row: Top Header - PURPLE MIXED WITH WHITE GRADIENT HERE */}
+     <div className="h-[8vh] min-h-[45px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
+      <h2 className="font-sans text-lg font-bold uppercase tracking-widest drop-shadow-md">Offline Recharge</h2>
      </div>
 
      {/* Scrollable Container with Tighter Gaps */}
