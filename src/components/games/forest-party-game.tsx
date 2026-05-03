@@ -246,8 +246,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
  
- const [droppedChips, setDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
- const [fakeDroppedChips, setFakeDroppedChips] = useState<{id: number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number, delay: number}[]>([]);
+ const [droppedChips, setDroppedChips] = useState<{id: string | number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
+ const [processedBetIds, setProcessedBetIds] = useState<Set<string>>(new Set());
  
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
@@ -272,11 +272,24 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  }, [firestore]);
   
  const { data: liveWins } = useCollection(winnersQuery);
+
+ // GLOBAL BETS LISTENER FOR LIVE CHIPS
+ const currentRoundIdForQuery = Math.floor(Date.now() / 40000);
+ const liveBetsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'globalBets'),
+      where('gameId', '==', 'forest-party'),
+      where('roundId', '==', currentRoundIdForQuery)
+    );
+ }, [firestore, gameState]); 
+ const { data: liveBets } = useCollection(liveBetsQuery);
   
  const winnersList = useMemo(() => {
     const currentRoundId = Math.floor(Date.now() / 40000);
-    const allWins = [...(liveWins || [])];
+    const allWins = liveWins ? [...liveWins] : [];
 
+    // Local win instant feedback
     if (winnerData && winnerData.win > 0 && currentUser) {
         const localWinExists = allWins.some(w => w.userId === currentUser.uid && w.roundId === currentRoundId);
         if (!localWinExists) {
@@ -291,19 +304,21 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         }
     }
 
+    // SIMPLIFIED & SOLID WINNER LOGIC
     const currentRoundWins = allWins.filter(win => win.roundId === currentRoundId);
-    const sortedByAmount = [...currentRoundWins].sort((a, b) => b.amount - a.amount);
+    currentRoundWins.sort((a, b) => b.amount - a.amount);
+
     const uniqueTopWinners: any[] = [];
     const seenUsers = new Set();
 
-    for (const win of sortedByAmount) {
+    for (const win of currentRoundWins) {
       if (!seenUsers.has(win.userId)) {
          seenUsers.add(win.userId);
          uniqueTopWinners.push({
            name: win.username,
            win: win.amount,
            avatar: win.avatarUrl,
-           bet: Math.floor(win.amount / 5), 
+           bet: Math.floor(win.amount / 5), // Basic fallback if pure bet isn't synced
            isMe: win.userId === currentUser?.uid
          });
          if (uniqueTopWinners.length === 3) break;
@@ -367,7 +382,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
          return x - Math.floor(x);
      };
 
-     // Calculate exactly what the LAST global round was
      const lastRoundId = currentRoundId - 1;
      let globalGroupType: 'none' | 'left' | 'right' = 'none';
      const chance = seededRandom(lastRoundId + 1);
@@ -376,13 +390,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      
      const globalWinningId = ANIMALS[Math.floor(seededRandom(lastRoundId + 2) * ANIMALS.length)].id;
      
-     // DEBUGGED & OPTIMIZED: Initialize array with EXACTLY 4 items.
-     // 1st is the REAL global winner, baaki 3 dummy hai as requested.
      const initialHistory = [
          { id: globalWinningId, type: globalGroupType },
-         { id: 'tiger', type: 'single' as const },  // Dummy 1
-         { id: 'bear', type: 'single' as const },   // Dummy 2
-         { id: 'rabbit', type: 'single' as const }  // Dummy 3
+         { id: 'tiger', type: 'single' as const }, 
+         { id: 'bear', type: 'single' as const },  
+         { id: 'rabbit', type: 'single' as const } 
      ];
      setHistory(initialHistory);
 
@@ -397,34 +409,38 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    }
  }, []);
 
+ // EFFECT TO DROP REAL-TIME GLOBAL CHIPS
  useEffect(() => {
-    if (gameState !== 'betting') return;
-    const interval = setInterval(() => {
-        if (!isMountedRef.current) return;
-        if (Math.random() > 0.2) { 
-            const dropCount = Math.floor(Math.random() * 6) + 10; 
-            const newFakeChips = [];
-            const baseTime = Date.now();
-            for (let i = 0; i < dropCount; i++) {
-                const randomAnimalIdx = Math.floor(Math.random() * ANIMALS.length);
-                const chipOptions = [0, 0, 0, 1, 1, 2, 3, 4, 5];
-                const randomChip = CHIPS_DATA[chipOptions[Math.floor(Math.random() * chipOptions.length)]] || CHIPS_DATA[0];
-                newFakeChips.push({
-                    id: baseTime + i,
-                    itemIdx: randomAnimalIdx,
-                    label: randomChip.label,
-                    bgColor: randomChip.bgColor,
-                    color: randomChip.color,
-                    x: (Math.random() * 40) - 20,
-                    y: (Math.random() * 30) - 15,
-                    delay: Math.random() * 0.8 
-                });
+    if (gameState === 'betting' && liveBets) {
+        let newChips: any[] = [];
+        let newProcessed = new Set(processedBetIds);
+
+        liveBets.forEach((bet: any) => {
+            if (bet.userId !== currentUser?.uid && !newProcessed.has(bet.id)) {
+                const chipInfo = CHIPS_DATA.find(c => c.value === bet.amount) || CHIPS_DATA[0];
+                const animalIdx = ANIMALS.findIndex(a => a.id === bet.animalId);
+                
+                if (animalIdx !== -1) {
+                    newChips.push({
+                        id: bet.id,
+                        itemIdx: animalIdx,
+                        label: chipInfo.label,
+                        bgColor: chipInfo.bgColor,
+                        color: chipInfo.color,
+                        x: (Math.random() * 30) - 15,
+                        y: (Math.random() * 20) - 10
+                    });
+                }
+                newProcessed.add(bet.id);
             }
-            setFakeDroppedChips(prev => [...prev.slice(-30), ...newFakeChips]);
+        });
+
+        if (newChips.length > 0) {
+            setDroppedChips(prev => [...prev, ...newChips]);
+            setProcessedBetIds(newProcessed);
         }
-    }, 2000); 
-    return () => clearInterval(interval);
- }, [gameState]);
+    }
+ }, [liveBets, gameState, currentUser?.uid]);
 
  useEffect(() => {
    if (typeof window !== 'undefined') {
@@ -455,7 +471,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const finalizeResult = useCallback((id: string, groupType: 'none' | 'left' | 'right') => {
   if (!isMountedRef.current) return;
   setDroppedChips([]);
-  setFakeDroppedChips([]);
   let winningIds = [id];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
@@ -498,7 +513,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   
   const historyItem = { id: id, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
   
-  // OPTIMIZED: limits history to 20 to avoid memory leak while keeping UI correct
   setHistory(prev => [historyItem, ...prev].slice(0, 20)); 
 
   let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
@@ -549,6 +563,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               setMyBets({});
               setHighlightIdx(null);
               setShiningGroup('none');
+              setProcessedBetIds(new Set()); 
           }
           const newTimeLeft = Math.ceil((BET_DUR - elapsed) / 1000);
           setTimeLeft(prev => prev !== newTimeLeft ? newTimeLeft : prev);
@@ -562,14 +577,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           const newTimeLeft = Math.ceil((BET_DUR + SPIN_DUR - elapsed) / 1000);
           setTimeLeft(prev => prev !== newTimeLeft ? newTimeLeft : prev);
           
+          // SMOOTH SPINNING LOGIC (No Random Glitches)
           const spinElapsed = elapsed - BET_DUR;
-          const ticks = Math.floor(spinElapsed / 120);
+          const ticks = Math.floor(spinElapsed / 100); 
           
-          const spinSeed = currentRoundId * 10000 + ticks;
-          const r = Math.sin(spinSeed) * 10000;
-          const randomFraction = r - Math.floor(r);
+          const totalTicksSpinning = Math.floor(SPIN_DUR / 120); 
+          const endSeed = currentRoundId * 10000 + totalTicksSpinning;
+          const rEnd = Math.sin(endSeed) * 10000;
+          const predictedWinIdx = Math.floor((rEnd - Math.floor(rEnd)) * 8);
           
-          const newHighlight = Math.floor(randomFraction * 8);
+          const totalSteps = Math.floor(SPIN_DUR / 100); 
+          const startOffset = (predictedWinIdx - (totalSteps % 8) + 8) % 8;
+          
+          const newHighlight = (startOffset + ticks) % 8;
+          
           setHighlightIdx(prev => prev !== newHighlight ? newHighlight : prev);
       } 
       else {
@@ -644,6 +665,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   if (firestore) {
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+
+    const currentRoundId = Math.floor(Date.now() / 40000);
+    addDocumentNonBlocking(collection(firestore, 'globalBets'), {
+        gameId: 'forest-party',
+        roundId: currentRoundId,
+        userId: currentUser.uid,
+        animalId: animal.id,
+        amount: selectedChip,
+        timestamp: serverTimestamp()
+    });
   }
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
  };
@@ -735,7 +766,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                           setActiveWinnerIdx(p.idx);
                           if(p.rank === 1) navigator.vibrate?.(30);
                         }}
-                        style={{ opacity: p.data ? 1 : 0.4, transform: 'translateZ(0)', willChange: 'transform' }}
+                        style={{ opacity: 1, transform: 'translateZ(0)', willChange: 'transform' }}
                       >
                         <div className="tw-ring-container relative flex items-center justify-center">
                           {p.rank === 1 && <>
@@ -838,34 +869,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               {history.map((h, i) => {
                   const animal = ANIMALS.find(a => a.id === h.id);
                   return (
-                    <div key={i} className="flex flex-col items-center gap-1 shrink-0">
-                      {h.type === 'single' ? (
-                        <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
-                           <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
-                           <span className="text-base z-10 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
-                        </div>
-                      ) : (
-                        <div className="relative w-7 h-7 rounded-full flex flex-col items-center justify-center bg-gradient-to-b from-[#8b4513] to-[#3a1c0d] border border-[#eebb99] overflow-hidden shadow-[0_2px_5px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.4)]">
-                            <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-full pointer-events-none z-20" />
-                            <div className="grid grid-cols-2 place-items-center w-full h-full p-0.5 z-10">
-                                {h.type === 'left' ? (
-                                    <>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🦁</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐯</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🦊</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐻</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐰</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐻‍❄️</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐼</span>
-                                        <span className="text-[8px] filter drop-shadow-sm leading-none">🐔</span>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                      )}
+                    <div key={`${h.id}-${i}`} className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
+                         <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
+                         <span className="text-base z-10 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
+                      </div>
                     </div>
                   )
               })}
@@ -975,14 +983,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                             </div>
                         </motion.div>
                     ))}
-                    {fakeDroppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 2, y: -80 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} exit={{ opacity: 0 }} transition={{ delay: chip.delay, duration: 0.3 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_4px_8px_rgba(0,0,0,0.5)] z-30 pointer-events-none overflow-hidden" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '2.5px', width: '22px', height: '22px', transform: 'translate3d(0,0,0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
-                            <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full z-50" />
-                            <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/30 shadow-inner relative", `bg-gradient-to-br ${chip.bgColor}`)}>
-                                <span className="text-[5.5px] font-bold text-white/95 z-40">{chip.label}</span>
-                            </div>
-                        </motion.div>
-                    ))}
                 </AnimatePresence>
                 {myBets[item.id] > 0 && (
                     <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-[#4a2511] text-[8px] font-black px-2.5 py-[2px] rounded-sm border border-white z-[60] shadow-md whitespace-nowrap tracking-tight">
@@ -1032,9 +1032,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                       "Select a Chip and Choose your animal", 
                       "If you win you will get Coins amount (Bet × multiplier)", 
                       "45× gives you the highest Coins Amount", 
-                      "If you lose you will not receive any coins amount", 
-                      "if Right mix Shine, all 10,15,25,45 time will be a winner", 
-                      "if Left Mix card will shine, all 5time will be winner", 
+                      "If you lose you will not receive any coins amount"
                     ].map((rule, i) => (
                         <div key={i} className="flex gap-3 items-start group">
                             <span className="bg-zinc-800 border border-white/10 text-yellow-500 text-[10px] font-black h-5 w-5 rounded-md flex items-center justify-center shrink-0 shadow-lg">{i+1}</span>
@@ -1109,7 +1107,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         @keyframes coinSpin { to { transform: rotateY(360deg) } }
         .tw-stat-value { color: #fff; font-variant-numeric: tabular-nums; }
         
-        /* 🔥 Yahan par transform translateY(-12px) kiya hai "Top Winner" ko upar uthane ke liye 🔥 */
         .tw-divider { height: 17%; display: flex; align-items: center; justify-content: center; position: relative; margin: 0 0 .4vh 0; z-index: 2; transform: translateY(-12px) translateZ(0); }
         .tw-divider-line {
           position: absolute; width: 29%; height: 2px; top: 50%;
@@ -1185,3 +1182,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
