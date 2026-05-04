@@ -68,8 +68,8 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 const SVGA_OfficialTag = () => (
   // Moved a little bit left side using -ml-0.5
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_4px_rgba(0,82,204,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/50 to-transparent rounded-sm blur-[0.5px]" />
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
     </svg>
@@ -78,11 +78,8 @@ const SVGA_OfficialTag = () => (
 );
 
 const SVGA_SellerTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_4px_rgba(255,149,0,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
-    {/* Top Glossy Reflection */}
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
-
-    {/* Red Money Bag (Image 2) */}
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
         <defs>
@@ -97,8 +94,6 @@ const SVGA_SellerTag = () => (
         <ellipse cx="14" cy="22" rx="3" ry="1.5" fill="white" fillOpacity="0.4" transform="rotate(-20 14 22)" />
       </svg>
     </div>
-
-    {/* Seller Text */}
     <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
       Seller
     </span>
@@ -107,11 +102,8 @@ const SVGA_SellerTag = () => (
 
 // --- NEW SERVICE TAG WITH IMAGE ICON ---
 const SVGA_ServiceTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#17CFB8] via-[#10B9A4] to-[#0D9482] shadow-[0_2px_4px_rgba(23,207,184,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2 border border-[#A7FFF1] ml-1 overflow-hidden">
-    {/* Top Glossy Reflection */}
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
-
-    {/* Cyan Smile Chat Bubble (Based on Image) */}
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#17CFB8] via-[#10B9A4] to-[#0D9482] shadow-[0_2px_8px_rgba(23,207,184,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#A7FFF1] ml-1 overflow-hidden">
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
         <defs>
@@ -121,12 +113,9 @@ const SVGA_ServiceTag = () => (
           </linearGradient>
         </defs>
         <path d="M20 6 C12.27 6 6 12.27 6 20 C6 23.5 7.3 26.7 9.4 29.2 C9.8 29.7 9.9 30.4 9.7 31.0 L8.5 34.5 L12.2 33.6 C12.8 33.4 13.5 33.6 14.1 33.9 C15.9 34.9 17.9 35.5 20 35.5 C27.73 35.5 34 29.23 34 21.5 C34 13.77 27.73 6 20 6 Z" fill="url(#tealBubble)" />
-        {/* White Smile Line */}
         <path d="M 13 21 Q 20 27 27 21" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
       </svg>
     </div>
-
-    {/* Service Text */}
     <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
       Service
     </span>
@@ -135,11 +124,8 @@ const SVGA_ServiceTag = () => (
 
 // --- NEW HOST TAG WITH BALLOONS IMAGE ICON ---
 const SVGA_HostTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#B57AFF] via-[#9E60FA] to-[#803AF5] shadow-[0_2px_4px_rgba(158,96,250,0.4),inset_0_1px_2px_rgba(255,255,255,0.8)] px-2 border border-[#E0C6FF] ml-1 overflow-hidden">
-    {/* Top Glossy Reflection */}
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/80 to-transparent rounded-full blur-[0.5px]" />
-
-    {/* Purple/Blue Balloons Icon (Based on uploaded Image) */}
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#B57AFF] via-[#9E60FA] to-[#803AF5] shadow-[0_2px_8px_rgba(158,96,250,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#E0C6FF] ml-1 overflow-hidden">
+    <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
         <defs>
@@ -148,32 +134,24 @@ const SVGA_HostTag = () => (
             <stop offset="100%" stopColor="#7C3AED" />
           </linearGradient>
         </defs>
-        {/* Balloon Strings */}
         <path d="M 24 24 Q 24 30 22 34" fill="none" stroke="#D8B4FE" strokeWidth="2" strokeLinecap="round" />
         <path d="M 16 26 Q 16 32 18 36" fill="none" stroke="#D8B4FE" strokeWidth="2.5" strokeLinecap="round" />
-
-        {/* Right smaller balloon */}
         <circle cx="26" cy="18" r="8" fill="url(#balloonGrad)" />
-        {/* Left larger balloon */}
         <circle cx="15" cy="16" r="10" fill="url(#balloonGrad)" />
-
-        {/* Glossy highlight on left balloon */}
         <path d="M 9 13 Q 12 8 16 10" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
       </svg>
     </div>
-
-    {/* Host Text */}
     <span className="relative z-10 text-[9px] font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
       Host
     </span>
   </div>
 );
 
-// --- NEW 3D GLOSSY VIP BANNER COMPONENT ---
+// --- NEW 3D GLOSSY VIP BANNER COMPONENT (Refined for clarity)---
 const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="relative w-full h-[75px] rounded-[22px] overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-300 shadow-lg group mt-3 flex items-center px-4"
+    className="relative w-full h-[75px] rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 shadow-lg group mt-3 flex items-center px-4"
     style={{
       background: 'linear-gradient(90deg, #02C697 0%, #2087D6 50%, #9C3FE4 100%)',
     }}
@@ -250,10 +228,8 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   const idNum = label? label.replace('ID: ', '').trim() : '000000';
 
   return (
-    // Moved slightly more left side with ml-1 instead of ml-2
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_4px_rgba(0,0,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
+    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
 
-      {/* Left 3D Jewel Badge (ID + S) */}
       <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
         <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
@@ -286,33 +262,24 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
             </filter>
           </defs>
 
-          {/* Base Hexagon Gold Frame */}
           <path d="M30 4 L54 18 L54 42 L30 56 L6 42 L6 18 Z" fill="url(#goldFrame)" />
-
-          {/* Inner Purple Gem */}
           <path d="M30 8 L50 20 L50 40 L30 52 L10 40 L10 20 Z" fill="url(#purpleGem)" />
-          <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" /> {/* Top facet highlight */}
+          <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" />
 
-          {/* ID Text */}
           <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>ID</text>
 
-          {/* Bottom Gold Flourish for 'S' */}
           <path d="M18 45 C 24 58, 36 58, 42 45 C 36 52, 24 52, 18 45 Z" fill="url(#goldFrame)" />
           <path d="M22 43 L38 43 L34 54 L26 54 Z" fill="url(#goldFrame)" />
 
-          {/* 'S' Character */}
           <text x="30" y="52" fontFamily="sans-serif" fontWeight="900" fontSize="13" fill="url(#goldS)" textAnchor="middle" style={{ textShadow: '0px 1px 2px rgba(0,0,0,0.5)' }}>S</text>
 
-          {/* Sparkles */}
           <path d="M 45 10 Q 48 10 48 7 Q 48 10 51 10 Q 48 10 48 13 Q 48 10 45 10 Z" fill="white" filter="url(#glow)"/>
           <path d="M 12 38 Q 14 38 14 36 Q 14 38 16 38 Q 14 38 14 40 Q 14 38 12 38 Z" fill="white" filter="url(#glow)"/>
         </svg>
       </div>
 
-      {/* Top Glossy Reflection for Main Pill */}
       <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
 
-      {/* ID Number Text */}
       <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {idNum}
       </span>
@@ -323,7 +290,7 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
 // --- UPDATED SVGA COMPONENTS WITH INCREASED SIZES (H-11 W-11) ---
 
 const SVGA_GoldDollar = () => (
-  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_4px_rgba(0,0,0,0.2)]">
+  <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
     <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
     <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
@@ -635,10 +602,10 @@ const formatCompactNumber = (num: number) => {
 };
 
 const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-slate-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0 grayscale">
+  <div className="flex items-center gap-1 bg-gradient-to-br from-amber-400 to-amber-600 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
     <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <StarIcon className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.0</span>
+    <StarIcon className="h-2.5 w-2.5 fill-white text-white" />
+    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
   </div>
 );
 
@@ -647,10 +614,10 @@ const StarIcon = ({ className }: { className?: string }) => (
 );
 
 const CharmLevelBadge = ({ level, className }: { level: number, className?: string }) => (
-  <div className={cn("flex items-center gap-1 bg-slate-400 pl-1 pr-2 py-0.5 rounded-full border border-white/20 shadow-sm relative overflow-hidden shrink-0 grayscale", className)}>
+  <div className={cn("flex items-center gap-1 bg-gradient-to-br from-pink-400 to-rose-500 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0", className)}>
     <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <Sparkles className="h-2 w-2 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none">Lv.0</span>
+    <Sparkles className="h-2.5 w-2.5 fill-white text-white" />
+    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
   </div>
 );
 
@@ -678,29 +645,29 @@ const GenderAgeTag = ({ gender, birthday }: { gender: string | null | undefined,
 };
 
 const StatItem = ({ label, value, onClick }: { label: string, value: number, onClick?: () => void }) => (
-  <button onClick={onClick} className="flex flex-col items-center justify-center py-1 active:scale-95 transition-transform min-w-[60px]">
-    <span className="text-[20px] font-outfit font-semibold text-slate-900 leading-none mb-1">{formatCompactNumber(value)}</span>
-    <span className="text-[9px] font-outfit font-black text-slate-400 tracking-wider uppercase">{label}</span>
+  <button onClick={onClick} className="flex flex-col items-center justify-center py-1 active:scale-95 transition-transform min-w-[60px] group">
+    <span className="text-[20px] font-semibold text-slate-800 leading-none mb-1 group-hover:text-slate-900 transition">{formatCompactNumber(value)}</span>
+    <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase group-hover:text-slate-500">{label}</span>
   </button>
 );
 
 const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomIcon }: { icon?: any, label: string, iconColor?: string, onClick: () => void, customIcon?: any }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
-    <div className="flex items-center justify-center py-1">
+    <div className="flex items-center justify-center p-1 bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/80 group-hover:shadow-md transition-all">
       {CustomIcon? (
-        <CustomIcon className="transition-all group-hover:scale-110" />
+        <CustomIcon className="transition-all group-hover:scale-105" />
       ) : (
-        <Icon className={cn("h-7 w-7 transition-all group-hover:scale-110", iconColor)} />
+        <Icon className={cn("h-7 w-7 transition-all group-hover:scale-105", iconColor)} />
       )}
     </div>
-    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700">{label}</span>
   </button>
 );
 
 const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor, customIcon: CustomIcon }: { icon?: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string, customIcon?: any }) => (
-  <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group">
+  <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/80 active:bg-slate-100/50 transition-all text-left group border-b border-slate-50 last:border-0">
     <div className="flex items-center gap-4">
-      <div className={cn("p-1.5 rounded-xl transition-colors shrink-0", iconColor || "bg-slate-100 text-slate-400")}>
+      <div className={cn("p-1.5 rounded-xl transition-colors shrink-0", iconColor || "bg-slate-100 text-slate-500 group-hover:scale-105")}>
         {CustomIcon? <CustomIcon /> : <Icon className="h-6 w-6" />}
       </div>
       <span className={cn("font-medium text-[16px]", destructive? "text-red-500" : "text-[#1F2937]")}>{label}</span>
@@ -932,13 +899,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
-        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#b28dff]/80 via-purple-100 to-white z-0 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#d9c9ff] via-purple-50/60 to-white z-0 pointer-events-none" />
 
         <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-10 pb-0">
           <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
-                 <button className="h-10 w-10 bg-slate-100/50 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-sm border border-slate-200"><Pencil className="h-4 w-4 text-slate-600" /></button>
+                 <button className="h-10 w-10 bg-white/80 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-md border border-slate-200/80 hover:shadow-lg"><Pencil className="h-4 w-4 text-slate-600" /></button>
                }/>
              )}
           </div>
@@ -950,7 +917,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
                 <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <Avatar className="h-[100px] w-[100px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-100">
+                  <Avatar className="h-[100px] w-[100px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                     <AvatarImage src={profile.avatarUrl} className="object-cover" />
                     <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -958,7 +925,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h2 className="text-[22px] font-bold text-slate-900 tracking-tighter leading-none truncate">{profile.username}</h2>
+                  <h2 className="text-[22px] font-bold text-slate-800 tracking-tighter leading-none truncate">{profile.username}</h2>
                   <span className="text-lg">🇮🇳</span>
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                 </div>
@@ -970,7 +937,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                         label={`ID: ${displayID}`}
                       />
                     ) : (
-                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md ml-2">
+                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-2 backdrop-blur-sm">
                         ID: {displayID}
                       </span>
                     )}
@@ -978,10 +945,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 </div>
 
                 {/* --- MODIFIED ID SECTION HERE --- */}
-                {/* mt-1.5 and -ml-0.5 to move it a bit down and left */}
                 <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
                   <RichLevelBadge level={profile.level?.rich || 1} />
-                  {/* Added -ml-1 to Charm Badge to move slightly left */}
                   <CharmLevelBadge level={profile.level?.charm || 1} className="-ml-1" />
 
                   {/* Calling New SVGA Tags Here */}
@@ -996,7 +961,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Stats */}
-            <div className="flex justify-start gap-8 items-center py-2 px-1 border-b border-slate-50 mb-4 mt-[-5px] pl-1">
+            <div className="flex justify-start gap-8 items-center py-2 px-1 border-b border-slate-100 mb-4 mt-[-5px] pl-1">
               <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
               <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
               <StatItem label="Friends" value={stats.friends} onClick={() => { setSocialTab('friends'); setSocialOpen(true); }} />
@@ -1005,9 +970,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
             {/* Wallet Section */}
             {isOwnProfile && (
-              <div className="grid grid-cols-2 gap-2 mt-2 -mx-2">
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_10px_20px_rgba(253,185,49,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
+              <div className="grid grid-cols-2 gap-3 mt-2 -mx-2">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_8px_20px_rgba(253,185,49,0.25)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden backdrop-blur-sm">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <SVGA_GoldDollar />
                     <span className="text-[10px] font-black text-[#5C4000] uppercase tracking-widest opacity-90">Coins</span>
@@ -1017,7 +982,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   </p>
                 </div>
 
-                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-2xl p-4 shadow-[0_10px_20px_rgba(58,123,213,0.3)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
+                <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#00D2FF] via-[#3a7bd5] to-[#004e92] rounded-2xl p-4 shadow-[0_8px_20px_rgba(58,123,213,0.25)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 skew-x-[-20deg] translate-x-[-100%] group-hover:animate-shine" />
                   <div className="flex items-center gap-2 relative z-10">
                     <div className="h-7 w-7 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-[14px]">💎</div>
@@ -1044,8 +1009,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             </div>
 
             {/* Main Menu List */}
-            <div className="space-y-2 pt-6 pb-32">
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="space-y-3 pt-6 pb-32">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem
                   customIcon={SVGA_InviteHeart}
                   label="Invite friends"
@@ -1099,7 +1064,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
 
               {/* Settings Section */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem
                   customIcon={SVGA_Settings}
                   label="Settings"
@@ -1132,5 +1097,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
-
+      }
