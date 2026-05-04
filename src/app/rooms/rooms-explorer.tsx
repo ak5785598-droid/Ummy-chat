@@ -209,11 +209,11 @@ function RoomsExplorerClassic() {
   // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
   return (
-    <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
+    <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white relative">
       <ThemeColorMeta color="#8b5cf6" />
       
-      {/* CLEANER PURPLE GRADIENT BACKGROUND - SMOOTHER TRANSITION */}
-      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-br from-violet-500/10 via-fuchsia-50/40 to-transparent z-0 pointer-events-none" />
+      {/* 30Vh PURPLE GRADIENT BACKGROUND MIXING IN WHITE */}
+      <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-purple-600/80 via-purple-300/40 to-transparent z-0 pointer-events-none" />
 
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
@@ -503,37 +503,31 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* NEW: IMAGE JAISA PURPLE FLOATING CALENDAR BUTTON (Slightly above bottom tab on the right) */}
+      {/* GLOSSY 3D CALENDAR BUTTON - (Ek Sparkle Hata Diya) */}
       {isHydrated && (
         <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
           <button 
-            onClick={() => setShowRewardsModal(true)} // <-- Yahan state true kiya
-            className="relative bg-gradient-to-br from-purple-400 to-purple-600 p-3.5 rounded-[1.2rem] shadow-[0_8px_20px_rgba(168,85,247,0.4)] border border-white/30 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+            onClick={() => setShowRewardsModal(true)}
+            className="relative bg-gradient-to-b from-purple-400 via-purple-500 to-purple-700 p-3.5 rounded-[1.2rem] shadow-[0_10px_20px_rgba(168,85,247,0.5),inset_0_2px_4px_rgba(255,255,255,0.7),inset_0_-4px_6px_rgba(0,0,0,0.3)] border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
           >
-            {/* Image ki tarah Sparkles effect */}
-            <Sparkles className="absolute -top-1 -left-1 h-5 w-5 text-white/90 animate-pulse drop-shadow-sm" fill="currentColor" />
-            <Sparkles className="absolute top-4 -left-2 h-3 w-3 text-white/70" fill="currentColor" />
+            {/* Glossy top highlight for 3D effect */}
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/25 rounded-t-[1.2rem] pointer-events-none" />
+
+            {/* Bss ek sparkle rakha hai jaisa bola tha */}
+            <Sparkles className="absolute -top-1 -left-1 h-5 w-5 text-white/90 animate-pulse drop-shadow-sm z-10" fill="currentColor" />
             
-            {/* Calendar Check Icon */}
-            <CalendarCheck className="h-7 w-7 text-white drop-shadow-md group-hover:scale-105 transition-transform" strokeWidth={2.5} />
+            {/* Calendar Check Icon with 3D shadow */}
+            <CalendarCheck className="h-7 w-7 text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform z-10 relative" strokeWidth={2.5} />
           </button>
         </div>
       )}
 
-      {/* DAILY REWARDS MODAL OVERLAY - START (Ye poora naya add hua hai) */}
+      {/* DAILY REWARDS MODAL OVERLAY - START (Close Button ab niche hai) */}
       {showRewardsModal && (
-        <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-5 animate-in fade-in duration-200 gap-6">
           
-          {/* Card Container (60vh, white bg, light purple border) */}
+          {/* Card Container (X button removed from inside) */}
           <div className="w-full max-w-sm h-[60vh] bg-white rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
-             
-             {/* Close Button */}
-             <button 
-               onClick={() => setShowRewardsModal(false)} 
-               className="absolute top-3 right-3 z-20 bg-black/20 hover:bg-black/40 transition-colors text-white rounded-full p-1.5"
-             >
-               <X className="h-4 w-4" />
-             </button>
 
              {/* Header Top Solid Purple Area */}
              <div className="bg-purple-600 pt-5 pb-3 px-4 relative flex-shrink-0">
@@ -619,6 +613,14 @@ function RoomsExplorerClassic() {
                </button>
              </div>
           </div>
+
+          {/* Close (X) Button bahar niche shift kar diya hai */}
+          <button 
+             onClick={() => setShowRewardsModal(false)} 
+             className="bg-white/20 hover:bg-white/30 border border-white/50 backdrop-blur-md transition-colors text-white rounded-full p-3.5 shadow-xl hover:scale-105 active:scale-95 z-50 animate-in slide-in-from-bottom-5 duration-300"
+          >
+             <X className="h-6 w-6 drop-shadow-md" />
+          </button>
 
         </div>
       )}
