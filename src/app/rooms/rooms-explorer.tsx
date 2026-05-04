@@ -93,7 +93,7 @@ export default function RoomsExplorer() {
 }
 
 /**
- * THE CLASSIC ROOMS EXPLORER (Tier 1).
+ * THE CLASSIC ROOMS EXPLORER (Refined: Clean, Clear, High-Graphic UI)
  */
 function RoomsExplorerClassic() {
   const firestore = useFirestore();
@@ -203,34 +203,32 @@ function RoomsExplorerClassic() {
   // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
   return (
-    <div className="h-[100dvh] flex flex-col font-sans animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
-      <ThemeColorMeta color="#d8b4fe" />
+    <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white">
+      <ThemeColorMeta color="#8b5cf6" />
       
-      {/* 20VH PURPLE SECTION - UPDATED VISIBILITY & REMOVED MOUNTAINS */}
-      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#d8b4fe] via-[#f5f0ff] to-white z-0 overflow-hidden pointer-events-none">
-         <div className="absolute inset-0 opacity-[0.1]" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/white-wall.png")' }} />
-      </div>
+      {/* CLEANER PURPLE GRADIENT BACKGROUND - SMOOTHER TRANSITION */}
+      <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-br from-violet-500/10 via-fuchsia-50/40 to-transparent z-0 pointer-events-none" />
 
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
            <div className="flex items-center gap-3">
-              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'recommend' ? "text-slate-900" : "text-slate-300 opacity-50")}>Recommend</button>
-              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all", headerTab === 'me' ? "text-slate-900" : "text-slate-300 opacity-50")}>Me</button>
+              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'recommend' ? "text-slate-900 drop-shadow-sm" : "text-slate-300")}>Recommend</button>
+              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'me' ? "text-slate-900 drop-shadow-sm" : "text-slate-300")}>Me</button>
            </div>
            <div className="flex items-center gap-2 text-slate-800">
               <UserSearchDialog />
                {myRoom ? (
                  <button 
                    onClick={() => router.push(`/rooms/${myRoom.id}`)} 
-                   className="p-1 px-1.5 bg-white/70 rounded-full shadow-md border border-white/20 active:scale-90 transition-all flex items-center"
+                   className="p-1 px-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md border border-white/50 active:scale-90 transition-all flex items-center"
                  >
-                   <Home className="h-4 w-4" />
+                   <Home className="h-4 w-4 text-slate-700" />
                  </button>
                ) : (
                  <CreateRoomDialog 
                    iconOnly 
                    trigger={
-                     <button className="p-1 px-1.5 bg-slate-900 rounded-full shadow-md active:scale-90 transition-all flex items-center">
+                     <button className="p-1 px-1.5 bg-slate-800 rounded-full shadow-md active:scale-90 transition-all flex items-center">
                        <Plus className="h-4 w-4 text-white" />
                      </button>
                    } 
@@ -257,9 +255,9 @@ function RoomsExplorerClassic() {
                         <div 
                           onClick={() => slide.link && router.push(slide.link)}
                           className={cn(
-                            "h-[110px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-2xl border-2 border-white/20 active:scale-[0.98] transition-all group", 
+                            "h-[110px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-lg border border-white/20 active:scale-[0.98] transition-all duration-300 group", 
                             slide.link ? "cursor-pointer" : "",
-                            slide.color || 'from-purple-600 to-indigo-600'
+                            slide.color || 'from-violet-500 to-indigo-500'
                           )}
                         >
                           {slide.imageUrl && (
@@ -267,20 +265,20 @@ function RoomsExplorerClassic() {
                               src={slide.imageUrl} 
                               alt="" 
                               fill 
-                              className="object-cover opacity-100 group-hover:scale-105 transition-transform duration-1000" 
+                              className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" 
                               unoptimized 
                             />
                           )}
-                          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           {!slide.imageUrl && (
                             <div className="relative z-10 px-2">
                               <div className="flex items-center gap-2 mb-2">
-                                <div className="bg-white/30 p-1 rounded-lg border border-white/30">
-                                  <Icon className="h-5 w-5 text-white animate-pulse" />
+                                <div className="bg-white/20 backdrop-blur-sm p-1 rounded-xl border border-white/30">
+                                  <Icon className="h-5 w-5 text-white drop-shadow-md" />
                                 </div>
-                                <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{slide.title}</h3>
+                                <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">{slide.title}</h3>
                               </div>
-                              <p className="text-[11px] font-black text-white drop-shadow-lg uppercase tracking-[0.4em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
+                              <p className="text-[11px] font-black text-white drop-shadow-md uppercase tracking-[0.3em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
                             </div>
                           )}
                         </div>
@@ -299,18 +297,19 @@ function RoomsExplorerClassic() {
               </div>
             </div>
 
-            <div className="px-3 sticky top-0 z-40 bg-white/95 py-2 mb-1 border-b border-slate-100 flex items-center">
+            {/* CLEANER CATEGORY BAR - BETTER CONTRAST */}
+            <div className="px-3 sticky top-0 z-40 bg-white/90 backdrop-blur-md py-2 mb-1 border-b border-slate-100/80 flex items-center">
               <div className="w-full overflow-x-auto no-scrollbar">
-                <div className="flex gap-1.5 px-0.5">
+                <div className="flex gap-2 px-0.5">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
                       className={cn(
-                        "px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                        "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap shadow-sm",
                         activeCategory === cat.id 
-                          ? "bg-slate-900 text-white shadow-md shadow-slate-900/20" 
-                          : "bg-white text-slate-400 hover:bg-slate-50 border border-slate-100"
+                          ? "bg-slate-800 text-white shadow-md ring-1 ring-white/30" 
+                          : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-200/80"
                       )}
                     >
                       {cat.label}
@@ -348,14 +347,15 @@ function RoomsExplorerClassic() {
                ) : (
                  <>
                    <section className="mb-6 mt-2">
-                     <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
+                     {/* CLEANER USER CARD - ENHANCED SHADOW & BORDER */}
+                     <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100/80 relative overflow-hidden group backdrop-blur-sm">
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-100/40 to-transparent rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
                        
                        <div className="flex items-center gap-4 relative z-10 w-full">
                          <div className="relative shrink-0">
-                           <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-2xl">
+                           <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-lg ring-1 ring-slate-200">
                              <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
-                             <AvatarFallback className="bg-slate-900 text-white font-black text-xl">U</AvatarFallback>
+                             <AvatarFallback className="bg-slate-800 text-white font-black text-xl">U</AvatarFallback>
                            </Avatar>
                            <div className="absolute -bottom-1 -right-1">
                              <VipBadge level={userDoc?.level?.rich || 1} />
@@ -363,12 +363,12 @@ function RoomsExplorerClassic() {
                          </div>
                          
                          <div className="flex flex-col flex-1 min-w-0 pr-2">
-                           <h2 className="text-lg font-bold text-slate-900 truncate">{userDoc?.username || 'Member'}</h2>
+                           <h2 className="text-lg font-bold text-slate-800 truncate">{userDoc?.username || 'Member'}</h2>
                            <div className="flex items-center gap-1">
-                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ID: {userDoc?.accountNumber || '---'}</span>
+                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ID: {userDoc?.accountNumber || '---'}</span>
                            </div>
-                           <div className="flex items-center gap-1.5 mt-1 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
-                             <GoldCoinIcon className="h-2.5 w-2.5" />
+                           <div className="flex items-center gap-1.5 mt-1.5 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
+                             <GoldCoinIcon className="h-2.5 w-2.5 text-amber-500" />
                              <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
                            </div>
                          </div>
@@ -376,14 +376,14 @@ function RoomsExplorerClassic() {
                            {myRoom ? (
                              <button 
                                onClick={() => router.push(`/rooms/${myRoom.id}`)}
-                               className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all"
+                               className="shrink-0 bg-slate-800 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all duration-200 hover:bg-slate-900"
                              >
                                My Room
                              </button>
                            ) : (
                              <CreateRoomDialog 
                                trigger={
-                                 <button className="shrink-0 bg-slate-900 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                                 <button className="shrink-0 bg-slate-800 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all duration-200 hover:bg-slate-900">
                                    Create Room
                                  </button>
                                } 
@@ -393,26 +393,26 @@ function RoomsExplorerClassic() {
                      </div>
                    </section>
 
-                   <div className="flex gap-4 mb-6 px-1 border-b border-slate-200/50">
+                   <div className="flex gap-6 mb-6 px-1 border-b border-slate-200/50">
                      <button 
                        onClick={() => setMeTab('following')} 
                        className={cn(
-                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-                         meTab === 'following' ? "text-slate-900" : "text-slate-300 opacity-60"
+                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all duration-200",
+                         meTab === 'following' ? "text-slate-800" : "text-slate-300"
                        )}
                      >
                        Following
-                       {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+                       {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
                      </button>
                      <button 
                        onClick={() => setMeTab('recent')} 
                        className={cn(
-                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all",
-                         meTab === 'recent' ? "text-slate-900" : "text-slate-300 opacity-60"
+                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all duration-200",
+                         meTab === 'recent' ? "text-slate-800" : "text-slate-300"
                        )}
                      >
                        Recent
-                       {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-900 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
+                       {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
                      </button>
                    </div>
 
@@ -427,8 +427,8 @@ function RoomsExplorerClassic() {
                        ) : followedRoomsData && followedRoomsData.length > 0 ? (
                          <div className="grid grid-cols-2 gap-3">
                            {followedRoomsData.map((roomRef: any) => (
-                             <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                             <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
+                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
                                   <Image 
                                    src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
                                    alt={roomRef.title}
@@ -436,9 +436,9 @@ function RoomsExplorerClassic() {
                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                    unoptimized
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                                   <div className="absolute bottom-3 left-3 right-3 text-white">
-                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{roomRef.title}</h4>
+                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight drop-shadow-sm">{roomRef.title}</h4>
                                   </div>
                                </div>
                              </div>
@@ -463,8 +463,8 @@ function RoomsExplorerClassic() {
                        ) : filteredRecentRooms.length > 0 ? (
                          <div className="grid grid-cols-2 gap-3">
                            {filteredRecentRooms.map((visit: any) => (
-                             <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all cursor-pointer">
-                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-lg border border-slate-100 mb-2">
+                             <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
+                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
                                   <Image 
                                    src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
                                    alt={visit.title}
@@ -472,12 +472,12 @@ function RoomsExplorerClassic() {
                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                    unoptimized
                                   />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                  <div className="absolute top-3 right-3 bg-black/40 rounded-full px-2 py-0.5 border border-white/30">
-                                     <span className="text-[8px] font-black text-white uppercase">Recently</span>
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 border border-white/20">
+                                     <span className="text-[8px] font-black text-white uppercase">Recent</span>
                                   </div>
                                   <div className="absolute bottom-3 left-3 right-3 text-white">
-                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight">{visit.title}</h4>
+                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight drop-shadow-sm">{visit.title}</h4>
                                   </div>
                                </div>
                              </div>
@@ -497,36 +497,36 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* CLEANER BOTTOM NAVIGATION - GLASSMORPHIC REFINEMENT */}
       {isHydrated && (
         <nav 
-          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/90 backdrop-blur-xl border-t border-white"
+          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-8px_30px_rgba(0,0,0,0.02)]"
         >
-          <div className="flex items-center justify-around h-16 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.03)] transition-all">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/rooms' ? "text-indigo-600" : "text-slate-400")}>
-               {pathname === '/rooms' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
-               <Home className={cn("h-6 w-6", pathname === '/rooms' ? "fill-current" : "")} />
+          <div className="flex items-center justify-around h-16 pb-safe transition-all">
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/rooms' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
+               {pathname === '/rooms' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
+               <Home className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/rooms' ? "fill-current" : "")} />
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/discover' ? "text-indigo-600" : "text-slate-400")}>
-               {pathname === '/discover' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
-               <Compass className={cn("h-6 w-6", pathname === '/discover' ? "fill-current" : "")} />
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/discover' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
+               {pathname === '/discover' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
+               <Compass className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/discover' ? "fill-current" : "")} />
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
             </Link>
 
-            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname === '/messages' ? "text-indigo-600" : "text-slate-400")}>
-               {pathname === '/messages' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/messages' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
+               {pathname === '/messages' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
                <div className="relative">
-                 <Mail className={cn("h-6 w-6", pathname === '/messages' ? "fill-current" : "")} />
+                 <Mail className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/messages' ? "fill-current" : "")} />
                  <UnreadBadge size="sm" className="absolute -top-2 -right-2 border-2 border-white" />
                </div>
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
             </Link>
 
-            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative", pathname?.startsWith('/profile') ? "text-indigo-600" : "text-slate-400")}>
-               {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-8 h-1 rounded-full bg-indigo-600" />}
-               <User className={cn("h-6 w-6", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname?.startsWith('/profile') ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
+               {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
+               <User className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname?.startsWith('/profile') ? "fill-current" : "")} />
                <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
             </Link>
           </div>
@@ -534,4 +534,4 @@ function RoomsExplorerClassic() {
       )}
     </div>
   );
-}
+           }
