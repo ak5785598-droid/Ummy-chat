@@ -3167,14 +3167,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       />
 
       <Dialog open={isLangPickerOpen} onOpenChange={setIsLangPickerOpen}>
-        <DialogContent className="bg-[#030014]/98 border-white/10 text-white max-w-[90vw] rounded-[2rem] p-0 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] z-[500]">
-          <DialogHeader className="p-5 border-b border-white/5 bg-white/5">
-            <DialogTitle className="text-xs font-black uppercase tracking-[0.2em] text-center text-white/90">Choose Your Language</DialogTitle>
-            <DialogDescription className="sr-only">Select a language for real-time chat translation.</DialogDescription>
+        <DialogContent className="bg-black/90 backdrop-blur-2xl border-white/10 text-white max-w-[92vw] w-full rounded-[2.5rem] p-0 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-[500] focus:ring-0">
+          <DialogHeader className="p-6 border-b border-white/5 bg-white/5 flex flex-col items-center">
+            <div className="w-12 h-1 bg-white/20 rounded-full mb-4 opacity-50" />
+            <DialogTitle className="text-sm font-black uppercase tracking-[0.25em] text-center text-white/90">Universal Translator</DialogTitle>
+            <DialogDescription className="text-[10px] uppercase tracking-wider text-white/30 mt-1 text-center">Select your target frequency</DialogDescription>
           </DialogHeader>
           
-          <div className="h-[60vh] overflow-y-auto px-4 py-4 custom-scrollbar overscroll-contain">
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="h-[65vh] overflow-y-auto px-5 py-6 no-scrollbar overscroll-contain">
+            <div className="grid grid-cols-2 gap-3 pb-4">
               {SUPPORTED_LANGUAGES.map((lang, idx) => (
                 <button
                   key={`${lang.code}-${idx}`}
@@ -3182,28 +3183,46 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                     e.stopPropagation();
                     setTargetLanguage(lang.name);
                     setIsLangPickerOpen(false);
-                    toast({ title: `Translation set to ${lang.name} 🌐` });
+                    toast({ 
+                      title: `Frequency Synced: ${lang.name} 🌐`,
+                      description: 'Now all incoming signals will be translated.'
+                    });
                   }}
                   className={cn(
-                    "flex items-center justify-between px-4 py-4 rounded-2xl transition-all border active:scale-95 touch-manipulation",
+                    "relative group flex items-center justify-between px-4 py-5 rounded-[1.5rem] transition-all border active:scale-95 touch-manipulation overflow-hidden",
                     targetLanguage === lang.name 
-                      ? "bg-primary border-primary text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-                      : "bg-white/5 border-white/5 text-white/60 hover:bg-white/10 hover:border-white/10"
+                      ? "bg-primary border-primary text-black shadow-[0_0_25px_rgba(255,255,255,0.15)]" 
+                      : "bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:border-white/10"
                   )}
                 >
-                  <span className="text-[13px] font-bold tracking-tight">{lang.name}</span>
-                  <span className="text-[9px] opacity-40 font-mono font-black">{lang.code}</span>
+                  {/* Glossy overlay for active state */}
+                  {targetLanguage === lang.name && (
+                    <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
+                  )}
+
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="text-[13px] font-black tracking-tight uppercase">{lang.name}</span>
+                    <span className={cn(
+                      "text-[9px] font-bold tracking-widest uppercase opacity-40",
+                      targetLanguage === lang.name ? "text-black" : "text-white"
+                    )}>{lang.code}</span>
+                  </div>
+                  
+                  {targetLanguage === lang.name && (
+                    <div className="h-1.5 w-1.5 bg-black rounded-full shadow-[0_0_8px_rgba(0,0,0,1)]" />
+                  )}
                 </button>
               ))}
             </div>
           </div>
-          <div className="p-4 bg-white/5 border-t border-white/5 flex justify-center">
-             <button 
-               onClick={() => setIsLangPickerOpen(false)}
-               className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors"
-             >
-               Close
-             </button>
+          
+          <div className="p-4 bg-white/5 border-t border-white/5 flex justify-center backdrop-blur-md">
+            <button 
+              onClick={() => setIsLangPickerOpen(false)}
+              className="px-8 py-3 rounded-full bg-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all border border-white/5 active:scale-95"
+            >
+              Close Portal
+            </button>
           </div>
         </DialogContent>
       </Dialog>

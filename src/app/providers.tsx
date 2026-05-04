@@ -13,6 +13,7 @@ import { ActiveRoomManager } from '@/components/active-room-manager';
 import { VoiceActivityProvider } from '@/components/voice-activity-provider';
 import { FloatingRoomOverlay } from '@/components/floating-room-overlay';
 import { AudioContextUnlocker } from '@/components/audio-context-unlocker';
+import { DeviceSync } from '@/components/device-sync';
 import type { ReactNode } from 'react';
 
 /**
@@ -27,6 +28,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <AudioContextUnlocker />
         <AdBlockWarning />
         <ProfileInitializer />
+        <DeviceSync />
         <GlobalPresenceManager />
         <GlobalBanGuard>
           <VoiceActivityProvider>

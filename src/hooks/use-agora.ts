@@ -334,14 +334,16 @@ export function useAgora(
           const bluetoothMicId = await getBestMicrophoneId();
           
           micTrack = await AgoraRTC.createMicrophoneAudioTrack({
-            microphoneId: bluetoothMicId, // Use specific device if found
-            AEC: false, // AUDIO MODE FIX: KILL AEC/NS TO PREVENT OS HIJACK
-            ANS: false,
-            AGC: false,
-            encoderConfig: 'high_quality'
+            microphoneId: bluetoothMicId, 
+            AEC: true, // Enable Echo Cancellation
+            ANS: true, // Enable Noise Suppression
+            AGC: true, // Enable Automatic Gain Control (Boosts low volume)
+            encoderConfig: 'music_standard' // Higher bitrate (48kHz, 50kbps) for crystal clear sound
           });
-          
+
+          // BOOST: Set local volume to 200% for maximum loudness
           if (micTrack) {
+            await micTrack.setVolume(200);
             await client.publish(micTrack);
             setLocalAudioTrack(micTrack);
           }
