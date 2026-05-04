@@ -362,7 +362,7 @@ const FALLBACK_GIFTS: Record<string, any[]> = {
      { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationId: 'apple_svga_3d', isLucky: true },
      ], 
   'Luxury': [
-     { id: 'castle', name: 'Castle', price: 999999, animationId: 'princess_castle_anim' }, // Castle gift updated price & no emoji
+     { id: 'castle', name: 'Castle', price: 10000000, animationId: 'princess_castle_anim' }, // Castle gift updated price & no emoji
      { id: 'dm', name: 'Guitar', price: 700000, emoji: '🎸', animationId: 'diamond' },
   ]
  };
