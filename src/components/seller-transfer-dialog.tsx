@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader, CheckCircle2, Send, User, Ban } from 'lucide-react';
-import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -51,6 +50,40 @@ const MoneyBag3DIcon = ({ className }: { className?: string }) => (
       <path d="M 25 85 C 10 85, 15 60, 25 45 Q 50 25, 75 45 C 85 60, 90 85, 75 85 Q 50 90, 25 85 Z" fill="url(#bagGrad)" />
       {/* Dollar Sign */}
       <path d="M50 38 L50 42 C45 42 42 45 42 48 C42 51 45 53 48 54 L52 55 C55 56 58 58 58 62 C58 66 55 69 50 69 L50 73 L46 73 L46 69 C41 68 39 65 39 62 L43 62 C43 64 45 66 48 66 L52 66 C54 66 55 64 55 62 C55 60 53 58 50 57 L46 56 C42 55 39 52 39 48 C39 44 42 41 46 41 L46 38 L50 38 Z" fill="url(#dollarGrad)" />
+    </g>
+  </svg>
+);
+
+/**
+ * 3D Glossy Dollar Coin SVG Icon for the Input Field
+ */
+const DollarCoin3DIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 100 100"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <defs>
+      <radialGradient id="goldCoinGrad" cx="40%" cy="30%" r="60%" fx="30%" fy="30%">
+        <stop offset="0%" stopColor="#FFF7B0" />
+        <stop offset="30%" stopColor="#FFD700" />
+        <stop offset="70%" stopColor="#DAA520" />
+        <stop offset="100%" stopColor="#B8860B" />
+      </radialGradient>
+      <filter id="coinShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#DAA520" floodOpacity="0.4" />
+      </filter>
+    </defs>
+    <g filter="url(#coinShadow)">
+      {/* Coin Base */}
+      <circle cx="50" cy="50" r="45" fill="url(#goldCoinGrad)" />
+      {/* Inner Ring */}
+      <circle cx="50" cy="50" r="38" stroke="#B8860B" strokeWidth="2" opacity="0.5" />
+      {/* Dollar Sign Back (Shadow/Depth) */}
+      <path d="M50 25 L50 75 M50 25 C40 25 35 32 35 40 C35 55 65 45 65 60 C65 68 60 75 50 75 C40 75 35 68 35 60" stroke="#8B6508" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      {/* Dollar Sign Front (Highlight) */}
+      <path d="M50 25 L50 75 M50 25 C40 25 35 32 35 40 C35 55 65 45 65 60 C65 68 60 75 50 75 C40 75 35 68 35 60" stroke="#FFF7B0" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" transform="translate(-1, -1)" />
     </g>
   </svg>
 );
@@ -214,12 +247,12 @@ export function SellerTransferDialog() {
     </button>
    </DialogTrigger>
    
-   {/* Sirf yaha fixed aur max-h-[85dvh] lgaya hai taaki keyboard aane par ui upar push ho jaye */}
-   <DialogContent className="sm:max-w-[425px] !rounded-none !mb-0 !bottom-0 !fixed !translate-y-0 !top-auto h-[50vh] max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden data-[state=open]:animate-in slide-in-from-bottom-full duration-300 z-[100]">
+   {/* DialogContent ko center kar diya hai aur max-height 85dvh lagayi hai taaki keyboard par auto-push up ho */}
+   <DialogContent className="sm:max-w-[425px] w-[95vw] md:w-full rounded-2xl max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
      {/* 1st Row: Top Header - PURPLE MIXED WITH WHITE GRADIENT HERE */}
-     <div className="h-[8vh] min-h-[45px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
+     <div className="h-[8vh] min-h-[55px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
       <h2 className="font-sans text-lg font-bold uppercase tracking-widest drop-shadow-md">Offline Recharge</h2>
      </div>
 
@@ -235,7 +268,7 @@ export function SellerTransferDialog() {
        </div>
       )}
 
-      <div className={cn("space-y-4", !isAuthorized && "opacity-40 grayscale pointer-events-none")}>
+      <div className={cn("space-y-4 my-auto", !isAuthorized && "opacity-40 grayscale pointer-events-none")}>
        
        {/* 2nd Row: ID Sync (Smaller Input) */}
        <div className="grid gap-1">
@@ -248,7 +281,7 @@ export function SellerTransferDialog() {
          placeholder="Enter ID"
          value={recipientId}
          onChange={(e) => setRecipientId(e.target.value.replace(/\D/g, ''))}
-         className="h-10 rounded-xl border-2 focus:border-purple-500 transition-all text-base font-bold text-center text-slate-900 bg-slate-50"
+         className="h-12 rounded-xl border-2 focus:border-purple-500 transition-all text-base font-bold text-center text-slate-900 bg-slate-50"
          required
          disabled={!isAuthorized}
         />
@@ -278,11 +311,11 @@ export function SellerTransferDialog() {
         )}
        </div>
 
-       {/* 4th Row: Enter Coins (Smaller Input) */}
+       {/* 4th Row: Enter Coins (Smaller Input with 3D Dollar Icon) */}
        <div className="grid gap-1">
         <Label htmlFor="amount" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">Enter Coins</Label>
         <div className="relative">
-         <GoldCoinIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+         <DollarCoin3DIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6" />
          <Input
           id="amount"
           type="text"
@@ -290,13 +323,17 @@ export function SellerTransferDialog() {
           placeholder="0"
           value={amount}
           onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
-          className="h-10 pl-9 rounded-xl border-2 focus:border-purple-500 transition-all text-lg font-bold text-slate-900 bg-slate-50"
+          className="h-12 pl-12 rounded-xl border-2 focus:border-purple-500 transition-all text-lg font-bold text-slate-900 bg-slate-50"
           required
           disabled={!isAuthorized}
          />
         </div>
-        <div className="text-[10px] font-bold text-muted-foreground ml-1 uppercase flex justify-between">
+        <div className="text-[10px] font-bold text-muted-foreground ml-1 mt-1 uppercase flex justify-between items-center">
          <span>Balance: {(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+         {/* YAHA PAR ADD KIYA HAI AMOUNT COMMA KE SATH */}
+         <span className={cn(amount ? "text-purple-600 font-extrabold" : "opacity-0")}>
+           Sending: {amount ? parseInt(amount).toLocaleString() : '0'}
+         </span>
         </div>
        </div>
 
@@ -304,7 +341,7 @@ export function SellerTransferDialog() {
      </div>
 
      {/* 5th Row: Recharge Now Button (Compact Padding & Height) */}
-     <div className="p-4 pt-0 shrink-0 bg-white">
+     <div className="p-4 shrink-0 bg-white border-t border-slate-50">
       <Button 
        type="submit" 
        disabled={isProcessing || !foundRecipient || !amount || !isAuthorized}
@@ -319,4 +356,3 @@ export function SellerTransferDialog() {
   </Dialog>
  );
 }
-
