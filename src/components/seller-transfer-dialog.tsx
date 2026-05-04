@@ -247,16 +247,16 @@ export function SellerTransferDialog() {
     </button>
    </DialogTrigger>
    
-   {/* UI FIX: 100dvh aur w-full ka strict push-up hack add kiya hai mobile ke liye, purana styling touched nahi hai */}
-   <DialogContent className="!w-full !max-w-full sm:!max-w-[425px] !h-[100dvh] sm:!h-auto sm:!max-h-[85dvh] !top-0 sm:!top-[50%] !translate-y-0 sm:!translate-y-[-50%] !rounded-none sm:!rounded-2xl bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
+   {/* DialogContent me dvh ka logic set hai taaki mobile keyboard aane par auto-push up ho jaye */}
+   <DialogContent className="sm:max-w-[425px] w-[95vw] md:w-full rounded-2xl max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
-     {/* 1st Row: Top Header - PURPLE MIXED WITH WHITE GRADIENT HERE */}
+     {/* 1st Row: Top Header */}
      <div className="h-[8vh] min-h-[55px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
       <h2 className="font-sans text-lg font-bold uppercase tracking-widest drop-shadow-md">Offline Recharge</h2>
      </div>
 
-     {/* Scrollable Container with Tighter Gaps */}
+     {/* Scrollable Container with Tighter Gaps (Keyboard aane par yahi scroll hoga) */}
      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-center space-y-4">
       
       {!isAuthorized && (
@@ -328,25 +328,28 @@ export function SellerTransferDialog() {
           disabled={!isAuthorized}
          />
         </div>
+        
+        {/* Right side me Sending Value AND Rupees Calculation dono hain */}
         <div className="text-[10px] font-bold text-muted-foreground ml-1 mt-1 uppercase flex justify-between items-start">
          <span className="mt-1">Balance: {(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-         {/* PRICE CALCULATION UPDATE: Coins + Amount in INR */}
-         <div className="flex flex-col items-end gap-0.5">
-           <span className={cn(amount ? "text-purple-600 font-extrabold" : "opacity-0")}>
+         
+         <div className={cn("flex flex-col items-end", amount ? "opacity-100" : "opacity-0")}>
+           <span className="text-purple-600 font-extrabold text-[11px]">
              Sending: {amount ? parseInt(amount).toLocaleString() : '0'}
            </span>
-           <span className={cn(amount ? "text-emerald-600 font-extrabold text-[10px]" : "opacity-0 hidden")}>
-             Price: ₹{amount ? (parseInt(amount) / 5500).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '0'}
+           <span className="text-green-600 font-bold mt-0.5 tracking-wider">
+             ≈ ₹{amount ? parseFloat((parseInt(amount) / 5500).toFixed(2)).toLocaleString('en-IN') : '0'}
            </span>
          </div>
         </div>
+
        </div>
 
       </div>
      </div>
 
      {/* 5th Row: Recharge Now Button (Compact Padding & Height) */}
-     <div className="p-4 shrink-0 bg-white border-t border-slate-50 mt-auto">
+     <div className="p-4 shrink-0 bg-white border-t border-slate-50">
       <Button 
        type="submit" 
        disabled={isProcessing || !foundRecipient || !amount || !isAuthorized}
@@ -361,3 +364,4 @@ export function SellerTransferDialog() {
   </Dialog>
  );
 }
+
