@@ -247,8 +247,8 @@ export function SellerTransferDialog() {
     </button>
    </DialogTrigger>
    
-   {/* DialogContent ko center kar diya hai aur max-height 85dvh lagayi hai taaki keyboard par auto-push up ho */}
-   <DialogContent className="sm:max-w-[425px] w-[95vw] md:w-full rounded-2xl max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
+   {/* UI FIX: 100dvh aur w-full ka strict push-up hack add kiya hai mobile ke liye, purana styling touched nahi hai */}
+   <DialogContent className="!w-full !max-w-full sm:!max-w-[425px] !h-[100dvh] sm:!h-auto sm:!max-h-[85dvh] !top-0 sm:!top-[50%] !translate-y-0 sm:!translate-y-[-50%] !rounded-none sm:!rounded-2xl bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
      {/* 1st Row: Top Header - PURPLE MIXED WITH WHITE GRADIENT HERE */}
@@ -328,12 +328,17 @@ export function SellerTransferDialog() {
           disabled={!isAuthorized}
          />
         </div>
-        <div className="text-[10px] font-bold text-muted-foreground ml-1 mt-1 uppercase flex justify-between items-center">
-         <span>Balance: {(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
-         {/* YAHA PAR ADD KIYA HAI AMOUNT COMMA KE SATH */}
-         <span className={cn(amount ? "text-purple-600 font-extrabold" : "opacity-0")}>
-           Sending: {amount ? parseInt(amount).toLocaleString() : '0'}
-         </span>
+        <div className="text-[10px] font-bold text-muted-foreground ml-1 mt-1 uppercase flex justify-between items-start">
+         <span className="mt-1">Balance: {(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+         {/* PRICE CALCULATION UPDATE: Coins + Amount in INR */}
+         <div className="flex flex-col items-end gap-0.5">
+           <span className={cn(amount ? "text-purple-600 font-extrabold" : "opacity-0")}>
+             Sending: {amount ? parseInt(amount).toLocaleString() : '0'}
+           </span>
+           <span className={cn(amount ? "text-emerald-600 font-extrabold text-[10px]" : "opacity-0 hidden")}>
+             Price: ₹{amount ? (parseInt(amount) / 5500).toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '0'}
+           </span>
+         </div>
         </div>
        </div>
 
@@ -341,7 +346,7 @@ export function SellerTransferDialog() {
      </div>
 
      {/* 5th Row: Recharge Now Button (Compact Padding & Height) */}
-     <div className="p-4 shrink-0 bg-white border-t border-slate-50">
+     <div className="p-4 shrink-0 bg-white border-t border-slate-50 mt-auto">
       <Button 
        type="submit" 
        disabled={isProcessing || !foundRecipient || !amount || !isAuthorized}
