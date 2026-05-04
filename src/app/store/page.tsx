@@ -113,6 +113,142 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
+// --- RABBIT AVATAR FRAME SVG COMPONENT ---
+const RabbitFrameSVG = ({ className }: { className?: string }) => (
+  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
+    <style>{`
+      .rabbit-svg svg { width: 100%; height: 100%; overflow: visible; }
+      .rabbit-ear-left, .rabbit-ear-right { transform-origin: 50% 80%; animation: earWiggle 3s ease-in-out infinite; }
+      .rabbit-ear-right { animation-delay: 0.2s; }
+      @keyframes earWiggle { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(6deg)} }
+      .rabbit-tail { transform-origin: 85% 85%; animation: tailWagRabbit 2s ease-in-out infinite; }
+      @keyframes tailWagRabbit { 0%,100%{transform:rotate(-8deg)} 50%{transform:rotate(8deg)} }
+      .rabbit-paw-left, .rabbit-paw-right { transform-origin: 50% 50%; animation: pawBounce 1.5s ease-in-out infinite; }
+      .rabbit-paw-right { animation-delay: 0.3s; }
+      @keyframes pawBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+      .rabbit-sparkle { animation: twinkleRabbit 2s ease-in-out infinite; }
+      @keyframes twinkleRabbit { 0%,100%{opacity:0.2; transform:scale(0.5)} 50%{opacity:1; transform:scale(1.2)} }
+    `}</style>
+    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-xl rabbit-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="rabbitGold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFF1AA" />
+          <stop offset="25%" stopColor="#FFD335" />
+          <stop offset="50%" stopColor="#C98B13" />
+          <stop offset="75%" stopColor="#FFD335" />
+          <stop offset="100%" stopColor="#9E6100" />
+        </linearGradient>
+        <linearGradient id="rabbitPink" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFB7C5" />
+          <stop offset="100%" stopColor="#FF8DA1" />
+        </linearGradient>
+        <linearGradient id="rabbitCream" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFF5F0" />
+          <stop offset="100%" stopColor="#F5BCB0" />
+        </linearGradient>
+        <filter id="rabbitShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation={8} floodColor="#8B5E3C" floodOpacity={0.25} />
+        </filter>
+        <filter id="rabbitGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="6" result="blur"/>
+          <feFlood floodColor="#FFD700" floodOpacity="0.4"/>
+          <feComposite operator="in" in2="blur"/>
+          <feMerge>
+            <feMergeNode/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Outer gold ring */}
+      <circle cx="400" cy="400" r="280" fill="none" stroke="url(#rabbitGold)" strokeWidth={28} opacity={0.95} filter="url(#rabbitShadow)"/>
+      <circle cx="400" cy="400" r="280" fill="none" stroke="#8B5E3C" strokeWidth={28} opacity={0.12} />
+      <circle cx="400" cy="400" r="266" fill="none" stroke="#FFD700" strokeWidth={3} opacity={0.6} />
+
+      {/* Left Ear */}
+      <g className="rabbit-ear-left" filter="url(#rabbitShadow)">
+        <path d="M 280 200 C 250 100 210 40 280 60 C 330 75 360 130 370 180 C 350 170 320 160 280 200 Z" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={5} strokeLinejoin="round"/>
+        <path d="M 305 160 C 285 110 270 85 295 92 C 315 98 335 125 342 150 C 328 143 315 140 305 160 Z" fill="url(#rabbitPink)"/>
+      </g>
+
+      {/* Right Ear */}
+      <g className="rabbit-ear-right" filter="url(#rabbitShadow)">
+        <path d="M 520 200 C 550 100 590 40 520 60 C 470 75 440 130 430 180 C 450 170 480 160 520 200 Z" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={5} strokeLinejoin="round"/>
+        <path d="M 495 160 C 515 110 530 85 505 92 C 485 98 465 125 458 150 C 472 143 485 140 495 160 Z" fill="url(#rabbitPink)"/>
+      </g>
+
+      {/* Main frame circle with cream/gold gradient */}
+      <circle cx="400" cy="420" r="220" fill="url(#rabbitCream)" stroke="url(#rabbitGold)" strokeWidth={12} filter="url(#rabbitShadow)"/>
+      <circle cx="400" cy="420" r="210" fill="none" stroke="#FFD700" strokeWidth={2} opacity={0.5}/>
+      
+      {/* Inner jade/cream ring */}
+      <circle cx="400" cy="420" r="195" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={4}/>
+      
+      <!-- Avatar cutout area -->
+      <circle cx="400" cy="420" r="175" fill="#2A1A0A" stroke="url(#rabbitGold)" strokeWidth={3}/>
+
+      {/* Fluffy Tail - bottom right */}
+      <g className="rabbit-tail" filter="url(#rabbitShadow)">
+        <circle cx="630" cy="600" r="45" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={4}/>
+        <circle cx="620" cy="590" r="15" fill="#FFF5F0" opacity={0.8}/>
+        <circle cx="640" cy="610" r="12" fill="#FFF5F0" opacity={0.6}/>
+        <circle cx="625" cy="615" r="10" fill="#FFF5F0" opacity={0.7}/>
+      </g>
+
+      {/* Left Paw */}
+      <g className="rabbit-paw-left" filter="url(#rabbitShadow)">
+        <ellipse cx="230" cy="620" rx="35" ry="28" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={4}/>
+        <circle cx="218" cy="612" r="8" fill="#FFF5F0"/>
+        <circle cx="230" cy="608" r="9" fill="#FFF5F0"/>
+        <circle cx="243" cy="612" r="8" fill="#FFF5F0"/>
+        <ellipse cx="230" cy="628" rx="14" ry="7" fill="#FFB7C5" opacity={0.4}/>
+      </g>
+
+      {/* Right Paw */}
+      <g className="rabbit-paw-right" filter="url(#rabbitShadow)">
+        <ellipse cx="570" cy="620" rx="35" ry="28" fill="url(#rabbitCream)" stroke="#D4AF37" strokeWidth={4}/>
+        <circle cx="558" cy="612" r="8" fill="#FFF5F0"/>
+        <circle cx="570" cy="608" r="9" fill="#FFF5F0"/>
+        <circle cx="583" cy="612" r="8" fill="#FFF5F0"/>
+        <ellipse cx="570" cy="628" rx="14" ry="7" fill="#FFB7C5" opacity={0.4}/>
+      </g>
+
+      {/* Whiskers - Left */}
+      <g stroke="#D4AF37" strokeWidth={5} strokeLinecap="round" opacity={0.8} filter="url(#rabbitShadow)">
+        <path d="M 215 415 L 130 395" />
+        <path d="M 215 425 L 120 425" />
+        <path d="M 215 435 L 130 455" />
+      </g>
+
+      {/* Whiskers - Right */}
+      <g stroke="#D4AF37" strokeWidth={5} strokeLinecap="round" opacity={0.8} filter="url(#rabbitShadow)">
+        <path d="M 585 415 L 670 395" />
+        <path d="M 585 425 L 680 425" />
+        <path d="M 585 435 L 670 455" />
+      </g>
+
+      {/* Decorative sparkles */}
+      <circle cx="300" cy="280" r="4" fill="#FFD700" className="rabbit-sparkle"/>
+      <circle cx="500" cy="270" r="3" fill="#FFD700" className="rabbit-sparkle" style={{animationDelay: '0.5s'}}/>
+      <circle cx="320" cy="580" r="3" fill="#FFD700" className="rabbit-sparkle" style={{animationDelay: '1s'}}/>
+      <circle cx="480" cy="590" r="4" fill="#FFD700" className="rabbit-sparkle" style={{animationDelay: '0.3s'}}/>
+      <circle cx="260" cy="340" r="2.5" fill="#FFB7C5" className="rabbit-sparkle" style={{animationDelay: '0.7s'}}/>
+      <circle cx="540" cy="350" r="2.5" fill="#FFB7C5" className="rabbit-sparkle" style={{animationDelay: '0.9s'}}/>
+
+      {/* Decorative dots around ring */}
+      <circle cx="400" cy="155" r="5" fill="#FFD700" opacity={0.7}/>
+      <circle cx="400" cy="685" r="5" fill="#FFD700" opacity={0.7}/>
+      <circle cx="185" cy="420" r="5" fill="#FFD700" opacity={0.7}/>
+      <circle cx="615" cy="420" r="5" fill="#FFD700" opacity={0.7}/>
+      
+      <circle cx="265" cy="220" r="3.5" fill="#FFB7C5" opacity={0.8}/>
+      <circle cx="535" cy="220" r="3.5" fill="#FFB7C5" opacity={0.8}/>
+      <circle cx="265" cy="620" r="3.5" fill="#FFB7C5" opacity={0.8}/>
+      <circle cx="535" cy="620" r="3.5" fill="#FFB7C5" opacity={0.8}/>
+    </svg>
+  </div>
+);
+
 // --- NEW PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
@@ -207,7 +343,7 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- MERGED GLOSSY WINGS SVG COMPONENT ---
+// --- GLOSSY WINGS SVG COMPONENT ---
 const GlossyWingsSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <style>{`
@@ -267,7 +403,7 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
         <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="18" result="b"/>
           <feFlood floodColor="#1e90ff" floodOpacity="0.25"/>
-          <feComposite in2="b" operator="in"/>
+          <feComposite operator="in" in2="b"/>
         </filter>
 
         <mask id="centerHole">
@@ -432,7 +568,7 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- NEW ARISE BUBBLE SVG COMPONENT ---
+// --- ARISE BUBBLE SVG COMPONENT ---
 const AriseBubbleSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <svg viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
@@ -629,6 +765,18 @@ export default function StorePage() {
       isCustomSVG: true
     });
 
+    // --- RABBIT FRAME ADDED HERE ---
+    frames.push({
+      id: 'f-rabbit',
+      name: 'Rabbit',
+      type: 'Frame',
+      price: 39999,
+      durationDays: 7,
+      description: 'Cute animated Rabbit frame with floppy ears, fluffy tail, and little paws.',
+      isCustomSVG: true,
+      isRabbit: true
+    });
+
     return frames;
   }, []);
 
@@ -810,6 +958,8 @@ export default function StorePage() {
                               </Avatar>
                               {item.id === 'f-kitti' ? (
                                 <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                              ) : item.id === 'f-rabbit' ? (
+                                <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                               ) : (
                                 <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                               )}
@@ -884,6 +1034,8 @@ export default function StorePage() {
                         </Avatar>
                         {previewItem.id === 'f-kitti' ? (
                           <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                        ) : previewItem.id === 'f-rabbit' ? (
+                          <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                         ) : (
                           <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
                         )}
@@ -981,5 +1133,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
-
+          }
