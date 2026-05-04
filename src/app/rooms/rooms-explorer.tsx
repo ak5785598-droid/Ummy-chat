@@ -31,7 +31,7 @@ import {
   Compass,
   Mail,
   User,
-  CalendarCheck, // <-- Import wahi hai, par ab hum custom icon use karenge
+  CalendarCheck,
   CircleDollarSign, 
   X 
 } from 'lucide-react';
@@ -307,8 +307,30 @@ function RoomsExplorerClassic() {
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
            <div className="flex items-center gap-3">
-              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'recommend' ? "text-white drop-shadow-md" : "text-white/60 hover:text-white/80")}>Recommend</button>
-              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'me' ? "text-white drop-shadow-md" : "text-white/60 hover:text-white/80")}>Me</button>
+              {/* Recommend Tab - Active Black text, inactive gray-500 */}
+              <button 
+                onClick={() => setHeaderTab('recommend')} 
+                className={cn(
+                  "text-xl font-bold tracking-tight transition-all duration-200", 
+                  headerTab === 'recommend' 
+                    ? "text-black drop-shadow-sm" 
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Recommend
+              </button>
+              {/* Me Tab - Active Black text, inactive gray-500 */}
+              <button 
+                onClick={() => setHeaderTab('me')} 
+                className={cn(
+                  "text-xl font-bold tracking-tight transition-all duration-200", 
+                  headerTab === 'me' 
+                    ? "text-black drop-shadow-sm" 
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                Me
+              </button>
            </div>
            <div className="flex items-center gap-2 text-slate-800">
               <UserSearchDialog />
@@ -592,15 +614,15 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* NEW GLOSSY CALENDAR BUTTON */}
+      {/* MODIFIED GLOSSY CALENDAR BUTTON - icon fills button completely */}
       {isHydrated && (
         <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
           <button 
             onClick={() => setShowRewardsModal(true)}
-            className="relative bg-purple-500 hover:bg-purple-600 p-3.5 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+            className="relative bg-purple-500 hover:bg-purple-600 p-0 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
           >
-            {/* Custom SVG Icon added here, keeping the same 1st Program h-7 w-7 logic */}
-            <GlossyCalendarIcon className="h-7 w-7 text-white group-hover:scale-105 transition-transform z-10 relative" />
+            {/* Icon now takes full button size (h-14 w-14 = 56px, matches original button dimensions) */}
+            <GlossyCalendarIcon className="h-14 w-14 text-white group-hover:scale-105 transition-transform z-10 relative" />
           </button>
         </div>
       )}
@@ -697,7 +719,7 @@ function RoomsExplorerClassic() {
              </div>
           </div>
 
-          {/* Close (X) Button bahar niche shift kar diya hai */}
+          {/* Close (X) Button */}
           <button 
              onClick={() => setShowRewardsModal(false)} 
              className="bg-white/20 hover:bg-white/30 border border-white/50 backdrop-blur-md transition-colors text-white rounded-full p-3.5 shadow-xl hover:scale-105 active:scale-95 z-50 animate-in slide-in-from-bottom-5 duration-300"
@@ -746,4 +768,4 @@ function RoomsExplorerClassic() {
       )}
     </div>
   );
-}
+ }
