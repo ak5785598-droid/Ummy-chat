@@ -35,6 +35,114 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
+// --------------------- SVG ANIMALS (replacing emojis) ---------------------
+const AnimalIcon = ({ id, className }: { id: string; className?: string }) => {
+  const common = "w-full h-full";
+  switch (id) {
+    case 'lion':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="16" fill="#F5B041" stroke="#C67B0B" strokeWidth="1.2"/>
+          <circle cx="13" cy="18" r="2" fill="#2C2C2C"/>
+          <circle cx="27" cy="18" r="2" fill="#2C2C2C"/>
+          <path d="M16 24 Q20 28 24 24" stroke="#5D3A1A" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          <path d="M8 10 L12 6 L16 10" stroke="#D48B1B" strokeWidth="1.2" fill="#F7CA6A"/>
+          <path d="M24 10 L28 6 L32 10" stroke="#D48B1B" strokeWidth="1.2" fill="#F7CA6A"/>
+          <circle cx="20" cy="20" r="16" fill="none" stroke="#C67B0B" strokeWidth="0.8" opacity="0.4"/>
+        </svg>
+      );
+    case 'tiger':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="16" fill="#F28C38" stroke="#B95A00" strokeWidth="1.2"/>
+          <path d="M12 14 L14 12 L16 14" stroke="#5D3A1A" strokeWidth="1" fill="none"/>
+          <path d="M24 14 L26 12 L28 14" stroke="#5D3A1A" strokeWidth="1" fill="none"/>
+          <circle cx="13" cy="19" r="1.8" fill="#1F1F1F"/>
+          <circle cx="27" cy="19" r="1.8" fill="#1F1F1F"/>
+          <path d="M16 25 Q20 29 24 25" stroke="#5D3A1A" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+          <path d="M10 28 L8 32 M30 28 L32 32" stroke="#B95A00" strokeWidth="1.2"/>
+        </svg>
+      );
+    case 'fox':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="15" fill="#E67E22" stroke="#B64900" strokeWidth="1"/>
+          <polygon points="12,12 8,6 16,10" fill="#E67E22" stroke="#B64900" strokeWidth="0.8"/>
+          <polygon points="28,12 32,6 24,10" fill="#E67E22" stroke="#B64900" strokeWidth="0.8"/>
+          <circle cx="13" cy="19" r="1.8" fill="white"/>
+          <circle cx="27" cy="19" r="1.8" fill="white"/>
+          <circle cx="13" cy="19" r="0.9" fill="#2C2C2C"/>
+          <circle cx="27" cy="19" r="0.9" fill="#2C2C2C"/>
+          <path d="M17 24 Q20 28 23 24" stroke="#5D3A1A" strokeWidth="1.5" fill="none"/>
+        </svg>
+      );
+    case 'bear':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="16" fill="#8B5A2B" stroke="#5A3817" strokeWidth="1.2"/>
+          <circle cx="12" cy="20" r="2.5" fill="#2E2E2E"/>
+          <circle cx="28" cy="20" r="2.5" fill="#2E2E2E"/>
+          <circle cx="12" cy="19.5" r="1" fill="white"/>
+          <circle cx="28" cy="19.5" r="1" fill="white"/>
+          <ellipse cx="20" cy="28" rx="6" ry="3" fill="#5A3817" opacity="0.6"/>
+          <circle cx="20" cy="24" r="1.5" fill="#5A3817"/>
+        </svg>
+      );
+    case 'panda':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="15" fill="white" stroke="#4F4F4F" strokeWidth="1.2"/>
+          <circle cx="12" cy="19" r="3.5" fill="#2C2C2C"/>
+          <circle cx="28" cy="19" r="3.5" fill="#2C2C2C"/>
+          <circle cx="14" cy="18" r="1" fill="white"/>
+          <circle cx="26" cy="18" r="1" fill="white"/>
+          <ellipse cx="20" cy="27" rx="4" ry="2.5" fill="#2C2C2C"/>
+          <circle cx="20" cy="21" r="1.5" fill="#262626"/>
+        </svg>
+      );
+    case 'rabbit':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="24" r="12" fill="#F8E0C0" stroke="#C49A6C" strokeWidth="1.2"/>
+          <ellipse cx="14" cy="16" rx="4" ry="7" fill="#F8E0C0" stroke="#C49A6C" strokeWidth="0.8"/>
+          <ellipse cx="26" cy="16" rx="4" ry="7" fill="#F8E0C0" stroke="#C49A6C" strokeWidth="0.8"/>
+          <circle cx="16" cy="23" r="1.8" fill="#2E2E2E"/>
+          <circle cx="24" cy="23" r="1.8" fill="#2E2E2E"/>
+          <path d="M18 27 Q20 30 22 27" stroke="#C49A6C" strokeWidth="1.2" fill="none"/>
+          <circle cx="20" cy="19" r="1.2" fill="#FFB6C1"/>
+        </svg>
+      );
+    case 'cow':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="20" r="16" fill="#FDF4E3" stroke="#A66E38" strokeWidth="1.2"/>
+          <ellipse cx="12" cy="18" rx="3" ry="2.5" fill="#8B5A2B"/>
+          <ellipse cx="28" cy="18" rx="3" ry="2.5" fill="#8B5A2B"/>
+          <circle cx="12" cy="18" r="1" fill="#2C2C2C"/>
+          <circle cx="28" cy="18" r="1" fill="#2C2C2C"/>
+          <circle cx="20" cy="25" r="2" fill="#FFB6C1"/>
+          <path d="M14 30 L12 34 M26 30 L28 34" stroke="#A66E38" strokeWidth="1.2"/>
+        </svg>
+      );
+    case 'dog':
+      return (
+        <svg viewBox="0 0 40 40" className={cn(common, className)} fill="none">
+          <circle cx="20" cy="22" r="14" fill="#D9A066" stroke="#8B5A2B" strokeWidth="1.2"/>
+          <ellipse cx="13" cy="18" rx="2.5" ry="4" fill="#BE7C3D"/>
+          <ellipse cx="27" cy="18" rx="2.5" ry="4" fill="#BE7C3D"/>
+          <circle cx="15" cy="22" r="1.8" fill="#2C2C2C"/>
+          <circle cx="25" cy="22" r="1.8" fill="#2C2C2C"/>
+          <circle cx="15" cy="21.5" r="0.8" fill="white"/>
+          <circle cx="25" cy="21.5" r="0.8" fill="white"/>
+          <path d="M18 28 Q20 31 22 28" stroke="#6B3E1A" strokeWidth="1.2" fill="none"/>
+        </svg>
+      );
+    default:
+      return <div className="w-full h-full bg-amber-200 rounded-full" />;
+  }
+};
+// --------------------------------------------------------------------------
+
 const formatKandM = (num: number) => {
   if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -243,7 +351,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
  const [history, setHistory] = useState<{id: string, type: 'single' | 'left' | 'right'}[]>([]);
  const [isMuted, setIsMuted] = useState(false);
- const [winnerData, setWinnerData] = useState<{ emoji: string; win: number; bet: number } | null>(null);
+ const [winnerData, setWinnerData] = useState<{ win: number; bet: number; winningId?: string; groupType?: 'none' | 'left' | 'right' } | null>(null);
  const [localCoins, setLocalCoins] = useState(0);
  
  const [droppedChips, setDroppedChips] = useState<{id: string | number, itemIdx: number, label: string, color: string, bgColor: string, x: number, y: number}[]>([]);
@@ -251,7 +359,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  
  const [showRules, setShowRules] = useState(false);
  const [showRecord, setShowRecord] = useState(false);
- const [gameRecords, setGameRecords] = useState<{ id: number; emoji: string; bet: number; win: number; timestamp: number }[]>([]);
+ const [gameRecords, setGameRecords] = useState<{ id: number; animalId: string; bet: number; win: number; timestamp: number }[]>([]);
  
  const [shiningGroup, setShiningGroup] = useState<'none' | 'left' | 'right'>('none');
  const [dailyWinnings, setDailyWinnings] = useState(0);
@@ -269,6 +377,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const gameStateRef = useRef(gameState);
  const myBetsRef = useRef(myBets);
  const isMountedRef = useRef(true);
+ const coinDisplayRef = useRef<HTMLSpanElement>(null);
 
  // Audio refs
  const chipAudio = useRef<HTMLAudioElement | null>(null);
@@ -365,6 +474,21 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     gameStateRef.current = gameState;
  }, [myBets, gameState]);
 
+ // Dynamic font scaling for coin balance
+ useEffect(() => {
+   if (coinDisplayRef.current) {
+     const text = coinDisplayRef.current.innerText;
+     const len = text.length;
+     let fontSize = 14; // base
+     if (len >= 12) fontSize = 8;
+     else if (len >= 10) fontSize = 9;
+     else if (len >= 8) fontSize = 10;
+     else if (len >= 6) fontSize = 11;
+     else fontSize = 13;
+     coinDisplayRef.current.style.fontSize = `${fontSize}px`;
+   }
+ }, [localCoins]);
+
  useEffect(() => {
     isMountedRef.current = true;
     const timer = setTimeout(() => {
@@ -382,7 +506,26 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
      if (saved) {
-       try { setGameRecords(JSON.parse(saved)); } catch (e) {}
+       try { 
+         const parsed = JSON.parse(saved);
+         // Migrate old records if needed (convert emoji to animalId)
+         if (parsed.length > 0 && parsed[0].animalId === undefined) {
+           // Old format, recreate with animalId
+           const migrated = parsed.map((rec: any) => {
+             const animal = ANIMALS.find(a => a.emoji === rec.emoji);
+             return {
+               id: rec.id,
+               animalId: animal?.id || 'panda',
+               bet: rec.bet,
+               win: rec.win,
+               timestamp: rec.timestamp
+             };
+           });
+           setGameRecords(migrated);
+         } else {
+           setGameRecords(parsed);
+         }
+       } catch (e) {}
      }
 
      const savedDaily = localStorage.getItem('forestPartyDailyWin');
@@ -424,9 +567,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      ];
      setHistory(initialHistory);
 
-     // Initialize audio elements
+     // Initialize audio elements with enhanced spin sound
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
-     spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
+     spinAudio.current = new Audio('https://actions.google.com/sound/bar/feel_the_beat.mp3'); 
+     if (spinAudio.current) {
+       spinAudio.current.load();
+       spinAudio.current.volume = 0.6;
+     }
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
      
@@ -438,6 +585,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      });
    }
  }, []);
+
+ // Ensure spin audio plays correctly on spin start
+ useEffect(() => {
+   if (gameState === 'spinning' && !isMuted && spinAudio.current) {
+     spinAudio.current.currentTime = 0;
+     spinAudio.current.play().catch(e => console.log("Spin audio play failed", e));
+   }
+   if (gameState !== 'spinning' && spinAudio.current && !spinAudio.current.paused) {
+     spinAudio.current.pause();
+     spinAudio.current.currentTime = 0;
+   }
+ }, [gameState, isMuted]);
 
  // Handle live bets - fixed to prevent accumulation across rounds
  useEffect(() => {
@@ -467,7 +626,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
         if (newChips.length > 0) {
             setDroppedChips(prev => {
-                // Keep only recent chips (limit to last 50 to avoid memory bloat)
                 const combined = [...prev, ...newChips];
                 if (combined.length > 100) return combined.slice(-100);
                 return combined;
@@ -552,12 +710,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setShiningGroup(groupType); 
   const baseTime = Date.now();
   const newRoundRecords = Object.entries(currentBets).map(([betId, betAmount], index) => {
-     const animal = ANIMALS.find(a => a.id === betId);
      return {
        id: baseTime + index,
-       emoji: animal?.emoji || '❓',
+       animalId: betId,
        bet: betAmount as number,
-       win: winningIds.includes(betId) ? (betAmount as number) * (animal?.multiplier || 0) : 0,
+       win: winningIds.includes(betId) ? (betAmount as number) * (ANIMALS.find(a => a.id === betId)?.multiplier || 0) : 0,
        timestamp: baseTime
      };
   });
@@ -566,12 +723,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   
   const historyItem = { id: winningId, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
   setHistory(prev => [historyItem, ...prev].slice(0, 20)); 
-
-  let displayEmoji = ANIMALS.find(i => i.id === winningId)?.emoji || '🏆';
-  if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
-  if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔'; 
   
-  setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
+  setWinnerData({ win: winAmount, bet: totalBetAmount, winningId, groupType });
   isPopupVisibleRef.current = true;
   setActiveWinnerIdx(1); 
 
@@ -606,7 +759,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 3000);
  }, [currentUser, firestore, playSound, userProfile]);
 
- // Main game loop with fixed timing
+ // Main game loop with fixed timing and faster smooth spinning
  useEffect(() => {
   const ROUND_DUR = 45000; 
   const BET_DUR = 30000;   
@@ -672,11 +825,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           const endFraction = rEnd - Math.floor(rEnd);
           const finalIdx = Math.floor(endFraction * ANIMALS.length);
           
-          // Calculate current highlight index during spin
+          // Calculate current highlight index during spin - FASTER SMOOTH SPIN
           let currentIdx = 0;
           if (progress < 0.95) {
-              // Fast spinning - cycle through all animals
-              const steps = Math.floor(eased * 40);
+              // Fast spinning - cycle through animals much faster (increased steps)
+              const steps = Math.floor(eased * 110); // Increased from 40 to 110 for faster spin
               currentIdx = steps % ANIMALS.length;
           } else {
               // Slow down to final position
@@ -814,7 +967,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     dragListener={false}
     dragMomentum={false}
     whileDrag={{ scale: 1.02, transition: { duration: 0.2 }, zIndex: 50 }}
-    className="h-[66dvh] my-auto w-full relative select-none overscroll-none" 
+    className="h-[66dvh] my-auto w-full relative select-none overscroll-none overflow-x-hidden" 
     style={{ touchAction: 'none' }}
   >
    <motion.div
@@ -846,9 +999,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                         {winnerData.bet === 0 ? (
                             <span className="text-[60px] filter drop-shadow-md">😴</span>
                         ) : (
-                            <span className="text-[70px] filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                               {winnerData.emoji}
-                            </span>
+                            winnerData.groupType === 'left' ? (
+                              <div className="flex gap-2 justify-center items-center">
+                                <AnimalIcon id="lion" className="w-12 h-12" />
+                                <AnimalIcon id="tiger" className="w-12 h-12" />
+                                <AnimalIcon id="fox" className="w-12 h-12" />
+                                <AnimalIcon id="bear" className="w-12 h-12" />
+                              </div>
+                            ) : winnerData.groupType === 'right' ? (
+                              <div className="flex gap-2 justify-center items-center">
+                                <AnimalIcon id="panda" className="w-12 h-12" />
+                                <AnimalIcon id="rabbit" className="w-12 h-12" />
+                                <AnimalIcon id="cow" className="w-12 h-12" />
+                                <AnimalIcon id="dog" className="w-12 h-12" />
+                              </div>
+                            ) : (
+                              winnerData.winningId && <AnimalIcon id={winnerData.winningId} className="w-16 h-16" />
+                            )
                         )}
                     </div>
                     
@@ -932,7 +1099,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                     {gameRecords.length === 0 ? <p className="text-white/20 text-center text-xs italic mt-8">No records found yet...</p> : gameRecords.map((rec) => (
                         <div key={rec.id} className="bg-white/5 border border-white/10 rounded-xl p-3 flex items-center justify-between backdrop-blur-sm">
                             <div className="flex items-center gap-3">
-                                <span className="text-2xl filter drop-shadow-md">{rec.emoji}</span>
+                                <div className="w-8 h-8">
+                                  <AnimalIcon id={rec.animalId} className="w-full h-full" />
+                                </div>
                                 <div className="flex flex-col">
                                     <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Bet Amount</span>
                                     <span className="text-xs font-black text-white/90">{rec.bet}</span>
@@ -950,58 +1119,60 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </AnimatePresence>
 
        {/* HEADER */}
-       <header className="relative z-50 flex items-center justify-between px-4 py-2 bg-transparent shrink-0 mt-1">
+       <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
           <div className="flex items-center gap-2">
               <div 
                 onPointerDown={(e) => dragControls.start(e)}
                 style={{ touchAction: 'none' }}
-                className="cursor-grab active:cursor-grabbing h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm touch-none"
+                className="cursor-grab active:cursor-grabbing h-8 w-8 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm touch-none"
               >
-                <Move size={16} className="filter drop-shadow-md pointer-events-none" />
+                <Move size={14} className="filter drop-shadow-md pointer-events-none" />
               </div>
               
-              <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[32px] pl-1 pr-1 ml-1">
+              {/* Reduced balance card size with dynamic text scaling */}
+              <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[28px] pl-1 pr-1 ml-1">
                   <div className="bg-yellow-400 rounded-md p-0.5">
-                      <CoinIcon2 className="h-5 w-5 filter brightness-110 drop-shadow-md" />
+                      <CoinIcon2 className="h-4 w-4 filter brightness-110 drop-shadow-md" />
                   </div>
-                  <span className="text-white px-2 font-semibold text-[12px]">{localCoins}</span>
-                  <button className="h-[24px] w-[24px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-3 w-3 stroke-[3]" /></button>
+                  <div className="px-1.5 min-w-[45px] max-w-[70px] text-center">
+                    <span ref={coinDisplayRef} className="font-semibold text-white whitespace-nowrap" style={{ fontSize: '12px' }}>
+                      {localCoins}
+                    </span>
+                  </div>
+                  <button className="h-[20px] w-[20px] bg-gradient-to-b from-[#7bdcb5] to-[#4caf50] rounded-md flex items-center justify-center text-white border-[1.5px] border-white/40 shadow-sm"><Plus className="h-2.5 w-2.5 stroke-[3]" /></button>
               </div>
           </div>
 
           <div className="flex items-center gap-2">
-              <button onClick={() => setShowRecord(true)} className="h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><Clock size={16} className="filter drop-shadow-md brightness-110" /></button>
-              <button onClick={() => setIsMuted(!isMuted)} className="h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm">{isMuted ? <VolumeX size={16} className="filter drop-shadow-md" /> : <Volume2 size={16} className="filter drop-shadow-md" />}</button>
-              <button onClick={() => setShowRules(true)} className="h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><HelpCircle size={16} className="filter drop-shadow-md brightness-110" /></button>
-              <button onClick={onBack} className="h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><X size={16} className="filter drop-shadow-md" /></button>
+              <button onClick={() => setShowRecord(true)} className="h-8 w-8 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><Clock size={14} className="filter drop-shadow-md brightness-110" /></button>
+              <button onClick={() => setIsMuted(!isMuted)} className="h-8 w-8 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm">{isMuted ? <VolumeX size={14} className="filter drop-shadow-md" /> : <Volume2 size={14} className="filter drop-shadow-md" />}</button>
+              <button onClick={() => setShowRules(true)} className="h-8 w-8 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><HelpCircle size={14} className="filter drop-shadow-md brightness-110" /></button>
+              <button onClick={onBack} className="h-8 w-8 flex items-center justify-center rounded-full border border-white/40 bg-gradient-to-b from-white/20 to-black/50 text-white transition-active active:scale-90 shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.4)] backdrop-blur-sm"><X size={14} className="filter drop-shadow-md" /></button>
           </div>
        </header>
 
        {/* WINNING HISTORY */}
        <div className="px-4 py-1 shrink-0 z-40 relative">
-         <div className="w-full bg-gradient-to-b from-white/20 to-white/5 backdrop-blur-xl py-2.5 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border border-white/30 rounded-2xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_6px_15px_rgba(0,0,0,0.4)] ring-1 ring-white/10">
+         <div className="w-full bg-gradient-to-b from-white/20 to-white/5 backdrop-blur-xl py-2 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border border-white/30 rounded-2xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_6px_15px_rgba(0,0,0,0.4)] ring-1 ring-white/10">
             <div className="flex flex-col items-center justify-center border-r border-white/20 pr-3 mr-1 shrink-0">
               <span className="text-[7px] text-white/60 uppercase font-black tracking-widest leading-none mb-0.5">Winning</span>
               <span className="text-[9px] text-white font-black tracking-tighter leading-none">History</span>
             </div>
             <div className="flex items-center gap-4">
-              {history.map((h, i) => {
-                  const animal = ANIMALS.find(a => a.id === h.id);
-                  return (
-                    <div key={`${h.id}-${i}`} className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
-                         <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
-                         <span className="text-base z-10 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
-                      </div>
-                    </div>
-                  )
-              })}
+              {history.map((h, i) => (
+                <div key={`${h.id}-${i}`} className="flex flex-col items-center gap-1 shrink-0">
+                  <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
+                     <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
+                     <AnimalIcon id={h.id} className="w-5 h-5 z-10" />
+                  </div>
+                </div>
+              ))}
             </div>
          </div>
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
-        {/* MIX LEFT */}
+        {/* MIX LEFT - replaced text emojis with SVGs */}
         <div className={cn(
             "absolute top-[3.5%] left-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
@@ -1009,16 +1180,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
             <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[75%] h-[35%] bg-gradient-to-b from-white/50 to-transparent rounded-full pointer-events-none z-20" />
-            <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🦁</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐯</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🦊</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐻</span>
+            <div className="grid grid-cols-2 gap-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
+                <AnimalIcon id="lion" className="w-3.5 h-3.5" />
+                <AnimalIcon id="tiger" className="w-3.5 h-3.5" />
+                <AnimalIcon id="fox" className="w-3.5 h-3.5" />
+                <AnimalIcon id="bear" className="w-3.5 h-3.5" />
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
-        {/* MIX RIGHT */}
+        {/* MIX RIGHT - replaced text emojis with SVGs */}
         <div className={cn(
             "absolute top-[3.5%] right-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
@@ -1026,11 +1197,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
             <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[75%] h-[35%] bg-gradient-to-b from-white/50 to-transparent rounded-full pointer-events-none z-20" />
-            <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐰</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐻‍❄️</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐼</span>
-                <span className="text-[9px] filter drop-shadow-md leading-none text-center">🐔</span>
+            <div className="grid grid-cols-2 gap-0.5 justify-center items-center z-10 mb-0.5 mt-0.5">
+                <AnimalIcon id="panda" className="w-3.5 h-3.5" />
+                <AnimalIcon id="rabbit" className="w-3.5 h-3.5" />
+                <AnimalIcon id="cow" className="w-3.5 h-3.5" />
+                <AnimalIcon id="dog" className="w-3.5 h-3.5" />
             </div>
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'right' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
@@ -1083,11 +1254,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               <button onClick={() => handlePlaceBet(item)} className="relative group outline-none">
                 <div className={cn(
                     "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_#d4a373]", 
-                    active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
+                    active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
                     applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
                 )} style={{ transform: 'translate3d(0,0,0)', willChange: 'transform, filter', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
-                    <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")} style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>{item.emoji}</span>
+                    <span className={cn("inline-flex items-center justify-center w-[38px] h-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")}>
+                      <AnimalIcon id={item.id} />
+                    </span>
                     <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
                         <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                     </div>
@@ -1319,4 +1492,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </motion.div>
   </motion.div>
  );
-}
+    }
