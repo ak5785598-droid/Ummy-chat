@@ -31,6 +31,9 @@ import {
   Compass,
   Mail,
   User,
+  CalendarCheck, // <-- Aapka calendar icon
+  CircleDollarSign, // <-- Dollar Coins Icon k liye
+  X // <-- Modal close karne k liye
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,6 +110,9 @@ function RoomsExplorerClassic() {
  const [activeCategory, setActiveCategory] = useState("All");
  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
+
+ // Naya State: Daily Rewards Modal Open/Close Manage karne ke liye
+ const [showRewardsModal, setShowRewardsModal] = useState(false);
 
  // LOCKDOWN: Dynamic Mount Tracker
  const [isReady, setIsReady] = useState(false);
@@ -497,6 +503,127 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
+      {/* NEW: IMAGE JAISA PURPLE FLOATING CALENDAR BUTTON (Slightly above bottom tab on the right) */}
+      {isHydrated && (
+        <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
+          <button 
+            onClick={() => setShowRewardsModal(true)} // <-- Yahan state true kiya
+            className="relative bg-gradient-to-br from-purple-400 to-purple-600 p-3.5 rounded-[1.2rem] shadow-[0_8px_20px_rgba(168,85,247,0.4)] border border-white/30 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+          >
+            {/* Image ki tarah Sparkles effect */}
+            <Sparkles className="absolute -top-1 -left-1 h-5 w-5 text-white/90 animate-pulse drop-shadow-sm" fill="currentColor" />
+            <Sparkles className="absolute top-4 -left-2 h-3 w-3 text-white/70" fill="currentColor" />
+            
+            {/* Calendar Check Icon */}
+            <CalendarCheck className="h-7 w-7 text-white drop-shadow-md group-hover:scale-105 transition-transform" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
+
+      {/* DAILY REWARDS MODAL OVERLAY - START (Ye poora naya add hua hai) */}
+      {showRewardsModal && (
+        <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in duration-200">
+          
+          {/* Card Container (60vh, white bg, light purple border) */}
+          <div className="w-full max-w-sm h-[60vh] bg-white rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
+             
+             {/* Close Button */}
+             <button 
+               onClick={() => setShowRewardsModal(false)} 
+               className="absolute top-3 right-3 z-20 bg-black/20 hover:bg-black/40 transition-colors text-white rounded-full p-1.5"
+             >
+               <X className="h-4 w-4" />
+             </button>
+
+             {/* Header Top Solid Purple Area */}
+             <div className="bg-purple-600 pt-5 pb-3 px-4 relative flex-shrink-0">
+               <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
+               <h2 className="text-[1.3rem] font-black text-white text-center drop-shadow-md relative z-10 tracking-wide">
+                 Daily Rewards
+               </h2>
+             </div>
+
+             {/* Sub Heading Halka Purple */}
+             <div className="bg-purple-100 py-2.5 px-4 text-center border-b border-purple-200 flex-shrink-0">
+               <p className="text-purple-800 font-bold text-[11px] uppercase tracking-wider">
+                 Sign in for 7 days for rich Rewards
+               </p>
+             </div>
+
+             {/* Body (Scrollable if needed, Flex column layout) */}
+             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 justify-center">
+               
+               {/* 1st Row: 4 Chote Cards (Day 1 to 4) */}
+               <div className="grid grid-cols-4 gap-2">
+                 {[
+                   { day: 1, amount: 5000 },
+                   { day: 2, amount: 10000 },
+                   { day: 3, amount: 10000 },
+                   { day: 4, amount: 10000 }
+                 ].map((item) => (
+                   <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-xl relative pt-6 pb-2 px-1 flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                     {/* Square Day Tag at Top Left */}
+                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-br-lg">
+                       {item.day}
+                     </div>
+                     
+                     {/* Big Dollar Coin */}
+                     <CircleDollarSign className="h-7 w-7 text-amber-500 mb-1.5 drop-shadow-sm" fill="#fef08a" strokeWidth={1.5} />
+                     
+                     {/* Small Coin icon + Text */}
+                     <div className="flex items-center gap-0.5 mt-auto bg-white px-1 py-0.5 rounded-full border border-slate-100">
+                       <GoldCoinIcon className="h-2 w-2" />
+                       <span className="text-[9px] font-bold text-slate-700 leading-none">{item.amount}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+
+               {/* 2nd Row: 2 Cards (Day 5 & 6) */}
+               <div className="grid grid-cols-2 gap-3">
+                 {[
+                   { day: 5, amount: 10000 },
+                   { day: 6, amount: 10000 }
+                 ].map((item) => (
+                   <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-2xl relative pt-7 pb-3 px-2 flex flex-col items-center justify-center overflow-hidden shadow-sm">
+                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-xs font-black px-2.5 py-0.5 rounded-br-xl">
+                       {item.day}
+                     </div>
+                     <CircleDollarSign className="h-10 w-10 text-amber-500 mb-2 drop-shadow-md" fill="#fef08a" strokeWidth={1.5} />
+                     <div className="flex items-center gap-1 mt-auto bg-white px-2 py-1 rounded-full border border-slate-100 shadow-sm">
+                       <GoldCoinIcon className="h-3 w-3" />
+                       <span className="text-[11px] font-bold text-slate-700 leading-none">{item.amount}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+
+               {/* 3rd Row: 1 Wide Card (Day 7) */}
+               <div className="bg-slate-50 border border-slate-200 rounded-[1.5rem] relative pt-8 pb-4 px-3 flex flex-col items-center justify-center overflow-hidden shadow-sm mt-1">
+                  <div className="absolute top-0 left-0 bg-purple-500 text-white text-[11px] font-black px-3 py-1 rounded-br-2xl flex items-center gap-1 shadow-sm uppercase tracking-wide">
+                    <span className="text-yellow-300 text-sm">7</span> Big Rewards
+                  </div>
+                  <CircleDollarSign className="h-14 w-14 text-amber-500 mb-2 drop-shadow-lg" fill="#fef08a" strokeWidth={1.5} />
+                  <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm">
+                    <GoldCoinIcon className="h-4 w-4" />
+                    <span className="text-sm font-bold text-slate-700 leading-none">10000</span>
+                  </div>
+               </div>
+
+             </div>
+
+             {/* Footer with Button */}
+             <div className="p-4 pt-2 bg-white flex-shrink-0 z-10 border-t border-slate-100">
+               <button className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white rounded-2xl py-3.5 font-black text-[15px] shadow-[0_4px_15px_rgba(168,85,247,0.3)] active:scale-95 transition-all duration-200 uppercase tracking-widest">
+                 Sign in Today
+               </button>
+             </div>
+          </div>
+
+        </div>
+      )}
+      {/* DAILY REWARDS MODAL OVERLAY - END */}
+
       {/* CLEANER BOTTOM NAVIGATION - GLASSMORPHIC REFINEMENT */}
       {isHydrated && (
         <nav 
@@ -534,4 +661,5 @@ function RoomsExplorerClassic() {
       )}
     </div>
   );
-           }
+}
+
