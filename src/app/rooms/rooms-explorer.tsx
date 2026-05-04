@@ -31,9 +31,9 @@ import {
   Compass,
   Mail,
   User,
-  CalendarCheck, // <-- Aapka calendar icon
-  CircleDollarSign, // <-- Dollar Coins Icon k liye
-  X // <-- Modal close karne k liye
+  CalendarCheck, // <-- Import wahi hai, par ab hum custom icon use karenge
+  CircleDollarSign, 
+  X 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -61,6 +61,95 @@ const ICON_MAP: Record<string, any> = {
  Sparkles,
  Trophy,
 };
+
+// ==========================================
+// 3D GLOSSY CALENDAR ICON (Converted from SVG)
+// ==========================================
+const GlossyCalendarIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" className={className}>
+    <defs>
+      <radialGradient id="bg" cx="0.5" cy="0.32" r="0.78">
+        <stop offset="0%" stopColor="#B06EF5"/>
+        <stop offset="48%" stopColor="#8A2BE2"/>
+        <stop offset="100%" stopColor="#5D149E"/>
+      </radialGradient>
+      <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FFFFFF"/>
+        <stop offset="12%" stopColor="#F7F7F8"/>
+        <stop offset="100%" stopColor="#D5D7DD"/>
+      </linearGradient>
+      <linearGradient id="headHi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45"/>
+        <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+      </linearGradient>
+      <filter id="inner" x="-10%" y="-10%" width="120%" height="120%">
+        <feOffset dy="18" in="SourceAlpha" result="o"/>
+        <feGaussianBlur in="o" stdDeviation="26" result="b"/>
+        <feFlood floodColor="#000" floodOpacity="0.28" result="c"/>
+        <feComposite in="c" in2="b" operator="in" result="s"/>
+        <feComposite in="SourceGraphic" in2="s" operator="over"/>
+      </filter>
+      <filter id="shadow" x="-40%" y="-20%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="36" stdDeviation="32" floodColor="#210645" floodOpacity="0.3"/>
+      </filter>
+      <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="b"/>
+        <feFlood floodColor="#FFFFFF" floodOpacity="0.9" result="f"/>
+        <feComposite in="f" in2="b" operator="in" result="g"/>
+        <feMerge>
+          <feMergeNode in="g"/>
+          <feMergeNode in="g"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <clipPath id="clip">
+        <rect x="-230" y="-272" width="460" height="540" rx="34"/>
+      </clipPath>
+    </defs>
+
+    <rect x="0" y="0" width="1024" height="1024" rx="228" fill="url(#bg)" filter="url(#inner)"/>
+    <ellipse cx="512" cy="190" rx="560" ry="310" fill="#FFFFFF" opacity="0.06"/>
+
+    <g filter="url(#glow)" opacity="0.98">
+      <g transform="translate(260 350)">
+        <path d="M0-72c5.5 28 26 48.5 72 54 -46 5.5 -66.5 26 -72 54 -5.5-28 -26-48.5-72-54 46-5.5 66.5-26 72-54z" fill="#FFFFFF"/>
+      </g>
+      <g transform="translate(188 232) scale(0.56)">
+        <path d="M0-72c5.5 28 26 48.5 72 54 -46 5.5 -66.5 26 -72 54 -5.5-28 -26-48.5-72-54 46-5.5 66.5-26 72-54z" fill="#FFFFFF"/>
+      </g>
+    </g>
+
+    <g transform="translate(588 552) rotate(-9)" filter="url(#shadow)">
+      <rect x="-220" y="-256" width="460" height="540" rx="36" fill="#C5C8D1" transform="translate(10 16)"/>
+      <rect x="-230" y="-272" width="460" height="540" rx="34" fill="#FFFFFF"/>
+      <g clipPath="url(#clip)">
+        <rect x="-230" y="-272" width="460" height="122" fill="#4FC3F7"/>
+        <rect x="-230" y="-272" width="460" height="122" fill="url(#headHi)"/>
+      </g>
+      <rect x="206" y="-248" width="18" height="496" rx="9" fill="#000000" opacity="0.04"/>
+      <rect x="-228" y="250" width="456" height="18" rx="9" fill="#E9EBEF" opacity="0.9"/>
+      
+      <path d="M-88 18 L-16 90 L108 -56" fill="none" stroke="#00A6ED" strokeWidth="56" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M-88 18 L-16 90 L108 -56" fill="none" stroke="#FFFFFF" strokeWidth="56" strokeLinecap="round" strokeLinejoin="round" opacity="0.07" transform="translate(0 -4)"/>
+
+      <g transform="translate(-98 -262)">
+        <ellipse cx="0" cy="30" rx="27" ry="9.5" fill="#000" opacity="0.12"/>
+        <rect x="-26" y="-38" width="52" height="68" rx="26" fill="url(#ring)"/>
+        <ellipse cx="0" cy="-32" rx="17.5" ry="6" fill="#FFFFFF"/>
+        <ellipse cx="0" cy="-24" rx="14" ry="3.5" fill="#000" opacity="0.06"/>
+        <rect x="-26" y="12" width="52" height="22" fill="#FFFFFF"/>
+      </g>
+      <g transform="translate(98 -262)">
+        <ellipse cx="0" cy="30" rx="27" ry="9.5" fill="#000" opacity="0.12"/>
+        <rect x="-26" y="-38" width="52" height="68" rx="26" fill="url(#ring)"/>
+        <ellipse cx="0" cy="-32" rx="17.5" ry="6" fill="#FFFFFF"/>
+        <ellipse cx="0" cy="-24" rx="14" ry="3.5" fill="#000" opacity="0.06"/>
+        <rect x="-26" y="12" width="52" height="22" fill="#FFFFFF"/>
+      </g>
+    </g>
+  </svg>
+);
+
 
 const RoomSkeleton = () => (
   <div className="flex flex-col gap-3 min-w-[280px] snap-center">
@@ -218,8 +307,8 @@ function RoomsExplorerClassic() {
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
            <div className="flex items-center gap-3">
-              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'recommend' ? "text-slate-900 drop-shadow-sm" : "text-slate-300")}>Recommend</button>
-              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'me' ? "text-slate-900 drop-shadow-sm" : "text-slate-300")}>Me</button>
+              <button onClick={() => setHeaderTab('recommend')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'recommend' ? "text-white drop-shadow-md" : "text-white/60 hover:text-white/80")}>Recommend</button>
+              <button onClick={() => setHeaderTab('me')} className={cn("text-xl font-bold tracking-tight transition-all duration-200", headerTab === 'me' ? "text-white drop-shadow-md" : "text-white/60 hover:text-white/80")}>Me</button>
            </div>
            <div className="flex items-center gap-2 text-slate-800">
               <UserSearchDialog />
@@ -503,15 +592,15 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* SIMPLE CALENDAR BUTTON - (Glossy and Sparkle Removed) */}
+      {/* NEW GLOSSY CALENDAR BUTTON */}
       {isHydrated && (
         <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
           <button 
             onClick={() => setShowRewardsModal(true)}
             className="relative bg-purple-500 hover:bg-purple-600 p-3.5 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
           >
-            {/* Calendar Check Icon with standard look */}
-            <CalendarCheck className="h-7 w-7 text-white group-hover:scale-105 transition-transform z-10 relative" strokeWidth={2.5} />
+            {/* Custom SVG Icon added here, keeping the same 1st Program h-7 w-7 logic */}
+            <GlossyCalendarIcon className="h-7 w-7 text-white group-hover:scale-105 transition-transform z-10 relative" />
           </button>
         </div>
       )}
@@ -658,4 +747,3 @@ function RoomsExplorerClassic() {
     </div>
   );
 }
-
