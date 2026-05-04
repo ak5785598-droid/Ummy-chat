@@ -212,8 +212,8 @@ function RoomsExplorerClassic() {
     <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white relative">
       <ThemeColorMeta color="#8b5cf6" />
       
-      {/* 30Vh PURPLE GRADIENT BACKGROUND MIXING IN WHITE */}
-      <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-purple-600/80 via-purple-300/40 to-transparent z-0 pointer-events-none" />
+      {/* 30Vh PURPLE GRADIENT BACKGROUND MIXING IN WHITE - THORA HALKA KAR DIYA HAI */}
+      <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-purple-500/50 via-purple-200/30 to-transparent z-0 pointer-events-none" />
 
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
@@ -503,30 +503,24 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* GLOSSY 3D CALENDAR BUTTON - (Ek Sparkle Hata Diya) */}
+      {/* SIMPLE CALENDAR BUTTON - (Glossy and Sparkle Removed) */}
       {isHydrated && (
         <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
           <button 
             onClick={() => setShowRewardsModal(true)}
-            className="relative bg-gradient-to-b from-purple-400 via-purple-500 to-purple-700 p-3.5 rounded-[1.2rem] shadow-[0_10px_20px_rgba(168,85,247,0.5),inset_0_2px_4px_rgba(255,255,255,0.7),inset_0_-4px_6px_rgba(0,0,0,0.3)] border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+            className="relative bg-purple-500 hover:bg-purple-600 p-3.5 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
           >
-            {/* Glossy top highlight for 3D effect */}
-            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/25 rounded-t-[1.2rem] pointer-events-none" />
-
-            {/* Bss ek sparkle rakha hai jaisa bola tha */}
-            <Sparkles className="absolute -top-1 -left-1 h-5 w-5 text-white/90 animate-pulse drop-shadow-sm z-10" fill="currentColor" />
-            
-            {/* Calendar Check Icon with 3D shadow */}
-            <CalendarCheck className="h-7 w-7 text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform z-10 relative" strokeWidth={2.5} />
+            {/* Calendar Check Icon with standard look */}
+            <CalendarCheck className="h-7 w-7 text-white group-hover:scale-105 transition-transform z-10 relative" strokeWidth={2.5} />
           </button>
         </div>
       )}
 
-      {/* DAILY REWARDS MODAL OVERLAY - START (Close Button ab niche hai) */}
+      {/* DAILY REWARDS MODAL OVERLAY - START */}
       {showRewardsModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-5 animate-in fade-in duration-200 gap-6">
           
-          {/* Card Container (X button removed from inside) */}
+          {/* Card Container */}
           <div className="w-full max-w-sm h-[60vh] bg-white rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
 
              {/* Header Top Solid Purple Area */}
