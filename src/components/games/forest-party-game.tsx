@@ -261,10 +261,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  // State for strict real-time round sync
  const [activeRoundId, setActiveRoundId] = useState(() => Math.floor(Date.now() / 45000));
 
- // NEW REFS FOR TIMING LOGIC
+ // Refs for timing and guard logic
  const hasFinalizedRef = useRef(false);
  const resolvedResultRef = useRef<{id: string, groupType: 'none' | 'left' | 'right'} | null>(null);
  const isPopupVisibleRef = useRef(false);
+ const intervalRef = useRef<NodeJS.Timeout | null>(null);
+ const gameStateRef = useRef(gameState);
+ const myBetsRef = useRef(myBets);
+ const isMountedRef = useRef(true);
+
+ // Audio refs
+ const chipAudio = useRef<HTMLAudioElement | null>(null);
+ const spinAudio = useRef<HTMLAudioElement | null>(null);
+ const tickAudio = useRef<HTMLAudioElement | null>(null);
+ const winAudio = useRef<HTMLAudioElement | null>(null);
 
  const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
  const { data: gameData } = useDoc(gameDocRef);
@@ -313,7 +323,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
     const currentRoundWins = allWins.filter(win => win.roundId === currentRoundId);
 
-    // PERFECT GROUPING LOGIC FOR STRICT TOP 3
     const userWinsMap = new Map();
     for (const win of currentRoundWins) {
         if (!userWinsMap.has(win.userId)) {
@@ -333,11 +342,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             name: win.username,
             win: win.amount,
             avatar: win.avatarUrl,
-            bet: Math.floor(win.amount / 5), // Basic fallback if pure bet isn't synced
+            bet: Math.floor(win.amount / 5),
             isMe: win.userId === currentUser?.uid
         }));
 
-    // Pad with empty states to guarantee 3 blocks exactly
     while (uniqueTopWinners.length < 3) {
         uniqueTopWinners.push({
             name: 'Waiting...',
@@ -351,15 +359,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return uniqueTopWinners;
  }, [liveWins, currentUser, winnerData, userProfile]);
 
- const myBetsRef = useRef(myBets);
- const gameStateRef = useRef(gameState);
- const isMountedRef = useRef(true);
-
- const chipAudio = useRef<HTMLAudioElement | null>(null);
- const spinAudio = useRef<HTMLAudioElement | null>(null);
- const tickAudio = useRef<HTMLAudioElement | null>(null);
- const winAudio = useRef<HTMLAudioElement | null>(null);
-
+ // Update refs
  useEffect(() => {
     myBetsRef.current = myBets;
     gameStateRef.current = gameState;
@@ -373,9 +373,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return () => { 
         clearTimeout(timer);
         isMountedRef.current = false; 
+        if (intervalRef.current) clearInterval(intervalRef.current);
     };
  }, []);
 
+ // Initialize audio and local storage
  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
@@ -422,20 +424,24 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      ];
      setHistory(initialHistory);
 
+     // Initialize audio elements
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
      spinAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1899/1899-preview.mp3');
      tickAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2040/2040-preview.mp3');
      winAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); 
      
      [chipAudio, spinAudio, tickAudio, winAudio].forEach(ref => {
-        if (ref.current) ref.current.load();
+        if (ref.current) {
+            ref.current.load();
+            ref.current.volume = 0.5;
+        }
      });
    }
  }, []);
 
- // EFFECT TO DROP REAL-TIME GLOBAL CHIPS (BUG-FREE)
+ // Handle live bets - fixed to prevent accumulation across rounds
  useEffect(() => {
-    if (gameState === 'betting' && liveBets) {
+    if (gameState === 'betting' && liveBets && activeRoundId) {
         let newChips: any[] = [];
         let newProcessed = new Set(processedBetIds);
 
@@ -460,18 +466,25 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         });
 
         if (newChips.length > 0) {
-            setDroppedChips(prev => [...prev, ...newChips]);
+            setDroppedChips(prev => {
+                // Keep only recent chips (limit to last 50 to avoid memory bloat)
+                const combined = [...prev, ...newChips];
+                if (combined.length > 100) return combined.slice(-100);
+                return combined;
+            });
             setProcessedBetIds(newProcessed);
         }
     }
- }, [liveBets, gameState, currentUser?.uid]);
+ }, [liveBets, gameState, currentUser?.uid, activeRoundId, processedBetIds]);
 
+ // Save records to localStorage
  useEffect(() => {
    if (typeof window !== 'undefined') {
      localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); 
    }
  }, [gameRecords]);
 
+ // Sync local coins with user profile
  useEffect(() => {
   if (userProfile?.wallet?.coins !== undefined && isMountedRef.current) {
       setLocalCoins(userProfile.wallet.coins);
@@ -481,21 +494,34 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const playSound = useCallback((type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
   try {
-    const audios = { bet: chipAudio.current, tick: tickAudio.current, spin: spinAudio.current, win: winAudio.current };
-    const audio = audios[type as keyof typeof audios];
+    let audio: HTMLAudioElement | null = null;
+    switch(type) {
+        case 'bet': audio = chipAudio.current; break;
+        case 'tick': audio = tickAudio.current; break;
+        case 'spin': audio = spinAudio.current; break;
+        case 'win': audio = winAudio.current; break;
+        case 'stop': 
+            if (spinAudio.current) {
+                spinAudio.current.pause();
+                spinAudio.current.currentTime = 0;
+            }
+            return;
+    }
     if (audio) {
         audio.currentTime = 0;
         const playPromise = audio.play();
         if (playPromise !== undefined) playPromise.catch(() => {});
     }
-    if (type === 'stop') spinAudio.current?.pause();
   } catch (error) {}
  }, [isMuted]);
 
- const finalizeResult = useCallback((id: string, groupType: 'none' | 'left' | 'right') => {
-  if (!isMountedRef.current) return;
+ const finalizeResult = useCallback((winningId: string, groupType: 'none' | 'left' | 'right') => {
+  if (!isMountedRef.current || hasFinalizedRef.current) return;
+  
+  hasFinalizedRef.current = true;
+  
   setDroppedChips([]);
-  let winningIds = [id];
+  let winningIds = [winningId];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
   
@@ -518,6 +544,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: newAmount }));
         return newAmount;
      });
+     
+     // Update local coins optimistically
+     setLocalCoins(prev => prev + winAmount);
   }
   
   setShiningGroup(groupType); 
@@ -535,17 +564,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   
   if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
   
-  const historyItem = { id: id, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
-  
+  const historyItem = { id: winningId, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
   setHistory(prev => [historyItem, ...prev].slice(0, 20)); 
 
-  let displayEmoji = ANIMALS.find(i => i.id === id)?.emoji || '🏆';
+  let displayEmoji = ANIMALS.find(i => i.id === winningId)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
   if (groupType === 'right') displayEmoji = '🐰🐻‍❄️🐼🐔'; 
   
   setWinnerData({ emoji: displayEmoji, win: winAmount, bet: totalBetAmount });
+  isPopupVisibleRef.current = true;
   setActiveWinnerIdx(1); 
 
+  // Firestore updates - non-blocking
   if (winAmount > 0 && currentUser && firestore && !isNaN(winAmount)) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
@@ -566,8 +596,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      updatedAt: serverTimestamp()
    });
   }
+  
+  // Auto-hide winner popup after 3 seconds
+  setTimeout(() => {
+      if (isMountedRef.current) {
+          setWinnerData(null);
+          isPopupVisibleRef.current = false;
+      }
+  }, 3000);
  }, [currentUser, firestore, playSound, userProfile]);
 
+ // Main game loop with fixed timing
  useEffect(() => {
   const ROUND_DUR = 45000; 
   const BET_DUR = 30000;   
@@ -575,7 +614,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   const WAIT_BEFORE_WINNER = 1000;
   const SHOW_WINNER_DUR = 3000;
   
-  const interval = setInterval(() => {
+  // Clear any existing interval
+  if (intervalRef.current) clearInterval(intervalRef.current);
+  
+  intervalRef.current = setInterval(() => {
       if (!isMountedRef.current) return;
       
       const now = Date.now();
@@ -583,67 +625,86 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       const elapsed = now % ROUND_DUR;
       
       if (elapsed < BET_DUR) {
+          // Betting phase
           if (gameStateRef.current !== 'betting') {
               setGameState('betting');
-              setActiveRoundId(currentRoundIdCalc); // Strict sync for Live Bets!
+              setActiveRoundId(currentRoundIdCalc);
+              // Reset round-specific state
               setWinnerData(null);
-              setMyBets({});
-              setHighlightIdx(null);
               setShiningGroup('none');
-              setProcessedBetIds(new Set()); 
+              setHighlightIdx(null);
+              setMyBets({});
+              setDroppedChips([]);
+              setProcessedBetIds(new Set());
               hasFinalizedRef.current = false;
-              isPopupVisibleRef.current = false;
               resolvedResultRef.current = null;
+              isPopupVisibleRef.current = false;
+              
+              // Stop any playing spin sound
+              if (spinAudio.current) {
+                  spinAudio.current.pause();
+                  spinAudio.current.currentTime = 0;
+              }
           }
           const newTimeLeft = Math.ceil((BET_DUR - elapsed) / 1000);
-          setTimeLeft(prev => prev !== newTimeLeft ? newTimeLeft : prev);
+          if (timeLeft !== newTimeLeft) setTimeLeft(newTimeLeft);
       } 
       else if (elapsed < BET_DUR + SPIN_DUR) {
+          // Spinning phase
           if (gameStateRef.current !== 'spinning') {
               setGameState('spinning');
               playSound('spin');
+              // Clear chips during spin to avoid visual clutter
+              setDroppedChips([]);
           }
           
           const newTimeLeft = Math.ceil((BET_DUR + SPIN_DUR - elapsed) / 1000);
-          setTimeLeft(prev => prev !== newTimeLeft ? newTimeLeft : prev);
+          if (timeLeft !== newTimeLeft) setTimeLeft(newTimeLeft);
           
-          // PERFECT SMOOTH SPIN USING CUBIC EASE-OUT
           const spinElapsed = elapsed - BET_DUR;
-          const totalTicksSpinning = Math.floor(SPIN_DUR / 100); 
-          const endSeed = currentRoundIdCalc * 10000 + totalTicksSpinning;
-          const rEnd = Math.sin(endSeed) * 10000;
+          const progress = Math.min(1, spinElapsed / SPIN_DUR);
+          // Ease out cubic for smoother slowdown
+          const eased = 1 - Math.pow(1 - progress, 3);
+          
+          // Deterministic final index based on round seed
+          const finalSeed = currentRoundIdCalc * 10000 + Math.floor(SPIN_DUR / 100);
+          const rEnd = Math.sin(finalSeed) * 10000;
           const endFraction = rEnd - Math.floor(rEnd);
-          const predictedWinIdx = Math.floor(endFraction * 8);
+          const finalIdx = Math.floor(endFraction * ANIMALS.length);
           
-          const p = spinElapsed / SPIN_DUR;
-          const easeOut = 1 - Math.pow(1 - p, 3);
+          // Calculate current highlight index during spin
+          let currentIdx = 0;
+          if (progress < 0.95) {
+              // Fast spinning - cycle through all animals
+              const steps = Math.floor(eased * 40);
+              currentIdx = steps % ANIMALS.length;
+          } else {
+              // Slow down to final position
+              const slowProgress = (progress - 0.95) / 0.05;
+              const smoothFactor = Math.min(1, slowProgress);
+              currentIdx = Math.floor((1 - smoothFactor) * (ANIMALS.length - 1) + smoothFactor * finalIdx);
+              currentIdx = currentIdx % ANIMALS.length;
+          }
           
-          const minimumSteps = 40;
-          const remainder = minimumSteps % 8;
-          const stepsNeeded = (predictedWinIdx - remainder + 8) % 8;
-          const totalSteps = minimumSteps + stepsNeeded;
-          
-          const currentStep = Math.floor(easeOut * totalSteps);
-          const newHighlight = currentStep % 8;
-          
-          setHighlightIdx(prev => prev !== newHighlight ? newHighlight : prev);
+          setHighlightIdx(currentIdx);
       } 
       else if (elapsed < BET_DUR + SPIN_DUR + WAIT_BEFORE_WINNER) {
-          // 1 second delay before showing popup
+          // Result preparation phase
           if (gameStateRef.current !== 'result') {
               setGameState('result');
               playSound('stop');
               
+              // Determine winner asynchronously (with oracle support)
               const triggerResult = async () => {
                   const totalTicks = Math.floor(SPIN_DUR / 100);
                   const endSeed = currentRoundIdCalc * 10000 + totalTicks;
                   const rEnd = Math.sin(endSeed) * 10000;
                   const endFraction = rEnd - Math.floor(rEnd);
                   
-                  let winningId = ANIMALS[Math.floor(endFraction * 8)].id;
+                  let winningId = ANIMALS[Math.floor(endFraction * ANIMALS.length)].id;
 
                   let groupType: 'none' | 'left' | 'right' = 'none';
-                  const chanceSeed = Math.sin(currentRoundIdCalc) * 10000;
+                  const chanceSeed = Math.sin(currentRoundIdCalc * 7) * 10000;
                   const chanceFraction = chanceSeed - Math.floor(chanceSeed);
                   if (chanceFraction < 0.025) groupType = 'left'; 
                   else if (chanceFraction < 0.05) groupType = 'right'; 
@@ -653,18 +714,19 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                           const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'forest-party'));
                           if (oracleSnap.exists() && oracleSnap.data().isActive) {
                               const forced = oracleSnap.data().forcedResult;
-                              if (ANIMALS.some(a => a.id === forced)) { winningId = forced; groupType = 'none'; }
-                              updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
+                              if (ANIMALS.some(a => a.id === forced)) { 
+                                  winningId = forced; 
+                                  groupType = 'none'; 
+                              }
+                              await updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'forest-party'), { isActive: false });
                           }
                       } catch (e) {}
                   }
 
                   if (!isMountedRef.current) return;
-                  // Ensure highlight syncs to the final win completely
                   const winIdx = ANIMALS.findIndex(a => a.id === winningId);
                   setHighlightIdx(winIdx);
                   
-                  // Save result for the next popup phase
                   resolvedResultRef.current = { id: winningId, groupType };
               };
               triggerResult();
@@ -672,26 +734,19 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           setTimeLeft(0);
       }
       else if (elapsed < BET_DUR + SPIN_DUR + WAIT_BEFORE_WINNER + SHOW_WINNER_DUR) {
-          // Show winner card for 3 seconds
+          // Winner display phase
           setTimeLeft(0);
           if (!hasFinalizedRef.current && resolvedResultRef.current) {
-              hasFinalizedRef.current = true;
-              isPopupVisibleRef.current = true;
               finalizeResult(resolvedResultRef.current.id, resolvedResultRef.current.groupType);
           }
       }
-      else {
-          // 1 second gap before next round starts
-          setTimeLeft(0);
-          if (isPopupVisibleRef.current) {
-              setWinnerData(null);
-              isPopupVisibleRef.current = false;
-          }
-      }
-  }, 100);
+      // else: idle before next round, do nothing - will loop to betting on next interval
+  }, 100); // 100ms interval for smooth updates
   
-  return () => clearInterval(interval);
- }, [firestore, playSound, finalizeResult]);
+  return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+ }, [firestore, playSound, finalizeResult, timeLeft]);
 
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameStateRef.current !== 'betting' || !currentUser) return;
@@ -722,10 +777,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
 
-    const currentRoundId = Math.floor(Date.now() / 45000);
+    const currentRoundIdCalc = Math.floor(Date.now() / 45000);
     addDocumentNonBlocking(collection(firestore, 'globalBets'), {
         gameId: 'forest-party',
-        roundId: currentRoundId,
+        roundId: currentRoundIdCalc,
         userId: currentUser.uid,
         animalId: animal.id,
         amount: selectedChip,
@@ -743,6 +798,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     }
     return highlightIdx === idx;
  }, [gameState, shiningGroup, highlightIdx]);
+
+ if (isLoading) {
+    return (
+        <div className="h-[66dvh] my-auto w-full flex items-center justify-center bg-[#0F2A1A] rounded-3xl">
+            <div className="text-white text-lg font-bold">Loading Forest Party...</div>
+        </div>
+    );
+ }
 
  return (
   <motion.div 
@@ -764,7 +827,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
        </div>
 
-       {/* --- WINNING PAGE FROM BOTTOM --- */}
+       {/* WINNING POPUP */}
        <AnimatePresence>
         {winnerData && (
           <motion.div 
@@ -1032,7 +1095,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 
                 <AnimatePresence>
                     {droppedChips.filter(c => c.itemIdx === idx).map(chip => (
-                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.6)] z-40 pointer-events-none overflow-hidden" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '3px', width: '26px', height: '26px', transform: 'translate3d(0,0,0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+                        <motion.div key={chip.id} initial={{ opacity: 0, scale: 3, y: -60 }} animate={{ opacity: 1, scale: 1, y: chip.y, x: chip.x }} exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full shadow-[0_5px_10px_rgba(0,0,0,0.6)] z-40 pointer-events-none overflow-hidden" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '3px', width: '26px', height: '26px', transform: 'translate3d(0,0,0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
                             <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full z-50" />
                             <div className={cn("w-full h-full rounded-full flex items-center justify-center border border-black/30 shadow-inner relative overflow-hidden", `bg-gradient-to-br ${chip.bgColor}`)}>
                                 <span className="text-[6.5px] font-black text-white filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)] z-40">{chip.label}</span>
@@ -1053,26 +1116,46 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </main>
 
        {/* CHIPS SELECTOR */}
-       <div className="w-full bg-[#1b0d07] border-t-[3px] border-[#4a2511] py-4 px-4 flex items-center justify-start gap-4 overflow-x-auto no-scrollbar shrink-0 z-40 relative shadow-[0_-8px_20px_rgba(0,0,0,0.6)] rounded-none">
-          {CHIPS_DATA.map((chip) => (
-              <button
-                  key={chip.value}
-                  onClick={() => setSelectedChip(chip.value)}
-                  className={cn(
-                      "relative shrink-0 flex flex-col items-center justify-center rounded-full transition-all duration-200 overflow-hidden outline-none",
-                      selectedChip === chip.value ? "scale-110 -translate-y-2 shadow-[0_10px_20px_rgba(0,0,0,0.6)]" : "scale-95 opacity-80 hover:opacity-100 shadow-[0_5px_10px_rgba(0,0,0,0.4)]"
-                  )}
-                  style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 20deg, ${chip.color} 20deg 40deg)`, padding: '6px', width: '56px', height: '56px' }}
-              >
-                  <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[85%] h-[45%] bg-gradient-to-b from-white/60 to-transparent rounded-full z-50 pointer-events-none" />
-                  <div className={cn("w-full h-full rounded-full flex items-center justify-center border-[2.5px] border-black/40 shadow-inner relative", `bg-gradient-to-br ${chip.bgColor}`)}>
-                      <span className="text-[12px] font-black text-white filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] z-40">{chip.label}</span>
-                  </div>
-                  {selectedChip === chip.value && (
-                      <div className="absolute -bottom-3 w-2 h-2 bg-yellow-400 rounded-full shadow-[0_0_12px_#facc15]" />
-                  )}
-              </button>
-          ))}
+       <div className="w-full bg-[#1b0d07] border-t-2 border-[#3a2416] pt-3 pb-3 shadow-[0_-12px_30px_rgba(0,0,0,0.5)] relative shrink-0 z-40">
+         <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(#fff 0.5px, transparent 0.5px)', backgroundSize: '14px 14px' }}></div>
+         
+         <div 
+           className="relative flex gap-2.5 overflow-x-auto no-scrollbar px-3 pb-1 snap-x"
+           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+         >
+            {CHIPS_DATA.map((chip) => {
+              const isSelected = selectedChip === chip.value;
+              return (
+                  <button
+                      key={chip.value}
+                      onClick={(e) => {
+                        setSelectedChip(chip.value);
+                        e.currentTarget.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+                      }}
+                      className={cn(
+                        "group relative shrink-0 snap-center outline-none",
+                        isSelected ? "selected" : ""
+                      )}
+                  >
+                      <div 
+                        className="relative w-[58px] h-[58px] transition-transform duration-200"
+                        style={{ transform: isSelected ? 'scale(1.12)' : 'scale(1)' }}
+                      >
+                          <div className="absolute inset-0 rounded-full" style={{ background: `repeating-conic-gradient(from 0deg, #fff 0deg 14deg, ${chip.color} 14deg 28deg)`, boxShadow: '0 3px 8px rgba(0,0,0,0.6), inset 0 1.5px 2px rgba(255,255,255,0.4)' }}></div>
+                          <div className={cn("absolute inset-[4px] rounded-full", `bg-gradient-to-br ${chip.bgColor}`)} style={{ border: '2px solid rgba(0,0,0,0.45)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.18)' }}></div>
+                          <div className="absolute inset-[9px] rounded-full border border-white/15"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-[12px] font-black text-white" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.5)' }}>{chip.label}</span>
+                          </div>
+                      </div>
+                      <div 
+                        className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-400 transition-opacity duration-200 shadow-[0_0_8px_#fbbf24]"
+                        style={{ opacity: isSelected ? 1 : 0 }}
+                      ></div>
+                  </button>
+              );
+            })}
+         </div>
        </div>
 
        {/* RULES SHEET */}
@@ -1100,7 +1183,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
-       {/* CSS STYLES */}
        <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
