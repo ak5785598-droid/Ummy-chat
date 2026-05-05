@@ -227,7 +227,7 @@ const getGameDay = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
-// ------------------- NEW MIX CARD COMPONENT (without label) -------------------
+// Mix Card Component (without label)
 const MixCard = ({ type, size = 'md', className = '' }: { type: 'left' | 'right', size?: 'sm' | 'md', className?: string }) => {
   const sizeClass = size === 'sm' ? 'w-12 h-12' : 'w-[48px] h-[48px]';
   const iconSize = size === 'sm' ? 'text-[9px]' : 'text-[9px]';
@@ -239,7 +239,7 @@ const MixCard = ({ type, size = 'md', className = '' }: { type: 'left' | 'right'
   return (
     <div className={cn(
       "rounded-full flex flex-col items-center justify-center overflow-hidden relative",
-      "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[2.5px] border-[#eebb99]",
+      "bg-skin-card border-[2.5px] border-[#eebb99]",
       "shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]",
       sizeClass, className
     )}>
@@ -250,11 +250,9 @@ const MixCard = ({ type, size = 'md', className = '' }: { type: 'left' | 'right'
         <span className={cn("filter drop-shadow-md leading-none text-center", iconSize)}>{emojis.bottomLeft}</span>
         <span className={cn("filter drop-shadow-md leading-none text-center", iconSize)}>{emojis.bottomRight}</span>
       </div>
-      {/* No "Mix" label here */}
     </div>
   );
 };
-// -------------------------------------------------------------------------
 
 export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
  const [isLoading, setIsLoading] = useState(true);
@@ -692,11 +690,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 3000);
  }, [currentUser, firestore, playSound, userProfile]);
 
- // Modified spin logic: sequential, smooth slowdown, exact final index
- // We will use the existing interval (every 100ms) to update highlightIdx based on spin progress
- // The final winner is determined by a deterministic final index based on roundId seed.
- // Mix chance: 2% total (1% left, 1% right) – determined at result time.
-
  // Main game loop with fixed timing and smooth sequential spin
  useEffect(() => {
   const ROUND_DUR = 45000; 
@@ -901,8 +894,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  if (isLoading) {
     return (
-        <div className="h-[66dvh] my-auto w-full flex items-center justify-center bg-[#ffffff] rounded-3xl">
-            <div className="text-slate-800 text-lg font-bold">Loading Forest Party...</div>
+        <div className="h-[66dvh] my-auto w-full flex items-center justify-center bg-[#3A4F8F] rounded-3xl">
+            <div className="text-white text-lg font-bold">Loading Forest Party...</div>
         </div>
     );
  }
@@ -921,11 +914,16 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white rounded-3xl border border-white/20 shadow-2xl"
     style={{ willChange: 'transform, opacity', transform: 'translate3d(0,0,0)', WebkitFontSmoothing: 'antialiased', WebkitOverflowScrolling: 'touch' }}
    >
-       {/* Background Updated Theme */}
-       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-white">
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-[#fdfdfd] to-[#f0f0f0]" />
-          <div className="absolute top-0 left-[-20%] right-[-20%] h-[40%] bg-gradient-to-b from-white/90 to-transparent rounded-b-[50%] opacity-80" />
-          <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#e5e5e5] to-transparent opacity-80" />
+       {/* New Themed Background */}
+       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+         {/* Top Sky */}
+         <div className="absolute top-0 left-0 right-0 h-[40%] bg-gradient-to-b from-[#3A4F8F] via-[#5A6FB5] to-[#8B6FAF]" />
+         {/* Middle Clouds */}
+         <div className="absolute top-[25%] left-0 right-0 h-[30%] bg-gradient-to-b from-[#8B6FAF] via-[#C07AA0] to-[#E49BAA]" />
+         {/* Sunset Glow */}
+         <div className="absolute top-[45%] left-0 right-0 h-[25%] bg-gradient-to-b from-[#E49BAA] via-[#F2C27A] to-[#EFA36B]" />
+         {/* Ground */}
+         <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#5C2E2E] via-[#7A3E3E] to-[#A45C4F]" />
        </div>
 
        {/* WINNING POPUP - now uses MixCard for mix wins */}
@@ -1128,10 +1126,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
         {/* MIX LEFT */}
         <div className={cn(
-            "absolute top-[3.5%] left-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
+            "absolute top-[3.5%] left-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden bg-skin-card",
             shiningGroup === 'left' 
-                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
-                : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
+                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110" 
+                : "border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
             <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[75%] h-[35%] bg-gradient-to-b from-white/50 to-transparent rounded-full pointer-events-none z-20" />
             <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
@@ -1145,10 +1143,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
         {/* MIX RIGHT */}
         <div className={cn(
-            "absolute top-[3.5%] right-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
+            "absolute top-[3.5%] right-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden bg-skin-card",
             shiningGroup === 'right' 
-                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110 bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-800" 
-                : "bg-gradient-to-b from-[#6b361a] to-[#3a1c0d] border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
+                ? "border-[#FFD700] shadow-[0_0_20px_#FFD700,inset_0_2px_8px_rgba(255,255,255,0.6)] scale-110" 
+                : "border-[#eebb99] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.2)]"
         )}>
             <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[75%] h-[35%] bg-gradient-to-b from-white/50 to-transparent rounded-full pointer-events-none z-20" />
             <div className="grid grid-cols-2 gap-x-1 gap-y-1 justify-center items-center z-10 mb-0.5 mt-0.5">
@@ -1161,7 +1159,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
 
         <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center">
-          <svg className="absolute inset-0 w-full h-full z-10 overflow-visible pointer-events-none" viewBox="0 0 100 100">
+          {/* Spinning Wheel SVG - Now rotates during spin state */}
+          <svg 
+            className={cn(
+              "absolute inset-0 w-full h-full z-10 overflow-visible pointer-events-none transition-all",
+              gameState === 'spinning' ? "animate-spin-wheel" : ""
+            )} 
+            viewBox="0 0 100 100"
+            style={{ animationDuration: '0.8s', animationTimingFunction: 'linear' }}
+          >
             <defs>
                 <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.8"/>
@@ -1207,13 +1213,14 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <motion.div key={item.id} className={cn("absolute z-20", item.pos === 'top' && "top-[2%] left-1/2 -translate-x-1/2", item.pos === 'top-right' && "top-[8%] right-[8%]", item.pos === 'right' && "right-[2%] top-1/2 -translate-y-1/2", item.pos === 'bottom-right' && "bottom-[8%] right-[8%]", item.pos === 'bottom' && "bottom-[2%] left-1/2 -translate-x-1/2", item.pos === 'bottom-left' && "bottom-[8%] left-[8%]", item.pos === 'left' && "left-[2%] top-1/2 -translate-y-1/2", item.pos === 'top-left' && "top-[8%] left-[8%]")}>
               <button onClick={() => handlePlaceBet(item)} className="relative group outline-none">
                 <div className={cn(
-                    "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] bg-[#4a2511] transition-all overflow-hidden relative shadow-[0_6px_0_rgba(0,0,0,0.3)]", 
+                    "h-[86px] w-[86px] rounded-full flex flex-col items-center justify-start pt-2 border-[3px] transition-all overflow-hidden relative shadow-[0_6px_0_rgba(0,0,0,0.3)]",
+                    "bg-skin-card",
                     active ? "scale-110 border-[#FFD700] shadow-[0_0_25px_#FFD700,inset_0_0_10px_#FFD700] z-50 ring-4 ring-[#FFD700]/70" : "border-[#eebb99]",
                     applyColorless ? "grayscale-[0.9] brightness-90 opacity-100 duration-300" : "grayscale-0 opacity-100 brightness-100 duration-150"
                 )} style={{ transform: 'translate3d(0,0,0)', willChange: 'transform, filter', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70%] h-[35%] bg-gradient-to-b from-white/40 to-white/5 rounded-full pointer-events-none z-0" />
                     <span className={cn("text-[38px] z-10 filter drop-shadow-lg", active ? "scale-125 rotate-6" : "")} style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>{item.emoji}</span>
-                    <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-[#4a2511] border-t border-[#eebb99]")}>
+                    <div className={cn("absolute bottom-0 left-0 right-0 py-0.5 text-center z-20 transition-colors duration-150", (active && gameState !== 'spinning') ? "bg-white/20 backdrop-blur-md" : "bg-skin-card/90 border-t border-[#eebb99]")}>
                         <span className="text-[7px] font-bold uppercase tracking-tighter text-white">Win {item.multiplier}x</span>
                     </div>
                 </div>
@@ -1311,9 +1318,20 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        <style jsx global>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+        @keyframes spin-wheel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin-wheel {
+          animation: spin-wheel 0.6s linear infinite;
+        }
         
         button { -webkit-tap-highlight-color: transparent; }
+
+        /* Skin color for animal cards and mix cards */
+        .bg-skin-card {
+          background: linear-gradient(145deg, #F5D0A9, #E0B68A);
+        }
+        .bg-skin-card\/90 {
+          background: linear-gradient(145deg, rgba(245, 208, 169, 0.9), rgba(224, 182, 138, 0.9));
+        }
 
         .winning-card {
           height: 40vh;
@@ -1445,4 +1463,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </motion.div>
   </motion.div>
  );
-         }
+}
