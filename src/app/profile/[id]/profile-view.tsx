@@ -67,8 +67,7 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 // --- NEW 3D GLOSSY OFFICIAL, SELLER, SERVICE & HOST TAGS ---
 
 const SVGA_OfficialTag = () => (
-  // Moved a little bit left side using -ml-0.5
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
@@ -100,7 +99,6 @@ const SVGA_SellerTag = () => (
   </div>
 );
 
-// --- NEW SERVICE TAG WITH IMAGE ICON ---
 const SVGA_ServiceTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#17CFB8] via-[#10B9A4] to-[#0D9482] shadow-[0_2px_8px_rgba(23,207,184,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#A7FFF1] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
@@ -122,7 +120,6 @@ const SVGA_ServiceTag = () => (
   </div>
 );
 
-// --- NEW HOST TAG WITH BALLOONS IMAGE ICON ---
 const SVGA_HostTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#B57AFF] via-[#9E60FA] to-[#803AF5] shadow-[0_2px_8px_rgba(158,96,250,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#E0C6FF] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
@@ -147,7 +144,6 @@ const SVGA_HostTag = () => (
   </div>
 );
 
-// --- NEW 3D GLOSSY VIP BANNER COMPONENT (Refined for clarity)---
 const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
   <div
     onClick={onClick}
@@ -223,7 +219,6 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
   </div>
 );
 
-// --- UPDATED GLOSSY 3D ID/BUDGET BADGE MATCHING YOUR IMAGE ---
 const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
   const idNum = label? label.replace('ID: ', '').trim() : '000000';
 
@@ -286,8 +281,6 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
     </div>
   );
 };
-
-// --- UPDATED SVGA COMPONENTS WITH INCREASED SIZES (H-11 W-11) ---
 
 const SVGA_GoldDollar = () => (
   <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
@@ -386,8 +379,6 @@ const SVGA_TaskClipboard = ({ className }: { className?: string }) => (
     <div className="absolute top-5 left-6 w-3 h-1.5 bg-white/50 rounded-full blur-[1px] rotate-[-10deg]" />
   </div>
 );
-
-// --- MENU ICONS (NOW LARGER: H-11 W-11) ---
 
 const SVGA_InviteHeart = ({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
@@ -912,30 +903,30 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   <span className="text-lg">🇮🇳</span>
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                 </div>
-                <div className="flex items-center gap-1.5 mt-1">
+                
+                {/* --- MODIFIED ID AND TAGS SECTION HERE --- */}
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  {/* ID Block */}
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    {profile.tags?.includes('Official')? (
+                    {profile.tags?.includes('Official') ? (
                       <SVGA_GlossyID
                         variant={getBudgetVariant(profile)}
                         label={`ID: ${displayID}`}
                       />
                     ) : (
-                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-2 backdrop-blur-sm">
+                      <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md backdrop-blur-sm">
                         ID: {displayID}
                       </span>
                     )}
                   </div>
-                </div>
 
-                {/* --- MODIFIED ID SECTION HERE --- */}
-                <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
-                  {/* Calling New SVGA Tags Here */}
+                  {/* Tags Block - Sitting directly next to ID */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
                   {profile.tags?.includes('Service') && <SVGA_ServiceTag />}
                   {profile.tags?.includes('Host') && <SVGA_HostTag />}
                 </div>
-                {/* --- MODIFIED ID SECTION ENDS --- */}
+                {/* --- MODIFIED ID AND TAGS SECTION ENDS --- */}
 
               </div>
             </div>
@@ -1078,4 +1069,3 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
-
