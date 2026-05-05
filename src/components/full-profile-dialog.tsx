@@ -7,12 +7,11 @@ import {
   Heart,
   MessageCircle,
   MoreHorizontal,
-  Star,
   Sparkles,
   Calendar,
-  Globe,
   Loader,
-  Armchair
+  Armchair,
+  Pencil
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,6 +27,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { GoldCoinIcon } from '@/components/icons';
+import { EditProfileDialog } from '@/components/edit-profile-dialog';
 
 // Registries
 import { MEDAL_REGISTRY } from '@/constants/medals';
@@ -35,30 +35,57 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // ==========================================
-// 1. LEVEL BADGES (RICH & CHARM) - MERGED
+// 1. BUDGET LEVEL BADGE (MERGED - BASED ON PROVIDED SVG)
 // ==========================================
-
-const StarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-  </svg>
-);
-
-export const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-br from-amber-400 to-amber-600 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
-    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <StarIcon className="h-2.5 w-2.5 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
-  </div>
-);
-
-export const CharmLevelBadge = ({ level, className }: { level: number, className?: string }) => (
-  <div className={cn("flex items-center gap-1 bg-gradient-to-br from-pink-400 to-rose-500 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0", className)}>
-    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <Sparkles className="h-2.5 w-2.5 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
-  </div>
-);
+const BudgetLevelBadge = ({ level }: { level: number }) => {
+  // SVG design exactly as given, but with dynamic level number
+  return (
+    <div className="inline-flex items-center shrink-0">
+      <svg width="auto" height="28" viewBox="0 0 400 120" style={{ height: '28px', width: 'auto' }}>
+        <defs>
+          <linearGradient id="pillFill" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#B97A56"/>
+            <stop offset="100%" stopColor="#D9A57F"/>
+          </linearGradient>
+          <linearGradient id="streak" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0"/>
+            <stop offset="35%" stopColor="#FFFFFF" stopOpacity="0"/>
+            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3"/>
+            <stop offset="65%" stopColor="#FFFFFF" stopOpacity="0.12"/>
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+          </linearGradient>
+          <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#F0D08A"/>
+            <stop offset="45%" stopColor="#B8863B"/>
+            <stop offset="100%" stopColor="#7A5120"/>
+          </linearGradient>
+          <linearGradient id="goldInner" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#D4A76A"/>
+            <stop offset="100%" stopColor="#9C6B2E"/>
+          </linearGradient>
+          <linearGradient id="vFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFF8DB"/>
+            <stop offset="48%" stopColor="#FFF1C0"/>
+            <stop offset="100%" stopColor="#D1A15E"/>
+          </linearGradient>
+          <linearGradient id="fourFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFFFE6"/>
+            <stop offset="50%" stopColor="#FFF5C8"/>
+            <stop offset="100%" stopColor="#E2B86A"/>
+          </linearGradient>
+        </defs>
+        <path d="M60 20 H320 A40 40 0 0 1 320 100 H60 Z" fill="url(#pillFill)" stroke="#8B5A3C" strokeWidth="2"/>
+        <path d="M60 20 H320 A40 40 0 0 1 320 100 H60 Z" fill="url(#streak)"/>
+        <text x="230" y="89" textAnchor="middle" fontFamily="Arial Black" fontSize="72" fontWeight="900" fill="url(#fourFill)" stroke="#5A3A1E" strokeWidth="2" paintOrder="stroke">{level}</text>
+        <g>
+          <path d="M60 9.5 C77.5 9.5 93.5 14.5 99.5 23.5 L99.5 66 C99.5 86.5 83.5 102.5 60 118.5 C36.5 102.5 20.5 86.5 20.5 66 L20.5 23.5 C26.5 14.5 42.5 9.5 60 9.5 Z" fill="url(#goldBorder)"/>
+          <path d="M60 17.5 C73 17.5 86 21.8 91.2 28.8 L91.2 65.2 C91.2 81.5 78 95.5 60 108.2 C42 95.5 28.8 81.5 28.8 65.2 L28.8 28.8 C34 21.8 47 17.5 60 17.5 Z" fill="url(#goldInner)"/>
+        </g>
+        <text x="60" y="80" textAnchor="middle" fontFamily="Arial Black" fontSize="52" fontWeight="900" fill="url(#vFill)" stroke="#6A3F14" strokeWidth="1.6" paintOrder="stroke" transform="rotate(-7 60 70)">V</text>
+      </svg>
+    </div>
+  );
+};
 
 // ==========================================
 // 2. GLOSSY 3D ROLE TAGS - MERGED
@@ -165,7 +192,7 @@ export const StandardIDTag = ({ idNum }: { idNum: string }) => (
   </span>
 );
 
-// Country code to flag emoji mapping (simple)
+// Country code to flag emoji mapping
 const getCountryFlagEmoji = (countryName: string): string => {
   if (!countryName) return '';
   const countryMap: Record<string, string> = {
@@ -186,7 +213,6 @@ const getCountryFlagEmoji = (countryName: string): string => {
     'Russia': '🇷🇺',
     'South Africa': '🇿🇦',
   };
-  // fallback: try to match first word or return empty
   const matched = Object.entries(countryMap).find(([key]) =>
     countryName.toLowerCase().includes(key.toLowerCase())
   );
@@ -283,6 +309,7 @@ export function FullProfileDialog({
   const [api, setApi] = useState<CarouselApi>();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const images = profile?.spaceImages || [];
 
   useEffect(() => {
@@ -302,11 +329,14 @@ export function FullProfileDialog({
   const ownedVehicles = ownedItems.filter((id: string) => VEHICLE_REGISTRY[id]);
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
-  const richLevel = profile.richLevel || profile.level?.rich || 1;
-  const charmLevel = profile.charmLevel || profile.level?.charm || 1;
+  // Single Budget level (remove Rich & Charm)
+  const budgetLevel = profile.budgetLevel || profile.level?.budget || 1;
 
   const displayId = profile.accountNumber || generateUnique6DigitId();
   const countryFlag = getCountryFlagEmoji(profile.country || '');
+
+  // Check for official tag (either flag or tags array)
+  const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -335,13 +365,20 @@ export function FullProfileDialog({
               </div>
             )}
 
+            {/* Top Buttons - Back & (3-dot OR Pencil) - plain icons without background */}
             <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
-              <button onClick={() => onOpenChange(false)} className="h-10 w-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20">
+              <button onClick={() => onOpenChange(false)} className="text-white">
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <button className="h-10 w-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20">
-                <MoreHorizontal className="h-6 w-6" />
-              </button>
+              {isOwnProfile ? (
+                <button onClick={() => setEditDialogOpen(true)} className="text-white">
+                  <Pencil className="h-6 w-6" />
+                </button>
+              ) : (
+                <button className="text-white">
+                  <MoreHorizontal className="h-6 w-6" />
+                </button>
+              )}
             </div>
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
@@ -361,31 +398,31 @@ export function FullProfileDialog({
               </div>
 
               <div className="text-center space-y-2.5 w-full">
-                {/* 1) Name - unchanged */}
+                {/* Name */}
                 <div className="flex items-center justify-center gap-2.5 flex-wrap">
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
                 </div>
 
-                {/* 2) Gender tag + country flag + ID (Budget/Non-Budget) - all in one row */}
+                {/* Gender + flag + ID - with official forced Budget ID */}
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                   {countryFlag && (
                     <span className="text-xl leading-none shrink-0">{countryFlag}</span>
                   )}
-                  {profile.isBudget ? (
+                  {/* If user has Official tag -> always Budget ID. Otherwise fallback to original isBudget logic */}
+                  {hasOfficialTag ? (
+                    <SVGA_GlossyID label={`ID: ${displayId}`} />
+                  ) : profile.isBudget ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
                   ) : (
                     <StandardIDTag idNum={displayId} />
                   )}
                 </div>
 
-                {/* 3) Rich/Charm level badges + all tags (Official, Seller) together */}
+                {/* Only ONE badge: Budget level, plus Official/Seller tags */}
                 <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <RichLevelBadge level={richLevel} />
-                  <CharmLevelBadge level={charmLevel} />
-                  {(profile.isOfficial || profile.tags?.includes('Official')) && (
-                    <SVGA_OfficialTag />
-                  )}
+                  <BudgetLevelBadge level={budgetLevel} />
+                  {hasOfficialTag && <SVGA_OfficialTag />}
                   {(profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t))) && (
                     <SVGA_SellerTag />
                   )}
@@ -460,7 +497,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Signature Bio (unchanged except we removed country from here since flag is now up top) */}
+            {/* Signature Bio (unchanged) */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
@@ -470,7 +507,6 @@ export function FullProfileDialog({
               </div>
 
               <div className="flex flex-wrap gap-4 px-1 mt-6">
-                 {/* country ab yahan nahi dikhega, already flag upar hai - but agar koi extra info chahiye toh globe optional */}
                  {(profile.showBirthday !== false && !!profile.birthday) && (
                    <div className="flex items-center gap-1.5">
                      <Calendar className="h-3 w-3 text-slate-300" />
@@ -625,7 +661,14 @@ export function FullProfileDialog({
              </button>
           </footer>
         )}
+
+        {/* Edit Profile Dialog */}
+        <EditProfileDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          profile={profile}
+        />
       </DialogContent>
     </Dialog>
   );
-            }
+              }
