@@ -26,14 +26,18 @@ import {
   Ghost,
   Loader,
   Sparkles,
-  Home,
   Plus,
   Compass,
   Mail,
   User,
   CalendarCheck,
   CircleDollarSign, 
-  X 
+  X,
+  Users,
+  Music,
+  Gamepad2,
+  PartyPopper,
+  MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,7 +67,20 @@ const ICON_MAP: Record<string, any> = {
 };
 
 // ==========================================
-// 3D GLOSSY CALENDAR ICON (Converted from SVG)
+// ENHANCED CUSTOM HOME ICON (Premium Look)
+// ==========================================
+const CustomHomeIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" className={className}>
+    <path 
+      fill="currentColor" 
+      fillRule="evenodd" 
+      d="M 500 80 L 285 285 C 125 410 125 525 125 525 C 125 525 210 565 210 565 L 185 920 L 815 920 L 790 565 C 875 525 875 410 875 410 C 875 410 715 285 715 285 L 500 80 Z M 350 860 L 350 610 Q 350 550 500 550 Q 650 550 650 610 L 650 860 Z"
+    />
+  </svg>
+);
+
+// ==========================================
+// 3D GLOSSY CALENDAR ICON (High Graphic)
 // ==========================================
 const GlossyCalendarIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" className={className}>
@@ -150,16 +167,17 @@ const GlossyCalendarIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-
+// Skeleton (Shimmer effect removed)
 const RoomSkeleton = () => (
   <div className="flex flex-col gap-3 min-w-[280px] snap-center">
-   <Skeleton className="aspect-square w-full rounded-2xl" />
-   <div className="space-y-1.5 px-1">
-    <Skeleton className="h-3.5 w-3/4 rounded-md" />
-    <Skeleton className="h-2.5 w-1/2 rounded-md" />
-   </div>
+    <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gradient-to-r from-slate-100 via-slate-200/50 to-slate-100 animate-pulse">
+    </div>
+    <div className="space-y-1.5 px-1">
+      <Skeleton className="h-3.5 w-3/4 rounded-md" />
+      <Skeleton className="h-2.5 w-1/2 rounded-md" />
+    </div>
   </div>
- );
+);
 
 export default function RoomsExplorer() {
   const firestore = useFirestore();
@@ -189,176 +207,187 @@ export default function RoomsExplorer() {
  */
 function RoomsExplorerClassic() {
   const firestore = useFirestore();
+  const { user } = useUser();
+  const { userProfile: userDoc } = useUserProfile(user?.uid);
+  const router = useRouter();
+  const { t } = useTranslation();
+  const pathname = usePathname();
+  const { isHydrated } = useFirebase();
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
+  const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
+  const [showRewardsModal, setShowRewardsModal] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
- const { user } = useUser();
- const { userProfile: userDoc } = useUserProfile(user?.uid);
- const router = useRouter();
- const { t } = useTranslation();
- const pathname = usePathname();
- const { isHydrated } = useFirebase();
- const [activeCategory, setActiveCategory] = useState("All");
- const [headerTab, setHeaderTab] = useState<'recommend' | 'me'>('recommend');
- const [meTab, setMeTab] = useState<'following' | 'recent'>('following');
+  // Enhanced category icons mapping
+  const getCategoryIcon = (categoryId: string) => {
+    switch(categoryId) {
+      case 'Chat': return <MessageCircle className="h-2.5 w-2.5" />;
+      case 'Game': return <Gamepad2 className="h-2.5 w-2.5" />;
+      case 'Music': return <Music className="h-2.5 w-2.5" />;
+      case 'Party': return <PartyPopper className="h-2.5 w-2.5" />;
+      default: return null;
+    }
+  };
 
- // Naya State: Daily Rewards Modal Open/Close Manage karne ke liye
- const [showRewardsModal, setShowRewardsModal] = useState(false);
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
 
- // LOCKDOWN: Dynamic Mount Tracker
- const [isReady, setIsReady] = useState(false);
- useEffect(() => {
-   setIsReady(true);
- }, []);
-
- const followedRoomsQuery = useMemoFirebase(() => {
+  const followedRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isHydrated) return null;
     return query(collection(firestore, 'users', user.uid, 'followedRooms'), orderBy('followedAt', 'desc'), limit(20));
   }, [firestore, user?.uid, isHydrated]);
 
- const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
+  const { data: followedRoomsData, isLoading: isFollowedLoading } = useCollection(followedRoomsQuery);
 
- const recentRoomsQuery = useMemoFirebase(() => {
+  const recentRoomsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isHydrated) return null;
     return query(collection(firestore, 'users', user.uid, 'recentVisits'), orderBy('visitedAt', 'desc'), limit(20));
   }, [firestore, user?.uid, isHydrated]);
 
- const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
+  const { data: recentRoomsData, isLoading: isRecentLoading } = useCollection(recentRoomsQuery);
 
- const filteredRecentRooms = useMemo(() => {
-   if (!recentRoomsData || !isHydrated) return [];
-   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-   return recentRoomsData.filter((visit: any) => {
-     const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
-     return visitTime > oneDayAgo;
-   });
- }, [recentRoomsData, isHydrated]);
+  const filteredRecentRooms = useMemo(() => {
+    if (!recentRoomsData || !isHydrated) return [];
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    return recentRoomsData.filter((visit: any) => {
+      const visitTime = visit.visitedAt?.toDate?.().getTime() || 0;
+      return visitTime > oneDayAgo;
+    });
+  }, [recentRoomsData, isHydrated]);
 
- // ⭐ DAILY QUEST INITIALIZER
- useQuestInitializer();
+  useQuestInitializer();
 
   const CATEGORIES = [
-   { id: "All", label: t.home.categories.all },
-   { id: "Chat", label: t.home.categories.chat },
-   { id: "Game", label: t.home.categories.game },
-   { id: "Music", label: t.home.categories.music },
-   { id: "Party", label: t.home.categories.party }
+    { id: "All", label: t.home.categories.all },
+    { id: "Chat", label: t.home.categories.chat, icon: <MessageCircle className="h-2.5 w-2.5" /> },
+    { id: "Game", label: t.home.categories.game, icon: <Gamepad2 className="h-2.5 w-2.5" /> },
+    { id: "Music", label: t.home.categories.music, icon: <Music className="h-2.5 w-2.5" /> },
+    { id: "Party", label: t.home.categories.party, icon: <PartyPopper className="h-2.5 w-2.5" /> }
   ];
 
- const roomsQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(
-   collection(firestore, 'chatRooms'), 
-   orderBy('participantCount', 'desc'),
-   limit(100)
-  );
- }, [firestore]);
+  const roomsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'chatRooms'), 
+      orderBy('participantCount', 'desc'),
+      limit(100)
+    );
+  }, [firestore]);
 
- const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
+  const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
 
- const myRoomQuery = useMemoFirebase(() => {
-   if (!firestore || !user?.uid || !isHydrated) return null;
-   return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
+  const myRoomQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !isHydrated) return null;
+    return query(collection(firestore, 'chatRooms'), where('ownerId', '==', user.uid), limit(1));
   }, [firestore, user?.uid, isHydrated]);
- const { data: myRoomsData } = useCollection(myRoomQuery);
- const myRoom = myRoomsData?.[0];
+  const { data: myRoomsData } = useCollection(myRoomQuery);
+  const myRoom = myRoomsData?.[0];
 
- const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
- const { data: bannerConfig } = useDoc(bannerRef);
+  const bannerRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'banners'), [firestore]);
+  const { data: bannerConfig } = useDoc(bannerRef);
 
- const displaySlides = useMemo(() => {
-  if (!isHydrated || !bannerConfig?.slides || bannerConfig.slides.length === 0) {
-    return [
-     { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
-     { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
-    ];
-  }
-  return bannerConfig.slides;
- }, [bannerConfig, isHydrated]);
+  const displaySlides = useMemo(() => {
+    if (!isHydrated || !bannerConfig?.slides || bannerConfig.slides.length === 0) {
+      return [
+        { id: 1, color: 'from-purple-600 to-indigo-600', title: 'Global Event', subtitle: 'Join the frequency', iconName: 'Sparkles' },
+        { id: 2, color: 'from-orange-500 to-red-600', title: 'Elite Rewards', subtitle: 'Claim your throne', iconName: 'Trophy' }
+      ];
+    }
+    return bannerConfig.slides;
+  }, [bannerConfig, isHydrated]);
 
   const displayRooms = useMemo(() => {
-   if (!roomsData || !isHydrated) return [];
-   
-   // Pre-sort by participant count and pin status once
-   const sorted = [...roomsData].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return (b.participantCount || 0) - (a.participantCount || 0);
-   });
+    if (!roomsData || !isHydrated) return [];
+    
+    const sorted = [...roomsData].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return (b.participantCount || 0) - (a.participantCount || 0);
+    });
 
-   return sorted.filter(room => {
-    const cat = room.category || 'Chat';
-    const matchesCategory = activeCategory === "All" || cat === activeCategory;
-    const hasUsers = (room.participantCount || 0) > 0;
-    const isPinned = room.isPinned === true;
-    const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
-    return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
-   });
+    return sorted.filter(room => {
+      const cat = room.category || 'Chat';
+      const matchesCategory = activeCategory === "All" || cat === activeCategory;
+      const hasUsers = (room.participantCount || 0) > 0;
+      const isPinned = room.isPinned === true;
+      const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
+      return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
+    });
   }, [roomsData, activeCategory, isHydrated]);
 
-
-  // STABILITY GUARD: Combine all signals for final flip.
   const showSummary = isReady && isHydrated && !isRoomsLoading && roomsData;
+
   return (
-    <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white relative">
+    <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-gradient-to-br from-white via-slate-50/30 to-white relative">
       <ThemeColorMeta color="#8b5cf6" />
       
-      {/* 30Vh PURPLE GRADIENT BACKGROUND MIXING IN WHITE - THORA HALKA KAR DIYA HAI */}
-      <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-purple-500/50 via-purple-200/30 to-transparent z-0 pointer-events-none" />
+      {/* TOP PURPLE GRADIENT - PRESERVED */}
+      <div className="absolute top-0 left-0 right-0 h-[10vh] bg-purple-500 z-0 pointer-events-none" />
+      <div className="absolute top-[10vh] left-0 right-0 h-[25vh] bg-gradient-to-b from-purple-500 to-transparent z-0 pointer-events-none" />
 
-      <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
+      {/* Header with improved glass effect */}
+      <header className="flex items-center justify-between px-5 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
-           <div className="flex items-center gap-3">
-              {/* Recommend Tab - Active Black text, inactive gray-500 */}
+          <div className="flex items-center gap-6">
+            <button 
+              onClick={() => setHeaderTab('recommend')} 
+              className={cn(
+                "text-2xl font-black tracking-tight transition-all duration-300 relative pb-1",
+                headerTab === 'recommend' 
+                  ? "text-black" 
+                  : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Recommend
+              {headerTab === 'recommend' && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full animate-in slide-in-from-left-2" />
+              )}
+            </button>
+            <button 
+              onClick={() => setHeaderTab('me')} 
+              className={cn(
+                "text-2xl font-black tracking-tight transition-all duration-300 relative pb-1",
+                headerTab === 'me' 
+                  ? "text-black" 
+                  : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Me
+              {headerTab === 'me' && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full animate-in slide-in-from-left-2" />
+              )}
+            </button>
+          </div>
+          <div className="flex items-center gap-3 text-slate-800">
+            <UserSearchDialog />
+            {myRoom ? (
               <button 
-                onClick={() => setHeaderTab('recommend')} 
-                className={cn(
-                  "text-xl font-bold tracking-tight transition-all duration-200", 
-                  headerTab === 'recommend' 
-                    ? "text-black drop-shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                )}
+                onClick={() => router.push(`/rooms/${myRoom.id}`)} 
+                className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-white/60 active:scale-95 transition-all hover:shadow-xl"
               >
-                Recommend
+                <CustomHomeIcon className="h-4 w-4 text-slate-700" />
               </button>
-              {/* Me Tab - Active Black text, inactive gray-500 */}
-              <button 
-                onClick={() => setHeaderTab('me')} 
-                className={cn(
-                  "text-xl font-bold tracking-tight transition-all duration-200", 
-                  headerTab === 'me' 
-                    ? "text-black drop-shadow-sm" 
-                    : "text-gray-500 hover:text-gray-700"
-                )}
-              >
-                Me
-              </button>
-           </div>
-           <div className="flex items-center gap-2 text-slate-800">
-              <UserSearchDialog />
-               {myRoom ? (
-                 <button 
-                   onClick={() => router.push(`/rooms/${myRoom.id}`)} 
-                   className="p-1 px-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md border border-white/50 active:scale-90 transition-all flex items-center"
-                 >
-                   <Home className="h-4 w-4 text-slate-700" />
-                 </button>
-               ) : (
-                 <CreateRoomDialog 
-                   iconOnly 
-                   trigger={
-                     <button className="p-1 px-1.5 bg-slate-800 rounded-full shadow-md active:scale-90 transition-all flex items-center">
-                       <Plus className="h-4 w-4 text-white" />
-                     </button>
-                   } 
-                 />
-               )}
-           </div>
+            ) : (
+              <CreateRoomDialog 
+                iconOnly 
+                trigger={
+                  <button className="p-2 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl shadow-lg active:scale-95 transition-all hover:shadow-xl">
+                    <Plus className="h-4 w-4 text-white" />
+                  </button>
+                } 
+              />
+            )}
+          </div>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto relative z-10 no-scrollbar pb-32">
         {headerTab === 'recommend' ? (
           <>
-            <div className="px-2.5 mb-1 mt-0">
+            {/* Enhanced Banner Carousel */}
+            <div className="px-4 mb-3">
               <Carousel 
                 className="w-full" 
                 opts={{ loop: true }}
@@ -372,8 +401,7 @@ function RoomsExplorerClassic() {
                         <div 
                           onClick={() => slide.link && router.push(slide.link)}
                           className={cn(
-                            "h-[110px] w-full rounded-[1.8rem] bg-gradient-to-br p-3 flex flex-col justify-center relative overflow-hidden shadow-lg border border-white/20 active:scale-[0.98] transition-all duration-300 group", 
-                            slide.link ? "cursor-pointer" : "",
+                            "h-[130px] w-full rounded-3xl bg-gradient-to-br p-4 flex flex-col justify-center relative overflow-hidden shadow-xl border border-white/30 active:scale-[0.98] transition-all duration-300 group cursor-pointer",
                             slide.color || 'from-violet-500 to-indigo-500'
                           )}
                         >
@@ -382,20 +410,21 @@ function RoomsExplorerClassic() {
                               src={slide.imageUrl} 
                               alt="" 
                               fill 
-                              className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" 
+                              className="object-cover opacity-90 group-hover:scale-110 transition-transform duration-700" 
                               unoptimized 
                             />
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                           {!slide.imageUrl && (
-                            <div className="relative z-10 px-2">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="bg-white/20 backdrop-blur-sm p-1 rounded-xl border border-white/30">
-                                  <Icon className="h-5 w-5 text-white drop-shadow-md" />
+                            <div className="relative z-10 px-3">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="bg-white/25 backdrop-blur-md p-2 rounded-2xl border border-white/40 shadow-lg">
+                                  <Icon className="h-6 w-6 text-white drop-shadow-md" />
                                 </div>
-                                <h3 className="text-3xl font-bold tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">{slide.title}</h3>
+                                <h3 className="text-3xl font-black tracking-tight text-white drop-shadow-lg">{slide.title}</h3>
                               </div>
-                              <p className="text-[11px] font-black text-white drop-shadow-md uppercase tracking-[0.3em] leading-none ml-1">{slide.subtitle || slide.sub}</p>
+                              <p className="text-xs font-black text-white/90 drop-shadow-md uppercase tracking-[0.2em] ml-1">{slide.subtitle || slide.sub}</p>
                             </div>
                           )}
                         </div>
@@ -406,29 +435,31 @@ function RoomsExplorerClassic() {
               </Carousel>
             </div>
 
-            <div className="px-2 mb-1.5">
-              <div className="flex gap-1.5">
-                 <RankingCard />
-                 <FamilyCard />
-                 <CpCard />
+            {/* Premium Feature Cards */}
+            <div className="px-4 mb-3">
+              <div className="flex gap-2.5">
+                <RankingCard />
+                <FamilyCard />
+                <CpCard />
               </div>
             </div>
 
-            {/* CLEANER CATEGORY BAR - BETTER CONTRAST */}
-            <div className="px-3 sticky top-0 z-40 bg-white/90 backdrop-blur-md py-2 mb-1 border-b border-slate-100/80 flex items-center">
+            {/* Enhanced Category Bar */}
+            <div className="px-4 sticky top-0 z-40 bg-white/95 backdrop-blur-md py-3 mb-2 border-b border-slate-100">
               <div className="w-full overflow-x-auto no-scrollbar">
-                <div className="flex gap-2 px-0.5">
+                <div className="flex gap-2.5 px-0.5">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id)}
                       className={cn(
-                        "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap shadow-sm",
+                        "px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-wider transition-all duration-300 whitespace-nowrap shadow-sm flex items-center gap-1.5",
                         activeCategory === cat.id 
-                          ? "bg-slate-800 text-white shadow-md ring-1 ring-white/30" 
-                          : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-200/80"
+                          ? "bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-md ring-2 ring-purple-400/30 scale-105" 
+                          : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-200 hover:shadow-md"
                       )}
                     >
+                      {cat.icon}
                       {cat.label}
                     </button>
                   ))}
@@ -436,336 +467,338 @@ function RoomsExplorerClassic() {
               </div>
             </div>
 
-            <main className="px-3 flex-1 pb-6">
-              <div className="grid grid-cols-2 gap-x-2 gap-y-3 pb-8">
+            {/* Rooms Grid with enhanced cards */}
+            <main className="px-4 flex-1 pb-6">
+              <div className="grid grid-cols-2 gap-3 pb-8">
                 {!showSummary ? (
-                   Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)
+                  Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)
                 ) : displayRooms.length > 0 ? (
                   displayRooms.map((room: any) => (
-                    <ChatRoomCard key={room.id} room={room} variant="modern" />
+                    <div key={room.id} className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/0 to-purple-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <ChatRoomCard key={room.id} room={room} variant="modern" />
+                    </div>
                   ))
                 ) : (
-                  <div className="col-span-2 py-12 text-center space-y-3 opacity-40">
-                    <Ghost className="h-8 w-8 mx-auto text-slate-300" />
-                    <p className="font-bold uppercase text-[9px] tracking-wider">{t.home.noActive}</p>
+                  <div className="col-span-2 py-16 text-center space-y-4 opacity-50">
+                    <Ghost className="h-10 w-10 mx-auto text-slate-300" />
+                    <p className="font-black uppercase text-[10px] tracking-wider">{t.home.noActive}</p>
                   </div>
                 )}
               </div>
             </main>
           </>
         ) : (
-          <div className="px-4 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
+          <div className="px-5 flex-1 animate-in slide-in-from-right-4 duration-500 pb-28">
             <div className={cn("transition-opacity duration-300", !isReady ? "opacity-0" : "opacity-100")}>
-               {!isReady || !userDoc ? (
-                 <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
-                   <Loader className="h-8 w-8 animate-spin text-slate-300 mx-auto" />
-                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Synchronizing Identity...</p>
-                 </div>
-               ) : (
-                 <>
-                   <section className="mb-6 mt-2">
-                     {/* CLEANER USER CARD - ENHANCED SHADOW & BORDER */}
-                     <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100/80 relative overflow-hidden group backdrop-blur-sm">
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-100/40 to-transparent rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
-                       
-                       <div className="flex items-center gap-4 relative z-10 w-full">
-                         <div className="relative shrink-0">
-                           <Avatar className="h-16 w-16 rounded-2xl border-2 border-white shadow-lg ring-1 ring-slate-200">
-                             <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
-                             <AvatarFallback className="bg-slate-800 text-white font-black text-xl">U</AvatarFallback>
-                           </Avatar>
-                           <div className="absolute -bottom-1 -right-1">
-                             <VipBadge level={userDoc?.level?.rich || 1} />
-                           </div>
-                         </div>
-                         
-                         <div className="flex flex-col flex-1 min-w-0 pr-2">
-                           <h2 className="text-lg font-bold text-slate-800 truncate">{userDoc?.username || 'Member'}</h2>
-                           <div className="flex items-center gap-1">
-                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ID: {userDoc?.accountNumber || '---'}</span>
-                           </div>
-                           <div className="flex items-center gap-1.5 mt-1.5 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 w-fit">
-                             <GoldCoinIcon className="h-2.5 w-2.5 text-amber-500" />
-                             <span className="text-[10px] font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
-                           </div>
-                         </div>
+              {!isReady || !userDoc ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
+                  <Loader className="h-10 w-10 animate-spin text-slate-300 mx-auto" />
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Synchronizing Identity...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Premium User Card */}
+                  <section className="mb-8 mt-2">
+                    <div className="relative bg-gradient-to-br from-white via-white to-purple-50/30 rounded-3xl p-5 shadow-2xl border border-slate-100/80 overflow-hidden group backdrop-blur-sm">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-500/5" />
+                      <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-bl from-purple-200/40 to-transparent rounded-full blur-2xl" />
+                      
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="relative shrink-0">
+                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400 to-purple-600 blur-md opacity-60" />
+                          <Avatar className="h-20 w-20 rounded-2xl border-3 border-white shadow-xl relative">
+                            <AvatarImage src={userDoc?.avatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-gradient-to-br from-purple-600 to-purple-800 text-white font-black text-2xl">
+                              {userDoc?.username?.[0] || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1">
+                            <VipBadge level={userDoc?.level?.rich || 1} />
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <h2 className="text-xl font-black text-slate-800 truncate">{userDoc?.username || 'Member'}</h2>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ID: {userDoc?.accountNumber || '---'}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-2 bg-gradient-to-r from-amber-50 to-amber-100/50 px-3 py-1 rounded-full border border-amber-200 w-fit shadow-sm">
+                            <GoldCoinIcon className="h-3 w-3 text-amber-500" />
+                            <span className="text-sm font-black text-slate-700">{(userDoc?.wallet?.coins || 0).toLocaleString()}</span>
+                          </div>
+                        </div>
 
-                           {myRoom ? (
-                             <button 
-                               onClick={() => router.push(`/rooms/${myRoom.id}`)}
-                               className="shrink-0 bg-slate-800 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all duration-200 hover:bg-slate-900"
-                             >
-                               My Room
-                             </button>
-                           ) : (
-                             <CreateRoomDialog 
-                               trigger={
-                                 <button className="shrink-0 bg-slate-800 text-white rounded-2xl px-4 py-2 text-[10px] font-bold uppercase tracking-wider shadow-md active:scale-95 transition-all duration-200 hover:bg-slate-900">
-                                   Create Room
-                                 </button>
-                               } 
-                             />
-                           )}
-                       </div>
-                     </div>
-                   </section>
+                        {myRoom ? (
+                          <button 
+                            onClick={() => router.push(`/rooms/${myRoom.id}`)}
+                            className="shrink-0 bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl px-5 py-2.5 text-[11px] font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all duration-200 hover:shadow-xl hover:from-slate-900 hover:to-slate-950"
+                          >
+                            My Room
+                          </button>
+                        ) : (
+                          <CreateRoomDialog 
+                            trigger={
+                              <button className="shrink-0 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-2xl px-5 py-2.5 text-[11px] font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all duration-200 hover:shadow-xl">
+                                Create Room
+                              </button>
+                            } 
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </section>
 
-                   <div className="flex gap-6 mb-6 px-1 border-b border-slate-200/50">
-                     <button 
-                       onClick={() => setMeTab('following')} 
-                       className={cn(
-                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all duration-200",
-                         meTab === 'following' ? "text-slate-800" : "text-slate-300"
-                       )}
-                     >
-                       Following
-                       {meTab === 'following' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-                     </button>
-                     <button 
-                       onClick={() => setMeTab('recent')} 
-                       className={cn(
-                         "pb-3 text-xs font-bold uppercase tracking-[0.2em] relative transition-all duration-200",
-                         meTab === 'recent' ? "text-slate-800" : "text-slate-300"
-                       )}
-                     >
-                       Recent
-                       {meTab === 'recent' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500 rounded-full animate-in fade-in slide-in-from-bottom-1" />}
-                     </button>
-                   </div>
+                  {/* Enhanced Tabs */}
+                  <div className="flex gap-8 mb-6 px-1 border-b border-slate-200/60">
+                    <button 
+                      onClick={() => setMeTab('following')} 
+                      className={cn(
+                        "pb-3 text-sm font-black uppercase tracking-[0.15em] relative transition-all duration-300",
+                        meTab === 'following' ? "text-slate-800" : "text-slate-300 hover:text-slate-400"
+                      )}
+                    >
+                      Following
+                      {meTab === 'following' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full animate-in fade-in slide-in-from-bottom-1" />
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => setMeTab('recent')} 
+                      className={cn(
+                        "pb-3 text-sm font-black uppercase tracking-[0.15em] relative transition-all duration-300",
+                        meTab === 'recent' ? "text-slate-800" : "text-slate-300 hover:text-slate-400"
+                      )}
+                    >
+                      Recent
+                      {meTab === 'recent' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-purple-300 rounded-full animate-in fade-in slide-in-from-bottom-1" />
+                      )}
+                    </button>
+                  </div>
 
-                   {meTab === 'following' && (
-                     <section className="animate-in fade-in slide-in-from-left-4 duration-300">
-                       {isFollowedLoading ? (
-                         <div className="grid grid-cols-2 gap-3">
-                           {Array.from({ length: 4 }).map((_, i) => (
-                             <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                           ))}
-                         </div>
-                       ) : followedRoomsData && followedRoomsData.length > 0 ? (
-                         <div className="grid grid-cols-2 gap-3">
-                           {followedRoomsData.map((roomRef: any) => (
-                             <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
-                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
-                                  <Image 
-                                   src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                                   alt={roomRef.title}
-                                   fill
-                                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                   unoptimized
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                  <div className="absolute bottom-3 left-3 right-3 text-white">
-                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight drop-shadow-sm">{roomRef.title}</h4>
+                  {/* Enhanced Following/Recent Grids */}
+                  {meTab === 'following' && (
+                    <section className="animate-in fade-in slide-in-from-left-4 duration-300">
+                      {isFollowedLoading ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="aspect-square rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 animate-pulse" />
+                          ))}
+                        </div>
+                      ) : followedRoomsData && followedRoomsData.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {followedRoomsData.map((roomRef: any) => (
+                            <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
+                              <div className="relative aspect-square rounded-3xl overflow-hidden shadow-xl border border-slate-100/80 mb-2">
+                                <Image 
+                                  src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                                  alt={roomRef.title}
+                                  fill
+                                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                  unoptimized
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                <div className="absolute bottom-3 left-3 right-3 text-white">
+                                  <h4 className="text-sm font-black uppercase truncate drop-shadow-lg">{roomRef.title}</h4>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Users className="h-2.5 w-2.5 text-white/80" />
+                                    <span className="text-[9px] font-bold text-white/80">{roomRef.participantCount || 0}</span>
                                   </div>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       ) : (
-                         <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                           No rooms followed yet
-                         </div>
-                       )}
-                     </section>
-                   )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-16 text-center text-[11px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                          No rooms followed yet
+                        </div>
+                      )}
+                    </section>
+                  )}
 
-                   {meTab === 'recent' && (
-                     <section className="animate-in fade-in slide-in-from-right-4 duration-300">
-                       {isRecentLoading ? (
-                         <div className="grid grid-cols-2 gap-3">
-                           {Array.from({ length: 4 }).map((_, i) => (
-                             <div key={i} className="aspect-square rounded-[2rem] bg-slate-100 animate-pulse" />
-                           ))}
-                         </div>
-                       ) : filteredRecentRooms.length > 0 ? (
-                         <div className="grid grid-cols-2 gap-3">
-                           {filteredRecentRooms.map((visit: any) => (
-                             <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
-                               <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
-                                  <Image 
-                                   src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
-                                   alt={visit.title}
-                                   fill
-                                   className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                   unoptimized
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                                  <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 border border-white/20">
-                                     <span className="text-[8px] font-black text-white uppercase">Recent</span>
+                  {meTab === 'recent' && (
+                    <section className="animate-in fade-in slide-in-from-right-4 duration-300">
+                      {isRecentLoading ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="aspect-square rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 animate-pulse" />
+                          ))}
+                        </div>
+                      ) : filteredRecentRooms.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {filteredRecentRooms.map((visit: any) => (
+                            <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
+                              <div className="relative aspect-square rounded-3xl overflow-hidden shadow-xl border border-slate-100/80 mb-2">
+                                <Image 
+                                  src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
+                                  alt={visit.title}
+                                  fill
+                                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                                  unoptimized
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1 border border-white/20">
+                                  <span className="text-[9px] font-black text-white uppercase">24h</span>
+                                </div>
+                                <div className="absolute bottom-3 left-3 right-3 text-white">
+                                  <h4 className="text-sm font-black uppercase truncate drop-shadow-lg">{visit.title}</h4>
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Users className="h-2.5 w-2.5 text-white/80" />
+                                    <span className="text-[9px] font-bold text-white/80">{visit.participantCount || 0}</span>
                                   </div>
-                                  <div className="absolute bottom-3 left-3 right-3 text-white">
-                                     <h4 className="text-[11px] font-black uppercase truncate tracking-tight drop-shadow-sm">{visit.title}</h4>
-                                  </div>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       ) : (
-                         <div className="py-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/50">
-                           No recent visits (last 24h)
-                         </div>
-                       )}
-                     </section>
-                   )}
-                 </>
-               )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-16 text-center text-[11px] font-black uppercase tracking-widest text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                          No recent visits (last 24h)
+                        </div>
+                      )}
+                    </section>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* MODIFIED GLOSSY CALENDAR BUTTON - icon fills button completely */}
+      {/* Enhanced Glossy Calendar Button */}
       {isHydrated && (
-        <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
+        <div className="fixed bottom-[6rem] right-5 z-[90] animate-in fade-in zoom-in duration-500 group">
           <button 
             onClick={() => setShowRewardsModal(true)}
-            className="relative bg-purple-500 hover:bg-purple-600 p-0 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+            className="relative bg-gradient-to-br from-purple-500 via-purple-600 to-purple-700 p-0 rounded-2xl shadow-2xl border border-purple-400/50 active:scale-95 transition-all duration-200 hover:shadow-3xl hover:scale-105 flex items-center justify-center overflow-hidden"
           >
-            {/* Icon now takes full button size (h-14 w-14 = 56px, matches original button dimensions) */}
-            <GlossyCalendarIcon className="h-14 w-14 text-white group-hover:scale-105 transition-transform z-10 relative" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
+            <GlossyCalendarIcon className="h-14 w-14 text-white relative z-10 drop-shadow-lg" />
           </button>
         </div>
       )}
 
-      {/* DAILY REWARDS MODAL OVERLAY - START */}
+      {/* Enhanced Daily Rewards Modal */}
       {showRewardsModal && (
-        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-5 animate-in fade-in duration-200 gap-6">
-          
-          {/* Card Container */}
-          <div className="w-full max-w-sm h-[60vh] bg-white rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-md flex flex-col items-center justify-center p-5 animate-in fade-in duration-200 gap-6">
+          <div className="w-full max-w-sm h-[60vh] bg-gradient-to-b from-white to-slate-50 rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 pt-5 pb-3 px-4 relative flex-shrink-0">
+              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
+              <h2 className="text-2xl font-black text-white text-center drop-shadow-md relative z-10 tracking-wide">
+                Daily Rewards
+              </h2>
+            </div>
 
-             {/* Header Top Solid Purple Area */}
-             <div className="bg-purple-600 pt-5 pb-3 px-4 relative flex-shrink-0">
-               <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
-               <h2 className="text-[1.3rem] font-black text-white text-center drop-shadow-md relative z-10 tracking-wide">
-                 Daily Rewards
-               </h2>
-             </div>
+            <div className="bg-purple-100/50 py-2.5 px-4 text-center border-b border-purple-200 flex-shrink-0">
+              <p className="text-purple-800 font-bold text-xs uppercase tracking-wider">
+                Sign in for 7 days for rich Rewards
+              </p>
+            </div>
 
-             {/* Sub Heading Halka Purple */}
-             <div className="bg-purple-100 py-2.5 px-4 text-center border-b border-purple-200 flex-shrink-0">
-               <p className="text-purple-800 font-bold text-[11px] uppercase tracking-wider">
-                 Sign in for 7 days for rich Rewards
-               </p>
-             </div>
-
-             {/* Body (Scrollable if needed, Flex column layout) */}
-             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 justify-center">
-               
-               {/* 1st Row: 4 Chote Cards (Day 1 to 4) */}
-               <div className="grid grid-cols-4 gap-2">
-                 {[
-                   { day: 1, amount: 5000 },
-                   { day: 2, amount: 10000 },
-                   { day: 3, amount: 10000 },
-                   { day: 4, amount: 10000 }
-                 ].map((item) => (
-                   <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-xl relative pt-6 pb-2 px-1 flex flex-col items-center justify-center overflow-hidden shadow-sm">
-                     {/* Square Day Tag at Top Left */}
-                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-br-lg">
-                       {item.day}
-                     </div>
-                     
-                     {/* Big Dollar Coin */}
-                     <CircleDollarSign className="h-7 w-7 text-amber-500 mb-1.5 drop-shadow-sm" fill="#fef08a" strokeWidth={1.5} />
-                     
-                     {/* Small Coin icon + Text */}
-                     <div className="flex items-center gap-0.5 mt-auto bg-white px-1 py-0.5 rounded-full border border-slate-100">
-                       <GoldCoinIcon className="h-2 w-2" />
-                       <span className="text-[9px] font-bold text-slate-700 leading-none">{item.amount}</span>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-
-               {/* 2nd Row: 2 Cards (Day 5 & 6) */}
-               <div className="grid grid-cols-2 gap-3">
-                 {[
-                   { day: 5, amount: 10000 },
-                   { day: 6, amount: 10000 }
-                 ].map((item) => (
-                   <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-2xl relative pt-7 pb-3 px-2 flex flex-col items-center justify-center overflow-hidden shadow-sm">
-                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-xs font-black px-2.5 py-0.5 rounded-br-xl">
-                       {item.day}
-                     </div>
-                     <CircleDollarSign className="h-10 w-10 text-amber-500 mb-2 drop-shadow-md" fill="#fef08a" strokeWidth={1.5} />
-                     <div className="flex items-center gap-1 mt-auto bg-white px-2 py-1 rounded-full border border-slate-100 shadow-sm">
-                       <GoldCoinIcon className="h-3 w-3" />
-                       <span className="text-[11px] font-bold text-slate-700 leading-none">{item.amount}</span>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-
-               {/* 3rd Row: 1 Wide Card (Day 7) */}
-               <div className="bg-slate-50 border border-slate-200 rounded-[1.5rem] relative pt-8 pb-4 px-3 flex flex-col items-center justify-center overflow-hidden shadow-sm mt-1">
-                  <div className="absolute top-0 left-0 bg-purple-500 text-white text-[11px] font-black px-3 py-1 rounded-br-2xl flex items-center gap-1 shadow-sm uppercase tracking-wide">
-                    <span className="text-yellow-300 text-sm">7</span> Big Rewards
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 justify-center">
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { day: 1, amount: 5000 },
+                  { day: 2, amount: 10000 },
+                  { day: 3, amount: 10000 },
+                  { day: 4, amount: 10000 }
+                ].map((item) => (
+                  <div key={item.day} className="bg-white border border-slate-200 rounded-xl relative pt-6 pb-2 px-1 flex flex-col items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-all">
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded-br-lg">
+                      {item.day}
+                    </div>
+                    <CircleDollarSign className="h-7 w-7 text-amber-500 mb-1.5 drop-shadow-sm" fill="#fef08a" strokeWidth={1.5} />
+                    <div className="flex items-center gap-0.5 mt-auto bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">
+                      <GoldCoinIcon className="h-2 w-2 text-amber-500" />
+                      <span className="text-[9px] font-bold text-slate-700 leading-none">{item.amount}</span>
+                    </div>
                   </div>
-                  <CircleDollarSign className="h-14 w-14 text-amber-500 mb-2 drop-shadow-lg" fill="#fef08a" strokeWidth={1.5} />
-                  <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm">
-                    <GoldCoinIcon className="h-4 w-4" />
-                    <span className="text-sm font-bold text-slate-700 leading-none">10000</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { day: 5, amount: 10000 },
+                  { day: 6, amount: 10000 }
+                ].map((item) => (
+                  <div key={item.day} className="bg-white border border-slate-200 rounded-2xl relative pt-7 pb-3 px-2 flex flex-col items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-all">
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs font-black px-2.5 py-0.5 rounded-br-xl">
+                      {item.day}
+                    </div>
+                    <CircleDollarSign className="h-10 w-10 text-amber-500 mb-2 drop-shadow-md" fill="#fef08a" strokeWidth={1.5} />
+                    <div className="flex items-center gap-1 mt-auto bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                      <GoldCoinIcon className="h-3 w-3 text-amber-500" />
+                      <span className="text-[11px] font-bold text-slate-700 leading-none">{item.amount}</span>
+                    </div>
                   </div>
-               </div>
+                ))}
+              </div>
 
-             </div>
+              <div className="bg-white border border-slate-200 rounded-3xl relative pt-8 pb-4 px-3 flex flex-col items-center justify-center overflow-hidden shadow-md hover:shadow-lg transition-all mt-1">
+                <div className="absolute top-0 left-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-[11px] font-black px-3 py-1 rounded-br-2xl flex items-center gap-1 shadow-sm uppercase tracking-wide">
+                  <span className="text-yellow-300 text-sm">7</span> Big Rewards
+                </div>
+                <CircleDollarSign className="h-14 w-14 text-amber-500 mb-2 drop-shadow-lg" fill="#fef08a" strokeWidth={1.5} />
+                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+                  <GoldCoinIcon className="h-4 w-4 text-amber-500" />
+                  <span className="text-sm font-bold text-slate-700 leading-none">10000</span>
+                </div>
+              </div>
+            </div>
 
-             {/* Footer with Button */}
-             <div className="p-4 pt-2 bg-white flex-shrink-0 z-10 border-t border-slate-100">
-               <button className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white rounded-2xl py-3.5 font-black text-[15px] shadow-[0_4px_15px_rgba(168,85,247,0.3)] active:scale-95 transition-all duration-200 uppercase tracking-widest">
-                 Sign in Today
-               </button>
-             </div>
+            <div className="p-4 pt-2 bg-white flex-shrink-0 z-10 border-t border-slate-100">
+              <button className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white rounded-2xl py-3.5 font-black text-sm shadow-xl active:scale-95 transition-all duration-200 uppercase tracking-widest">
+                Sign in Today
+              </button>
+            </div>
           </div>
 
-          {/* Close (X) Button */}
           <button 
-             onClick={() => setShowRewardsModal(false)} 
-             className="bg-white/20 hover:bg-white/30 border border-white/50 backdrop-blur-md transition-colors text-white rounded-full p-3.5 shadow-xl hover:scale-105 active:scale-95 z-50 animate-in slide-in-from-bottom-5 duration-300"
+            onClick={() => setShowRewardsModal(false)} 
+            className="bg-white/20 hover:bg-white/30 border border-white/50 backdrop-blur-md transition-colors text-white rounded-full p-3.5 shadow-xl hover:scale-105 active:scale-95 z-50 animate-in slide-in-from-bottom-5 duration-300"
           >
-             <X className="h-6 w-6 drop-shadow-md" />
+            <X className="h-6 w-6 drop-shadow-md" />
           </button>
-
         </div>
       )}
-      {/* DAILY REWARDS MODAL OVERLAY - END */}
 
-      {/* CLEANER BOTTOM NAVIGATION - GLASSMORPHIC REFINEMENT */}
+      {/* Enhanced Bottom Navigation - Premium Glassmorphic */}
       {isHydrated && (
         <nav 
-          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-8px_30px_rgba(0,0,0,0.02)]"
+          className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/90 backdrop-blur-xl border-t border-white/40 shadow-[0_-8px_30px_rgba(0,0,0,0.05)]"
         >
           <div className="flex items-center justify-around h-16 pb-safe transition-all">
-            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/rooms' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
-               {pathname === '/rooms' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
-               <Home className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/rooms' ? "fill-current" : "")} />
-               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
+            <Link href="/rooms" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/rooms' ? "text-purple-600" : "text-slate-400 hover:text-slate-600")}>
+              {pathname === '/rooms' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-300 shadow-sm" />}
+              <CustomHomeIcon className={cn("h-6 w-6 transition-transform group-hover:scale-110", pathname === '/rooms' ? "fill-current" : "")} />
+              <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.home || 'Home'}</span>
             </Link>
 
-            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/discover' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
-               {pathname === '/discover' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
-               <Compass className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/discover' ? "fill-current" : "")} />
-               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
+            <Link href="/discover" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/discover' ? "text-purple-600" : "text-slate-400 hover:text-slate-600")}>
+              {pathname === '/discover' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-300 shadow-sm" />}
+              <Compass className={cn("h-6 w-6 transition-transform group-hover:scale-110", pathname === '/discover' ? "fill-current" : "")} />
+              <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.discover || 'Discover'}</span>
             </Link>
 
-            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/messages' ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
-               {pathname === '/messages' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
-               <div className="relative">
-                 <Mail className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname === '/messages' ? "fill-current" : "")} />
-                 <UnreadBadge size="sm" className="absolute -top-2 -right-2 border-2 border-white" />
-               </div>
-               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
+            <Link href="/messages" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname === '/messages' ? "text-purple-600" : "text-slate-400 hover:text-slate-600")}>
+              {pathname === '/messages' && <div className="absolute -top-1 w-8 h-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-300 shadow-sm" />}
+              <div className="relative">
+                <Mail className={cn("h-6 w-6 transition-transform group-hover:scale-110", pathname === '/messages' ? "fill-current" : "")} />
+                <UnreadBadge size="sm" className="absolute -top-2 -right-2 border-2 border-white" />
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.message || 'Message'}</span>
             </Link>
 
-            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname?.startsWith('/profile') ? "text-violet-600" : "text-slate-400 hover:text-slate-600")}>
-               {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-8 h-1 rounded-full bg-violet-500 shadow-sm" />}
-               <User className={cn("h-6 w-6 transition-transform group-hover:scale-105", pathname?.startsWith('/profile') ? "fill-current" : "")} />
-               <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
+            <Link href="/profile" className={cn("flex flex-col items-center gap-1 p-2 transition-all active:scale-95 relative group", pathname?.startsWith('/profile') ? "text-purple-600" : "text-slate-400 hover:text-slate-600")}>
+              {pathname?.startsWith('/profile') && <div className="absolute -top-1 w-8 h-1 rounded-full bg-gradient-to-r from-purple-500 to-purple-300 shadow-sm" />}
+              <User className={cn("h-6 w-6 transition-transform group-hover:scale-110", pathname?.startsWith('/profile') ? "fill-current" : "")} />
+              <span className="text-[9px] font-black uppercase tracking-tight">{t?.nav?.me || 'Me'}</span>
             </Link>
           </div>
         </nav>
       )}
     </div>
   );
- }
+}
