@@ -601,26 +601,6 @@ const formatCompactNumber = (num: number) => {
   return formatter.format(num);
 };
 
-const RichLevelBadge = ({ level }: { level: number }) => (
-  <div className="flex items-center gap-1 bg-gradient-to-br from-amber-400 to-amber-600 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0">
-    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <StarIcon className="h-2.5 w-2.5 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
-  </div>
-);
-
-const StarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-);
-
-const CharmLevelBadge = ({ level, className }: { level: number, className?: string }) => (
-  <div className={cn("flex items-center gap-1 bg-gradient-to-br from-pink-400 to-rose-500 pl-1 pr-2 py-0.5 rounded-full border border-white/30 shadow-sm relative overflow-hidden shrink-0", className)}>
-    <div className="absolute inset-0 bg-white/10 -skew-x-[30deg]"></div>
-    <Sparkles className="h-2.5 w-2.5 fill-white text-white" />
-    <span className="text-[10px] font-outfit font-black text-white leading-none drop-shadow-sm">Lv.{level}</span>
-  </div>
-);
-
 const calculateAge = (birthday: string) => {
   if (!birthday) return null;
   const birthDate = new Date(birthday);
@@ -653,7 +633,7 @@ const StatItem = ({ label, value, onClick }: { label: string, value: number, onC
 
 const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomIcon }: { icon?: any, label: string, iconColor?: string, onClick: () => void, customIcon?: any }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
-    <div className="flex items-center justify-center p-1 bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100/80 group-hover:shadow-md transition-all">
+    <div className="flex items-center justify-center p-1 transition-all">
       {CustomIcon? (
         <CustomIcon className="transition-all group-hover:scale-105" />
       ) : (
@@ -899,13 +879,16 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
-        <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-[#d9c9ff] via-purple-50/60 to-white z-0 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 flex flex-col z-0 pointer-events-none">
+          <div className="h-[3vh] bg-purple-400" />
+          <div className="h-[25vh] bg-gradient-to-b from-purple-400 via-purple-300/40 to-transparent" />
+        </div>
 
         <header className="absolute top-0 right-0 z-[100] bg-transparent px-6 pt-10 pb-0">
           <div className="flex items-center justify-end max-w-[440px] mx-auto">
              {isOwnProfile && (
                <EditProfileDialog profile={profile} trigger={
-                 <button className="h-10 w-10 bg-white/80 backdrop-blur-xl rounded-full flex items-center justify-center active:scale-90 transition-all shadow-md border border-slate-200/80 hover:shadow-lg"><Pencil className="h-4 w-4 text-slate-600" /></button>
+                 <button className="p-2 active:scale-90 transition-all hover:opacity-70"><Pencil className="h-6 w-6 text-slate-600 drop-shadow-sm" /></button>
                }/>
              )}
           </div>
@@ -946,9 +929,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
                 {/* --- MODIFIED ID SECTION HERE --- */}
                 <div className="flex flex-wrap items-center gap-2 mt-1.5 -ml-0.5">
-                  <RichLevelBadge level={profile.level?.rich || 1} />
-                  <CharmLevelBadge level={profile.level?.charm || 1} className="-ml-1" />
-
                   {/* Calling New SVGA Tags Here */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
@@ -1097,4 +1077,5 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-      }
+}
+
