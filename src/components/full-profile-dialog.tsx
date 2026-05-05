@@ -38,10 +38,10 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 // 1. BUDGET LEVEL BADGE (UPDATED - RED/ORANGE/YELLOW SVG)
 // ==========================================
 const BudgetLevelBadge = ({ level }: { level: number }) => {
-  // Converted pure SVG to React JSX. Width/thickness reduced slightly as requested.
+  // Width/thickness reduced slightly as requested.
   return (
     <div className="inline-flex items-center shrink-0">
-      <svg viewBox="0 0 360 120" style={{ height: '26px', width: 'auto' }} className="drop-shadow-md cursor-default transition-transform hover:-translate-y-[2px] hover:scale-[1.015]">
+      <svg viewBox="0 0 320 120" style={{ height: '26px', width: 'auto' }} className="drop-shadow-md cursor-default transition-transform hover:-translate-y-[2px] hover:scale-[1.015]">
         <defs>
           <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#e92848"/>
@@ -94,12 +94,12 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
         </defs>
 
         <g filter="url(#badgeShadow)">
-          {/* BANNER - Adjusted width to make patti shorter */}
-          <path d="M85 34 H320 L334 86 H85 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
-          <path d="M85 34 H320 L334 86 H85 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
-          <path d="M85 34 H320 L334 86 H85 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
-          <path d="M85 34 H320 L334 86 H85 Z" fill="url(#redGloss)" opacity="0.24"/>
-          <path d="M85 38 H317 L330 82 H89 Z" fill="none" stroke="#000" strokeWidth="1.5" strokeLinejoin="round" opacity="0.18"/>
+          {/* BANNER - Width reduced (X coordinates changed from 320 to 280) */}
+          <path d="M85 34 H280 L294 86 H85 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
+          <path d="M85 34 H280 L294 86 H85 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
+          <path d="M85 34 H280 L294 86 H85 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
+          <path d="M85 34 H280 L294 86 H85 Z" fill="url(#redGloss)" opacity="0.24"/>
+          <path d="M85 38 H277 L290 82 H89 Z" fill="none" stroke="#000" strokeWidth="1.5" strokeLinejoin="round" opacity="0.18"/>
 
           {/* PENTAGON */}
           <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
@@ -122,8 +122,8 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
             <path d="M66 60 L66 74 L46.015 87.506 Z" fill="url(#starDark)"/>
           </g>
 
-          {/* TEXT - Centered based on new width */}
-          <text x="210" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
+          {/* TEXT - Centered based on new width (X adjusted from 210 to 190) */}
+          <text x="190" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
         </g>
       </svg>
     </div>
@@ -353,6 +353,11 @@ export function FullProfileDialog({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // STRICT ID LOCK: State ke through generate function ko sirf ek baar call kiya,
+  // Taki agar profile.accountNumber na ho toh yeh lock ho jaye aur automatically change na ho.
+  const [lockedFallbackId] = useState(() => generateUnique6DigitId());
+
   const images = profile?.spaceImages || [];
 
   useEffect(() => {
@@ -373,7 +378,10 @@ export function FullProfileDialog({
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
   const budgetLevel = profile.budgetLevel || profile.level?.budget || 1;
-  const displayId = profile.accountNumber || generateUnique6DigitId();
+  
+  // LOGIC APPLY: Pehle backend ki ID check karega, agar nahi hui toh locked fallback id use karega.
+  const displayId = profile.accountNumber || lockedFallbackId;
+  
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
 
@@ -437,8 +445,8 @@ export function FullProfileDialog({
               </div>
 
               <div className="text-center space-y-2.5 w-full">
-                {/* Name */}
-                <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                {/* Name - Added -mt-1 to shift it up a very very little bit */}
+                <div className="flex items-center justify-center gap-2.5 flex-wrap -mt-1">
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
                 </div>
 
@@ -710,4 +718,3 @@ export function FullProfileDialog({
     </Dialog>
   );
 }
-
