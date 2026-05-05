@@ -35,60 +35,98 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // ==========================================
-// 1. BUDGET LEVEL BADGE (MERGED - BASED ON PROVIDED SVG)
+// 1. BUDGET LEVEL BADGE (NEW RED ORANGE YELLOW)
 // ==========================================
 const BudgetLevelBadge = ({ level }: { level: number }) => {
-  // SVG design exactly as given, but with dynamic level number
   return (
     <div className="inline-flex items-center shrink-0">
-      <svg width="auto" height="28" viewBox="0 0 400 120" style={{ height: '28px', width: 'auto' }}>
+      <svg viewBox="0 0 380 120" style={{ height: '24px', width: 'auto' }} aria-label={`Level ${level} badge`}>
         <defs>
-          <linearGradient id="pillFill" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#B97A56"/>
-            <stop offset="100%" stopColor="#D9A57F"/>
+          <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#e92848"/>
+            <stop offset="50%" stopColor="#c4122f"/>
+            <stop offset="100%" stopColor="#8f0a1f"/>
           </linearGradient>
-          <linearGradient id="streak" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0"/>
-            <stop offset="35%" stopColor="#FFFFFF" stopOpacity="0"/>
-            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3"/>
-            <stop offset="65%" stopColor="#FFFFFF" stopOpacity="0.12"/>
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
+          <linearGradient id="orangeBorder" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffad42"/>
+            <stop offset="50%" stopColor="#ff7e00"/>
+            <stop offset="100%" stopColor="#d65a00"/>
           </linearGradient>
-          <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F0D08A"/>
-            <stop offset="45%" stopColor="#B8863B"/>
-            <stop offset="100%" stopColor="#7A5120"/>
+          <linearGradient id="orangeHighlight" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffe0b3" stopOpacity="0.95"/>
+            <stop offset="40%" stopColor="#ffcc80" stopOpacity="0.55"/>
+            <stop offset="100%" stopColor="#ffad42" stopOpacity="0"/>
           </linearGradient>
-          <linearGradient id="goldInner" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#D4A76A"/>
-            <stop offset="100%" stopColor="#9C6B2E"/>
+          <linearGradient id="redGloss" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.36"/>
+            <stop offset="28%" stopColor="#ffffff" stopOpacity="0.14"/>
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0"/>
           </linearGradient>
-          <linearGradient id="vFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFF8DB"/>
-            <stop offset="48%" stopColor="#FFF1C0"/>
-            <stop offset="100%" stopColor="#D1A15E"/>
+          <linearGradient id="starTop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff176"/>
+            <stop offset="38%" stopColor="#ffeb3b"/>
+            <stop offset="100%" stopColor="#ffca28"/>
           </linearGradient>
-          <linearGradient id="fourFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFFFE6"/>
-            <stop offset="50%" stopColor="#FFF5C8"/>
-            <stop offset="100%" stopColor="#E2B86A"/>
+          <linearGradient id="starMid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffeb3b"/>
+            <stop offset="100%" stopColor="#ffca28"/>
           </linearGradient>
+          <linearGradient id="starDeep" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffca28"/>
+            <stop offset="100%" stopColor="#ffa000"/>
+          </linearGradient>
+          <linearGradient id="starDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffa000"/>
+            <stop offset="100%" stopColor="#c67100"/>
+          </linearGradient>
+
+          <filter id="badgeShadow" x="-30%" y="-40%" width="160%" height="200%">
+            <feDropShadow dx="0" dy="6" stdDeviation="7" floodColor="#000" floodOpacity="0.75"/>
+          </filter>
+          <filter id="textShadow" x="-20%" y="-20%" width="140%" height="180%">
+            <feDropShadow dx="0" dy="2.5" stdDeviation="1.3" floodColor="#8f0a1f" floodOpacity="1"/>
+            <feDropShadow dx="0" dy="1" stdDeviation="0.8" floodColor="#000" floodOpacity="0.55"/>
+          </filter>
+          <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#ffb300" floodOpacity="0.45"/>
+          </filter>
         </defs>
-        <path d="M60 20 H320 A40 40 0 0 1 320 100 H60 Z" fill="url(#pillFill)" stroke="#8B5A3C" strokeWidth="2"/>
-        <path d="M60 20 H320 A40 40 0 0 1 320 100 H60 Z" fill="url(#streak)"/>
-        <text x="230" y="89" textAnchor="middle" fontFamily="Arial Black" fontSize="72" fontWeight="900" fill="url(#fourFill)" stroke="#5A3A1E" strokeWidth="2" paintOrder="stroke">{level}</text>
-        <g>
-          <path d="M60 9.5 C77.5 9.5 93.5 14.5 99.5 23.5 L99.5 66 C99.5 86.5 83.5 102.5 60 118.5 C36.5 102.5 20.5 86.5 20.5 66 L20.5 23.5 C26.5 14.5 42.5 9.5 60 9.5 Z" fill="url(#goldBorder)"/>
-          <path d="M60 17.5 C73 17.5 86 21.8 91.2 28.8 L91.2 65.2 C91.2 81.5 78 95.5 60 108.2 C42 95.5 28.8 81.5 28.8 65.2 L28.8 28.8 C34 21.8 47 17.5 60 17.5 Z" fill="url(#goldInner)"/>
+
+        <g filter="url(#badgeShadow)">
+          <path d="M85 34 H351 L365 86 H85 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
+          <path d="M85 34 H351 L365 86 H85 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
+          <path d="M85 34 H351 L365 86 H85 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
+          <path d="M85 34 H351 L365 86 H85 Z" fill="url(#redGloss)" opacity="0.24"/>
+          <path d="M85 38 H348 L361 82 H89 Z" fill="none" stroke="#000" strokeWidth="1.5" strokeLinejoin="round" opacity="0.18"/>
+
+          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
+          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
+          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
+          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redGloss)" opacity="0.22"/>
+          <path d="M66 12 L112 45 L93.5 98.5 L38.5 98.5 L20 45 Z" fill="none" stroke="#000" strokeWidth="1.5" opacity="0.18"/>
+
+          <g filter="url(#starGlow)" stroke="#b25f00" strokeOpacity="0.28" strokeWidth="0.6" strokeLinejoin="round">
+            <path d="M66 60 L66 26 L74.229 48.674 Z" fill="url(#starTop)"/>
+            <path d="M66 60 L57.771 48.674 L66 26 Z" fill="url(#starTop)"/>
+            <path d="M66 60 L74.229 48.674 L98.34 49.494 Z" fill="url(#starMid)"/>
+            <path d="M66 60 L33.663 49.494 L57.771 48.674 Z" fill="url(#starMid)"/>
+            <path d="M66 60 L98.34 49.494 L79.315 64.326 Z" fill="url(#starMid)"/>
+            <path d="M66 60 L52.685 64.326 L33.663 49.494 Z" fill="url(#starMid)"/>
+            <path d="M66 60 L79.315 64.326 L85.985 87.506 Z" fill="url(#starDeep)"/>
+            <path d="M66 60 L46.015 87.506 L52.685 64.326 Z" fill="url(#starDeep)"/>
+            <path d="M66 60 L85.985 87.506 L66 74 Z" fill="url(#starDark)"/>
+            <path d="M66 60 L66 74 L46.015 87.506 Z" fill="url(#starDark)"/>
+          </g>
+
+          <text x="225" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">Lv.{level}</text>
         </g>
-        <text x="60" y="80" textAnchor="middle" fontFamily="Arial Black" fontSize="52" fontWeight="900" fill="url(#vFill)" stroke="#6A3F14" strokeWidth="1.6" paintOrder="stroke" transform="rotate(-7 60 70)">V</text>
       </svg>
     </div>
   );
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS - MERGED
+// 2. GLOSSY 3D ROLE TAGS
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
@@ -123,7 +161,7 @@ export const SVGA_SellerTag = () => (
 );
 
 // ==========================================
-// 3. IDENTIFICATION BADGES - MERGED
+// 3. IDENTIFICATION BADGES
 // ==========================================
 
 export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: string }) => {
@@ -187,7 +225,8 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
 };
 
 export const StandardIDTag = ({ idNum }: { idNum: string }) => (
-  <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-2 backdrop-blur-sm border border-slate-200/50">
+  // ml-2 ko ml-1 kar diya hai taaki very very little bit left move ho jaye
+  <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-1 backdrop-blur-sm border border-slate-200/50">
     ID: {idNum}
   </span>
 );
@@ -329,13 +368,11 @@ export function FullProfileDialog({
   const ownedVehicles = ownedItems.filter((id: string) => VEHICLE_REGISTRY[id]);
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
-  // Single Budget level (remove Rich & Charm)
   const budgetLevel = profile.budgetLevel || profile.level?.budget || 1;
 
   const displayId = profile.accountNumber || generateUnique6DigitId();
   const countryFlag = getCountryFlagEmoji(profile.country || '');
 
-  // Check for official tag (either flag or tags array)
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
 
   return (
@@ -365,12 +402,13 @@ export function FullProfileDialog({
               </div>
             )}
 
-            {/* Top Buttons - Back & (3-dot OR Pencil) - plain icons without background */}
+            {/* Top Buttons - Back & (3-dot OR Pencil) */}
             <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
               <button onClick={() => onOpenChange(false)} className="text-white">
                 <ChevronLeft className="h-6 w-6" />
               </button>
               {isOwnProfile ? (
+                {/* Yaha click karne par edit profile dialog open hota hai via setEditDialogOpen */}
                 <button onClick={() => setEditDialogOpen(true)} className="text-white">
                   <Pencil className="h-6 w-6" />
                 </button>
@@ -384,7 +422,7 @@ export function FullProfileDialog({
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
           </div>
 
-          {/* Content Section - Main Card - GLOSSY WHITE */}
+          {/* Content Section - Main Card */}
           <div className="relative z-20 bg-white/98 backdrop-blur-2xl rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-white/80 min-h-[70vh]">
 
             <div className="flex flex-col items-center">
@@ -398,18 +436,15 @@ export function FullProfileDialog({
               </div>
 
               <div className="text-center space-y-2.5 w-full">
-                {/* Name */}
                 <div className="flex items-center justify-center gap-2.5 flex-wrap">
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
                 </div>
 
-                {/* Gender + flag + ID - with official forced Budget ID */}
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                   {countryFlag && (
                     <span className="text-xl leading-none shrink-0">{countryFlag}</span>
                   )}
-                  {/* If user has Official tag -> always Budget ID. Otherwise fallback to original isBudget logic */}
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
                   ) : profile.isBudget ? (
@@ -419,7 +454,6 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* Only ONE badge: Budget level, plus Official/Seller tags */}
                 <div className="flex items-center justify-center gap-2 flex-wrap">
                   <BudgetLevelBadge level={budgetLevel} />
                   {hasOfficialTag && <SVGA_OfficialTag />}
@@ -430,7 +464,6 @@ export function FullProfileDialog({
               </div>
             </div>
 
-            {/* Stats Bar (unchanged) */}
             <div className="flex justify-between items-center py-5 mb-0 mx-[-24px]">
               <div className="flex flex-col items-center flex-1">
                 <span className="text-xl font-bold text-slate-900 leading-none">{stats.fans}</span>
@@ -455,7 +488,6 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Top Contribution Section (unchanged) */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Top Contribution</h3>
               <div className="flex items-end justify-center gap-4 mt-5">
@@ -497,7 +529,6 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Signature Bio (unchanged) */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
@@ -518,7 +549,6 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* TAB Navigation (unchanged) */}
             <div className="flex items-center justify-between mt-6 border-b border-slate-100 pb-0">
               {['medal', 'vehicle', 'frame', 'gift'].map((tab) => (
                 <button
@@ -537,7 +567,6 @@ export function FullProfileDialog({
               ))}
             </div>
 
-            {/* TAB CONTENT Area (unchanged) */}
             <div className="min-h-[50vh] mt-4 w-full">
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
@@ -630,7 +659,7 @@ export function FullProfileDialog({
           </div>
         </div>
 
-        {/* Footer (unchanged) */}
+        {/* Footer */}
         {!isOwnProfile && (
           <footer className="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-white/95 backdrop-blur-md border-t border-slate-100 flex gap-4 z-[160]">
              <button
@@ -671,4 +700,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-              }
+}
