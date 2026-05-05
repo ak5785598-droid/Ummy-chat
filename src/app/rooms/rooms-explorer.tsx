@@ -81,9 +81,9 @@ const GlossyCalendarIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" className={className}>
     <defs>
       <radialGradient id="bg" cx="0.5" cy="0.32" r="0.78">
-        <stop offset="0%" stopColor="#B06EF5"/>
-        <stop offset="48%" stopColor="#8A2BE2"/>
-        <stop offset="100%" stopColor="#5D149E"/>
+        <stop offset="0%" stopColor="#C084F5"/>
+        <stop offset="48%" stopColor="#9D4EDD"/>
+        <stop offset="100%" stopColor="#6B21A8"/>
       </radialGradient>
       <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#FFFFFF"/>
@@ -313,12 +313,13 @@ function RoomsExplorerClassic() {
     <div className="h-[100dvh] flex flex-col font-sans antialiased animate-in fade-in duration-700 text-slate-900 overflow-hidden bg-white relative">
       <ThemeColorMeta color="#8b5cf6" />
       
-      {/* TOP 5Vh SOLID PURPLE BAKI NICHE AATE AATE HALKA */}
+      {/* TOP 5Vh HALKA PURPLE */}
       <div className="absolute top-0 left-0 right-0 flex flex-col z-0 pointer-events-none">
-        <div className="h-[5vh] bg-purple-500" />
-        <div className="h-[25vh] bg-gradient-to-b from-purple-500 via-purple-300/40 to-transparent" />
+        <div className="h-[3qvh] bg-purple-400" />
+        <div className="h-[25vh] bg-gradient-to-b from-purple-400 via-purple-300/40 to-transparent" />
       </div>
 
+      {/* TOP HEADER (FIXED - WON'T SCROLL) */}
       <header className="flex items-center justify-between px-4 pt-safe shrink-0 relative z-50 bg-transparent pb-4">
         <div className="flex items-center justify-between w-full">
            <div className="flex items-center gap-3">
@@ -370,9 +371,11 @@ function RoomsExplorerClassic() {
         </div>
       </header>
 
+      {/* MAIN SCROLLABLE AREA */}
       <div className="flex-1 overflow-y-auto relative z-10 no-scrollbar pb-32">
         {headerTab === 'recommend' ? (
           <>
+            {/* Banner (Will Scroll) */}
             <div className="px-2.5 mb-1 mt-0">
               <Carousel 
                 className="w-full" 
@@ -421,6 +424,7 @@ function RoomsExplorerClassic() {
               </Carousel>
             </div>
 
+            {/* Ranking Cards (Will Scroll) */}
             <div className="px-2 mb-1.5">
               <div className="flex gap-1.5">
                  <RankingCard />
@@ -429,8 +433,8 @@ function RoomsExplorerClassic() {
               </div>
             </div>
 
-            {/* CLEANER CATEGORY BAR - BETTER CONTRAST */}
-            <div className="px-3 sticky top-0 z-40 bg-white/90 backdrop-blur-md py-2 mb-1 border-b border-slate-100/80 flex items-center">
+            {/* STICKY CATEGORY BAR - Scroll karne par Top Header ke theek niche atak jayega */}
+            <div className="px-3 sticky top-0 z-40 bg-white/95 backdrop-blur-md py-2 mb-1 border-b border-slate-100/80 flex items-center">
               <div className="w-full overflow-x-auto no-scrollbar">
                 <div className="flex gap-2 px-0.5">
                   {CATEGORIES.map((cat) => (
@@ -479,7 +483,6 @@ function RoomsExplorerClassic() {
                ) : (
                  <>
                    <section className="mb-6 mt-2">
-                     {/* CLEANER USER CARD - ENHANCED SHADOW & BORDER */}
                      <div className="flex items-center justify-between bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100/80 relative overflow-hidden group backdrop-blur-sm">
                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-violet-100/40 to-transparent rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700" />
                        
@@ -629,45 +632,39 @@ function RoomsExplorerClassic() {
         )}
       </div>
 
-      {/* MODIFIED GLOSSY CALENDAR BUTTON - icon fills button completely */}
+      {/* GLOSSY CALENDAR BUTTON (Slightly Lighter bg-purple-400) */}
       {isHydrated && (
         <div className="fixed bottom-[5.5rem] right-4 z-[90] animate-in fade-in zoom-in duration-500">
           <button 
             onClick={() => setShowRewardsModal(true)}
-            className="relative bg-purple-500 hover:bg-purple-600 p-0 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
+            className="relative bg-purple-400 hover:bg-purple-500 p-0 rounded-[1.2rem] shadow-lg border border-purple-300/50 active:scale-95 transition-all duration-200 group flex items-center justify-center overflow-hidden"
           >
-            {/* Icon now takes full button size (h-14 w-14 = 56px, matches original button dimensions) */}
             <GlossyCalendarIcon className="h-14 w-14 text-white group-hover:scale-105 transition-transform z-10 relative" />
           </button>
         </div>
       )}
 
-      {/* DAILY REWARDS MODAL OVERLAY - START */}
+      {/* DAILY REWARDS MODAL OVERLAY */}
       {showRewardsModal && (
         <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-5 animate-in fade-in duration-200 gap-6">
           
-          {/* Card Container */}
           <div className="w-full max-w-sm h-[60vh] bg-white rounded-3xl border-4 border-purple-200 shadow-2xl flex flex-col relative overflow-hidden animate-in zoom-in-95 duration-300">
 
-             {/* Header Top Solid Purple Area */}
-             <div className="bg-purple-600 pt-5 pb-3 px-4 relative flex-shrink-0">
+             <div className="bg-purple-500 pt-5 pb-3 px-4 relative flex-shrink-0">
                <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" />
                <h2 className="text-[1.3rem] font-black text-white text-center drop-shadow-md relative z-10 tracking-wide">
                  Daily Rewards
                </h2>
              </div>
 
-             {/* Sub Heading Halka Purple */}
              <div className="bg-purple-100 py-2.5 px-4 text-center border-b border-purple-200 flex-shrink-0">
                <p className="text-purple-800 font-bold text-[11px] uppercase tracking-wider">
                  Sign in for 7 days for rich Rewards
                </p>
              </div>
 
-             {/* Body (Scrollable if needed, Flex column layout) */}
              <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 justify-center">
                
-               {/* 1st Row: 4 Chote Cards (Day 1 to 4) */}
                <div className="grid grid-cols-4 gap-2">
                  {[
                    { day: 1, amount: 5000 },
@@ -676,15 +673,12 @@ function RoomsExplorerClassic() {
                    { day: 4, amount: 10000 }
                  ].map((item) => (
                    <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-xl relative pt-6 pb-2 px-1 flex flex-col items-center justify-center overflow-hidden shadow-sm">
-                     {/* Square Day Tag at Top Left */}
-                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-br-lg">
+                     <div className="absolute top-0 left-0 bg-purple-400 text-white text-[10px] font-black px-1.5 py-0.5 rounded-br-lg">
                        {item.day}
                      </div>
                      
-                     {/* Big Dollar Coin */}
                      <CircleDollarSign className="h-7 w-7 text-amber-500 mb-1.5 drop-shadow-sm" fill="#fef08a" strokeWidth={1.5} />
                      
-                     {/* Small Coin icon + Text */}
                      <div className="flex items-center gap-0.5 mt-auto bg-white px-1 py-0.5 rounded-full border border-slate-100">
                        <GoldCoinIcon className="h-2 w-2" />
                        <span className="text-[9px] font-bold text-slate-700 leading-none">{item.amount}</span>
@@ -693,14 +687,13 @@ function RoomsExplorerClassic() {
                  ))}
                </div>
 
-               {/* 2nd Row: 2 Cards (Day 5 & 6) */}
                <div className="grid grid-cols-2 gap-3">
                  {[
                    { day: 5, amount: 10000 },
                    { day: 6, amount: 10000 }
                  ].map((item) => (
                    <div key={item.day} className="bg-slate-50 border border-slate-200 rounded-2xl relative pt-7 pb-3 px-2 flex flex-col items-center justify-center overflow-hidden shadow-sm">
-                     <div className="absolute top-0 left-0 bg-purple-500 text-white text-xs font-black px-2.5 py-0.5 rounded-br-xl">
+                     <div className="absolute top-0 left-0 bg-purple-400 text-white text-xs font-black px-2.5 py-0.5 rounded-br-xl">
                        {item.day}
                      </div>
                      <CircleDollarSign className="h-10 w-10 text-amber-500 mb-2 drop-shadow-md" fill="#fef08a" strokeWidth={1.5} />
@@ -712,9 +705,8 @@ function RoomsExplorerClassic() {
                  ))}
                </div>
 
-               {/* 3rd Row: 1 Wide Card (Day 7) */}
                <div className="bg-slate-50 border border-slate-200 rounded-[1.5rem] relative pt-8 pb-4 px-3 flex flex-col items-center justify-center overflow-hidden shadow-sm mt-1">
-                  <div className="absolute top-0 left-0 bg-purple-500 text-white text-[11px] font-black px-3 py-1 rounded-br-2xl flex items-center gap-1 shadow-sm uppercase tracking-wide">
+                  <div className="absolute top-0 left-0 bg-purple-400 text-white text-[11px] font-black px-3 py-1 rounded-br-2xl flex items-center gap-1 shadow-sm uppercase tracking-wide">
                     <span className="text-yellow-300 text-sm">7</span> Big Rewards
                   </div>
                   <CircleDollarSign className="h-14 w-14 text-amber-500 mb-2 drop-shadow-lg" fill="#fef08a" strokeWidth={1.5} />
@@ -726,15 +718,13 @@ function RoomsExplorerClassic() {
 
              </div>
 
-             {/* Footer with Button */}
              <div className="p-4 pt-2 bg-white flex-shrink-0 z-10 border-t border-slate-100">
-               <button className="w-full bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white rounded-2xl py-3.5 font-black text-[15px] shadow-[0_4px_15px_rgba(168,85,247,0.3)] active:scale-95 transition-all duration-200 uppercase tracking-widest">
+               <button className="w-full bg-gradient-to-r from-purple-400 to-purple-600 hover:from-purple-500 hover:to-purple-700 text-white rounded-2xl py-3.5 font-black text-[15px] shadow-[0_4px_15px_rgba(168,85,247,0.3)] active:scale-95 transition-all duration-200 uppercase tracking-widest">
                  Sign in Today
                </button>
              </div>
           </div>
 
-          {/* Close (X) Button */}
           <button 
              onClick={() => setShowRewardsModal(false)} 
              className="bg-white/20 hover:bg-white/30 border border-white/50 backdrop-blur-md transition-colors text-white rounded-full p-3.5 shadow-xl hover:scale-105 active:scale-95 z-50 animate-in slide-in-from-bottom-5 duration-300"
@@ -744,9 +734,8 @@ function RoomsExplorerClassic() {
 
         </div>
       )}
-      {/* DAILY REWARDS MODAL OVERLAY - END */}
 
-      {/* CLEANER BOTTOM NAVIGATION - GLASSMORPHIC REFINEMENT */}
+      {/* BOTTOM NAVIGATION */}
       {isHydrated && (
         <nav 
           className="fixed bottom-0 left-0 right-0 z-[100] md:hidden bg-white/80 backdrop-blur-xl border-t border-white/50 shadow-[0_-8px_30px_rgba(0,0,0,0.02)]"
@@ -784,3 +773,4 @@ function RoomsExplorerClassic() {
     </div>
   );
 }
+
