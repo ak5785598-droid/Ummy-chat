@@ -3,11 +3,25 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, onSnapshot, query, orderBy, limit, getDoc } from 'firebase/firestore';
+import { doc, increment, collection, onSnapshot, query, orderBy, limit, getDoc, setDoc } from 'firebase/firestore';
 import { X, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
+// --- LOADING PAGE ---
+const LoadingPage = () => (
+  <motion.div 
+    initial={{ y: "100%" }} animate={{ y: 0 }}
+    className="h-[80vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
+  >
+    <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
+      <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
+      <h1 className="text-4xl font-black text-gray-800 tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,0.1)]">
+        Ummy
+      </h1>
+    </div>
+  </motion.div>
+);
 
 // --- NUMBER FORMATTING (shared) ---
 const formatKandM = (num: number): string => {
@@ -90,7 +104,7 @@ const Cloud = ({ className }: { className?: string }) => (
 
 // --- NEW GOLD COINS BETTING SOUND ---
 const SOUNDS = {
-  BET: 'https://assets.mixkit.co/active_storage/sfx/2002/2002-preview.mp3', // Gold coins sound
+  BET: 'https://assets.mixkit.co/active_storage/sfx/2002/2002-preview.mp3',
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
   WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3',
@@ -109,11 +123,11 @@ const ITEMS = [
 ];
 
 const CHIPS_DATA = [
- { value: 1000, label: '1k', color: '#a855f7', bgColor: 'from-purple-400 to-purple-600' }, 
- { value: 50000, label: '50k', color: '#f97316', bgColor: 'from-orange-400 to-orange-600' }, 
- { value: 100000, label: '100k', color: '#ef4444', bgColor: 'from-red-400 to-red-600' }, 
- { value: 500000, label: '500k', color: '#22c55e', bgColor: 'from-green-400 to-green-600' }, 
- { value: 1000000, label: '1M', color: '#06b6d4', bgColor: 'from-cyan-400 to-cyan-600' }, 
+  { value: 1000, label: '1k', color: 'from-blue-500 to-blue-700' },
+  { value: 5000, label: '5K', color: 'from-green-500 to-green-700' },
+  { value: 50000, label: '50K', color: 'from-purple-500 to-purple-700' },
+  { value: 500000, label: '500K', color: 'from-red-500 to-red-700' },
+  { value: 1000000, label: '1M', color: 'from-yellow-500 to-yellow-700' },
 ];
 
 const floatingVariants = {
@@ -583,6 +597,21 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     audio.play().catch(e => console.log("Sound play error:", e));
   };
 
+  // HELPER: Ensure profile document exists before updating wallet coins
+  const ensureProfileDoc = async (userId: string) => {
+    if (!firestore) return null;
+    const profileRef = doc(firestore, 'users', userId, 'profile', userId);
+    const snap = await getDoc(profileRef);
+    if (!snap.exists()) {
+      // Create default profile with wallet coins
+      await setDoc(profileRef, {
+        wallet: { coins: 0 },
+        createdAt: new Date()
+      }, { merge: true });
+    }
+    return profileRef;
+  };
+
   // Fetch & compute global top winners from globalGameWins collection
   useEffect(() => {
     if (!firestore) return;
@@ -693,7 +722,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     };
   }, [gameState, isLoading]);
 
-  const handlePlaceBet = (id: string) => {
+  const handlePlaceBet = async (id: string) => {
     if (gameState !== 'betting' || !currentUser) {
       if (!currentUser) alert('Please login to play!');
       return;
@@ -702,10 +731,15 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       alert('You do not have enough Coins!'); 
       return;
     }
-    playSound(SOUNDS.BET, 0.5); // Gold coins betting sound
+    playSound(SOUNDS.BET, 0.5);
+    
+    // Ensure profile exists before updating
+    const profileRef = await ensureProfileDoc(currentUser.uid);
+    if (profileRef) {
+      await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(-selectedChip) });
+    }
+    
     setLocalCoins(prev => prev - selectedChip);
-    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
@@ -753,8 +787,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     }, 1000);
   };
 
-  const finalizeResult = (winningItem: typeof ITEMS[0]) => {
-    if (gameState !== 'spinning') return; // extra safety
+  const finalizeResult = async (winningItem: typeof ITEMS[0]) => {
+    if (gameState !== 'spinning') return;
     
     const betOnItem = myBets[winningItem.id] || 0;
     const totalWinAmount = betOnItem * winningItem.multiplier;
@@ -778,19 +812,26 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       setLocalCoins(prev => prev + totalWinAmount);
       setTodayWins(prev => prev + totalWinAmount);
       
-      const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
+      // Ensure profile exists and update
+      const profileRef = await ensureProfileDoc(currentUser.uid);
+      if (profileRef) {
+        await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalWinAmount) });
+      }
       
-      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-        gameId: 'fruit-party', 
-        amount: totalWinAmount,
-        userId: currentUser.uid,
-        timestamp: new Date(),
-        isGroupWin: false
-      });
+      try {
+        await addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+          gameId: 'fruit-party', 
+          amount: totalWinAmount,
+          userId: currentUser.uid,
+          timestamp: new Date(),
+          isGroupWin: false
+        });
+      } catch (err) {
+        console.error("Failed to add globalGameWins:", err);
+      }
 
       const userRef = doc(firestore, 'users', currentUser.uid);
-      updateDocumentNonBlocking(userRef, { 'stats.totalWins': increment(totalWinAmount) });
+      await updateDocumentNonBlocking(userRef, { 'stats.totalWins': increment(totalWinAmount) });
     }
     
     setWinnerData({ 
@@ -1097,4 +1138,4 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       </AnimatePresence>
     </div>
   );
-      }
+   }
