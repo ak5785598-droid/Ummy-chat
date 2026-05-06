@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useUser, useDoc, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useState, useEffect, useRef } from 'react';
+import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit, getDoc } from 'firebase/firestore';
 import { 
@@ -19,7 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
-/** * Glossy 3D Money Bag SVG Icon based on uploaded image 
+/**
+ * Glossy 3D Money Bag SVG Icon
  */
 const MoneyBag3DIcon = ({ className }: { className?: string }) => (
   <svg
@@ -44,18 +45,15 @@ const MoneyBag3DIcon = ({ className }: { className?: string }) => (
       </filter>
     </defs>
     <g filter="url(#shadow)">
-      {/* Top knot */}
       <path d="M35 30 C 25 15, 75 15, 65 30 Q 50 35, 35 30 Z" fill="url(#bagGrad)" />
-      {/* Main Bag */}
       <path d="M 25 85 C 10 85, 15 60, 25 45 Q 50 25, 75 45 C 85 60, 90 85, 75 85 Q 50 90, 25 85 Z" fill="url(#bagGrad)" />
-      {/* Dollar Sign */}
       <path d="M50 38 L50 42 C45 42 42 45 42 48 C42 51 45 53 48 54 L52 55 C55 56 58 58 58 62 C58 66 55 69 50 69 L50 73 L46 73 L46 69 C41 68 39 65 39 62 L43 62 C43 64 45 66 48 66 L52 66 C54 66 55 64 55 62 C55 60 53 58 50 57 L46 56 C42 55 39 52 39 48 C39 44 42 41 46 41 L46 38 L50 38 Z" fill="url(#dollarGrad)" />
     </g>
   </svg>
 );
 
 /**
- * 3D Glossy Dollar Coin SVG Icon for the Input Field
+ * 3D Glossy Dollar Coin SVG Icon
  */
 const DollarCoin3DIcon = ({ className }: { className?: string }) => (
   <svg
@@ -76,22 +74,17 @@ const DollarCoin3DIcon = ({ className }: { className?: string }) => (
       </filter>
     </defs>
     <g filter="url(#coinShadow)">
-      {/* Coin Base */}
       <circle cx="50" cy="50" r="45" fill="url(#goldCoinGrad)" />
-      {/* Inner Ring */}
       <circle cx="50" cy="50" r="38" stroke="#B8860B" strokeWidth="2" opacity="0.5" />
-      {/* Dollar Sign Back (Shadow/Depth) */}
       <path d="M50 25 L50 75 M50 25 C40 25 35 32 35 40 C35 55 65 45 65 60 C65 68 60 75 50 75 C40 75 35 68 35 60" stroke="#8B6508" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      {/* Dollar Sign Front (Highlight) */}
       <path d="M50 25 L50 75 M50 25 C40 25 35 32 35 40 C35 55 65 45 65 60 C65 68 60 75 50 75 C40 75 35 68 35 60" stroke="#FFF7B0" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" transform="translate(-1, -1)" />
     </g>
   </svg>
 );
 
 /**
- * Official Seller Transfer Portal.
- * Handles the high-fidelity dispatch of Gold Coins to tribe members by ID.
- * Hardened with a Fresh Database Verification Handshake to prevent unauthorized transfers after revocation.
+ * Official Seller Transfer Portal
+ * Fixed: Dialog reset, abort controller, fresh balance check
  */
 export function SellerTransferDialog() {
  const [open, setOpen] = useState(false);
@@ -105,14 +98,33 @@ export function SellerTransferDialog() {
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
  const { toast } = useToast();
+ 
+ // Abort controller ref for search cleanup
+ const abortControllerRef = useRef<AbortController | null>(null);
 
- // AUTH STATUS SYNC: Reactive check for seller tags
- const isAuthorized = userProfile?.tags?.some(t => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user?.uid === CREATOR_ID;
+ // Auth check
+ const isAuthorized = userProfile?.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) || user?.uid === CREATOR_ID;
 
- // AUTO-TERMINATION PROTOCOL
+ // Reset form when dialog closes
+ const handleOpenChange = (newOpen: boolean) => {
+   if (!newOpen) {
+     // Reset all form states
+     setRecipientId('');
+     setAmount('');
+     setFoundRecipient(null);
+     setIsSearching(false);
+     if (abortControllerRef.current) {
+       abortControllerRef.current.abort();
+       abortControllerRef.current = null;
+     }
+   }
+   setOpen(newOpen);
+ };
+
+ // Auto-close if unauthorized
  useEffect(() => {
   if (open && !isAuthorized && user?.uid !== CREATOR_ID) {
-   setOpen(false);
+   handleOpenChange(false);
    toast({ 
     variant: 'destructive', 
     title: 'Certification Suspended', 
@@ -121,37 +133,56 @@ export function SellerTransferDialog() {
   }
  }, [isAuthorized, open, user?.uid, toast]);
 
- // REAL-TIME IDENTITY SYNC
+ // Real-time recipient search with abort control
  useEffect(() => {
-  const lookupRecipient = async () => {
-   if (!firestore || recipientId.length < 1) {
-    setFoundRecipient(null);
-    return;
-   }
+   const lookupRecipient = async () => {
+     if (!firestore || recipientId.length < 1) {
+       setFoundRecipient(null);
+       return;
+     }
 
-   setIsSearching(true);
-   try {
-    const q = query(
-     collection(firestore, 'users'), 
-     where('accountNumber', '==', recipientId.trim()), 
-     limit(1)
-    );
-    const snap = await getDocs(q);
-    
-    if (!snap.empty) {
-     setFoundRecipient({ ...snap.docs[0].data(), id: snap.docs[0].id });
-    } else {
-     setFoundRecipient(null);
-    }
-   } catch (err) {
-    console.error("[Identity Sync] Lookup failed:", err);
-   } finally {
-    setIsSearching(false);
-   }
-  };
+     // Cancel previous request
+     if (abortControllerRef.current) {
+       abortControllerRef.current.abort();
+     }
+     const controller = new AbortController();
+     abortControllerRef.current = controller;
 
-  const timer = setTimeout(lookupRecipient, 500);
-  return () => clearTimeout(timer);
+     setIsSearching(true);
+     try {
+       const q = query(
+         collection(firestore, 'users'), 
+         where('accountNumber', '==', recipientId.trim()), 
+         limit(1)
+       );
+       const snap = await getDocs(q);
+       
+       if (controller.signal.aborted) return;
+       
+       if (!snap.empty) {
+         setFoundRecipient({ ...snap.docs[0].data(), id: snap.docs[0].id });
+       } else {
+         setFoundRecipient(null);
+       }
+     } catch (err: any) {
+       if (err.name !== 'AbortError') {
+         console.error("[Identity Sync] Lookup failed:", err);
+       }
+     } finally {
+       if (!controller.signal.aborted) {
+         setIsSearching(false);
+       }
+     }
+   };
+
+   const timer = setTimeout(lookupRecipient, 500);
+   return () => {
+     clearTimeout(timer);
+     if (abortControllerRef.current) {
+       abortControllerRef.current.abort();
+       abortControllerRef.current = null;
+     }
+   };
  }, [recipientId, firestore]);
 
  const handleTransfer = async (e: React.FormEvent) => {
@@ -161,7 +192,7 @@ export function SellerTransferDialog() {
   setIsProcessing(true);
 
   try {
-   // 1. FRESH AUTHORITY VERIFICATION
+   // 1. Fresh authority verification
    const freshUserSnap = await getDoc(doc(firestore, 'users', user.uid));
    const freshTags = freshUserSnap.data()?.tags || [];
    const sellerTags = ['Seller', 'Seller center', 'Coin Seller'];
@@ -169,7 +200,7 @@ export function SellerTransferDialog() {
 
    if (!isStillAuthorized) {
     toast({ variant: 'destructive', title: 'Authority Revoked', description: 'Your seller certification is no longer active. Transfer blocked.' });
-    setOpen(false);
+    handleOpenChange(false);
     setIsProcessing(false);
     return;
    }
@@ -181,7 +212,10 @@ export function SellerTransferDialog() {
     return;
    }
 
-   const currentBalance = userProfile.wallet?.coins || 0;
+   // 2. Fresh balance check from DB (prevent stale local state)
+   const freshSenderSnap = await getDoc(doc(firestore, 'users', user.uid));
+   const currentBalance = freshSenderSnap.data()?.wallet?.coins || 0;
+   
    if (coinsToTransfer > currentBalance) {
     toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Your frequency balance is too low for this dispatch.' });
     setIsProcessing(false);
@@ -194,7 +228,7 @@ export function SellerTransferDialog() {
     return;
    }
 
-   // 2. ATOMIC DISPATCH HANDSHAKE
+   // 3. Atomic dispatch handshake
    const batch = writeBatch(firestore);
    const senderRef = doc(firestore, 'users', user.uid);
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
@@ -218,21 +252,18 @@ export function SellerTransferDialog() {
    await batch.commit();
    
    toast({ title: 'Sync Successful', description: `Successfully dispatched ${coinsToTransfer.toLocaleString()} Gold Coins to ${foundRecipient.username}.` });
-   setOpen(false);
-   setRecipientId('');
-   setAmount('');
-   setFoundRecipient(null);
+   handleOpenChange(false); // This will reset all states
 
   } catch (e: any) {
    console.error('[Seller Portal] Transfer Error:', e);
-   toast({ variant: 'destructive', title: 'Dispatch Failed' });
+   toast({ variant: 'destructive', title: 'Dispatch Failed', description: e?.message || 'Please try again' });
   } finally {
    setIsProcessing(false);
   }
  };
 
  return (
-  <Dialog open={open} onOpenChange={setOpen}>
+  <Dialog open={open} onOpenChange={handleOpenChange}>
    <DialogTrigger asChild>
     <button 
      type="button"
@@ -247,16 +278,15 @@ export function SellerTransferDialog() {
     </button>
    </DialogTrigger>
    
-   {/* DialogContent me dvh ka logic set hai taaki mobile keyboard aane par auto-push up ho jaye */}
    <DialogContent className="sm:max-w-[425px] w-[95vw] md:w-full rounded-2xl max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
-     {/* 1st Row: Top Header */}
+     {/* Header */}
      <div className="h-[8vh] min-h-[55px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
       <h2 className="font-sans text-lg font-bold uppercase tracking-widest drop-shadow-md">Offline Recharge</h2>
      </div>
 
-     {/* Scrollable Container with Tighter Gaps (Keyboard aane par yahi scroll hoga) */}
+     {/* Scrollable Content */}
      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-center space-y-4">
       
       {!isAuthorized && (
@@ -270,7 +300,7 @@ export function SellerTransferDialog() {
 
       <div className={cn("space-y-4 my-auto", !isAuthorized && "opacity-40 grayscale pointer-events-none")}>
        
-       {/* 2nd Row: ID Sync (Smaller Input) */}
+       {/* Recipient ID Field */}
        <div className="grid gap-1">
         <div className="flex items-center justify-between px-1">
          <Label htmlFor="recipientId" className="text-[10px] font-bold uppercase tracking-wider text-gray-400">ID Sync (Tribal ID)</Label>
@@ -287,7 +317,7 @@ export function SellerTransferDialog() {
         />
        </div>
 
-       {/* 3rd Row: User ID Show Confirm (Compact Card) */}
+       {/* Recipient Confirmation Card */}
        <div className="relative h-[3.5rem] flex items-center justify-center">
         {foundRecipient ? (
          <div className="flex items-center gap-2 p-2 px-3 bg-slate-50 rounded-xl border-2 border-green-100 w-full animate-in zoom-in duration-300">
@@ -311,7 +341,7 @@ export function SellerTransferDialog() {
         )}
        </div>
 
-       {/* 4th Row: Enter Coins (Smaller Input with 3D Dollar Icon) */}
+       {/* Amount Field */}
        <div className="grid gap-1">
         <Label htmlFor="amount" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">Enter Coins</Label>
         <div className="relative">
@@ -329,7 +359,7 @@ export function SellerTransferDialog() {
          />
         </div>
         
-        {/* Right side me Sending Value AND Rupees Calculation dono hain */}
+        {/* Balance & Calculation */}
         <div className="text-[10px] font-bold text-muted-foreground ml-1 mt-1 uppercase flex justify-between items-start">
          <span className="mt-1">Balance: {(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
          
@@ -342,13 +372,11 @@ export function SellerTransferDialog() {
            </span>
          </div>
         </div>
-
        </div>
-
       </div>
      </div>
 
-     {/* 5th Row: Recharge Now Button (Compact Padding & Height) */}
+     {/* Submit Button */}
      <div className="p-4 shrink-0 bg-white border-t border-slate-50">
       <Button 
        type="submit" 
@@ -358,10 +386,8 @@ export function SellerTransferDialog() {
        {isProcessing ? <Loader className="animate-spin h-5 w-5" /> : <><Send className="mr-2 h-4 w-4" /> Recharge Now</>}
       </Button>
      </div>
-
     </form>
    </DialogContent>
   </Dialog>
  );
-}
-
+     }
