@@ -87,11 +87,11 @@ const MockConfetti = ({ show }) => {
   );
 };
 
-// --- LOADING PAGE (unchanged) ---
+// --- LOADING PAGE with 50vh height (unchanged except height) ---
 const LoadingPage = () => (
   <motion.div 
     initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[80vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
+    className="h-[50vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
   >
     <div className="bg-white p-8 rounded-[2rem] flex flex-col items-center justify-center shadow-2xl">
       <Loader2 className="w-12 h-12 text-yellow-500 animate-spin mb-3" strokeWidth={3} />
@@ -349,7 +349,10 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }) {
       <div className="absolute inset-0" onClick={onClose} />
 
       <AnimatePresence mode="wait">
-        <motion.div 
+        {isLoading ? (
+          <LoadingPage />
+        ) : (
+          <motion.div 
             key="game"
             drag
             dragControls={dragControls}
@@ -361,7 +364,6 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }) {
             initial="initial"
             animate="animate"
             className={cn(
-              // 50vh height, maintain square shape
               "h-[50vh] w-auto aspect-square max-w-[500px] flex flex-col relative overflow-hidden bg-[#020617] text-white select-none rounded-[2rem] border border-white/20 shadow-2xl transition-all duration-300 will-change-transform"
             )}
             style={{ 
@@ -650,7 +652,8 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }) {
               </motion.div>
             )}
           </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
-    }
+  }
