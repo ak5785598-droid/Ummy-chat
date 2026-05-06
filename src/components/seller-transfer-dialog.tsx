@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useUser, useDoc, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, query, where, getDocs, doc, increment, serverTimestamp, writeBatch, limit, getDoc, runTransaction } from 'firebase/firestore';
 import { 
@@ -19,15 +19,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
-/** * Glossy 3D Money Bag SVG Icon based on uploaded image 
- */
 const MoneyBag3DIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
       <radialGradient id="bagGrad" cx="50%" cy="30%" r="60%" fx="30%" fy="30%">
         <stop offset="0%" stopColor="#ff9999" />
@@ -52,12 +45,7 @@ const MoneyBag3DIcon = ({ className }: { className?: string }) => (
 );
 
 const DollarCoin3DIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 100 100"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <defs>
       <radialGradient id="goldCoinGrad" cx="40%" cy="30%" r="60%" fx="30%" fy="30%">
         <stop offset="0%" stopColor="#FFF7B0" />
@@ -92,12 +80,12 @@ export function SellerTransferDialog() {
  const firestore = useFirestore();
  const { toast } = useToast();
  
- // ✅ FIX 1: Seller tags ko lowercase compare karo (case-insensitive)
+ // ✅ Seller tag check - case insensitive
  const isAuthorized = userProfile?.tags?.some((t: string) => 
-   ['Seller', 'seller', 'Seller center', 'seller center', 'Coin Seller', 'coin seller'].includes(t.toLowerCase())
+   ['seller', 'seller center', 'coin seller'].includes(t.toLowerCase())
  ) || user?.uid === CREATOR_ID;
 
- // ✅ FIX 2: Auto-termination with proper cleanup
+ // ✅ Auto-termination
  useEffect(() => {
   if (open && !isAuthorized && user?.uid !== CREATOR_ID) {
    setOpen(false);
@@ -109,11 +97,11 @@ export function SellerTransferDialog() {
   }
  }, [isAuthorized, open, user?.uid, toast]);
 
- // ✅ FIX 3: Recipient lookup - more robust, with error state
+ // ✅ Recipient lookup - FIXED: Error handling + no invalid paths
  useEffect(() => {
   let isMounted = true;
   const lookupRecipient = async () => {
-   if (!firestore || recipientId.length < 1) {
+   if (!firestore || recipientId.length < 3) {
     if (isMounted) setFoundRecipient(null);
     return;
    }
@@ -121,32 +109,26 @@ export function SellerTransferDialog() {
    setIsSearching(true);
    setDebugError(null);
    try {
-    // Try by accountNumber first
-    let q = query(
+    // Query by accountNumber
+    const q = query(
      collection(firestore, 'users'), 
      where('accountNumber', '==', recipientId.trim()), 
      limit(1)
     );
-    let snap = await getDocs(q);
-    
-    // If not found, try by uid (for debugging)
-    if (snap.empty) {
-     q = query(collection(firestore, 'users'), where('uid', '==', recipientId.trim()), limit(1));
-     snap = await getDocs(q);
-    }
+    const snap = await getDocs(q);
     
     if (!snap.empty && isMounted) {
      const docData = snap.docs[0].data();
      setFoundRecipient({ 
        ...docData, 
        id: snap.docs[0].id,
-       username: docData.username || docData.displayName || 'Unknown User'
+       username: docData.username || docData.displayName || 'Unknown'
      });
     } else if (isMounted) {
      setFoundRecipient(null);
     }
    } catch (err: any) {
-    console.error("[Identity Sync] Lookup failed:", err);
+    console.error("[Lookup] Failed:", err);
     if (isMounted) setDebugError(err.message);
    } finally {
     if (isMounted) setIsSearching(false);
@@ -160,30 +142,29 @@ export function SellerTransferDialog() {
   };
  }, [recipientId, firestore]);
 
- // ✅ FIX 4: Use Transaction instead of Batch for reliable increment
+ // ✅ MAIN FIX: Transfer without transaction increment conflict
  const handleTransfer = async (e: React.FormEvent) => {
   e.preventDefault();
   
-  // Clear previous errors
   setDebugError(null);
   
-  // Validation checks
-  if (!user || !firestore || !foundRecipient || !amount || !userProfile) {
-    toast({ variant: 'destructive', title: 'Missing Info', description: 'Please fill all fields and ensure recipient is found.' });
+  if (!user || !firestore || !foundRecipient || !amount) {
+    toast({ variant: 'destructive', title: 'Missing Info', description: 'Please fill all fields.' });
     return;
   }
 
   setIsProcessing(true);
 
   try {
-   // 🔥 FIRE 1: Fresh authority verification (case insensitive)
+   // 1. Verify seller authority fresh
    const freshUserSnap = await getDoc(doc(firestore, 'users', user.uid));
    const freshTags = freshUserSnap.data()?.tags || [];
-   const sellerTags = ['Seller', 'seller', 'Seller center', 'seller center', 'Coin Seller', 'coin seller'];
-   const isStillAuthorized = freshTags.some((t: string) => sellerTags.includes(t.toLowerCase())) || user.uid === CREATOR_ID;
+   const isStillAuthorized = freshTags.some((t: string) => 
+     ['seller', 'seller center', 'coin seller'].includes(t.toLowerCase())
+   ) || user.uid === CREATOR_ID;
 
    if (!isStillAuthorized) {
-    toast({ variant: 'destructive', title: 'Authority Revoked', description: 'Your seller certification is no longer active. Transfer blocked.' });
+    toast({ variant: 'destructive', title: 'Authority Revoked', description: 'Seller certification no longer active.' });
     setOpen(false);
     setIsProcessing(false);
     return;
@@ -191,64 +172,70 @@ export function SellerTransferDialog() {
 
    const coinsToTransfer = parseInt(amount, 10);
    if (isNaN(coinsToTransfer) || coinsToTransfer <= 0) {
-    toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid number of coins.' });
+    toast({ variant: 'destructive', title: 'Invalid Amount' });
     setIsProcessing(false);
     return;
    }
 
-   // ✅ FIX 5: Get fresh balance from Firestore directly (not from stale userProfile)
+   // 2. Get fresh balance
    const freshSenderSnap = await getDoc(doc(firestore, 'users', user.uid));
    const currentBalance = freshSenderSnap.data()?.wallet?.coins || 0;
    
    if (coinsToTransfer > currentBalance) {
-    toast({ variant: 'destructive', title: 'Insufficient Coins', description: `Your balance is ${currentBalance.toLocaleString()} coins.` });
+    toast({ variant: 'destructive', title: 'Insufficient Coins', description: `Balance: ${currentBalance.toLocaleString()} coins` });
     setIsProcessing(false);
     return;
    }
 
    if (foundRecipient.id === user.uid) {
-    toast({ variant: 'destructive', title: 'Invalid Sync', description: 'Cannot dispatch to your own frequency.' });
+    toast({ variant: 'destructive', title: 'Invalid', description: 'Cannot transfer to yourself.' });
     setIsProcessing(false);
     return;
    }
 
-   // ✅ FIX 6: Use RUNTRANSACTION instead of batch (more reliable for increments)
+   // ✅ FIXED: Simple batch write without transaction (increment works fine in batch)
+   const batch = writeBatch(firestore);
+   
    const senderRef = doc(firestore, 'users', user.uid);
    const receiverRef = doc(firestore, 'users', foundRecipient.id);
    
-   await runTransaction(firestore, async (transaction) => {
-     const senderDoc = await transaction.get(senderRef);
-     const receiverDoc = await transaction.get(receiverRef);
-     
-     if (!senderDoc.exists()) throw new Error('Sender not found');
-     if (!receiverDoc.exists()) throw new Error('Receiver not found');
-     
-     const senderBalance = senderDoc.data()?.wallet?.coins || 0;
-     if (senderBalance < coinsToTransfer) {
-       throw new Error('Insufficient balance in transaction');
-     }
-     
-     transaction.update(senderRef, {
-       'wallet.coins': increment(-coinsToTransfer),
-       updatedAt: serverTimestamp()
-     });
-     
-     transaction.update(receiverRef, {
-       'wallet.coins': increment(coinsToTransfer),
-       updatedAt: serverTimestamp()
-     });
+   // Main wallet updates
+   batch.update(senderRef, {
+    'wallet.coins': increment(-coinsToTransfer),
+    updatedAt: serverTimestamp()
    });
    
-   // ✅ FIX 7: Update profile subcollection as well (for consistency)
-   const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-   const receiverProfileRef = doc(firestore, 'users', foundRecipient.id, 'profile', foundRecipient.id);
+   batch.update(receiverRef, {
+    'wallet.coins': increment(coinsToTransfer),
+    updatedAt: serverTimestamp()
+   });
    
-   const batch = writeBatch(firestore);
-   batch.set(senderProfileRef, { wallet: { coins: increment(-coinsToTransfer) }, updatedAt: serverTimestamp() }, { merge: true });
-   batch.set(receiverProfileRef, { wallet: { coins: increment(coinsToTransfer) }, updatedAt: serverTimestamp() }, { merge: true });
+   // ✅ FIXED: Check if profile subcollection exists before writing
+   try {
+     const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+     const senderProfileSnap = await getDoc(senderProfileRef);
+     if (senderProfileSnap.exists()) {
+       batch.update(senderProfileRef, {
+        'wallet.coins': increment(-coinsToTransfer),
+        updatedAt: serverTimestamp()
+       });
+     }
+     
+     const receiverProfileRef = doc(firestore, 'users', foundRecipient.id, 'profile', foundRecipient.id);
+     const receiverProfileSnap = await getDoc(receiverProfileRef);
+     if (receiverProfileSnap.exists()) {
+       batch.update(receiverProfileRef, {
+        'wallet.coins': increment(coinsToTransfer),
+        updatedAt: serverTimestamp()
+       });
+     }
+   } catch (profileErr) {
+     console.warn("[Profile] Subcollection update skipped:", profileErr);
+   }
    
-   // Add notification to receiver
-   const receiverNotifRef = doc(collection(firestore, 'users', foundRecipient.id, 'notifications'));
+   // ✅ FIXED: Safe notification creation - ensure collection exists by using doc with random ID
+   const notifId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+   const receiverNotifRef = doc(firestore, 'users', foundRecipient.id, 'notifications', notifId);
    batch.set(receiverNotifRef, {
     title: 'Dispatch Received',
     content: `You received ${coinsToTransfer.toLocaleString()} Gold Coins from an Official Seller.`,
@@ -259,13 +246,12 @@ export function SellerTransferDialog() {
    
    await batch.commit();
    
-   // ✅ FIX 8: Force refresh user profile after transfer
+   // Refresh profile
    await refreshUserProfile();
    
    toast({ 
-     title: 'Sync Successful', 
-     description: `Successfully dispatched ${coinsToTransfer.toLocaleString()} Gold Coins to ${foundRecipient.username}.`,
-     variant: 'default'
+     title: 'Success!', 
+     description: `Dispatched ${coinsToTransfer.toLocaleString()} coins to ${foundRecipient.username}.`
    });
    
    // Reset form
@@ -275,19 +261,25 @@ export function SellerTransferDialog() {
    setFoundRecipient(null);
 
   } catch (e: any) {
-   console.error('[Seller Portal] Transfer Error:', e);
+   console.error('[Transfer Error]:', e);
    setDebugError(e.message);
+   
+   // ✅ Better error messages
+   let errorMsg = 'Transfer failed. ';
+   if (e.code === 'permission-denied') errorMsg += 'Permission denied. Check Firebase rules.';
+   else if (e.code === 'not-found') errorMsg += 'User document not found.';
+   else errorMsg += e.message;
+   
    toast({ 
      variant: 'destructive', 
-     title: 'Dispatch Failed', 
-     description: e.message || 'Something went wrong. Please try again.' 
+     title: 'Transfer Failed', 
+     description: errorMsg
    });
   } finally {
    setIsProcessing(false);
   }
  };
 
- // Reset form when dialog closes
  const handleOpenChange = (newOpen: boolean) => {
    if (!newOpen) {
      setRecipientId('');
@@ -317,24 +309,19 @@ export function SellerTransferDialog() {
    <DialogContent className="sm:max-w-[425px] w-[95vw] md:w-full rounded-2xl max-h-[85dvh] bg-white text-black p-0 border-none shadow-2xl flex flex-col overflow-hidden z-[100] gap-0">
     <form onSubmit={handleTransfer} className="flex flex-col h-full w-full">
      
-     {/* Header */}
      <div className="h-[8vh] min-h-[55px] bg-gradient-to-b from-purple-600 via-purple-500 to-purple-100 flex items-center justify-center text-white shrink-0 shadow-sm relative z-10">
       <h2 className="font-sans text-lg font-bold uppercase tracking-widest drop-shadow-md">Offline Recharge</h2>
      </div>
 
-     {/* Scrollable Container */}
      <div className="flex-1 overflow-y-auto p-4 flex flex-col justify-center space-y-4">
       
       {!isAuthorized && (
        <div className="bg-red-50 p-2.5 rounded-xl border border-red-100 flex gap-2">
          <Ban className="h-5 w-5 text-red-500 shrink-0" />
-         <p className="text-[10px] font-bold text-red-800 uppercase">
-          Certification Revoked. Access Restricted.
-         </p>
+         <p className="text-[10px] font-bold text-red-800 uppercase">Certification Revoked. Access Restricted.</p>
        </div>
       )}
       
-      {/* Debug Error Display */}
       {debugError && (
         <div className="bg-amber-50 p-2 rounded-xl border border-amber-200 flex gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
@@ -344,7 +331,6 @@ export function SellerTransferDialog() {
 
       <div className={cn("space-y-4 my-auto", !isAuthorized && "opacity-40 grayscale pointer-events-none")}>
        
-       {/* ID Input */}
        <div className="grid gap-1">
         <div className="flex items-center justify-between px-1">
          <Label htmlFor="recipientId" className="text-[10px] font-bold uppercase tracking-wider text-gray-400">ID Sync (Tribal ID)</Label>
@@ -361,7 +347,6 @@ export function SellerTransferDialog() {
         />
        </div>
 
-       {/* Recipient Confirmation Card */}
        <div className="relative h-[3.5rem] flex items-center justify-center">
         {foundRecipient ? (
          <div className="flex items-center gap-2 p-2 px-3 bg-slate-50 rounded-xl border-2 border-green-100 w-full animate-in zoom-in duration-300">
@@ -377,7 +362,7 @@ export function SellerTransferDialog() {
            </div>
           </div>
          </div>
-        ) : recipientId.length > 0 && !isSearching ? (
+        ) : recipientId.length > 2 && !isSearching ? (
           <div className="flex items-center justify-center gap-2 w-full p-2 bg-red-50 rounded-xl border border-red-200">
             <User className="h-4 w-4 text-red-500" />
             <span className="text-[10px] font-bold uppercase text-red-600">User Not Found</span>
@@ -390,7 +375,6 @@ export function SellerTransferDialog() {
         )}
        </div>
 
-       {/* Amount Input */}
        <div className="grid gap-1">
         <Label htmlFor="amount" className="text-[10px] font-bold uppercase tracking-wider text-gray-400 ml-1">Enter Coins</Label>
         <div className="relative">
@@ -424,7 +408,6 @@ export function SellerTransferDialog() {
       </div>
      </div>
 
-     {/* Submit Button */}
      <div className="p-4 shrink-0 bg-white border-t border-slate-50">
       <Button 
        type="submit" 
@@ -438,4 +421,4 @@ export function SellerTransferDialog() {
    </DialogContent>
   </Dialog>
  );
-     }
+   }
