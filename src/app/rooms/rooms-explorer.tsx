@@ -293,17 +293,25 @@ function RoomsExplorerClassic() {
    const sorted = [...roomsData].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
-    return (b.participantCount || 0) - (a.participantCount || 0);
+    return (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0);
    });
 
    return sorted.filter(room => {
     const cat = room.category || 'Chat';
     const matchesCategory = activeCategory === "All" || cat === activeCategory;
-    // 🐞 FIX: Room show nahi ho raha tha agar participantCount stale tha.
-    // Ab participantIds bhi check karte hain. Agar koi bhi user room mein hai toh room dikhega.
-    const hasUsers = (room.participantCount || 0) > 0 || (room.participantIds && room.participantIds.length > 0);
+    
+    // 🐞 STRICT FIX: Ab ye logic definitely check karega. 
+    // Agar participantCount proper updated na ho, tab bhi arrays check honge aur room dikhega!
+    const pCount = Number(room.participantCount) || 0;
+    const pIdsLength = Array.isArray(room.participantIds) ? room.participantIds.length : 0;
+    const activeLength = Array.isArray(room.activeUsers) ? room.activeUsers.length : 0;
+    const onlineLength = Array.isArray(room.onlineUsers) ? room.onlineUsers.length : 0;
+    
+    const hasUsers = pCount >= 1 || pIdsLength >= 1 || activeLength >= 1 || onlineLength >= 1;
+    
     const isPinned = room.isPinned === true;
     const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
+    
     return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
    });
   }, [roomsData, activeCategory, isHydrated]);
