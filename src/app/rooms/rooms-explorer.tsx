@@ -299,7 +299,9 @@ function RoomsExplorerClassic() {
    return sorted.filter(room => {
     const cat = room.category || 'Chat';
     const matchesCategory = activeCategory === "All" || cat === activeCategory;
-    const hasUsers = (room.participantCount || 0) > 0;
+    // 🐞 FIX: Room show nahi ho raha tha agar participantCount stale tha.
+    // Ab participantIds bhi check karte hain. Agar koi bhi user room mein hai toh room dikhega.
+    const hasUsers = (room.participantCount || 0) > 0 || (room.participantIds && room.participantIds.length > 0);
     const isPinned = room.isPinned === true;
     const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
     return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
@@ -375,7 +377,7 @@ function RoomsExplorerClassic() {
       <div className="flex-1 overflow-y-auto relative z-10 no-scrollbar pb-32">
         {headerTab === 'recommend' ? (
           <>
-            {/* Banner (Will Scroll) */}
+            {/* Banner (Will Scroll) - 🚀 IMAGE FAST LOAD FIX */}
             <div className="px-2.5 mb-1 mt-0">
               <Carousel 
                 className="w-full" 
@@ -400,7 +402,12 @@ function RoomsExplorerClassic() {
                               src={slide.imageUrl} 
                               alt="" 
                               fill 
+                              // 🔥 FAST LOAD: priority for first image, eager for all, high fetch priority
+                              priority={idx === 0}
+                              loading="eager"
+                              fetchPriority={idx === 0 ? "high" : "auto"}
                               className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" 
+                              sizes="(max-width: 768px) 100vw, 50vw"
                               unoptimized 
                             />
                           )}
@@ -773,4 +780,3 @@ function RoomsExplorerClassic() {
     </div>
   );
 }
-
