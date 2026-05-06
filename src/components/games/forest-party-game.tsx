@@ -258,8 +258,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  const [activeWinnerIdx, setActiveWinnerIdx] = useState<number | null>(null);
  
- // State for strict real-time round sync - Updated to 50000ms duration
- const [activeRoundId, setActiveRoundId] = useState(() => Math.floor(Date.now() / 50000));
+ const [activeRoundId, setActiveRoundId] = useState(() => Math.floor(Date.now() / 65000));
 
  // Refs for timing and guard logic
  const hasFinalizedRef = useRef(false);
@@ -271,11 +270,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const isMountedRef = useRef(true);
  const coinDisplayRef = useRef<HTMLSpanElement>(null);
  
- // NEW REFS FOR DETERMINISTIC WINNER (NO EXTRA RANDOM)
+ // ---- FIXES: Coin sync blocker + localCoinsRef ----
+ const localCoinsRef = useRef(localCoins);
+ const shouldSyncProfileRef = useRef(true);   // block profile sync during active round after any bet
+
+ // NEW REFS FOR DETERMINISTIC WINNER
  const precomputedWinnerId = useRef<string>(ANIMALS[0].id);
  const precomputedGroupType = useRef<'none' | 'left' | 'right'>('none');
  const precomputedFinalIdx = useRef<number>(0);
  const lastProcessedRoundId = useRef<number | null>(null);
+ 
+ // Refs for main loop
+ const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+ const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+ 
+ // Betting lock - extended time to avoid race
+ const isBettingLockRef = useRef(false);
 
  // Audio refs
  const chipAudio = useRef<HTMLAudioElement | null>(null);
@@ -298,7 +308,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   
  const { data: liveWins } = useCollection(winnersQuery);
 
- // GLOBAL BETS LISTENER STRICTLY TIED TO activeRoundId
  const liveBetsQuery = useMemo(() => {
     if (!firestore || !activeRoundId) return null;
     return query(
@@ -310,10 +319,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const { data: liveBets } = useCollection(liveBetsQuery);
   
  const winnersList = useMemo(() => {
-    const currentRoundId = Math.floor(Date.now() / 50000);
+    const currentRoundId = Math.floor(Date.now() / 65000);
     const allWins = liveWins ? [...liveWins] : [];
 
-    // Local win instant feedback
     if (winnerData && winnerData.win > 0 && currentUser) {
         const localWinExists = allWins.some(w => w.userId === currentUser.uid && w.roundId === currentRoundId);
         if (!localWinExists) {
@@ -372,12 +380,17 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     gameStateRef.current = gameState;
  }, [myBets, gameState]);
 
+ // Keep localCoinsRef in sync
+ useEffect(() => {
+    localCoinsRef.current = localCoins;
+ }, [localCoins]);
+
  // Dynamic font scaling for coin balance
  useEffect(() => {
    if (coinDisplayRef.current) {
      const text = coinDisplayRef.current.innerText;
      const len = text.length;
-     let fontSize = 14; // base
+     let fontSize = 14;
      if (len >= 12) fontSize = 8;
      else if (len >= 10) fontSize = 9;
      else if (len >= 8) fontSize = 10;
@@ -395,7 +408,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     return () => { 
         clearTimeout(timer);
         isMountedRef.current = false; 
-        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        if (winnerTimeoutRef.current) clearTimeout(winnerTimeoutRef.current);
     };
  }, []);
 
@@ -422,7 +436,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     const ROUND_DUR = 50000;
+     const ROUND_DUR = 65000;
      const currentRoundId = Math.floor(Date.now() / ROUND_DUR);
      
      const seededRandom = (seed: number) => {
@@ -446,9 +460,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      ];
      setHistory(initialHistory);
 
-     // Initialize audio elements with enhanced spin sound
      chipAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1114/1114-preview.mp3'); 
-     spinAudio.current = new Audio('https://actions.google.com/sound/bar/feel_the_beat.mp3'); // better spin sound
+     spinAudio.current = new Audio('https://actions.google.com/sound/bar/feel_the_beat.mp3');
      if (spinAudio.current) {
        spinAudio.current.load();
        spinAudio.current.volume = 0.6;
@@ -465,7 +478,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    }
  }, []);
 
- // Ensure spin audio plays correctly on spin start
  useEffect(() => {
    if (gameState === 'spinning' && !isMuted && spinAudio.current) {
      spinAudio.current.currentTime = 0;
@@ -477,7 +489,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    }
  }, [gameState, isMuted]);
 
- // Handle live bets - fixed to prevent accumulation across rounds
+ // Handle live bets
  useEffect(() => {
     if (gameState === 'betting' && liveBets && activeRoundId) {
         let newChips: any[] = [];
@@ -514,19 +526,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     }
  }, [liveBets, gameState, currentUser?.uid, activeRoundId, processedBetIds]);
 
- // Save records to localStorage
  useEffect(() => {
    if (typeof window !== 'undefined') {
      localStorage.setItem('forestPartyRecords', JSON.stringify(gameRecords.slice(0, 20))); 
    }
  }, [gameRecords]);
 
- // Sync local coins with user profile
+ // ---- FIXED: Sync localCoins from profile ONLY when allowed ----
  useEffect(() => {
-  if (userProfile?.wallet?.coins !== undefined && isMountedRef.current) {
-      setLocalCoins(userProfile.wallet.coins);
+  if (userProfile?.wallet?.coins !== undefined && isMountedRef.current && shouldSyncProfileRef.current) {
+      // Only sync if we are not in an active betting round where user has placed bets
+      // Prevents overwriting local optimism
+      if (gameState !== 'betting' || Object.keys(myBets).length === 0) {
+        setLocalCoins(userProfile.wallet.coins);
+      }
   }
- }, [userProfile?.wallet?.coins]);
+ }, [userProfile?.wallet?.coins, gameState, myBets]);
 
  const playSound = useCallback((type: 'bet' | 'spin' | 'stop' | 'tick' | 'win') => {
   if (isMuted) return;
@@ -552,7 +567,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   } catch (error) {}
  }, [isMuted]);
 
- // Deterministic outcome based on roundId (no extra random on result)
  const computeOutcomeForRound = useCallback((roundId: number) => {
     const seededRandom = (seed: number) => {
         const x = Math.sin(seed) * 10000;
@@ -572,7 +586,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     } else {
         const animalRand = seededRandom(roundId + 3000);
         finalIdx = Math.floor(animalRand * ANIMALS.length);
-        winningAnimalId = ANIMALS[finalIdx].id; // for visual highlight only, not used for payout
+        winningAnimalId = ANIMALS[finalIdx].id;
     }
     return { groupType, winningAnimalId, finalIdx };
  }, []);
@@ -607,7 +621,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         return newAmount;
      });
      
-     // Update local coins optimistically
      setLocalCoins(prev => prev + winAmount);
   }
   
@@ -637,14 +650,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   isPopupVisibleRef.current = true;
   setActiveWinnerIdx(1); 
 
-  // Firestore updates - non-blocking
   if (winAmount > 0 && currentUser && firestore && !isNaN(winAmount)) {
    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
    
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'forest-party', 
-    roundId: Math.floor(Date.now() / 50000), 
+    roundId: Math.floor(Date.now() / 65000), 
     userId: currentUser.uid,
     username: userProfile?.username || 'Guest',
     avatarUrl: userProfile?.avatarUrl || null,
@@ -659,8 +671,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    });
   }
   
-  // Auto-hide winner popup after 3 seconds
-  setTimeout(() => {
+  if (winnerTimeoutRef.current) clearTimeout(winnerTimeoutRef.current);
+  winnerTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) {
           setWinnerData(null);
           isPopupVisibleRef.current = false;
@@ -668,27 +680,32 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 3000);
  }, [currentUser, firestore, playSound, userProfile]);
 
- // Main game loop with fixed timing and 1 by 1 smooth forward spin
+ const finalizeResultRef = useRef(finalizeResult);
+ const computeOutcomeForRoundRef = useRef(computeOutcomeForRound);
  useEffect(() => {
-  const ROUND_DUR = 50000; 
-  const BET_DUR = 30000;   
+   finalizeResultRef.current = finalizeResult;
+   computeOutcomeForRoundRef.current = computeOutcomeForRound;
+ }, [finalizeResult, computeOutcomeForRound]);
+
+ // Main game loop - FIXED: smooth highlighting and round reset
+ useEffect(() => {
+  const ROUND_DUR = 65000;
+  const BET_DUR = 45000;   
   const SPIN_DUR = 15000;  
   const WAIT_BEFORE_WINNER = 1000;
   const SHOW_WINNER_DUR = 3000;
   
-  // Clear any existing interval
-  if (intervalRef.current) clearInterval(intervalRef.current);
+  if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
   
-  intervalRef.current = setInterval(() => {
+  timerIntervalRef.current = setInterval(() => {
       if (!isMountedRef.current) return;
       
       const now = Date.now();
       const currentRoundIdCalc = Math.floor(now / ROUND_DUR);
       const elapsed = now % ROUND_DUR;
       
-      // Precompute outcome for this round if it's new (only once per round)
       if (lastProcessedRoundId.current !== currentRoundIdCalc) {
-          const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRound(currentRoundIdCalc);
+          const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRoundRef.current(currentRoundIdCalc);
           precomputedGroupType.current = groupType;
           precomputedWinnerId.current = winningAnimalId;
           precomputedFinalIdx.current = finalIdx;
@@ -696,11 +713,9 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       }
       
       if (elapsed < BET_DUR) {
-          // Betting phase
           if (gameStateRef.current !== 'betting') {
               setGameState('betting');
               setActiveRoundId(currentRoundIdCalc);
-              // Reset round-specific state
               setWinnerData(null);
               setShiningGroup('none');
               setHighlightIdx(null);
@@ -711,21 +726,26 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               resolvedResultRef.current = null;
               isPopupVisibleRef.current = false;
               
-              // Stop any playing spin sound
+              // 🔥 Re-enable profile sync for new round
+              shouldSyncProfileRef.current = true;
+              
+              if (winnerTimeoutRef.current) {
+                clearTimeout(winnerTimeoutRef.current);
+                winnerTimeoutRef.current = null;
+              }
+              
               if (spinAudio.current) {
                   spinAudio.current.pause();
                   spinAudio.current.currentTime = 0;
               }
           }
-          const newTimeLeft = Math.ceil((BET_DUR - elapsed) / 1000);
+          const newTimeLeft = Math.ceil((BET_DUR - elapsed) / 1500);
           if (timeLeft !== newTimeLeft) setTimeLeft(newTimeLeft);
       } 
       else if (elapsed < BET_DUR + SPIN_DUR) {
-          // Spinning phase - 1 by 1 Smooth Forward Behavior
           if (gameStateRef.current !== 'spinning') {
               setGameState('spinning');
               playSound('spin');
-              // Clear chips during spin to avoid visual clutter
               setDroppedChips([]);
           }
           
@@ -735,31 +755,18 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           const spinElapsed = elapsed - BET_DUR;
           const progress = Math.min(1, spinElapsed / SPIN_DUR);
           
-          // Smooth ease out so it slows down beautifully at the end
-          const eased = 1 - Math.pow(1 - progress, 3);
-          
           const finalIdx = precomputedFinalIdx.current;
-          
-          // 4 full circles (32 steps) + whatever is needed to reach the final index
-          // This ensures it spins smoothly forward averaging ~0.47 sec per step over 15 seconds
-          const totalSteps = (4 * ANIMALS.length) + finalIdx;
-          
-          // It will strictly move forward 1 by 1
-          const currentStep = Math.floor(eased * totalSteps);
+          const totalSteps = (15 * ANIMALS.length) + finalIdx;
+          const currentStep = Math.floor(progress * totalSteps);
           const currentIdx = currentStep % ANIMALS.length;
           
           setHighlightIdx(currentIdx);
       } 
       else if (elapsed < BET_DUR + SPIN_DUR + WAIT_BEFORE_WINNER) {
-          // Result preparation phase
           if (gameStateRef.current !== 'result') {
               setGameState('result');
               playSound('stop');
-              
-              // Force final highlight to the precomputed final animal index
               setHighlightIdx(precomputedFinalIdx.current);
-              
-              // Store resolved result using precomputed values (no async oracle)
               resolvedResultRef.current = { 
                   id: precomputedWinnerId.current, 
                   groupType: precomputedGroupType.current 
@@ -768,29 +775,34 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           setTimeLeft(0);
       }
       else if (elapsed < BET_DUR + SPIN_DUR + WAIT_BEFORE_WINNER + SHOW_WINNER_DUR) {
-          // Winner display phase
           setTimeLeft(0);
           if (!hasFinalizedRef.current && resolvedResultRef.current) {
-              finalizeResult(resolvedResultRef.current.id, resolvedResultRef.current.groupType);
+              finalizeResultRef.current(resolvedResultRef.current.id, resolvedResultRef.current.groupType);
           }
       }
-      // else: idle before next round, do nothing - will loop to betting on next interval
-  }, 40); // 40ms interval for ultra-smooth updates
+  }, 40);
   
   return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
   };
- }, [firestore, playSound, finalizeResult, timeLeft, computeOutcomeForRound]);
+ }, []); 
 
+ // 🔥 FIXED: Robust betting logic with localCoinsRef and lock
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameStateRef.current !== 'betting' || !currentUser) return;
+  if (isBettingLockRef.current) return;
   
   if (selectedChip <= 0 || isNaN(selectedChip)) return;
   
-  if (localCoins < selectedChip) {
+  // Use ref to avoid stale state
+  if (localCoinsRef.current < selectedChip) {
    toast({ title: 'You do not have enough Coins!', variant: 'destructive' });
    return;
   }
+  
+  isBettingLockRef.current = true;
+  // Block profile sync after first bet of the round
+  shouldSyncProfileRef.current = false;
   
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
@@ -805,13 +817,19 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   };
   
   setDroppedChips(prev => [...prev, newChip]);
-  setLocalCoins(prev => prev - selectedChip);
+  
+  // Safe deduction using functional update
+  setLocalCoins(prev => {
+    const newCoins = prev - selectedChip;
+    if (newCoins < 0) return prev;
+    return newCoins;
+  });
   
   if (firestore) {
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
 
-    const currentRoundIdCalc = Math.floor(Date.now() / 50000);
+    const currentRoundIdCalc = Math.floor(Date.now() / 65000);
     addDocumentNonBlocking(collection(firestore, 'globalBets'), {
         gameId: 'forest-party',
         roundId: currentRoundIdCalc,
@@ -822,6 +840,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     });
   }
   setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
+  
+  setTimeout(() => {
+    isBettingLockRef.current = false;
+  }, 300); // increased to 300ms for safety
  };
 
  const isWinningAnimal = useCallback((idx: number, itemId: string) => {
@@ -855,13 +877,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     className="w-full h-full flex flex-col relative overflow-hidden font-sans text-white bg-[#0F2A1A] rounded-3xl border border-white/20 shadow-2xl"
     style={{ willChange: 'transform, opacity', transform: 'translate3d(0,0,0)', WebkitFontSmoothing: 'antialiased', WebkitOverflowScrolling: 'touch' }}
    >
-       {/* Background */}
        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-[#0F2A1A] via-[#1E4D2C] to-[#2E7D32]" />
           <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-t from-[#0B2112] to-transparent opacity-80" />
        </div>
 
-       {/* WINNING POPUP */}
        <AnimatePresence>
         {winnerData && (
           <motion.div 
@@ -954,7 +974,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
-       {/* RECORD PAGE */}
        <AnimatePresence>
         {showRecord && (
             <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[40dvh] bg-black/95 backdrop-blur-3xl border-t-[2px] border-zinc-800 rounded-none shadow-[0_-10px_50px_rgba(0,0,0,0.8)] flex flex-col">
@@ -983,7 +1002,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         )}
        </AnimatePresence>
 
-       {/* HEADER */}
        <header className="relative z-50 flex items-center justify-between px-4 py-1 bg-transparent shrink-0 mt-1">
           <div className="flex items-center gap-2">
               <div 
@@ -994,7 +1012,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                 <Move size={14} className="filter drop-shadow-md pointer-events-none" />
               </div>
               
-              {/* Reduced balance card size with dynamic text scaling */}
               <div className="flex items-center bg-black/20 backdrop-blur-md rounded-md border border-white/20 h-[28px] pl-1 pr-1 ml-1">
                   <div className="bg-yellow-400 rounded-md p-0.5">
                       <CoinIcon2 className="h-4 w-4 filter brightness-110 drop-shadow-md" />
@@ -1016,7 +1033,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           </div>
        </header>
 
-       {/* WINNING HISTORY */}
        <div className="px-4 py-1 shrink-0 z-40 relative">
          <div className="w-full bg-gradient-to-b from-white/20 to-white/5 backdrop-blur-xl py-2 px-4 flex items-center gap-3 overflow-x-auto no-scrollbar border border-white/30 rounded-2xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),0_6px_15px_rgba(0,0,0,0.4)] ring-1 ring-white/10">
             <div className="flex flex-col items-center justify-center border-r border-white/20 pr-3 mr-1 shrink-0">
@@ -1040,7 +1056,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        </div>
 
        <main className="flex-1 w-full flex flex-col items-center justify-start pt-8 px-4 relative">
-        {/* MIX LEFT */}
         <div className={cn(
             "absolute top-[3.5%] left-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'left' 
@@ -1057,7 +1072,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             <span className={cn("text-[6px] font-black uppercase mt-0 z-10 filter drop-shadow-sm", shiningGroup === 'left' ? "text-yellow-200" : "text-white/90")}>Mix</span>
         </div>
 
-        {/* MIX RIGHT */}
         <div className={cn(
             "absolute top-[3.5%] right-[6%] z-30 w-[48px] h-[48px] rounded-full flex flex-col items-center justify-center border-[2.5px] transition-all duration-500 overflow-hidden",
             shiningGroup === 'right' 
@@ -1096,7 +1110,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
             ))}
           </svg>
 
-          {/* TIMER CENTER */}
           <div className={cn(
             "relative z-20 w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-300 overflow-hidden", 
             gameState === 'spinning' 
@@ -1154,7 +1167,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
         </div>
        </main>
 
-       {/* CHIPS SELECTOR */}
        <div className="w-full bg-[#1b0d07] border-t-2 border-[#3a2416] pt-3 pb-3 shadow-[0_-12px_30px_rgba(0,0,0,0.5)] relative shrink-0 z-40">
          <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(#fff 0.5px, transparent 0.5px)', backgroundSize: '14px 14px' }}></div>
          
@@ -1197,7 +1209,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
          </div>
        </div>
 
-       {/* RULES SHEET */}
        <AnimatePresence>
         {showRules && (
             <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="fixed bottom-0 left-0 right-0 z-[300] h-[30dvh] bg-black/95 backdrop-blur-3xl border-t-[3px] border-zinc-800 rounded-none shadow-[0_-10px_50px_rgba(0,0,0,0.9)] flex flex-col">
@@ -1358,5 +1369,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    </motion.div>
   </motion.div>
  );
-}
-
+  }
