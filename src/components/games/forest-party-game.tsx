@@ -258,8 +258,8 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
 
  const [activeWinnerIdx, setActiveWinnerIdx] = useState<number | null>(null);
  
- // State for strict real-time round sync
- const [activeRoundId, setActiveRoundId] = useState(() => Math.floor(Date.now() / 45000));
+ // State for strict real-time round sync - Updated to 50000ms duration
+ const [activeRoundId, setActiveRoundId] = useState(() => Math.floor(Date.now() / 50000));
 
  // Refs for timing and guard logic
  const hasFinalizedRef = useRef(false);
@@ -310,7 +310,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const { data: liveBets } = useCollection(liveBetsQuery);
   
  const winnersList = useMemo(() => {
-    const currentRoundId = Math.floor(Date.now() / 45000);
+    const currentRoundId = Math.floor(Date.now() / 50000);
     const allWins = liveWins ? [...liveWins] : [];
 
     // Local win instant feedback
@@ -422,7 +422,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
        localStorage.setItem('forestPartyDailyWin', JSON.stringify({ gameDay: getGameDay(), amount: 0 }));
      }
 
-     const ROUND_DUR = 45000;
+     const ROUND_DUR = 50000;
      const currentRoundId = Math.floor(Date.now() / ROUND_DUR);
      
      const seededRandom = (seed: number) => {
@@ -644,7 +644,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'forest-party', 
-    roundId: Math.floor(Date.now() / 45000), 
+    roundId: Math.floor(Date.now() / 50000), 
     userId: currentUser.uid,
     username: userProfile?.username || 'Guest',
     avatarUrl: userProfile?.avatarUrl || null,
@@ -668,11 +668,11 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   }, 3000);
  }, [currentUser, firestore, playSound, userProfile]);
 
- // Main game loop with fixed timing and smoother fast spinning
+ // Main game loop with fixed timing and 1 by 1 smooth forward spin
  useEffect(() => {
-  const ROUND_DUR = 45000; 
+  const ROUND_DUR = 50000; 
   const BET_DUR = 30000;   
-  const SPIN_DUR = 10000;  
+  const SPIN_DUR = 15000;  
   const WAIT_BEFORE_WINNER = 1000;
   const SHOW_WINNER_DUR = 3000;
   
@@ -721,7 +721,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           if (timeLeft !== newTimeLeft) setTimeLeft(newTimeLeft);
       } 
       else if (elapsed < BET_DUR + SPIN_DUR) {
-          // Spinning phase - SMOOTH & FAST
+          // Spinning phase - 1 by 1 Smooth Forward Behavior
           if (gameStateRef.current !== 'spinning') {
               setGameState('spinning');
               playSound('spin');
@@ -734,25 +734,19 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           
           const spinElapsed = elapsed - BET_DUR;
           const progress = Math.min(1, spinElapsed / SPIN_DUR);
-          // Stronger ease out for realistic slowdown
+          
+          // Smooth ease out so it slows down beautifully at the end
           const eased = 1 - Math.pow(1 - progress, 3);
           
-          // Deterministic final index from precomputed value (no extra random)
           const finalIdx = precomputedFinalIdx.current;
           
-          // Calculate current highlight index during spin - MUCH FASTER CYCLE
-          let currentIdx = 0;
-          if (progress < 0.92) {
-              // FAST SPINNING: cycle through animals very rapidly
-              const steps = Math.floor(eased * 160); // increased steps for faster spin feel
-              currentIdx = steps % ANIMALS.length;
-          } else {
-              // Slow down to final position with smooth transition
-              const slowProgress = (progress - 0.92) / 0.08;
-              const smoothFactor = Math.min(1, slowProgress);
-              currentIdx = Math.floor((1 - smoothFactor) * (ANIMALS.length - 1) + smoothFactor * finalIdx);
-              currentIdx = currentIdx % ANIMALS.length;
-          }
+          // 4 full circles (32 steps) + whatever is needed to reach the final index
+          // This ensures it spins smoothly forward averaging ~0.47 sec per step over 15 seconds
+          const totalSteps = (4 * ANIMALS.length) + finalIdx;
+          
+          // It will strictly move forward 1 by 1
+          const currentStep = Math.floor(eased * totalSteps);
+          const currentIdx = currentStep % ANIMALS.length;
           
           setHighlightIdx(currentIdx);
       } 
@@ -781,7 +775,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
           }
       }
       // else: idle before next round, do nothing - will loop to betting on next interval
-  }, 40); // 40ms interval for ultra-smooth updates (down from 100ms)
+  }, 40); // 40ms interval for ultra-smooth updates
   
   return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -817,7 +811,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
 
-    const currentRoundIdCalc = Math.floor(Date.now() / 45000);
+    const currentRoundIdCalc = Math.floor(Date.now() / 50000);
     addDocumentNonBlocking(collection(firestore, 'globalBets'), {
         gameId: 'forest-party',
         roundId: currentRoundIdCalc,
@@ -1034,7 +1028,7 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
                   const animal = ANIMALS.find(a => a.id === h.id);
                   return (
                     <div key={`${h.id}-${i}`} className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
+                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to black/20 border border-white/40 shadow-md">
                          <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
                          <span className="text-base z-10 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
                       </div>
@@ -1365,3 +1359,4 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   </motion.div>
  );
 }
+
