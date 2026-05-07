@@ -659,7 +659,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
-  // 1. Live ID ke liye state
+  // 1. Live ID ke liye state (NEW)
   const [liveID, setLiveID] = useState<string | null>(null);
 
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
@@ -743,48 +743,23 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   const currentDBId = liveID || profile?.accountNumber;
 
-  // Helper check for strictly 6 digits without repeats
-  const isStrictFormat = (id: string | number) => {
-    const idStr = String(id);
-    if (!/^\d{6}$/.test(idStr)) return false; // Must be 6 pure digits
-    return !/(.).*\1/.test(idStr); // No repeating characters allowed anywhere in the string
-  };
-
-  const isCorrectFormat = isStrictFormat(currentDBId) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
+  // Strict check for 6-digit numbers or Creator's 0000
+  const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
 
   // NEVER show "Syncing..." or undefined. Always show DB ID or Fallback.
-  const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
-
-  // Helper Function: Generates strict 6-digit number where no two digits are same
-  const generateStrictUniqueDigitID = () => {
-    let id = '';
-    while (id.length < 6) {
-      const digit = Math.floor(Math.random() * 10).toString();
-      // First digit should logically not be zero, though for a pure 6 digit string it's okay, 
-      // but to be standard we can skip 0 at index 0.
-      if (id.length === 0 && digit === '0') continue; 
-      
-      if (!id.includes(digit)) {
-        id += digit;
-      }
-    }
-    return id;
-  };
+  const displayID = isCorrectFormat? String(currentDBId) : fallbackID;
 
   // 3. Sync and Transaction Logic (STRICTLY LOCKED)
   useEffect(() => {
     const syncUserID = async () => {
-      if (!isOwnProfile || !profile || !firestore || !profileId) return;
+      if (!isOwnProfile ||!profile ||!firestore ||!profileId) return;
 
+      const currentID = profile.accountNumber; // Sirf profile state par rely karenge shuru mein
+      const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      // 🛑 LOCK 1 (Client State): Agar pehle se strict 6-digit ID hai, toh proceed mat karo.
-      if ((isCreator && profile.accountNumber === '0000') || (!isCreator && profile.accountNumber && isStrictFormat(profile.accountNumber))) {
-        return;
-      }
-
-      // 🛑 LOCK 2 (Live DB Listener State): Agar live DB listener mein confirm ho chuka hai, toh rok do.
-      if ((isCreator && liveID === '0000') || (!isCreator && liveID && isStrictFormat(liveID))) {
+      // 🛑 PERMANENT LOCK CHECK 1: Agar ek baar valid ID mil chuki hai, toh aage transaction karne ki zarurat hi nahi.
+      if ((isCreator && currentID === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
         return;
       }
 
@@ -793,13 +768,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           const uRef = doc(firestore, 'users', profileId);
           const userSnap = await transaction.get(uRef);
 
-          // 🛑 LOCK 3 (Database Read Lock): Transaction block ke andar database ki sacchai.
+          // 🛑 PERMANENT LOCK CHECK 2: Agar backend database me pehle se assign ho gaya hai, toh yahi lock kar do.
           if (userSnap.exists()) {
             const dbID = userSnap.data().accountNumber;
-            // Agar db mein ID pehle se mojood hai, toh generation band kardo.
-            // Sirf admin portal aage changes karega if needed.
-            if (dbID && String(dbID).length > 0) {
-              return; 
+            const isDbIdValid = /^\d{6}$/.test(String(dbID));
+
+            if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
+              return; // ID already exist aur valid hai, naya generate nahi hoga
             }
           }
 
@@ -808,22 +783,22 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           if (isCreator) {
             finalNumber = '0000';
           } else {
-            // Unique 6-Digit (No Repeats) generate karne ka lock/loop
-            let isUniqueInDb = false;
-            while (!isUniqueInDb) {
-              const randomID = generateStrictUniqueDigitID();
+            // Unique 6-Digit generate karne ka loop
+            let isUnique = false;
+            while (!isUnique) {
+              const randomID = Math.floor(100000 + Math.random() * 900000).toString();
               const idRef = doc(firestore, 'assigned_ids', randomID);
               const idSnap = await transaction.get(idRef);
 
               if (!idSnap.exists()) {
                 transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
                 finalNumber = randomID;
-                isUniqueInDb = true;
+                isUnique = true;
               }
             }
           }
 
-          // Database ke dono folders (users aur profile) mein update (4th Step Lock Creation)
+          // Database ke dono folders (users aur profile) mein update
           const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
           transaction.update(uRef, { accountNumber: finalNumber });
           transaction.update(pRef, { accountNumber: finalNumber });
@@ -834,7 +809,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     };
 
     syncUserID();
-  }, [isOwnProfile, profile, firestore, profileId, liveID]); // Dependent on liveID as well to halt execution early
+  }, [isOwnProfile, profile, firestore, profileId]); // Isme se `liveID` hata diya taaki infinite loop band ho jaye.
 
   const followRef = useMemoFirebase(() => {
     if (!firestore ||!currentUser ||!profileId || currentUser.uid === profileId) return null;
@@ -1094,4 +1069,3 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
-
