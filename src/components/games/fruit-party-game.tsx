@@ -14,10 +14,6 @@ const formatKandM = (num: number): string => {
   return num.toString();
 };
 
-// --- CHIP VALUES ---
-const CHIP_VALUES = [100, 1000, 100000, 500000, 1000000];
-const CHIP_LABELS = ['100', '1K', '100K', '500K', '1M'];
-
 // --- 3D GLOSSY GOLD COIN ---
 const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -45,7 +41,7 @@ const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
 );
 
 // --- CAFE ICON WITH 3D COFFEE CUP AND COUNTDOWN ---
-const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
+const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
   return (
     <div
       className={className}
@@ -296,130 +292,130 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME ---
-function GlassDomeSmall({ size = 80 }: { size?: number }) {
+// --- SMALL GLASS DOME (unchanged) ---
+function GlassDomeSmall({ size = 56 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
       <defs>
-        <linearGradient id="glassBodySmall" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassBodySmall2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#f4fdff" stopOpacity="0.03" />
           <stop offset="52%" stopColor="#d7eff2" stopOpacity="0.09" />
           <stop offset="82%" stopColor="#a9d9e0" stopOpacity="0.22" />
           <stop offset="100%" stopColor="#7bc5cd" stopOpacity="0.38" />
         </linearGradient>
-        <linearGradient id="glassRimSmall" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="glassRimSmall2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
           <stop offset="18%" stopColor="#d8f2f5" stopOpacity="0.6" />
           <stop offset="65%" stopColor="#8cbdc3" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#5a9ca2" stopOpacity="0.75" />
         </linearGradient>
-        <linearGradient id="leftHLSmall" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="leftHLSmall2" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
           <stop offset="22%" stopColor="#ffffff" stopOpacity="0.98" />
           <stop offset="55%" stopColor="#ffffff" stopOpacity="0.55" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
-        <radialGradient id="knobSmall" cx="0.32" cy="0.27" r="0.7">
+        <radialGradient id="knobSmall2" cx="0.32" cy="0.27" r="0.7">
           <stop offset="0%" stopColor="#ffffff" />
           <stop offset="15%" stopColor="#eaf8fa" stopOpacity="0.96" />
           <stop offset="45%" stopColor="#c1e5ea" stopOpacity="0.88" />
           <stop offset="82%" stopColor="#8ab6bc" stopOpacity="0.92" />
           <stop offset="100%" stopColor="#5e8f95" stopOpacity="1" />
         </radialGradient>
-        <linearGradient id="neckSmall" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="neckSmall2" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#6e9fa4" stopOpacity="0.9" />
           <stop offset="28%" stopColor="#e0f4f6" stopOpacity="0.98" />
           <stop offset="72%" stopColor="#e0f4f6" stopOpacity="0.98" />
           <stop offset="100%" stopColor="#6e9fa4" stopOpacity="0.9" />
         </linearGradient>
-        <linearGradient id="baseSideSmall" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="baseSideSmall2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#40a6ad" />
           <stop offset="100%" stopColor="#2A7F84" />
         </linearGradient>
-        <radialGradient id="baseTopSmall" cx="0.5" cy="0.3" r="0.78">
+        <radialGradient id="baseTopSmall2" cx="0.5" cy="0.3" r="0.78">
           <stop offset="0%" stopColor="#73d3d9" />
           <stop offset="100%" stopColor="#5AC0C5" />
         </radialGradient>
-        <filter id="b2s" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2" /></filter>
-        <filter id="b4s" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" /></filter>
-        <filter id="b8s" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" /></filter>
-        <filter id="b12s" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" /></filter>
+        <filter id="b2s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2" /></filter>
+        <filter id="b4s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4" /></filter>
+        <filter id="b8s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" /></filter>
+        <filter id="b12s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" /></filter>
       </defs>
 
       {/* Shadow */}
-      <ellipse cx="256" cy="410" rx="154" ry="25" fill="#0b2f33" opacity="0.18" filter="url(#b8s)" />
+      <ellipse cx="256" cy="410" rx="154" ry="25" fill="#0b2f33" opacity="0.18" filter="url(#b8s2)" />
 
       {/* Base (blue plate) */}
       <g>
-        <path d="M96 340a160 32 0 0 0 320 0v26a160 32 0 0 1-320 0z" fill="url(#baseSideSmall)" />
-        <ellipse cx="256" cy="340" rx="160" ry="32" fill="url(#baseTopSmall)" />
+        <path d="M96 340a160 32 0 0 0 320 0v26a160 32 0 0 1-320 0z" fill="url(#baseSideSmall2)" />
+        <ellipse cx="256" cy="340" rx="160" ry="32" fill="url(#baseTopSmall2)" />
         <ellipse cx="256" cy="340" rx="160" ry="32" fill="none" stroke="#185a5f" strokeOpacity="0.18" strokeWidth="2" />
-        <ellipse cx="222" cy="326" rx="108" ry="17" fill="#ffffff" opacity="0.14" filter="url(#b8s)" />
+        <ellipse cx="222" cy="326" rx="108" ry="17" fill="#ffffff" opacity="0.14" filter="url(#b8s2)" />
       </g>
 
       {/* Inner shadow */}
-      <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s)" />
+      <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s2)" />
 
       {/* Glass body */}
-      <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
+      <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
 
       {/* Dark accent */}
-      <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s)" />
+      <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
 
-      <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s)" />
+      <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s2)" />
 
       {/* Glass rim */}
       <g>
-        <path d="M112 332c0 13 32 24 144 24s144-11 144-24v10c0 14-35 26-144 26s-144-12-144-26z" fill="url(#glassRimSmall)" opacity="0.95" />
+        <path d="M112 332c0 13 32 24 144 24s144-11 144-24v10c0 14-35 26-144 26s-144-12-144-26z" fill="url(#glassRimSmall2)" opacity="0.95" />
         <ellipse cx="256" cy="332" rx="142.5" ry="11.8" fill="none" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="2.4" />
-        <ellipse cx="256" cy="332" rx="138" ry="6.5" fill="#e6f9fb" opacity="0.55" filter="url(#b2s)" />
+        <ellipse cx="256" cy="332" rx="138" ry="6.5" fill="#e6f9fb" opacity="0.55" filter="url(#b2s2)" />
       </g>
 
       {/* Neck */}
-      <path d="M242 96c0-6 2-12.5 4.2-17.5h19.6c2.2 5 4.2 11.5 4.2 17.5v5.5h-28z" fill="url(#neckSmall)" />
+      <path d="M242 96c0-6 2-12.5 4.2-17.5h19.6c2.2 5 4.2 11.5 4.2 17.5v5.5h-28z" fill="url(#neckSmall2)" />
       <rect x="242" y="91" width="28" height="3" fill="#4a7f84" opacity="0.15" />
 
       {/* Knob */}
       <g>
-        <circle cx="256" cy="57.5" r="22.5" fill="url(#knobSmall)" stroke="#ccecf0" strokeOpacity="0.45" strokeWidth="1" />
-        <ellipse cx="247.2" cy="47.5" rx="8.8" ry="6.2" fill="#ffffff" opacity="0.95" filter="url(#b2s)" />
-        <ellipse cx="264.8" cy="66.2" rx="4.2" ry="2.9" fill="#ffffff" opacity="0.48" filter="url(#b2s)" />
+        <circle cx="256" cy="57.5" r="22.5" fill="url(#knobSmall2)" stroke="#ccecf0" strokeOpacity="0.45" strokeWidth="1" />
+        <ellipse cx="247.2" cy="47.5" rx="8.8" ry="6.2" fill="#ffffff" opacity="0.95" filter="url(#b2s2)" />
+        <ellipse cx="264.8" cy="66.2" rx="4.2" ry="2.9" fill="#ffffff" opacity="0.48" filter="url(#b2s2)" />
         <ellipse cx="256" cy="57.5" rx="22" ry="22" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1" />
       </g>
 
       {/* Left highlight */}
       <g>
-        <path d="M129 310c2-57 14-117 43.5-172.5 20-37 48-61 74-71" fill="none" stroke="#ffffff" strokeWidth="16" strokeLinecap="round" opacity="0.26" filter="url(#b4s)" />
-        <path d="M131 307c2-55 14-113 42.5-168 19.5-35 46-57.5 70.5-66" fill="none" stroke="url(#leftHLSmall)" strokeWidth="13.5" strokeLinecap="round" opacity="0.92" />
+        <path d="M129 310c2-57 14-117 43.5-172.5 20-37 48-61 74-71" fill="none" stroke="#ffffff" strokeWidth="16" strokeLinecap="round" opacity="0.26" filter="url(#b4s2)" />
+        <path d="M131 307c2-55 14-113 42.5-168 19.5-35 46-57.5 70.5-66" fill="none" stroke="url(#leftHLSmall2)" strokeWidth="13.5" strokeLinecap="round" opacity="0.92" />
         <path d="M134 305c2-53 13.5-110 41.5-164 19-33 44-54 67-62.5" fill="none" stroke="#ffffff" strokeWidth="4.8" strokeLinecap="round" opacity="0.99" />
       </g>
 
       {/* Right reflection */}
-      <path d="M360 158c22 38 31.5 87 34.5 148.5" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" opacity="0.13" filter="url(#b4s)" />
+      <path d="M360 158c22 38 31.5 87 34.5 148.5" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" opacity="0.13" filter="url(#b4s2)" />
       <path d="M150 318c0-43 8-94 24-138" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.18" />
 
-      <ellipse cx="270" cy="101" rx="16.5" ry="7.2" fill="#ffffff" opacity="0.19" transform="rotate(-19 270 101)" filter="url(#b4s)" />
-      <ellipse cx="256" cy="324" rx="129" ry="27" fill="#5AC0C5" opacity="0.07" filter="url(#b12s)" />
-      <path d="M142 333c18-3.2 58-6.5 114-6.5s96 3.3 114 6.5" fill="none" stroke="#aee1e6" strokeOpacity="0.32" strokeWidth="3" filter="url(#b2s)" />
+      <ellipse cx="270" cy="101" rx="16.5" ry="7.2" fill="#ffffff" opacity="0.19" transform="rotate(-19 270 101)" filter="url(#b4s2)" />
+      <ellipse cx="256" cy="324" rx="129" ry="27" fill="#5AC0C5" opacity="0.07" filter="url(#b12s2)" />
+      <path d="M142 333c18-3.2 58-6.5 114-6.5s96 3.3 114 6.5" fill="none" stroke="#aee1e6" strokeOpacity="0.32" strokeWidth="3" filter="url(#b2s2)" />
     </svg>
   );
 }
 
-// --- FRUIT DOME COMPONENT (emoji inside glass dome + purple strip) ---
+// --- FRUIT DOME COMPONENT (compact with red glow on click) ---
 function FruitDome({
   emoji,
   multiplier,
   betAmount,
   isHighlighted,
+  isSelected,
   onClick,
-  size = 70,
 }: {
   emoji: string;
   multiplier: number;
   betAmount: number;
   isHighlighted: boolean;
+  isSelected: boolean;
   onClick: () => void;
-  size?: number;
 }) {
   return (
     <motion.div
@@ -429,19 +425,20 @@ function FruitDome({
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        <div className="relative" style={{ width: size, height: size }}>
-          <GlassDomeSmall size={size} />
-          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: `${size * 0.12}px` }}>
-            <span className="drop-shadow-lg" style={{ fontSize: `${size * 0.38}px`, lineHeight: 1 }}>{emoji}</span>
+        {/* Glass dome */}
+        <div className="relative w-[56px] h-[56px]">
+          <GlassDomeSmall size={56} />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '6px' }}>
+            <span className="text-2xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        <div 
-          className="mt-[-5px] bg-gradient-to-r from-purple-700 to-purple-500 rounded-full flex items-center justify-between px-2 text-white font-bold border border-white/20 shadow-md"
-          style={{ width: size, height: `${size * 0.22}px`, fontSize: `${size * 0.13}px` }}
-        >
-          <span>×{multiplier}</span>
+        {/* Purple strip - bet patti, chhoti aur red on select */}
+        <div className={`mt-[-4px] w-[56px] h-[15px] rounded-full flex items-center justify-between px-2 text-white text-[9px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
+          isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
+        }`}>
+          <span className="text-[9px]">×{multiplier}</span>
           <div className="flex items-center gap-0.5">
-            <DollarCoin className="w-3 h-3" />
+            <DollarCoin className="w-2.5 h-2.5" />
             <span>{betAmount > 0 ? formatKandM(betAmount) : '0'}</span>
           </div>
         </div>
@@ -468,6 +465,14 @@ const ITEMS = [
   { id: 'orange', icon: '🍟', multiplier: 5 },
 ];
 
+const CHIPS = [
+  { value: 100, label: '100' },
+  { value: 1000, label: '1K' },
+  { value: 100000, label: '100K' },
+  { value: 500000, label: '500K' },
+  { value: 1000000, label: '1M' },
+];
+
 export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
@@ -477,14 +482,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
   const [spinTimeLeft, setSpinTimeLeft] = useState(0);
-  const [selectedChip, setSelectedChip] = useState(1000); 
+  const [selectedChip, setSelectedChip] = useState(1000);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [isSoundOn, setIsSoundOn] = useState(true);
-  const [winningItemIcon, setWinningItemIcon] = useState<string | null>(null);
+  const [lastWinningItem, setLastWinningItem] = useState<typeof ITEMS[0] | null>(null);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -560,7 +565,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
-    setWinningItemIcon(winningItem.icon);
+    setLastWinningItem(winningItem);
     setGameState('result');
     setTimeout(() => {
       setGameState('betting');
@@ -580,25 +585,30 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        drag
+        variants={{
+          initial: { opacity: 0, scale: 0.9, y: 20 },
+          animate: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+          exit: { opacity: 0, y: "100%", transition: { duration: 0.3 } }
+        }}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        drag="y"
         dragControls={dragControls}
-        dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
-        dragElastic={0.1}
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        className="w-[95vw] max-w-[420px] h-[85vh] max-h-[700px] flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-[40px] shadow-[0_0_60px_rgba(0,0,0,0.6)] cursor-grab active:cursor-grabbing"
+        className="h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-[40px] shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
         style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
       >
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-white/30 rounded-full z-30" />
 
-        {/* Header */}
-        <div className="w-full flex justify-between items-center px-4 pt-4 pb-2 z-20">
+        {/* Top bar */}
+        <div className="w-full flex justify-between p-4 z-20">
           <div className="flex items-center gap-2">
             <button 
               onPointerDown={(e) => dragControls.start(e)} 
-              className="w-9 h-9 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors"
+              className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors"
             >
               <Move className="w-4 h-4 text-blue-400" />
             </button>
@@ -620,30 +630,33 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game Area - Compact */}
-        <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '280px' }}>
-          <div className="absolute w-[130px] h-[130px] z-0 opacity-90">
+        {/* Game area with cafe and food items */}
+        <div className="relative w-full flex-1 flex items-center justify-center">
+          {/* Central Cafe – size 120 */}
+          <div className="absolute w-[120px] h-[120px] z-0 opacity-90">
             <CafeShopIcon 
-              size={130} 
+              size={120} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
+          {/* Fruit items placed around – radius 95 for compactness */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const radius = 105;
+            const radius = 95;
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
+            const isSelected = (myBets[item.id] || 0) > 0;
             
             return (
               <div
                 key={item.id}
                 className="absolute z-10"
                 style={{
-                  left: `calc(50% + ${x}px - 30px)`,
-                  top: `calc(50% + ${y}px - 30px)`,
+                  left: `calc(50% + ${x}px - 28px)`,
+                  top: `calc(50% + ${y}px - 28px)`,
                 }}
               >
                 <FruitDome
@@ -651,47 +664,50 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   multiplier={item.multiplier}
                   betAmount={myBets[item.id] || 0}
                   isHighlighted={isHighlighted}
+                  isSelected={isSelected}
                   onClick={() => handlePlaceBet(item.id)}
-                  size={60}
                 />
               </div>
             );
           })}
         </div>
 
-        {/* Chips Selection */}
-        <div className="px-4 pb-1 z-20">
-          <div className="bg-gradient-to-r from-purple-800/60 to-purple-600/60 rounded-2xl p-3 border border-purple-400/20">
-            <p className="text-[10px] font-semibold text-purple-200 text-center mb-2">SELECT A CHIP & YOUR FOOD</p>
+        {/* Chips Bar */}
+        <div className="px-4 z-20">
+          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-2.5 border border-white/10">
+            <div className="text-white text-[10px] font-bold mb-1.5 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
             <div className="flex justify-center gap-2">
-              {CHIP_VALUES.map((value, idx) => (
+              {CHIPS.map((chip) => (
                 <motion.button
-                  key={value}
+                  key={chip.value}
                   whileTap={{ scale: 0.9 }}
-                  onClick={() => setSelectedChip(value)}
-                  className={`flex flex-col items-center justify-center w-[50px] h-[50px] rounded-xl transition-all ${
-                    selectedChip === value 
-                      ? 'bg-blue-600 border-2 border-blue-300 shadow-lg shadow-blue-500/40 scale-105' 
-                      : 'bg-blue-900/60 border border-blue-400/20 hover:bg-blue-800/60'
+                  onClick={() => setSelectedChip(chip.value)}
+                  className={`flex flex-col items-center justify-center w-[52px] h-[44px] rounded-xl border-2 transition-all duration-200 ${
+                    selectedChip === chip.value 
+                      ? 'bg-red-600 border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)] scale-105' 
+                      : 'bg-blue-600/80 border-blue-400/40 hover:bg-blue-500/80'
                   }`}
                 >
                   <DollarCoin className="w-4 h-4 mb-0.5" />
-                  <span className="text-[10px] font-bold">{CHIP_LABELS[idx]}</span>
+                  <span className="text-white text-[10px] font-extrabold">{chip.label}</span>
                 </motion.button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Result Bar */}
-        <div className="px-4 pb-3 z-20">
-          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-2.5 border border-white/10 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-300">RESULT</span>
-            <div className="flex items-center gap-2">
-              {winningItemIcon ? (
-                <span className="text-2xl">{winningItemIcon}</span>
+        {/* Result Strip */}
+        <div className="px-4 pb-4 z-20 mt-1.5">
+          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-full h-10 flex items-center justify-between px-4 border border-white/10">
+            <span className="text-white text-[11px] font-bold tracking-wide">RESULT</span>
+            <div className="flex items-center gap-1.5">
+              {lastWinningItem ? (
+                <>
+                  <span className="text-lg">{lastWinningItem.icon}</span>
+                  <span className="text-white text-[11px] font-bold">×{lastWinningItem.multiplier}</span>
+                </>
               ) : (
-                <span className="text-[11px] text-slate-400">Waiting...</span>
+                <span className="text-white/60 text-[10px]">Waiting...</span>
               )}
             </div>
           </div>
@@ -706,10 +722,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               exit={{ opacity: 0, scale: 0.5 }}
               className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-[40px]"
             >
-              <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[40px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
-                <div className="text-6xl mb-2">{winnerData.emoji}</div>
+              <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[30px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
+                <div className="text-5xl mb-1">{winnerData.emoji}</div>
                 <div className="text-xl font-black text-white uppercase tracking-tighter">Winner!</div>
-                <div className="flex items-center justify-center gap-2 text-3xl font-black text-white mt-2">
+                <div className="flex items-center justify-center gap-2 text-3xl font-black text-white mt-1">
                   <DollarCoin className="w-8 h-8" />
                   {winnerData.win.toLocaleString()}
                 </div>
@@ -720,4 +736,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-            }
+                }
