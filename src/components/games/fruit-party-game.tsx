@@ -14,6 +14,10 @@ const formatKandM = (num: number): string => {
   return num.toString();
 };
 
+// --- CHIP VALUES ---
+const CHIP_VALUES = [100, 1000, 100000, 500000, 1000000];
+const CHIP_LABELS = ['100', '1K', '100K', '500K', '1M'];
+
 // --- 3D GLOSSY GOLD COIN ---
 const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -242,7 +246,7 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
             <rect x="76" y="34" width="360" height="112" rx="28" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" fill="none" />
             <rect x="76" y="34" width="360" height="46" rx="28" fill="url(#signTop)" />
 
-            {/* Static small cup logo – no floating, placed before the Café text */}
+            {/* Static small cup logo */}
             <g transform="translate(112, 66) scale(0.2)">
               <ellipse cx="140" cy="192" rx="121" ry="30" fill="#7a542f" opacity="0.7" filter="url(#cupShadow)"/>
               <ellipse cx="140" cy="188" rx="123" ry="32" fill="url(#saucerSide)" />
@@ -292,7 +296,7 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME (unchanged) ---
+// --- SMALL GLASS DOME ---
 function GlassDomeSmall({ size = 80 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
@@ -408,12 +412,14 @@ function FruitDome({
   betAmount,
   isHighlighted,
   onClick,
+  size = 70,
 }: {
   emoji: string;
   multiplier: number;
   betAmount: number;
   isHighlighted: boolean;
   onClick: () => void;
+  size?: number;
 }) {
   return (
     <motion.div
@@ -423,17 +429,17 @@ function FruitDome({
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        {/* Glass dome */}
-        <div className="relative w-[80px] h-[80px]">
-          <GlassDomeSmall size={80} />
-          {/* Emoji centered inside the glass, reduced size */}
-          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '10px' }}>
-            <span className="text-3xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
+        <div className="relative" style={{ width: size, height: size }}>
+          <GlassDomeSmall size={size} />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: `${size * 0.12}px` }}>
+            <span className="drop-shadow-lg" style={{ fontSize: `${size * 0.38}px`, lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        {/* Purple strip below the dome */}
-        <div className="mt-[-6px] w-[80px] h-[19px] bg-gradient-to-r from-purple-700 to-purple-500 rounded-full flex items-center justify-between px-2.5 text-white text-[10px] font-bold border border-white/20 shadow-md">
-          <span className="text-[11px]">×{multiplier}</span>
+        <div 
+          className="mt-[-5px] bg-gradient-to-r from-purple-700 to-purple-500 rounded-full flex items-center justify-between px-2 text-white font-bold border border-white/20 shadow-md"
+          style={{ width: size, height: `${size * 0.22}px`, fontSize: `${size * 0.13}px` }}
+        >
+          <span>×{multiplier}</span>
           <div className="flex items-center gap-0.5">
             <DollarCoin className="w-3 h-3" />
             <span>{betAmount > 0 ? formatKandM(betAmount) : '0'}</span>
@@ -462,12 +468,6 @@ const ITEMS = [
   { id: 'orange', icon: '🍟', multiplier: 5 },
 ];
 
-const floatingVariants = {
-  initial: { opacity: 0, scale: 0.9, y: 20 },
-  animate: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-  exit: { opacity: 0, y: "100%", transition: { duration: 0.3 } }
-};
-
 export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
@@ -477,13 +477,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
   const [spinTimeLeft, setSpinTimeLeft] = useState(0);
-  const [selectedChip] = useState(1000); 
+  const [selectedChip, setSelectedChip] = useState(1000); 
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [isSoundOn, setIsSoundOn] = useState(true);
+  const [winningItemIcon, setWinningItemIcon] = useState<string | null>(null);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -559,6 +560,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
+    setWinningItemIcon(winningItem.icon);
     setGameState('result');
     setTimeout(() => {
       setGameState('betting');
@@ -576,63 +578,61 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex flex-col justify-end z-[100]">
-      <div className="flex-1" onClick={onClose} />
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
       <motion.div 
-        variants={floatingVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        drag="y"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        drag
         dragControls={dragControls}
-        dragConstraints={{ top: 0 }}
-        dragElastic={0.2}
+        dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        dragElastic={0.1}
         onDragEnd={handleDragEnd}
-        className="h-[60vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-t-[40px] shadow-[0_-10px_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
+        className="w-[95vw] max-w-[420px] h-[85vh] max-h-[700px] flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-[40px] shadow-[0_0_60px_rgba(0,0,0,0.6)] cursor-grab active:cursor-grabbing"
         style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
       >
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-white/30 rounded-full z-30" />
 
-        <div className="w-full flex justify-between p-6 z-20">
-          <div className="flex items-center gap-3">
+        {/* Header */}
+        <div className="w-full flex justify-between items-center px-4 pt-4 pb-2 z-20">
+          <div className="flex items-center gap-2">
             <button 
               onPointerDown={(e) => dragControls.start(e)} 
-              className="w-10 h-10 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors"
+              className="w-9 h-9 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors"
             >
-              <Move className="w-5 h-5 text-blue-400" />
+              <Move className="w-4 h-4 text-blue-400" />
             </button>
-            <div className="relative flex items-center bg-[#1e293b] border border-white/10 rounded-full h-9 min-w-[120px] pl-10 pr-4 text-sm font-bold shadow-inner">
-              <div className="absolute -left-1"><DollarCoin className="w-9 h-9" /></div>
+            <div className="relative flex items-center bg-[#1e293b] border border-white/10 rounded-full h-8 min-w-[100px] pl-8 pr-3 text-xs font-bold shadow-inner">
+              <div className="absolute -left-1"><DollarCoin className="w-7 h-7" /></div>
               {localCoins.toLocaleString()}
             </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => setIsSoundOn(!isSoundOn)} className="w-10 h-10 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
-              {isSoundOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          <div className="flex gap-1.5">
+            <button onClick={() => setIsSoundOn(!isSoundOn)} className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
+              {isSoundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
-            <button className="w-10 h-10 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
-              <HelpCircle className="w-5 h-5" />
+            <button className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
+              <HelpCircle className="w-4 h-4" />
             </button>
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
-              <X className="w-5 h-5" />
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* Central Cafe – decreased size from 200 to 160 */}
-          <div className="absolute w-[160px] h-[160px] z-0 opacity-90 scale-110">
+        {/* Game Area - Compact */}
+        <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '280px' }}>
+          <div className="absolute w-[130px] h-[130px] z-0 opacity-90">
             <CafeShopIcon 
-              size={160} 
+              size={130} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
-          {/* Fruit items placed around the cafe – radius reduced from 150 to 120 */}
           {ITEMS.map((item, idx) => {
-            const angle = (idx * 45) - 90; // start from top
-            const radius = 120; // decreased game area
+            const angle = (idx * 45) - 90;
+            const radius = 105;
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
@@ -642,8 +642,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 key={item.id}
                 className="absolute z-10"
                 style={{
-                  left: `calc(50% + ${x}px - 40px)`, // still 80px/2 = 40px
-                  top: `calc(50% + ${y}px - 40px)`,
+                  left: `calc(50% + ${x}px - 30px)`,
+                  top: `calc(50% + ${y}px - 30px)`,
                 }}
               >
                 <FruitDome
@@ -652,10 +652,49 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   betAmount={myBets[item.id] || 0}
                   isHighlighted={isHighlighted}
                   onClick={() => handlePlaceBet(item.id)}
+                  size={60}
                 />
               </div>
             );
           })}
+        </div>
+
+        {/* Chips Selection */}
+        <div className="px-4 pb-1 z-20">
+          <div className="bg-gradient-to-r from-purple-800/60 to-purple-600/60 rounded-2xl p-3 border border-purple-400/20">
+            <p className="text-[10px] font-semibold text-purple-200 text-center mb-2">SELECT A CHIP & YOUR FOOD</p>
+            <div className="flex justify-center gap-2">
+              {CHIP_VALUES.map((value, idx) => (
+                <motion.button
+                  key={value}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setSelectedChip(value)}
+                  className={`flex flex-col items-center justify-center w-[50px] h-[50px] rounded-xl transition-all ${
+                    selectedChip === value 
+                      ? 'bg-blue-600 border-2 border-blue-300 shadow-lg shadow-blue-500/40 scale-105' 
+                      : 'bg-blue-900/60 border border-blue-400/20 hover:bg-blue-800/60'
+                  }`}
+                >
+                  <DollarCoin className="w-4 h-4 mb-0.5" />
+                  <span className="text-[10px] font-bold">{CHIP_LABELS[idx]}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Result Bar */}
+        <div className="px-4 pb-3 z-20">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-2.5 border border-white/10 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-300">RESULT</span>
+            <div className="flex items-center gap-2">
+              {winningItemIcon ? (
+                <span className="text-2xl">{winningItemIcon}</span>
+              ) : (
+                <span className="text-[11px] text-slate-400">Waiting...</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Winner popup */}
@@ -665,13 +704,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               initial={{ opacity: 0, scale: 0.5 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-[40px]"
             >
-              <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-8 rounded-[40px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
-                <div className="text-7xl mb-2">{winnerData.emoji}</div>
-                <div className="text-2xl font-black text-white uppercase tracking-tighter">Winner!</div>
-                <div className="flex items-center justify-center gap-2 text-4xl font-black text-white mt-2">
-                  <DollarCoin className="w-10 h-10" />
+              <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[40px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
+                <div className="text-6xl mb-2">{winnerData.emoji}</div>
+                <div className="text-xl font-black text-white uppercase tracking-tighter">Winner!</div>
+                <div className="flex items-center justify-center gap-2 text-3xl font-black text-white mt-2">
+                  <DollarCoin className="w-8 h-8" />
                   {winnerData.win.toLocaleString()}
                 </div>
               </div>
