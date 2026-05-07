@@ -752,30 +752,43 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   // 3. Sync and Transaction Logic (STRICTLY LOCKED)
   useEffect(() => {
     const syncUserID = async () => {
-      if (!isOwnProfile ||!profile ||!firestore ||!profileId) return;
+      if (!isOwnProfile || !profile || !firestore || !profileId) return;
 
-      const currentID = profile.accountNumber; // Sirf profile state par rely karenge shuru mein
+      const currentID = liveID || profile.accountNumber;
       const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      // 🛑 PERMANENT LOCK CHECK 1: Agar ek baar valid ID mil chuki hai, toh aage transaction karne ki zarurat hi nahi.
-      if ((isCreator && currentID === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
+      // 🛑 PERMANENT LOCK CHECK 1: Local state
+      if ((isCreator && String(currentID) === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
         return;
       }
 
       try {
         await runTransaction(firestore, async (transaction) => {
           const uRef = doc(firestore, 'users', profileId);
+          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+
           const userSnap = await transaction.get(uRef);
+          const profileSnap = await transaction.get(pRef);
 
-          // 🛑 PERMANENT LOCK CHECK 2: Agar backend database me pehle se assign ho gaya hai, toh yahi lock kar do.
-          if (userSnap.exists()) {
-            const dbID = userSnap.data().accountNumber;
-            const isDbIdValid = /^\d{6}$/.test(String(dbID));
+          let existingID = null;
 
-            if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
-              return; // ID already exist aur valid hai, naya generate nahi hoga
-            }
+          // 🛑 PERMANENT LOCK CHECK 2: Database state across collections
+          if (userSnap.exists() && userSnap.data().accountNumber && /^\d{6}$/.test(String(userSnap.data().accountNumber))) {
+            existingID = String(userSnap.data().accountNumber);
+          } else if (profileSnap.exists() && profileSnap.data().accountNumber && /^\d{6}$/.test(String(profileSnap.data().accountNumber))) {
+            existingID = String(profileSnap.data().accountNumber);
+          }
+
+          if (isCreator) {
+            existingID = '0000';
+          }
+
+          if (existingID) {
+            // Set with merge ensures documents remain in sync but never overwrites existing logic
+            transaction.set(uRef, { accountNumber: existingID }, { merge: true });
+            transaction.set(pRef, { accountNumber: existingID }, { merge: true });
+            return;
           }
 
           let finalNumber = '';
@@ -783,10 +796,20 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           if (isCreator) {
             finalNumber = '0000';
           } else {
-            // Unique 6-Digit generate karne ka loop
             let isUnique = false;
             while (!isUnique) {
-              const randomID = Math.floor(100000 + Math.random() * 900000).toString();
+              // Generate 6-digit number ensuring NO repeating digits
+              let randomID = '';
+              const usedDigits = new Set();
+              while (randomID.length < 6) {
+                const digit = Math.floor(Math.random() * 10);
+                if (randomID.length === 0 && digit === 0) continue; // No leading zero
+                if (!usedDigits.has(digit)) {
+                  usedDigits.add(digit);
+                  randomID += digit.toString();
+                }
+              }
+
               const idRef = doc(firestore, 'assigned_ids', randomID);
               const idSnap = await transaction.get(idRef);
 
@@ -798,18 +821,17 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             }
           }
 
-          // Database ke dono folders (users aur profile) mein update
-          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-          transaction.update(uRef, { accountNumber: finalNumber });
-          transaction.update(pRef, { accountNumber: finalNumber });
+          // Force using merge instead of update to avoid missing document crashes
+          transaction.set(uRef, { accountNumber: finalNumber }, { merge: true });
+          transaction.set(pRef, { accountNumber: finalNumber }, { merge: true });
         });
       } catch (err: any) {
-        console.warn("❌ ID Generation me error aaya ya access denied: ", err);
+        console.warn("❌ ID Generation me error aaya: ", err);
       }
     };
 
     syncUserID();
-  }, [isOwnProfile, profile, firestore, profileId]); // Isme se `liveID` hata diya taaki infinite loop band ho jaye.
+  }, [isOwnProfile, profile?.accountNumber, liveID, firestore, profileId]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore ||!currentUser ||!profileId || currentUser.uid === profileId) return null;
@@ -1069,3 +1091,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
