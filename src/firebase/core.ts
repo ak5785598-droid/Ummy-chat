@@ -47,9 +47,12 @@ export function initializeFirebase() {
       });
       console.log('[Firebase Core] Firestore initialized with auto-long-polling');
     } catch (e: any) {
-      if (e?.code === 'failed-precondition' && e?.message?.includes('newer version')) {
-        console.error('[Firebase Core] SDK Version Conflict detected. Clearing persistence cache...');
-        // Force basic initialization to allow the app to boot
+      if (e?.code === 'failed-precondition' && (e?.message?.includes('newer version') || e?.message?.includes('persistence'))) {
+        console.error('[Firebase Core] SDK Version Conflict or Persistence Error. Forcing memory-only mode and requesting reset.');
+        // Clear IndexedDB for Firestore to allow a clean restart on next load
+        if (typeof window !== 'undefined' && window.indexedDB) {
+          window.indexedDB.deleteDatabase('firestoreBacking');
+        }
         firestoreInstance = getFirestore(appInstance);
       } else {
         console.warn('[Firebase Core] Initialization issue, using default:', e);
