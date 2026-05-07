@@ -124,7 +124,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
    >
     <div className="relative shrink-0">
      <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
-      <AvatarImage src={otherUser.avatarUrl || undefined} />
+      <AvatarImage src={otherUser.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
       <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
      </Avatar>
      {isUnread && (

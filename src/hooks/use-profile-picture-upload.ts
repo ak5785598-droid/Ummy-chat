@@ -98,6 +98,16 @@ export function useProfilePictureUpload() {
     title: 'Identity Synchronized',
     description: 'Your new persona is now live across the frequency.',
    });
+
+   // Elite Force Sync: Ensure the UI picks up the change by clearing local state
+   if (typeof window !== 'undefined') {
+     setTimeout(() => {
+       // We don't want a full reload if possible, but for a 100% guarantee on mobile:
+       // window.location.reload(); 
+       // Better: trigger a custom event that components can listen to
+       window.dispatchEvent(new CustomEvent('identity-updated'));
+     }, 500);
+   }
   } catch (error: any) {
    console.error('[Visual Sync] Identity Upload Failed:', error);
    toast({

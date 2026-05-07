@@ -17,8 +17,9 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
  const { data: config } = useDoc(configRef);
 
- const fallbackLogo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
- const src = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
+  const fallbackLogo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
+  const baseSrc = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://api.dicebear.com/7.x/bottts/svg?seed=Ummy";
+  const src = `${baseSrc}${baseSrc.includes('?') ? '&' : '?'}v=${config?.updatedAt?.toMillis?.() || Date.now()}`;
  
  return (
   <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>
