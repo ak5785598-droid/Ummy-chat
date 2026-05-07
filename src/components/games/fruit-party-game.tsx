@@ -4,24 +4,9 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, collection } from 'firebase/firestore';
-import { X, Plus, Clock, Volume2, VolumeX, HelpCircle, Loader2, ArrowLeft, Move } from 'lucide-react';
+import { X, Plus, Clock, Volume2, VolumeX, HelpCircle, ArrowLeft, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
-
-// --- LOADING PAGE ---
-const LoadingPage = () => (
-  <motion.div 
-    initial={{ y: "100%" }} animate={{ y: 0 }}
-    className="h-[80vh] w-full bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden"
-  >
-    <div className="bg-white p-12 rounded-[2.5rem] flex flex-col items-center justify-center shadow-2xl">
-      <Loader2 className="w-16 h-16 text-yellow-500 animate-spin mb-4" strokeWidth={3} />
-      <h1 className="text-4xl font-black text-gray-800 tracking-tighter drop-shadow-[2px_2px_0px_rgba(0,0,0,0.1)]">
-        Ummy
-      </h1>
-    </div>
-  </motion.div>
-);
 
 // --- NUMBER FORMATTING (shared) ---
 const formatKandM = (num: number): string => {
@@ -143,7 +128,7 @@ const floatingVariants = {
   }
 };
 
-// ======================== WINNER POPUP COMPONENT (MERGED) ========================
+// ======================== WINNER POPUP COMPONENT ========================
 const winnerFormatKandM = (num: number) => {
   if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -156,11 +141,9 @@ const WinnerCountUpDisplay = ({ amount, duration = 900 }: { amount: number, dura
   useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
-
     const start = 0;
     const t0 = performance.now();
     let rafId: number;
-
     const tick = (t: number) => {
       const p = Math.min((t - t0) / duration, 1);
       const eased = 1 - Math.pow(1 - p, 3);
@@ -168,11 +151,9 @@ const WinnerCountUpDisplay = ({ amount, duration = 900 }: { amount: number, dura
       if (node) node.textContent = winnerFormatKandM(currentVal);
       if (p < 1) rafId = requestAnimationFrame(tick);
     };
-    
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [amount, duration]);
-
   return <span ref={nodeRef} style={{ willChange: 'contents' }}>{winnerFormatKandM(0)}</span>;
 };
 
@@ -227,21 +208,14 @@ const Crown = ({ rank }: { rank: 1 | 2 | 3 }) => {
           <stop offset="0%" stopColor="#ffffff" /><stop offset="30%" stopColor="#e6e8ee" />
           <stop offset="60%" stopColor="#b6bcc6" /><stop offset="100%" stopColor="#7a8290" />
         </linearGradient>
-        <linearGradient id="silverInnerGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5e6570" /><stop offset="100%" stopColor="#dfe3e8" />
-        </linearGradient>
         <filter id="silverShadow"><feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity=".55" /></filter>
       </defs>
       <g transform="translate(70,28)" filter="url(#silverShadow)">
         <path d="M-22 -2 L-14 -16 L-6 -4 L0 -18 L6 -4 L14 -16 L22 -2 L22 8 L-22 8 Z" fill="url(#silverRingGrad)" stroke="#7c8491" strokeWidth="1.4" />
         <circle cx="0" cy="-12" r="3.3" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
-        <circle cx="-14" cy="-10" r="2.7" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
-        <circle cx="14" cy="-10" r="2.7" fill="#e8edf3" stroke="#7c8491" strokeWidth="1" />
         <rect x="-22" y="8" width="44" height="5.5" rx="2" fill="#9aa2ae" />
       </g>
-      <circle cx="70" cy="90" r="48" fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45" />
       <circle cx="70" cy="90" r="48" fill="none" stroke="url(#silverRingGrad)" strokeWidth="11.5" filter="url(#silverShadow)" />
-      <circle cx="70" cy="90" r="42" fill="none" stroke="url(#silverInnerGrad)" strokeWidth="1.4" opacity=".85" />
       <g transform="translate(104,124)">
         <circle r="15.5" fill="url(#silverRingGrad)" stroke="#5a6270" strokeWidth="2" filter="url(#silverShadow)" />
         <text x="0" y="5.5" textAnchor="middle" fontSize="15.5" fontWeight="800" fill="white" fontFamily="Arial">2</text>
@@ -262,7 +236,6 @@ const Crown = ({ rank }: { rank: 1 | 2 | 3 }) => {
         <circle cx="0" cy="-12" r="3.2" fill="#f0b599" stroke="#7a3e26" strokeWidth="1" />
         <rect x="-22" y="8" width="44" height="5.5" rx="2" fill="#8a4f35" />
       </g>
-      <circle cx="70" cy="90" r="46" fill="none" stroke="#2a1510" strokeWidth="13.5" opacity=".45" />
       <circle cx="70" cy="90" r="46" fill="none" stroke="url(#bronzeRingGrad)" strokeWidth="11" filter="url(#bronzeShadow)" />
       <g transform="translate(102,122)">
         <circle r="15" fill="url(#bronzeRingGrad)" stroke="#5c2c1a" strokeWidth="2" filter="url(#bronzeShadow)" />
@@ -282,17 +255,13 @@ const WinnerConfetti = ({ show }: { show: boolean }) => {
       rotate: `${Math.random() * 360}deg`
     }));
   }, []);
-
   if (!show) return null;
   return (
-    <div className="winner-confetti pointer-events-none" style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}>
+    <div className="winner-confetti pointer-events-none">
       {pieces.map((p) => (
         <i key={p.id} style={{
-          left: p.left,
-          background: p.background,
-          animationDelay: p.delay,
-          transform: `rotate(${p.rotate})`,
-          willChange: 'transform, opacity'
+          left: p.left, background: p.background, animationDelay: p.delay,
+          transform: `rotate(${p.rotate})`, willChange: 'transform, opacity'
         }} />
       ))}
       <style jsx>{`
@@ -304,245 +273,70 @@ const WinnerConfetti = ({ show }: { show: boolean }) => {
   );
 };
 
-interface WinnerPopupData {
-  emoji: string;
-  win: number;
-  bet: number;
-}
-
-interface WinnerPlayer {
-  name: string;
-  win: number;
-  avatar: string | null;
-  bet: number;
-  isMe: boolean;
-}
-
-interface WinnerPopupProps {
-  winnerData: WinnerPopupData | null;
-  winnersList: WinnerPlayer[];
-}
+interface WinnerPopupData { emoji: string; win: number; bet: number; }
+interface WinnerPlayer { name: string; win: number; avatar: string | null; bet: number; isMe: boolean; }
+interface WinnerPopupProps { winnerData: WinnerPopupData | null; winnersList: WinnerPlayer[]; }
 
 const WinnerPopup = ({ winnerData, winnersList }: WinnerPopupProps) => {
   const [activeWinnerIdx, setActiveWinnerIdx] = useState<number | null>(1);
-
   return (
-    <>
-      <AnimatePresence>
-        {winnerData && (
-          <motion.div 
-            initial={{ y: "100%" }} 
-            animate={{ y: 0 }} 
-            exit={{ y: "100%" }} 
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 z-[210] flex justify-center pb-4 px-2"
-            style={{ transform: 'translateZ(0)', willChange: 'transform' }}
-          >
-            <div className="winning-card" style={{ transform: 'translateZ(0)' }}>
-              <WinnerConfetti show={true} />
-              
-              <div className="tw-top">
-                <div className="tw-emoji-box flex items-center justify-center" onClick={() => navigator.vibrate?.(10)}>
-                  {winnerData.bet === 0 ? (
-                    <span className="text-[60px] filter drop-shadow-md">😴</span>
-                  ) : (
-                    <span className="text-[70px] filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                      {winnerData.emoji}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="tw-stats">
-                  <div className="tw-stat-row">
-                    <span className="tw-stat-label">Your Prize:</span>
-                    <CoinIcon2 className="tw-coin-icon" />
-                    <span className="tw-stat-value"><WinnerCountUpDisplay amount={winnerData.win} /></span>
-                  </div>
-                  <div className="tw-stat-row">
-                    <span className="tw-stat-label">Your Bet:</span>
-                    <CoinIcon2 className="tw-coin-icon" />
-                    <span className="tw-stat-value"><WinnerCountUpDisplay amount={winnerData.bet} /></span>
-                  </div>
-                </div>
+    <AnimatePresence>
+      {winnerData && (
+        <motion.div 
+          initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} 
+          transition={{ type: "spring", damping: 25, stiffness: 200 }}
+          className="fixed bottom-0 left-0 right-0 z-[210] flex justify-center pb-4 px-2"
+        >
+          <div className="winning-card">
+            <WinnerConfetti show={true} />
+            <div className="tw-top">
+              <div className="tw-emoji-box flex items-center justify-center" onClick={() => navigator.vibrate?.(10)}>
+                {winnerData.bet === 0 ? <span className="text-[60px]">😴</span> : <span className="text-[70px]">{winnerData.emoji}</span>}
               </div>
-
-              <div className="tw-divider">
-                <div className="tw-divider-line tw-left"></div>
-                <div className="tw-divider-text">Top Winner</div>
-                <div className="tw-divider-line tw-right"></div>
-              </div>
-
-              <div className="tw-winners">
-                {[
-                  { rank: 2, data: winnersList[1], idx: 1 },
-                  { rank: 1, data: winnersList[0], idx: 0 },
-                  { rank: 3, data: winnersList[2], idx: 2 }
-                ].map((p) => (
-                  <div
-                    key={`rank-${p.rank}`}
-                    className={`tw-player tw-rank-${p.rank} ${activeWinnerIdx === p.idx ? 'tw-active' : ''}`}
-                    onClick={() => {
-                      setActiveWinnerIdx(p.idx);
-                      if(p.rank === 1) navigator.vibrate?.(30);
-                    }}
-                    style={{ opacity: 1, transform: 'translateZ(0)', willChange: 'transform' }}
-                  >
-                    <div className="tw-ring-container relative flex items-center justify-center">
-                      {p.rank === 1 && <>
-                        <div className="tw-sparkle tw-s1"></div>
-                        <div className="tw-sparkle tw-s2"></div>
-                        <div className="tw-sparkle tw-s3"></div>
-                      </>}
-                      
-                      <div className="absolute top-[56%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] rounded-full overflow-hidden bg-slate-800 z-0 border border-white/10 shadow-inner flex items-center justify-center">
-                        {p.data?.avatar ? (
-                          <img src={p.data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[20px] text-white/50">😴</span>
-                        )}
-                      </div>
-
-                      <div className="relative z-10 w-full h-full" style={{ transform: 'translateZ(0)' }}>
-                        <Crown rank={p.rank as 1|2|3} />
-                      </div>
-                    </div>
-                    <div className="tw-player-name">{p.data ? p.data.name : 'Waiting...'}</div>
-                    <div className="tw-player-prize">
-                      <CoinIcon2 className="tw-coin-icon" />
-                      <span><WinnerCountUpDisplay amount={p.data ? p.data.win : 0} duration={1100 + p.idx * 150} /></span>
-                    </div>
-                    <div className="tw-player-bet">Bet: {p.data ? winnerFormatKandM(p.data.bet || 0) : 0}</div>
-                  </div>
-                ))}
+              <div className="tw-stats">
+                <div className="tw-stat-row"><span className="tw-stat-label">Your Prize:</span><CoinIcon2 className="tw-coin-icon" /><span className="tw-stat-value"><WinnerCountUpDisplay amount={winnerData.win} /></span></div>
+                <div className="tw-stat-row"><span className="tw-stat-label">Your Bet:</span><CoinIcon2 className="tw-coin-icon" /><span className="tw-stat-value"><WinnerCountUpDisplay amount={winnerData.bet} /></span></div>
               </div>
             </div>
-            <style jsx global>{`
-              .winning-card {
-                height: 40vh;
-                min-height: 320px;
-                max-height: 420px;
-                width: 100%;
-                max-width: 100%;
-                background: linear-gradient(180deg, rgba(28,22,34,.95) 0%, rgba(12,10,14,.98) 58%, #050507 100%);
-                border: 1px solid rgba(232,200,120,.18);
-                border-radius: 28px 28px 12px 12px;
-                padding: clamp(12px,2vh,18px) clamp(14px,3vw,22px);
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset, 0 -15px 40px rgba(0,0,0,0.8), 0 -5px 15px rgba(0,0,0,0.6);
-                isolation: isolate;
-              }
-              .winning-card::before {
-                content: ""; position: absolute; inset: 0;
-                background: radial-gradient(400px 120px at 50% 0%, rgba(232,200,120,.14), transparent 70%),
-                            radial-gradient(300px 200px at 80% 120%, rgba(255,180,60,.08), transparent 60%);
-                pointer-events: none; z-index: 0;
-              }
-              .winning-card::after {
-                content: ""; position: absolute; inset: -1px; border-radius: 28px 28px 12px 12px;
-                background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,0) 30%);
-                mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-                -webkit-mask-composite: xor; mask-composite: exclude;
-                padding: 1px; pointer-events: none;
-              }
-              
-              .tw-top { display: flex; align-items: center; gap: 3.2vw; height: 35%; position: relative; z-index: 2; transform: translateZ(0); }
-              .tw-emoji-box {
-                width: 25%; min-width: 75px; aspect-ratio: 1; position: relative; flex-shrink: 0; cursor: pointer;
-                transition: transform .3s;
-              }
-              .tw-emoji-box:active { transform: scale(.96); }
-              .tw-stats { flex: 1; display: flex; flex-direction: column; gap: 1.1vh; justify-content: center; }
-              .tw-stat-row {
-                display: flex; align-items: center; gap: .6rem;
-                background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
-                border: 1px solid rgba(255,255,255,.09); padding: .4rem .6rem; border-radius: 12px;
-                font-size: clamp(12px, 2vh, 14px); font-weight: 650;
-                box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 8px 18px rgba(0,0,0,.4);
-                transition: transform .2s, border-color .2s;
-                will-change: transform;
-              }
-              .tw-stat-row:hover { transform: translateY(-1px); border-color: rgba(232,200,120,.3); }
-              .tw-stat-label { color: #f0eadd; min-width: 88px; opacity: .92; letter-spacing: .2px; }
-              .tw-coin-icon { width: 2.2vh; height: 2.2vh; min-width: 16px; min-height: 16px; flex-shrink: 0; }
-              .tw-stat-row .tw-coin-icon { animation: coinSpin 5.5s linear infinite; }
-              @keyframes coinSpin { to { transform: rotateY(360deg) } }
-              .tw-stat-value { color: #fff; font-variant-numeric: tabular-nums; }
-              
-              .tw-divider { height: 17%; display: flex; align-items: center; justify-content: center; position: relative; margin: 0 0 .4vh 0; z-index: 2; transform: translateY(-12px) translateZ(0); }
-              .tw-divider-line {
-                position: absolute; width: 29%; height: 2px; top: 50%;
-                background: linear-gradient(90deg, transparent, #e8c878, transparent);
-                filter: drop-shadow(0 0 8px rgba(232,200,120,.45)); overflow: visible;
-              }
-              .tw-divider-line.tw-left { left: 0; transform: scaleX(-1); }
-              .tw-divider-line.tw-right { right: 0; }
-              .tw-divider-line::after {
-                content: ""; position: absolute; width: 0; height: 0;
-                border-left: 7px solid #e8c878; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
-                top: -2.5px; right: -6px; filter: drop-shadow(0 0 4px rgba(232,200,120,.7));
-                animation: arrowPulse 2s ease-in-out infinite;
-              }
-              @keyframes arrowPulse { 0%,100%{opacity:.9; transform:translateX(0)} 50%{opacity:1; transform:translateX(2px)} }
-              .tw-divider-text {
-                color: #e8c878; font-size: clamp(14px,2.4vh,18px); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-                text-shadow: 0 1px 2px #000, 0 0 20px rgba(232,200,120,.4), 0 0 40px rgba(232,200,120,.15);
-                padding: .15rem .7rem; background: radial-gradient(50% 120% at 50% 50%, rgba(232,200,120,.15), transparent 70%);
-                border-radius: 8px;
-              }
-              
-              .tw-winners { display: flex; justify-content: space-between; align-items: flex-end; height: 48%; gap: 2vw; position: relative; z-index: 2; transform: translateZ(0); }
-              .tw-player {
-                flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer;
-                transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity 0.3s;
-                -webkit-tap-highlight-color: transparent;
-              }
-              .tw-player:hover { transform: translateY(-3px); }
-              .tw-player:active { transform: translateY(-1px) scale(.97); }
-              .tw-player.tw-rank-1 { transform: translateY(-1.1vh); }
-              .tw-player.tw-rank-1:hover { transform: translateY(-1.1vh) translateY(-3px); }
-              .tw-player.tw-rank-3 { transform: translateY(.45vh); }
-              .tw-player.tw-rank-3:hover { transform: translateY(.45vh) translateY(-3px); }
-              
-              .tw-ring-container { width: 86%; max-width: 110px; aspect-ratio: 1; position: relative; transition: filter .3s; }
-              .tw-ring-container > svg { width: 100%; height: 100%; overflow: visible; animation: float 4.5s ease-in-out infinite; }
-              .tw-player.tw-rank-1 .tw-ring-container > svg { animation-duration: 4s; }
-              .tw-player.tw-rank-2 .tw-ring-container > svg { animation-delay: .3s; }
-              .tw-player.tw-rank-3 .tw-ring-container > svg { animation-delay: .6s; }
-              @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-              .tw-player:hover .tw-ring-container { filter: brightness(1.12) drop-shadow(0 6px 16px rgba(255,200,80,.15)); }
-              
-              .tw-player-name {
-                font-size: clamp(11px,1.8vh,14px); font-weight: 650; margin-top: .7vh; color: #f5f3ef;
-                white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 118px; transition: color .2s;
-              }
-              .tw-player:hover .tw-player-name { color: #fff; }
-              .tw-player-prize { display: flex; align-items: center; justify-content: center; gap: .35rem; margin-top: .4vh; font-size: clamp(12px,1.85vh,15px); font-weight: 700; color: #ffd166; text-shadow: 0 1px 3px rgba(0,0,0,.7); }
-              .tw-player-prize .tw-coin-icon { width: 1.95vh; height: 1.95vh; min-width: 14px; min-height: 14px; }
-              .tw-player-bet { font-size: clamp(9px,1.3vh,11px); color: #b9b9c2; margin-top: .2vh; font-weight: 500; }
-              
-              .tw-player.tw-active .tw-ring-container > svg { animation: pulseUi .6s; }
-              @keyframes pulseUi { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
-              
-              .tw-sparkle { position: absolute; width: 4px; height: 4px; background: #fff3c4; border-radius: 50%; box-shadow: 0 0 10px #ffd76a, 0 0 18px #ffb300; opacity: 0; animation: spark 2.8s ease-in-out infinite; }
-              @keyframes spark { 0%{opacity:0; transform:translateY(8px) scale(.5)} 20%{opacity:1} 80%{opacity:.7} 100%{opacity:0; transform:translateY(-18px) scale(1.1)} }
-              .tw-rank-1 .tw-s1 { left: 18%; top: 28%; animation-delay: .2s }
-              .tw-rank-1 .tw-s2 { right: 14%; top: 20%; animation-delay: 1s }
-              .tw-rank-1 .tw-s3 { left: 25%; bottom: 20%; animation-delay: 1.7s }
-              
-              @media (max-width:380px){
-                .winning-card { border-radius: 22px; padding: 11px 13px; }
-                .tw-stat-label { min-width: 76px; }
-                .tw-divider-line { width: 26%; }
-              }
-            `}</style>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+            <div className="tw-divider"><div className="tw-divider-line tw-left"></div><div className="tw-divider-text">Top Winner</div><div className="tw-divider-line tw-right"></div></div>
+            <div className="tw-winners">
+              {[{ rank: 2, data: winnersList[1], idx: 1 }, { rank: 1, data: winnersList[0], idx: 0 }, { rank: 3, data: winnersList[2], idx: 2 }].map((p) => (
+                <div key={`rank-${p.rank}`} className={`tw-player tw-rank-${p.rank} ${activeWinnerIdx === p.idx ? 'tw-active' : ''}`} onClick={() => setActiveWinnerIdx(p.idx)}>
+                  <div className="tw-ring-container relative flex items-center justify-center">
+                    <div className="absolute top-[56%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] rounded-full overflow-hidden bg-slate-800 border border-white/10 flex items-center justify-center">
+                      {p.data?.avatar ? <img src={p.data.avatar} className="w-full h-full object-cover" /> : <span className="text-[20px] text-white/50">😴</span>}
+                    </div>
+                    <div className="relative z-10 w-full h-full"><Crown rank={p.rank as 1|2|3} /></div>
+                  </div>
+                  <div className="tw-player-name">{p.data ? p.data.name : 'Waiting...'}</div>
+                  <div className="tw-player-prize"><CoinIcon2 className="tw-coin-icon" /><span><WinnerCountUpDisplay amount={p.data ? p.data.win : 0} /></span></div>
+                  <div className="tw-player-bet">Bet: {p.data ? winnerFormatKandM(p.data.bet || 0) : 0}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <style jsx global>{`
+            .winning-card { height: 40vh; min-height: 320px; width: 100%; background: linear-gradient(180deg, rgba(28,22,34,.95) 0%, #050507 100%); border: 1px solid rgba(232,200,120,.18); border-radius: 28px 28px 12px 12px; padding: 15px 18px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; isolation: isolate; }
+            .tw-top { display: flex; align-items: center; gap: 3vw; height: 35%; }
+            .tw-emoji-box { width: 25%; min-width: 75px; aspect-ratio: 1; transition: transform .3s; }
+            .tw-stats { flex: 1; display: flex; flex-direction: column; gap: 1vh; justify-content: center; }
+            .tw-stat-row { display: flex; align-items: center; gap: .6rem; background: rgba(255,255,255,.05); padding: .4rem .6rem; border-radius: 12px; font-size: 13px; font-weight: 650; }
+            .tw-stat-label { color: #f0eadd; min-width: 88px; opacity: .9; }
+            .tw-coin-icon { width: 2vh; height: 2vh; }
+            .tw-divider { height: 15%; display: flex; align-items: center; justify-content: center; position: relative; }
+            .tw-divider-line { position: absolute; width: 29%; height: 2px; background: #e8c878; }
+            .tw-divider-line.tw-left { left: 0; } .tw-divider-line.tw-right { right: 0; }
+            .tw-divider-text { color: #e8c878; font-size: 16px; font-weight: 800; text-transform: uppercase; }
+            .tw-winners { display: flex; justify-content: space-between; align-items: flex-end; height: 48%; gap: 2vw; }
+            .tw-player { flex: 1; display: flex; flex-direction: column; align-items: center; }
+            .tw-player.tw-rank-1 { transform: translateY(-1vh); }
+            .tw-ring-container { width: 85%; aspect-ratio: 1; position: relative; }
+            .tw-player-name { font-size: 12px; font-weight: 650; margin-top: .5vh; color: #f5f3ef; }
+            .tw-player-prize { display: flex; align-items: center; gap: .3rem; color: #ffd166; font-weight: 700; }
+          `}</style>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -554,46 +348,31 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   const firestore = useFirestore();
   const dragControls = useDragControls();
 
-  const [isLoading, setIsLoading] = useState(true);
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
   const [spinTimeLeft, setSpinTimeLeft] = useState(0);
   const [selectedChip, setSelectedChip] = useState(1000); 
   const [myBets, setMyBets] = useState<Record<string, number>>({});
-  
   const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [todayWins, setTodayWins] = useState(0); 
-  const [history, setHistory] = useState(['🍎', '🍊', '🍇', '🥦', '🥕']);
   const [historyData, setHistoryData] = useState<{ icon: string, bet: number, time: string }[]>([]);
-  
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [showRules, setShowRules] = useState(false);
   const [showHistoryPage, setShowHistoryPage] = useState(false);
-  const soundRef = useRef(isSoundOn);
 
-  // Refs for spin intervals
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const movingIndexRef = useRef<number>(0);
 
-  useEffect(() => {
-    soundRef.current = isSoundOn;
-  }, [isSoundOn]);
-
   const playSound = (url: string, vol = 0.5) => {
-    if (!soundRef.current) return;
+    if (!isSoundOn) return;
     const audio = new Audio(url);
     audio.volume = vol;
-    audio.play().catch(e => console.log("Sound play error:", e));
+    audio.play().catch(() => {});
   };
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
@@ -603,7 +382,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   }, [userProfile, isCoinsLoaded]);
 
   useEffect(() => {
-    if (gameState !== 'betting' || isLoading) return;
+    if (gameState !== 'betting') return;
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) { startSpin(); return 0; }
@@ -611,14 +390,11 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState, isLoading]);
+  }, [gameState]);
 
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || !currentUser) return;
-    if (localCoins < selectedChip) {
-      alert('You do not have any Coins!'); 
-      return;
-    }
+    if (localCoins < selectedChip) return alert('No Coins!');
     playSound(SOUNDS.BET, 0.9);
     setLocalCoins(prev => prev - selectedChip);
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
@@ -626,37 +402,24 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
-  // New spin logic: 10 seconds timer, moves highlight every 0.9 sec
   const startSpin = () => {
-    if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-
     setGameState('spinning');
     setSpinTimeLeft(10);
     playSound(SOUNDS.WHIRRING, 1.0);
-
-    let currentIndex = 0;
-    movingIndexRef.current = currentIndex;
-    setHighlightIdxs([currentIndex]);
-
-    // Movement interval: every 0.9 seconds move to next item (Sequentially 1, 2, 3...)
+    movingIndexRef.current = 0;
+    setHighlightIdxs([0]);
     moveIntervalRef.current = setInterval(() => {
-      if (gameState !== 'spinning') return; // safety
       const nextIndex = (movingIndexRef.current + 1) % ITEMS.length;
       movingIndexRef.current = nextIndex;
       setHighlightIdxs([nextIndex]);
       playSound(SOUNDS.TICK, 0.3);
     }, 900);
-
-    // Countdown timer: 10 seconds -> 0
     countdownIntervalRef.current = setInterval(() => {
       setSpinTimeLeft(prev => {
         if (prev <= 1) {
-          // Spin finished
-          if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-          const finalItem = ITEMS[movingIndexRef.current];
-          finalizeResult(finalItem);
+          clearInterval(moveIntervalRef.current!);
+          clearInterval(countdownIntervalRef.current!);
+          finalizeResult(ITEMS[movingIndexRef.current]);
           return 0;
         }
         return prev - 1;
@@ -667,352 +430,97 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
   const finalizeResult = (winningItem: typeof ITEMS[0]) => {
     const betOnItem = myBets[winningItem.id] || 0;
     const totalWinAmount = betOnItem * winningItem.multiplier;
-    const totalMyBetOnWinners = betOnItem;
-    
-    setHistory(prev => [winningItem.icon, ...prev].slice(0, 10));
-
-    // Record each bet that was placed (for history page)
     Object.entries(myBets).forEach(([itemId, amount]) => {
       const item = ITEMS.find(i => i.id === itemId);
       if (item && amount > 0) {
-        setHistoryData(prev => [{
-          icon: item.icon,
-          bet: amount,
-          time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-        }, ...prev]);
+        setHistoryData(prev => [{ icon: item.icon, bet: amount, time: new Date().toLocaleTimeString() }, ...prev]);
       }
     });
-
-    if (totalWinAmount > 0 && currentUser && firestore) {
+    if (totalWinAmount > 0 && currentUser) {
       playSound(SOUNDS.WIN, 0.6);
       setLocalCoins(prev => prev + totalWinAmount);
       setTodayWins(prev => prev + totalWinAmount);
-      
       const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
-      
-      addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-        gameId: 'fruit-party', 
-        amount: totalWinAmount,
-        userId: currentUser.uid,
-        timestamp: new Date(),
-        isGroupWin: false
-      });
-
-      const userRef = doc(firestore, 'users', currentUser.uid);
-      updateDocumentNonBlocking(userRef, { 'stats.totalWins': increment(totalWinAmount) });
     }
-    
-    setWinnerData({ 
-      emoji: winningItem.icon, 
-      win: totalWinAmount, 
-      bet: totalMyBetOnWinners,
-      isGroup: false,
-    });
+    setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
     setGameState('result');
-
     setTimeout(() => {
       setGameState('betting');
       setTimeLeft(30);
       setMyBets({});
       setWinnerData(null);
       setHighlightIdxs([]);
-      // Reset spin time display
-      setSpinTimeLeft(0);
-      // Clear any leftover intervals just in case
-      if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     }, 5000);
   };
 
-  // Build winners list for popup (Top 3 mock data)
   const winnersListForPopup = useMemo(() => {
     if (!winnerData) return [];
-    const myWin = winnerData.win;
-    const myBet = winnerData.bet;
-
-    const otherWins = [
-      { name: "Farmer Joe", win: myWin > 0 ? myWin * 0.6 : 12500, bet: myBet > 0 ? myBet * 0.5 : 5000 },
-      { name: "ForestQueen", win: myWin > 0 ? myWin * 0.3 : 8200, bet: myBet > 0 ? myBet * 0.3 : 2300 },
-    ];
-
     return [
-      { 
-        name: currentUser?.displayName || "You", 
-        win: myWin, 
-        avatar: currentUser?.photoURL || null, 
-        bet: myBet,
-        isMe: true 
-      },
-      { 
-        name: otherWins[0].name, 
-        win: otherWins[0].win, 
-        avatar: null, 
-        bet: otherWins[0].bet,
-        isMe: false 
-      },
-      { 
-        name: otherWins[1].name, 
-        win: otherWins[1].win, 
-        avatar: null, 
-        bet: otherWins[1].bet,
-        isMe: false 
-      }
+      { name: currentUser?.displayName || "You", win: winnerData.win, avatar: currentUser?.photoURL || null, bet: winnerData.bet, isMe: true },
+      { name: "Farmer Joe", win: 12000, avatar: null, bet: 5000, isMe: false },
+      { name: "ForestQueen", win: 8000, avatar: null, bet: 2000, isMe: false }
     ];
   }, [winnerData, currentUser]);
-
-  const winnerPopupData = winnerData ? {
-    emoji: winnerData.emoji,
-    win: winnerData.win,
-    bet: winnerData.bet,
-  } : null;
-
-  // Cleanup intervals on unmount
-  useEffect(() => {
-    return () => {
-      if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-    };
-  }, []);
-
-  if (isLoading) return <LoadingPage />;
 
   return (
     <div className="fixed inset-0 bg-black/10 flex flex-col justify-end z-[100]">
       <div className="flex-1" onClick={onClose} />
-
       <AnimatePresence mode="wait">
         <motion.div 
-            key="game"
-            drag
-            dragControls={dragControls}
-            dragListener={false}
-            dragMomentum={false}
-            variants={floatingVariants}
-            initial="initial"
-            animate="animate"
-            whileDrag={{ scale: 1.02, transition: { duration: 0.2 } }}
-            className={cn(
-              "h-[80vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white select-none border border-white/20 shadow-2xl transition-all duration-300",
-              !isOverlay && "min-h-[80vh]",
-              "rounded-none"
-            )}
-            style={{ 
-              backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' 
-            }}
-          >
-            
-            {/* HEADER */}
-            <div className="w-full flex flex-col z-20">
-              <div className="w-full p-4 flex justify-between items-center relative">
-                <div className="flex items-center gap-2">
-                  <button 
-                    onPointerDown={(e) => dragControls.start(e)}
-                    className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white cursor-grab active:cursor-grabbing touch-none"
-                  >
-                    <Move className="w-[18px] h-[18px]" strokeWidth={2.5} />
-                  </button>
-
-                  <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[105px] ml-2">
-                    <div className="absolute -left-1 w-8 h-8 flex items-center justify-center z-10 drop-shadow-md">
-                      <DollarCoin className="w-8 h-8" />
-                    </div>
-                    <span className="pl-9 pr-5 text-white font-medium text-xs tracking-wider">{localCoins.toLocaleString()}</span>
-                    <button className="absolute -right-3 w-7 h-7 rounded-full bg-gradient-to-b from-yellow-100 via-yellow-300 to-yellow-600 flex items-center justify-center text-black shadow-md border-2 border-[#181a4a]">
-                      <Plus className="w-4 h-4 font-bold" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 relative">
-                   <div className="absolute top-12 right-2 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                     <Cloud className="w-28 h-auto" />
-                  </div>
-                  {[ 
-                    { icon: Clock, action: () => setShowHistoryPage(true) }, 
-                    { icon: isSoundOn ? Volume2 : VolumeX, action: () => setIsSoundOn(!isSoundOn) }, 
-                    { icon: HelpCircle, action: () => setShowRules(true) }, 
-                    { icon: X, action: onClose } 
-                  ].map((btn, i) => (
-                    <button key={i} onClick={btn.action} className="w-8 h-8 rounded-full bg-[#1e2350] border-[2px] border-[#4b558c] flex items-center justify-center text-white">
-                      <btn.icon className="w-[18px] h-[18px]" strokeWidth={2.5} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="px-4 mt-1 relative">
-                <div className="bg-black/60 border border-yellow-500/50 text-yellow-400 px-3 py-0.5 rounded-full font-bold shadow-lg flex items-center gap-2 w-fit text-sm">
-                  <span className="text-base leading-none drop-shadow-md">🏆</span> {todayWins.toLocaleString()}
-                </div>
-                <div className="absolute top-10 left-6 z-10 pointer-events-none drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                   <Cloud className="w-14 h-auto" />
-                </div>
+          drag dragControls={dragControls} dragListener={false} variants={floatingVariants} initial="initial" animate="animate"
+          className={cn(
+            "h-[50vh] min-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white border border-white/20 shadow-2xl rounded-none"
+          )}
+          style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
+        >
+          {/* HEADER */}
+          <div className="w-full flex justify-between p-4 z-20">
+            <div className="flex items-center gap-2">
+              <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 rounded-full bg-[#1e2350] border-2 border-[#4b558c] flex items-center justify-center"><Move className="w-4 h-4" /></button>
+              <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[100px] pl-8 pr-4 text-xs font-bold">
+                <div className="absolute -left-1"><DollarCoin className="w-7 h-7" /></div>
+                {localCoins.toLocaleString()}
               </div>
             </div>
-
-            {/* BOARD AREA */}
-            <div className="relative w-full flex-1 flex items-center justify-center scale-95 -translate-y-6" style={{ perspective: '1000px' }}>
-              <svg className="absolute w-full h-full pointer-events-none z-0 overflow-visible">
-                <defs>
-                  <linearGradient id="darkWoodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#3d1a05" /> 
-                    <stop offset="100%" stopColor="#1a0801" />
-                  </linearGradient>
-                </defs>
-                <g transform="translate(175, 175)">
-                  <line x1="0" y1="20" x2="-120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="-120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="120" y2="450" stroke="#f5d0a9" strokeWidth="24" strokeLinecap="round" />
-                  <line x1="0" y1="20" x2="120" y2="450" stroke="url(#darkWoodGradient)" strokeWidth="14" strokeLinecap="round" />
-                </g>
-              </svg>
-
-              <svg className="absolute w-[350px] h-[350px] pointer-events-none overflow-visible">
-                <g transform="translate(175, 175)">
-                  {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-                    <line key={angle} x1="0" y1="0" x2={110 * Math.cos((angle-90)*Math.PI/180)} y2={110 * Math.sin((angle-90)*Math.PI/180)} stroke="#fbbf24" strokeWidth="6" strokeLinecap="round" />
-                  ))}
-                </g>
-              </svg>
-              
-              <div className="relative z-50">
-                <div style={{ transformStyle: 'preserve-3d', transform: 'rotateX(20deg)' }} className="relative w-32 h-32 rounded-full p-1.5 bg-gradient-to-b from-yellow-300 via-yellow-500 to-yellow-800 shadow-[0_15px_30px_rgba(0,0,0,0.8)]">
-                  <div className="w-full h-full rounded-full bg-[#1e0701] flex flex-col items-center justify-center overflow-hidden border-4 border-black/40">
-                    <div className="w-full h-1/2 bg-gradient-to-b from-red-950 to-red-900 flex items-center justify-center border-b-2 border-yellow-500/40">
-                        <span className="text-4xl">🧆</span>
-                    </div>
-                    <div className="w-full h-1/2 bg-gradient-to-b from-red-600 to-red-800 flex items-center justify-center">
-                      <span className="text-4xl font-black text-white italic">
-                        {gameState === 'spinning' ? spinTimeLeft : (gameState === 'betting' ? timeLeft : '🎉')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {ITEMS.map((item, idx) => {
-                const angle = (idx * 45) - 90;
-                const x = Math.cos((angle * Math.PI) / 180) * 135;
-                const y = Math.sin((angle * Math.PI) / 180) * 135;
-                const betAmount = myBets[item.id] || 0;
-                const isHighlighted = highlightIdxs.includes(idx);
-
-                return (
-                  <div key={item.id} className="absolute z-10" style={{ transform: `translate(${x}px, ${y}px)` }}>
-                    <button 
-                      onClick={() => handlePlaceBet(item.id)}
-                      style={{ transform: `rotateY(${isHighlighted ? '0deg' : '15deg'}) rotateX(10deg)` }}
-                      className={cn(
-                        "w-24 h-24 rounded-full border-[4px] border-yellow-500 flex flex-col overflow-hidden transition-all duration-300 relative items-center justify-center",
-                        "bg-[#7f1d1d] shadow-[10px_10px_20px_rgba(0,0,0,0.5)]",
-                        isHighlighted ? "scale-110 -translate-y-2 ring-[6px] ring-[#ffd700] shadow-[0_0_40px_#ffd700] z-50" : ""
-                      )}
-                    >
-                      <div className="w-full flex-[1.2] flex items-center justify-center">
-                        <span className="text-4xl drop-shadow-lg z-20">{item.icon}</span>
-                      </div>
-                      <AnimatePresence>
-                        {betAmount > 0 && (
-                          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="w-full bg-orange-500 flex items-center justify-center py-0.5 z-20 gap-1">
-                            <DollarCoin className="w-3 h-3" />
-                            <span className="text-[10px] font-black text-white">{betAmount >= 1000 ? `${betAmount/1000}K` : betAmount}</span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      <div className="w-full flex-1 flex items-center justify-center bg-orange-600 z-20">
-                        <span className="font-black text-[12px] text-white italic">×{item.multiplier}</span>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* BOTTOM UI */}
-            <div className="w-full px-4 mb-2 z-20 relative">
-               <div className="flex justify-between px-1 mb-1 items-end relative">
-                <div className="absolute -top-16 left-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
-                <span className="text-4xl relative z-20">
-                  🥗
-                </span>
-                <div className="absolute -top-16 right-0 z-10 pointer-events-none"> <Cloud className="w-24 h-auto" /> </div>
-                <span className="text-4xl relative z-20">
-                  🍕
-                </span>
-              </div>
-              <div className="w-full h-12 bg-[#3e1a05] rounded-xl border-2 border-[#f5d0a9] flex items-center px-4 gap-3 overflow-x-auto no-scrollbar">
-                 <span className="text-[10px] font-bold text-[#f5d0a9] uppercase mr-2 border-r border-[#f5d0a9]/30 pr-2">History</span>
-                 {history.map((icon, i) => (
-                   <div key={i} className="min-w-[32px] h-8 bg-black/30 rounded-lg flex items-center justify-center text-lg">{icon}</div>
-                 ))}
-              </div>
-            </div>
-
-            {/* CHIPS AREA */}
-            <div className="w-full bg-gradient-to-b from-[#270c01] to-[#1a0801] p-6 flex justify-center gap-3 z-20 border-t-4 border-[#f5d0a9]">
-              {CHIPS_DATA.map(chip => (
-                <button 
-                  key={chip.value}
-                  onClick={() => setSelectedChip(chip.value)}
-                  className={cn(
-                    "w-16 h-16 rounded-full border-[3px] border-dashed border-white/40 flex items-center justify-center text-[10px] font-black transition-all relative bg-gradient-to-br shadow-[0_5px_0_rgba(0,0,0,0.4)]",
-                    chip.color,
-                    selectedChip === chip.value ? "scale-110 -translate-y-2 ring-4 ring-yellow-400 border-solid opacity-100" : "opacity-70"
-                  )}
-                >
-                  <div className="absolute inset-1.5 rounded-full border-2 border-white/20 bg-black/10 flex items-center justify-center">
-                    <span className="text-white font-black text-sm">{chip.label}</span>
-                  </div>
-                </button>
+            <div className="flex gap-2">
+              {[Clock, isSoundOn ? Volume2 : VolumeX, HelpCircle, X].map((Icon, i) => (
+                <button key={i} onClick={i===0?()=>setShowHistoryPage(true):i===1?()=>setIsSoundOn(!isSoundOn):i===2?()=>setShowRules(true):onClose} className="w-8 h-8 rounded-full bg-[#1e2350] border-2 border-[#4b558c] flex items-center justify-center"><Icon className="w-4 h-4" /></button>
               ))}
             </div>
+          </div>
 
-            {/* WINNER POPUP */}
-            <WinnerPopup winnerData={winnerPopupData} winnersList={winnersListForPopup} />
+          {/* BOARD */}
+          <div className="relative w-full flex-1 flex items-center justify-center scale-[0.8] -translate-y-4">
+            {ITEMS.map((item, idx) => {
+              const angle = (idx * 45) - 90;
+              const x = Math.cos((angle * Math.PI) / 180) * 130;
+              const y = Math.sin((angle * Math.PI) / 180) * 130;
+              const isHighlighted = highlightIdxs.includes(idx);
+              return (
+                <div key={item.id} className="absolute" style={{ transform: `translate(${x}px, ${y}px)` }}>
+                  <button onClick={() => handlePlaceBet(item.id)} className={cn("w-20 h-20 rounded-full border-4 border-yellow-500 bg-[#7f1d1d] flex flex-col items-center justify-center transition-all", isHighlighted && "scale-110 ring-4 ring-yellow-300 shadow-[0_0_30px_#ffd700]")}>
+                    <span className="text-3xl">{item.icon}</span>
+                    {myBets[item.id] > 0 && <div className="bg-orange-500 text-[10px] px-1 rounded flex items-center gap-1"><DollarCoin className="w-2 h-2" />{formatKandM(myBets[item.id])}</div>}
+                    <div className="text-[10px] font-bold">×{item.multiplier}</div>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
-            {/* RULES & HISTORY PANELS */}
-            {showRules && (
-              <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute bottom-0 left-0 right-0 h-[40vh] bg-[#0ea5e9] border-t-[10px] border-[#0284c7] z-[300] flex flex-col px-6 py-8">
-                <div className="flex items-center justify-center mb-6">
-                  <button onClick={() => setShowRules(false)} className="absolute left-6 p-2 bg-white/20 rounded-full text-white"><ArrowLeft className="w-6 h-6" /></button>
-                  <h2 className="text-white font-black text-2xl">RULES</h2>
-                </div>
-                <div className="text-white/95 font-semibold text-sm space-y-4">
-                  <p>1. Select Chip amount</p>
-                  <p>2. Put bets on Items</p>
-                  <p>3. Win Amount = Bet × Multiplier</p>
-                  <p className="text-yellow-200 font-bold">4. Spin lasts 10 seconds – wherever the light stops, that item wins!</p>
-                </div>
-              </motion.div>
-            )}
+          <WinnerPopup winnerData={winnerData} winnersList={winnersListForPopup} />
 
-            {showHistoryPage && (
-              <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute bottom-0 left-0 right-0 h-[60vh] bg-[#0ea5e9] border-t-[10px] border-[#0284c7] z-[400] flex flex-col">
-                <div className="p-6 flex items-center justify-between">
-                  <div className="w-10" /><h2 className="text-white font-black text-2xl italic">Game history</h2>
-                  <button onClick={() => setShowHistoryPage(false)} className="p-2 bg-white/20 rounded-full text-white"><X className="w-6 h-6" /></button>
-                </div>
-                <div className="flex-1 px-6 pb-6 overflow-hidden">
-                  <div className="bg-white h-full rounded-[2.5rem] p-4 overflow-y-auto no-scrollbar">
-                    {historyData.map((rec, i) => (
-                      <div key={i} className="flex items-center justify-between bg-gray-50 p-3 mb-2 rounded-2xl">
-                        <span className="text-3xl">{rec.icon}</span>
-                        <div className="flex items-center gap-1 font-black text-gray-800">
-                          <DollarCoin className="w-4 h-4" />
-                          <span>{rec.bet.toLocaleString()}</span>
-                        </div>
-                        <span className="text-[10px] text-gray-400">{rec.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
+          {/* PANELS */}
+          {showRules && (
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="absolute inset-0 bg-[#0ea5e9] z-[300] p-8">
+              <button onClick={() => setShowRules(false)}><ArrowLeft /></button>
+              <h2 className="text-2xl font-black mb-4">RULES</h2>
+              <p>Place bets on items. Spin is 10s. If it stops on your item, you win!</p>
+            </motion.div>
+          )}
+        </motion.div>
       </AnimatePresence>
     </div>
   );
 }
-
