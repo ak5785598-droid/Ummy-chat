@@ -68,14 +68,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
         .s1 { animation-delay: 0s; }
         .s2 { animation-delay: 0.4s; }
         .s3 { animation-delay: 0.8s; }
-        .float-cup {
-          animation: floatCup 3.6s ease-in-out infinite;
-          transform-origin: 140px 150px;
-        }
-        @keyframes floatCup {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
       `}</style>
       <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
         <defs>
@@ -245,13 +237,13 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
           </g>
 
           <g filter="url(#soft)">
-            <rect x="76" y="28" width="360" height="112" rx="28" fill="#b21268" />
+            <rect x="76" y="34" width="360" height="112" rx="28" fill="#b21268" />
             <rect x="76" y="34" width="360" height="112" rx="28" fill="url(#magenta)" />
             <rect x="76" y="34" width="360" height="112" rx="28" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" fill="none" />
             <rect x="76" y="34" width="360" height="46" rx="28" fill="url(#signTop)" />
 
-            {/* Cup moved to top of sign, positioned above the "Café" text */}
-            <g transform="translate(145, 12) scale(0.3)" className="float-cup">
+            {/* Static small cup logo – no floating, placed before the Café text */}
+            <g transform="translate(112, 66) scale(0.2)">
               <ellipse cx="140" cy="192" rx="121" ry="30" fill="#7a542f" opacity="0.7" filter="url(#cupShadow)"/>
               <ellipse cx="140" cy="188" rx="123" ry="32" fill="url(#saucerSide)" />
               <ellipse cx="140" cy="174" rx="125" ry="36" fill="url(#saucerTop)" stroke="#fff7e0" strokeWidth="1.5"/>
@@ -300,7 +292,7 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME (from second program) ---
+// --- SMALL GLASS DOME (unchanged) ---
 function GlassDomeSmall({ size = 80 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
@@ -434,9 +426,9 @@ function FruitDome({
         {/* Glass dome */}
         <div className="relative w-[80px] h-[80px]">
           <GlassDomeSmall size={80} />
-          {/* Emoji centered inside the glass */}
+          {/* Emoji centered inside the glass, reduced size */}
           <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '10px' }}>
-            <span className="text-4xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
+            <span className="text-3xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
         {/* Purple strip below the dome */}
@@ -460,14 +452,14 @@ const SOUNDS = {
 };
 
 const ITEMS = [
-  { id: 'broccoli', icon: '🥦', multiplier: 10 },
-  { id: 'lettuce', icon: '🥬', multiplier: 15 },
-  { id: 'carrot', icon: '🥕', multiplier: 25 },
-  { id: 'corn', icon: '🌽', multiplier: 45 },
-  { id: 'tomato', icon: '🍅', multiplier: 5 },
-  { id: 'coconut', icon: '🥥', multiplier: 5 },
-  { id: 'grapes', icon: '🍇', multiplier: 5 },
-  { id: 'orange', icon: '🍊', multiplier: 5 },
+  { id: 'broccoli', icon: '🥐', multiplier: 10 },
+  { id: 'lettuce', icon: '🍔', multiplier: 15 },
+  { id: 'carrot', icon: '🍦', multiplier: 25 },
+  { id: 'corn', icon: '🍿', multiplier: 45 },
+  { id: 'tomato', icon: '🍪', multiplier: 5 },
+  { id: 'coconut', icon: '🍮', multiplier: 5 },
+  { id: 'grapes', icon: '🥩', multiplier: 5 },
+  { id: 'orange', icon: '🍟', multiplier: 5 },
 ];
 
 const floatingVariants = {
@@ -628,19 +620,19 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* Central Cafe with countdown */}
-          <div className="absolute w-[200px] h-[200px] z-0 opacity-90 scale-110">
+          {/* Central Cafe – decreased size from 200 to 160 */}
+          <div className="absolute w-[160px] h-[160px] z-0 opacity-90 scale-110">
             <CafeShopIcon 
-              size={200} 
+              size={160} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
-          {/* Fruit items placed around the cafe */}
+          {/* Fruit items placed around the cafe – radius reduced from 150 to 120 */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90; // start from top
-            const radius = 150;
+            const radius = 120; // decreased game area
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
@@ -650,7 +642,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 key={item.id}
                 className="absolute z-10"
                 style={{
-                  left: `calc(50% + ${x}px - 40px)`, // 80px width / 2 = 40px
+                  left: `calc(50% + ${x}px - 40px)`, // still 80px/2 = 40px
                   top: `calc(50% + ${y}px - 40px)`,
                 }}
               >
