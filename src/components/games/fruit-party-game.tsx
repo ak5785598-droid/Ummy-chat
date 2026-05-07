@@ -174,11 +174,9 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
           </filter>
         </defs>
 
-        <!-- Shadow under the whole building -->
         <ellipse cx="256" cy="484" rx="172" ry="20" fill="#000" opacity="0.12" />
 
         <g filter="url(#bigShadow)">
-          <!-- Bottom wood panel -->
           <rect x="28" y="402" width="456" height="86" rx="24" fill="url(#wood)" />
           <rect x="28" y="402" width="456" height="86" rx="24" stroke="#5a2e15" strokeWidth="4" fill="none" opacity="0.8" />
           <rect x="36" y="410" width="440" height="32" rx="16" fill="#fff" opacity="0.08" />
@@ -186,7 +184,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
           <rect x="36" y="466" width="440" height="9" fill="#fff" opacity="0.25" />
           <text x="256" y="459" fontFamily="'Nunito Black','Poppins','Arial Black',sans-serif" fontSize="30" fontWeight="900" fill="#5a2e15" textAnchor="middle" letterSpacing="0.3">Select Food</text>
 
-          <!-- Upper wood frame -->
           <rect x="60" y="128" width="392" height="28" rx="12" fill="url(#woodDark)" />
           <rect x="60" y="128" width="392" height="14" rx="12" fill="url(#gold)" />
           <rect x="68" y="152" width="376" height="268" rx="18" fill="url(#woodDark)" />
@@ -194,7 +191,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
           <rect x="88" y="172" width="336" height="228" rx="10" fill="url(#cream)" />
           <rect x="88" y="172" width="336" height="48" fill="#fff" opacity="0.15" />
 
-          <!-- Window frame -->
           <rect x="216" y="180" width="80" height="54" rx="6" fill="#5a2e15" />
           <path d="M224 226 V200 A32 32 0 0 1 288 200 V226 Z" fill="#442009" />
           <path d="M227 224 V202 A29 29 0 0 1 285 202 V224 Z" fill="url(#glass)" />
@@ -202,13 +198,11 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
           <rect x="254" y="175" width="4" height="49" fill="#5a2e15" />
           <ellipse cx="256" cy="202" rx="26" ry="8" fill="#fff" opacity="0.18" />
 
-          <!-- Display panel with countdown -->
           <rect x="100" y="250" width="312" height="136" rx="16" fill="#5a2e15" />
           <rect x="108" y="258" width="296" height="120" rx="12" fill="url(#window)" />
           <rect x="108" y="258" width="296" height="22" rx="12" fill="#fff" opacity="0.07" />
           <text x="256" y="345" fontFamily="'Montserrat Black','Inter','Arial Black',sans-serif" fontSize="100" fontWeight="900" fill="white" textAnchor="middle" letterSpacing="-3">{countdown}</text>
 
-          <!-- Decorative pink scallops -->
           <g filter="url(#soft)">
             <path d="M86 200 H426 V240 Q402 272 378 240 Q354 272 330 240 Q306 272 282 240 Q258 272 234 240 Q210 272 186 240 Q162 272 138 240 Q114 272 90 240 Z" fill="#e91e8c" />
             <path d="M86 200 H134 V240 Q114 272 90 240 V200" fill="#ff4da6" />
@@ -220,7 +214,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
             <path d="M90 240 Q114 262 138 240 M186 240 Q210 262 234 240 M282 240 Q306 262 330 240 M378 240 Q402 262 426 240" fill="none" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" />
           </g>
 
-          <!-- Left potted plant -->
           <g transform="translate(94,322)">
             <ellipse cx="38" cy="78" rx="26" ry="7" fill="#000" opacity="0.14" />
             <path d="M14 56 H62 L56 84 H20 Z" fill="url(#pot)" stroke="#7e3314" strokeWidth="2.5" strokeLinejoin="round" />
@@ -236,7 +229,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
             <ellipse cx="28" cy="2" rx="9" ry="5" fill="#fff" opacity="0.28" />
           </g>
 
-          <!-- Right potted plant -->
           <g transform="translate(338,322)">
             <ellipse cx="38" cy="78" rx="26" ry="7" fill="#000" opacity="0.14" />
             <path d="M14 56 H62 L56 84 H20 Z" fill="url(#pot)" stroke="#7e3314" strokeWidth="2.5" strokeLinejoin="round" />
@@ -252,14 +244,12 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
             <ellipse cx="28" cy="2" rx="9" ry="5" fill="#fff" opacity="0.28" />
           </g>
 
-          <!-- Signboard area with café text and 3D cup -->
           <g filter="url(#soft)">
             <rect x="76" y="28" width="360" height="112" rx="28" fill="#b21268" />
             <rect x="76" y="34" width="360" height="112" rx="28" fill="url(#magenta)" />
             <rect x="76" y="34" width="360" height="112" rx="28" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" fill="none" />
             <rect x="76" y="34" width="360" height="46" rx="28" fill="url(#signTop)" />
 
-            <!-- 3D Coffee Cup (replaces the simple white cup) -->
             <g transform="translate(105, 38) scale(0.42)" className="float-cup">
               <ellipse cx="140" cy="192" rx="121" ry="30" fill="#7a542f" opacity="0.7" filter="url(#cupShadow)"/>
               <ellipse cx="140" cy="188" rx="123" ry="32" fill="url(#saucerSide)" />
@@ -309,7 +299,6 @@ const CafeShopIcon = ({ size = 200, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SOUNDS ---
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
@@ -318,14 +307,14 @@ const SOUNDS = {
 };
 
 const ITEMS = [
-  { id: 'broccoli', icon: '🥦', multiplier: 10 },
-  { id: 'lettuce', icon: '🥬', multiplier: 15 },
-  { id: 'carrot', icon: '🥕', multiplier: 25 },
-  { id: 'corn', icon: '🌽', multiplier: 45 },
-  { id: 'tomato', icon: '🍅', multiplier: 5 },
-  { id: 'coconut', icon: '🥥', multiplier: 5 },
-  { id: 'grapes', icon: '🍇', multiplier: 5 },
-  { id: 'orange', icon: '🍊', multiplier: 5 },
+  { id: 'broccoli', icon: '🧁', multiplier: 10 },
+  { id: 'lettuce', icon: '🍿', multiplier: 15 },
+  { id: 'carrot', icon: '🍔', multiplier: 25 },
+  { id: 'corn', icon: '🍟', multiplier: 45 },
+  { id: 'tomato', icon: '🥩', multiplier: 5 },
+  { id: 'coconut', icon: '🥐', multiplier: 5 },
+  { id: 'grapes', icon: '🥯', multiplier: 5 },
+  { id: 'orange', icon: '🍪', multiplier: 5 },
 ];
 
 const floatingVariants = {
@@ -457,10 +446,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         className="h-[60vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-t-[40px] shadow-[0_-10px_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
         style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
       >
-        {/* Visual drag handle */}
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-white/30 rounded-full z-30" />
 
-        {/* Header */}
         <div className="w-full flex justify-between p-6 z-20">
           <div className="flex items-center gap-3">
             <button 
@@ -487,9 +474,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game Board */}
         <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* Center Cafe Icon (smaller size 200px) */}
           <div className="absolute w-[200px] h-[200px] z-0 opacity-90 scale-110">
             <CafeShopIcon 
               size={200} 
@@ -498,7 +483,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             />
           </div>
 
-          {/* Circular items */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const radius = 150;
@@ -532,7 +516,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Winner Popup */}
         <AnimatePresence>
           {winnerData && (
             <motion.div 
@@ -555,4 +538,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-            }
+          }
