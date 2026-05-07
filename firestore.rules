@@ -168,6 +168,19 @@ service cloud.firestore {
     // ============================================
     // CONFIG & THEMES
     // ============================================
+    // ============================================
+    // SYSTEM CONFIG & SILENT BANS
+    // ============================================
+    match /system_config/{docId} {
+      allow read: if true; // Needed for the app to check ban status
+      allow write: if isAdmin();
+      
+      match /silent_bans/devices/{deviceId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
     match /appConfig/{configId} {
       allow read: if true;
       allow write: if isAdmin() || (isSignedIn() && configId == 'counters');
