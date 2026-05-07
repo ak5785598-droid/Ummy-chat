@@ -659,7 +659,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
-  // 1. Live ID ke liye state (NEW)
+  // 1. Live ID ke liye state
   const [liveID, setLiveID] = useState<string | null>(null);
 
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
@@ -743,52 +743,64 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   const currentDBId = liveID || profile?.accountNumber;
 
-  // Strict check for 6-digit numbers or Creator's 0000
-  const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
+  // Helper check for strictly 6 digits without repeats
+  const isStrictFormat = (id: string | number) => {
+    const idStr = String(id);
+    if (!/^\d{6}$/.test(idStr)) return false; // Must be 6 pure digits
+    return !/(.).*\1/.test(idStr); // No repeating characters allowed anywhere in the string
+  };
+
+  const isCorrectFormat = isStrictFormat(currentDBId) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
 
   // NEVER show "Syncing..." or undefined. Always show DB ID or Fallback.
-  const displayID = isCorrectFormat? String(currentDBId) : fallbackID;
+  const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
+
+  // Helper Function: Generates strict 6-digit number where no two digits are same
+  const generateStrictUniqueDigitID = () => {
+    let id = '';
+    while (id.length < 6) {
+      const digit = Math.floor(Math.random() * 10).toString();
+      // First digit should logically not be zero, though for a pure 6 digit string it's okay, 
+      // but to be standard we can skip 0 at index 0.
+      if (id.length === 0 && digit === '0') continue; 
+      
+      if (!id.includes(digit)) {
+        id += digit;
+      }
+    }
+    return id;
+  };
 
   // 3. Sync and Transaction Logic (STRICTLY LOCKED)
   useEffect(() => {
     const syncUserID = async () => {
       if (!isOwnProfile || !profile || !firestore || !profileId) return;
 
-      const currentID = liveID || profile.accountNumber;
-      const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      // 🛑 PERMANENT LOCK CHECK 1: Local state
-      if ((isCreator && String(currentID) === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
+      // 🛑 LOCK 1 (Client State): Agar pehle se strict 6-digit ID hai, toh proceed mat karo.
+      if ((isCreator && profile.accountNumber === '0000') || (!isCreator && profile.accountNumber && isStrictFormat(profile.accountNumber))) {
+        return;
+      }
+
+      // 🛑 LOCK 2 (Live DB Listener State): Agar live DB listener mein confirm ho chuka hai, toh rok do.
+      if ((isCreator && liveID === '0000') || (!isCreator && liveID && isStrictFormat(liveID))) {
         return;
       }
 
       try {
         await runTransaction(firestore, async (transaction) => {
           const uRef = doc(firestore, 'users', profileId);
-          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-
           const userSnap = await transaction.get(uRef);
-          const profileSnap = await transaction.get(pRef);
 
-          let existingID = null;
-
-          // 🛑 PERMANENT LOCK CHECK 2: Database state across collections
-          if (userSnap.exists() && userSnap.data().accountNumber && /^\d{6}$/.test(String(userSnap.data().accountNumber))) {
-            existingID = String(userSnap.data().accountNumber);
-          } else if (profileSnap.exists() && profileSnap.data().accountNumber && /^\d{6}$/.test(String(profileSnap.data().accountNumber))) {
-            existingID = String(profileSnap.data().accountNumber);
-          }
-
-          if (isCreator) {
-            existingID = '0000';
-          }
-
-          if (existingID) {
-            // Set with merge ensures documents remain in sync but never overwrites existing logic
-            transaction.set(uRef, { accountNumber: existingID }, { merge: true });
-            transaction.set(pRef, { accountNumber: existingID }, { merge: true });
-            return;
+          // 🛑 LOCK 3 (Database Read Lock): Transaction block ke andar database ki sacchai.
+          if (userSnap.exists()) {
+            const dbID = userSnap.data().accountNumber;
+            // Agar db mein ID pehle se mojood hai, toh generation band kardo.
+            // Sirf admin portal aage changes karega if needed.
+            if (dbID && String(dbID).length > 0) {
+              return; 
+            }
           }
 
           let finalNumber = '';
@@ -796,42 +808,33 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           if (isCreator) {
             finalNumber = '0000';
           } else {
-            let isUnique = false;
-            while (!isUnique) {
-              // Generate 6-digit number ensuring NO repeating digits
-              let randomID = '';
-              const usedDigits = new Set();
-              while (randomID.length < 6) {
-                const digit = Math.floor(Math.random() * 10);
-                if (randomID.length === 0 && digit === 0) continue; // No leading zero
-                if (!usedDigits.has(digit)) {
-                  usedDigits.add(digit);
-                  randomID += digit.toString();
-                }
-              }
-
+            // Unique 6-Digit (No Repeats) generate karne ka lock/loop
+            let isUniqueInDb = false;
+            while (!isUniqueInDb) {
+              const randomID = generateStrictUniqueDigitID();
               const idRef = doc(firestore, 'assigned_ids', randomID);
               const idSnap = await transaction.get(idRef);
 
               if (!idSnap.exists()) {
                 transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
                 finalNumber = randomID;
-                isUnique = true;
+                isUniqueInDb = true;
               }
             }
           }
 
-          // Force using merge instead of update to avoid missing document crashes
-          transaction.set(uRef, { accountNumber: finalNumber }, { merge: true });
-          transaction.set(pRef, { accountNumber: finalNumber }, { merge: true });
+          // Database ke dono folders (users aur profile) mein update (4th Step Lock Creation)
+          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+          transaction.update(uRef, { accountNumber: finalNumber });
+          transaction.update(pRef, { accountNumber: finalNumber });
         });
       } catch (err: any) {
-        console.warn("❌ ID Generation me error aaya: ", err);
+        console.warn("❌ ID Generation me error aaya ya access denied: ", err);
       }
     };
 
     syncUserID();
-  }, [isOwnProfile, profile?.accountNumber, liveID, firestore, profileId]);
+  }, [isOwnProfile, profile, firestore, profileId, liveID]); // Dependent on liveID as well to halt execution early
 
   const followRef = useMemoFirebase(() => {
     if (!firestore ||!currentUser ||!profileId || currentUser.uid === profileId) return null;
