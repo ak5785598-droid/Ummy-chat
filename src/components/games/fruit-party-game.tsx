@@ -340,6 +340,36 @@ const WinnerPopup = ({ winnerData, winnersList }: WinnerPopupProps) => {
   );
 };
 
+// ======================== CAFÉ COUNTDOWN COMPONENT ========================
+const CafeCountdownDisplay = ({ timeLeft, phase }: { timeLeft: number; phase: 'betting' | 'spinning' | 'result' }) => {
+  const displayTime = Math.max(0, timeLeft);
+  return (
+    <div className="cafe-countdown-core absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+      <div className="relative w-auto flex flex-col items-center justify-center">
+        <div className="w-[180px] h-[180px] md:w-[220px] md:h-[220px] relative">
+          {/* Wooden outer ring */}
+          <div className="absolute inset-0 rounded-full bg-[#5a2e15] shadow-inner shadow-black/50"></div>
+          <div className="absolute inset-[6px] rounded-full bg-[#7e3e1a]"></div>
+          {/* Dark window background */}
+          <div className="absolute inset-[12px] rounded-full bg-gradient-to-b from-[#0a0a20] to-[#000000] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] border border-[#ffdf7a]/30 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-[52px] md:text-[68px] font-black text-white tracking-tighter leading-none drop-shadow-lg">
+                {displayTime}
+              </div>
+              <div className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-amber-300/90 mt-1">
+                {phase === 'betting' ? 'PLACE BETS' : phase === 'spinning' ? 'SPINNING' : 'TIME\'S UP'}
+              </div>
+            </div>
+          </div>
+          {/* Decorative gold dots */}
+          <div className="absolute inset-0 rounded-full border-[3px] border-[#ffdf7a]/40 pointer-events-none"></div>
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-3 bg-[#ffdf7a] rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ======================== MAIN GAME COMPONENT ========================
 
 export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onClose?: () => void, isOverlay?: boolean }) {
@@ -463,64 +493,136 @@ export default function CarnivalFoodParty({ onClose, isOverlay = false }: { onCl
     ];
   }, [winnerData, currentUser]);
 
+  const currentDisplayTime = gameState === 'betting' ? timeLeft : (gameState === 'spinning' ? spinTimeLeft : 0);
+
   return (
-    <div className="fixed inset-0 bg-black/10 flex flex-col justify-end z-[100]">
+    <div className="fixed inset-0 bg-black/80 flex flex-col justify-end z-[100] backdrop-blur-sm">
       <div className="flex-1" onClick={onClose} />
       <AnimatePresence mode="wait">
         <motion.div 
           drag dragControls={dragControls} dragListener={false} variants={floatingVariants} initial="initial" animate="animate"
           className={cn(
-            "h-[50vh] min-h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white border border-white/20 shadow-2xl rounded-none"
+            "h-[55vh] min-h-[55vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#030014] text-white border border-white/10 shadow-2xl rounded-t-3xl"
           )}
-          style={{ backgroundImage: 'radial-gradient(circle at top, #1e3a8a, #020617)' }}
+          style={{ backgroundImage: 'radial-gradient(circle at 20% 30%, #1a0f2e, #020007)' }}
         >
           {/* HEADER */}
           <div className="w-full flex justify-between p-4 z-20">
             <div className="flex items-center gap-2">
-              <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 rounded-full bg-[#1e2350] border-2 border-[#4b558c] flex items-center justify-center"><Move className="w-4 h-4" /></button>
-              <div className="relative flex items-center bg-[#181a4a] border border-[#2b2e63] rounded-full h-7 min-w-[100px] pl-8 pr-4 text-xs font-bold">
+              <button onPointerDown={(e) => dragControls.start(e)} className="w-8 h-8 rounded-full bg-[#1e1a3a] border border-[#4b4470] flex items-center justify-center"><Move className="w-4 h-4" /></button>
+              <div className="relative flex items-center bg-[#1e1a2e] border border-[#3a3355] rounded-full h-7 min-w-[100px] pl-8 pr-4 text-xs font-bold">
                 <div className="absolute -left-1"><DollarCoin className="w-7 h-7" /></div>
                 {localCoins.toLocaleString()}
               </div>
             </div>
             <div className="flex gap-2">
               {[Clock, isSoundOn ? Volume2 : VolumeX, HelpCircle, X].map((Icon, i) => (
-                <button key={i} onClick={i===0?()=>setShowHistoryPage(true):i===1?()=>setIsSoundOn(!isSoundOn):i===2?()=>setShowRules(true):onClose} className="w-8 h-8 rounded-full bg-[#1e2350] border-2 border-[#4b558c] flex items-center justify-center"><Icon className="w-4 h-4" /></button>
+                <button key={i} onClick={i===0?()=>setShowHistoryPage(true):i===1?()=>setIsSoundOn(!isSoundOn):i===2?()=>setShowRules(true):onClose} className="w-8 h-8 rounded-full bg-[#1e1a3a] border border-[#4b4470] flex items-center justify-center"><Icon className="w-4 h-4" /></button>
               ))}
             </div>
           </div>
 
-          {/* BOARD */}
-          <div className="relative w-full flex-1 flex items-center justify-center scale-[0.8] -translate-y-4">
+          {/* BOARD with integrated Café style and dynamic countdown */}
+          <div className="relative w-full flex-1 flex items-center justify-center scale-[0.85] md:scale-90 -translate-y-2">
+            {/* Background Café Decorative Elements (Wood texture, subtle plants) */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[90%] h-16 bg-[#2d1a0c] rounded-b-2xl shadow-lg"></div>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[95%] h-12 bg-[#4a2c16] rounded-full blur-sm opacity-40"></div>
+              {/* Decorative leaves (simplified) */}
+              <div className="absolute bottom-4 left-6 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-800/30 to-emerald-600/10 blur-md rotate-45"></div>
+              <div className="absolute bottom-4 right-6 w-12 h-12 rounded-full bg-gradient-to-bl from-emerald-800/30 to-emerald-600/10 blur-md -rotate-12"></div>
+            </div>
+            
+            {/* ITEMS (Fruits) placed around center */}
             {ITEMS.map((item, idx) => {
               const angle = (idx * 45) - 90;
-              const x = Math.cos((angle * Math.PI) / 180) * 130;
-              const y = Math.sin((angle * Math.PI) / 180) * 130;
+              const radius = 140;
+              const x = Math.cos((angle * Math.PI) / 180) * radius;
+              const y = Math.sin((angle * Math.PI) / 180) * radius;
               const isHighlighted = highlightIdxs.includes(idx);
               return (
-                <div key={item.id} className="absolute" style={{ transform: `translate(${x}px, ${y}px)` }}>
-                  <button onClick={() => handlePlaceBet(item.id)} className={cn("w-20 h-20 rounded-full border-4 border-yellow-500 bg-[#7f1d1d] flex flex-col items-center justify-center transition-all", isHighlighted && "scale-110 ring-4 ring-yellow-300 shadow-[0_0_30px_#ffd700]")}>
-                    <span className="text-3xl">{item.icon}</span>
-                    {myBets[item.id] > 0 && <div className="bg-orange-500 text-[10px] px-1 rounded flex items-center gap-1"><DollarCoin className="w-2 h-2" />{formatKandM(myBets[item.id])}</div>}
-                    <div className="text-[10px] font-bold">×{item.multiplier}</div>
+                <div key={item.id} className="absolute z-20" style={{ transform: `translate(${x}px, ${y}px)` }}>
+                  <button 
+                    onClick={() => handlePlaceBet(item.id)} 
+                    disabled={gameState !== 'betting'}
+                    className={cn(
+                      "w-20 h-20 rounded-full border-4 border-amber-500 bg-gradient-to-br from-red-800 to-red-950 flex flex-col items-center justify-center transition-all shadow-xl active:scale-95",
+                      isHighlighted && "scale-110 ring-4 ring-yellow-300 shadow-[0_0_30px_#ffd700]",
+                      gameState !== 'betting' && "opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    <span className="text-3xl drop-shadow-md">{item.icon}</span>
+                    {myBets[item.id] > 0 && <div className="bg-orange-500 text-[10px] px-1 rounded-full flex items-center gap-1 mt-0.5"><DollarCoin className="w-2 h-2" />{formatKandM(myBets[item.id])}</div>}
+                    <div className="text-[10px] font-bold bg-black/40 px-1 rounded-full mt-0.5">×{item.multiplier}</div>
                   </button>
                 </div>
               );
             })}
+            
+            {/* CENTER CAFÉ COUNTDOWN */}
+            <CafeCountdownDisplay timeLeft={currentDisplayTime} phase={gameState} />
+          </div>
+
+          {/* CHIP SELECTOR & BETTING CONTROLS */}
+          <div className="w-full pb-4 px-4 z-20 mt-2">
+            <div className="bg-black/40 rounded-2xl p-2 backdrop-blur-md border border-white/10">
+              <div className="flex flex-wrap justify-center gap-2 mb-2">
+                {CHIPS_DATA.map((chip) => (
+                  <button
+                    key={chip.value}
+                    onClick={() => setSelectedChip(chip.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full font-bold text-xs transition-all shadow-md",
+                      `bg-gradient-to-r ${chip.color}`,
+                      selectedChip === chip.value ? "ring-2 ring-white scale-105" : "opacity-80"
+                    )}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+              <div className="text-center text-[10px] text-amber-300/80 font-mono">
+                BET PHASE: {timeLeft}s remaining • click any food to place bet
+              </div>
+            </div>
           </div>
 
           <WinnerPopup winnerData={winnerData} winnersList={winnersListForPopup} />
 
-          {/* PANELS */}
+          {/* RULES PANEL */}
           {showRules && (
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="absolute inset-0 bg-[#0ea5e9] z-[300] p-8">
-              <button onClick={() => setShowRules(false)}><ArrowLeft /></button>
-              <h2 className="text-2xl font-black mb-4">RULES</h2>
-              <p>Place bets on items. Spin is 10s. If it stops on your item, you win!</p>
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute inset-0 bg-gradient-to-b from-purple-900 to-black z-[300] p-6">
+              <button onClick={() => setShowRules(false)} className="flex items-center gap-2 text-white mb-4"><ArrowLeft className="w-5 h-5" /> Back</button>
+              <h2 className="text-2xl font-black mb-4">🍒 GAME RULES</h2>
+              <ul className="space-y-3 text-sm">
+                <li>• Place bets on your favorite food items using chips.</li>
+                <li>• Each item has a multiplier (x5 to x45).</li>
+                <li>• After 30s betting, the wheel spins for 10 seconds.</li>
+                <li>• If the spinner stops on your item, you win: Bet × Multiplier!</li>
+                <li>• Win big and climb the leaderboard.</li>
+              </ul>
+              <div className="absolute bottom-8 left-0 right-0 text-center text-xs text-white/40">Good luck!</div>
+            </motion.div>
+          )}
+
+          {/* HISTORY PANEL (simple) */}
+          {showHistoryPage && (
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="absolute inset-0 bg-black/95 backdrop-blur-md z-[300] p-4">
+              <button onClick={() => setShowHistoryPage(false)} className="flex items-center gap-2 text-white mb-4"><ArrowLeft className="w-5 h-5" /> Back</button>
+              <h2 className="text-xl font-black mb-4">📜 BET HISTORY</h2>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {historyData.length === 0 && <div className="text-center text-white/40 py-8">No bets placed yet.</div>}
+                {historyData.map((entry, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                    <div className="flex items-center gap-2"><span className="text-2xl">{entry.icon}</span><span className="text-xs text-white/70">{entry.time}</span></div>
+                    <div className="flex items-center gap-1"><DollarCoin className="w-3 h-3" /><span className="font-bold">{entry.bet.toLocaleString()}</span></div>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
         </motion.div>
       </AnimatePresence>
     </div>
   );
-}
+    }
