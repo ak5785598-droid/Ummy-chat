@@ -41,48 +41,177 @@ const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-// --- CENTER CAFE COUNTDOWN SVG ---
-const CafeCountdownSVG = ({ countdown }: { countdown: number }) => (
-  <svg viewBox="0 0 512 512" className="w-full h-full drop-shadow-2xl">
-    <defs>
-      <linearGradient id="magenta" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ff4da6"/><stop offset="52%" stopColor="#e91e8c"/><stop offset="100%" stopColor="#d31678"/></linearGradient>
-      <linearGradient id="signTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff" stopOpacity="0.4"/><stop offset="35%" stopColor="#fff" stopOpacity="0"/></linearGradient>
-      <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff8d6"/><stop offset="100%" stopColor="#f9eab1"/></linearGradient>
-      <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#d0863f"/><stop offset="100%" stopColor="#b76e2d"/></linearGradient>
-      <linearGradient id="woodDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#a65a23"/><stop offset="100%" stopColor="#5a2e15"/></linearGradient>
-      <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#ffdf7a"/><stop offset="100%" stopColor="#f5b833"/></linearGradient>
-      <linearGradient id="window" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#1e1e1e"/><stop offset="100%" stopColor="#000000"/></linearGradient>
-      <linearGradient id="pot" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#e57a3d"/><stop offset="100%" stopColor="#b5521f"/></linearGradient>
-      <radialGradient id="leaf" cx="0.35" cy="0.25" r="0.8"><stop offset="0%" stopColor="#1dd3b0"/><stop offset="55%" stopColor="#00b89c"/><stop offset="100%" stopColor="#00957e"/></radialGradient>
-      <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#9d7aff"/><stop offset="50%" stopColor="#6b6cf5"/><stop offset="100%" stopColor="#3d5ef2"/></linearGradient>
-      <linearGradient id="saucerTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#fff5dc"/><stop offset="100%" stopColor="#e8d4a8"/></linearGradient>
-      <linearGradient id="cupBody" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="#fffaf0"/><stop offset="100%" stopColor="#f0e0b8"/></linearGradient>
-      <radialGradient id="coffeeGrad" cx="0.5" cy="0.3" r="0.75"><stop offset="0%" stopColor="#6b2f15"/><stop offset="100%" stopColor="#2b0e05"/></radialGradient>
-    </defs>
-    {/* Shadow */}
-    <ellipse cx="256" cy="484" rx="172" ry="20" fill="#000" opacity="0.3"/>
-    
-    {/* Stand and Base */}
-    <rect x="28" y="402" width="456" height="86" rx="24" fill="url(#wood)" stroke="#5a2e15" strokeWidth="4"/>
-    <text x="256" y="459" fontSize="30" fontWeight="900" fill="#5a2e15" textAnchor="middle">WAITING...</text>
-    
-    {/* Main Structure */}
-    <rect x="68" y="152" width="376" height="268" rx="18" fill="url(#woodDark)"/>
-    <rect x="76" y="160" width="360" height="252" rx="14" fill="url(#wood)"/>
-    <rect x="88" y="172" width="336" height="228" rx="10" fill="url(#cream)"/>
+// --- IMPROVED CAFE ICON WITH DYNAMIC COUNTDOWN ---
+const CafeShopIcon = ({ size = 240, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
+  return (
+    <div
+      className={className}
+      style={{
+        width: size,
+        height: size,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        filter: 'drop-shadow(0 24px 32px rgba(0,0,0,0.15))',
+      }}
+    >
+      <svg
+        viewBox="0 0 512 512"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}
+      >
+        <defs>
+          <linearGradient id="magenta" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ff4da6" />
+            <stop offset="52%" stopColor="#e91e8c" />
+            <stop offset="100%" stopColor="#d31678" />
+          </linearGradient>
+          <linearGradient id="signTop" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.4" />
+            <stop offset="35%" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff8d6" />
+            <stop offset="100%" stopColor="#f9eab1" />
+          </linearGradient>
+          <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#d0863f" />
+            <stop offset="100%" stopColor="#b76e2d" />
+          </linearGradient>
+          <linearGradient id="woodDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a65a23" />
+            <stop offset="100%" stopColor="#5a2e15" />
+          </linearGradient>
+          <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffdf7a" />
+            <stop offset="100%" stopColor="#f5b833" />
+          </linearGradient>
+          <linearGradient id="window" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1e1e1e" />
+            <stop offset="100%" stopColor="#000000" />
+          </linearGradient>
+          <linearGradient id="pot" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#e57a3d" />
+            <stop offset="100%" stopColor="#b5521f" />
+          </linearGradient>
+          <radialGradient id="leaf" cx="0.35" cy="0.25" r="0.8">
+            <stop offset="0%" stopColor="#1dd3b0" />
+            <stop offset="55%" stopColor="#00b89c" />
+            <stop offset="100%" stopColor="#00957e" />
+          </radialGradient>
+          <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#9d7aff" />
+            <stop offset="50%" stopColor="#6b6cf5" />
+            <stop offset="100%" stopColor="#3d5ef2" />
+          </linearGradient>
+          <filter id="bigShadow" x="-20%" y="-10%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="#000" floodOpacity="0.2" />
+          </filter>
+          <filter id="soft" x="-15%" y="-15%" width="130%" height="130%">
+            <feDropShadow dx="0" dy="6" stdDeviation="6" floodColor="#000" floodOpacity="0.22" />
+          </filter>
+        </defs>
 
-    {/* Countdown Window */}
-    <rect x="100" y="250" width="312" height="136" rx="16" fill="#5a2e15"/>
-    <rect x="108" y="258" width="296" height="120" rx="12" fill="url(#window)"/>
-    <text x="256" y="348" fontSize="100" fontWeight="900" fill="white" textAnchor="middle" fontFamily="Arial Black">
-      {countdown}
-    </text>
+        <ellipse cx="256" cy="484" rx="172" ry="20" fill="#000" opacity="0.12" />
 
-    {/* Coffee Cup and Signage (Simplified for performance) */}
-    <rect x="76" y="34" width="360" height="112" rx="28" fill="url(#magenta)" stroke="#fff" strokeWidth="3"/>
-    <text x="256" y="110" fontSize="60" fontWeight="900" fill="#fff" textAnchor="middle">CAFÉ</text>
-  </svg>
-);
+        <g filter="url(#bigShadow)">
+          <rect x="28" y="402" width="456" height="86" rx="24" fill="url(#wood)" />
+          <rect x="28" y="402" width="456" height="86" rx="24" stroke="#5a2e15" strokeWidth="4" fill="none" opacity="0.8" />
+          <rect x="36" y="410" width="440" height="32" rx="16" fill="#fff" opacity="0.08" />
+          <rect x="36" y="466" width="440" height="18" rx="9" fill="url(#gold)" />
+          <rect x="36" y="466" width="440" height="9" fill="#fff" opacity="0.25" />
+          
+          <text x="256" y="459" fontFamily="'Nunito Black','Poppins','Arial Black',sans-serif" fontSize="30" fontWeight="900" fill="#5a2e15" textAnchor="middle" letterSpacing="0.3">Select Food</text>
+
+          <rect x="60" y="128" width="392" height="28" rx="12" fill="url(#woodDark)" />
+          <rect x="60" y="128" width="392" height="14" rx="12" fill="url(#gold)" />
+          
+          <rect x="68" y="152" width="376" height="268" rx="18" fill="url(#woodDark)" />
+          <rect x="76" y="160" width="360" height="252" rx="14" fill="url(#wood)" />
+          <rect x="88" y="172" width="336" height="228" rx="10" fill="url(#cream)" />
+          <rect x="88" y="172" width="336" height="48" fill="#fff" opacity="0.15" />
+
+          <rect x="216" y="180" width="80" height="54" rx="6" fill="#5a2e15" />
+          <path d="M224 226 V200 A32 32 0 0 1 288 200 V226 Z" fill="#442009" />
+          <path d="M227 224 V202 A29 29 0 0 1 285 202 V224 Z" fill="url(#glass)" />
+          <path d="M226 215 Q256 198 286 215" fill="none" stroke="#5a2e15" strokeOpacity="0.5" strokeWidth="3" />
+          <rect x="254" y="175" width="4" height="49" fill="#5a2e15" />
+          <ellipse cx="256" cy="202" rx="26" ry="8" fill="#fff" opacity="0.18" />
+
+          <rect x="100" y="250" width="312" height="136" rx="16" fill="#5a2e15" />
+          <rect x="108" y="258" width="296" height="120" rx="12" fill="url(#window)" />
+          <rect x="108" y="258" width="296" height="22" rx="12" fill="#fff" opacity="0.07" />
+          
+          {/* Dynamic Countdown Text */}
+          <text x="256" y="345" fontFamily="'Montserrat Black','Inter','Arial Black',sans-serif" fontSize="100" fontWeight="900" fill="white" textAnchor="middle" letterSpacing="-3">{countdown}</text>
+
+          <g filter="url(#soft)">
+            <path d="M86 200 H426 V240 Q402 272 378 240 Q354 272 330 240 Q306 272 282 240 Q258 272 234 240 Q210 272 186 240 Q162 272 138 240 Q114 272 90 240 Z" fill="#e91e8c" />
+            <path d="M86 200 H134 V240 Q114 272 90 240 V200" fill="#ff4da6" />
+            <path d="M182 200 H230 V240 Q210 272 186 240 V200" fill="#ff4da6" />
+            <path d="M278 200 H326 V240 Q306 272 282 240 V200" fill="#ff4da6" />
+            <path d="M374 200 H422 V240 Q402 272 378 240 V200" fill="#ff4da6" />
+            <rect x="84" y="192" width="344" height="16" rx="8" fill="#c1106a" />
+            <rect x="86" y="194" width="340" height="8" rx="4" fill="#fff" opacity="0.18" />
+            <path d="M90 240 Q114 262 138 240 M186 240 Q210 262 234 240 M282 240 Q306 262 330 240 M378 240 Q402 262 426 240" fill="none" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" />
+          </g>
+
+          <g transform="translate(94,322)">
+            <ellipse cx="38" cy="78" rx="26" ry="7" fill="#000" opacity="0.14" />
+            <path d="M14 56 H62 L56 84 H20 Z" fill="url(#pot)" stroke="#7e3314" strokeWidth="2.5" strokeLinejoin="round" />
+            <rect x="12" y="50" width="52" height="10" rx="4" fill="#d4682e" />
+            <rect x="14" y="52" width="48" height="4" fill="#fff" opacity="0.2" />
+            <rect x="32" y="32" width="12" height="20" rx="3" fill="#8b4a1d" />
+            <g fill="url(#leaf)">
+              <circle cx="22" cy="24" r="20" />
+              <circle cx="46" cy="20" r="19" />
+              <circle cx="34" cy="6" r="22" />
+              <circle cx="14" cy="12" r="13" opacity="0.9" />
+            </g>
+            <ellipse cx="28" cy="2" rx="9" ry="5" fill="#fff" opacity="0.28" />
+          </g>
+
+          <g transform="translate(338,322)">
+            <ellipse cx="38" cy="78" rx="26" ry="7" fill="#000" opacity="0.14" />
+            <path d="M14 56 H62 L56 84 H20 Z" fill="url(#pot)" stroke="#7e3314" strokeWidth="2.5" strokeLinejoin="round" />
+            <rect x="12" y="50" width="52" height="10" rx="4" fill="#d4682e" />
+            <rect x="14" y="52" width="48" height="4" fill="#fff" opacity="0.2" />
+            <rect x="32" y="32" width="12" height="20" rx="3" fill="#8b4a1d" />
+            <g fill="url(#leaf)">
+              <circle cx="22" cy="24" r="20" />
+              <circle cx="46" cy="20" r="19" />
+              <circle cx="34" cy="6" r="22" />
+              <circle cx="14" cy="12" r="13" opacity="0.9" />
+            </g>
+            <ellipse cx="28" cy="2" rx="9" ry="5" fill="#fff" opacity="0.28" />
+          </g>
+
+          <g filter="url(#soft)">
+            <rect x="76" y="28" width="360" height="112" rx="28" fill="#b21268" />
+            <rect x="76" y="34" width="360" height="112" rx="28" fill="url(#magenta)" />
+            <rect x="76" y="34" width="360" height="112" rx="28" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" fill="none" />
+            <rect x="76" y="34" width="360" height="46" rx="28" fill="url(#signTop)" />
+
+            <g transform="translate(102,44)">
+              <ellipse cx="30" cy="58" rx="24" ry="7" fill="#fff" opacity="0.92" />
+              <ellipse cx="30" cy="56" rx="22" ry="6" fill="#fff" />
+              <path d="M12 36 Q12 54 30 56 Q48 54 48 36 L44 24 H16 Z" fill="#fff" />
+              <ellipse cx="30" cy="24" rx="16" ry="5.5" fill="#fff" />
+              <ellipse cx="30" cy="24" rx="11" ry="3" fill="#000" opacity="0.07" />
+              <path d="M47 32 C56 30 59 35 57 42 C55 48 50 50 45 47" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round" />
+              <path d="M20 14 C22 8 19 4 21 -2 C23 -7 20 -11 24 -15" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" />
+              <path d="M30 12 C32 6 29 2 31 -4 C33 -9 30 -13 34 -17" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" />
+              <path d="M40 14 C42 8 39 4 41 -2 C43 -7 40 -11 44 -15" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" />
+            </g>
+
+            <text x="222" y="112" fontFamily="'Poppins','Fredoka One','Nunito','Arial Rounded MT Bold',sans-serif" fontSize="68" fontWeight="900" fill="#fff" letterSpacing="-1.5">Café</text>
+            <path d="M218 118 Q236 132 260 124 Q242 130 222 122 Q216 120 218 118 Z" fill="#fff" />
+          </g>
+        </g>
+      </svg>
+    </div>
+  );
+};
 
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
@@ -235,9 +364,13 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         {/* BOARD AREA */}
         <div className="relative w-full flex-1 flex items-center justify-center">
           
-          {/* CENTER CAFE SVG */}
+          {/* REPLACED CENTER CAFE ICON WITH DYNAMIC COUNTDOWN */}
           <div className="absolute w-[240px] h-[240px] z-0 opacity-90 scale-110">
-            <CafeCountdownSVG countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft} />
+            <CafeShopIcon 
+              size={240} 
+              countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
+              className="w-full h-full drop-shadow-2xl"
+            />
           </div>
 
           {/* CIRCULAR FLOATING FRUITS (No cards/containers) */}
@@ -294,5 +427,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-}
-
+            }
