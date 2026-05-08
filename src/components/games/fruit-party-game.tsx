@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Clock, Volume2, VolumeX, HelpCircle, Move } from 'lucide-react';
+import { X, Clock, Volume2, VolumeX, HelpCircle, Move, Sparkles, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 // --- NUMBER FORMATTING ---
@@ -412,23 +412,43 @@ function FruitDome({
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        <div className="relative w-[72px] h-[72px]">
-          <GlassDomeSmall size={72} />
-          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '6px' }}>
+        <div className="relative w-[60px] h-[60px]">
+          {/* Only show dome when bet is placed */}
+          {isSelected && <GlassDomeSmall size={60} />}
+          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: isSelected ? '8px' : '0px' }}>
             <span className="text-2xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        <div className={`mt-[-4px] w-[72px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
+        <div className={`mt-[-2px] w-[60px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
           isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
         }`}>
-          <span className="text-[10px]">×{multiplier}</span>
+          <span className="text-[9px]">×{multiplier}</span>
           <div className="flex items-center gap-0.5">
             <DollarCoin className="w-2.5 h-2.5" />
-            <span>{betAmount > 0 ? formatKandM(betAmount) : '0'}</span>
+            <span className="text-[9px]">{betAmount > 0 ? formatKandM(betAmount) : '0'}</span>
           </div>
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// --- WINNER CARD COMPONENT ---
+function WinnerCard({ rank, avatar, name, winAmount }: { rank: number; avatar: string; name: string; winAmount: number }) {
+  return (
+    <div className="bg-gradient-to-b from-pink-600 to-pink-700 rounded-xl p-2 flex flex-col items-center gap-1 border border-pink-400/30 min-w-[80px]">
+      <div className="w-8 h-8 rounded-full bg-pink-500/50 flex items-center justify-center text-white text-xs font-bold">
+        {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+      </div>
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-lg border-2 border-white/30">
+        {avatar}
+      </div>
+      <span className="text-white text-[10px] font-bold truncate w-full text-center">{name}</span>
+      <div className="flex items-center gap-1 text-white">
+        <DollarCoin className="w-3 h-3" />
+        <span className="text-[10px] font-bold">{formatKandM(winAmount)}</span>
+      </div>
+    </div>
   );
 }
 
@@ -474,8 +494,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [isSoundOn, setIsSoundOn] = useState(true);
-  
-  // NEW: History State added
+  const [showWinnerPopup, setShowWinnerPopup] = useState(false);
   const [history, setHistory] = useState<typeof ITEMS[0][]>([]);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -552,18 +571,18 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
-    
-    // NEW: Winning item ko history mein add karna (max 5 items dikhane ke liye)
     setHistory(prev => [winningItem, ...prev].slice(0, 5));
-
     setGameState('result');
+    setShowWinnerPopup(true);
+
     setTimeout(() => {
+      setShowWinnerPopup(false);
       setGameState('betting');
       setTimeLeft(30);
       setMyBets({});
       setWinnerData(null);
       setHighlightIdxs([]);
-    }, 5000);
+    }, 6000);
   };
 
   const handleDragEnd = (event: any, info: any) => {
@@ -620,22 +639,44 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game area with cafe and food items */}
-        <div className="relative w-full flex-1 flex items-center justify-center">
+        {/* Game area with perfect circle */}
+        <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '340px' }}>
           
-          {/* Central Cafe - Size decreased to 110px */}
-          <div className="absolute w-[110px] h-[110px] z-0 opacity-90">
+          {/* Blue transparent connecting circle ring */}
+          <div 
+            className="absolute rounded-full border-4 border-blue-400/30"
+            style={{
+              width: '260px',
+              height: '260px',
+              boxShadow: '0 0 20px rgba(56, 189, 248, 0.15), 0 0 40px rgba(56, 189, 248, 0.1)',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+
+          {/* Central Cafe - perfectly centered */}
+          <div 
+            className="absolute z-0 opacity-90"
+            style={{
+              width: '95px',
+              height: '95px',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
             <CafeShopIcon 
-              size={110} 
+              size={95} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
-          {/* Fruit items placed around - Radius increased to 130 for bigger domes */}
+          {/* Fruit items placed around in perfect circle */}
           {ITEMS.map((item, idx) => {
-            const angle = (idx * 45) - 90;
-            const radius = 130; 
+            const angle = (idx * 45) - 90; // Start from top
+            const radius = 115; // Radius from center
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
@@ -646,8 +687,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                 key={item.id}
                 className="absolute z-10"
                 style={{
-                  left: `calc(50% + ${x}px - 36px)`,
-                  top: `calc(50% + ${y}px - 36px)`,
+                  left: `calc(50% + ${x}px)`,
+                  top: `calc(50% + ${y}px)`,
+                  transform: 'translate(-50%, -50%)',
                 }}
               >
                 <FruitDome
@@ -663,7 +705,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Chips Bar (Square Cards Update) */}
+        {/* Chips Bar */}
         <div className="px-4 pb-2 z-20">
           <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
             <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
@@ -687,7 +729,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* NEW: Result History Bar below chip bar - Thin strip with "Result" text */}
+        {/* Result History Bar */}
         <div className="px-4 pb-4 z-20">
           <div className="bg-gradient-to-r from-purple-900/80 to-purple-700/80 rounded-lg border border-white/10 py-1 px-2">
             <div className="flex items-center gap-2">
@@ -707,21 +749,111 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Winner popup */}
+        {/* Winner Popup - Bottom 40vh Purple Card with U shape top */}
         <AnimatePresence>
-          {winnerData && (
+          {showWinnerPopup && winnerData && (
             <motion.div 
-              initial={{ opacity: 0, scale: 0.5 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-none"
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="absolute bottom-0 left-0 right-0 z-[50]"
+              style={{ height: '40vh' }}
             >
-              <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[30px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
-                <div className="text-5xl mb-1">{winnerData.emoji}</div>
-                <div className="text-xl font-black text-white uppercase tracking-tighter">Winner!</div>
-                <div className="flex items-center justify-center gap-2 text-3xl font-black text-white mt-1">
-                  <DollarCoin className="w-8 h-8" />
-                  {winnerData.win.toLocaleString()}
+              {/* Sparkle effects */}
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute"
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{
+                      opacity: [0, 1, 0],
+                      scale: [0, 1.5, 0],
+                      x: Math.random() * 300 - 150,
+                      y: Math.random() * -200 - 50,
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      delay: i * 0.2,
+                      repeat: Infinity,
+                      repeatDelay: 1,
+                    }}
+                    style={{
+                      left: `${20 + (i * 8)}%`,
+                      top: '50%',
+                    }}
+                  >
+                    <Sparkles className="w-5 h-5 text-yellow-400" />
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              <div className="relative w-full h-full bg-gradient-to-b from-transparent via-purple-900/95 to-purple-950">
+                {/* U-shape cutout at top */}
+                <div 
+                  className="absolute left-1/2 transform -translate-x-1/2 bg-[#020617] rounded-b-full"
+                  style={{
+                    width: '140px',
+                    height: '70px',
+                    top: '-1px',
+                  }}
+                />
+                
+                {/* Winner emoji in the U cutout */}
+                <div 
+                  className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center"
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    top: '-45px',
+                    zIndex: 10,
+                  }}
+                >
+                  <div className="w-20 h-20 rounded-full bg-purple-800/50 backdrop-blur-sm border-2 border-yellow-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.4)]">
+                    <span className="text-3xl">{winnerData.emoji}</span>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex flex-col items-center justify-center h-full pt-12 gap-3">
+                  {/* You Win header */}
+                  <motion.h2 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
+                    className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500"
+                    style={{ textShadow: '0 2px 10px rgba(234,179,8,0.3)' }}
+                  >
+                    YOU WIN!
+                  </motion.h2>
+
+                  {/* Win amount */}
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
+                    className="flex items-center gap-2 text-3xl font-black text-white"
+                  >
+                    <DollarCoin className="w-8 h-8" />
+                    <span>{winnerData.win.toLocaleString()}</span>
+                  </motion.div>
+
+                  {/* Leaderboard Cards */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex gap-3 mt-2 px-4"
+                  >
+                    <WinnerCard rank={1} avatar="👑" name="You" winAmount={winnerData.win} />
+                    <WinnerCard rank={2} avatar="🦊" name="Player2" winAmount={250000} />
+                    <WinnerCard rank={3} avatar="🐸" name="Player3" winAmount={130000} />
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -730,4 +862,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-}
+      }
