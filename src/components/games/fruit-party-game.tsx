@@ -40,7 +40,7 @@ const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-// --- CAFE ICON WITH 3D COFFEE CUP AND COUNTDOWN ---
+// --- CAFE ICON WITH 3D COFFEE CUP AND COUNTDOWN (size increased) ---
 const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
   return (
     <div
@@ -70,6 +70,7 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
         .s3 { animation-delay: 0.8s; }
       `}</style>
       <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        {/* ... same SVG content as original, unchanged ... */}
         <defs>
           <linearGradient id="magenta" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ff4da6" />
@@ -289,8 +290,8 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME WITH HALF-OPEN ANIMATION ---
-function GlassDomeSmall({ size = 72, isClosed = true }: { size?: number, isClosed?: boolean }) {
+// --- SMALL GLASS DOME (always closed) ---
+function GlassDomeSmall({ size = 72 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
       <defs>
@@ -339,7 +340,7 @@ function GlassDomeSmall({ size = 72, isClosed = true }: { size?: number, isClose
         <filter id="b12s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" /></filter>
       </defs>
 
-      {/* --- BASE ELEMENTS --- */}
+      {/* BASE */}
       <ellipse cx="256" cy="410" rx="154" ry="25" fill="#0b2f33" opacity="0.18" filter="url(#b8s2)" />
       <g>
         <path d="M96 340a160 32 0 0 0 320 0v26a160 32 0 0 1-320 0z" fill="url(#baseSideSmall2)" />
@@ -350,11 +351,8 @@ function GlassDomeSmall({ size = 72, isClosed = true }: { size?: number, isClose
       <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s2)" />
       <ellipse cx="256" cy="324" rx="129" ry="27" fill="#5AC0C5" opacity="0.07" filter="url(#b12s2)" />
 
-      {/* --- LID ELEMENTS --- */}
-      <g style={{
-        transform: isClosed ? 'translateY(0)' : 'translateY(-140px)',
-        transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      }}>
+      {/* LID – always closed */}
+      <g>
         <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
         <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
         <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s2)" />
@@ -397,7 +395,7 @@ function FruitDome({
   betAmount,
   isHighlighted,
   isSelected,
-  isClosed,
+  isSpinning,
   onClick,
 }: {
   emoji: string;
@@ -405,28 +403,35 @@ function FruitDome({
   betAmount: number;
   isHighlighted: boolean;
   isSelected: boolean;
-  isClosed: boolean;
+  isSpinning: boolean;
   onClick: () => void;
 }) {
+  const brightnessClass = isSpinning
+    ? isHighlighted
+      ? 'brightness-100 opacity-100'
+      : 'brightness-50 opacity-60'
+    : 'brightness-100 opacity-100';
+
   return (
     <motion.div
-      className="cursor-pointer"
-      animate={isHighlighted ? { scale: 1.15, filter: 'drop-shadow(0 0 12px #fbbf24)' } : { scale: 1 }}
+      className={`cursor-pointer transition-all duration-300 ${brightnessClass}`}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        <div className="relative w-[80px] h-[80px]">
+        <div className="relative w-[88px] h-[88px]">
           <div className="absolute inset-0 z-20 pointer-events-none">
-             <GlassDomeSmall size={80} isClosed={isClosed} />
+            <GlassDomeSmall size={88} />
           </div>
-          <div className="absolute inset-0 flex items-center justify-center z-10" style={{ paddingBottom: isClosed ? '10px' : '0px', transition: 'padding-bottom 0.4s ease' }}>
-            <span className="text-4xl drop-shadow-lg relative" style={{ lineHeight: 1 }}>{emoji}</span>
+          <div className="absolute inset-0 flex items-center justify-center z-10 pb-[10px]">
+            <span className="text-4xl drop-shadow-lg relative">{emoji}</span>
           </div>
         </div>
-        <div className={`-mt-2.5 relative z-30 w-[60px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
-          isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
-        }`}>
+        <div
+          className={`-mt-2.5 relative z-30 w-[60px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
+            isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
+          }`}
+        >
           <span className="text-[9px]">×{multiplier}</span>
           <div className="flex items-center gap-0.5">
             <DollarCoin className="w-2.5 h-2.5" />
@@ -438,7 +443,7 @@ function FruitDome({
   );
 }
 
-// --- WINNER CARD COMPONENT (UPDATED AVATARS) ---
+// --- WINNER CARD ---
 function WinnerCard({ rankText, avatarUrl, name, winAmount }: { rankText: string; avatarUrl?: string; name: string; winAmount: number }) {
   return (
     <div className="bg-gradient-to-b from-red-600 to-red-800 rounded-xl p-2 flex flex-col items-center gap-1 border-2 border-red-400 shadow-lg min-w-[90px]">
@@ -461,7 +466,7 @@ function WinnerCard({ rankText, avatarUrl, name, winAmount }: { rankText: string
   );
 }
 
-// --- ANIMATED TRUMPET COMPONENT ---
+// --- ANIMATED TRUMPET ---
 const AnimatedTrumpet = ({ flip }: { flip?: boolean }) => (
   <motion.svg 
     animate={{ 
@@ -483,11 +488,11 @@ const AnimatedTrumpet = ({ flip }: { flip?: boolean }) => (
   </motion.svg>
 );
 
+// --- SOUND EFFECTS (betting and spinning sounds removed, new spin sound added) ---
 const SOUNDS = {
-  BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
-  WHIRRING: 'https://assets.mixkit.co/active_storage/sfx/731/731-preview.mp3',
+  SPIN_START: 'https://assets.mixkit.co/active_storage/sfx/2009/2009-preview.mp3', // New game-spin sound
 };
 
 const ITEMS = [
@@ -523,7 +528,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [highlightIdxs, setHighlightIdxs] = useState<number[]>([]);
   const [winnerData, setWinnerData] = useState<any>(null);
   const [localCoins, setLocalCoins] = useState(0);
-  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
+  const [isCoinsLoaded, setIsCoinsLoaded] = useState(false);
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [showWinnerPopup, setShowWinnerPopup] = useState(false);
   const [history, setHistory] = useState<typeof ITEMS[0][]>([]);
@@ -560,7 +565,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const handlePlaceBet = (id: string) => {
     if (gameState !== 'betting' || !currentUser) return;
     if (localCoins < selectedChip) return;
-    playSound(SOUNDS.BET, 0.9);
+    // Betting sound removed
     setLocalCoins(prev => prev - selectedChip);
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
@@ -570,7 +575,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const startSpin = () => {
     setGameState('spinning');
     setSpinTimeLeft(10);
-    playSound(SOUNDS.WHIRRING, 1.0);
+    playSound(SOUNDS.SPIN_START, 0.8); // New spin start sound
     movingIndexRef.current = 0;
     setHighlightIdxs([0]);
     moveIntervalRef.current = setInterval(() => {
@@ -578,7 +583,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       movingIndexRef.current = nextIndex;
       setHighlightIdxs([nextIndex]);
       playSound(SOUNDS.TICK, 0.3);
-    }, 500); 
+    }, 500);
 
     countdownIntervalRef.current = setInterval(() => {
       setSpinTimeLeft(prev => {
@@ -639,8 +644,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         dragConstraints={{ top: 0 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        className="h-[66vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
-        style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
+        className="h-[66vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#0f2b5e] text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
+        style={{ backgroundImage: 'radial-gradient(circle at center, #1e40af 0%, #0f172a 100%)' }}
       >
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-white/30 rounded-full z-30" />
 
@@ -671,33 +676,22 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game area */}
+        {/* Game area - removed the circle ring */}
         <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '340px' }}>
           
-          <div 
-            className="absolute rounded-full border-4 border-blue-400/30"
-            style={{
-              width: '260px',
-              height: '260px',
-              boxShadow: '0 0 20px rgba(56, 189, 248, 0.15), 0 0 40px rgba(56, 189, 248, 0.1)',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-
+          {/* Central cafe icon */}
           <div 
             className="absolute z-0 opacity-90"
             style={{
-              width: '95px',
-              height: '95px',
+              width: '105px',
+              height: '105px',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
             }}
           >
             <CafeShopIcon 
-              size={95} 
+              size={105} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
@@ -710,13 +704,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
             const isSelected = (myBets[item.id] || 0) > 0;
-            
-            let isClosed = true;
-            if (gameState === 'spinning' || gameState === 'result') {
-              isClosed = !isHighlighted;
-            } else {
-              isClosed = isSelected || timeLeft <= 1;
-            }
             
             return (
               <div
@@ -734,7 +721,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   betAmount={myBets[item.id] || 0}
                   isHighlighted={isHighlighted}
                   isSelected={isSelected}
-                  isClosed={isClosed} 
+                  isSpinning={gameState === 'spinning'}
                   onClick={() => handlePlaceBet(item.id)}
                 />
               </div>
@@ -743,7 +730,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Chips Bar */}
-        <div className="px-4 pb-2 z-20">
+        <div className="px-4 pb-2 z-20 -mt-2">
           <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
             <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
             <div className="flex justify-center gap-2">
@@ -767,7 +754,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Result History Bar */}
-        <div className="px-4 pb-4 z-20">
+        <div className="px-4 pb-4 z-20 -mt-1">
           <div className="bg-gradient-to-r from-purple-900/80 to-purple-700/80 rounded-lg border border-white/10 py-1 px-2">
             <div className="flex items-center gap-2">
               <span className="text-white text-[9px] font-bold tracking-wider whitespace-nowrap">Result</span>
@@ -786,7 +773,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* --- MODIFIED WINNER POPUP SECTION --- */}
+        {/* --- WINNER POPUP --- */}
         <AnimatePresence>
           {showWinnerPopup && winnerData && (
             <motion.div 
@@ -797,16 +784,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               className="absolute bottom-0 left-0 right-0 z-[50]"
               style={{ height: '40vh' }}
             >
-              {/* Solid Background Card */}
               <div className="relative w-full h-full bg-[#2e1065] border-t-2 border-purple-500 shadow-[0_-15px_40px_rgba(0,0,0,0.6)] rounded-t-3xl overflow-visible">
-                
-                {/* 1st Top Card Center U shape (Transparent Cutout Illusion using Background Color) */}
                 <div 
                   className="absolute left-1/2 transform -translate-x-1/2 bg-[#020617] rounded-b-[40px]"
                   style={{ width: '130px', height: '60px', top: '-2px' }}
                 />
-                
-                {/* Floating Winning Icon (No Card Behind It) */}
                 <div 
                   className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center"
                   style={{ width: '130px', height: '60px', top: -10, zIndex: 10 }}
@@ -815,10 +797,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                     {winnerData.emoji}
                   </span>
                 </div>
-
                 <div className="flex flex-col items-center justify-start h-full pt-14 gap-4 px-4">
-                  
-                  {/* 2nd Row: You won */}
                   <motion.h2 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -827,20 +806,14 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   >
                     YOU WON!
                   </motion.h2>
-
-                  {/* 3rd Row: Trumpets, Coin & Amount */}
                   <div className="flex items-center justify-between w-full px-6">
                     <AnimatedTrumpet />
-                    
                     <div className="flex items-center gap-2 text-4xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                       <DollarCoin className="w-10 h-10" />
                       <span>{winnerData.win.toLocaleString()}</span>
                     </div>
-
                     <AnimatedTrumpet flip />
                   </div>
-
-                  {/* 4th Row: 3 Red Cards (1st, 2nd, 3rd) with Image Avatars */}
                   <div className="flex justify-center gap-3 w-full mt-2">
                     <WinnerCard 
                       rankText="1st" 
@@ -861,7 +834,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                       winAmount={130000} 
                     />
                   </div>
-
                 </div>
               </div>
             </motion.div>
@@ -870,4 +842,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-}
+            }
