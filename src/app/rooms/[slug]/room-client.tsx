@@ -695,6 +695,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                   receiverName: msg.receiverName,
                   imageUrl: msg.imageUrl,
                   animationUrl: msg.animationUrl,
+                  videoUrl: msg.videoUrl,
                   soundUrl: msg.soundUrl,
                   tier: msg.tier,
                   targetSeat: msg.recipientSeat || 1
@@ -3424,6 +3425,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         receiverName={activeGift?.receiverName}
         imageUrl={activeGift?.imageUrl} 
         animationUrl={activeGift?.animationUrl}
+        videoUrl={activeGift?.videoUrl}
         soundUrl={activeGift?.soundUrl}
         tier={activeGift?.tier}
         targetSeat={activeGift?.targetSeat} 

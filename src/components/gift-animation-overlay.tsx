@@ -14,6 +14,7 @@ interface GiftAnimationOverlayProps {
   receiverName?: string;
   imageUrl?: string | null;
   animationUrl?: string | null;
+  videoUrl?: string | null;
   soundUrl?: string | null;
   tier?: 'normal' | 'epic' | 'legendary';
   onComplete: () => void;
@@ -27,6 +28,7 @@ export function GiftAnimationOverlay({
   receiverName,
   imageUrl,
   animationUrl,
+  videoUrl,
   soundUrl,
   tier = 'normal',
   onComplete, 
@@ -182,6 +184,17 @@ export function GiftAnimationOverlay({
                     animationData={lottieData} 
                     loop={true} 
                     className="w-full h-full"
+                  />
+                </div>
+              ) : videoUrl ? (
+                <div className="w-[320px] h-[320px] flex items-center justify-center">
+                  <video 
+                    src={videoUrl} 
+                    autoPlay 
+                    muted 
+                    playsInline
+                    onEnded={onComplete}
+                    className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.4)]"
                   />
                 </div>
               ) : imageUrl ? (

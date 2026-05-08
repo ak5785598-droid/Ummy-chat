@@ -703,7 +703,14 @@ function AdminPageContent() {
   const [giftAnimationId, setGiftAnimationId] = useState("");
   const [isUploadingGift, setIsUploadingGift] = useState(false);
   const [isAddingGift, setIsAddingGift] = useState(false);
+  
+  const [giftThumbnail, setGiftThumbnail] = useState<File | null>(null);
+  const [giftVideo, setGiftVideo] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
+  const [videoPreview, setVideoPreview] = useState("");
+  
   const giftFileInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const giftsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -1815,42 +1822,62 @@ function AdminPageContent() {
     }
   };
 
-  const handleUploadGift = async (f: File) => {
-    if (!giftName || !giftPrice) {
+  const handleSaveGift = async () => {
+    if (!giftName || !giftPrice || !giftThumbnail) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Gift name and price are required.",
+        description: "Name, Price, and Icon Thumbnail are mandatory.",
       });
       return;
     }
+
     setIsUploadingGift(true);
     try {
-      const sRef = ref(storage, `gifts/${Date.now()}_${f.name}`);
-      const uploadResult = await uploadBytes(sRef, f);
-      const url = await getDownloadURL(uploadResult.ref);
+      let imageUrl = "";
+      let videoUrl = "";
 
-      await addDocumentNonBlocking(collection(firestore, "giftList"), {
+      // 1. Upload Icon Thumbnail
+      const tRef = ref(storage, `gifts/thumb_${Date.now()}_${giftThumbnail.name}`);
+      const tRes = await uploadBytes(tRef, giftThumbnail);
+      imageUrl = await getDownloadURL(tRes.ref);
+
+      // 2. Upload Animation Video (Optional)
+      if (giftVideo) {
+        const vRef = ref(storage, `gifts/anim_${Date.now()}_${giftVideo.name}`);
+        const vRes = await uploadBytes(vRef, giftVideo);
+        videoUrl = await getDownloadURL(vRes.ref);
+      }
+
+      // 3. Save to Firestore
+      await addDoc(collection(firestore!, "giftList"), {
         name: giftName,
         price: parseInt(giftPrice),
         category: giftCategory,
-        imageUrl: url,
-        animationId: giftAnimationId,
+        imageUrl,
+        videoUrl,
+        animationId: giftAnimationId || (videoUrl ? "video_based" : ""),
         createdAt: serverTimestamp(),
       });
 
+      // 4. Reset state
       setGiftName("");
       setGiftPrice("");
       setGiftAnimationId("");
+      setGiftThumbnail(null);
+      setGiftVideo(null);
+      setThumbnailPreview("");
+      setVideoPreview("");
+      
       toast({
-        title: "Gift Uploaded",
-        description: `${giftName} has been added to the tribe boutique.`,
+        title: "Gift Synchronized",
+        description: `${giftName} is now live in the boutique.`,
       });
     } catch (err: any) {
       console.error(err);
       toast({
         variant: "destructive",
-        title: "Upload Failed",
+        title: "Sync Failed",
         description: err.message,
       });
     } finally {
@@ -2560,15 +2587,15 @@ function AdminPageContent() {
                 </CardHeader>
                 <CardContent className="px-0 space-y-8">
                   {/* UPLOADER SECTION */}
-                  <div className="p-6 bg-orange-50 rounded-3xl border-2 border-orange-100 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-6 bg-orange-50 rounded-3xl border-2 border-orange-100 flex flex-col gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase text-orange-400">Gift Name</Label>
                         <Input 
                           value={giftName} 
                           onChange={e => setGiftName(e.target.value)} 
                           placeholder="e.g. Diamond Ring" 
-                          className="rounded-xl border-orange-200"
+                          className="h-12 rounded-xl border-orange-200 bg-white"
                         />
                       </div>
                       <div className="space-y-2">
@@ -2578,13 +2605,13 @@ function AdminPageContent() {
                           value={giftPrice} 
                           onChange={e => setGiftPrice(e.target.value)} 
                           placeholder="999" 
-                          className="rounded-xl border-orange-200"
+                          className="h-12 rounded-xl border-orange-200 bg-white"
                         />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase text-orange-400">Category</Label>
                         <Select value={giftCategory} onValueChange={setGiftCategory}>
-                          <SelectTrigger className="rounded-xl border-orange-200">
+                          <SelectTrigger className="h-12 rounded-xl border-orange-200 bg-white">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -2596,39 +2623,97 @@ function AdminPageContent() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase text-orange-400">Animation ID</Label>
+                        <Label className="text-[10px] font-bold uppercase text-orange-400">Legacy Anim ID</Label>
                         <Input 
                           value={giftAnimationId} 
                           onChange={e => setGiftAnimationId(e.target.value)} 
-                          placeholder="e.g. car_anim" 
-                          className="rounded-xl border-orange-200"
+                          placeholder="Optional" 
+                          className="h-12 rounded-xl border-orange-200 bg-white"
                         />
                       </div>
                     </div>
 
-                    <div 
-                      onClick={() => giftFileInputRef.current?.click()}
-                      className="border-2 border-dashed border-orange-200 rounded-2xl p-8 flex flex-col items-center gap-3 bg-white/50 hover:bg-orange-100/50 cursor-pointer transition-colors"
-                    >
-                      <input 
-                        type="file" 
-                        ref={giftFileInputRef} 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) handleUploadGift(file);
-                        }}
-                      />
-                      {isUploadingGift ? (
-                        <Loader className="h-10 w-10 text-orange-400 animate-spin" />
-                      ) : (
-                        <>
-                          <Upload className="h-10 w-10 text-orange-200" />
-                          <div className="text-center text-sm font-bold text-orange-400 uppercase">Click to Select Gift Image</div>
-                        </>
-                      )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* THUMBNAIL UPLOAD */}
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-orange-500">1. Display Icon (Image)</Label>
+                        <div 
+                          onClick={() => giftFileInputRef.current?.click()}
+                          className="aspect-video border-2 border-dashed border-orange-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-orange-100/30 cursor-pointer transition-all overflow-hidden relative group"
+                        >
+                          {thumbnailPreview ? (
+                            <Image src={thumbnailPreview} alt="Preview" fill className="object-contain p-4" unoptimized />
+                          ) : (
+                            <>
+                              <ImageIcon className="h-8 w-8 text-orange-200" />
+                              <span className="text-[10px] font-bold uppercase text-orange-300">Select Thumbnail</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={giftFileInputRef} 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setGiftThumbnail(f);
+                                setThumbnailPreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* VIDEO UPLOAD */}
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">2. Animation Video (MP4)</Label>
+                        <div 
+                          onClick={() => videoFileInputRef.current?.click()}
+                          className="aspect-video border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
+                        >
+                          {videoPreview ? (
+                            <video src={videoPreview} autoPlay muted loop className="h-full w-full object-contain" />
+                          ) : (
+                            <>
+                              <Video className="h-8 w-8 text-indigo-200" />
+                              <span className="text-[10px] font-bold uppercase text-indigo-300">Select Animation Video</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={videoFileInputRef} 
+                            className="hidden" 
+                            accept="video/*" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setGiftVideo(f);
+                                setVideoPreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
+
+                    <Button
+                      onClick={handleSaveGift}
+                      disabled={isUploadingGift}
+                      className="h-16 rounded-[1.5rem] bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-lg shadow-xl shadow-orange-500/20 active:scale-95 transition-all"
+                    >
+                      {isUploadingGift ? (
+                        <div className="flex items-center gap-3">
+                          <Loader className="animate-spin h-6 w-6" />
+                          <span>Uploading Frequencies...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-6 w-6" />
+                          <span>Synchronize Hybrid Gift</span>
+                        </div>
+                      )}
+                    </Button>
                   </div>
 
                   <div className="flex justify-center">
@@ -2659,13 +2744,21 @@ function AdminPageContent() {
                           </button>
                           <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-4">
                             <img src={gift.imageUrl} alt={gift.name} className="max-h-full object-contain" />
+                            {gift.videoUrl && (
+                              <div className="absolute top-2 left-2 bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase flex items-center gap-1 shadow-lg">
+                                <Video className="h-2 w-2" /> Video
+                              </div>
+                            )}
                           </div>
                           <div className="text-center">
-                            <p className="font-bold uppercase text-xs truncate">{gift.name}</p>
-                            <div className="flex items-center justify-center gap-1 text-orange-500 font-black text-sm">
+                            <p className="font-bold uppercase text-[10px] truncate">{gift.name}</p>
+                            <div className="flex items-center justify-center gap-1 text-orange-500 font-black text-xs">
                               <GoldCoinIcon className="h-3 w-3" /> {gift.price}
                             </div>
-                            <Badge className="mt-1 bg-slate-200 text-slate-600 text-[8px] font-bold uppercase">{gift.category}</Badge>
+                            <div className="flex flex-wrap justify-center gap-1 mt-1">
+                              <Badge className="bg-slate-200 text-slate-600 text-[7px] font-bold uppercase">{gift.category}</Badge>
+                              {gift.animationId && <Badge variant="outline" className="text-[7px] font-bold uppercase opacity-50">{gift.animationId}</Badge>}
+                            </div>
                           </div>
                         </div>
                       ))}
