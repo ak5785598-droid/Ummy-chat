@@ -39,6 +39,7 @@ export function GiftAnimationOverlay({
   const [phase, setPhase] = useState<'center' | 'target'>('center');
   const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // 3x3 Grid Layout - Each seat position with pixel coordinates
   const getSeatTarget = (seat: number) => {
@@ -122,6 +123,22 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, onComplete]);
 
+  // Handle Video Auto-play Force
+  useEffect(() => {
+    if (activeGift && videoUrl && videoRef.current) {
+      const playVideo = async () => {
+        try {
+          videoRef.current!.defaultMuted = true;
+          videoRef.current!.muted = true;
+          await videoRef.current!.play();
+        } catch (err) {
+          console.warn('Video Playback Failed:', err);
+        }
+      };
+      playVideo();
+    }
+  }, [activeGift, videoUrl]);
+
   return (
     <div 
       ref={containerRef}
@@ -187,14 +204,17 @@ export function GiftAnimationOverlay({
                   />
                 </div>
               ) : videoUrl ? (
-                <div className="w-[320px] h-[320px] flex items-center justify-center">
+                <div className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none">
                   <video 
+                    ref={videoRef}
                     src={videoUrl} 
                     autoPlay 
                     muted 
                     playsInline
+                    webkit-playsinline="true"
+                    preload="auto"
                     onEnded={onComplete}
-                    className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.4)]"
+                    className="w-full h-full object-contain bg-transparent"
                   />
                 </div>
               ) : imageUrl ? (
