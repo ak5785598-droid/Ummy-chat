@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment } from 'firebase/firestore';
-import { X, Clock, Volume2, VolumeX, HelpCircle, Move, Sparkles, DollarSign } from 'lucide-react';
+import { X, Clock, Volume2, VolumeX, HelpCircle, Move, Sparkles, DollarSign, User } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
 // --- NUMBER FORMATTING ---
@@ -289,8 +289,8 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME ---
-function GlassDomeSmall({ size = 72 }: { size?: number }) {
+// --- SMALL GLASS DOME WITH HALF-OPEN ANIMATION ---
+function GlassDomeSmall({ size = 72, isClosed = true }: { size?: number, isClosed?: boolean }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
       <defs>
@@ -339,51 +339,53 @@ function GlassDomeSmall({ size = 72 }: { size?: number }) {
         <filter id="b12s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" /></filter>
       </defs>
 
+      {/* --- BASE ELEMENTS --- */}
       <ellipse cx="256" cy="410" rx="154" ry="25" fill="#0b2f33" opacity="0.18" filter="url(#b8s2)" />
-
       <g>
         <path d="M96 340a160 32 0 0 0 320 0v26a160 32 0 0 1-320 0z" fill="url(#baseSideSmall2)" />
         <ellipse cx="256" cy="340" rx="160" ry="32" fill="url(#baseTopSmall2)" />
         <ellipse cx="256" cy="340" rx="160" ry="32" fill="none" stroke="#185a5f" strokeOpacity="0.18" strokeWidth="2" />
         <ellipse cx="222" cy="326" rx="108" ry="17" fill="#ffffff" opacity="0.14" filter="url(#b8s2)" />
       </g>
-
       <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s2)" />
-
-      <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
-
-      <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
-
-      <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s2)" />
-
-      <g>
-        <path d="M112 332c0 13 32 24 144 24s144-11 144-24v10c0 14-35 26-144 26s-144-12-144-26z" fill="url(#glassRimSmall2)" opacity="0.95" />
-        <ellipse cx="256" cy="332" rx="142.5" ry="11.8" fill="none" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="2.4" />
-        <ellipse cx="256" cy="332" rx="138" ry="6.5" fill="#e6f9fb" opacity="0.55" filter="url(#b2s2)" />
-      </g>
-
-      <path d="M242 96c0-6 2-12.5 4.2-17.5h19.6c2.2 5 4.2 11.5 4.2 17.5v5.5h-28z" fill="url(#neckSmall2)" />
-      <rect x="242" y="91" width="28" height="3" fill="#4a7f84" opacity="0.15" />
-
-      <g>
-        <circle cx="256" cy="57.5" r="22.5" fill="url(#knobSmall2)" stroke="#ccecf0" strokeOpacity="0.45" strokeWidth="1" />
-        <ellipse cx="247.2" cy="47.5" rx="8.8" ry="6.2" fill="#ffffff" opacity="0.95" filter="url(#b2s2)" />
-        <ellipse cx="264.8" cy="66.2" rx="4.2" ry="2.9" fill="#ffffff" opacity="0.48" filter="url(#b2s2)" />
-        <ellipse cx="256" cy="57.5" rx="22" ry="22" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1" />
-      </g>
-
-      <g>
-        <path d="M129 310c2-57 14-117 43.5-172.5 20-37 48-61 74-71" fill="none" stroke="#ffffff" strokeWidth="16" strokeLinecap="round" opacity="0.26" filter="url(#b4s2)" />
-        <path d="M131 307c2-55 14-113 42.5-168 19.5-35 46-57.5 70.5-66" fill="none" stroke="url(#leftHLSmall2)" strokeWidth="13.5" strokeLinecap="round" opacity="0.92" />
-        <path d="M134 305c2-53 13.5-110 41.5-164 19-33 44-54 67-62.5" fill="none" stroke="#ffffff" strokeWidth="4.8" strokeLinecap="round" opacity="0.99" />
-      </g>
-
-      <path d="M360 158c22 38 31.5 87 34.5 148.5" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" opacity="0.13" filter="url(#b4s2)" />
-      <path d="M150 318c0-43 8-94 24-138" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.18" />
-
-      <ellipse cx="270" cy="101" rx="16.5" ry="7.2" fill="#ffffff" opacity="0.19" transform="rotate(-19 270 101)" filter="url(#b4s2)" />
       <ellipse cx="256" cy="324" rx="129" ry="27" fill="#5AC0C5" opacity="0.07" filter="url(#b12s2)" />
-      <path d="M142 333c18-3.2 58-6.5 114-6.5s96 3.3 114 6.5" fill="none" stroke="#aee1e6" strokeOpacity="0.32" strokeWidth="3" filter="url(#b2s2)" />
+
+      {/* --- LID ELEMENTS --- */}
+      <g style={{
+        transform: isClosed ? 'translateY(0)' : 'translateY(-140px)',
+        transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      }}>
+        <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
+        <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
+        <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s2)" />
+
+        <g>
+          <path d="M112 332c0 13 32 24 144 24s144-11 144-24v10c0 14-35 26-144 26s-144-12-144-26z" fill="url(#glassRimSmall2)" opacity="0.95" />
+          <ellipse cx="256" cy="332" rx="142.5" ry="11.8" fill="none" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="2.4" />
+          <ellipse cx="256" cy="332" rx="138" ry="6.5" fill="#e6f9fb" opacity="0.55" filter="url(#b2s2)" />
+        </g>
+
+        <path d="M242 96c0-6 2-12.5 4.2-17.5h19.6c2.2 5 4.2 11.5 4.2 17.5v5.5h-28z" fill="url(#neckSmall2)" />
+        <rect x="242" y="91" width="28" height="3" fill="#4a7f84" opacity="0.15" />
+
+        <g>
+          <circle cx="256" cy="57.5" r="22.5" fill="url(#knobSmall2)" stroke="#ccecf0" strokeOpacity="0.45" strokeWidth="1" />
+          <ellipse cx="247.2" cy="47.5" rx="8.8" ry="6.2" fill="#ffffff" opacity="0.95" filter="url(#b2s2)" />
+          <ellipse cx="264.8" cy="66.2" rx="4.2" ry="2.9" fill="#ffffff" opacity="0.48" filter="url(#b2s2)" />
+          <ellipse cx="256" cy="57.5" rx="22" ry="22" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1" />
+        </g>
+
+        <g>
+          <path d="M129 310c2-57 14-117 43.5-172.5 20-37 48-61 74-71" fill="none" stroke="#ffffff" strokeWidth="16" strokeLinecap="round" opacity="0.26" filter="url(#b4s2)" />
+          <path d="M131 307c2-55 14-113 42.5-168 19.5-35 46-57.5 70.5-66" fill="none" stroke="url(#leftHLSmall2)" strokeWidth="13.5" strokeLinecap="round" opacity="0.92" />
+          <path d="M134 305c2-53 13.5-110 41.5-164 19-33 44-54 67-62.5" fill="none" stroke="#ffffff" strokeWidth="4.8" strokeLinecap="round" opacity="0.99" />
+        </g>
+
+        <path d="M360 158c22 38 31.5 87 34.5 148.5" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" opacity="0.13" filter="url(#b4s2)" />
+        <path d="M150 318c0-43 8-94 24-138" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.18" />
+        <ellipse cx="270" cy="101" rx="16.5" ry="7.2" fill="#ffffff" opacity="0.19" transform="rotate(-19 270 101)" filter="url(#b4s2)" />
+        <path d="M142 333c18-3.2 58-6.5 114-6.5s96 3.3 114 6.5" fill="none" stroke="#aee1e6" strokeOpacity="0.32" strokeWidth="3" filter="url(#b2s2)" />
+      </g>
     </svg>
   );
 }
@@ -395,6 +397,7 @@ function FruitDome({
   betAmount,
   isHighlighted,
   isSelected,
+  isClosed,
   onClick,
 }: {
   emoji: string;
@@ -402,6 +405,7 @@ function FruitDome({
   betAmount: number;
   isHighlighted: boolean;
   isSelected: boolean;
+  isClosed: boolean;
   onClick: () => void;
 }) {
   return (
@@ -412,14 +416,15 @@ function FruitDome({
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        <div className="relative w-[60px] h-[60px]">
-          {/* Only show dome when bet is placed */}
-          {isSelected && <GlassDomeSmall size={60} />}
-          <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: isSelected ? '8px' : '0px' }}>
-            <span className="text-2xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
+        <div className="relative w-[80px] h-[80px]">
+          <div className="absolute inset-0 z-20 pointer-events-none">
+             <GlassDomeSmall size={80} isClosed={isClosed} />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center z-10" style={{ paddingBottom: isClosed ? '10px' : '0px', transition: 'padding-bottom 0.4s ease' }}>
+            <span className="text-4xl drop-shadow-lg relative" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        <div className={`mt-[-2px] w-[60px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
+        <div className={`-mt-2.5 relative z-30 w-[60px] h-[18px] rounded-full flex items-center justify-between px-2 text-white text-[10px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
           isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
         }`}>
           <span className="text-[9px]">×{multiplier}</span>
@@ -433,24 +438,50 @@ function FruitDome({
   );
 }
 
-// --- WINNER CARD COMPONENT ---
-function WinnerCard({ rank, avatar, name, winAmount }: { rank: number; avatar: string; name: string; winAmount: number }) {
+// --- WINNER CARD COMPONENT (UPDATED AVATARS) ---
+function WinnerCard({ rankText, avatarUrl, name, winAmount }: { rankText: string; avatarUrl?: string; name: string; winAmount: number }) {
   return (
-    <div className="bg-gradient-to-b from-pink-600 to-pink-700 rounded-xl p-2 flex flex-col items-center gap-1 border border-pink-400/30 min-w-[80px]">
-      <div className="w-8 h-8 rounded-full bg-pink-500/50 flex items-center justify-center text-white text-xs font-bold">
-        {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+    <div className="bg-gradient-to-b from-red-600 to-red-800 rounded-xl p-2 flex flex-col items-center gap-1 border-2 border-red-400 shadow-lg min-w-[90px]">
+      <div className="text-white text-[13px] font-black uppercase tracking-widest drop-shadow-md">
+        {rankText}
       </div>
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-lg border-2 border-white/30">
-        {avatar}
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center text-xl border-2 border-white/50 shadow-inner overflow-hidden">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <User className="w-6 h-6 text-white/80" />
+        )}
       </div>
-      <span className="text-white text-[10px] font-bold truncate w-full text-center">{name}</span>
-      <div className="flex items-center gap-1 text-white">
-        <DollarCoin className="w-3 h-3" />
-        <span className="text-[10px] font-bold">{formatKandM(winAmount)}</span>
+      <span className="text-white text-[11px] font-bold truncate w-full max-w-[80px] text-center mt-1">{name}</span>
+      <div className="flex items-center gap-1 text-white bg-black/30 px-2 py-0.5 rounded-full mt-0.5">
+        <DollarCoin className="w-3.5 h-3.5" />
+        <span className="text-[11px] font-extrabold">{formatKandM(winAmount)}</span>
       </div>
     </div>
   );
 }
+
+// --- ANIMATED TRUMPET COMPONENT ---
+const AnimatedTrumpet = ({ flip }: { flip?: boolean }) => (
+  <motion.svg 
+    animate={{ 
+      rotate: flip ? [-10, 10, -10] : [10, -10, 10], 
+      scale: [1, 1.1, 1] 
+    }}
+    transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+    style={{ transform: flip ? 'scaleX(-1)' : 'none' }}
+    width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+  >
+    <path d="M3 12h10l5-5v10l-5-5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5"/>
+    <path d="M14 8v8" stroke="#ca8a04" strokeWidth="2"/>
+    <path d="M12 12v.01" stroke="#ca8a04"/>
+    <motion.path 
+      animate={{ opacity: [0, 1, 0], x: flip ? [-5, 5] : [5, -5], y: [-5, -10] }}
+      transition={{ duration: 0.8, repeat: Infinity }}
+      d="M20 8v.01M22 10v.01" stroke="#facc15" strokeWidth="2"
+    />
+  </motion.svg>
+);
 
 const SOUNDS = {
   BET: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', 
@@ -547,7 +578,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       movingIndexRef.current = nextIndex;
       setHighlightIdxs([nextIndex]);
       playSound(SOUNDS.TICK, 0.3);
-    }, 900);
+    }, 500); 
+
     countdownIntervalRef.current = setInterval(() => {
       setSpinTimeLeft(prev => {
         if (prev <= 1) {
@@ -639,10 +671,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game area with perfect circle */}
+        {/* Game area */}
         <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '340px' }}>
           
-          {/* Blue transparent connecting circle ring */}
           <div 
             className="absolute rounded-full border-4 border-blue-400/30"
             style={{
@@ -655,7 +686,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             }}
           />
 
-          {/* Central Cafe - perfectly centered */}
           <div 
             className="absolute z-0 opacity-90"
             style={{
@@ -673,14 +703,20 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             />
           </div>
 
-          {/* Fruit items placed around in perfect circle */}
           {ITEMS.map((item, idx) => {
-            const angle = (idx * 45) - 90; // Start from top
-            const radius = 115; // Radius from center
+            const angle = (idx * 45) - 90; 
+            const radius = 130; 
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
             const isSelected = (myBets[item.id] || 0) > 0;
+            
+            let isClosed = true;
+            if (gameState === 'spinning' || gameState === 'result') {
+              isClosed = !isHighlighted;
+            } else {
+              isClosed = isSelected || timeLeft <= 1;
+            }
             
             return (
               <div
@@ -698,6 +734,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   betAmount={myBets[item.id] || 0}
                   isHighlighted={isHighlighted}
                   isSelected={isSelected}
+                  isClosed={isClosed} 
                   onClick={() => handlePlaceBet(item.id)}
                 />
               </div>
@@ -749,111 +786,82 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Winner Popup - Bottom 40vh Purple Card with U shape top */}
+        {/* --- MODIFIED WINNER POPUP SECTION --- */}
         <AnimatePresence>
           {showWinnerPopup && winnerData && (
             <motion.div 
-              initial={{ y: '100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0 }}
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="absolute bottom-0 left-0 right-0 z-[50]"
               style={{ height: '40vh' }}
             >
-              {/* Sparkle effects */}
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {[...Array(8)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1.5, 0],
-                      x: Math.random() * 300 - 150,
-                      y: Math.random() * -200 - 50,
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      delay: i * 0.2,
-                      repeat: Infinity,
-                      repeatDelay: 1,
-                    }}
-                    style={{
-                      left: `${20 + (i * 8)}%`,
-                      top: '50%',
-                    }}
-                  >
-                    <Sparkles className="w-5 h-5 text-yellow-400" />
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <div className="relative w-full h-full bg-gradient-to-b from-transparent via-purple-900/95 to-purple-950">
-                {/* U-shape cutout at top */}
+              {/* Solid Background Card */}
+              <div className="relative w-full h-full bg-[#2e1065] border-t-2 border-purple-500 shadow-[0_-15px_40px_rgba(0,0,0,0.6)] rounded-t-3xl overflow-visible">
+                
+                {/* 1st Top Card Center U shape (Transparent Cutout Illusion using Background Color) */}
                 <div 
-                  className="absolute left-1/2 transform -translate-x-1/2 bg-[#020617] rounded-b-full"
-                  style={{
-                    width: '140px',
-                    height: '70px',
-                    top: '-1px',
-                  }}
+                  className="absolute left-1/2 transform -translate-x-1/2 bg-[#020617] rounded-b-[40px]"
+                  style={{ width: '130px', height: '60px', top: '-2px' }}
                 />
                 
-                {/* Winner emoji in the U cutout */}
+                {/* Floating Winning Icon (No Card Behind It) */}
                 <div 
                   className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center"
-                  style={{
-                    width: '100px',
-                    height: '100px',
-                    top: '-45px',
-                    zIndex: 10,
-                  }}
+                  style={{ width: '130px', height: '60px', top: -10, zIndex: 10 }}
                 >
-                  <div className="w-20 h-20 rounded-full bg-purple-800/50 backdrop-blur-sm border-2 border-yellow-400/50 flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.4)]">
-                    <span className="text-3xl">{winnerData.emoji}</span>
-                  </div>
+                  <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] animate-bounce">
+                    {winnerData.emoji}
+                  </span>
                 </div>
 
-                {/* Content */}
-                <div className="flex flex-col items-center justify-center h-full pt-12 gap-3">
-                  {/* You Win header */}
+                <div className="flex flex-col items-center justify-start h-full pt-14 gap-4 px-4">
+                  
+                  {/* 2nd Row: You won */}
                   <motion.h2 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
-                    className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500"
+                    className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 tracking-widest"
                     style={{ textShadow: '0 2px 10px rgba(234,179,8,0.3)' }}
                   >
-                    YOU WIN!
+                    YOU WON!
                   </motion.h2>
 
-                  {/* Win amount */}
-                  <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
-                    className="flex items-center gap-2 text-3xl font-black text-white"
-                  >
-                    <DollarCoin className="w-8 h-8" />
-                    <span>{winnerData.win.toLocaleString()}</span>
-                  </motion.div>
+                  {/* 3rd Row: Trumpets, Coin & Amount */}
+                  <div className="flex items-center justify-between w-full px-6">
+                    <AnimatedTrumpet />
+                    
+                    <div className="flex items-center gap-2 text-4xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                      <DollarCoin className="w-10 h-10" />
+                      <span>{winnerData.win.toLocaleString()}</span>
+                    </div>
 
-                  {/* Leaderboard Cards */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="flex gap-3 mt-2 px-4"
-                  >
-                    <WinnerCard rank={1} avatar="👑" name="You" winAmount={winnerData.win} />
-                    <WinnerCard rank={2} avatar="🦊" name="Player2" winAmount={250000} />
-                    <WinnerCard rank={3} avatar="🐸" name="Player3" winAmount={130000} />
-                  </motion.div>
+                    <AnimatedTrumpet flip />
+                  </div>
+
+                  {/* 4th Row: 3 Red Cards (1st, 2nd, 3rd) with Image Avatars */}
+                  <div className="flex justify-center gap-3 w-full mt-2">
+                    <WinnerCard 
+                      rankText="1st" 
+                      avatarUrl={currentUser?.photoURL || undefined} 
+                      name={currentUser?.displayName || "You"} 
+                      winAmount={winnerData.win} 
+                    />
+                    <WinnerCard 
+                      rankText="2nd" 
+                      avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=Player2" 
+                      name="Rahul" 
+                      winAmount={250000} 
+                    />
+                    <WinnerCard 
+                      rankText="3rd" 
+                      avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=Player3" 
+                      name="Priya" 
+                      winAmount={130000} 
+                    />
+                  </div>
+
                 </div>
               </div>
             </motion.div>
@@ -862,4 +870,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-      }
+}
