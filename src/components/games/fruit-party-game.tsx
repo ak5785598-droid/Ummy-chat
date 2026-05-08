@@ -598,7 +598,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         dragConstraints={{ top: 0 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        className="h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-[40px] shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
+        // Yahan par rounded-none lagaya hai taaki top aur bottom corners square ho jayein
+        className="h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
         style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
       >
         <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-12 h-1.5 bg-white/30 rounded-full z-30" />
@@ -672,24 +673,24 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Chips Bar */}
+        {/* Chips Bar - Yahan height choti (decrease) kar di gayi hai (p-1.5 and h-[34px] w-[46px]) */}
         <div className="px-4 z-20">
-          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-2.5 border border-white/10">
-            <div className="text-white text-[10px] font-bold mb-1.5 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
+          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
+            <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
             <div className="flex justify-center gap-2">
               {CHIPS.map((chip) => (
                 <motion.button
                   key={chip.value}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setSelectedChip(chip.value)}
-                  className={`flex flex-col items-center justify-center w-[52px] h-[44px] rounded-xl border-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center justify-center w-[46px] h-[34px] rounded-lg border-2 transition-all duration-200 ${
                     selectedChip === chip.value 
                       ? 'bg-red-600 border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)] scale-105' 
                       : 'bg-blue-600/80 border-blue-400/40 hover:bg-blue-500/80'
                   }`}
                 >
-                  <DollarCoin className="w-4 h-4 mb-0.5" />
-                  <span className="text-white text-[10px] font-extrabold">{chip.label}</span>
+                  <DollarCoin className="w-3.5 h-3.5 mb-0.5" />
+                  <span className="text-white text-[9px] font-extrabold">{chip.label}</span>
                 </motion.button>
               ))}
             </div>
@@ -720,7 +721,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               initial={{ opacity: 0, scale: 0.5 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-[40px]"
+              // Isko bhi rounded-none kar diya taaki overall look square rahe overlay pe
+              className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-none"
             >
               <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[30px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
                 <div className="text-5xl mb-1">{winnerData.emoji}</div>
@@ -736,4 +738,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-                }
+}
