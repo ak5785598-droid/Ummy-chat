@@ -230,16 +230,30 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
       </div>
 
       <Sheet open={showActions} onOpenChange={setShowActions}>
-        <SheetContent side="bottom" className="rounded-t-3xl p-6 bg-white border-t shadow-2xl">
+        <SheetContent side="bottom" className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]">
           <div className="max-w-md mx-auto">
-            <div className="flex flex-col gap-3">
-              <button onClick={togglePin} className="w-full py-4 px-6 flex items-center gap-4 bg-slate-50 rounded-2xl active:scale-[0.98] transition-all hover:bg-slate-100">
-                <Pin className={cn("h-5 w-5", isPinned ? "text-primary fill-current" : "text-slate-400")} />
-                <span className="font-bold text-slate-700 uppercase tracking-wider text-sm">{isPinned ? 'Unpin from Top' : 'Pin to Top'}</span>
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={togglePin} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-slate-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-slate-100 border border-slate-100 group"
+              >
+                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-colors", isPinned ? "bg-primary/20 text-primary" : "bg-white text-slate-400 group-hover:text-primary")}>
+                  <Pin className={cn("h-5 w-5", isPinned && "fill-current")} />
+                </div>
+                <span className="font-bold text-slate-700 uppercase tracking-widest text-xs">
+                  {isPinned ? 'Unpin from Top' : 'Pin to Top'}
+                </span>
               </button>
-              <button onClick={deleteChat} className="w-full py-4 px-6 flex items-center gap-4 bg-red-50 rounded-2xl active:scale-[0.98] transition-all hover:bg-red-100 text-red-500">
-                <Trash2 className="h-5 w-5" />
-                <span className="font-bold uppercase tracking-wider text-sm">Delete Conversation</span>
+              
+              <button 
+                onClick={deleteChat} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <span className="font-bold uppercase tracking-widest text-xs text-red-600">Delete Conversation</span>
               </button>
             </div>
           </div>
@@ -428,12 +442,18 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
       </Dialog>
 
       <Sheet open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
-        <SheetContent side="bottom" className="rounded-t-3xl p-6 bg-white border-t shadow-2xl z-[700]">
+        <SheetContent side="bottom" className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]">
           <div className="max-w-md mx-auto">
-            <div className="flex flex-col gap-3">
-              <button onClick={deleteMessage} className="w-full py-4 px-6 flex items-center gap-4 bg-red-50 rounded-2xl active:scale-[0.98] transition-all hover:bg-red-100 text-red-500">
-                <Trash2 className="h-5 w-5" />
-                <span className="font-bold uppercase tracking-wider text-sm">Delete Message</span>
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={deleteMessage} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group text-red-600"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <span className="font-bold uppercase tracking-widest text-xs">Delete Message</span>
               </button>
             </div>
           </div>
