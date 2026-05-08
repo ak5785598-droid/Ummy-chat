@@ -418,7 +418,8 @@ function FruitDome({
             <span className="text-2xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        <div className={`mt-[-4px] w-[56px] h-[15px] rounded-full flex items-center justify-between px-2 text-white text-[9px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
+        {/* BET STRIP MOVED A LITTLE BIT UP (mt-[-12px] and relative z-10 for overlapping) */}
+        <div className={`mt-[-12px] relative z-10 w-[56px] h-[15px] rounded-full flex items-center justify-between px-2 text-white text-[9px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
           isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
         }`}>
           <span className="text-[9px]">×{multiplier}</span>
@@ -475,7 +476,11 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [isSoundOn, setIsSoundOn] = useState(true);
   
-  // NEW: History State added
+  // Stats State
+  const [todayBet, setTodayBet] = useState(0);
+  const [totalEarning, setTotalEarning] = useState(0);
+
+  // History State
   const [history, setHistory] = useState<typeof ITEMS[0][]>([]);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -512,6 +517,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (localCoins < selectedChip) return;
     playSound(SOUNDS.BET, 0.9);
     setLocalCoins(prev => prev - selectedChip);
+    setTodayBet(prev => prev + selectedChip); // Adding bet tracking
+    
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
     setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
@@ -545,16 +552,18 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const finalizeResult = (winningItem: typeof ITEMS[0]) => {
     const betOnItem = myBets[winningItem.id] || 0;
     const totalWinAmount = betOnItem * winningItem.multiplier;
+    
     if (totalWinAmount > 0 && currentUser) {
       playSound(SOUNDS.WIN, 0.6);
       setLocalCoins(prev => prev + totalWinAmount);
+      setTotalEarning(prev => prev + totalWinAmount); // Adding total earning tracking
       const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
     
-    // NEW: Winning item ko history mein add karna (max 5 items dikhane ke liye)
-    setHistory(prev => [winningItem, ...prev].slice(0, 5));
+    // Result mein jyada data store karenge (taki scroll properly kaam kare)
+    setHistory(prev => [winningItem, ...prev].slice(0, 15));
 
     setGameState('result');
     setTimeout(() => {
@@ -574,6 +583,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
+
       <motion.div 
         variants={{
           initial: { opacity: 0, scale: 0.9, y: 20 },
@@ -621,32 +634,34 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Game area with cafe and food items */}
-        <div className="relative w-full flex-1 flex items-center justify-center">
+        <div className="relative w-full flex-1 flex items-center justify-center mb-8"> {/* mb-8 for bottom bar space */}
           
-          {/* NEW: History Strip on the Left Side Corner */}
-          <div className="absolute left-3 top-0 z-30 bg-gradient-to-b from-purple-800/90 to-purple-600/90 border border-white/10 rounded-md p-1.5 shadow-lg flex flex-col gap-1">
-            <div className="text-[8px] text-white font-bold text-center tracking-wider mb-1">HISTORY</div>
-            {history.length > 0 ? (
-              history.map((item, i) => (
-                <div key={i} className="w-7 h-7 bg-black/30 rounded flex items-center justify-center text-base border border-white/5">
-                  {item.icon}
-                </div>
-              ))
-            ) : (
-              <div className="w-7 h-7 flex items-center justify-center text-white/30 text-[10px]">-</div>
-            )}
+          {/* UPDATED: Result Bar on the Left Side Corner */}
+          <div className="absolute left-2 top-0 z-30 bg-gradient-to-b from-purple-800/90 to-purple-600/90 border border-white/10 rounded-md p-1 shadow-lg flex flex-col gap-1 w-[42px] items-center">
+            <div className="text-[7px] text-white font-bold text-center tracking-tighter w-full pb-0.5 border-b border-white/20 uppercase">Result</div>
+            <div className="flex flex-col gap-1 overflow-y-auto max-h-[96px] w-full items-center pb-1 no-scrollbar" style={{ msOverflowStyle: 'none' }}>
+              {history.length > 0 ? (
+                history.map((item, i) => (
+                  <div key={i} className="w-7 h-7 shrink-0 bg-black/30 rounded flex items-center justify-center text-base border border-white/5">
+                    {item.icon}
+                  </div>
+                ))
+              ) : (
+                <div className="w-7 h-7 shrink-0 flex items-center justify-center text-white/30 text-[10px]">-</div>
+              )}
+            </div>
           </div>
 
-          {/* Central Cafe - Size increased to 135px */}
-          <div className="absolute w-[135px] h-[135px] z-0 opacity-90">
+          {/* Central Cafe - DECREASED SIZE (100px) */}
+          <div className="absolute w-[100px] h-[100px] z-0 opacity-90">
             <CafeShopIcon 
-              size={135} 
+              size={100} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
-          {/* Fruit items placed around - Radius increased to 110 for proper circle */}
+          {/* Fruit items placed around */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
             const radius = 110; 
@@ -677,28 +692,40 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Chips Bar (Square Cards Update) - Shifted upwards using pb-6 and mb-2 */}
-        <div className="px-4 pb-6 mb-2 z-20">
-          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
-            <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
-            <div className="flex justify-center gap-2">
-              {CHIPS.map((chip) => (
-                <motion.button
-                  key={chip.value}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setSelectedChip(chip.value)}
-                  // MODIFIED: Changed w-[46px] h-[34px] to w-[42px] h-[42px] for Square Shape
-                  className={`flex flex-col items-center justify-center w-[42px] h-[42px] rounded-md border-2 transition-all duration-200 ${
-                    selectedChip === chip.value 
-                      ? 'bg-red-600 border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)] scale-105' 
-                      : 'bg-blue-600/80 border-blue-400/40 hover:bg-blue-500/80'
-                  }`}
-                >
-                  <DollarCoin className="w-3.5 h-3.5 mb-0.5" />
-                  <span className="text-white text-[9px] font-extrabold">{chip.label}</span>
-                </motion.button>
-              ))}
-            </div>
+        {/* Chips Bar - Moved Slightly Up (bottom-10) */}
+        <div className="absolute right-3 bottom-10 z-30">
+          <div className="bg-gradient-to-b from-purple-800/90 to-purple-600/90 rounded-md p-1.5 border border-white/10 flex flex-col gap-1.5 shadow-lg">
+            {CHIPS.map((chip) => (
+              <motion.button
+                key={chip.value}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedChip(chip.value)}
+                className={`flex flex-col items-center justify-center w-[32px] h-[32px] rounded-md border transition-all duration-200 ${
+                  selectedChip === chip.value 
+                    ? 'bg-red-600 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.6)] scale-105' 
+                    : 'bg-blue-600/80 border-blue-400/40 hover:bg-blue-500/80'
+                }`}
+              >
+                <DollarCoin className="w-2.5 h-2.5 mb-0.5" />
+                <span className="text-white text-[8px] font-extrabold">{chip.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* NEW: Bottom Red Stats Strip */}
+        <div className="absolute bottom-0 left-0 w-full h-8 bg-red-600 border-t border-red-400/50 flex justify-between items-center px-4 z-40 shadow-[0_-2px_10px_rgba(220,38,38,0.4)]">
+          <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-white tracking-wider">
+            <span className="opacity-80">TODAY BET:</span>
+            <span className="flex items-center gap-0.5 text-[#fde047] drop-shadow-md">
+              <DollarCoin className="w-3.5 h-3.5" /> {formatKandM(todayBet)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-white tracking-wider">
+            <span className="opacity-80">TOTAL EARNING:</span>
+            <span className="flex items-center gap-0.5 text-[#4ade80] drop-shadow-md">
+              <DollarCoin className="w-3.5 h-3.5" /> {formatKandM(totalEarning)}
+            </span>
           </div>
         </div>
 
@@ -726,4 +753,3 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     </div>
   );
 }
-
