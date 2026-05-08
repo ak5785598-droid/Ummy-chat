@@ -71,7 +71,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
       `}</style>
       <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
         <defs>
-          {/* Main gradients used in the cafe building */}
           <linearGradient id="magenta" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ff4da6" />
             <stop offset="52%" stopColor="#e91e8c" />
@@ -116,7 +115,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
             <stop offset="100%" stopColor="#3d5ef2" />
           </linearGradient>
           
-          {/* Gradients for the 3D coffee cup */}
           <linearGradient id="saucerTop" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fff5dc"/>
             <stop offset="20%" stopColor="#fff5dc"/>
@@ -242,7 +240,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
             <rect x="76" y="34" width="360" height="112" rx="28" stroke="#fff" strokeOpacity="0.12" strokeWidth="3" fill="none" />
             <rect x="76" y="34" width="360" height="46" rx="28" fill="url(#signTop)" />
 
-            {/* Static small cup logo */}
             <g transform="translate(112, 66) scale(0.2)">
               <ellipse cx="140" cy="192" rx="121" ry="30" fill="#7a542f" opacity="0.7" filter="url(#cupShadow)"/>
               <ellipse cx="140" cy="188" rx="123" ry="32" fill="url(#saucerSide)" />
@@ -292,7 +289,7 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME (unchanged) ---
+// --- SMALL GLASS DOME ---
 function GlassDomeSmall({ size = 56 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
@@ -342,10 +339,8 @@ function GlassDomeSmall({ size = 56 }: { size?: number }) {
         <filter id="b12s2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="12" /></filter>
       </defs>
 
-      {/* Shadow */}
       <ellipse cx="256" cy="410" rx="154" ry="25" fill="#0b2f33" opacity="0.18" filter="url(#b8s2)" />
 
-      {/* Base (blue plate) */}
       <g>
         <path d="M96 340a160 32 0 0 0 320 0v26a160 32 0 0 1-320 0z" fill="url(#baseSideSmall2)" />
         <ellipse cx="256" cy="340" rx="160" ry="32" fill="url(#baseTopSmall2)" />
@@ -353,29 +348,23 @@ function GlassDomeSmall({ size = 56 }: { size?: number }) {
         <ellipse cx="222" cy="326" rx="108" ry="17" fill="#ffffff" opacity="0.14" filter="url(#b8s2)" />
       </g>
 
-      {/* Inner shadow */}
       <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s2)" />
 
-      {/* Glass body */}
       <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
 
-      {/* Dark accent */}
       <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
 
       <path d="M158 316c2-50 12-107 37-159 6-12 13-23 21-33" fill="none" stroke="#143e43" opacity="0.05" strokeWidth="26" filter="url(#b8s2)" />
 
-      {/* Glass rim */}
       <g>
         <path d="M112 332c0 13 32 24 144 24s144-11 144-24v10c0 14-35 26-144 26s-144-12-144-26z" fill="url(#glassRimSmall2)" opacity="0.95" />
         <ellipse cx="256" cy="332" rx="142.5" ry="11.8" fill="none" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="2.4" />
         <ellipse cx="256" cy="332" rx="138" ry="6.5" fill="#e6f9fb" opacity="0.55" filter="url(#b2s2)" />
       </g>
 
-      {/* Neck */}
       <path d="M242 96c0-6 2-12.5 4.2-17.5h19.6c2.2 5 4.2 11.5 4.2 17.5v5.5h-28z" fill="url(#neckSmall2)" />
       <rect x="242" y="91" width="28" height="3" fill="#4a7f84" opacity="0.15" />
 
-      {/* Knob */}
       <g>
         <circle cx="256" cy="57.5" r="22.5" fill="url(#knobSmall2)" stroke="#ccecf0" strokeOpacity="0.45" strokeWidth="1" />
         <ellipse cx="247.2" cy="47.5" rx="8.8" ry="6.2" fill="#ffffff" opacity="0.95" filter="url(#b2s2)" />
@@ -383,14 +372,12 @@ function GlassDomeSmall({ size = 56 }: { size?: number }) {
         <ellipse cx="256" cy="57.5" rx="22" ry="22" fill="none" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1" />
       </g>
 
-      {/* Left highlight */}
       <g>
         <path d="M129 310c2-57 14-117 43.5-172.5 20-37 48-61 74-71" fill="none" stroke="#ffffff" strokeWidth="16" strokeLinecap="round" opacity="0.26" filter="url(#b4s2)" />
         <path d="M131 307c2-55 14-113 42.5-168 19.5-35 46-57.5 70.5-66" fill="none" stroke="url(#leftHLSmall2)" strokeWidth="13.5" strokeLinecap="round" opacity="0.92" />
         <path d="M134 305c2-53 13.5-110 41.5-164 19-33 44-54 67-62.5" fill="none" stroke="#ffffff" strokeWidth="4.8" strokeLinecap="round" opacity="0.99" />
       </g>
 
-      {/* Right reflection */}
       <path d="M360 158c22 38 31.5 87 34.5 148.5" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" opacity="0.13" filter="url(#b4s2)" />
       <path d="M150 318c0-43 8-94 24-138" fill="none" stroke="#ffffff" strokeWidth="2.5" opacity="0.18" />
 
@@ -401,7 +388,7 @@ function GlassDomeSmall({ size = 56 }: { size?: number }) {
   );
 }
 
-// --- FRUIT DOME COMPONENT (compact with red glow on click) ---
+// --- FRUIT DOME COMPONENT ---
 function FruitDome({
   emoji,
   multiplier,
@@ -425,14 +412,12 @@ function FruitDome({
       onClick={onClick}
     >
       <div className="relative flex flex-col items-center">
-        {/* Glass dome */}
         <div className="relative w-[56px] h-[56px]">
           <GlassDomeSmall size={56} />
           <div className="absolute inset-0 flex items-center justify-center" style={{ paddingBottom: '6px' }}>
             <span className="text-2xl drop-shadow-lg" style={{ lineHeight: 1 }}>{emoji}</span>
           </div>
         </div>
-        {/* Purple strip - bet patti, chhoti aur red on select */}
         <div className={`mt-[-4px] w-[56px] h-[15px] rounded-full flex items-center justify-between px-2 text-white text-[9px] font-bold border border-white/20 shadow-md transition-colors duration-200 ${
           isSelected ? 'bg-red-600' : 'bg-gradient-to-r from-purple-700 to-purple-500'
         }`}>
@@ -489,7 +474,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [localCoins, setLocalCoins] = useState(0);
   const [isCoinsLoaded, setIsCoinsLoaded] = useState(false); 
   const [isSoundOn, setIsSoundOn] = useState(true);
-  const [lastWinningItem, setLastWinningItem] = useState<typeof ITEMS[0] | null>(null);
+  
+  // NEW: History State added
+  const [history, setHistory] = useState<typeof ITEMS[0][]>([]);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -565,7 +552,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
-    setLastWinningItem(winningItem);
+    
+    // NEW: Winning item ko history mein add karna (max 5 items dikhane ke liye)
+    setHistory(prev => [winningItem, ...prev].slice(0, 5));
+
     setGameState('result');
     setTimeout(() => {
       setGameState('betting');
@@ -598,7 +588,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         dragConstraints={{ top: 0 }}
         dragElastic={0.2}
         onDragEnd={handleDragEnd}
-        // Yahan par rounded-none lagaya hai taaki top aur bottom corners square ho jayein
         className="h-[50vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#020617] text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.5)] cursor-grab active:cursor-grabbing"
         style={{ backgroundImage: 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)' }}
       >
@@ -633,19 +622,34 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
 
         {/* Game area with cafe and food items */}
         <div className="relative w-full flex-1 flex items-center justify-center">
-          {/* Central Cafe – size 120 */}
-          <div className="absolute w-[120px] h-[120px] z-0 opacity-90">
+          
+          {/* NEW: History Strip on the Left Side Corner */}
+          <div className="absolute left-3 top-0 z-30 bg-gradient-to-b from-purple-800/90 to-purple-600/90 border border-white/10 rounded-md p-1.5 shadow-lg flex flex-col gap-1">
+            <div className="text-[8px] text-white font-bold text-center tracking-wider mb-1">HISTORY</div>
+            {history.length > 0 ? (
+              history.map((item, i) => (
+                <div key={i} className="w-7 h-7 bg-black/30 rounded flex items-center justify-center text-base border border-white/5">
+                  {item.icon}
+                </div>
+              ))
+            ) : (
+              <div className="w-7 h-7 flex items-center justify-center text-white/30 text-[10px]">-</div>
+            )}
+          </div>
+
+          {/* Central Cafe - Size increased to 135px */}
+          <div className="absolute w-[135px] h-[135px] z-0 opacity-90">
             <CafeShopIcon 
-              size={120} 
+              size={135} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
           </div>
 
-          {/* Fruit items placed around – radius 95 for compactness */}
+          {/* Fruit items placed around - Radius increased to 110 for proper circle */}
           {ITEMS.map((item, idx) => {
             const angle = (idx * 45) - 90;
-            const radius = 95;
+            const radius = 110; 
             const x = Math.cos((angle * Math.PI) / 180) * radius;
             const y = Math.sin((angle * Math.PI) / 180) * radius;
             const isHighlighted = highlightIdxs.includes(idx);
@@ -673,8 +677,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           })}
         </div>
 
-        {/* Chips Bar - Yahan height choti (decrease) kar di gayi hai (p-1.5 and h-[34px] w-[46px]) */}
-        <div className="px-4 z-20">
+        {/* Chips Bar (Square Cards Update) - Shifted upwards using pb-6 and mb-2 */}
+        <div className="px-4 pb-6 mb-2 z-20">
           <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
             <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
             <div className="flex justify-center gap-2">
@@ -683,7 +687,8 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
                   key={chip.value}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setSelectedChip(chip.value)}
-                  className={`flex flex-col items-center justify-center w-[46px] h-[34px] rounded-lg border-2 transition-all duration-200 ${
+                  // MODIFIED: Changed w-[46px] h-[34px] to w-[42px] h-[42px] for Square Shape
+                  className={`flex flex-col items-center justify-center w-[42px] h-[42px] rounded-md border-2 transition-all duration-200 ${
                     selectedChip === chip.value 
                       ? 'bg-red-600 border-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)] scale-105' 
                       : 'bg-blue-600/80 border-blue-400/40 hover:bg-blue-500/80'
@@ -697,23 +702,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Result Strip */}
-        <div className="px-4 pb-4 z-20 mt-1.5">
-          <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-full h-10 flex items-center justify-between px-4 border border-white/10">
-            <span className="text-white text-[11px] font-bold tracking-wide">RESULT</span>
-            <div className="flex items-center gap-1.5">
-              {lastWinningItem ? (
-                <>
-                  <span className="text-lg">{lastWinningItem.icon}</span>
-                  <span className="text-white text-[11px] font-bold">×{lastWinningItem.multiplier}</span>
-                </>
-              ) : (
-                <span className="text-white/60 text-[10px]">Waiting...</span>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Winner popup */}
         <AnimatePresence>
           {winnerData && (
@@ -721,7 +709,6 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
               initial={{ opacity: 0, scale: 0.5 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.5 }}
-              // Isko bhi rounded-none kar diya taaki overall look square rahe overlay pe
               className="absolute inset-0 flex items-center justify-center z-[50] bg-black/60 backdrop-blur-sm rounded-none"
             >
               <div className="bg-gradient-to-b from-yellow-400 to-orange-600 p-6 rounded-[30px] text-center border-4 border-white shadow-[0_0_50px_rgba(251,191,36,0.5)]">
@@ -739,3 +726,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     </div>
   );
 }
+
