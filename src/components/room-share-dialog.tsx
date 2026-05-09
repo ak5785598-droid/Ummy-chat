@@ -78,8 +78,26 @@ export function RoomShareDialog({ open, onOpenChange, room, onShare }: RoomShare
       <Button 
         className="h-14 rounded-2xl bg-[#25D366] text-white shadow-xl shadow-green-900/20 font-bold uppercase text-xs col-span-2 mb-2" 
         onClick={() => {
-          const text = `Join my room on Ummy Chat!\nRoom ID: ${room.roomNumber}\nLink: ${window.location.origin}/rooms/${room.id}`;
-          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          const shareTitle = 'Join my room on Ummy Chat!';
+          const shareText = `Tribe Member, join my frequency!\nRoom ID: #${room.roomNumber}\n\nDownload Ummy Chat to enter.`;
+          const shareUrl = `${window.location.origin}/rooms/${room.id}`;
+          const fullInvite = `${shareText}\nLink: ${shareUrl}`;
+
+          // Native Share API (Best for Mobile/Capacitor)
+          if (navigator.share) {
+            navigator.share({
+              title: shareTitle,
+              text: fullInvite,
+              url: shareUrl
+            }).catch(() => {
+              // Fallback to direct WhatsApp
+              window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+            });
+          } else {
+            // Browser Fallback
+            window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+          }
+          
           if (onShare) onShare();
         }}
       >
