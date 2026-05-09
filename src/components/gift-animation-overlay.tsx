@@ -66,18 +66,24 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Timelines - Direct finish after 4 seconds (Seat pe jane wala phase hata diya)
-      const finishTimer = setTimeout(() => {
-        setActiveGift(null);
-        setLottieData(null);
-        onComplete();
-      }, 4000);
+      // 3. Timelines - Agar video nahi hai tabhi 4 second ka timer chalega
+      let finishTimer: ReturnType<typeof setTimeout>;
+      
+      if (!videoUrl) {
+        finishTimer = setTimeout(() => {
+          setActiveGift(null);
+          setLottieData(null);
+          onComplete();
+        }, 4000);
+      }
 
       return () => {
-        clearTimeout(finishTimer);
+        if (finishTimer) {
+          clearTimeout(finishTimer);
+        }
       };
     }
-  }, [giftId, soundUrl, onComplete]);
+  }, [giftId, soundUrl, videoUrl, onComplete]);
 
   // Handle Video Auto-play Force (Sound On)
   useEffect(() => {
@@ -169,7 +175,12 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    onEnded={onComplete}
+                    onEnded={() => {
+                      // Yaha video khatam hone par sab hide ho jayega aur onComplete chalega
+                      setActiveGift(null);
+                      setLottieData(null);
+                      onComplete();
+                    }}
                     className="w-full h-full object-contain bg-transparent"
                   />
                 </div>
@@ -197,3 +208,4 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
+
