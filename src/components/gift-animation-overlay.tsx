@@ -35,7 +35,7 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false); // Ye video loading flash rokenge
+  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye naya state
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -55,7 +55,7 @@ export function GiftAnimationOverlay({
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
-      setIsVideoReady(false); // Reset video ready state on new gift
+      setIsVideoReady(false); // Har naye gift pe reset
 
       // 1. Play Sound
       if (soundUrl) {
@@ -86,13 +86,14 @@ export function GiftAnimationOverlay({
     onComplete();
   };
 
-  // Handle Video Metadata
+  // Handle Video Metadata (Isse humein video ki exact length pata chalegi)
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000; 
+    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
     
+    // Video khatam hote hi clean up karne ka backup
     setTimeout(() => {
       handleCleanup();
-    }, duration + 500); 
+    }, duration + 500); // 500ms extra for smooth exit
   };
 
   // Handle Video Auto-play Force
@@ -119,11 +120,10 @@ export function GiftAnimationOverlay({
         {activeGift && (
           <motion.div
             key={activeGift.id}
-            // Yahan se scale:0 aur scale:1 hata diya hai. Ab sirf smooth fade in/out hoga
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 0 }} // Scale hata diya taaki choti badi na ho
             animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }} 
+            exit={{ opacity: 0 }} // Center se hi gayab hogi
+            transition={{ duration: 0.2 }} // Fast fade effect ekdam direct show hone ke liye
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
             {/* NAME BANNER */}
@@ -161,8 +161,16 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                // Video ke liye ab koi full screen ya mask nahi. Center mein aayegi direct.
-                <div className="w-[300px] h-[300px] relative flex items-center justify-center pointer-events-none z-[2000]">
+                <div 
+                  className={cn(
+                    "fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none transition-opacity duration-150",
+                    isVideoReady ? "opacity-100" : "opacity-0" // Jab tak video load hogi, invisible rahegi, fir direct on
+                  )}
+                  style={{
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
+                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                  }}
+                >
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -170,14 +178,10 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
+                    onPlaying={() => setIsVideoReady(true)} // <-- YAHAN SE DIRECT PLAY HOGI BINA BLACK SCREEN
                     onLoadedMetadata={handleVideoMetadata} 
                     onEnded={handleCleanup} 
-                    // Jaise hi play hone ke layak hogi (bina loading ke), opacity 100 kar denge
-                    onCanPlay={() => setIsVideoReady(true)}
-                    className={cn(
-                      "w-full h-full object-contain bg-transparent transition-opacity duration-300",
-                      isVideoReady ? "opacity-100" : "opacity-0"
-                    )}
+                    className="w-full h-full object-contain bg-transparent"
                   />
                 </div>
               ) : null} 
@@ -200,3 +204,4 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
+
