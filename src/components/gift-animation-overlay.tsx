@@ -96,17 +96,34 @@ export function GiftAnimationOverlay({
     }, duration + 500); // 500ms extra for smooth exit
   };
 
-  // Handle Video Auto-play Force
+  // Handle Video Auto-play Force & Sound
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          videoRef.current!.defaultMuted = true;
-          videoRef.current!.muted = true;
-          videoRef.current!.playbackRate = 1.15; // Slightly faster play
-          await videoRef.current!.play();
+          // Sound ON karne ke liye false kar diya
+          videoRef.current!.defaultMuted = false;
+          videoRef.current!.muted = false;
+          videoRef.current!.playbackRate = 1.15; 
+          
+          // Fast playback ke liye load force kar diya
+          videoRef.current!.load();
+          
+          const playPromise = videoRef.current!.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
         } catch (err) {
-          console.warn('Video Playback Failed:', err);
+          console.warn('Video Playback with sound failed, browser might be blocking auto-play. Trying muted fallback:', err);
+          // Agar browser bina interaction ke sound block karta hai, toh black screen na aaye isliye fallback
+          try {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              await videoRef.current.play();
+            }
+          } catch (e) {
+            console.error('Fallback video play also failed', e);
+          }
         }
       };
       playVideo();
@@ -122,10 +139,10 @@ export function GiftAnimationOverlay({
         {activeGift && (
           <motion.div
             key={activeGift.id}
-            initial={{ opacity: 0 }} // Scale hata diya taaki choti badi na ho
+            initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0 }} // Center se hi gayab hogi
-            transition={{ duration: 0.2 }} // Fast fade effect ekdam direct show hone ke liye
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.2 }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
             {/* NAME BANNER */}
@@ -166,7 +183,7 @@ export function GiftAnimationOverlay({
                 <div 
                   className={cn(
                     "fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none transition-opacity duration-150",
-                    isVideoReady ? "opacity-100" : "opacity-0" // Jab tak video load hogi, invisible rahegi, fir direct on
+                    isVideoReady ? "opacity-100" : "opacity-0" 
                   )}
                   style={{
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
@@ -180,7 +197,7 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    onPlaying={() => setIsVideoReady(true)} // <-- YAHAN SE DIRECT PLAY HOGI BINA BLACK SCREEN
+                    onCanPlay={() => setIsVideoReady(true)} // <-- Delay hatane ke liye onPlaying se onCanPlay kar diya, instantly show hogi
                     onLoadedMetadata={handleVideoMetadata} 
                     onEnded={handleCleanup} 
                     className="w-full h-full object-contain bg-transparent"
