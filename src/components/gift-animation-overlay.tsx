@@ -18,7 +18,7 @@ interface GiftAnimationOverlayProps {
   soundUrl?: string | null;
   tier?: 'normal' | 'epic' | 'legendary';
   onComplete: () => void;
-  targetSeat?: number; // Prop waise hi rakha hai taaki pichhe ka logic break na ho
+  targetSeat?: number; 
 }
 
 export function GiftAnimationOverlay({ 
@@ -50,7 +50,7 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Animation trigger
+  // Animation trigger logic
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
@@ -66,31 +66,40 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Timelines - Agar video nahi hai tabhi 4 second ka timer chalega
-      let finishTimer: ReturnType<typeof setTimeout>;
-      
+      // 3. Dynamic Timeout Logic
+      // Agar Video nahi hai, toh default 4 sec me khatam hoga
+      // Agar video hai, toh hum 'onLoadedMetadata' use karenge (niche video tag me)
       if (!videoUrl) {
-        finishTimer = setTimeout(() => {
-          setActiveGift(null);
-          setLottieData(null);
-          onComplete();
+        const finishTimer = setTimeout(() => {
+          handleCleanup();
         }, 4000);
+        return () => clearTimeout(finishTimer);
       }
-
-      return () => {
-        if (finishTimer) {
-          clearTimeout(finishTimer);
-        }
-      };
     }
-  }, [giftId, soundUrl, videoUrl, onComplete]);
+  }, [giftId, soundUrl, videoUrl]);
 
-  // Handle Video Auto-play Force (Sound On)
+  // Cleanup function to avoid repetition
+  const handleCleanup = () => {
+    setActiveGift(null);
+    setLottieData(null);
+    onComplete();
+  };
+
+  // Handle Video Metadata (Isse humein video ki exact length pata chalegi)
+  const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
+    
+    // Video khatam hote hi clean up karne ka backup
+    setTimeout(() => {
+      handleCleanup();
+    }, duration + 500); // 500ms extra for smooth exit
+  };
+
+  // Handle Video Auto-play Force
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          // Muted true tha, usko hata diya taaki sound play ho
           videoRef.current!.muted = false;
           await videoRef.current!.play();
         } catch (err) {
@@ -111,19 +120,9 @@ export function GiftAnimationOverlay({
           <motion.div
             key={activeGift.id}
             initial={{ opacity: 0, scale: 0 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, // Hamesha center me full size rahega
-              x: 0,     // Move nahi hoga
-              y: 0,     // Move nahi hoga
-            }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 70,
-              damping: 15,
-              mass: 1
-            }}
+            transition={{ type: "spring", stiffness: 70, damping: 15, mass: 1 }}
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
             {/* NAME BANNER */}
@@ -151,7 +150,6 @@ export function GiftAnimationOverlay({
 
             {/* THE GIFT ITSELF */}
             <div className="relative flex items-center justify-center">
-              {/* Premium Glow */}
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
                 tier === 'legendary' ? "bg-yellow-400" : tier === 'epic' ? "bg-purple-500" : "bg-cyan-400"
@@ -159,15 +157,10 @@ export function GiftAnimationOverlay({
               
               {lottieData ? (
                 <div className="w-[280px] h-[280px]">
-                  <Lottie 
-                    animationData={lottieData} 
-                    loop={true} 
-                    className="w-full h-full"
-                  />
+                  <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
                 <div className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none">
-                  {/* Video se 'muted' hata diya gaya hai */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -175,26 +168,19 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    onEnded={() => {
-                      // Yaha video khatam hone par sab hide ho jayega aur onComplete chalega
-                      setActiveGift(null);
-                      setLottieData(null);
-                      onComplete();
-                    }}
+                    onLoadedMetadata={handleVideoMetadata} // <-- YAHAN SE TIME NIKAL RAHA HAI
+                    onEnded={handleCleanup} // <-- VIDEO KHATAM HOTE HI GAYAB
                     className="w-full h-full object-contain bg-transparent"
                   />
                 </div>
-              ) : imageUrl ? (
-                <div className="relative h-48 w-48 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]">
-                  <img src={imageUrl} alt="gift" className="h-full w-full object-contain" />
-                </div>
-              ) : null /* Ye default '🎁' box hata diya gaya hai */} 
+              ) : null} 
+              {/* IMAGE ANIMATION YAHA SE CLOSE (REMOVE) KAR DI GAYI HAI */}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE (Only for Legendary) */}
+      {/* FULL SCREEN AMBIANCE */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
