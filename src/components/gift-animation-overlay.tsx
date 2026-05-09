@@ -35,6 +35,7 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
+  const [isVideoReady, setIsVideoReady] = useState(false); // Ye video loading flash rokenge
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -54,6 +55,7 @@ export function GiftAnimationOverlay({
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
+      setIsVideoReady(false); // Reset video ready state on new gift
 
       // 1. Play Sound
       if (soundUrl) {
@@ -67,8 +69,6 @@ export function GiftAnimationOverlay({
       }
 
       // 3. Dynamic Timeout Logic
-      // Agar Video nahi hai, toh default 4 sec me khatam hoga
-      // Agar video hai, toh hum 'onLoadedMetadata' use karenge (niche video tag me)
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
@@ -82,17 +82,17 @@ export function GiftAnimationOverlay({
   const handleCleanup = () => {
     setActiveGift(null);
     setLottieData(null);
+    setIsVideoReady(false);
     onComplete();
   };
 
-  // Handle Video Metadata (Isse humein video ki exact length pata chalegi)
+  // Handle Video Metadata
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
+    const duration = e.currentTarget.duration * 1000; 
     
-    // Video khatam hote hi clean up karne ka backup
     setTimeout(() => {
       handleCleanup();
-    }, duration + 500); // 500ms extra for smooth exit
+    }, duration + 500); 
   };
 
   // Handle Video Auto-play Force
@@ -119,10 +119,11 @@ export function GiftAnimationOverlay({
         {activeGift && (
           <motion.div
             key={activeGift.id}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{ type: "spring", stiffness: 70, damping: 15, mass: 1 }}
+            // Yahan se scale:0 aur scale:1 hata diya hai. Ab sirf smooth fade in/out hoga
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
             {/* NAME BANNER */}
@@ -160,7 +161,8 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                <div className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none">
+                // Video ke liye ab koi full screen ya mask nahi. Center mein aayegi direct.
+                <div className="w-[300px] h-[300px] relative flex items-center justify-center pointer-events-none z-[2000]">
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -168,13 +170,17 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    onLoadedMetadata={handleVideoMetadata} // <-- YAHAN SE TIME NIKAL RAHA HAI
-                    onEnded={handleCleanup} // <-- VIDEO KHATAM HOTE HI GAYAB
-                    className="w-full h-full object-contain bg-transparent"
+                    onLoadedMetadata={handleVideoMetadata} 
+                    onEnded={handleCleanup} 
+                    // Jaise hi play hone ke layak hogi (bina loading ke), opacity 100 kar denge
+                    onCanPlay={() => setIsVideoReady(true)}
+                    className={cn(
+                      "w-full h-full object-contain bg-transparent transition-opacity duration-300",
+                      isVideoReady ? "opacity-100" : "opacity-0"
+                    )}
                   />
                 </div>
               ) : null} 
-              {/* IMAGE ANIMATION YAHA SE CLOSE (REMOVE) KAR DI GAYI HAI */}
             </div>
           </motion.div>
         )}
@@ -194,4 +200,3 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
-
