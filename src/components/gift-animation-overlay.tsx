@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -18,7 +18,7 @@ interface GiftAnimationOverlayProps {
   soundUrl?: string | null;
   tier?: 'normal' | 'epic' | 'legendary';
   onComplete: () => void;
-  targetSeat?: number;
+  targetSeat?: number; // Prop waise hi rakha hai taaki pichhe ka logic break na ho
 }
 
 export function GiftAnimationOverlay({ 
@@ -32,47 +32,11 @@ export function GiftAnimationOverlay({
   soundUrl,
   tier = 'normal',
   onComplete, 
-  targetSeat = 1,
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [phase, setPhase] = useState<'center' | 'target'>('center');
-  const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // 3x3 Grid Layout - Each seat position with pixel coordinates
-  const getSeatTarget = (seat: number) => {
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (!containerRect) return { x: 0, y: 0 };
-
-    const centerX = containerRect.width / 2;
-    const centerY = containerRect.height / 2;
-
-    // Optimized for Mobile (closer seats)
-    const spacing = 120; 
-
-    const positions: Record<number, { x: number; y: number }> = {
-      1: { x: -spacing, y: -spacing * 2 },   // Top-left
-      2: { x: 0,        y: -spacing * 2 },   // Top-center
-      3: { x: spacing,  y: -spacing * 2 },   // Top-right
-      4: { x: -spacing, y: -spacing },       // Middle-left
-      5: { x: 0,        y: -spacing },       // Center
-      6: { x: spacing,  y: -spacing },       // Middle-right
-      7: { x: -spacing, y: 0 },              // Bottom-left
-      8: { x: 0,        y: 0 },              // Bottom-center
-      9: { x: spacing,  y: 0 },              // Bottom-right
-    };
-
-    return positions[seat] || { x: 0, y: 0 };
-  };
-
-  // Recalculate target
-  useEffect(() => {
-    if (activeGift) {
-      setTargetCoords(getSeatTarget(targetSeat));
-    }
-  }, [activeGift, targetSeat]);
 
   // Load Lottie Data
   useEffect(() => {
@@ -90,7 +54,6 @@ export function GiftAnimationOverlay({
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
-      setPhase('center');
 
       // 1. Play Sound
       if (soundUrl) {
@@ -103,13 +66,7 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Timelines
-      // Show in center for 2 seconds
-      const targetTimer = setTimeout(() => {
-        setPhase('target');
-      }, 2000);
-
-      // Finish after 4 seconds
+      // 3. Timelines - Direct finish after 4 seconds (Seat pe jane wala phase hata diya)
       const finishTimer = setTimeout(() => {
         setActiveGift(null);
         setLottieData(null);
@@ -117,19 +74,18 @@ export function GiftAnimationOverlay({
       }, 4000);
 
       return () => {
-        clearTimeout(targetTimer);
         clearTimeout(finishTimer);
       };
     }
   }, [giftId, soundUrl, onComplete]);
 
-  // Handle Video Auto-play Force
+  // Handle Video Auto-play Force (Sound On)
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          videoRef.current!.defaultMuted = true;
-          videoRef.current!.muted = true;
+          // Muted true tha, usko hata diya taaki sound play ho
+          videoRef.current!.muted = false;
           await videoRef.current!.play();
         } catch (err) {
           console.warn('Video Playback Failed:', err);
@@ -151,9 +107,9 @@ export function GiftAnimationOverlay({
             initial={{ opacity: 0, scale: 0 }}
             animate={{ 
               opacity: 1, 
-              scale: phase === 'center' ? 1 : 0.4,
-              x: phase === 'center' ? 0 : targetCoords.x,
-              y: phase === 'center' ? 0 : targetCoords.y,
+              scale: 1, // Hamesha center me full size rahega
+              x: 0,     // Move nahi hoga
+              y: 0,     // Move nahi hoga
             }}
             exit={{ opacity: 0, scale: 0 }}
             transition={{ 
@@ -164,8 +120,8 @@ export function GiftAnimationOverlay({
             }}
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NAME BANNER (Only in Center Phase) */}
-            {phase === 'center' && senderName && receiverName && (
+            {/* NAME BANNER */}
+            {senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: -180 }}
@@ -205,11 +161,11 @@ export function GiftAnimationOverlay({
                 </div>
               ) : videoUrl ? (
                 <div className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none">
+                  {/* Video se 'muted' hata diya gaya hai */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
                     autoPlay 
-                    muted 
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
@@ -221,9 +177,7 @@ export function GiftAnimationOverlay({
                 <div className="relative h-48 w-48 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]">
                   <img src={imageUrl} alt="gift" className="h-full w-full object-contain" />
                 </div>
-              ) : (
-                <div className="text-9xl animate-bounce">🎁</div>
-              )}
+              ) : null /* Ye default '🎁' box hata diya gaya hai */} 
             </div>
           </motion.div>
         )}
@@ -231,7 +185,7 @@ export function GiftAnimationOverlay({
 
       {/* FULL SCREEN AMBIANCE (Only for Legendary) */}
       <AnimatePresence>
-        {activeGift && phase === 'center' && tier === 'legendary' && (
+        {activeGift && tier === 'legendary' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
