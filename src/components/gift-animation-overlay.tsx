@@ -101,7 +101,9 @@ export function GiftAnimationOverlay({
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          videoRef.current!.muted = false;
+          videoRef.current!.defaultMuted = true;
+          videoRef.current!.muted = true;
+          videoRef.current!.playbackRate = 1.15; // Slightly faster play
           await videoRef.current!.play();
         } catch (err) {
           console.warn('Video Playback Failed:', err);

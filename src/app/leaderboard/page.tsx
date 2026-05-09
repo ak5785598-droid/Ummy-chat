@@ -132,12 +132,16 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top2 && (
         <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
            <div className="relative mb-2">
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[#D4AF37] font-black text-2xl italic opacity-70">2</div>
+             <img 
+               src="/images/leaderboard/rank2.png" 
+               alt="Rank 2" 
+               className="absolute -top-10 left-1/2 -translate-x-1/2 w-14 h-14 z-20 drop-shadow-[0_0_10px_rgba(192,192,192,0.5)]"
+             />
              <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" />
            </div>
-           <div className="w-full bg-gradient-to-b from-[#D4AF37]/20 to-transparent border-t-2 border-[#D4AF37]/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
+           <div className="w-full bg-gradient-to-b from-slate-400/20 to-transparent border-t-2 border-slate-400/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top2.username || top2.name || 'User'}</span>
-             <span className="text-[#D4AF37] font-bold text-xs">{formatValue(getValue(top2))} Coins</span>
+             <span className="text-slate-300 font-bold text-xs">{formatValue(getValue(top2))}</span>
            </div>
         </Link>
       )}
@@ -145,12 +149,16 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top1 && (
         <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex-1 flex flex-col items-center z-10 -translate-y-4 scale-110">
            <div className="relative mb-2">
-             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 z-20 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 text-black text-[10px] font-black px-3 py-0.5 rounded-full shadow-md">1</div>
+             <img 
+               src="/images/leaderboard/rank1.png" 
+               alt="Rank 1" 
+               className="absolute -top-12 left-1/2 -translate-x-1/2 w-16 h-16 z-20 drop-shadow-[0_0_20px_rgba(212,175,55,0.8)]"
+             />
              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" />
            </div>
            <div className="w-full bg-gradient-to-b from-[#D4AF37]/30 to-transparent border-t-2 border-[#D4AF37] pt-6 pb-2 flex flex-col items-center rounded-t-lg shadow-[0_-10px_20px_rgba(212,175,55,0.2)]">
              <span className="text-[11px] font-black uppercase text-white truncate w-24 text-center drop-shadow-md">{top1.username || top1.name || 'User'}</span>
-             <span className="text-yellow-400 font-black text-sm drop-shadow-md">{formatValue(getValue(top1))} Coins</span>
+             <span className="text-yellow-400 font-black text-sm drop-shadow-md">{formatValue(getValue(top1))}</span>
            </div>
         </Link>
       )}
@@ -158,12 +166,16 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top3 && (
         <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center">
            <div className="relative mb-2">
-             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[#D4AF37] font-black text-2xl italic opacity-70">3</div>
+             <img 
+               src="/images/leaderboard/rank3.png" 
+               alt="Rank 3" 
+               className="absolute -top-10 left-1/2 -translate-x-1/2 w-14 h-14 z-20 drop-shadow-[0_0_10px_rgba(205,127,50,0.5)]"
+             />
              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" />
            </div>
-           <div className="w-full bg-gradient-to-b from-[#D4AF37]/20 to-transparent border-t-2 border-[#D4AF37]/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
+           <div className="w-full bg-gradient-to-b from-orange-400/20 to-transparent border-t-2 border-orange-400/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top3.username || top3.name || 'User'}</span>
-             <span className="text-[#D4AF37] font-bold text-xs">{formatValue(getValue(top3))} Coins</span>
+             <span className="text-orange-300 font-bold text-xs">{formatValue(getValue(top3))}</span>
            </div>
         </Link>
       )}

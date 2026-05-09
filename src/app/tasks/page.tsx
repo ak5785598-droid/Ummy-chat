@@ -100,11 +100,12 @@ export default function TasksPage() {
    updateDocumentNonBlocking(userRef, updateData);
    updateDocumentNonBlocking(profileRef, updateData);
 
+   setIsCheckedIn(true); // Instant local state sync
+   
    toast({
     title: 'Check-In Successful!',
     description: `Synced ${rewardAmount.toLocaleString()} Gold Coins to your vault.`,
    });
-   setIsCheckedIn(true);
   } catch (e: any) {
    toast({ variant: 'destructive', title: 'Check-In Failed' });
   } finally {
@@ -121,8 +122,11 @@ export default function TasksPage() {
    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const collectRef = doc(firestore, 'users', user.uid, 'collectedTasks', task.id);
 
+   const reward = Number(task.coinReward) || 0;
+   if (reward <= 0) throw new Error('Invalid reward');
+
    const updateData = {
-    'wallet.coins': increment(task.coinReward || 0),
+    'wallet.coins': increment(reward),
     'updatedAt': serverTimestamp()
    };
 
@@ -130,16 +134,18 @@ export default function TasksPage() {
    updateDocumentNonBlocking(userRef, updateData);
    updateDocumentNonBlocking(profileRef, updateData);
    
+   // Crucial: Await the record creation so UI updates correctly
    await setDocumentNonBlocking(collectRef, {
     collectedAt: serverTimestamp(),
-    reward: task.coinReward
+    reward: reward
    }, { merge: true });
 
    toast({
     title: 'Reward Synchronized!',
-    description: `${(Number(task.coinReward) || 0).toLocaleString()} Coins added to vault.`,
+    description: `${reward.toLocaleString()} Coins added to vault.`,
    });
   } catch (e: any) {
+   console.error('Task Collect Error:', e);
    toast({ variant: 'destructive', title: 'Collection Failed' });
   } finally {
    setIsCollecting(null);
