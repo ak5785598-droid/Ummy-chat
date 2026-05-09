@@ -26,7 +26,7 @@ export function GiftAnimationOverlay({
   giftName,
   senderName,
   receiverName,
-  imageUrl,
+  imageUrl, // Agar future me use karna ho
   animationUrl,
   videoUrl,
   soundUrl,
@@ -35,7 +35,7 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye naya state
+  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye state
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -68,7 +68,7 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic
+      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
@@ -86,7 +86,7 @@ export function GiftAnimationOverlay({
     onComplete();
   };
 
-  // Handle Video Metadata (Isse humein video ki exact length pata chalegi)
+  // Handle Video Metadata (Exact length pata karne ke liye)
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
     
@@ -141,8 +141,10 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
+            // Jab gayab hoga tab ekdam smooth fade out hoga
             exit={{ opacity: 0 }} 
-            transition={{ duration: 0.2 }} 
+            // Duration thodi badha di hai taaki exit ekdam smooth aur transparent hoke ho
+            transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
             {/* NAME BANNER */}
@@ -180,14 +182,20 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                <div 
-                  className={cn(
-                    "fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none transition-opacity duration-150",
-                    isVideoReady ? "opacity-100" : "opacity-0" 
-                  )}
+                // Yahan div ko motion.div kar diya hai Center pop in/out effect ke liye
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ 
+                    opacity: isVideoReady ? 1 : 0, 
+                    scale: isVideoReady ? 1 : 0.8 
+                  }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
                   style={{
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)',
-                    maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)'
+                    // Tumhara gradient ekdam same rakha hai edges smooth blend karne ke liye
+                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
+                    maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
                   <video 
@@ -197,12 +205,14 @@ export function GiftAnimationOverlay({
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    onCanPlay={() => setIsVideoReady(true)} // <-- Delay hatane ke liye onPlaying se onCanPlay kar diya, instantly show hogi
+                    disablePictureInPicture
+                    controls={false}
+                    onCanPlay={() => setIsVideoReady(true)} 
                     onLoadedMetadata={handleVideoMetadata} 
                     onEnded={handleCleanup} 
                     className="w-full h-full object-contain bg-transparent"
                   />
-                </div>
+                </motion.div>
               ) : null} 
             </div>
           </motion.div>
@@ -216,6 +226,7 @@ export function GiftAnimationOverlay({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[900]"
           />
         )}
