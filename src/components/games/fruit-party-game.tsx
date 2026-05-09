@@ -842,4 +842,4 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       </motion.div>
     </div>
   );
-            }
+      }
