@@ -2,30 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { Button } from '@/components/ui/button';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Loader, Gem } from 'lucide-react';
+import { ChevronLeft, Loader, Gem, ArrowDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const EXCHANGE_PACKAGES = [
- { coins: 33, diamonds: 100 }, 
- { coins: 330, diamonds: 1000 },
- { coins: 3300, diamonds: 10000 },
- { coins: 33000, diamonds: 100000 },
- { coins: 330000, diamonds: 1000000 },
- { coins: 3300000, diamonds: 10000000 },
- { coins: 33000000, diamonds: 100000000 },
-];
-
-/**
- * Diamond Exchange Portal.
- * Re-engineered to match the high-fidelity tribal blueprint.
- */
 export default function DiamondExchangePage() {
  const router = useRouter();
  const { user, isUserLoading } = useUser();
@@ -33,7 +18,11 @@ export default function DiamondExchangePage() {
  const firestore = useFirestore();
  const { toast } = useToast();
 
- const [isProcessing, setIsProcessing] = useState<number | null>(null);
+ const [isProcessing, setIsProcessing] = useState<boolean>(false);
+ const [diamondInput, setDiamondInput] = useState<string>('');
+
+ // Logic: 100 diamonds = 33 coins (0.33 conversion rate)
+ const calculatedCoins = Math.floor((Number(diamondInput) || 0) * 0.33);
 
  useEffect(() => {
   if (!isUserLoading && !user) {
@@ -41,10 +30,21 @@ export default function DiamondExchangePage() {
   }
  }, [user, isUserLoading, router]);
 
- const handleExchange = async (pkg: typeof EXCHANGE_PACKAGES[0], index: number) => {
+ const handleExchange = async () => {
   if (!user || !firestore || !userProfile) return;
 
-  if ((userProfile.wallet?.diamonds || 0) < pkg.diamonds) {
+  const diamondsToExchange = Number(diamondInput);
+  
+  if (!diamondsToExchange || diamondsToExchange <= 0) {
+    toast({
+      variant: 'destructive',
+      title: 'Invalid Amount',
+      description: 'Please enter a valid amount of diamonds.'
+    });
+    return;
+  }
+
+  if ((userProfile.wallet?.diamonds || 0) < diamondsToExchange) {
    toast({ 
     variant: 'destructive', 
     title: 'Insufficient Diamonds', 
@@ -53,7 +53,16 @@ export default function DiamondExchangePage() {
    return;
   }
 
-  setIsProcessing(index);
+  if (calculatedCoins <= 0) {
+    toast({
+      variant: 'destructive',
+      title: 'Minimum Amount Not Met',
+      description: 'You need to exchange more diamonds to get at least 1 coin.'
+    });
+    return;
+  }
+
+  setIsProcessing(true);
 
   try {
    const userRef = doc(firestore, 'users', user.uid);
@@ -61,8 +70,8 @@ export default function DiamondExchangePage() {
    const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
 
    const updateData = {
-    'wallet.diamonds': increment(-pkg.diamonds),
-    'wallet.coins': increment(pkg.coins),
+    'wallet.diamonds': increment(-diamondsToExchange),
+    'wallet.coins': increment(calculatedCoins),
     updatedAt: serverTimestamp()
    };
 
@@ -73,20 +82,23 @@ export default function DiamondExchangePage() {
    // 2. Record Transaction in the Ledger
    addDocumentNonBlocking(historyRef, {
     type: 'exchange',
-    diamondAmount: pkg.diamonds,
-    coinAmount: pkg.coins,
+    diamondAmount: diamondsToExchange,
+    coinAmount: calculatedCoins,
     timestamp: serverTimestamp(),
     status: 'completed'
    });
 
    toast({ 
     title: 'Exchange Successful', 
-    description: `Successfully converted ${pkg.diamonds.toLocaleString()} Diamonds to ${pkg.coins.toLocaleString()} Coins.` 
+    description: `Successfully converted ${diamondsToExchange.toLocaleString()} Diamonds to ${calculatedCoins.toLocaleString()} Coins.` 
    });
+   
+   // Success ke baad input field khali karne ke liye
+   setDiamondInput('');
   } catch (e: any) {
    toast({ variant: 'destructive', title: 'Exchange Failed', description: e.message });
   } finally {
-   setIsProcessing(null);
+   setIsProcessing(false);
   }
  };
 
@@ -111,54 +123,79 @@ export default function DiamondExchangePage() {
       <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
        <ChevronLeft className="h-6 w-6 text-gray-800" />
       </button>
-      <h1 className="text-xl font-bold uppercase tracking-tight flex-1 text-center pr-10">Exchange diamonds to coins</h1>
+      <h1 className="text-xl font-bold uppercase tracking-tight flex-1 text-center pr-10">Exchange diamonds</h1>
     </header>
 
     <div className="p-6 space-y-8">
-      {/* Current Balance Box */}
-      <div className="bg-[#fffef0] rounded-2xl p-6 flex items-center justify-between border border-orange-50 shadow-sm">
-       <span className="text-gray-400 font-bold text-lg uppercase tracking-tight">Current Diamonds</span>
+      {/* Current Balance Box - Text Size Chota kar diya hai */}
+      <div className="bg-[#fffef0] rounded-2xl p-5 flex items-center justify-between border border-orange-50 shadow-sm">
+       <span className="text-gray-400 font-semibold text-sm uppercase tracking-tight">Current Diamonds</span>
        <div className="flex items-center gap-2">
          <Gem className="h-4 w-4 text-[#00E5FF] fill-current" />
-         <span className="text-2xl font-bold text-[#0ea5e9]">
+         <span className="text-xl font-bold text-[#0ea5e9]">
           {(userProfile?.wallet?.diamonds || 0).toLocaleString()}
          </span>
        </div>
       </div>
 
-      {/* Exchange Roster */}
-      <div className="space-y-2">
-       <h2 className="text-lg font-bold text-gray-900 mb-6 px-1">Exchange Diamonds to Coins</h2>
+      {/* Custom Exchange Section */}
+      <div className="space-y-6">
+       <h2 className="text-lg font-bold text-gray-900 px-1">Exchange Custom Amount</h2>
        
-       <div className="divide-y divide-gray-50">
-         {EXCHANGE_PACKAGES.map((pkg, idx) => (
-          <div key={idx} className="flex items-center justify-between py-6 group">
-           <div className="flex items-center gap-4">
-             <div className="h-10 w-10">
+       <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-6">
+         
+         {/* Diamond Input Area */}
+         <div className="space-y-3">
+           <label className="text-sm font-semibold text-gray-500 ml-1">Enter Diamonds to Exchange</label>
+           <div className="flex items-center gap-3 bg-blue-50/50 border-2 border-blue-100 rounded-2xl px-4 py-3 focus-within:border-blue-300 focus-within:bg-blue-50 transition-all">
+             <Gem className="h-6 w-6 text-[#00E5FF] fill-current" />
+             <input 
+               type="number" 
+               value={diamondInput}
+               onChange={(e) => setDiamondInput(e.target.value)}
+               placeholder="0"
+               min="1"
+               className="w-full text-2xl font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-300"
+             />
+           </div>
+         </div>
+
+         {/* Arrow Down Divider */}
+         <div className="flex justify-center -my-2 relative z-10">
+           <div className="bg-white border-2 border-gray-100 rounded-full p-2 shadow-sm">
+             <ArrowDown className="h-5 w-5 text-gray-400" />
+           </div>
+         </div>
+
+         {/* Output Coins Area */}
+         <div className="space-y-3">
+           <label className="text-sm font-semibold text-gray-500 ml-1">You will receive</label>
+           <div className="flex items-center gap-3 bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 py-3">
+             <div className="h-7 w-7">
               <GoldCoinIcon className="h-full w-full drop-shadow-sm" />
              </div>
-             <span className="text-xl font-bold text-gray-900">{pkg.coins.toLocaleString()}</span>
+             <span className="w-full text-2xl font-bold text-gray-900">
+               {calculatedCoins.toLocaleString()}
+             </span>
            </div>
-           
-           <button 
-            onClick={() => handleExchange(pkg, idx)}
-            disabled={isProcessing !== null}
+         </div>
+
+         {/* Exchange Button */}
+         <button 
+            onClick={handleExchange}
+            disabled={isProcessing || !diamondInput || Number(diamondInput) <= 0 || calculatedCoins <= 0}
             className={cn(
-             "h-12 px-6 rounded-full border-2 border-blue-100 bg-white flex items-center gap-2 shadow-sm transition-all active:scale-95",
-             "hover:bg-blue-50 hover:border-blue-200"
+             "w-full h-14 rounded-full border-2 border-blue-100 bg-white flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95",
+             "hover:bg-blue-50 hover:border-blue-200 disabled:opacity-50 disabled:pointer-events-none mt-4"
             )}
            >
-             {isProcessing === idx ? (
-              <Loader className="h-3 w-3 animate-spin text-blue-500" />
+             {isProcessing ? (
+              <Loader className="h-5 w-5 animate-spin text-blue-500" />
              ) : (
-              <Gem className="h-3 w-3 text-[#00E5FF] fill-current" />
+              <span className="font-bold text-blue-500 text-lg">Exchange Now</span>
              )}
-             <span className="font-bold text-blue-500 text-sm">
-              {pkg.diamonds.toLocaleString()}
-             </span>
-           </button>
-          </div>
-         ))}
+         </button>
+
        </div>
       </div>
     </div>
@@ -166,3 +203,4 @@ export default function DiamondExchangePage() {
   </AppLayout>
  );
 }
+
