@@ -30,7 +30,9 @@ import {
   DollarSign,
   HelpCircle,
   Check,
-  Crown // Added Crown for the new Medal UI
+  Crown, // Added Crown for the new Medal UI
+  Gift, // Added for Gift tab
+  Activity as ActivityIcon // Added for Activity tab
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -653,9 +655,11 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 
 // --- NEW MEDAL MODAL COMPONENT (UI AS PER IMAGE) ---
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
+  const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[999] bg-[#0A0217] text-white flex flex-col font-outfit overflow-hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[999] bg-[#0A0217] text-white flex flex-col font-outfit overflow-hidden animate-in fade-in duration-200 pt-6">
       
       {/* Header */}
       <div className="flex items-center px-4 h-14 relative shrink-0">
@@ -691,61 +695,136 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 
         {/* Tabs */}
         <div className="flex justify-around mt-6 border-b border-white/10 px-4">
-          <button className="pb-3 border-b-2 border-[#fcd34d] text-[#fcd34d] font-semibold text-[15px] tracking-wide">Achievement</button>
-          <button className="pb-3 text-white/50 font-medium text-[15px] tracking-wide hover:text-white/80 transition-colors">Gift</button>
-          <button className="pb-3 text-white/50 font-medium text-[15px] tracking-wide hover:text-white/80 transition-colors">Activity</button>
+          <button 
+            onClick={() => setActiveTab('Achievement')} 
+            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Achievement' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
+          >
+            Achievement
+          </button>
+          <button 
+            onClick={() => setActiveTab('Gift')} 
+            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Gift' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
+          >
+            Gift
+          </button>
+          <button 
+            onClick={() => setActiveTab('Activity')} 
+            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Activity' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
+          >
+            Activity
+          </button>
         </div>
 
         {/* Medals List Grid */}
         <div className="grid grid-cols-2 gap-4 p-4 mt-2">
           
-          {/* Decabillionaire */}
-          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-             <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
-               <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
-                  <ShieldAlert className="h-10 w-10 text-white drop-shadow-md" />
-               </div>
-             </div>
-             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-             <span className="text-[14px] font-medium text-white tracking-wide">Decabillionaire</span>
-          </div>
+          {activeTab === 'Achievement' && (
+            <>
+              {/* Decabillionaire */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
+                      <ShieldAlert className="h-10 w-10 text-white drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Decabillionaire</span>
+              </div>
 
-          {/* Charm Legend */}
-          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-             <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
-               <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
-                  <Crown className="h-10 w-10 text-white drop-shadow-md" />
-               </div>
-             </div>
-             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-             <span className="text-[14px] font-medium text-white tracking-wide">Charm Legend</span>
-          </div>
+              {/* Charm Legend */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
+                      <Crown className="h-10 w-10 text-white drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Charm Legend</span>
+              </div>
 
-          {/* Billionaire */}
-          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-             <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
-               <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
-                  <ShieldAlert className="h-10 w-10 text-white/90 drop-shadow-md" />
-               </div>
-             </div>
-             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-             <span className="text-[14px] font-medium text-white tracking-wide">Billionaire</span>
-          </div>
+              {/* Billionaire */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
+                      <ShieldAlert className="h-10 w-10 text-white/90 drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Billionaire</span>
+              </div>
 
-          {/* Charm Luminary */}
-          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-             <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
-               <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
-                  <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
-               </div>
-             </div>
-             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-             <span className="text-[14px] font-medium text-white tracking-wide">Charm Luminary</span>
-          </div>
+              {/* Charm Luminary */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
+                      <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Charm Luminary</span>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'Gift' && (
+            <>
+              {/* Dummy Gift Card 1 */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-pink-200 via-pink-400 to-pink-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.15)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-pink-300 to-pink-500">
+                      <Gift className="h-10 w-10 text-white drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Top Gifter</span>
+              </div>
+
+              {/* Dummy Gift Card 2 */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-pink-300 via-pink-500 to-pink-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.1)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-pink-400 to-pink-600">
+                      <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Generous Soul</span>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'Activity' && (
+            <>
+              {/* Dummy Activity Card 1 */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-green-200 via-green-400 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.15)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-green-300 to-green-500">
+                      <ActivityIcon className="h-10 w-10 text-white drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Event Master</span>
+              </div>
+
+              {/* Dummy Activity Card 2 */}
+              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
+                 <div className="h-24 w-24 bg-gradient-to-br from-green-300 via-green-500 to-green-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.1)] p-1">
+                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-green-400 to-green-600">
+                      <Ticket className="h-10 w-10 text-white/90 drop-shadow-md" />
+                   </div>
+                 </div>
+                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+                 <span className="text-[14px] font-medium text-white tracking-wide">Active Player</span>
+              </div>
+            </>
+          )}
 
         </div>
       </div>
@@ -948,6 +1027,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     }
   };
 
+  const handleWhatsAppInvite = () => {
+    const inviteMessage = encodeURIComponent(`Hey! Download Ummy Chat and join me! My ID is: ${displayID}`);
+    window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
+  };
+
   if (isUserLoading || isProfileLoading ||!profile) return (
     <AppLayout>
       <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
@@ -1095,7 +1179,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   customIcon={SVGA_InviteHeart}
                   label="Invite friends"
                   iconColor="bg-pink-50"
-                  onClick={() => {}}
+                  onClick={handleWhatsAppInvite}
                 />
                 <ProfileMenuItem
                   customIcon={SVGA_FamilyShield}
@@ -1179,3 +1263,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     </AppLayout>
   );
 }
+
