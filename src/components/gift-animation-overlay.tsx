@@ -26,7 +26,7 @@ export function GiftAnimationOverlay({
   giftName,
   senderName,
   receiverName,
-  imageUrl, // Agar future me use karna ho
+  imageUrl, 
   animationUrl,
   videoUrl,
   soundUrl,
@@ -35,7 +35,7 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye state
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -55,7 +55,7 @@ export function GiftAnimationOverlay({
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
-      setIsVideoReady(false); // Har naye gift pe reset
+      setIsVideoReady(false);
 
       // 1. Play Sound
       if (soundUrl) {
@@ -78,7 +78,7 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Cleanup function to avoid repetition
+  // Cleanup function
   const handleCleanup = () => {
     setActiveGift(null);
     setLottieData(null);
@@ -86,14 +86,13 @@ export function GiftAnimationOverlay({
     onComplete();
   };
 
-  // Handle Video Metadata (Exact length pata karne ke liye)
+  // Handle Video Metadata
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
+    const duration = e.currentTarget.duration * 1000; 
     
-    // Video khatam hote hi clean up karne ka backup
     setTimeout(() => {
       handleCleanup();
-    }, duration + 500); // 500ms extra for smooth exit
+    }, duration + 500); 
   };
 
   // Handle Video Auto-play Force & Sound
@@ -101,12 +100,10 @@ export function GiftAnimationOverlay({
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          // Sound ON karne ke liye false kar diya
           videoRef.current!.defaultMuted = false;
           videoRef.current!.muted = false;
           videoRef.current!.playbackRate = 1.15; 
           
-          // Fast playback ke liye load force kar diya
           videoRef.current!.load();
           
           const playPromise = videoRef.current!.play();
@@ -114,8 +111,7 @@ export function GiftAnimationOverlay({
             await playPromise;
           }
         } catch (err) {
-          console.warn('Video Playback with sound failed, browser might be blocking auto-play. Trying muted fallback:', err);
-          // Agar browser bina interaction ke sound block karta hai, toh black screen na aaye isliye fallback
+          console.warn('Video Playback with sound failed, trying fallback:', err);
           try {
             if (videoRef.current) {
               videoRef.current.muted = true;
@@ -141,19 +137,17 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
-            // Jab gayab hoga tab ekdam smooth fade out hoga
             exit={{ opacity: 0 }} 
-            // Duration thodi badha di hai taaki exit ekdam smooth aur transparent hoke ho
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NEW 3D SCROLL NAME BANNER */}
+            {/* NEW 3D SCROLL BANNER NAME PLATE */}
             {senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: -220 }} // Gift ke upar space dene ke liye adjust kiya
+                animate={{ opacity: 1, y: -220 }}
                 exit={{ opacity: 0 }}
-                className="absolute text-center w-[600px] pointer-events-none"
+                className="absolute text-center w-[480px] z-[1002]"
               >
                 <div className="scroll-stage playing">
                   <div className="svg-wrap">
@@ -223,6 +217,27 @@ export function GiftAnimationOverlay({
                         <g className="bannerGroup" filter="url(#bannerShadow)">
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
+                          
+                          {/* Embedded Sender and Receiver Names inside SVG Scroll */}
+                          <foreignObject x="200" y="110" width="600" height="150">
+                            <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center">
+                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
+                                <span className="text-yellow-400">{senderName}</span>
+                              </p>
+                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-[0.2em] my-1">
+                                sent gift to
+                              </p>
+                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
+                                <span className="text-cyan-400">{receiverName}</span>
+                              </p>
+                              {giftName && (
+                                <p className="text-white/50 text-[12px] font-black uppercase tracking-[0.3em] mt-2 drop-shadow-lg">
+                                  {giftName}
+                                </p>
+                              )}
+                            </div>
+                          </foreignObject>
+
                           <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="url(#goldEdge)" strokeWidth="3.2"/>
                           <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="#fff3b0" strokeWidth="1" opacity=".35"/>
                           <path d="M 146 93 Q 500 119 854 93" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="2"/>
@@ -231,12 +246,6 @@ export function GiftAnimationOverlay({
                           <g transform="translate(828,114) rotate(90)"><use href="#corner"/></g>
                           <g transform="translate(828,246) rotate(180)"><use href="#corner"/></g>
                           <g transform="translate(172,246) rotate(270)"><use href="#corner"/></g>
-
-                          {/* DYNAMIC TEXT INSIDE THE SVG SCROLL */}
-                          <text x="500" y="150" textAnchor="middle" fill="#FFD700" fontSize="32" fontWeight="900" fontFamily="Inter, sans-serif">{senderName}</text>
-                          <text x="500" y="175" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="12" fontWeight="bold" letterSpacing="4" fontFamily="Inter, sans-serif">SENT GIFT TO</text>
-                          <text x="500" y="205" textAnchor="middle" fill="#00FFFF" fontSize="32" fontWeight="900" fontFamily="Inter, sans-serif">{receiverName}</text>
-                          <text x="500" y="225" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="10" fontWeight="900" letterSpacing="6" fontFamily="Inter, sans-serif">{giftName || 'SPECIAL GIFT'}</text>
                         </g>
 
                         <g className="leftRod" filter="url(#rodDepth)">
@@ -266,7 +275,7 @@ export function GiftAnimationOverlay({
                           <circle cx="880" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
                           <ellipse cx="880" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
                           <ellipse cx="880" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
-                          <ellipse cx="880" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
+                          <ellipse cx="880" cy="308" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
                           <circle cx="880" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
                           <ellipse cx="880" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
                           <rect x="859.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
@@ -276,65 +285,10 @@ export function GiftAnimationOverlay({
                     </svg>
                   </div>
                 </div>
-
-                {/* SCROLL BANNER STYLES - Scoped properly */}
-                <style>{`
-                  .scroll-stage {
-                    width: 100%;
-                    max-width: 900px;
-                    margin: 0 auto;
-                    perspective: 1200px;
-                    filter: drop-shadow(0 40px 60px rgba(0,0,0,.55));
-                  }
-                  .svg-wrap { position: relative; transform-style: preserve-3d; }
-                  .scroll-stage svg {
-                    width: 100%; height: auto; display: block; overflow: visible;
-                    transform: rotateX(12deg);
-                    transform-origin: 50% 45%;
-                  }
-                  .leftRod, .rightRod, .bannerGroup, .floatGroup { will-change: transform; transform-box: view-box; }
-                  .bannerGroup { transform-origin: 500px 180px; }
-                  
-                  /* Always playing state since the component unmounts on complete */
-                  .playing .leftRod { animation: leftOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-                  .playing .rightRod { animation: rightOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-                  .playing .bannerGroup { animation: bannerOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-                  .playing .floatGroup { animation: floatY 3.6s ease-in-out infinite; }
-                  
-                  @keyframes leftOpen {
-                    0%,7% { transform: translate3d(380px,0,0); }
-                    22%,78% { transform: translate3d(0,0,0); }
-                    93%,100% { transform: translate3d(380px,0,0); }
-                  }
-                  @keyframes rightOpen {
-                    0%,7% { transform: translate3d(-380px,0,0); }
-                    22%,78% { transform: translate3d(0,0,0); }
-                    93%,100% { transform: translate3d(-380px,0,0); }
-                  }
-                  @keyframes bannerOpen {
-                    0%,7% { transform: scaleX(.04); opacity: 0; }
-                    12% { opacity: 1; }
-                    22%,78% { transform: scaleX(1); opacity: 1; }
-                    86% { opacity: 1; }
-                    93%,100% { transform: scaleX(.04); opacity: 0; }
-                  }
-                  @keyframes floatY {
-                    0%,7% { transform: translateY(10px); }
-                    20% { transform: translateY(0); }
-                    35% { transform: translateY(-4px); }
-                    50% { transform: translateY(2px); }
-                    65% { transform: translateY(-3px); }
-                    80%,86% { transform: translateY(0); }
-                    100% { transform: translateY(10px); }
-                  }
-                  @media (prefers-reduced-motion: reduce) {
-                    .playing .leftRod, .playing .rightRod, .playing .bannerGroup, .playing .floatGroup { animation: none; }
-                  }
-                `}</style>
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF (UNTOUCHED) */}
+            {/* THE GIFT ITSELF (Untouched) */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -346,7 +300,6 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                // Yahan div ko motion.div kar diya hai Center pop in/out effect ke liye
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ 
@@ -357,7 +310,6 @@ export function GiftAnimationOverlay({
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
                   style={{
-                    // Tumhara gradient ekdam same rakha hai edges smooth blend karne ke liye
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
@@ -383,7 +335,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE */}
+      {/* FULL SCREEN AMBIANCE (Untouched) */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -395,6 +347,64 @@ export function GiftAnimationOverlay({
           />
         )}
       </AnimatePresence>
+
+      {/* Scroll Banner Animations Scoped Styles */}
+      <style>{`
+        .scroll-stage {
+          width: 100%; max-width: 900px;
+          perspective: 1200px;
+          filter: drop-shadow(0 40px 60px rgba(0,0,0,.55));
+        }
+        .scroll-stage .svg-wrap {
+          position: relative; transform-style: preserve-3d;
+        }
+        .scroll-stage svg {
+          width: 100%; height: auto; display: block; overflow: visible;
+          transform: rotateX(12deg);
+          transform-origin: 50% 45%;
+        }
+        .scroll-stage .leftRod, .scroll-stage .rightRod, .scroll-stage .bannerGroup, .scroll-stage .floatGroup {
+          will-change: transform; transform-box: view-box;
+        }
+        .scroll-stage .bannerGroup { transform-origin: 500px 180px; }
+        
+        .scroll-stage.playing .leftRod { animation: leftOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+        .scroll-stage.playing .rightRod { animation: rightOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+        .scroll-stage.playing .bannerGroup { animation: bannerOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+        .scroll-stage.playing .floatGroup { animation: floatY 3.6s ease-in-out infinite; }
+
+        @keyframes leftOpen {
+          0%, 7% { transform: translate3d(380px, 0, 0); }
+          22%, 78% { transform: translate3d(0, 0, 0); }
+          93%, 100% { transform: translate3d(380px, 0, 0); }
+        }
+        @keyframes rightOpen {
+          0%, 7% { transform: translate3d(-380px, 0, 0); }
+          22%, 78% { transform: translate3d(0, 0, 0); }
+          93%, 100% { transform: translate3d(-380px, 0, 0); }
+        }
+        @keyframes bannerOpen {
+          0%, 7% { transform: scaleX(.04); opacity: 0; }
+          12% { opacity: 1; }
+          22%, 78% { transform: scaleX(1); opacity: 1; }
+          86% { opacity: 1; }
+          93%, 100% { transform: scaleX(.04); opacity: 0; }
+        }
+        @keyframes floatY {
+          0%, 7% { transform: translateY(10px); }
+          20% { transform: translateY(0); }
+          35% { transform: translateY(-4px); }
+          50% { transform: translateY(2px); }
+          65% { transform: translateY(-3px); }
+          80%, 86% { transform: translateY(0); }
+          100% { transform: translateY(10px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .scroll-stage.playing .leftRod, .scroll-stage.playing .rightRod, 
+          .scroll-stage.playing .bannerGroup, .scroll-stage.playing .floatGroup { animation: none; }
+        }
+      `}</style>
     </div>
   );
 }
+
