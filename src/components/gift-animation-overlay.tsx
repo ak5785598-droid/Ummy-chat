@@ -11,7 +11,7 @@ interface GiftAnimationOverlayProps {
   giftId: string | null;
   giftName?: string;
   senderName?: string;
-  receiverName?: string;
+  receiverName?: string; 
   imageUrl?: string | null;
   animationUrl?: string | null;
   videoUrl?: string | null;
@@ -147,30 +147,194 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NAME BANNER */}
+            {/* NEW 3D SCROLL NAME BANNER */}
             {senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: -180 }}
+                animate={{ opacity: 1, y: -220 }} // Gift ke upar space dene ke liye adjust kiya
                 exit={{ opacity: 0 }}
-                className="absolute text-center w-[300px]"
+                className="absolute text-center w-[600px] pointer-events-none"
               >
-                <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-2xl">
-                  <p className="text-white text-lg font-black tracking-tight leading-tight">
-                    <span className="text-yellow-400">{senderName}</span>
-                  </p>
-                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] my-0.5">sent gift to</p>
-                  <p className="text-white text-lg font-black tracking-tight leading-tight">
-                    <span className="text-cyan-400">{receiverName}</span>
-                  </p>
+                <div className="scroll-stage playing">
+                  <div className="svg-wrap">
+                    <svg viewBox="0 0 1000 400" aria-label="3D Chinese Scroll Banner">
+                      <defs>
+                        <linearGradient id="gold" x1="0" x2="1" y1="0" y2="0">
+                          <stop offset="0%" stopColor="#5e4200"/>
+                          <stop offset="10%" stopColor="#FFD700"/>
+                          <stop offset="22%" stopColor="#FFF5B0"/>
+                          <stop offset="38%" stopColor="#B8860B"/>
+                          <stop offset="52%" stopColor="#FFD700"/>
+                          <stop offset="66%" stopColor="#FFF5B0"/>
+                          <stop offset="82%" stopColor="#D4AF37"/>
+                          <stop offset="100%" stopColor="#5a3e00"/>
+                        </linearGradient>
+                        <linearGradient id="goldEdge" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#FFF5B0"/>
+                          <stop offset="45%" stopColor="#D4AF37"/>
+                          <stop offset="100%" stopColor="#8a6a10"/>
+                        </linearGradient>
+                        <linearGradient id="spec" x1="0" x2="1">
+                          <stop offset="0%" stopColor="rgba(255,255,255,0)"/>
+                          <stop offset="45%" stopColor="rgba(255,255,255,.9)"/>
+                          <stop offset="55%" stopColor="rgba(255,255,255,.9)"/>
+                          <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
+                        </linearGradient>
+                        <radialGradient id="blue" cx="50%" cy="38%" r="78%">
+                          <stop offset="0%" stopColor="#1E3AFF"/>
+                          <stop offset="38%" stopColor="#1a2fe6"/>
+                          <stop offset="72%" stopColor="#0f1fb0"/>
+                          <stop offset="100%" stopColor="#0A1A9C"/>
+                        </radialGradient>
+                        <radialGradient id="blueCap" cx="35%" cy="28%" r="70%">
+                          <stop offset="0%" stopColor="#3550ff"/>
+                          <stop offset="55%" stopColor="#0A1A9C"/>
+                          <stop offset="100%" stopColor="#050c54"/>
+                        </radialGradient>
+                        <radialGradient id="floorShadow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="rgba(0,0,0,.5)"/>
+                          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+                        </radialGradient>
+                        <filter id="bannerShadow" x="-20%" y="-30%" width="140%" height="180%">
+                          <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="b"/>
+                          <feOffset dy="18" result="o"/>
+                          <feComponentTransfer><feFuncA type="linear" slope="0.8"/></feComponentTransfer>
+                          <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <filter id="innerGlow" x="-10%" y="-10%" width="120%" height="120%">
+                          <feGaussianBlur stdDeviation="9" result="g"/>
+                          <feComposite in="g" in2="SourceAlpha" operator="in"/>
+                          <feFlood floodColor="#8aa6ff" floodOpacity=".28"/>
+                          <feComposite operator="in" in2="SourceAlpha"/>
+                          <feBlend in="SourceGraphic" mode="screen"/>
+                        </filter>
+                        <filter id="rodDepth" x="-40%" y="-15%" width="180%" height="160%">
+                          <feDropShadow dx="0" dy="14" stdDeviation="12" floodColor="#000" floodOpacity=".55"/>
+                        </filter>
+                        <g id="corner" fill="none" stroke="url(#goldEdge)" strokeWidth="2.4" strokeLinecap="round">
+                          <path d="M0 22 v-9 c0-6.2 5-11.2 11.2-11.2 h9.8" opacity=".98"/>
+                          <path d="M3.5 19 v-5 c0-3.8 3.1-6.9 6.9-6.9 h5.6" opacity=".6"/>
+                        </g>
+                      </defs>
+
+                      <g className="floatGroup">
+                        <ellipse cx="500" cy="334" rx="300" ry="30" fill="url(#floorShadow)" opacity=".55"/>
+
+                        <g className="bannerGroup" filter="url(#bannerShadow)">
+                          <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
+                          <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
+                          <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="url(#goldEdge)" strokeWidth="3.2"/>
+                          <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="#fff3b0" strokeWidth="1" opacity=".35"/>
+                          <path d="M 146 93 Q 500 119 854 93" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="2"/>
+                          <path d="M 146 267 Q 500 241 854 267" fill="none" stroke="rgba(0,0,0,.45)" strokeWidth="2.5"/>
+                          <g transform="translate(172,114)"><use href="#corner"/></g>
+                          <g transform="translate(828,114) rotate(90)"><use href="#corner"/></g>
+                          <g transform="translate(828,246) rotate(180)"><use href="#corner"/></g>
+                          <g transform="translate(172,246) rotate(270)"><use href="#corner"/></g>
+
+                          {/* DYNAMIC TEXT INSIDE THE SVG SCROLL */}
+                          <text x="500" y="150" textAnchor="middle" fill="#FFD700" fontSize="32" fontWeight="900" fontFamily="Inter, sans-serif">{senderName}</text>
+                          <text x="500" y="175" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="12" fontWeight="bold" letterSpacing="4" fontFamily="Inter, sans-serif">SENT GIFT TO</text>
+                          <text x="500" y="205" textAnchor="middle" fill="#00FFFF" fontSize="32" fontWeight="900" fontFamily="Inter, sans-serif">{receiverName}</text>
+                          <text x="500" y="225" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="10" fontWeight="900" letterSpacing="6" fontFamily="Inter, sans-serif">{giftName || 'SPECIAL GIFT'}</text>
+                        </g>
+
+                        <g className="leftRod" filter="url(#rodDepth)">
+                          <ellipse cx="120" cy="324" rx="28" ry="9" fill="#000" opacity=".26"/>
+                          <rect x="102" y="52" width="36" height="256" rx="18" fill="url(#gold)"/>
+                          <rect x="102" y="52" width="36" height="256" rx="18" fill="none" stroke="rgba(0,0,0,.28)" strokeWidth="2"/>
+                          <rect x="110" y="58" width="5" height="244" rx="2.5" fill="url(#spec)" opacity=".78"/>
+                          <rect x="124.5" y="58" width="2.2" height="244" rx="1.1" fill="rgba(255,255,255,.18)"/>
+                          <ellipse cx="120" cy="52" rx="19" ry="7.5" fill="#050a3b"/>
+                          <circle cx="120" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
+                          <ellipse cx="120" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
+                          <ellipse cx="120" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
+                          <ellipse cx="120" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
+                          <circle cx="120" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
+                          <ellipse cx="120" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
+                          <rect x="99.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
+                          <rect x="99.5" y="283.5" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
+                        </g>
+
+                        <g className="rightRod" filter="url(#rodDepth)">
+                          <ellipse cx="880" cy="324" rx="28" ry="9" fill="#000" opacity=".26"/>
+                          <rect x="862" y="52" width="36" height="256" rx="18" fill="url(#gold)"/>
+                          <rect x="862" y="52" width="36" height="256" rx="18" fill="none" stroke="rgba(0,0,0,.28)" strokeWidth="2"/>
+                          <rect x="870" y="58" width="5" height="244" rx="2.5" fill="url(#spec)" opacity=".78"/>
+                          <rect x="884.5" y="58" width="2.2" height="244" rx="1.1" fill="rgba(255,255,255,.18)"/>
+                          <ellipse cx="880" cy="52" rx="19" ry="7.5" fill="#050a3b"/>
+                          <circle cx="880" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
+                          <ellipse cx="880" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
+                          <ellipse cx="880" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
+                          <ellipse cx="880" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
+                          <circle cx="880" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
+                          <ellipse cx="880" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
+                          <rect x="859.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
+                          <rect x="859.5" y="283.5" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
+                        </g>
+                      </g>
+                    </svg>
+                  </div>
                 </div>
-                <p className="text-white/40 text-[9px] font-black uppercase tracking-[0.4em] mt-3 drop-shadow-lg">
-                  {giftName || 'Special Gift'}
-                </p>
+
+                {/* SCROLL BANNER STYLES - Scoped properly */}
+                <style>{`
+                  .scroll-stage {
+                    width: 100%;
+                    max-width: 900px;
+                    margin: 0 auto;
+                    perspective: 1200px;
+                    filter: drop-shadow(0 40px 60px rgba(0,0,0,.55));
+                  }
+                  .svg-wrap { position: relative; transform-style: preserve-3d; }
+                  .scroll-stage svg {
+                    width: 100%; height: auto; display: block; overflow: visible;
+                    transform: rotateX(12deg);
+                    transform-origin: 50% 45%;
+                  }
+                  .leftRod, .rightRod, .bannerGroup, .floatGroup { will-change: transform; transform-box: view-box; }
+                  .bannerGroup { transform-origin: 500px 180px; }
+                  
+                  /* Always playing state since the component unmounts on complete */
+                  .playing .leftRod { animation: leftOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+                  .playing .rightRod { animation: rightOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+                  .playing .bannerGroup { animation: bannerOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
+                  .playing .floatGroup { animation: floatY 3.6s ease-in-out infinite; }
+                  
+                  @keyframes leftOpen {
+                    0%,7% { transform: translate3d(380px,0,0); }
+                    22%,78% { transform: translate3d(0,0,0); }
+                    93%,100% { transform: translate3d(380px,0,0); }
+                  }
+                  @keyframes rightOpen {
+                    0%,7% { transform: translate3d(-380px,0,0); }
+                    22%,78% { transform: translate3d(0,0,0); }
+                    93%,100% { transform: translate3d(-380px,0,0); }
+                  }
+                  @keyframes bannerOpen {
+                    0%,7% { transform: scaleX(.04); opacity: 0; }
+                    12% { opacity: 1; }
+                    22%,78% { transform: scaleX(1); opacity: 1; }
+                    86% { opacity: 1; }
+                    93%,100% { transform: scaleX(.04); opacity: 0; }
+                  }
+                  @keyframes floatY {
+                    0%,7% { transform: translateY(10px); }
+                    20% { transform: translateY(0); }
+                    35% { transform: translateY(-4px); }
+                    50% { transform: translateY(2px); }
+                    65% { transform: translateY(-3px); }
+                    80%,86% { transform: translateY(0); }
+                    100% { transform: translateY(10px); }
+                  }
+                  @media (prefers-reduced-motion: reduce) {
+                    .playing .leftRod, .playing .rightRod, .playing .bannerGroup, .playing .floatGroup { animation: none; }
+                  }
+                `}</style>
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF */}
+            {/* THE GIFT ITSELF (UNTOUCHED) */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -234,4 +398,3 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
-
