@@ -1,16 +1,28 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment } from 'firebase/firestore';
-import { X, Clock, Volume2, VolumeX, HelpCircle, Move, Sparkles, DollarSign, User } from 'lucide-react';
+import { doc, increment, collection, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { X, Clock, Volume2, VolumeX, HelpCircle, Move } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
+
+// --- STRICT 6-DIGIT UNIQUE ID GENERATOR (No Repeating Digits) ---
+const generateUnique6DigitId = () => {
+  let digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  let id = '';
+  for (let i = 0; i < 6; i++) {
+    let randomIndex = Math.floor(Math.random() * digits.length);
+    id += digits[randomIndex];
+    digits.splice(randomIndex, 1);
+  }
+  return id;
+};
 
 // --- NUMBER FORMATTING ---
 const formatKandM = (num: number): string => {
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M';
-  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K';
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return num.toString();
 };
 
@@ -40,8 +52,8 @@ const DollarCoin = ({ className = "w-4 h-4" }: { className?: string }) => (
   </svg>
 );
 
-// --- CAFE ICON WITH 3D COFFEE CUP AND COUNTDOWN (size increased) ---
-const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
+// --- CAFE ICON WITH 3D COFFEE CUP AND COUNTDOWN ---
+const CafeShopIcon = ({ size = 150, countdown = 0, className = "" }: { size?: number; countdown?: number; className?: string }) => {
   return (
     <div
       className={className}
@@ -70,7 +82,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
         .s3 { animation-delay: 0.8s; }
       `}</style>
       <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        {/* ... same SVG content as original, unchanged ... */}
         <defs>
           <linearGradient id="magenta" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#ff4da6" />
@@ -115,7 +126,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
             <stop offset="50%" stopColor="#6b6cf5" />
             <stop offset="100%" stopColor="#3d5ef2" />
           </linearGradient>
-          
           <linearGradient id="saucerTop" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fff5dc"/>
             <stop offset="20%" stopColor="#fff5dc"/>
@@ -153,7 +163,6 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
             <stop offset="0%" stopColor="#a05e33" stopOpacity="0.9"/>
             <stop offset="100%" stopColor="#6b2f15" stopOpacity="0"/>
           </linearGradient>
-          
           <filter id="bigShadow" x="-20%" y="-10%" width="140%" height="140%">
             <feDropShadow dx="0" dy="18" stdDeviation="16" floodColor="#000" floodOpacity="0.2" />
           </filter>
@@ -249,12 +258,10 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
               <ellipse cx="140" cy="172" rx="95" ry="22" fill="#fff9e8" opacity="0.3"/>
               <ellipse cx="140" cy="162" rx="110" ry="24" fill="none" stroke="#fff" strokeOpacity="0.25" strokeWidth="2"/>
 
-              <path d="M203 132.5 C231 126 253 144 248.5 170.5 C244 193 224.5 203.5 198 188 L207 178.5 C221 186.5 231.5 180 233.5 166.5 C235.5 152 222 140 207.5 144.5 L203 132.5 Z" 
-                fill="url(#handleGrad)" stroke="#d0b481" strokeWidth="1.3"/>
+              <path d="M203 132.5 C231 126 253 144 248.5 170.5 C244 193 224.5 203.5 198 188 L207 178.5 C221 186.5 231.5 180 233.5 166.5 C235.5 152 222 140 207.5 144.5 L203 132.5 Z" fill="url(#handleGrad)" stroke="#d0b481" strokeWidth="1.3"/>
               <path d="M207 138 C220 136 229 143 228 156" fill="none" stroke="#ffffff" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round"/>
 
-              <path d="M66 124 C59 138 61 168 75 186.5 C79.5 192.5 107 196 135 196.5 C163 196 190.5 192.5 195 186.5 C209 168 211 138 204 124 C202 133 181 139 135 141 C89 139 68 133 66 124 Z"
-                fill="url(#cupBody)" stroke="#f3e0b6" strokeWidth="1.2"/>
+              <path d="M66 124 C59 138 61 168 75 186.5 C79.5 192.5 107 196 135 196.5 C163 196 190.5 192.5 195 186.5 C209 168 211 138 204 124 C202 133 181 139 135 141 C89 139 68 133 66 124 Z" fill="url(#cupBody)" stroke="#f3e0b6" strokeWidth="1.2"/>
               <path d="M178 128 C197 135 206 152 203 174 C199 186 188 193 171 195.5 C184 190 195 177 196 159 C197 144 189 132 178 128 Z" fill="url(#cupShade)" opacity="0.85"/>
 
               <ellipse cx="86" cy="155" rx="13" ry="31" fill="#ffffff" opacity="0.22" filter="url(#cupShadow)"/>
@@ -290,7 +297,7 @@ const CafeShopIcon = ({ size = 140, countdown = 0, className = "" }: { size?: nu
   );
 };
 
-// --- SMALL GLASS DOME (always closed) ---
+// --- SMALL GLASS DOME ---
 function GlassDomeSmall({ size = 72 }: { size?: number }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width={size} height={size} style={{ overflow: 'visible' }}>
@@ -351,7 +358,7 @@ function GlassDomeSmall({ size = 72 }: { size?: number }) {
       <ellipse cx="256" cy="335" rx="127" ry="21" fill="#0e4349" opacity="0.07" filter="url(#b4s2)" />
       <ellipse cx="256" cy="324" rx="129" ry="27" fill="#5AC0C5" opacity="0.07" filter="url(#b12s2)" />
 
-      {/* LID – always closed */}
+      {/* LID */}
       <g>
         <path d="M118 333c0-61 13-121 44-173 30-50 68-76 94-80 26 4 64 30 94 80 31 52 44 112 44 173 0 4-5 8-19 10.5-31 5.5-86 8.5-119 8.5s-88-3-119-8.5c-14-2.5-19-6.5-19-10.5z" fill="url(#glassBodySmall2)" stroke="#e9f8fa" strokeOpacity="0.38" strokeWidth="1.6" />
         <path d="M310 142c27 36 47 86 55 155 1 17 1 31l-35 1.5s0-13-1-28c-5-63-22-110-45-142-8-11-16-20-24-27 16 0 33 3 49 9.5z" fill="#0f5258" opacity="0.055" filter="url(#b4s2)" />
@@ -389,27 +396,9 @@ function GlassDomeSmall({ size = 72 }: { size?: number }) {
 }
 
 // --- FRUIT DOME COMPONENT ---
-function FruitDome({
-  emoji,
-  multiplier,
-  betAmount,
-  isHighlighted,
-  isSelected,
-  isSpinning,
-  onClick,
-}: {
-  emoji: string;
-  multiplier: number;
-  betAmount: number;
-  isHighlighted: boolean;
-  isSelected: boolean;
-  isSpinning: boolean;
-  onClick: () => void;
-}) {
+function FruitDome({ emoji, multiplier, betAmount, isHighlighted, isSelected, isSpinning, onClick }: any) {
   const brightnessClass = isSpinning
-    ? isHighlighted
-      ? 'brightness-100 opacity-100'
-      : 'brightness-50 opacity-60'
+    ? isHighlighted ? 'brightness-100 opacity-100' : 'brightness-50 opacity-60'
     : 'brightness-100 opacity-100';
 
   return (
@@ -443,56 +432,11 @@ function FruitDome({
   );
 }
 
-// --- WINNER CARD ---
-function WinnerCard({ rankText, avatarUrl, name, winAmount }: { rankText: string; avatarUrl?: string; name: string; winAmount: number }) {
-  return (
-    <div className="bg-gradient-to-b from-red-600 to-red-800 rounded-xl p-2 flex flex-col items-center gap-1 border-2 border-red-400 shadow-lg min-w-[90px]">
-      <div className="text-white text-[13px] font-black uppercase tracking-widest drop-shadow-md">
-        {rankText}
-      </div>
-      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-red-500 flex items-center justify-center text-xl border-2 border-white/50 shadow-inner overflow-hidden">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-        ) : (
-          <User className="w-6 h-6 text-white/80" />
-        )}
-      </div>
-      <span className="text-white text-[11px] font-bold truncate w-full max-w-[80px] text-center mt-1">{name}</span>
-      <div className="flex items-center gap-1 text-white bg-black/30 px-2 py-0.5 rounded-full mt-0.5">
-        <DollarCoin className="w-3.5 h-3.5" />
-        <span className="text-[11px] font-extrabold">{formatKandM(winAmount)}</span>
-      </div>
-    </div>
-  );
-}
-
-// --- ANIMATED TRUMPET ---
-const AnimatedTrumpet = ({ flip }: { flip?: boolean }) => (
-  <motion.svg 
-    animate={{ 
-      rotate: flip ? [-10, 10, -10] : [10, -10, 10], 
-      scale: [1, 1.1, 1] 
-    }}
-    transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-    style={{ transform: flip ? 'scaleX(-1)' : 'none' }}
-    width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-  >
-    <path d="M3 12h10l5-5v10l-5-5" fill="#facc15" stroke="#ca8a04" strokeWidth="1.5"/>
-    <path d="M14 8v8" stroke="#ca8a04" strokeWidth="2"/>
-    <path d="M12 12v.01" stroke="#ca8a04"/>
-    <motion.path 
-      animate={{ opacity: [0, 1, 0], x: flip ? [-5, 5] : [5, -5], y: [-5, -10] }}
-      transition={{ duration: 0.8, repeat: Infinity }}
-      d="M20 8v.01M22 10v.01" stroke="#facc15" strokeWidth="2"
-    />
-  </motion.svg>
-);
-
-// --- SOUND EFFECTS (betting and spinning sounds removed, new spin sound added) ---
+// --- SOUND EFFECTS ---
 const SOUNDS = {
   TICK: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
   WIN: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3',
-  SPIN_START: 'https://assets.mixkit.co/active_storage/sfx/2009/2009-preview.mp3', // New game-spin sound
+  SPIN_START: 'https://assets.mixkit.co/active_storage/sfx/2009/2009-preview.mp3',
 };
 
 const ITEMS = [
@@ -514,12 +458,237 @@ const CHIPS = [
   { value: 1000000, label: '1M' },
 ];
 
+// --- HELPER COMPONENTS ---
+const CountUpDisplay = ({ amount, duration = 900 }: { amount: number, duration?: number }) => {
+  const nodeRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const node = nodeRef.current;
+    if (!node) return;
+    const start = 0;
+    const t0 = performance.now();
+    let rafId: number;
+
+    const tick = (t: number) => {
+      const p = Math.min((t - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const currentVal = Math.round(start + (amount - start) * eased);
+      if (node) node.textContent = formatKandM(currentVal);
+      if (p < 1) rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [amount, duration]);
+
+  return <span ref={nodeRef} style={{ willChange: 'contents' }}>{formatKandM(0)}</span>;
+};
+
+const CoinIcon2 = ({ className = '' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 32 32">
+    <defs>
+      <linearGradient id="coinGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#fff9c4" />
+        <stop offset="28%" stopColor="#ffd54f" />
+        <stop offset="68%" stopColor="#f9a825" />
+        <stop offset="100%" stopColor="#e65100" />
+      </linearGradient>
+    </defs>
+    <circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1" />
+    <circle cx="16" cy="16" r="12" fill="none" stroke="#ffecb3" strokeWidth="1" opacity=".55" />
+    <text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text>
+  </svg>
+);
+
+const Confetti = ({ show }: { show: boolean }) => {
+  const pieces = useMemo(() => Array.from({ length: 26 }).map((_, i) => ({
+    id: i,
+    left: `${5 + Math.random() * 90}%`,
+    background: `hsl(${38 + Math.random() * 30}, 100%, ${62 + Math.random() * 18}%)`,
+    delay: `${Math.random() * 0.2}s`,
+    rotate: `${Math.random() * 360}deg`
+  })), []);
+
+  if (!show) return null;
+  return (
+    <div className="confetti pointer-events-none" style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}>
+      {pieces.map((p) => (
+        <i key={p.id} style={{ left: p.left, background: p.background, animationDelay: p.delay, transform: `rotate(${p.rotate})`, willChange: 'transform, opacity' }} />
+      ))}
+    </div>
+  );
+};
+
+const Crown = ({ rank }: { rank: 1 | 2 | 3 }) => {
+   const colors = {
+    1: ['#fbbf24', '#b45309'],
+    2: ['#e2e8f0', '#475569'],
+    3: ['#d97706', '#78350f']
+  }[rank];
+
+  return (
+    <svg viewBox="0 0 64 64" className="w-full h-full absolute inset-0 drop-shadow-md z-10" style={{ transform: 'translateY(-15px)' }}>
+      <path d="M12 44 L16 20 L32 32 L48 20 L52 44 Z" fill={colors[0]} stroke={colors[1]} strokeWidth="2" strokeLinejoin="round"/>
+      <ellipse cx="32" cy="44" rx="20" ry="4" fill={colors[0]} stroke={colors[1]} strokeWidth="2"/>
+      <circle cx="16" cy="16" r="4" fill={colors[0]} stroke={colors[1]} strokeWidth="1.5"/>
+      <circle cx="32" cy="28" r="4" fill={colors[0]} stroke={colors[1]} strokeWidth="1.5"/>
+      <circle cx="48" cy="16" r="4" fill={colors[0]} stroke={colors[1]} strokeWidth="1.5"/>
+      <text x="32" y="46" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold" fontFamily="Arial">{rank}</text>
+    </svg>
+  );
+};
+
+export const WinnerPopup = ({ winnerData, winnersList, activeWinnerIdx, setActiveWinnerIdx }: any) => {
+  return (
+    <>
+      <AnimatePresence>
+        {winnerData && (
+          <motion.div 
+            initial={{ y: "100%" }} 
+            animate={{ y: 0 }} 
+            exit={{ y: "100%" }} 
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed bottom-0 left-0 right-0 z-[210] flex justify-center pb-4 px-2"
+            style={{ transform: 'translateZ(0)', willChange: 'transform' }}
+          >
+              <div className="winning-card" style={{ transform: 'translateZ(0)' }}>
+                  <Confetti show={true} />
+                  
+                  {/* Top Section: Your Win */}
+                  <div className="tw-top">
+                    <div className="tw-emoji-box flex items-center justify-center" onClick={() => navigator.vibrate?.(10)}>
+                        {winnerData.bet === 0 ? (
+                            <span className="text-[60px] filter drop-shadow-md">😴</span>
+                        ) : (
+                            <span className="text-[70px] filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                               {winnerData.emoji}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <div className="tw-stats">
+                      <div className="tw-stat-row">
+                        <span className="tw-stat-label">Your Prize:</span>
+                        <CoinIcon2 className="tw-coin-icon" />
+                        <span className="tw-stat-value"><CountUpDisplay amount={winnerData.win} /></span>
+                      </div>
+                      <div className="tw-stat-row">
+                        <span className="tw-stat-label">Your Bet:</span>
+                        <CoinIcon2 className="tw-coin-icon" />
+                        <span className="tw-stat-value"><CountUpDisplay amount={winnerData.bet} /></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divider Line */}
+                  <div className="tw-divider">
+                    <div className="tw-divider-line tw-left"></div>
+                    <div className="tw-divider-text">Top Winner</div>
+                    <div className="tw-divider-line tw-right"></div>
+                  </div>
+
+                  {/* Leaderboard: Rank 2, 1, 3 Order */}
+                  <div className="tw-winners">
+                    {[
+                      { rank: 2, data: winnersList[1], idx: 1 },
+                      { rank: 1, data: winnersList[0], idx: 0 },
+                      { rank: 3, data: winnersList[2], idx: 2 }
+                    ].map((p) => (
+                      <div
+                        key={`rank-${p.rank}`}
+                        className={`tw-player tw-rank-${p.rank} ${activeWinnerIdx === p.idx ? 'tw-active' : ''}`}
+                        onClick={() => {
+                          setActiveWinnerIdx(p.idx);
+                          if(p.rank === 1) navigator.vibrate?.(30);
+                        }}
+                        style={{ opacity: 1, transform: 'translateZ(0)', willChange: 'transform' }}
+                      >
+                        <div className="tw-ring-container relative flex items-center justify-center">
+                          {p.rank === 1 && <>
+                            <div className="tw-sparkle tw-s1"></div>
+                            <div className="tw-sparkle tw-s2"></div>
+                            <div className="tw-sparkle tw-s3"></div>
+                          </>}
+                          
+                          <div className="absolute top-[56%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] rounded-full overflow-hidden bg-slate-800 z-0 border border-white/10 shadow-inner flex items-center justify-center">
+                            {p.data?.avatar ? (
+                                <img src={p.data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-[20px] text-white/50">😴</span>
+                            )}
+                          </div>
+
+                          <div className="relative z-10 w-full h-full" style={{ transform: 'translateZ(0)' }}>
+                            <Crown rank={p.rank as 1|2|3} />
+                          </div>
+                        </div>
+                        <div className="tw-player-name">{p.data ? p.data.name : 'Waiting...'}</div>
+                        <div className="tw-player-prize">
+                          <CoinIcon2 className="tw-coin-icon" />
+                          <span><CountUpDisplay amount={p.data ? p.data.win : 0} duration={1100 + p.idx * 150} /></span>
+                        </div>
+                        <div className="tw-player-bet">Bet: {p.data ? formatKandM(p.data.bet || 0) : 0}</div>
+                      </div>
+                    ))}
+                  </div>
+              </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style jsx global>{`
+        .winning-card {
+          height: 40vh; min-height: 320px; max-height: 420px; width: 100%; max-width: 100%;
+          background: linear-gradient(180deg, rgba(28,22,34,.95) 0%, rgba(12,10,14,.98) 58%, #050507 100%);
+          border: 1px solid rgba(232,200,120,.18); border-radius: 28px 28px 12px 12px;
+          padding: clamp(12px,2vh,18px) clamp(14px,3vw,22px);
+          display: flex; flex-direction: column; justify-content: space-between; position: relative;
+          overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,.05) inset, 0 -15px 40px rgba(0,0,0,0.8), 0 -5px 15px rgba(0,0,0,0.6);
+          isolation: isolate;
+        }
+        .winning-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(400px 120px at 50% 0%, rgba(232,200,120,.14), transparent 70%), radial-gradient(300px 200px at 80% 120%, rgba(255,180,60,.08), transparent 60%); pointer-events: none; z-index: 0; }
+        
+        .tw-top { display: flex; align-items: center; gap: 3.2vw; height: 35%; position: relative; z-index: 2; transform: translateZ(0); }
+        .tw-emoji-box { width: 25%; min-width: 75px; aspect-ratio: 1; position: relative; flex-shrink: 0; cursor: pointer; transition: transform .3s; }
+        .tw-emoji-box:active { transform: scale(.96); }
+        
+        .tw-stats { flex: 1; display: flex; flex-direction: column; gap: 1.1vh; justify-content: center; }
+        .tw-stat-row { display: flex; align-items: center; gap: .6rem; background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.09); padding: .4rem .6rem; border-radius: 12px; font-size: clamp(12px, 2vh, 14px); font-weight: 650; box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 8px 18px rgba(0,0,0,.4); transition: transform .2s, border-color .2s; }
+        .tw-stat-label { color: #f0eadd; min-width: 88px; }
+        .tw-coin-icon { width: 2.2vh; height: 2.2vh; min-width: 16px; min-height: 16px; flex-shrink: 0; }
+        .tw-stat-value { color: #fff; }
+        
+        .tw-divider { height: 17%; display: flex; align-items: center; justify-content: center; position: relative; margin: 0 0 .4vh 0; z-index: 2; transform: translateY(-12px); }
+        .tw-divider-line { position: absolute; width: 29%; height: 2px; top: 50%; background: linear-gradient(90deg, transparent, #e8c878, transparent); }
+        .tw-divider-line.tw-left { left: 0; transform: scaleX(-1); }
+        .tw-divider-line.tw-right { right: 0; }
+        .tw-divider-text { color: #e8c878; font-size: clamp(14px,2.4vh,18px); font-weight: 800; text-transform: uppercase; text-shadow: 0 1px 2px #000; padding: .15rem .7rem; background: radial-gradient(50% 120% at 50% 50%, rgba(232,200,120,.15), transparent 70%); border-radius: 8px; }
+        
+        .tw-winners { display: flex; justify-content: space-between; align-items: flex-end; height: 48%; gap: 2vw; position: relative; z-index: 2; }
+        .tw-player { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; transition: transform .35s; }
+        .tw-player.tw-rank-1 { transform: translateY(-1.1vh); }
+        .tw-player.tw-rank-3 { transform: translateY(.45vh); }
+        
+        .tw-ring-container { width: 86%; max-width: 110px; aspect-ratio: 1; position: relative; transition: filter .3s; }
+        .tw-player-name { font-size: clamp(11px,1.8vh,14px); font-weight: 650; margin-top: .7vh; color: #f5f3ef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 118px; }
+        .tw-player-prize { display: flex; align-items: center; justify-content: center; gap: .35rem; margin-top: .4vh; font-size: clamp(12px,1.85vh,15px); font-weight: 700; color: #ffd166; }
+        .tw-player-bet { font-size: clamp(9px,1.3vh,11px); color: #b9b9c2; margin-top: .2vh; font-weight: 500; }
+        
+        .confetti { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; border-radius: 28px; }
+        .confetti i { position: absolute; width: 6px; height: 10px; border-radius: 2px; opacity: 0; top: 38%; animation: conf 900ms cubic-bezier(.2,.7,.3,1) forwards; }
+        @keyframes conf { 0%{opacity:1; transform:translateY(0) rotate(0) scale(1)} 100%{opacity:0; transform:translateY(90px) rotate(520deg) scale(.8)} }
+      `}</style>
+    </>
+  );
+};
+
+// --- MAIN COMPONENT ---
 export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const dragControls = useDragControls();
 
+  const [currentRoundId, setCurrentRoundId] = useState(() => generateUnique6DigitId());
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
   const [timeLeft, setTimeLeft] = useState(30);
   const [spinTimeLeft, setSpinTimeLeft] = useState(0);
@@ -532,6 +701,10 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [showWinnerPopup, setShowWinnerPopup] = useState(false);
   const [history, setHistory] = useState<typeof ITEMS[0][]>([]);
+  
+  // States for Winner popup Leaderboard
+  const [winnersList, setWinnersList] = useState<any[]>([]);
+  const [activeWinnerIdx, setActiveWinnerIdx] = useState(0);
 
   const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -562,20 +735,44 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     return () => clearInterval(interval);
   }, [gameState]);
 
-  const handlePlaceBet = (id: string) => {
+  // --- GLOBAL BET SYNC LOGIC ---
+  const handlePlaceBet = async (id: string) => {
     if (gameState !== 'betting' || !currentUser) return;
     if (localCoins < selectedChip) return;
-    // Betting sound removed
+    
+    // Deduct locally
     setLocalCoins(prev => prev - selectedChip);
+    
+    // Deduct globally
     const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
     updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
-    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
+    
+    const newBetAmount = (myBets[id] || 0) + selectedChip;
+    setMyBets(prev => ({ ...prev, [id]: newBetAmount }));
+
+    // Send this bet to the Global Round Collection taaki Leaderboard ban sake
+    try {
+      const globalBetRef = doc(firestore, 'game_carnival', 'global_rounds', 'bets', `${currentRoundId}_${currentUser.uid}`);
+      await setDoc(globalBetRef, {
+        uid: currentUser.uid,
+        name: currentUser.displayName || "Unknown Player",
+        avatar: currentUser.photoURL || null,
+        bets: {
+           ...myBets,
+           [id]: newBetAmount
+        },
+        roundId: currentRoundId,
+        timestamp: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.log("Error syncing global bet", error);
+    }
   };
 
   const startSpin = () => {
     setGameState('spinning');
     setSpinTimeLeft(10);
-    playSound(SOUNDS.SPIN_START, 0.8); // New spin start sound
+    playSound(SOUNDS.SPIN_START, 0.8);
     movingIndexRef.current = 0;
     setHighlightIdxs([0]);
     moveIntervalRef.current = setInterval(() => {
@@ -598,26 +795,82 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     }, 1000);
   };
 
-  const finalizeResult = (winningItem: typeof ITEMS[0]) => {
+  const finalizeResult = async (winningItem: typeof ITEMS[0]) => {
     const betOnItem = myBets[winningItem.id] || 0;
     const totalWinAmount = betOnItem * winningItem.multiplier;
+    
     if (totalWinAmount > 0 && currentUser) {
       playSound(SOUNDS.WIN, 0.6);
       setLocalCoins(prev => prev + totalWinAmount);
       const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
       updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
     }
+    
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
+
+    // --- FETCH GLOBAL TOP WINNERS FROM FIREBASE ---
+    try {
+      const betsCollection = collection(firestore, 'game_carnival', 'global_rounds', 'bets');
+      const snapshot = await getDocs(betsCollection);
+      
+      let playersList: any[] = [];
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.roundId === currentRoundId) {
+            const userBetOnWin = data.bets[winningItem.id] || 0;
+            const userWinAmount = userBetOnWin * winningItem.multiplier;
+            
+            // Push har us player ko jisne participate kiya is round me
+            playersList.push({
+                name: data.name,
+                avatar: data.avatar,
+                win: userWinAmount,
+                bet: userBetOnWin, 
+                uid: data.uid
+            });
+        }
+      });
+
+      // Agar data na mile toh apna current state fallback daal do
+      if (playersList.length === 0 && currentUser) {
+          playersList.push({ name: currentUser.displayName || "You", avatar: currentUser.photoURL || null, win: totalWinAmount, bet: betOnItem });
+      }
+
+      // Sort by highest Win (Jisne sabse zada bet lagakar jeeta ho)
+      playersList.sort((a, b) => b.win - a.win);
+
+      // Top 3 nikal lo
+      const top3 = playersList.slice(0, 3);
+      
+      // Empty spaces null se fill kardo card UI maintain rakhne ke liye
+      while(top3.length < 3) {
+          top3.push(null);
+      }
+
+      setWinnersList(top3);
+    } catch (error) {
+      console.log("Leaderboard Fetch Error", error);
+      // Fallback
+      setWinnersList([
+        { name: currentUser?.displayName || "You", avatar: currentUser?.photoURL || null, win: totalWinAmount, bet: betOnItem },
+        null, null
+      ]);
+    }
+
+    setActiveWinnerIdx(0);
     setHistory(prev => [winningItem, ...prev].slice(0, 5));
     setGameState('result');
     setShowWinnerPopup(true);
 
+    // Resetting for Next Round
     setTimeout(() => {
       setShowWinnerPopup(false);
       setGameState('betting');
       setTimeLeft(30);
       setMyBets({});
-      setWinnerData(null);
+      setCurrentRoundId(generateUnique6DigitId()); // NEXT ROUND KI STRICT 6-DIGIT UNIQUE ID GENERATE HOGI
+      setTimeout(() => setWinnerData(null), 1000); 
       setHighlightIdxs([]);
     }, 6000);
   };
@@ -664,6 +917,9 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
             </div>
           </div>
           <div className="flex gap-1.5">
+            <button className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
+              <Clock className="w-4 h-4" />
+            </button>
             <button onClick={() => setIsSoundOn(!isSoundOn)} className="w-8 h-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center hover:bg-[#2d3a4e] transition-colors">
               {isSoundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
@@ -676,22 +932,22 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
           </div>
         </div>
 
-        {/* Game area - removed the circle ring */}
+        {/* Game area */}
         <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '340px' }}>
           
           {/* Central cafe icon */}
           <div 
             className="absolute z-0 opacity-90"
             style={{
-              width: '105px',
-              height: '105px',
+              width: '150px',
+              height: '150px',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
             }}
           >
             <CafeShopIcon 
-              size={105} 
+              size={150} 
               countdown={gameState === 'spinning' ? spinTimeLeft : timeLeft}
               className="w-full h-full drop-shadow-2xl"
             />
@@ -730,7 +986,7 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* Chips Bar */}
-        <div className="px-4 pb-2 z-20 -mt-2">
+        <div className="px-4 pb-2 z-20 -mt-5">
           <div className="bg-gradient-to-r from-purple-800/90 to-purple-600/90 rounded-2xl p-1.5 border border-white/10">
             <div className="text-white text-[9px] font-bold mb-1 text-center tracking-wide">SELECT A CHIP & YOUR FOOD</div>
             <div className="flex justify-center gap-2">
@@ -774,72 +1030,15 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
         </div>
 
         {/* --- WINNER POPUP --- */}
-        <AnimatePresence>
-          {showWinnerPopup && winnerData && (
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 z-[50]"
-              style={{ height: '40vh' }}
-            >
-              <div className="relative w-full h-full bg-[#2e1065] border-t-2 border-purple-500 shadow-[0_-15px_40px_rgba(0,0,0,0.6)] rounded-t-3xl overflow-visible">
-                <div 
-                  className="absolute left-1/2 transform -translate-x-1/2 bg-[#020617] rounded-b-[40px]"
-                  style={{ width: '130px', height: '60px', top: '-2px' }}
-                />
-                <div 
-                  className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center"
-                  style={{ width: '130px', height: '60px', top: -10, zIndex: 10 }}
-                >
-                  <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] animate-bounce">
-                    {winnerData.emoji}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center justify-start h-full pt-14 gap-4 px-4">
-                  <motion.h2 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500 tracking-widest"
-                    style={{ textShadow: '0 2px 10px rgba(234,179,8,0.3)' }}
-                  >
-                    YOU WON!
-                  </motion.h2>
-                  <div className="flex items-center justify-between w-full px-6">
-                    <AnimatedTrumpet />
-                    <div className="flex items-center gap-2 text-4xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                      <DollarCoin className="w-10 h-10" />
-                      <span>{winnerData.win.toLocaleString()}</span>
-                    </div>
-                    <AnimatedTrumpet flip />
-                  </div>
-                  <div className="flex justify-center gap-3 w-full mt-2">
-                    <WinnerCard 
-                      rankText="1st" 
-                      avatarUrl={currentUser?.photoURL || undefined} 
-                      name={currentUser?.displayName || "You"} 
-                      winAmount={winnerData.win} 
-                    />
-                    <WinnerCard 
-                      rankText="2nd" 
-                      avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=Player2" 
-                      name="Rahul" 
-                      winAmount={250000} 
-                    />
-                    <WinnerCard 
-                      rankText="3rd" 
-                      avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=Player3" 
-                      name="Priya" 
-                      winAmount={130000} 
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <WinnerPopup 
+          winnerData={showWinnerPopup ? winnerData : null} 
+          winnersList={winnersList} 
+          activeWinnerIdx={activeWinnerIdx} 
+          setActiveWinnerIdx={setActiveWinnerIdx} 
+        />
+        
       </motion.div>
     </div>
   );
-      }
+}
+
