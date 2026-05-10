@@ -45,6 +45,13 @@ const getTodayString = () => {
     return istDate.toISOString().split('T')[0];
 };
 
+const formatCompactNumber = (number: number) => {
+  if (number < 1000000) return number.toLocaleString();
+  
+  const formatter = Intl.NumberFormat('en', { notation: 'compact' });
+  return formatter.format(number);
+};
+
 export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
@@ -305,17 +312,20 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        </div>
      </Tabs>
 
-     <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl">
-      <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-2xl border border-white/5">
-       <GoldenDollar />
-       <span className="text-sm font-black text-yellow-500">{(userProfile?.wallet?.coins || 0).toLocaleString()}</span>
+     <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-2">
+      <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-2xl border border-white/5 min-w-0 flex-1">
+       <div className="shrink-0"><GoldenDollar /></div>
+       <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
+         {formatCompactNumber(userProfile?.wallet?.coins || 0)}
+       </span>
       </div>
-      <div className="flex items-center gap-2">
+      
+      <div className="flex items-center gap-2 shrink-0">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-10 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-bold focus:ring-0"><SelectValue /></SelectTrigger>
+         <SelectTrigger className="w-16 h-10 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-bold focus:ring-0 shrink-0"><SelectValue /></SelectTrigger>
          <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
        </Select>
-       <button onClick={() => handleSend()} disabled={!selectedGift || isSending || selectedUids.length === 0} className="h-10 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20">
+       <button onClick={() => handleSend()} disabled={!selectedGift || isSending || selectedUids.length === 0} className="h-10 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 shrink-0">
          {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
        </button>
       </div>
