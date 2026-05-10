@@ -26,7 +26,7 @@ export function GiftAnimationOverlay({
   giftName,
   senderName,
   receiverName,
-  imageUrl,
+  imageUrl, // Agar future me use karna ho
   animationUrl,
   videoUrl,
   soundUrl,
@@ -35,11 +35,9 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [videoReady, setVideoReady] = useState(false);
-  const [videoKey, setVideoKey] = useState(0);
+  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye state
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load Lottie Data
   useEffect(() => {
@@ -53,101 +51,84 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Cleanup function – ek baar kaam kare bas
-  const handleCleanup = () => {
-    if (cleanupTimeoutRef.current) {
-      clearTimeout(cleanupTimeoutRef.current);
-      cleanupTimeoutRef.current = null;
-    }
-    setActiveGift(null);
-    setLottieData(null);
-    setVideoReady(false);
-    onComplete();
-  };
-
-  // Preload video jab gift aaye, taaki jab show karein toh instantly play ho
-  useEffect(() => {
-    if (giftId && videoUrl) {
-      // Naye gift ke liye video state reset
-      setVideoReady(false);
-      setVideoKey(prev => prev + 1); // force video element refresh
-      
-      // Pehle se preload karne ke liye hidden video element bana lete hain
-      const preloadVideo = document.createElement('video');
-      preloadVideo.preload = 'auto';
-      preloadVideo.src = videoUrl;
-      preloadVideo.load();
-      
-      // Cleanup preload video after load
-      const onCanPlay = () => {
-        // ready hai, ab kuch nahi karna
-        preloadVideo.removeEventListener('canplaythrough', onCanPlay);
-      };
-      preloadVideo.addEventListener('canplaythrough', onCanPlay);
-      
-      // 3 second baad cleanup to avoid memory leak
-      setTimeout(() => {
-        preloadVideo.src = '';
-        preloadVideo.removeEventListener('canplaythrough', onCanPlay);
-      }, 10000);
-    }
-  }, [giftId, videoUrl]);
-
-  // Animation trigger logic – video waale case me smooth playback ke liye thoda wait karte hain
+  // Animation trigger logic
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
-      
-      // Sound play – pehle hi baja do
+      setIsVideoReady(false); // Har naye gift pe reset
+
+      // 1. Play Sound
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // Haptics
+      // 2. Haptics
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // Video nahi hai to 4 second baad cleanup
+      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
       if (!videoUrl) {
-        cleanupTimeoutRef.current = setTimeout(() => {
+        const finishTimer = setTimeout(() => {
           handleCleanup();
         }, 4000);
-        return () => {
-          if (cleanupTimeoutRef.current) clearTimeout(cleanupTimeoutRef.current);
-        };
+        return () => clearTimeout(finishTimer);
       }
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Video element ready hone par play karna aur smooth cleanup set karna
-  const onVideoCanPlay = () => {
-    if (!videoRef.current) return;
+  // Cleanup function to avoid repetition
+  const handleCleanup = () => {
+    setActiveGift(null);
+    setLottieData(null);
+    setIsVideoReady(false);
+    onComplete();
+  };
+
+  // Handle Video Metadata (Exact length pata karne ke liye)
+  const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
     
-    setVideoReady(true);
-    videoRef.current.play().catch(e => {
-      console.warn('Video play failed', e);
-      // fallback: mute kar ke try karo
-      if (videoRef.current) {
-        videoRef.current.muted = true;
-        videoRef.current.play().catch(err => console.error('Fallback also failed', err));
-      }
-    });
-  };
-
-  const onVideoEnded = () => {
-    handleCleanup();
-  };
-
-  const onVideoMetadataLoaded = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000;
-    // Itna time baad cleanup backup ke taur par
-    if (cleanupTimeoutRef.current) clearTimeout(cleanupTimeoutRef.current);
-    cleanupTimeoutRef.current = setTimeout(() => {
+    // Video khatam hote hi clean up karne ka backup
+    setTimeout(() => {
       handleCleanup();
-    }, duration + 500);
+    }, duration + 500); // 500ms extra for smooth exit
   };
+
+  // Handle Video Auto-play Force & Sound
+  useEffect(() => {
+    if (activeGift && videoUrl && videoRef.current) {
+      const playVideo = async () => {
+        try {
+          // Sound ON karne ke liye false kar diya
+          videoRef.current!.defaultMuted = false;
+          videoRef.current!.muted = false;
+          videoRef.current!.playbackRate = 1.15; 
+          
+          // Fast playback ke liye load force kar diya
+          videoRef.current!.load();
+          
+          const playPromise = videoRef.current!.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
+        } catch (err) {
+          console.warn('Video Playback with sound failed, browser might be blocking auto-play. Trying muted fallback:', err);
+          // Agar browser bina interaction ke sound block karta hai, toh black screen na aaye isliye fallback
+          try {
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              await videoRef.current.play();
+            }
+          } catch (e) {
+            console.error('Fallback video play also failed', e);
+          }
+        }
+      };
+      playVideo();
+    }
+  }, [activeGift, videoUrl]);
 
   return (
     <div 
@@ -160,11 +141,13 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
+            // Jab gayab hoga tab ekdam smooth fade out hoga
             exit={{ opacity: 0 }} 
+            // Duration thodi badha di hai taaki exit ekdam smooth aur transparent hoke ho
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NAME BANNER - Bilkul same */}
+            {/* NAME BANNER */}
             {senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -199,20 +182,23 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                // Video wrapper ab koi scale nahi, sirf fade-in smooth transition, aur koi glitch nahi
+                // Yahan div ko motion.div kar diya hai Center pop in/out effect ke liye
                 <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: videoReady ? 1 : 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ 
+                    opacity: isVideoReady ? 1 : 0, 
+                    scale: isVideoReady ? 1 : 0.8 
+                  }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
                   className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
                   style={{
+                    // Tumhara gradient ekdam same rakha hai edges smooth blend karne ke liye
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
                   <video 
-                    key={videoKey}
                     ref={videoRef}
                     src={videoUrl} 
                     autoPlay 
@@ -221,10 +207,9 @@ export function GiftAnimationOverlay({
                     preload="auto"
                     disablePictureInPicture
                     controls={false}
-                    muted={false}
-                    onCanPlayThrough={onVideoCanPlay}
-                    onLoadedMetadata={onVideoMetadataLoaded}
-                    onEnded={onVideoEnded}
+                    onCanPlay={() => setIsVideoReady(true)} 
+                    onLoadedMetadata={handleVideoMetadata} 
+                    onEnded={handleCleanup} 
                     className="w-full h-full object-contain bg-transparent"
                   />
                 </motion.div>
@@ -234,7 +219,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE - Same */}
+      {/* FULL SCREEN AMBIANCE */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -248,4 +233,5 @@ export function GiftAnimationOverlay({
       </AnimatePresence>
     </div>
   );
-        }
+}
+
