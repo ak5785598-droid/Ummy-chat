@@ -41,6 +41,8 @@ service cloud.firestore {
       match /profile/{profileId} {
         allow read: if isSignedIn();
         allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+        // Allow updating stats and wallet by others (needed for gifting)
+        allow update: if isSignedIn() && isNotBanned();
       }
       
       match /profileVisitors/{visitorId} {
@@ -99,6 +101,8 @@ service cloud.firestore {
         resource.data.ownerId == request.auth.uid ||
         // Check if user is moderator
         (resource.data.moderatorIds is list && request.auth.uid in resource.data.moderatorIds) ||
+        // Allow anyone to update stats/rocket (for gifting)
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'rocket']) ||
         // Admin override
         isAdmin()
       );
