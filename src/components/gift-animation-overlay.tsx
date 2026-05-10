@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -35,28 +35,11 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoKey, setVideoKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // ---- Bug Fixes: timer refs for clean overlap handling ----
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const videoCleanupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleCleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    if (videoCleanupTimeoutRef.current) {
-      clearTimeout(videoCleanupTimeoutRef.current);
-      videoCleanupTimeoutRef.current = null;
-    }
-    setActiveGift(null);
-    setLottieData(null);
-    setIsVideoReady(false);
-    onComplete();
-  }, [onComplete]);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load Lottie Data
   useEffect(() => {
@@ -70,23 +53,52 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Animation trigger logic
+  // Cleanup function – ek baar kaam kare bas
+  const handleCleanup = () => {
+    if (cleanupTimeoutRef.current) {
+      clearTimeout(cleanupTimeoutRef.current);
+      cleanupTimeoutRef.current = null;
+    }
+    setActiveGift(null);
+    setLottieData(null);
+    setVideoReady(false);
+    onComplete();
+  };
+
+  // Preload video jab gift aaye, taaki jab show karein toh instantly play ho
+  useEffect(() => {
+    if (giftId && videoUrl) {
+      // Naye gift ke liye video state reset
+      setVideoReady(false);
+      setVideoKey(prev => prev + 1); // force video element refresh
+      
+      // Pehle se preload karne ke liye hidden video element bana lete hain
+      const preloadVideo = document.createElement('video');
+      preloadVideo.preload = 'auto';
+      preloadVideo.src = videoUrl;
+      preloadVideo.load();
+      
+      // Cleanup preload video after load
+      const onCanPlay = () => {
+        // ready hai, ab kuch nahi karna
+        preloadVideo.removeEventListener('canplaythrough', onCanPlay);
+      };
+      preloadVideo.addEventListener('canplaythrough', onCanPlay);
+      
+      // 3 second baad cleanup to avoid memory leak
+      setTimeout(() => {
+        preloadVideo.src = '';
+        preloadVideo.removeEventListener('canplaythrough', onCanPlay);
+      }, 10000);
+    }
+  }, [giftId, videoUrl]);
+
+  // Animation trigger logic – video waale case me smooth playback ke liye thoda wait karte hain
   useEffect(() => {
     if (giftId) {
-      // Purane timeouts cancel
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (videoCleanupTimeoutRef.current) {
-        clearTimeout(videoCleanupTimeoutRef.current);
-        videoCleanupTimeoutRef.current = null;
-      }
-
       setActiveGift({ id: Date.now() });
-      setIsVideoReady(false);
-
-      // Sound
+      
+      // Sound play – pehle hi baja do
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
@@ -97,62 +109,45 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // Agar video nahi hai to manual timeout
+      // Video nahi hai to 4 second baad cleanup
       if (!videoUrl) {
-        timeoutRef.current = setTimeout(() => {
+        cleanupTimeoutRef.current = setTimeout(() => {
           handleCleanup();
         }, 4000);
+        return () => {
+          if (cleanupTimeoutRef.current) clearTimeout(cleanupTimeoutRef.current);
+        };
       }
     }
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (videoCleanupTimeoutRef.current) {
-        clearTimeout(videoCleanupTimeoutRef.current);
-        videoCleanupTimeoutRef.current = null;
-      }
-    };
-  }, [giftId, soundUrl, videoUrl, handleCleanup]);
+  }, [giftId, soundUrl, videoUrl]);
 
-  // Video metadata backup timer
-  const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+  // Video element ready hone par play karna aur smooth cleanup set karna
+  const onVideoCanPlay = () => {
+    if (!videoRef.current) return;
+    
+    setVideoReady(true);
+    videoRef.current.play().catch(e => {
+      console.warn('Video play failed', e);
+      // fallback: mute kar ke try karo
+      if (videoRef.current) {
+        videoRef.current.muted = true;
+        videoRef.current.play().catch(err => console.error('Fallback also failed', err));
+      }
+    });
+  };
+
+  const onVideoEnded = () => {
+    handleCleanup();
+  };
+
+  const onVideoMetadataLoaded = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e.currentTarget.duration * 1000;
-    videoCleanupTimeoutRef.current = setTimeout(() => {
-      videoCleanupTimeoutRef.current = null;
+    // Itna time baad cleanup backup ke taur par
+    if (cleanupTimeoutRef.current) clearTimeout(cleanupTimeoutRef.current);
+    cleanupTimeoutRef.current = setTimeout(() => {
       handleCleanup();
     }, duration + 500);
   };
-
-  // Force autoplay with sound, fallback to muted
-  useEffect(() => {
-    if (activeGift && videoUrl && videoRef.current) {
-      const playVideo = async () => {
-        try {
-          videoRef.current!.defaultMuted = false;
-          videoRef.current!.muted = false;
-          videoRef.current!.playbackRate = 1.15;
-          videoRef.current!.load();
-          const playPromise = videoRef.current!.play();
-          if (playPromise !== undefined) {
-            await playPromise;
-          }
-        } catch (err) {
-          console.warn('Sound ke saath play fail, muted try kar rahe:', err);
-          try {
-            if (videoRef.current) {
-              videoRef.current.muted = true;
-              await videoRef.current.play();
-            }
-          } catch (e) {
-            console.error('Muted bhi fail ho gaya:', e);
-          }
-        }
-      };
-      playVideo();
-    }
-  }, [activeGift, videoUrl]);
 
   return (
     <div 
@@ -169,7 +164,7 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NAME BANNER */}
+            {/* NAME BANNER - Bilkul same */}
             {senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -204,23 +199,20 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                /* Video Overlay – bilkul clear, graphic UI perfect */
+                // Video wrapper ab koi scale nahi, sirf fade-in smooth transition, aur koi glitch nahi
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ 
-                    opacity: isVideoReady ? 1 : 0, 
-                    scale: isVideoReady ? 1 : 0.8 
-                  }}
-                  exit={{ opacity: 0, scale: 1.1 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: videoReady ? 1 : 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                   className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
                   style={{
-                    // Cinematic soft edge mask – video edges clean blend hote hain
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
                   <video 
+                    key={videoKey}
                     ref={videoRef}
                     src={videoUrl} 
                     autoPlay 
@@ -229,15 +221,10 @@ export function GiftAnimationOverlay({
                     preload="auto"
                     disablePictureInPicture
                     controls={false}
-                    onCanPlay={() => setIsVideoReady(true)} 
-                    onLoadedMetadata={handleVideoMetadata} 
-                    onEnded={() => {
-                      if (videoCleanupTimeoutRef.current) {
-                        clearTimeout(videoCleanupTimeoutRef.current);
-                        videoCleanupTimeoutRef.current = null;
-                      }
-                      handleCleanup();
-                    }} 
+                    muted={false}
+                    onCanPlayThrough={onVideoCanPlay}
+                    onLoadedMetadata={onVideoMetadataLoaded}
+                    onEnded={onVideoEnded}
                     className="w-full h-full object-contain bg-transparent"
                   />
                 </motion.div>
@@ -247,7 +234,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE */}
+      {/* FULL SCREEN AMBIANCE - Same */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -261,4 +248,4 @@ export function GiftAnimationOverlay({
       </AnimatePresence>
     </div>
   );
-}
+        }
