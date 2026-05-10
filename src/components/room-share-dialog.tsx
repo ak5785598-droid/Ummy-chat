@@ -83,19 +83,29 @@ export function RoomShareDialog({ open, onOpenChange, room, onShare }: RoomShare
           const shareUrl = `${window.location.origin}/rooms/${room.id}`;
           const fullInvite = `${shareText}\nLink: ${shareUrl}`;
 
-          // Native Share API (Best for Mobile/Capacitor)
+          // Primary: Native Share API (Best for modern mobile)
           if (navigator.share) {
             navigator.share({
               title: shareTitle,
               text: fullInvite,
               url: shareUrl
             }).catch(() => {
-              // Fallback to direct WhatsApp
-              window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+              // Fallback 1: Direct WhatsApp App Launch (Best for Capacitor/Android)
+              window.location.href = `whatsapp://send?text=${encodeURIComponent(fullInvite)}`;
+              
+              // Fallback 2: Web Link (if WhatsApp not installed)
+              setTimeout(() => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+              }, 500);
             });
           } else {
-            // Browser Fallback
-            window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+            // No Share API support (Fallback to Direct App Launch)
+            window.location.href = `whatsapp://send?text=${encodeURIComponent(fullInvite)}`;
+            
+            // Backup Web Link
+            setTimeout(() => {
+              window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
+            }, 500);
           }
           
           if (onShare) onShare();
