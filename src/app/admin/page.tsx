@@ -625,8 +625,10 @@ function AdminPageContent() {
   const [storeCategory, setStoreCategory] = useState<
     "Frame" | "Bubble" | "Theme" | "Wave"
   >("Frame");
-  const [isUploadingStore, setIsUploadingStore] = useState(false);
   const storeFileInputRef = useRef<HTMLInputElement>(null);
+  const storeVideoFileInputRef = useRef<HTMLInputElement>(null);
+  const [storeVideoFile, setStoreVideoFile] = useState<File | null>(null);
+  const [storeVideoPreview, setStoreVideoPreview] = useState("");
 
   const [isUploadingLoginBG, setIsUploadingLoginBG] = useState(false);
   const loginBGFileInputRef = useRef<HTMLInputElement>(null);
@@ -717,6 +719,12 @@ function AdminPageContent() {
     return query(collection(firestore, "giftList"), orderBy("createdAt", "desc"));
   }, [firestore, isAuthorized]);
   const { data: dbGifts, isLoading: isLoadingGifts } = useCollection(giftsQuery);
+
+  const storeQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "storeItems"), orderBy("createdAt", "desc"));
+  }, [firestore, isAuthorized]);
+  const { data: dbStoreItems, isLoading: isLoadingStoreItems } = useCollection(storeQuery);
 
   const gamesQuery = useMemoFirebase(() => {
     if (!firestore || !isCreator) return null;
@@ -2082,43 +2090,65 @@ function AdminPageContent() {
     );
   };
 
-  const handleStoreItemUpload = async (f: File) => {
+  const handleStoreItemUpload = async () => {
     if (!storage || !firestore) return;
-    if (!storeName.trim()) {
-      toast({ variant: "destructive", title: "Missing Name" });
+    const f = storeFileInputRef.current?.files?.[0];
+    if (!f || !storeName.trim()) {
+      toast({ variant: "destructive", title: "Missing Information", description: "Name and Image are mandatory." });
       return;
     }
     setIsUploadingStore(true);
     try {
-      const sRef = ref(storage, `store/item_${Date.now()}.jpg`);
+      // 1. Upload Display Image
+      const sRef = ref(storage, `store/item_${Date.now()}_${f.name}`);
       const result = await uploadBytes(sRef, f);
       const url = await getDownloadURL(result.ref);
+
+      // 2. Upload Video Animation (Optional)
+      let videoUrl = "";
+      if (storeVideoFile) {
+        const vRef = ref(storage, `store/anim_${Date.now()}_${storeVideoFile.name}`);
+        const vResult = await uploadBytes(vRef, storeVideoFile);
+        videoUrl = await getDownloadURL(vResult.ref);
+      }
+
       const itemRef = doc(collection(firestore, "storeItems"));
       const itemData = {
         id: itemRef.id,
         name: storeName.trim(),
         url,
+        videoUrl, // Save the video link
+        price: parseInt(storePrice),
+        duration: parseInt(storeDuration),
         category: storeCategory,
-        price: parseInt(storePrice) || 0,
-        durationDays: parseInt(storeDuration) || 7,
         createdAt: serverTimestamp(),
       };
-      setDoc(itemRef, itemData)
-        .then(() => {
-          toast({ title: "Item Synchronized" });
-          setStoreName("");
-        })
-        .catch((err) => {
-          errorEmitter.emit(
-            "permission-error",
-            new FirestorePermissionError({
-              path: itemRef.path,
-              operation: "create",
-            }),
-          );
-        });
+      await setDoc(itemRef, itemData);
+      
+      // Reset
+      setStoreName("");
+      setStorePrice("0");
+      setStoreVideoFile(null);
+      setStoreVideoPreview("");
+      if (storeFileInputRef.current) storeFileInputRef.current.value = "";
+      if (storeVideoFileInputRef.current) storeVideoFileInputRef.current.value = "";
+
+      toast({ title: "Boutique Synchronized" });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Sync Failed", description: err.message });
     } finally {
       setIsUploadingStore(false);
+    }
+  };
+
+  const handleDeleteStoreItem = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this boutique asset?")) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "storeItems", id));
+      toast({ title: "Asset Removed" });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Deletion Failed", description: err.message });
     }
   };
 
@@ -3321,30 +3351,112 @@ function AdminPageContent() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6 group">
-                      <button
-                        onClick={() => storeFileInputRef.current?.click()}
-                        className="flex flex-col items-center gap-3"
-                      >
-                        {isUploadingStore ? (
-                          <Loader className="animate-spin text-primary" />
-                        ) : (
-                          <Upload className="h-8 w-8 text-slate-400" />
-                        )}
-                        <span className="text-[10px] font-bold uppercase">
-                          Upload Visual
-                        </span>
-                      </button>
-                      <input
-                        type="file"
-                        ref={storeFileInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) =>
-                          e.target.files?.[0] &&
-                          handleStoreItemUpload(e.target.files[0])
-                        }
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* IMAGE UPLOAD */}
+                      <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6 group relative overflow-hidden aspect-video">
+                        <button
+                          onClick={() => storeFileInputRef.current?.click()}
+                          className="flex flex-col items-center gap-3 w-full h-full justify-center"
+                        >
+                          {isUploadingStore ? (
+                            <Loader className="animate-spin text-primary" />
+                          ) : (
+                            <Upload className="h-8 w-8 text-slate-400" />
+                          )}
+                          <span className="text-[10px] font-bold uppercase">
+                            1. Upload Display Image
+                          </span>
+                        </button>
+                        <input
+                          type="file"
+                          ref={storeFileInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => {
+                            // Handled by handleStoreItemUpload on button click or similar
+                            // Actually, I'll just keep the preview logic here if needed
+                          }}
+                        />
+                      </div>
+
+                      {/* VIDEO UPLOAD (Only for Frames) */}
+                      <div className={cn(
+                        "flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6 group relative overflow-hidden aspect-video",
+                        storeCategory !== 'Frame' && "opacity-30 pointer-events-none"
+                      )}>
+                        <button
+                          onClick={() => storeVideoFileInputRef.current?.click()}
+                          className="flex flex-col items-center gap-3 w-full h-full justify-center"
+                        >
+                          {storeVideoPreview ? (
+                             <video src={storeVideoPreview} autoPlay muted loop className="absolute inset-0 w-full h-full object-contain" />
+                          ) : (
+                            <Video className="h-8 w-8 text-indigo-400" />
+                          )}
+                          <span className="text-[10px] font-bold uppercase text-indigo-500">
+                            2. Upload Animation (MP4)
+                          </span>
+                        </button>
+                        <input
+                          type="file"
+                          ref={storeVideoFileInputRef}
+                          className="hidden"
+                          accept="video/*"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) {
+                              setStoreVideoFile(f);
+                              setStoreVideoPreview(URL.createObjectURL(f));
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      className="h-16 rounded-2xl bg-black text-white font-bold uppercase shadow-xl active:scale-95 transition-all"
+                      onClick={handleStoreItemUpload}
+                      disabled={isUploadingStore}
+                    >
+                      {isUploadingStore ? <Loader className="animate-spin mr-2" /> : <Plus className="mr-2 h-5 w-5" />}
+                      Sync Boutique Asset
+                    </Button>
+                  </div>
+
+                  {/* BOUTIQUE INVENTORY */}
+                  <div className="space-y-4 pt-8">
+                    <h3 className="text-sm font-bold uppercase text-slate-400">Current Boutique Inventory</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {isLoadingStoreItems ? (
+                        <div className="col-span-full py-10 flex justify-center"><Loader className="animate-spin text-primary" /></div>
+                      ) : dbStoreItems?.map((item: any) => (
+                        <div key={item.id} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-3xl flex flex-col gap-3 relative group">
+                          <button 
+                            onClick={() => handleDeleteStoreItem(item.id)}
+                            className="absolute top-2 right-2 p-2 bg-red-100 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-90 z-10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-slate-200 flex items-center justify-center p-4">
+                            <img src={item.url} alt={item.name} className="max-h-full object-contain" />
+                            {item.videoUrl && (
+                              <div className="absolute top-2 left-2 bg-indigo-600 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase flex items-center gap-1 shadow-lg">
+                                <Video className="h-2 w-2" /> Animated
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <p className="font-bold uppercase text-[10px] truncate">{item.name}</p>
+                            <div className="flex items-center justify-center gap-1 text-primary font-black text-xs">
+                              <GoldCoinIcon className="h-3 w-3" /> {item.price}
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-1 mt-1">
+                              <Badge className="bg-slate-200 text-slate-600 text-[7px] font-bold uppercase">{item.category}</Badge>
+                              <Badge variant="outline" className="text-[7px] font-bold uppercase opacity-50">{item.duration} Days</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>

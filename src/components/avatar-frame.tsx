@@ -93,25 +93,7 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
-const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
-  if (!config) return null;
-
-  const { 
-    gradient, borderColor, glowColor, ornament: Ornament, animationType,
-    extraType, particleType, extraColor, particleColor, id, imageUrl
-  } = config;
-
-  const isSakura = id === 'sakura-blossom';
-
-  // Calculate pixel-perfect dimensions with dynamic hole sizing
-  const multiplier = config.scaleMultiplier || 1.54;
-  const imgSize = pixelSize * multiplier;
-  const imgRadius = imgSize / 2;
-  
-  // Precise hole radius in pixels
-  const holeRadius = config.holeRatio 
-    ? (imgRadius * config.holeRatio) 
-    : (pixelSize / 2);
+  const isMediaFrame = imageUrl || config.videoUrl;
 
   return (
     <div className="absolute inset-0 w-full h-full rounded-full overflow-visible pointer-events-none z-[100]">
@@ -140,7 +122,6 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
       {/* SVG Filter for transparency (converts brightness to alpha) */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <filter id="remove-black-background">
-          {/* Multiply colors to make them pop, and use a more sensitive alpha calculation */}
           <feColorMatrix type="matrix" values="
             1.2 0 0 0 0  
             0 1.2 0 0 0  
@@ -150,37 +131,49 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
         </filter>
       </svg>
 
-      {/* 3D Tubelike Frame Body or Image Frame */}
-      {imageUrl ? (
+      {/* 3D Media Frame (Video or Image) */}
+      {isMediaFrame ? (
         <div 
           className="absolute left-1/2 top-1/2"
           style={{
             width: `${imgSize}px`,
             height: `${imgSize}px`,
             transform: `translate(calc(-50% + ${config.offsetX || 0}px), calc(-50% + ${config.offsetY || 0}px))`,
-            // Disable gradient mask for these special frames to prevent cutting off details
             maskImage: 'none',
             WebkitMaskImage: 'none',
-            mixBlendMode: 'normal', // Changed from config.blendMode to normal since we handle transparency via filter
             animation: 
               config.animationType === 'rotate' ? 'custom-spin 12s linear infinite' : 
               config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 4s ease-in-out infinite' : 
               'none',
           }}
         >
-          <img 
-            src={imageUrl} 
-            alt={config.name} 
-            className={cn(
-              "w-full h-full object-contain",
-              (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-150"
-            )}
-            style={{
-               filter: (id === 'electro-red' || id === 'imperial-blue') 
-                 ? `url(#remove-black-background) drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 5px ${glowColor})` 
-                 : 'none'
-            }}
-          />
+          {config.videoUrl ? (
+            <video 
+              src={config.videoUrl} 
+              autoPlay 
+              muted 
+              loop 
+              playsInline 
+              className="w-full h-full object-contain"
+              style={{
+                filter: `url(#remove-black-background) drop-shadow(0 0 8px ${glowColor})`
+              }}
+            />
+          ) : (
+            <img 
+              src={imageUrl} 
+              alt={config.name} 
+              className={cn(
+                "w-full h-full object-contain",
+                (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-150"
+              )}
+              style={{
+                 filter: (id === 'electro-red' || id === 'imperial-blue') 
+                   ? `url(#remove-black-background) drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 5px ${glowColor})` 
+                   : 'none'
+              }}
+            />
+          )}
         </div>
       ) : (
         <div

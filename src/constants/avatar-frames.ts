@@ -20,6 +20,7 @@ export interface AvatarFrameConfig {
   
   // Image-based frame support
   imageUrl?: string;
+  videoUrl?: string; // High-fidelity video frame support
   scaleMultiplier?: number;
   holeRatio?: number;
   offsetX?: number;
