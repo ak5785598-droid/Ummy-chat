@@ -121,61 +121,71 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      }
     }, 15000);
 
-    // CLEANUP: Admin-only task to purge stale sessions
-    if (canCleanup && !cleanupInterval.current) {
+    // CLEANUP: Periodic task to purge stale sessions and sync counter
+    // Now runs for EVERYONE (not just mods) to ensure ghost rooms are eventually cleared
+    if (!cleanupInterval.current) {
      cleanupInterval.current = setInterval(async () => {
       // 1. Periodic IST Resets (Once every 60s)
       const roomSnap = await getDoc(roomDocRef);
       if (roomSnap.exists()) {
-       const now = new Date();
-       const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-       const istNow = new Date(utc + (3600000 * 5.5));
-       const roomData = roomSnap.data();
-       const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
-       
-       const lastUtc = lastUpdated.getTime() + (lastUpdated.getTimezoneOffset() * 60000);
-       const istLast = new Date(lastUtc + (3600000 * 5.5));
+        const now = new Date();
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const istNow = new Date(utc + (3600000 * 5.5));
+        const roomData = roomSnap.data();
+        const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
+        
+        const lastUtc = lastUpdated.getTime() + (lastUpdated.getTimezoneOffset() * 60000);
+        const istLast = new Date(lastUtc + (3600000 * 5.5));
 
-       const resetData: any = { updatedAt: serverTimestamp() };
-       let needsReset = false;
+        const resetData: any = { updatedAt: serverTimestamp() };
+        let needsReset = false;
 
-       if (istLast.toDateString() !== istNow.toDateString()) {
-        needsReset = true;
-        resetData['stats.dailyGifts'] = 0;
-        if (istNow.getDay() === 1) resetData['stats.weeklyGifts'] = 0;
-       }
-       if (istLast.getMonth() !== istNow.getMonth()) {
-        needsReset = true;
-        resetData['stats.monthlyGifts'] = 0;
-       }
+        if (istLast.toDateString() !== istNow.toDateString()) {
+          needsReset = true;
+          resetData['stats.dailyGifts'] = 0;
+          if (istNow.getDay() === 1) resetData['stats.weeklyGifts'] = 0;
+        }
+        if (istLast.getMonth() !== istNow.getMonth()) {
+          needsReset = true;
+          resetData['stats.monthlyGifts'] = 0;
+        }
 
-       if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
+        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
       }
 
-      // 2. Clear Stale Participants (Ghost Removal)
-      const ghostThreshold = new Date(Date.now() - 120000); // 2 minutes
+      // 2. Clear Stale Participants (Ghost Removal) & Sync Counter
+      const ghostThreshold = new Date(Date.now() - 90000); // 1.5 minutes (aggressive)
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       
-      if (!snap.empty) {
-       const purgeBatch = writeBatch(firestore);
-       let activeCount = 0;
-       let purgeCount = 0;
-       snap.docs.forEach(d => {
+      const purgeBatch = writeBatch(firestore);
+      let activeCount = 0;
+      let purgeCount = 0;
+
+      snap.docs.forEach(d => {
         const p = d.data();
         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-        if (lastSeen < ghostThreshold && d.id !== uid) {
+        // If user hasn't sent heartbeat in 90s, they are a ghost
+        if (lastSeen < ghostThreshold) {
           purgeBatch.delete(d.ref);
           purgeCount++;
         } else {
           activeCount++;
         }
-       });
-       if (purgeCount > 0) {
-         purgeBatch.update(roomDocRef, { participantCount: activeCount, updatedAt: serverTimestamp() });
-         purgeBatch.commit().catch(() => {});
-       }
+      });
+
+      // ALWAYS sync the counter if it's different from the actual document count
+      const roomData = roomSnap.exists() ? roomSnap.data() : null;
+      const currentStoredCount = roomData?.participantCount || 0;
+
+      if (purgeCount > 0 || currentStoredCount !== activeCount) {
+        console.log(`[Presence] Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
+        purgeBatch.update(roomDocRef, { 
+          participantCount: activeCount, 
+          updatedAt: serverTimestamp() 
+        });
+        purgeBatch.commit().catch(() => {});
       }
-      }, 30000); 
+      }, 45000); // Every 45 seconds
      }
     };
  
