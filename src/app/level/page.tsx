@@ -1,151 +1,179 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Star, Moon, Sun, Diamond, Shield, Crown } from 'lucide-react';
+import { ChevronLeft, HelpCircle, User } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { Progress } from '@/components/ui/progress';
-import { calculateLevelProgress, LEVEL_RANGES } from '@/lib/level-utils';
-import { GoldCoinIcon } from '@/components/icons';
-import { cn } from '@/lib/utils';
-
-const LevelBadge = ({ level, type, colorClass }: { level: number | string, type: string, colorClass: string }) => {
- const getIcon = () => {
-  const iconClass = "h-2.5 w-2.5 fill-white text-white drop-shadow-sm";
-  switch (type) {
-   case 'star': return <Star className={iconClass} />;
-   case 'moon': return <Moon className={iconClass} />;
-   case 'sun': return <Sun className={iconClass} />;
-   case 'diamond': return <Diamond className={iconClass} />;
-   case 'shield': return <Shield className={iconClass} />;
-   case 'crown-white': return <Crown className={iconClass} />;
-   case 'crown-gold': return <Crown className={cn(iconClass, "text-yellow-200 fill-yellow-200")} />;
-   case 'crown-ultimate': return <Crown className={cn(iconClass, "text-yellow-100 fill-yellow-100")} />;
-   default: return <Star className={iconClass} />;
-  }
- };
-
- return (
-  <div className={cn(
-   "inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full shadow-md border border-white/30 relative overflow-hidden",
-   colorClass
-  )}>
-   <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent h-1/2 pointer-events-none" />
-   {getIcon()}
-   <span className="text-[10px] font-bold text-white leading-none drop-shadow-sm relative z-10">{level}</span>
-  </div>
- );
-};
-
-const LevelEntryStrip = ({ type }: { type?: string }) => {
- if (!type) return <div className="h-5 w-32 bg-transparent" />;
-
- const gradients: Record<string, string> = {
-  cyan: "from-[#00E5FF] via-[#2196F3] to-transparent",
-  green: "from-[#4CAF50] via-[#81C784] to-transparent",
-  orange: "from-[#FF9800] via-[#FFB74D] to-transparent",
-  red: "from-[#F44336] via-[#E57373] to-transparent",
-  pink: "from-[#E91E63] via-[#F06292] to-transparent",
-  'gold-purple': "from-[#FFD700] via-[#BA68C8] to-transparent",
-  ultimate: "from-[#FFD700] via-[#FFF176] to-[#FFD700] border border-yellow-200/50",
- };
-
- return (
-  <div className={cn(
-   "h-5 w-32 rounded-full bg-gradient-to-r shadow-lg relative overflow-hidden",
-   gradients[type]
-  )}>
-    <div className="absolute inset-0 w-1/2 h-full bg-white/40 skew-x-[-30deg] -translate-x-[200%] animate-shine pointer-events-none" />
-    {type === 'ultimate' && (
-     <div className="absolute left-1 top-1/2 -translate-y-1/2">
-      <Crown className="h-2.5 w-2.5 text-yellow-700 fill-current" />
-     </div>
-    )}
-  </div>
- );
-};
+import { calculateLevelProgress } from '@/lib/level-utils';
 
 export default function UserLevelPage() {
- const router = useRouter();
- const { user } = useUser();
- const { userProfile } = useUserProfile(user?.uid);
+  const router = useRouter();
+  const { user } = useUser();
+  const { userProfile } = useUserProfile(user?.uid);
+  
+  // Modal state manage karne ke liye
+  const [showRules, setShowRules] = useState(false);
 
- const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
+  // Aapka purana logic same hai
+  const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
 
- return (
-  <AppLayout>
-   <div className="min-h-full bg-white font-sans pb-20 animate-in fade-in duration-700">
-    <header className="p-6 pt-safe flex items-center justify-between">
-     <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
-      <ChevronLeft className="h-6 w-6 text-gray-800" />
-     </button>
-     <h1 className="text-2xl font-bold uppercase tracking-tight text-center flex-1 -ml-8">User level</h1>
-    </header>
+  return (
+    <AppLayout>
+      {/* Main Container - Black Background */}
+      <div className="relative min-h-screen bg-black font-sans pb-20 overflow-hidden text-white">
+        
+        {/* Top 30VH Glossy Purple Mixing */}
+        <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-purple-800/50 via-purple-900/20 to-transparent pointer-events-none blur-xl" />
 
-    <div className="p-6 space-y-10">
-     <section className="space-y-4">
-      <div className="flex justify-between items-center px-1">
-        <span className="text-sm font-bold">Lv.{stats.currentLevel}</span>
-        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase">
-         <GoldCoinIcon className="h-3 w-3 text-yellow-500" />
-         <span>{stats.remainingToLevelUp.toLocaleString()} to level up</span>
+        {/* Top Header */}
+        <header className="relative z-10 p-6 pt-safe flex items-center justify-between">
+          <button 
+            onClick={() => router.back()} 
+            className="p-2 -ml-2 rounded-full transition-colors active:bg-white/10"
+          >
+            <ChevronLeft className="h-6 w-6 text-white" />
+          </button>
+          <h1 className="text-xl font-bold uppercase tracking-widest text-center flex-1 -ml-8">
+            Levels
+          </h1>
+        </header>
+
+        <div className="relative z-10 p-6 space-y-8">
+          
+          {/* Sea Blue Glossy Card */}
+          <div className="bg-[#005f73]/40 backdrop-blur-md border border-[#0a9396]/40 shadow-[0_0_20px_rgba(10,147,150,0.15)] rounded-2xl p-5">
+            
+            {/* 1st Row: User Avatar & Name */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="h-12 w-12 rounded-full bg-gray-700/50 overflow-hidden flex items-center justify-center border border-white/20">
+                {userProfile?.photoURL ? (
+                  <img src={userProfile.photoURL} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-6 w-6 text-gray-300" />
+                )}
+              </div>
+              <div className="text-lg font-semibold tracking-wide text-white">
+                {userProfile?.name || 'Username'}
+              </div>
+            </div>
+
+            {/* 2nd Row: Loading Patti & Level */}
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex-1 h-2 bg-black/60 rounded-full overflow-hidden shadow-inner">
+                <div 
+                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-400 rounded-full transition-all duration-500" 
+                  style={{ width: `${stats.progressPercent}%` }} 
+                />
+              </div>
+              <span className="text-sm font-bold text-cyan-300 whitespace-nowrap">
+                Lv.{stats.currentLevel}
+              </span>
+            </div>
+
+            {/* 3rd Row: Need Exp & Question Mark Icon */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-300 tracking-wide">
+                Need {stats.remainingToLevelUp.toLocaleString()} Exp For Lv.{stats.nextLevel}
+              </span>
+              <button 
+                onClick={() => setShowRules(true)} 
+                className="p-1 rounded-full active:scale-95 transition-transform"
+              >
+                <HelpCircle className="h-6 w-6 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Budget Section (6 Cards) */}
+          <div className="space-y-4 pt-4">
+            <h2 className="text-lg font-bold tracking-wider text-gray-200">Budget</h2>
+            
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                'Lv.0 - Lv.10',
+                'Lv.20 - Lv.35',
+                'Lv.40 - Lv.56',
+                'Lv.63 - Lv.75',
+                'Lv.78 - Lv.87',
+                'Lv.88 - Lv.99'
+              ].map((range, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start"
+                >
+                  <span className="text-[10px] font-semibold text-gray-400 tracking-wider">
+                    {range}
+                  </span>
+                  {/* Aap in cards ke andar future me koi data dalna chaho to yahan daal sakte ho */}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <span className="text-sm font-bold">Lv.{stats.nextLevel}</span>
-      </div>
-      <Progress value={stats.progressPercent} className="h-3 bg-yellow-100 rounded-full [&>div]:bg-[#FFCC00]" />
-     </section>
 
-     <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-5 bg-[#FFCC00] rounded-full" />
-        <h2 className="text-lg font-bold uppercase tracking-tight">Level Description</h2>
-      </div>
-      <div className="space-y-4 text-sm font-body text-gray-600 leading-relaxed">
-        <p>1. Upgrading experience will be gained through behaviors such as recharging and consuming on the platform</p>
-        <p>2. The higher the level, the corresponding level will have different styles of identification. Your wealth level identification will be displayed in the room, and the identification will become cool as the level increases, highlighting your uniqueness</p>
-      </div>
-     </section>
+        {/* --- Rules Modal (Glossy Sea Blue Center Card) --- */}
+        {showRules && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/70 backdrop-blur-sm">
+            <div className="w-full max-w-sm bg-[#005f73]/70 backdrop-blur-xl border border-[#0a9396]/50 shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              
+              <div className="p-4 border-b border-white/10 flex items-center">
+                <button 
+                  onClick={() => setShowRules(false)} 
+                  className="p-1 -ml-1 rounded-full"
+                >
+                  <ChevronLeft className="h-6 w-6 text-white" />
+                </button>
+                <h2 className="text-lg font-bold flex-1 text-center -ml-6">Rules</h2>
+              </div>
 
-     <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="w-1 h-5 bg-[#FFCC00] rounded-full" />
-        <h2 className="text-lg font-bold uppercase tracking-tight">Level Icon</h2>
+              {/* Rules Content from Image */}
+              <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5">
+                
+                <div className="space-y-2">
+                  <h3 className="text-sm text-cyan-100">Gift coins consumption</h3>
+                  <p className="text-xs text-yellow-500 font-medium">5 coins = 1 Exp</p>
+                  <div className="bg-yellow-600/20 text-yellow-300 text-[11px] p-2 rounded-lg border border-yellow-500/30">
+                    Svip2 privilege: 5coins = 1.2EXP
+                  </div>
+                  <div className="bg-yellow-600/20 text-yellow-300 text-[11px] p-2 rounded-lg border border-yellow-500/30">
+                    Svip7 privilege: 5coins = 1.3EXP
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm text-cyan-100">Enter the room</h3>
+                  <p className="text-xs text-yellow-500 font-medium">2000 Exp/day</p>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm text-cyan-100">Share the room</h3>
+                  <p className="text-xs text-yellow-500 font-medium">2000 Exp/day</p>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm text-cyan-100">Stay in your own room (Limited Time)</h3>
+                  <p className="text-xs text-yellow-500 font-medium">10mins = 1000 Exp, 10000Exp/day</p>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-sm text-cyan-100">Stay on other rooms (Limited Time)</h3>
+                  <p className="text-xs text-yellow-500 font-medium">10mins = 1000 Exp, 20000 Exp/day</p>
+                </div>
+
+                <div className="space-y-1 pb-4">
+                  <h3 className="text-sm text-cyan-100">Participate in activities</h3>
+                  <p className="text-xs text-yellow-500 font-medium">Speed up upgrade</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        )}
+        
       </div>
-      <div className="overflow-hidden border border-yellow-100 rounded-xl shadow-sm">
-        <table className="w-full text-center border-collapse">
-         <thead className="bg-[#fff9e6]">
-           <tr className="border-b border-yellow-100">
-            <th className="py-4 px-2 text-[10px] font-bold uppercase text-orange-800 leading-tight border-r border-yellow-100">Grade<br/>(Recharge coins / level)</th>
-            <th className="py-4 px-2 text-[10px] font-bold uppercase text-orange-800 border-r border-yellow-100">Icon</th>
-            <th className="py-4 px-2 text-[10px] font-bold uppercase text-orange-800">Entry Strip</th>
-           </tr>
-         </thead>
-         <tbody>
-           {LEVEL_RANGES.map((item, idx) => {
-            const startLevel = item.range.split('~')[0].replace('Lv.', '');
-            return (
-             <tr key={idx} className="border-b border-yellow-50 last:border-0 hover:bg-yellow-50/20 transition-colors">
-              <td className="py-4 px-2 border-r border-yellow-50">
-                <p className="text-xs font-bold text-gray-800">{item.range}</p>
-                <p className="text-[10px] font-bold text-gray-400 ">({item.cost})</p>
-              </td>
-              <td className="py-4 px-2 border-r border-yellow-50">
-                <LevelBadge level={startLevel} type={item.type} colorClass={item.color} />
-              </td>
-              <td className="py-4 px-2 flex justify-center items-center">
-                <LevelEntryStrip type={item.strip} />
-              </td>
-             </tr>
-            );
-           })}
-         </tbody>
-        </table>
-      </div>
-     </section>
-    </div>
-   </div>
-  </AppLayout>
- );
+    </AppLayout>
+  );
 }
+
