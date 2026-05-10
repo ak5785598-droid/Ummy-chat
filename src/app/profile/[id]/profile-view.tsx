@@ -29,7 +29,8 @@ import {
   Medal as MedalIcon,
   DollarSign,
   HelpCircle,
-  Check
+  Check,
+  Crown // Added Crown for the new Medal UI
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -650,6 +651,109 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
+// --- NEW MEDAL MODAL COMPONENT (UI AS PER IMAGE) ---
+const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[999] bg-[#0A0217] text-white flex flex-col font-outfit overflow-hidden animate-in fade-in duration-200">
+      
+      {/* Header */}
+      <div className="flex items-center px-4 h-14 relative shrink-0">
+        <ChevronLeft className="h-6 w-6 cursor-pointer active:scale-90 transition-transform" onClick={onClose} />
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-medium tracking-wide">Medal</h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-10 custom-scrollbar">
+        {/* Current Medal Section */}
+        <div className="flex items-center justify-center gap-3 mt-6 text-[#cfb284] text-[13px] font-medium">
+          <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-[#cfb284]/60"></div>
+          <span className="tracking-widest uppercase">Current Medal</span>
+          <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-[#cfb284]/60"></div>
+        </div>
+
+        {/* 2x5 Grid of Empty Slots */}
+        <div className="grid grid-cols-5 gap-3 px-6 mt-6">
+          {Array.from({length: 10}).map((_, i) => (
+            <div key={i} className="aspect-square rounded-xl bg-white/[0.02] border border-white/[0.08] border-dashed flex items-center justify-center shadow-inner">
+              <span className="text-[#cfb284]/50 text-xl font-light">+</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Obtained Info Box */}
+        <div className="mt-8 mb-4 flex justify-center">
+          <div className="relative overflow-hidden group px-6 py-1.5 rounded-full border border-blue-500/30 bg-gradient-to-r from-blue-900/20 via-blue-800/20 to-blue-900/20 shadow-[0_0_15px_rgba(30,58,138,0.3)]">
+            <span className="text-sm text-indigo-200/90 font-medium">Obtained Medal(s): 0 </span>
+            <span className="text-[#e2c594] ml-1 cursor-pointer font-bold active:opacity-70 transition-opacity">Check &gt;</span>
+            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-around mt-6 border-b border-white/10 px-4">
+          <button className="pb-3 border-b-2 border-[#fcd34d] text-[#fcd34d] font-semibold text-[15px] tracking-wide">Achievement</button>
+          <button className="pb-3 text-white/50 font-medium text-[15px] tracking-wide hover:text-white/80 transition-colors">Gift</button>
+          <button className="pb-3 text-white/50 font-medium text-[15px] tracking-wide hover:text-white/80 transition-colors">Activity</button>
+        </div>
+
+        {/* Medals List Grid */}
+        <div className="grid grid-cols-2 gap-4 p-4 mt-2">
+          
+          {/* Decabillionaire */}
+          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+             <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
+               <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
+                  <ShieldAlert className="h-10 w-10 text-white drop-shadow-md" />
+               </div>
+             </div>
+             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+             <span className="text-[14px] font-medium text-white tracking-wide">Decabillionaire</span>
+          </div>
+
+          {/* Charm Legend */}
+          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+             <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
+               <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
+                  <Crown className="h-10 w-10 text-white drop-shadow-md" />
+               </div>
+             </div>
+             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
+             <span className="text-[14px] font-medium text-white tracking-wide">Charm Legend</span>
+          </div>
+
+          {/* Billionaire */}
+          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+             <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
+               <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
+                  <ShieldAlert className="h-10 w-10 text-white/90 drop-shadow-md" />
+               </div>
+             </div>
+             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+             <span className="text-[14px] font-medium text-white tracking-wide">Billionaire</span>
+          </div>
+
+          {/* Charm Luminary */}
+          <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+             <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
+               <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
+                  <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
+               </div>
+             </div>
+             <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
+             <span className="text-[14px] font-medium text-white tracking-wide">Charm Luminary</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 // --- MAIN PROFILE COMPONENT ---
 
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
@@ -668,6 +772,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const [fullViewOpen, setFullViewOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
+
+  // --- NEW STATE FOR MEDAL MODAL ---
+  const [medalModalOpen, setMedalModalOpen] = useState(false);
 
   const isOwnProfile = currentUser?.uid === profileId;
 
@@ -975,8 +1082,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <div className="flex justify-between items-center px-4 mt-6">
               <IconButton customIcon={SVGA_LevelCrown} label="Level" onClick={() => router.push('/level')} />
               <IconButton customIcon={SVGA_StoreCart} label="Store" onClick={() => router.push('/store')} />
-              <IconButton customIcon={SVGA_MedalStar} label="Medal" onClick={() => router.push('/medals')} />
-              <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/tasks')} />
+              {/* --- MEDAL BUTTON UPDATED --- */}
+              <IconButton customIcon={SVGA_MedalStar} label="Medal" onClick={() => setMedalModalOpen(true)} />
+              {/* --- TASK BUTTON UPDATED --- */}
+              <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/room-tasks')} />
             </div>
 
             {/* Main Menu List */}
@@ -1054,6 +1163,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         </div>
 
         {/* Dialogs */}
+        <MedalModal open={medalModalOpen} onClose={() => setMedalModalOpen(false)} />
         <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
         <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} />
         <ReportUserDialog
