@@ -3314,43 +3314,61 @@ function AdminPageContent() {
                 </CardHeader>
                 <CardContent className="px-0 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                    <div className="space-y-4">
-                      <Input
-                        placeholder="Asset Name..."
-                        value={storeName}
-                        onChange={(e) => setStoreName(e.target.value)}
-                        className="h-14 rounded-2xl border-2"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Asset Identity</label>
                         <Input
-                          type="number"
-                          placeholder="Price"
-                          value={storePrice}
-                          onChange={(e) => setStorePrice(e.target.value)}
-                          className="h-12 rounded-xl"
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Days"
-                          value={storeDuration}
-                          onChange={(e) => setStoreDuration(e.target.value)}
-                          className="h-12 rounded-xl"
+                          placeholder="Enter Asset Name (e.g. Royal Dragon Frame)"
+                          value={storeName}
+                          onChange={(e) => setStoreName(e.target.value)}
+                          className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all text-sm font-bold"
                         />
                       </div>
-                      <Select
-                        value={storeCategory}
-                        onValueChange={(v: any) => setStoreCategory(v)}
-                      >
-                        <SelectTrigger className="h-14 rounded-2xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Frame">Avatar Frame</SelectItem>
-                          <SelectItem value="Bubble">Chat Bubble</SelectItem>
-                          <SelectItem value="Theme">Room Theme</SelectItem>
-                          <SelectItem value="Wave">Voice Wave</SelectItem>
-                        </SelectContent>
-                      </Select>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-1">
+                            <GoldCoinIcon className="h-3 w-3" /> Price (Coins)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="e.g. 500"
+                            value={storePrice}
+                            onChange={(e) => setStorePrice(e.target.value)}
+                            className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all font-bold"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Duration (Days)
+                          </label>
+                          <Input
+                            type="number"
+                            placeholder="e.g. 7"
+                            value={storeDuration}
+                            onChange={(e) => setStoreDuration(e.target.value)}
+                            className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Store Category</label>
+                        <Select
+                          value={storeCategory}
+                          onValueChange={(v: any) => setStoreCategory(v)}
+                        >
+                          <SelectTrigger className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 font-bold">
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-2">
+                            <SelectItem value="Frame" className="font-bold">Avatar Frame</SelectItem>
+                            <SelectItem value="Bubble" className="font-bold">Chat Bubble</SelectItem>
+                            <SelectItem value="Theme" className="font-bold">Room Theme</SelectItem>
+                            <SelectItem value="Wave" className="font-bold">Voice Wave</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* IMAGE UPLOAD */}
@@ -3890,6 +3908,62 @@ function AdminPageContent() {
                       mode={tagSearchMode}
                       setMode={setTagSearchMode}
                     />
+                    <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Asset Identity</label>
+                      <Input
+                        placeholder="Enter Asset Name (e.g. Royal Dragon Frame)"
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all text-sm font-bold"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-1">
+                          <GoldCoinIcon className="h-3 w-3" /> Price (Coins)
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 500"
+                          value={storePrice}
+                          onChange={(e) => setStorePrice(e.target.value)}
+                          className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all font-bold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2 flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Duration (Days)
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 7"
+                          value={storeDuration}
+                          onChange={(e) => setStoreDuration(e.target.value)}
+                          className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 focus:border-primary transition-all font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Store Category</label>
+                      <Select
+                        value={storeCategory}
+                        onValueChange={(v: any) => setStoreCategory(v)}
+                      >
+                        <SelectTrigger className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 font-bold">
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2">
+                          <SelectItem value="Frame" className="font-bold">Avatar Frame</SelectItem>
+                          <SelectItem value="Bubble" className="font-bold">Chat Bubble</SelectItem>
+                          <SelectItem value="Theme" className="font-bold">Room Theme</SelectItem>
+                          <SelectItem value="Wave" className="font-bold">Voice Wave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    </div>
                     <div className="flex gap-4">
                       <Input
                         placeholder="Enter member signature..."
