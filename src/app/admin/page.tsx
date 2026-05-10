@@ -625,6 +625,7 @@ function AdminPageContent() {
   const [storeCategory, setStoreCategory] = useState<
     "Frame" | "Bubble" | "Theme" | "Wave"
   >("Frame");
+  const [isUploadingStore, setIsUploadingStore] = useState(false);
   const storeFileInputRef = useRef<HTMLInputElement>(null);
   const storeVideoFileInputRef = useRef<HTMLInputElement>(null);
   const [storeVideoFile, setStoreVideoFile] = useState<File | null>(null);
