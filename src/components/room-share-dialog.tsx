@@ -90,22 +90,12 @@ export function RoomShareDialog({ open, onOpenChange, room, onShare }: RoomShare
               text: fullInvite,
               url: shareUrl
             }).catch(() => {
-              // Fallback 1: Direct WhatsApp App Launch (Best for Capacitor/Android)
-              window.location.href = `whatsapp://send?text=${encodeURIComponent(fullInvite)}`;
-              
-              // Fallback 2: Web Link (if WhatsApp not installed)
-              setTimeout(() => {
-                window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
-              }, 500);
+              // Fallback: Universal WhatsApp Link (Works in all WebViews)
+              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(fullInvite)}`, '_blank');
             });
           } else {
-            // No Share API support (Fallback to Direct App Launch)
-            window.location.href = `whatsapp://send?text=${encodeURIComponent(fullInvite)}`;
-            
-            // Backup Web Link
-            setTimeout(() => {
-              window.open(`https://wa.me/?text=${encodeURIComponent(fullInvite)}`, '_blank');
-            }, 500);
+            // No Share API support (Fallback to Universal Link)
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(fullInvite)}`, '_blank');
           }
           
           if (onShare) onShare();
