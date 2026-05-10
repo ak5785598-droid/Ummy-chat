@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -26,7 +26,7 @@ export function GiftAnimationOverlay({
   giftName,
   senderName,
   receiverName,
-  imageUrl, // Agar future me use karna ho
+  imageUrl,
   animationUrl,
   videoUrl,
   soundUrl,
@@ -35,9 +35,28 @@ export function GiftAnimationOverlay({
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
-  const [isVideoReady, setIsVideoReady] = useState(false); // Black screen rokne ke liye state
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // ---- Bug Fixes: timer refs for clean overlap handling ----
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoCleanupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCleanup = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (videoCleanupTimeoutRef.current) {
+      clearTimeout(videoCleanupTimeoutRef.current);
+      videoCleanupTimeoutRef.current = null;
+    }
+    setActiveGift(null);
+    setLottieData(null);
+    setIsVideoReady(false);
+    onComplete();
+  }, [onComplete]);
 
   // Load Lottie Data
   useEffect(() => {
@@ -54,75 +73,80 @@ export function GiftAnimationOverlay({
   // Animation trigger logic
   useEffect(() => {
     if (giftId) {
-      setActiveGift({ id: Date.now() });
-      setIsVideoReady(false); // Har naye gift pe reset
+      // Purane timeouts cancel
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (videoCleanupTimeoutRef.current) {
+        clearTimeout(videoCleanupTimeoutRef.current);
+        videoCleanupTimeoutRef.current = null;
+      }
 
-      // 1. Play Sound
+      setActiveGift({ id: Date.now() });
+      setIsVideoReady(false);
+
+      // Sound
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // 2. Haptics
+      // Haptics
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
+      // Agar video nahi hai to manual timeout
       if (!videoUrl) {
-        const finishTimer = setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           handleCleanup();
         }, 4000);
-        return () => clearTimeout(finishTimer);
       }
     }
-  }, [giftId, soundUrl, videoUrl]);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (videoCleanupTimeoutRef.current) {
+        clearTimeout(videoCleanupTimeoutRef.current);
+        videoCleanupTimeoutRef.current = null;
+      }
+    };
+  }, [giftId, soundUrl, videoUrl, handleCleanup]);
 
-  // Cleanup function to avoid repetition
-  const handleCleanup = () => {
-    setActiveGift(null);
-    setLottieData(null);
-    setIsVideoReady(false);
-    onComplete();
-  };
-
-  // Handle Video Metadata (Exact length pata karne ke liye)
+  // Video metadata backup timer
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000; // Convert to milliseconds
-    
-    // Video khatam hote hi clean up karne ka backup
-    setTimeout(() => {
+    const duration = e.currentTarget.duration * 1000;
+    videoCleanupTimeoutRef.current = setTimeout(() => {
+      videoCleanupTimeoutRef.current = null;
       handleCleanup();
-    }, duration + 500); // 500ms extra for smooth exit
+    }, duration + 500);
   };
 
-  // Handle Video Auto-play Force & Sound
+  // Force autoplay with sound, fallback to muted
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          // Sound ON karne ke liye false kar diya
           videoRef.current!.defaultMuted = false;
           videoRef.current!.muted = false;
-          videoRef.current!.playbackRate = 1.15; 
-          
-          // Fast playback ke liye load force kar diya
+          videoRef.current!.playbackRate = 1.15;
           videoRef.current!.load();
-          
           const playPromise = videoRef.current!.play();
           if (playPromise !== undefined) {
             await playPromise;
           }
         } catch (err) {
-          console.warn('Video Playback with sound failed, browser might be blocking auto-play. Trying muted fallback:', err);
-          // Agar browser bina interaction ke sound block karta hai, toh black screen na aaye isliye fallback
+          console.warn('Sound ke saath play fail, muted try kar rahe:', err);
           try {
             if (videoRef.current) {
               videoRef.current.muted = true;
               await videoRef.current.play();
             }
           } catch (e) {
-            console.error('Fallback video play also failed', e);
+            console.error('Muted bhi fail ho gaya:', e);
           }
         }
       };
@@ -141,9 +165,7 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
-            // Jab gayab hoga tab ekdam smooth fade out hoga
             exit={{ opacity: 0 }} 
-            // Duration thodi badha di hai taaki exit ekdam smooth aur transparent hoke ho
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
@@ -182,7 +204,7 @@ export function GiftAnimationOverlay({
                   <Lottie animationData={lottieData} loop={true} className="w-full h-full" />
                 </div>
               ) : videoUrl ? (
-                // Yahan div ko motion.div kar diya hai Center pop in/out effect ke liye
+                /* Video Overlay – bilkul clear, graphic UI perfect */
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ 
@@ -193,7 +215,7 @@ export function GiftAnimationOverlay({
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
                   style={{
-                    // Tumhara gradient ekdam same rakha hai edges smooth blend karne ke liye
+                    // Cinematic soft edge mask – video edges clean blend hote hain
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
@@ -209,7 +231,13 @@ export function GiftAnimationOverlay({
                     controls={false}
                     onCanPlay={() => setIsVideoReady(true)} 
                     onLoadedMetadata={handleVideoMetadata} 
-                    onEnded={handleCleanup} 
+                    onEnded={() => {
+                      if (videoCleanupTimeoutRef.current) {
+                        clearTimeout(videoCleanupTimeoutRef.current);
+                        videoCleanupTimeoutRef.current = null;
+                      }
+                      handleCleanup();
+                    }} 
                     className="w-full h-full object-contain bg-transparent"
                   />
                 </motion.div>
@@ -234,4 +262,3 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
-
