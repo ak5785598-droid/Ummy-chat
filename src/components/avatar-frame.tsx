@@ -93,6 +93,10 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
   );
 };
 
+const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
+  const { id, imageUrl, borderColor, glowColor, gradient, animationType, extraType, extraColor, particleType, particleColor, Ornament } = config;
+  const isSakura = id === 'sakura-blossom';
+  const imgSize = pixelSize * 2.2;
   const isMediaFrame = imageUrl || config.videoUrl;
 
   return (
