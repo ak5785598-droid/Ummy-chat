@@ -1215,7 +1215,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US'; // Default, will be updated based on target or auto
+    
+    // Dynamically set recognition language based on selected target language
+    const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage);
+    recognition.lang = selectedLang?.locale || 'hi-IN'; 
 
     recognition.onresult = async (event: any) => {
       if (!firestore || !room.id || !currentUser?.uid || currentUserParticipant?.isMuted) return;
@@ -1239,6 +1242,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           name: userProfile?.username || 'User',
           timestamp: Date.now()
         }, { merge: true });
+
+        // Immediate local feedback
+        setRoomCaptions(prev => ({
+          ...prev,
+          [currentUser.uid]: {
+            text: textToShow,
+            name: userProfile?.username || 'Me',
+            timestamp: Date.now(),
+            emoji: '🗣️'
+          }
+        }));
       }
     };
 
@@ -1253,7 +1267,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => {
       if (recognitionRef.current) recognitionRef.current.stop();
     };
-  }, [isCaptionsEnabled, isHydrated, isInSeat, currentUserParticipant?.isMuted, firestore, room.id, currentUser?.uid, userProfile?.username]);
+  }, [isCaptionsEnabled, isHydrated, isInSeat, currentUserParticipant?.isMuted, firestore, room.id, currentUser?.uid, userProfile?.username, targetLanguage]);
 
   // SYNC: Listen for all captions in the room and translate if needed
   useEffect(() => {
@@ -1264,7 +1278,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       snapshot.docChanges().forEach(async (change) => {
         const data = change.doc.data();
         const uid = change.doc.id;
-        if (uid === currentUser?.uid) return;
+        // Now processing all users for synchronization
 
         if (change.type === 'added' || change.type === 'modified') {
           // Detect Emotion for Subtitles
@@ -3019,7 +3033,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </div>
           </button>
 
-          <button
+           <button
              onClick={() => {
                setPortalDefaultView('grid');
                setIsRoomPlayOpen(true);
@@ -3383,6 +3397,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         room={room}
         isAIVoiceEnabled={isAIVoiceEnabled}
         onToggleAIVoice={toggleAIVoice}
+        isCaptionsEnabled={isCaptionsEnabled}
+        onToggleCaptions={() => setIsCaptionsEnabled(!isCaptionsEnabled)}
       />
 
       <ExitRoomDialog
