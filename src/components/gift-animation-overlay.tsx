@@ -36,8 +36,10 @@ export function GiftAnimationOverlay({
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [showNameplate, setShowNameplate] = useState(false); // State to control nameplate visibility
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null); // Timer for nameplate
 
   // Load Lottie Data
   useEffect(() => {
@@ -56,6 +58,14 @@ export function GiftAnimationOverlay({
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
+      
+      // Show nameplate and set timer to hide it after 3.5 seconds
+      setShowNameplate(true);
+      // Clear any existing timer
+      if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
+      nameplateTimerRef.current = setTimeout(() => {
+        setShowNameplate(false);
+      }, 3500);
 
       // 1. Play Sound
       if (soundUrl) {
@@ -68,30 +78,44 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic
+      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
         }, 4000);
         return () => clearTimeout(finishTimer);
       }
+    } else {
+      // Reset nameplate state when giftId becomes null
+      setShowNameplate(false);
+      if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
     }
   }, [giftId, soundUrl, videoUrl]);
 
+  // Cleanup function
   const handleCleanup = () => {
+    // Clear nameplate timer to prevent memory leaks
+    if (nameplateTimerRef.current) {
+      clearTimeout(nameplateTimerRef.current);
+      nameplateTimerRef.current = null;
+    }
     setActiveGift(null);
     setLottieData(null);
     setIsVideoReady(false);
+    setShowNameplate(false);
     onComplete();
   };
 
+  // Handle Video Metadata
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e.currentTarget.duration * 1000; 
+    
     setTimeout(() => {
       handleCleanup();
     }, duration + 500); 
   };
 
+  // Handle Video Auto-play Force & Sound
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
@@ -99,7 +123,9 @@ export function GiftAnimationOverlay({
           videoRef.current!.defaultMuted = false;
           videoRef.current!.muted = false;
           videoRef.current!.playbackRate = 1.15; 
+          
           videoRef.current!.load();
+          
           const playPromise = videoRef.current!.play();
           if (playPromise !== undefined) {
             await playPromise;
@@ -135,12 +161,13 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* LOGIC CHANGE: Added !videoUrl condition so banner hides when video plays */}
-            {senderName && receiverName && !videoUrl && (
+            {/* MODIFIED 3D SCROLL BANNER NAME PLATE - Shows only for 3.5 seconds, text compact */}
+            {showNameplate && senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: -220 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className="absolute text-center w-[480px] z-[1002]"
               >
                 <div className="scroll-stage playing">
@@ -207,24 +234,25 @@ export function GiftAnimationOverlay({
 
                       <g className="floatGroup">
                         <ellipse cx="500" cy="334" rx="300" ry="30" fill="url(#floorShadow)" opacity=".55"/>
+
                         <g className="bannerGroup" filter="url(#bannerShadow)">
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
                           
+                          {/* Embedded Sender and Receiver Names inside SVG Scroll - COMPACT TEXT STYLES */}
                           <foreignObject x="200" y="110" width="600" height="150">
-                            <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center">
-                              {/* UI CHANGE: Added 'tracking-tighter' for closer text spacing */}
-                              <p className="text-white text-[32px] font-black tracking-tighter leading-tight m-0 drop-shadow-md">
+                            <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center [&>p]:m-0 [&>p]:leading-tight gap-0">
+                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
                                 <span className="text-yellow-400">{senderName}</span>
                               </p>
-                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-normal my-1">
+                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-[0.2em] my-0 leading-tight">
                                 sent gift to
                               </p>
-                              <p className="text-white text-[32px] font-black tracking-tighter leading-tight m-0 drop-shadow-md">
+                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
                                 <span className="text-cyan-400">{receiverName}</span>
                               </p>
                               {giftName && (
-                                <p className="text-white/50 text-[12px] font-black uppercase tracking-tighter mt-2 drop-shadow-lg">
+                                <p className="text-white/50 text-[12px] font-black uppercase tracking-[0.3em] mt-1 mb-0 leading-tight drop-shadow-lg">
                                   {giftName}
                                 </p>
                               )}
@@ -281,7 +309,7 @@ export function GiftAnimationOverlay({
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF */}
+            {/* THE GIFT ITSELF (Untouched) */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -328,6 +356,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
+      {/* FULL SCREEN AMBIANCE (Untouched) */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -340,6 +369,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
+      {/* Scroll Banner Animations Scoped Styles */}
       <style>{`
         .scroll-stage {
           width: 100%; max-width: 900px;
@@ -398,4 +428,3 @@ export function GiftAnimationOverlay({
     </div>
   );
 }
-
