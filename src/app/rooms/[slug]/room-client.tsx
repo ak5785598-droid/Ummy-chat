@@ -1202,20 +1202,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
-  // --- REAL-TIME VOICE CAPTIONS ENGINE (FIXED) ---
+  // --- REAL-TIME VOICE CAPTIONS ENGINE (FIXED v2) ---
+  // Use a ref to avoid stale closure in onend/onerror callbacks
+  const isCaptionsEnabledRef = useRef(false);
+  useEffect(() => { isCaptionsEnabledRef.current = isCaptionsEnabled; }, [isCaptionsEnabled]);
+
   useEffect(() => {
     if (!isCaptionsEnabled || !isHydrated) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      console.warn('Speech Recognition not supported in this browser.');
+      console.warn('[Captions] Speech Recognition not supported.');
       return;
     }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-
     const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage);
     recognition.lang = selectedLang?.locale || 'hi-IN';
 
@@ -1224,20 +1227,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
       let interimTranscript = '';
       let finalTranscript = '';
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
+        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+        else interimTranscript += event.results[i][0].transcript;
       }
 
       const textToShow = finalTranscript || interimTranscript;
       if (!textToShow.trim()) return;
 
-      // FIX: Immediate local update FIRST — no waiting for AI calls
       const now = Date.now();
+
+      // Show immediately locally
       setRoomCaptions(prev => ({
         ...prev,
         [currentUser.uid]: {
@@ -1248,7 +1248,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }
       }));
 
-      // Write to Firestore so other room members see it too
+      // Broadcast to all room members via Firestore
       const captionRef = doc(firestore, 'chatRooms', room.id, 'captions', currentUser.uid);
       setDocumentNonBlocking(captionRef, {
         text: textToShow,
@@ -1258,24 +1258,22 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     };
 
     recognition.onerror = (event: any) => {
-      console.error('Speech Recognition Error:', event.error);
-      // Auto-restart on recoverable errors
-      if (event.error === 'no-speech' || event.error === 'aborted') {
-        try { recognition.start(); } catch(e) {}
-      }
+      console.error('[Captions] Error:', event.error);
     };
 
+    // KEY FIX: Use ref instead of state variable to avoid stale closure
     recognition.onend = () => {
-      if (isCaptionsEnabled) {
+      if (isCaptionsEnabledRef.current) {
         try { recognition.start(); } catch(e) {}
       }
     };
 
     recognitionRef.current = recognition;
-    try { recognition.start(); } catch(e) {}
+    try { recognition.start(); } catch(e) { console.warn('[Captions] Start failed:', e); }
 
     return () => {
-      try { recognitionRef.current?.stop(); } catch(e) {}
+      isCaptionsEnabledRef.current = false;
+      try { recognition.stop(); } catch(e) {}
       recognitionRef.current = null;
     };
   }, [isCaptionsEnabled, isHydrated, firestore, room.id, currentUser?.uid, userProfile?.username, targetLanguage]);
