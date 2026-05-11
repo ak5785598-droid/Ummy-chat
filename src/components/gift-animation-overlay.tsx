@@ -68,7 +68,7 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
+      // 3. Dynamic Timeout Logic
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
@@ -78,7 +78,6 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Cleanup function
   const handleCleanup = () => {
     setActiveGift(null);
     setLottieData(null);
@@ -86,16 +85,13 @@ export function GiftAnimationOverlay({
     onComplete();
   };
 
-  // Handle Video Metadata
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e.currentTarget.duration * 1000; 
-    
     setTimeout(() => {
       handleCleanup();
     }, duration + 500); 
   };
 
-  // Handle Video Auto-play Force & Sound
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
@@ -103,9 +99,7 @@ export function GiftAnimationOverlay({
           videoRef.current!.defaultMuted = false;
           videoRef.current!.muted = false;
           videoRef.current!.playbackRate = 1.15; 
-          
           videoRef.current!.load();
-          
           const playPromise = videoRef.current!.play();
           if (playPromise !== undefined) {
             await playPromise;
@@ -141,8 +135,8 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* NEW 3D SCROLL BANNER NAME PLATE */}
-            {senderName && receiverName && (
+            {/* LOGIC CHANGE: Added !videoUrl condition so banner hides when video plays */}
+            {senderName && receiverName && !videoUrl && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: -220 }}
@@ -213,25 +207,24 @@ export function GiftAnimationOverlay({
 
                       <g className="floatGroup">
                         <ellipse cx="500" cy="334" rx="300" ry="30" fill="url(#floorShadow)" opacity=".55"/>
-
                         <g className="bannerGroup" filter="url(#bannerShadow)">
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
                           
-                          {/* Embedded Sender and Receiver Names inside SVG Scroll */}
                           <foreignObject x="200" y="110" width="600" height="150">
                             <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center">
-                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
+                              {/* UI CHANGE: Added 'tracking-tighter' for closer text spacing */}
+                              <p className="text-white text-[32px] font-black tracking-tighter leading-tight m-0 drop-shadow-md">
                                 <span className="text-yellow-400">{senderName}</span>
                               </p>
-                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-[0.2em] my-1">
+                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-normal my-1">
                                 sent gift to
                               </p>
-                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
+                              <p className="text-white text-[32px] font-black tracking-tighter leading-tight m-0 drop-shadow-md">
                                 <span className="text-cyan-400">{receiverName}</span>
                               </p>
                               {giftName && (
-                                <p className="text-white/50 text-[12px] font-black uppercase tracking-[0.3em] mt-2 drop-shadow-lg">
+                                <p className="text-white/50 text-[12px] font-black uppercase tracking-tighter mt-2 drop-shadow-lg">
                                   {giftName}
                                 </p>
                               )}
@@ -275,7 +268,7 @@ export function GiftAnimationOverlay({
                           <circle cx="880" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
                           <ellipse cx="880" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
                           <ellipse cx="880" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
-                          <ellipse cx="880" cy="308" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
+                          <ellipse cx="880" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
                           <circle cx="880" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
                           <ellipse cx="880" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
                           <rect x="859.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
@@ -288,7 +281,7 @@ export function GiftAnimationOverlay({
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF (Untouched) */}
+            {/* THE GIFT ITSELF */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -335,7 +328,6 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE (Untouched) */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -348,7 +340,6 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* Scroll Banner Animations Scoped Styles */}
       <style>{`
         .scroll-stage {
           width: 100%; max-width: 900px;
