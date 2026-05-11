@@ -189,8 +189,6 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       }
       }, 60000); // Every 60 seconds
      }
-
-     }
     };
  
     performJoin();
