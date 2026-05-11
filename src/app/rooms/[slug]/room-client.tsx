@@ -1202,7 +1202,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => clearTimeout(clearTimer);
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
-  // --- REAL-TIME VOICE CAPTIONS ENGINE ---
+  // --- REAL-TIME VOICE CAPTIONS ENGINE (FIXED) ---
   useEffect(() => {
     if (!isCaptionsEnabled || !isHydrated) return;
 
@@ -1215,13 +1215,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    
-    // Dynamically set recognition language based on selected target language
-    const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage);
-    recognition.lang = selectedLang?.locale || 'hi-IN'; 
 
-    recognition.onresult = async (event: any) => {
-      if (!firestore || !room.id || !currentUser?.uid || currentUserParticipant?.isMuted) return;
+    const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage);
+    recognition.lang = selectedLang?.locale || 'hi-IN';
+
+    recognition.onresult = (event: any) => {
+      if (!firestore || !room.id || !currentUser?.uid) return;
 
       let interimTranscript = '';
       let finalTranscript = '';
@@ -1235,41 +1234,53 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       }
 
       const textToShow = finalTranscript || interimTranscript;
-      if (textToShow.trim()) {
-        const captionRef = doc(firestore, 'chatRooms', room.id, 'captions', currentUser.uid);
-        setDocumentNonBlocking(captionRef, {
-          text: textToShow,
-          name: userProfile?.username || 'User',
-          timestamp: Date.now()
-        }, { merge: true });
+      if (!textToShow.trim()) return;
 
-        // Immediate local feedback
-        setRoomCaptions(prev => ({
-          ...prev,
-          [currentUser.uid]: {
-            text: textToShow,
-            name: userProfile?.username || 'Me',
-            timestamp: Date.now(),
-            emoji: '🗣️'
-          }
-        }));
+      // FIX: Immediate local update FIRST — no waiting for AI calls
+      const now = Date.now();
+      setRoomCaptions(prev => ({
+        ...prev,
+        [currentUser.uid]: {
+          text: textToShow,
+          name: userProfile?.username || 'Me',
+          timestamp: now,
+          emoji: '🗣️'
+        }
+      }));
+
+      // Write to Firestore so other room members see it too
+      const captionRef = doc(firestore, 'chatRooms', room.id, 'captions', currentUser.uid);
+      setDocumentNonBlocking(captionRef, {
+        text: textToShow,
+        name: userProfile?.username || 'User',
+        timestamp: now
+      }, { merge: true });
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech Recognition Error:', event.error);
+      // Auto-restart on recoverable errors
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        try { recognition.start(); } catch(e) {}
       }
     };
 
-    recognition.onerror = (event: any) => console.error('Speech Recognition Error:', event.error);
-    recognition.onend = () => { if (isCaptionsEnabled && !currentUserParticipant?.isMuted) recognition.start(); };
+    recognition.onend = () => {
+      if (isCaptionsEnabled) {
+        try { recognition.start(); } catch(e) {}
+      }
+    };
 
     recognitionRef.current = recognition;
-    if (isInSeat && !currentUserParticipant?.isMuted) {
-      recognition.start();
-    }
+    try { recognition.start(); } catch(e) {}
 
     return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      try { recognitionRef.current?.stop(); } catch(e) {}
+      recognitionRef.current = null;
     };
-  }, [isCaptionsEnabled, isHydrated, isInSeat, currentUserParticipant?.isMuted, firestore, room.id, currentUser?.uid, userProfile?.username, targetLanguage]);
+  }, [isCaptionsEnabled, isHydrated, firestore, room.id, currentUser?.uid, userProfile?.username, targetLanguage]);
 
-  // SYNC: Listen for all captions in the room and translate if needed
+  // SYNC: Listen for all captions in the room (FIXED — no blocking AI calls)
   useEffect(() => {
     if (!firestore || !room.id || !isCaptionsEnabled) return;
 
@@ -1281,19 +1292,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         // Now processing all users for synchronization
 
         if (change.type === 'added' || change.type === 'modified') {
-          // Detect Emotion for Subtitles
-          const moodData = await detectEmotion(data.text);
-          
-          // Translate to target language
-          const translatedText = await translateMessage(data.text, targetLanguage);
+          // Show caption IMMEDIATELY — don't block on async AI calls
           setRoomCaptions(prev => ({
             ...prev,
             [uid]: {
-              text: translatedText || data.text,
+              text: data.text,
               name: data.name,
               timestamp: data.timestamp,
-              emotion: moodData.emotion,
-              emoji: moodData.emoji
+              emoji: '🗣️'
             }
           }));
 
@@ -1305,6 +1311,25 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               return next;
             });
           }, 5000);
+
+          // Run AI emotion/translation in background (doesn't block display)
+          try {
+            const moodData = await detectEmotion(data.text);
+            const translatedText = await translateMessage(data.text, targetLanguage);
+            
+            setRoomCaptions(prev => {
+              if (!prev[uid] || prev[uid].timestamp !== data.timestamp) return prev;
+              return { 
+                ...prev, 
+                [uid]: { 
+                  ...prev[uid], 
+                  text: translatedText || data.text,
+                  emotion: moodData.emotion, 
+                  emoji: moodData.emoji 
+                } 
+              };
+            });
+          } catch (e) {}
         }
       });
     });
