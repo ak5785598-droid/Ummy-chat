@@ -21,7 +21,7 @@ const GoldenDollar = () => (
   </div>
 );
 
-// Fallback gifts if Firestore is empty
+// Fallback gifts – ye hamesha base rahega
 const FALLBACK_GIFTS: Record<string, any[]> = {
   'Hot': [
    { id: 'heart', name: 'Heart', price: 299, emoji: '❤️', animationId: 'heart_anim' },
@@ -45,12 +45,8 @@ const getTodayString = () => {
     return istDate.toISOString().split('T')[0];
 };
 
-const formatCompactNumber = (number: number) => {
-  if (number < 1000000) return number.toLocaleString();
-  
-  const formatter = Intl.NumberFormat('en', { notation: 'compact' });
-  return formatter.format(number);
-};
+// ab use nahi kar rahe kyunki balance simple number me dikhana hai
+// const formatCompactNumber = ... (hataya gaya)
 
 export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
  const { user } = useUser();
@@ -61,7 +57,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [quantity, setQuantity] = useState('1');
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
- 
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
 
  const giftsQuery = useMemoFirebase(() => {
@@ -72,29 +67,32 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const { data: dbGifts, isLoading: isGiftsLoading } = useCollection(giftsQuery);
 
  const GIFTS = useMemo(() => {
-   if (!dbGifts || dbGifts.length === 0) return FALLBACK_GIFTS;
-   
+   // --- YAHIN BADA CHANGE: hamesha FALLBACK ko base banao, fir Firestore wale add karo ---
    const groups: Record<string, any[]> = {
-     'Hot': [],
-     'Lucky': [],
+     'Hot': [...(FALLBACK_GIFTS['Hot'] || [])],        // emoji wale gifts yahan se aayenge
+     'Lucky': [...(FALLBACK_GIFTS['Lucky'] || [])],
      'Luxury': [],
      'Event': []
    };
 
-   dbGifts.forEach((g: any) => {
-     const cat = g.category || 'Hot';
-     if (groups[cat]) {
-       groups[cat].push({
-         ...g,
-         id: g.id || g.giftId 
-       });
-     } else {
-       if (!groups['Event']) groups['Event'] = [];
-       groups['Event'].push({ ...g, id: g.id || g.giftId });
-     }
-   });
+   // ab Firestore ke sare gifts ko bina condition ke add kar do
+   if (dbGifts && dbGifts.length > 0) {
+     dbGifts.forEach((g: any) => {
+       const cat = g.category || 'Hot';
+       if (groups[cat]) {
+         groups[cat].push({
+           ...g,
+           id: g.id || g.giftId
+         });
+       } else {
+         // unknown category ko 'Event' me daal do
+         if (!groups['Event']) groups['Event'] = [];
+         groups['Event'].push({ ...g, id: g.id || g.giftId });
+       }
+     });
+   }
 
-   // Ensure Emoji gifts appear before Image gifts
+   // sorting: pehle emoji wale (jinka imageUrl nahi), fir image wale
    Object.keys(groups).forEach(key => {
      groups[key].sort((a, b) => {
        const aHasImage = !!a.imageUrl;
@@ -132,7 +130,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   try {
    const batch = writeBatch(firestore);
    const today = getTodayString();
-   
    let winAmount = 0;
    let selectedMult = 1;
 
@@ -152,7 +149,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
    const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
-   
    const coinAdjustment = -totalCost + winAmount;
 
    batch.update(senderProfileRef, { 
@@ -162,7 +158,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'wallet.lastDailyResetDate': today,
      updatedAt: serverTimestamp() 
    });
-   
    batch.update(senderUserRef, { 
      'wallet.coins': increment(coinAdjustment),
      'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
@@ -170,7 +165,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     });
 
    const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
-   
    selectedUids.forEach(uid => {
      const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
      const recUserRef = doc(firestore, 'users', uid);
@@ -274,7 +268,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        ))}
       </TabsList>
       
-       {/* UI UPDATE: Height fixed to 200px to strictly show 2 rows before scroll begins */}
        <div className="h-[200px] overflow-y-auto no-scrollbar px-4 pt-3 pb-16 grid grid-cols-4 gap-x-2 gap-y-4 content-start">
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
@@ -299,7 +292,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
                 <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
                 <div className="flex items-center gap-1 mt-0.5">
                   <GoldenDollar /> 
-                  {/* UI UPDATE: Coin text size decreased to text-[10px] */}
                   <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
                 </div>
                 {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
@@ -315,8 +307,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-2">
       <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-2xl border border-white/5 min-w-0 flex-1">
        <div className="shrink-0"><GoldenDollar /></div>
+       {/* Balance ab simple number me, bina K/M/B */}
        <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
-         {formatCompactNumber(userProfile?.wallet?.coins || 0)}
+         {(userProfile?.wallet?.coins || 0).toLocaleString()}
        </span>
       </div>
       
@@ -334,4 +327,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Sheet>
   </>
  );
-}
+           }
