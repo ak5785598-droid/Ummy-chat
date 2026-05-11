@@ -122,10 +122,11 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     }, 15000);
 
     // CLEANUP: Periodic task to purge stale sessions and sync counter
-    // Now runs for EVERYONE (not just mods) to ensure ghost rooms are eventually cleared
-    if (!cleanupInterval.current) {
+    // Only run by authorized personnel (Owner/Mod) to prevent "race conditions" where users delete each other
+    if (!cleanupInterval.current && canCleanup) {
      cleanupInterval.current = setInterval(async () => {
       // 1. Periodic IST Resets (Once every 60s)
+      // ... (rest of the reset logic stays same)
       const roomSnap = await getDoc(roomDocRef);
       if (roomSnap.exists()) {
         const now = new Date();
@@ -154,7 +155,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       }
 
       // 2. Clear Stale Participants (Ghost Removal) & Sync Counter
-      const ghostThreshold = new Date(Date.now() - 90000); // 1.5 minutes (aggressive)
+      // Threshold increased to 5 minutes (300s) for high resilience
+      const ghostThreshold = new Date(Date.now() - 300000); 
       const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
       
       const purgeBatch = writeBatch(firestore);
@@ -164,7 +166,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       snap.docs.forEach(d => {
         const p = d.data();
         const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-        // If user hasn't sent heartbeat in 90s, they are a ghost
+        // If user hasn't sent heartbeat in 5 mins, they are a ghost
         if (lastSeen < ghostThreshold) {
           purgeBatch.delete(d.ref);
           purgeCount++;
@@ -178,14 +180,16 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
       const currentStoredCount = roomData?.participantCount || 0;
 
       if (purgeCount > 0 || currentStoredCount !== activeCount) {
-        console.log(`[Presence] Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
+        console.log(`[Presence] Leader Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
         purgeBatch.update(roomDocRef, { 
           participantCount: activeCount, 
           updatedAt: serverTimestamp() 
         });
         purgeBatch.commit().catch(() => {});
       }
-      }, 45000); // Every 45 seconds
+      }, 60000); // Every 60 seconds
+     }
+
      }
     };
  
