@@ -286,6 +286,26 @@ function WalletContent() {
     }
   };
 
+  const handleUPIIntentRecharge = () => {
+    const pkg = COIN_PACKAGES.find(p => p.id === selectedPackageId);
+    if (!pkg) return;
+
+    const priceINR = parseInt(pkg.price.split(' ')[0]);
+    const upiId = config?.upiId || "7209741932@ptyes";
+    const upiName = config?.upiName || "Ummy Chat";
+    
+    // Generate UPI URI
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${priceINR}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
+    
+    // Try to open UPI app
+    window.location.href = upiUri;
+    
+    // After a delay, open the manual verification dialog
+    setTimeout(() => {
+      setIsOfflineDialogOpen(true);
+    }, 1500);
+  };
+
   const handleRechargeNow = async () => {
    if (!user || !firestore) return;
    
@@ -293,6 +313,8 @@ function WalletContent() {
      handleRazorpayRecharge();
    } else if (config?.paymentMode === 'cashfree') {
      handleCashfreeRecharge();
+   } else if (config?.paymentMode === 'upi_intent') {
+     handleUPIIntentRecharge();
    } else {
      setIsOfflineDialogOpen(true);
    }

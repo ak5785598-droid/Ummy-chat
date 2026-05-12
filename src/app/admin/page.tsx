@@ -2454,6 +2454,18 @@ function AdminPageContent() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger
+                  value="financial-audit"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
+                >
+                  <ClipboardList className="h-4 w-4" /> Financial Audit 💰
+                </TabsTrigger>
+                <TabsTrigger
+                  value="financial-settings"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-green-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Wallet className="h-4 w-4" /> Financial Settings
+                </TabsTrigger>
+                <TabsTrigger
                   value="app-data"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2598,12 +2610,6 @@ function AdminPageContent() {
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
                   <RefreshCcw className="h-4 w-4" /> System Control
-                </TabsTrigger>
-                <TabsTrigger
-                  value="financial-audit"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
-                >
-                  <ClipboardList className="h-4 w-4" /> Financial Audit 💰
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -2804,6 +2810,149 @@ function AdminPageContent() {
             <TabsContent value="financial-audit" className="m-0 space-y-6">
               <LogViewer firestore={firestore} isAuthorized={isAuthorized} />
             </TabsContent>
+
+            <TabsContent value="financial-settings" className="m-0 space-y-6">
+               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+                 <CardHeader className="px-0">
+                   <CardTitle className="text-2xl uppercase flex items-center gap-2 text-green-600">
+                     <Wallet className="h-6 w-6" /> Financial & Payment Settings
+                   </CardTitle>
+                   <CardDescription>
+                     Configure global payment gateways and offline recharge settings.
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent className="px-0 space-y-8">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
+                       <Label className="text-[10px] font-black uppercase text-slate-400">1. Global Payment Mode</Label>
+                       <Select 
+                         value={config?.paymentMode || 'manual'} 
+                         onValueChange={(val) => {
+                           if (!configRef) return;
+                           updateDoc(configRef, { paymentMode: val, updatedAt: serverTimestamp() })
+                             .then(() => toast({ title: "Payment Mode Updated", description: `Switched to ${val} mode.` }));
+                         }}
+                       >
+                         <SelectTrigger className="h-14 rounded-2xl border-none bg-white shadow-sm font-bold">
+                           <SelectValue placeholder="Select Mode" />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="manual">Manual (QR Scan + UTR)</SelectItem>
+                           <SelectItem value="upi_intent">UPI Intent (Direct App + UTR)</SelectItem>
+                           <SelectItem value="razorpay">Razorpay (Automatic - Needs GST)</SelectItem>
+                           <SelectItem value="cashfree">Cashfree (Automatic - Needs GST)</SelectItem>
+                         </SelectContent>
+                       </Select>
+                       <p className="text-[9px] font-medium text-slate-400 uppercase leading-relaxed">
+                         {config?.paymentMode === 'manual' && "Users scan QR, pay manually, and submit UTR ID."}
+                         {config?.paymentMode === 'upi_intent' && "Users click button to open PhonePe/GPay, then submit UTR ID."}
+                         {config?.paymentMode === 'razorpay' && "Users pay via Razorpay modal. Coins added automatically."}
+                         {config?.paymentMode === 'cashfree' && "Users pay via Cashfree modal. Coins added automatically."}
+                       </p>
+                     </div>
+
+                     <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border-2 border-slate-100">
+                        <Label className="text-[10px] font-black uppercase text-slate-400">2. UPI Identity (For Manual/Intent)</Label>
+                        <div className="space-y-3">
+                           <div className="space-y-1">
+                              <Label className="text-[8px] font-bold uppercase text-slate-400 ml-1">UPI ID / VPA</Label>
+                              <Input 
+                                defaultValue={config?.upiId || ''} 
+                                onBlur={(e) => {
+                                   if (!configRef || e.target.value === config?.upiId) return;
+                                   updateDoc(configRef, { upiId: e.target.value, updatedAt: serverTimestamp() })
+                                     .then(() => toast({ title: "UPI ID Saved" }));
+                                }}
+                                placeholder="e.g. 7209741932@ptyes" 
+                                className="h-12 rounded-xl border-none bg-white shadow-sm font-mono"
+                              />
+                           </div>
+                           <div className="space-y-1">
+                              <Label className="text-[8px] font-bold uppercase text-slate-400 ml-1">Merchant/Business Name</Label>
+                              <Input 
+                                defaultValue={config?.upiName || ''} 
+                                onBlur={(e) => {
+                                   if (!configRef || e.target.value === config?.upiName) return;
+                                   updateDoc(configRef, { upiName: e.target.value, updatedAt: serverTimestamp() })
+                                     .then(() => toast({ title: "Merchant Name Saved" }));
+                                }}
+                                placeholder="e.g. Ummy Chat Official" 
+                                className="h-12 rounded-xl border-none bg-white shadow-sm font-bold"
+                              />
+                           </div>
+                        </div>
+                     </div>
+                   </div>
+
+                   <div className="p-6 bg-slate-50 rounded-3xl border-2 border-slate-100 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <Label className="text-[10px] font-black uppercase text-slate-400">3. Offline Recharge QR Code</Label>
+                         {config?.paymentQrUrl && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-[9px] font-bold text-red-500 uppercase h-7 px-3 border border-red-100 rounded-lg"
+                              onClick={() => updateDoc(configRef!, { paymentQrUrl: null })}
+                            >
+                               Remove QR
+                            </Button>
+                         )}
+                      </div>
+
+                      <div className="flex flex-col md:flex-row items-center gap-10">
+                         <div className="relative h-48 w-48 bg-white rounded-3xl border-4 border-white shadow-xl flex items-center justify-center overflow-hidden">
+                            {config?.paymentQrUrl ? (
+                               <Image src={config.paymentQrUrl} alt="Payment QR" fill className="object-contain p-2" unoptimized />
+                            ) : (
+                               <div className="text-center opacity-20">
+                                  <ImageIcon className="h-10 w-10 mx-auto mb-1" />
+                                  <p className="text-[8px] font-black uppercase">No QR Active</p>
+                               </div>
+                            )}
+                            {isUploadingPaymentQr && (
+                               <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                  <Loader className="animate-spin text-white" />
+                               </div>
+                            )}
+                         </div>
+
+                         <div className="flex-1 space-y-4">
+                            <p className="text-xs font-medium text-slate-500 leading-relaxed uppercase">
+                               Upload your UPI QR code image (PhonePe/GPay/Paytm Business QR). This will be displayed to users in Manual Recharge mode.
+                            </p>
+                            <Button 
+                              onClick={() => paymentQrFileInputRef.current?.click()}
+                              disabled={isUploadingPaymentQr}
+                              className="h-14 rounded-2xl bg-black text-white font-black uppercase px-8 shadow-xl shadow-black/10 flex gap-2"
+                            >
+                               {isUploadingPaymentQr ? <Loader className="animate-spin h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                               Upload New QR Image
+                            </Button>
+                            <input 
+                              type="file" 
+                              ref={paymentQrFileInputRef} 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={(e) => {
+                                 const file = e.target.files?.[0];
+                                 if (!file || !storage || !configRef) return;
+                                 setIsUploadingPaymentQr(true);
+                                 const path = `appConfig/payment_qr_${Date.now()}`;
+                                 const sRef = ref(storage, path);
+                                 uploadBytes(sRef, file)
+                                    .then(snap => getDownloadURL(snap.ref))
+                                    .then(url => updateDoc(configRef, { paymentQrUrl: url, updatedAt: serverTimestamp() }))
+                                    .then(() => toast({ title: "QR Updated Successfully" }))
+                                    .catch(err => toast({ variant: 'destructive', title: "Upload Failed", description: err.message }))
+                                    .finally(() => setIsUploadingPaymentQr(false));
+                              }}
+                            />
+                         </div>
+                      </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             </TabsContent>
 
             <TabsContent value="recharge-requests" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
