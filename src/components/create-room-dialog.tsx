@@ -174,9 +174,34 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
        <Label htmlFor="name" className="text-[10px] font-bold uppercase text-gray-400 ml-1">Room Name</Label>
        <Input id="name" placeholder="Vibe Name" value={name} onChange={(e) => setName(e.target.value)} className="h-14 rounded-2xl border-2 focus:border-primary transition-all" required />
       </div>
-      <div className="grid gap-2">
-       <Label htmlFor="topic" className="text-[10px] font-bold uppercase text-gray-400 ml-1">Vibe Topic</Label>
-       <Input id="topic" placeholder="Vibe Topic" value={topic} onChange={(e) => setTopic(e.target.value)} className="h-14 rounded-2xl border-2 focus:border-primary transition-all" required />
+      <div className="grid gap-3">
+       <Label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Vibe Topic</Label>
+       <div className="grid grid-cols-2 gap-2">
+        {[
+          { id: 'Chat', label: 'Chat', icon: '💬' },
+          { id: 'Music', label: 'Music', icon: '🎵' },
+          { id: 'Game', label: 'Game', icon: '🎮' },
+          { id: 'Party', label: 'Party', icon: '🎉' },
+        ].map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            onClick={() => {
+              setCategory(cat.id);
+              setTopic(cat.label);
+            }}
+            className={cn(
+              "flex items-center justify-center gap-2 h-14 rounded-2xl border-2 transition-all font-bold text-sm",
+              category === cat.id 
+                ? "bg-slate-900 border-slate-900 text-white shadow-lg scale-[1.02]" 
+                : "bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200"
+            )}
+          >
+            <span className="text-lg">{cat.icon}</span>
+            {cat.label}
+          </button>
+        ))}
+       </div>
       </div>
      </div>
      <DialogFooter className="p-8 pt-0">
