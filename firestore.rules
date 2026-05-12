@@ -275,5 +275,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // ============================================
+    // BOUTIQUE HUB (Store Items)
+    // ============================================
+    match /storeItems/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
