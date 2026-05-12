@@ -120,27 +120,26 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        }
      }
     }, 15000);
-
     // CLEANUP: Periodic task to purge stale sessions and sync counter
-    // Only run by authorized personnel (Owner/Mod) to prevent "race conditions" where users delete each other
-    if (!cleanupInterval.current && canCleanup) {
-     cleanupInterval.current = setInterval(async () => {
-      // 1. Periodic IST Resets (Once every 60s)
-      // ... (rest of the reset logic stays same)
-      const roomSnap = await getDoc(roomDocRef);
-      if (roomSnap.exists()) {
+    // Only run by Room Owner to prevent "race conditions" and clock-skew issues from multiple moderators
+    if (!cleanupInterval.current && isOwner) {
+      cleanupInterval.current = setInterval(async () => {
+        const roomSnap = await getDoc(roomDocRef);
+        if (!roomSnap.exists()) return;
+        
+        const roomData = roomSnap.data();
         const now = new Date();
         const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
         const istNow = new Date(utc + (3600000 * 5.5));
-        const roomData = roomSnap.data();
-        const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
         
+        const lastUpdated = roomData.updatedAt?.toDate() || new Date(0);
         const lastUtc = lastUpdated.getTime() + (lastUpdated.getTimezoneOffset() * 60000);
         const istLast = new Date(lastUtc + (3600000 * 5.5));
 
         const resetData: any = { updatedAt: serverTimestamp() };
         let needsReset = false;
 
+        // 1. Periodic IST Resets (Daily/Weekly/Monthly)
         if (istLast.toDateString() !== istNow.toDateString()) {
           needsReset = true;
           resetData['stats.dailyGifts'] = 0;
@@ -151,44 +150,47 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
           resetData['stats.monthlyGifts'] = 0;
         }
 
-        if (needsReset) updateDocumentNonBlocking(roomDocRef, resetData);
-      }
-
-      // 2. Clear Stale Participants (Ghost Removal) & Sync Counter
-      // Threshold increased to 5 minutes (300s) for high resilience
-      const ghostThreshold = new Date(Date.now() - 300000); 
-      const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
-      
-      const purgeBatch = writeBatch(firestore);
-      let activeCount = 0;
-      let purgeCount = 0;
-
-      snap.docs.forEach(d => {
-        const p = d.data();
-        const lastSeen = p.lastSeen?.toDate?.() || new Date(0);
-        // If user hasn't sent heartbeat in 5 mins, they are a ghost
-        if (lastSeen < ghostThreshold) {
-          purgeBatch.delete(d.ref);
-          purgeCount++;
-        } else {
-          activeCount++;
+        if (needsReset) {
+          updateDocumentNonBlocking(roomDocRef, resetData);
         }
-      });
 
-      // ALWAYS sync the counter if it's different from the actual document count
-      const roomData = roomSnap.exists() ? roomSnap.data() : null;
-      const currentStoredCount = roomData?.participantCount || 0;
+        // 2. Clear Stale Participants (Ghost Removal)
+        // CRITICAL FIX: Use the server-provided 'updatedAt' from the room document as our "Now" reference
+        // This prevents users with wrong system clocks from kicking active participants.
+        const serverRefTime = roomData.updatedAt?.toMillis() || Date.now();
+        const ghostThreshold = serverRefTime - 600000; // 10 Minutes threshold for high resilience
+        
+        const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
+        const purgeBatch = writeBatch(firestore);
+        let activeCount = 0;
+        let purgeCount = 0;
 
-      if (purgeCount > 0 || currentStoredCount !== activeCount) {
-        console.log(`[Presence] Leader Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
-        purgeBatch.update(roomDocRef, { 
-          participantCount: activeCount, 
-          updatedAt: serverTimestamp() 
+        snap.docs.forEach(d => {
+          const p = d.data();
+          const lastSeen = p.lastSeen?.toMillis?.() || 0;
+          
+          // If user hasn't sent heartbeat in 10 mins relative to server time, they are a ghost
+          if (lastSeen < ghostThreshold) {
+            purgeBatch.delete(d.ref);
+            purgeCount++;
+          } else {
+            activeCount++;
+          }
         });
-        purgeBatch.commit().catch(() => {});
-      }
+
+        // Sync the participantCount if needed
+        const currentStoredCount = roomData.participantCount || 0;
+        if (purgeCount > 0 || currentStoredCount !== activeCount) {
+          console.log(`[Presence] Owner Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
+          purgeBatch.update(roomDocRef, { 
+            participantCount: activeCount, 
+            updatedAt: serverTimestamp() 
+          });
+          purgeBatch.commit().catch(() => {});
+        }
       }, 60000); // Every 60 seconds
-     }
+    }
+
     };
  
     performJoin();
