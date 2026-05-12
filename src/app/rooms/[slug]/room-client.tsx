@@ -400,6 +400,22 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const { user: currentUser } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
+  const router = useRouter();
+
+  // --- BOUTIQUE SYNC: Fetch all store items for frame/bubble configs ---
+  const [storeLibrary, setStoreLibrary] = useState<Record<string, any>>({});
+  useEffect(() => {
+    if (!firestore) return;
+    const q = query(collection(firestore, 'storeItems'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items: Record<string, any> = {};
+      snapshot.docs.forEach(d => {
+        items[d.id] = d.data();
+      });
+      setStoreLibrary(items);
+    });
+    return () => unsubscribe();
+  }, [firestore]);
 
   // MUSIC LIBRARY FETCH: Needed for Next/Previous and Auto-play logic
   const { data: roomMusicLibrary = [] } = useCollection(

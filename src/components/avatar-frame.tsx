@@ -7,6 +7,7 @@ import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames
 
 interface AvatarFrameProps {
   frameId?: string | null;
+  dynamicConfig?: AvatarFrameConfig | null;
   children: React.ReactNode;
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -229,7 +230,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   );
 };
 
-export const AvatarFrame = memo(({ frameId, children, className, size = 'md' }: AvatarFrameProps) => {
+export const AvatarFrame = memo(({ frameId, dynamicConfig, children, className, size = 'md' }: AvatarFrameProps) => {
   const sizeMap = {
     sm: 40,
     md: 60,
@@ -245,8 +246,8 @@ export const AvatarFrame = memo(({ frameId, children, className, size = 'md' }: 
   };
 
   const pixelSize = sizeMap[size];
-  const config = frameId ? AVATAR_FRAMES[frameId] : null;
-  const isElite = !!config && frameId !== 'None';
+  const config = dynamicConfig || (frameId ? AVATAR_FRAMES[frameId] : null);
+  const isElite = !!config && (frameId !== 'None' || !!dynamicConfig);
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>

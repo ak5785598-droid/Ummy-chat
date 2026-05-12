@@ -787,7 +787,24 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems];
+  const storeItemsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: dbStoreItems } = useCollection(storeItemsQuery);
+
+  const boutiqueItems = useMemo(() => {
+    return (dbStoreItems || []).map(item => ({
+      ...item,
+      // If it's a dynamic item, ensure we have the correct fields mapped
+      type: item.category || item.type,
+      description: item.description || `Premium ${item.name} asset.`,
+      isDynamic: true
+    }));
+  }, [dbStoreItems]);
+
+  const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...boutiqueItems];
 
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
@@ -877,7 +894,19 @@ export default function StorePage() {
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
-                          {item.isCustomSVG ? (
+                          {item.isDynamic && item.videoUrl ? (
+                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden rounded-full border border-white/10 shadow-lg">
+                              <video 
+                                src={item.videoUrl} 
+                                autoPlay 
+                                muted 
+                                loop 
+                                playsInline 
+                                className="w-full h-full object-contain"
+                                style={{ filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.3))' }}
+                              />
+                            </div>
+                          ) : item.isCustomSVG ? (
                             <div className="relative flex items-center justify-center h-20 w-20">
                               <Avatar className="absolute h-[38px] w-[38px]">
                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
@@ -953,7 +982,15 @@ export default function StorePage() {
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
                   {previewItem.type === 'Frame' ? (
-                    previewItem.isCustomSVG ? (
+                    previewItem.isDynamic && previewItem.url ? (
+                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden rounded-full border border-white/20 shadow-2xl bg-slate-900/40">
+                         <img src={previewItem.url} alt={previewItem.name} className="w-full h-full object-contain" />
+                         <Avatar className="absolute h-[60px] w-[60px] -z-10 opacity-50">
+                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
+                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    ) : previewItem.isCustomSVG ? (
                       <div className="relative flex items-center justify-center h-32 w-32 mt-4">
                         <Avatar className="absolute h-[60px] w-[60px]">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
