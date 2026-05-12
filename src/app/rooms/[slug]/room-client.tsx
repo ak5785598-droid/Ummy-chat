@@ -538,7 +538,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { toast } = useToast();
-  const router = useRouter();
 
   useEffect(() => {
     if (localStorage.getItem('ummy_ai_voice_enabled') === 'true') {
