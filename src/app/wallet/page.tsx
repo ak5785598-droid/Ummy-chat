@@ -294,11 +294,19 @@ function WalletContent() {
     const upiId = config?.upiId || "7209741932@ptyes";
     const upiName = config?.upiName || "Ummy Chat";
     
-    // Generate UPI URI
-    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${priceINR}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
+    // Fix: Using float string for amount (e.g. 10.00) as some UPI apps strictly require it
+    const formattedAmount = Number(priceINR).toFixed(2);
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
     
-    // Try to open UPI app
-    window.location.href = upiUri;
+    // Capacitor/Cordova friendly trigger to open external UPI apps
+    try {
+      window.open(upiUri, '_system');
+    } catch (e) {
+      // Fallback for standard browsers
+      const link = document.createElement('a');
+      link.href = upiUri;
+      link.click();
+    }
     
     // After a delay, open the manual verification dialog
     setTimeout(() => {
@@ -654,6 +662,19 @@ function WalletContent() {
            </div>
            <Button onClick={handleDownloadQR} variant="link" className="text-[10px] font-black text-slate-400 uppercase tracking-widest h-auto py-0">Click QR to download image</Button>
         </div>
+
+        {/* DIRECT PAY BUTTON (Fallback for intent errors) */}
+        {config?.paymentMode === 'upi_intent' && (
+           <div className="px-6 pb-2">
+             <Button 
+               onClick={handleUPIIntentRecharge}
+               className="w-full h-14 bg-green-600 hover:bg-green-700 text-white font-black uppercase rounded-2xl shadow-lg flex items-center justify-center gap-2 border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all"
+             >
+               <ExternalLink className="h-5 w-5" /> Open GPay / PhonePe / Paytm
+             </Button>
+             <p className="text-[8px] text-center font-bold text-slate-400 mt-2 uppercase tracking-widest opacity-60">Automatic trigger failed? Click button above</p>
+           </div>
+        )}
 
         {/* COMPACT INSTRUCTIONS (Side-by-Side Notice Area) */}
         <div className="p-4 bg-slate-50 border-y border-slate-100 shrink-0">
