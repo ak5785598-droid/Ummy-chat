@@ -2602,7 +2602,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        <RoomTrophyBadge coins={room.stats?.totalGifts || 0} />
+        <RoomTrophyBadge coins={room.stats?.dailyGifts || 0} />
 
         {/* Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY */}
         {(isHydrated && isOwner) && (
