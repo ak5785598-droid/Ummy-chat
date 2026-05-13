@@ -36,10 +36,14 @@ export function GiftAnimationOverlay({
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
-  const [showNameplate, setShowNameplate] = useState(false); // State to control nameplate visibility
+  const [showNameplate, setShowNameplate] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null); // Timer for nameplate
+  const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // 🆕 Canvas ref for black-fade processing
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   // Load Lottie Data
   useEffect(() => {
@@ -59,9 +63,7 @@ export function GiftAnimationOverlay({
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
       
-      // Show nameplate and set timer to hide it after 3.5 seconds
       setShowNameplate(true);
-      // Clear any existing timer
       if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
       nameplateTimerRef.current = setTimeout(() => {
         setShowNameplate(false);
@@ -78,7 +80,7 @@ export function GiftAnimationOverlay({
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic (Agar video nahi hai toh)
+      // 3. Dynamic Timeout Logic
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
@@ -86,15 +88,92 @@ export function GiftAnimationOverlay({
         return () => clearTimeout(finishTimer);
       }
     } else {
-      // Reset nameplate state when giftId becomes null
       setShowNameplate(false);
       if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
     }
   }, [giftId, soundUrl, videoUrl]);
 
+  // 🆕 Black Fade Processor (Canvas Magic)
+  const processBlackFade = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || video.paused || video.ended) {
+      // Stop loop if video not playing
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    // Match canvas size to video
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+
+    // Draw current video frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Get pixel data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const len = data.length;
+
+    // 🎯 Superfast Black Detection Threshold
+    const BLACK_THRESHOLD = 30; // RGB < 30 = black maan lenge
+    const ALPHA_FADE_SPEED = 0.85; // 85% fade per frame (smooth)
+
+    for (let i = 0; i < len; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      
+      // Check if pixel is black/dark
+      if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
+        // Gradually fade black pixels to transparent
+        data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+      }
+      // Non-black pixels: untouched, full opacity rakho
+    }
+
+    // Apply modified pixels back to canvas
+    ctx.putImageData(imageData, 0, 0);
+
+    // Continue processing loop (60fps target)
+    animationFrameRef.current = requestAnimationFrame(processBlackFade);
+  };
+
+  // 🆕 Start/Stop Black Fade Processor when video plays
+  useEffect(() => {
+    if (activeGift && videoUrl && isVideoReady) {
+      // Small delay to ensure video has started
+      const startTimer = setTimeout(() => {
+        processBlackFade();
+      }, 100);
+      
+      return () => {
+        clearTimeout(startTimer);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+      };
+    }
+  }, [activeGift, videoUrl, isVideoReady]);
+
   // Cleanup function
   const handleCleanup = () => {
-    // Clear nameplate timer to prevent memory leaks
+    // 🆕 Stop canvas processing
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
     if (nameplateTimerRef.current) {
       clearTimeout(nameplateTimerRef.current);
       nameplateTimerRef.current = null;
@@ -161,7 +240,7 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* MODIFIED 3D SCROLL BANNER NAME PLATE - Shows only for 3.5 seconds, text compact */}
+            {/* MODIFIED 3D SCROLL BANNER NAME PLATE */}
             {showNameplate && senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -239,7 +318,6 @@ export function GiftAnimationOverlay({
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
                           
-                          {/* Embedded Sender and Receiver Names inside SVG Scroll - COMPACT TEXT STYLES */}
                           <foreignObject x="200" y="110" width="600" height="150">
                             <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center [&>p]:m-0 [&>p]:leading-tight gap-0">
                               <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
@@ -309,7 +387,7 @@ export function GiftAnimationOverlay({
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF (Untouched) */}
+            {/* THE GIFT ITSELF (Untouched) + 🆕 Canvas Overlay */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -335,6 +413,7 @@ export function GiftAnimationOverlay({
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
+                  {/* 🆕 Hidden original video (for audio + timing reference) */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -347,7 +426,18 @@ export function GiftAnimationOverlay({
                     onCanPlay={() => setIsVideoReady(true)} 
                     onLoadedMetadata={handleVideoMetadata} 
                     onEnded={handleCleanup} 
+                    className="hidden" // Hide original, use canvas instead
+                    crossOrigin="anonymous"
+                  />
+                  
+                  {/* 🆕 Canvas showing black-faded video */}
+                  <canvas 
+                    ref={canvasRef}
                     className="w-full h-full object-contain bg-transparent"
+                    style={{ 
+                      display: isVideoReady ? 'block' : 'none',
+                      background: 'transparent'
+                    }}
                   />
                 </motion.div>
               ) : null} 
@@ -427,4 +517,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-}
+                      }
