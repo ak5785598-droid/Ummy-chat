@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- SMART BLACK BACKGROUND REMOVER COMPONENT (SIZE BADHAYA + CENTER BLACK REMOVE) ---
+// --- SMART BLACK BACKGROUND REMOVER (SMOOTH + BADA SIZE) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -34,8 +34,8 @@ const SmartBlackRemover = ({
   const [useCanvas, setUseCanvas] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
-  // Detect solid black background
-  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+  // Smooth black detection with tolerance
+  const detectBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -46,33 +46,39 @@ const SmartBlackRemover = ({
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const STRICT_BLACK = 25;
-    const EDGE_CHECK = 0.10;
-    const SOLID_THRESHOLD = 0.90;
+    const BLACK_THRESHOLD = 30;
+    const EDGE_RATIO = 0.08;
+    const MIN_BLACK_RATIO = 0.85;
 
-    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-      let blackCount = 0, total = 0;
+    const checkRegion = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackPixels = 0, total = 0;
       for (let y = yStart; y < yEnd; y++) {
         for (let x = xStart; x < xEnd; x++) {
           const i = (y * width + x) * 4;
-          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-            blackCount++;
+          if (data[i] < BLACK_THRESHOLD && data[i+1] < BLACK_THRESHOLD && data[i+2] < BLACK_THRESHOLD) {
+            blackPixels++;
           }
           total++;
         }
       }
-      return blackCount / total >= SOLID_THRESHOLD;
+      return total > 0 ? blackPixels / total : 0;
     };
 
-    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
-    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
-    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
-    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+    const topEdge = Math.floor(height * EDGE_RATIO);
+    const bottomEdge = Math.floor(height * (1 - EDGE_RATIO));
+    const leftEdge = Math.floor(width * EDGE_RATIO);
+    const rightEdge = Math.floor(width * (1 - EDGE_RATIO));
 
-    return topSolid && bottomSolid && leftSolid && rightSolid;
+    const topRatio = checkRegion(0, width, 0, topEdge);
+    const bottomRatio = checkRegion(0, width, bottomEdge, height);
+    const leftRatio = checkRegion(0, leftEdge, 0, height);
+    const rightRatio = checkRegion(rightEdge, width, 0, height);
+
+    return topRatio >= MIN_BLACK_RATIO && bottomRatio >= MIN_BLACK_RATIO && 
+           leftRatio >= MIN_BLACK_RATIO && rightRatio >= MIN_BLACK_RATIO;
   };
 
-  // Process black fade (flood fill from edges + center se bhi black remove)
+  // Smooth flood fill black removal (edges + center + multiple seed points)
   const processFrame = (video?: HTMLVideoElement) => {
     const canvas = canvasRef.current;
     const media = video || mediaRef.current;
@@ -93,44 +99,72 @@ const SmartBlackRemover = ({
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const STRICT_BLACK = 20;
-    const ALPHA_FADE_SPEED = 0.95; // Thoda aur aggressive fade
-    const scale = 4;
+    const BLACK_THRESHOLD = 25;
+    const FADE_STRENGTH = 1.0; // Full transparent for pure black
+    const scale = 3; // Better precision
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
     const visited = new Uint8Array(scaledW * scaledH);
+    const toRemove = new Uint8Array(scaledW * scaledH);
 
     const isBlack = (sx: number, sy: number) => {
       const x = Math.min(sx * scale, width - 1);
       const y = Math.min(sy * scale, height - 1);
       const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+      return data[i] < BLACK_THRESHOLD && data[i+1] < BLACK_THRESHOLD && data[i+2] < BLACK_THRESHOLD;
     };
 
     const queue: [number, number][] = [];
     
-    // Edges se flood fill start
+    // All edges flood fill
     for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+      if (isBlack(sx, 0) && !visited[sx]) { 
+        queue.push([sx, 0]); 
+        visited[sx] = 1; 
+      }
+      if (isBlack(sx, scaledH - 1) && !visited[(scaledH - 1) * scaledW + sx]) { 
+        queue.push([sx, scaledH - 1]); 
+        visited[(scaledH - 1) * scaledW + sx] = 1; 
+      }
     }
     for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+      if (isBlack(0, sy) && !visited[sy * scaledW]) { 
+        queue.push([0, sy]); 
+        visited[sy * scaledW] = 1; 
+      }
+      if (isBlack(scaledW - 1, sy) && !visited[sy * scaledW + (scaledW - 1)]) { 
+        queue.push([scaledW - 1, sy]); 
+        visited[sy * scaledW + (scaledW - 1)] = 1; 
+      }
     }
 
-    // CENTER SE BHI BLACK REMOVE - center point se flood fill shuru karo
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
+    // Multiple center seed points for better coverage
+    const centerSeeds = [
+      [Math.floor(scaledW / 2), Math.floor(scaledH / 2)],
+      [Math.floor(scaledW / 3), Math.floor(scaledH / 3)],
+      [Math.floor(2 * scaledW / 3), Math.floor(scaledH / 3)],
+      [Math.floor(scaledW / 3), Math.floor(2 * scaledH / 3)],
+      [Math.floor(2 * scaledW / 3), Math.floor(2 * scaledH / 3)],
+    ];
+
+    for (const [cx, cy] of centerSeeds) {
+      if (isBlack(cx, cy) && !visited[cy * scaledW + cx]) {
+        queue.push([cx, cy]);
+        visited[cy * scaledW + cx] = 1;
+      }
     }
 
+    // BFS flood fill
     let head = 0;
     while (head < queue.length) {
       const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      toRemove[sy * scaledW + sx] = 1;
+      
+      const neighbors: [number, number][] = [
+        [sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1],
+        [sx-1, sy-1], [sx+1, sy-1], [sx-1, sy+1], [sx+1, sy+1]
+      ];
+      
       for (const [nx, ny] of neighbors) {
         if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
           const nidx = ny * scaledW + nx;
@@ -142,17 +176,23 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Black pixels ko transparent/fade karo
+    // Smooth alpha removal with anti-aliasing
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
-        if (visited[sy * scaledW + sx]) {
+        if (toRemove[sy * scaledW + sx]) {
           for (let dy = 0; dy < scale; dy++) {
             for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
+              const x = sx * scale + dx;
+              const y = sy * scale + dy;
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+                const r = data[i], g = data[i+1], b = data[i+2];
+                
+                // Smooth gradient fade based on how dark the pixel is
+                const darkness = Math.max(r, g, b);
+                if (darkness < BLACK_THRESHOLD) {
+                  const fadeAmount = 1 - (darkness / BLACK_THRESHOLD);
+                  data[i + 3] = Math.round(data[i + 3] * (1 - FADE_STRENGTH * fadeAmount));
                 }
               }
             }
@@ -168,44 +208,40 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Initialize for images
   useEffect(() => {
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete) {
-        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        const hasBlackBg = detectBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
         setIsReady(true);
         if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
+          setTimeout(() => processFrame(), 30);
         }
       }
     }
   }, [src, type]);
 
-  // Handle image load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+    const hasBlackBg = detectBlackBg(img, img.naturalWidth, img.naturalHeight);
     setUseCanvas(hasBlackBg);
     setIsReady(true);
     if (hasBlackBg) {
-      setTimeout(() => processFrame(), 50);
+      setTimeout(() => processFrame(), 30);
     }
   };
 
-  // Handle video ready
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
-    const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+    const hasBlackBg = detectBlackBg(video, video.videoWidth, video.videoHeight);
     setUseCanvas(hasBlackBg);
     setIsReady(true);
     if (hasBlackBg) {
-      setTimeout(() => processFrame(video), 100);
+      setTimeout(() => processFrame(video), 50);
     }
   };
 
-  // Cleanup video animation
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
@@ -305,61 +341,7 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PREMIUM AVATAR FRAME COMPONENT ---
-interface PremiumAvatarFrameProps {
-  imageUrl: string;
-  size?: number;
-  className?: string;
-}
-
-const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAvatarFrameProps) => {
-  return (
-    <div className={cn("relative flex items-center justify-center", className)} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-10">
-        <defs>
-          <linearGradient id="premiumGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#FDF0AD' }} />
-            <stop offset="20%" style={{ stopColor: '#D4AF37' }} />
-            <stop offset="50%" style={{ stopColor: '#FFFCEB' }} />
-            <stop offset="80%" style={{ stopColor: '#BD9731' }} />
-            <stop offset="100%" style={{ stopColor: '#8A6E00' }} />
-          </linearGradient>
-          <filter id="metalRelief" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
-            <feSpecularLighting in="blur" surfaceScale="6" specularConstant="1.2" specularExponent="35" lightingColor="white" result="specOut">
-              <fePointLight x="-5000" y="-10000" z="20000" />
-            </feSpecularLighting>
-            <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
-            <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
-          </filter>
-        </defs>
-        <g filter="url(#metalRelief)" stroke="#5c4300" strokeWidth="0.5">
-          <path d="M100 240 C50 240 30 180 50 130 L95 155 C80 185 85 210 100 235 Z" fill="url(#premiumGold)" />
-          <path d="M300 240 C350 240 370 180 350 130 L305 155 C320 185 315 210 300 235 Z" fill="url(#premiumGold)" />
-        </g>
-        <circle cx="200" cy="200" r="108" fill="none" stroke="#3d2d00" strokeWidth="12" />
-        <circle cx="200" cy="200" r="102" fill="none" stroke="url(#premiumGold)" strokeWidth="8" filter="url(#metalRelief)" />
-        <g filter="url(#metalRelief)">
-          <path d="M125 105 L105 40 L160 75 L200 15 L240 75 L295 40 L275 105 Z" fill="url(#premiumGold)" stroke="#5c4300" strokeWidth="1" />
-        </g>
-        <g filter="url(#metalRelief)">
-          <path d="M160 280 Q200 350 240 280 L230 265 Q200 280 170 265 Z" fill="url(#premiumGold)" stroke="#4a3700" />
-        </g>
-        <g className="animate-pulse">
-          <circle cx="200" cy="15" r="4" fill="white" />
-          <circle cx="105" cy="40" r="2" fill="white" />
-          <circle cx="295" cy="40" r="2" fill="white" />
-        </g>
-      </svg>
-      <div className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0" style={{ width: '43%', height: '43%' }}>
-        <img src={imageUrl} alt="User Avatar" className="w-full h-full object-cover brightness-105" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-      </div>
-    </div>
-  );
-};
-
-// --- NEW PINK DIAMOND ID BADGE ---
+// --- PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -387,7 +369,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#roseSilverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
@@ -446,266 +428,10 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#silverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
-  </div>
-);
-
-// --- GLOSSY WINGS SVG ---
-const GlossyWingsSVG = ({ className }: { className?: string }) => (
-  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <style>{`
-      .wing { filter:url(#wingGlow); will-change:transform; }
-      .left-wing { transform-origin:322px 395px; animation:flapL 3s ease-in-out infinite; }
-      .right-wing { transform-origin:478px 395px; animation:flapR 3s ease-in-out infinite; }
-      @keyframes flapL { 0%,100%{transform:rotate(14deg) translateX(10px) scale(0.92)} 50%{transform:rotate(-18deg) translateX(-14px) scale(1.08)} }
-      @keyframes flapR { 0%,100%{transform:rotate(-14deg) translateX(-10px) scale(0.92)} 50%{transform:rotate(18deg) translateX(14px) scale(1.08)} }
-      .charm { animation:float 1.5s ease-in-out infinite; transform-origin:400px 605px; }
-      @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-      .ring-pulse { animation:pulse 3s ease-in-out infinite; }
-      @keyframes pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
-      .sparkle { animation:twinkle 2.2s ease-in-out infinite; }
-      @keyframes twinkle { 0%,100%{opacity:.2; transform:scale(.7)} 50%{opacity:1; transform:scale(1.3)} }
-    `}</style>
-    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-[0_10px_20px_rgba(30,144,255,0.4)]" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="wingGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stopColor="#4169e1" />
-          <stop offset="45%" stopColor="#1e90ff" />
-          <stop offset="100%" stopColor="#00bfff" />
-        </linearGradient>
-        <linearGradient id="wingGradRev" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor="#4169e1" />
-          <stop offset="45%" stopColor="#1e90ff" />
-          <stop offset="100%" stopColor="#00bfff" />
-        </linearGradient>
-        <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#b3e5fc" />
-          <stop offset="30%" stopColor="#00bfff" />
-          <stop offset="70%" stopColor="#1e90ff" />
-          <stop offset="100%" stopColor="#4169e1" />
-        </linearGradient>
-        <radialGradient id="aura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#00bfff" stopOpacity="0.5"/>
-          <stop offset="70%" stopColor="#1e90ff" stopOpacity="0.2"/>
-          <stop offset="100%" stopColor="#4169e1" stopOpacity="0"/>
-        </radialGradient>
-        <filter id="wingGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur1"/>
-          <feFlood floodColor="#00bfff" floodOpacity="0.6" result="color1"/>
-          <feComposite in="color1" in2="blur1" operator="in" result="glow1"/>
-          <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur2"/>
-          <feFlood floodColor="#1e90ff" floodOpacity="0.9" result="color2"/>
-          <feComposite in="color2" in2="blur2" operator="in" result="glow2"/>
-          <feMerge>
-            <feMergeNode in="glow1"/>
-            <feMergeNode in="glow2"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-        <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="18" result="b"/>
-          <feFlood floodColor="#1e90ff" floodOpacity="0.25"/>
-          <feComposite in2="b" operator="in"/>
-        </filter>
-        <mask id="centerHole">
-          <rect width="800" height="800" fill="white"/>
-          <circle cx="400" cy="400" r="185" fill="black"/>
-        </mask>
-      </defs>
-      <circle cx="400" cy="400" r="280" fill="url(#aura)" opacity="0.3" filter="url(#outerGlow)"/>
-      <g mask="url(#centerHole)">
-        <g className="wing left-wing">
-          <path d="M 323 336 C 260 298 192 268 155 259 C 138 275 152 298 175 312 C 225 335 285 355 319 361 Z" fill="url(#wingGrad)" opacity="0.96"/>
-          <path d="M 319 364 C 235 348 158 335 124 333 C 110 352 120 376 145 389 C 200 395 270 390 317 383 Z" fill="url(#wingGrad)" opacity="0.94"/>
-          <path d="M 317 386 C 228 406 156 425 130 436 C 136 458 152 468 183 456 C 242 434 292 415 319 402 Z" fill="url(#wingGrad)" opacity="0.92"/>
-          <path d="M 317 405 C 250 442 208 478 196 512 C 215 525 238 518 262 496 C 286 472 306 444 319 419 Z" fill="url(#wingGradRev)" opacity="0.88"/>
-          <path d="M 315 428 C 278 462 254 494 248 518 C 264 522 278 512 290 494 C 302 476 310 450 317 434 Z" fill="url(#wingGradRev)" opacity="0.8"/>
-          <path d="M 318 346 C 270 328 224 312 198 306 C 194 314 202 322 214 326 C 248 336 286 348 316 356 Z" fill="#87cefa" opacity="0.65"/>
-          <path d="M 315 372 C 256 362 202 356 172 356 C 170 364 178 370 192 372 C 234 376 282 378 314 380 Z" fill="#b3e5fc" opacity="0.55"/>
-          <path d="M 314 395 C 248 410 196 422 174 430 C 178 436 186 438 198 434 C 238 422 280 410 313 402 Z" fill="#87cefa" opacity="0.5"/>
-        </g>
-        <g className="wing right-wing">
-          <path d="M 477 336 C 540 298 608 268 645 259 C 662 275 648 298 625 312 C 575 335 515 355 481 361 Z" fill="url(#wingGradRev)" opacity="0.96"/>
-          <path d="M 481 364 C 565 348 642 335 676 333 C 690 352 680 376 655 389 C 600 395 530 390 483 383 Z" fill="url(#wingGradRev)" opacity="0.94"/>
-          <path d="M 483 386 C 572 406 644 425 670 436 C 664 458 648 468 617 456 C 558 434 508 415 481 402 Z" fill="url(#wingGradRev)" opacity="0.92"/>
-          <path d="M 483 405 C 550 442 592 478 604 512 C 585 525 562 518 538 496 C 514 472 494 444 481 419 Z" fill="url(#wingGrad)" opacity="0.88"/>
-          <path d="M 485 428 C 522 462 546 494 552 518 C 536 522 522 512 510 494 C 498 476 490 450 483 434 Z" fill="url(#wingGrad)" opacity="0.8"/>
-          <path d="M 482 346 C 530 328 576 312 602 306 C 606 314 598 322 586 326 C 552 336 514 348 484 356 Z" fill="#87cefa" opacity="0.65"/>
-          <path d="M 485 372 C 544 362 598 356 628 356 C 630 364 622 370 608 372 C 566 376 518 378 486 380 Z" fill="#b3e5fc" opacity="0.55"/>
-          <path d="M 486 395 C 552 410 604 422 626 430 C 622 436 614 438 602 434 C 562 422 520 410 487 402 Z" fill="#87cefa" opacity="0.5"/>
-        </g>
-      </g>
-      <circle cx="400" cy="400" r="188" fill="none" stroke="url(#wingGrad)" strokeWidth="3" opacity="0.9" filter="url(#softGlow)" className="ring-pulse"/>
-      <circle cx="400" cy="400" r="183" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
-      <circle cx="400" cy="400" r="195" fill="none" stroke="#1e90ff" strokeWidth="0.8" opacity="0.35" strokeDasharray="3 7" transform="rotate(-15 400 400)"/>
-      <circle cx="400" cy="400" r="186" fill="none" stroke="#87cefa" strokeWidth="0.5" opacity="0.8"/>
-      <g className="charm" filter="url(#softGlow)">
-        <line x1="400" y1="586" x2="400" y2="575" stroke="#00bfff" strokeWidth="1.5" opacity="0.7"/>
-        <circle cx="400" cy="574" r="4" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
-        <circle cx="400" cy="574" r="2" fill="#b3e5fc" opacity="0.9"/>
-        <path d="M 400 584 L 389 600 L 386 614 L 392 626 L 400 634 L 408 626 L 414 614 L 411 600 Z" fill="url(#crystalGrad)" stroke="#87cefa" strokeWidth="1.2" opacity="0.95"/>
-        <path d="M 400 588 L 393 601 L 392 614 L 400 628 L 408 614 L 407 601 Z" fill="#e0f7ff" opacity="0.4"/>
-        <path d="M 400 590 L 396 603 L 400 622 L 404 603 Z" fill="white" opacity="0.6"/>
-        <path d="M 388 602 Q 376 598 372 606 Q 378 611 388 607 Z" fill="#1e90ff" opacity="0.85"/>
-        <path d="M 412 602 Q 424 598 428 606 Q 422 611 412 607 Z" fill="#1e90ff" opacity="0.85"/>
-      </g>
-      <circle cx="268" cy="312" r="2.2" fill="#87cefa" className="sparkle" style={{animationDelay:'0s'}}/>
-      <circle cx="532" cy="308" r="2" fill="#b3e5fc" className="sparkle" style={{animationDelay:'0.5s'}}/>
-      <circle cx="238" cy="438" r="1.6" fill="#00bfff" className="sparkle" style={{animationDelay:'1.1s'}}/>
-      <circle cx="562" cy="442" r="1.8" fill="#00bfff" className="sparkle" style={{animationDelay:'0.8s'}}/>
-      <circle cx="312" cy="528" r="1.4" fill="#87cefa" className="sparkle" style={{animationDelay:'1.4s'}}/>
-      <circle cx="488" cy="532" r="1.4" fill="#87cefa" className="sparkle" style={{animationDelay:'0.3s'}}/>
-      <circle cx="400" cy="658" r="1.7" fill="#e0f7ff" className="sparkle" style={{animationDelay:'0.7s'}}/>
-    </svg>
-  </div>
-);
-
-// --- CAT FRAME SVG ---
-const CatFrameSVG = ({ className }: { className?: string }) => (
-  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <style>{`
-      .cat-wrap svg { width: 100%; height: 100%; overflow: visible; }
-      #cat-tail { transform-origin: 612px 382px; animation: tailWag 2s ease-in-out infinite; }
-      @keyframes tailWag { 0%,100%{transform:rotate(-12deg)} 50%{transform:rotate(12deg)} }
-      #ear-left, #ear-right { transform-box: fill-box; transform-origin: 50% 85%; }
-      #ear-left { animation: earTwitch 4s ease-in-out infinite; }
-      #ear-right { animation: earTwitch 4s ease-in-out infinite; animation-delay: 0.3s; }
-      @keyframes earTwitch { 0%,82%,100%{transform:rotate(0)} 86%{transform:rotate(-6deg)} 90%{transform:rotate(4deg)} 94%{transform:rotate(-2deg)} }
-      #bell-left, #bell-right { transform-box: fill-box; transform-origin: 50% 0%; }
-      #bell-left { animation: bellSwing 2.6s ease-in-out infinite; }
-      #bell-right { animation: bellSwing 2.6s ease-in-out infinite 0.4s; }
-      @keyframes bellSwing { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
-    `}</style>
-    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-xl cat-wrap" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="cat-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="6" stdDeviation={8} floodColor="#B8772F" floodOpacity={0.18} />
-        </filter>
-        <linearGradient id="cat-ringGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#EDB15E" />
-          <stop offset="100%" stopColor="#E6A64D" />
-        </linearGradient>
-      </defs>
-      <g id="whiskers" stroke="#B8772F" strokeWidth={7} strokeLinecap="round" opacity={0.95} filter="url(#cat-shadow)">
-        <path d="M 176 360 Q 110 342 58 358" />
-        <path d="M 172 395 Q 98 390 52 400" />
-        <path d="M 176 430 Q 110 448 62 438" />
-      </g>
-      <g id="cat-tail" filter="url(#cat-shadow)">
-        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z" fill="url(#cat-ringGrad)" stroke="#D1923C" strokeWidth={5} strokeLinejoin="round" />
-        <g fill="none" stroke="#B8772F" strokeLinecap="round" strokeWidth={16} opacity={1}>
-          <path d="M 662 388 Q 690 410 700 438" />
-          <path d="M 690 462 Q 706 482 700 508" />
-          <path d="M 682 536 Q 690 556 676 576" />
-          <path d="M 648 578 Q 654 594 636 608" />
-          <path d="M 602 594 Q 608 606 592 616" />
-          <path d="M 556 604 Q 560 614 546 620" />
-        </g>
-        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z" fill="none" stroke="#B8772F" strokeWidth={2.5} opacity={0.15} />
-      </g>
-      <g filter="url(#cat-shadow)">
-        <circle cx="400" cy="400" r="230" fill="none" stroke="url(#cat-ringGrad)" strokeWidth={68} strokeLinecap="round" />
-        <circle cx="400" cy="400" r="230" fill="none" stroke="#B8772F" strokeWidth={68} strokeLinecap="round" opacity={0.08} />
-      </g>
-      <g id="ear-left" filter="url(#cat-shadow)">
-        <path d="M 208 242 C 170 176 142 118 212 134 C 252 143 288 176 312 222 C 288 210 252 194 208 242 Z" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
-        <path d="M 236 218 C 212 180 196 152 230 160 C 252 165 272 183 284 206 C 268 197 250 188 236 218 Z" fill="#B8772F" />
-      </g>
-      <g id="ear-right" filter="url(#cat-shadow)">
-        <path d="M 592 242 C 630 176 658 118 588 134 C 548 143 512 176 488 222 C 512 210 548 194 592 242 Z" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
-        <path d="M 564 218 C 588 180 604 152 570 160 C 548 165 528 183 516 206 C 532 197 550 188 564 218 Z" fill="#B8772F" />
-      </g>
-      <g id="paws" filter="url(#cat-shadow)">
-        <g transform="translate(340 615)">
-          <ellipse cx="0" cy="8" rx="42" ry="30" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="-22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="0" cy="-20" r="16" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <ellipse cx="0" cy="10" rx="18" ry="10" fill="#F5E6C8" opacity={0.2} />
-        </g>
-        <g transform="translate(460 615)">
-          <ellipse cx="0" cy="8" rx="42" ry="30" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="-22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="0" cy="-20" r="16" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <circle cx="22" cy="-12" r="14" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
-          <ellipse cx="0" cy="10" rx="18" ry="10" fill="#F5E6C8" opacity={0.2} />
-        </g>
-      </g>
-      <g id="bell-left" transform="translate(368 608)" filter="url(#cat-shadow)">
-        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
-        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
-        <path d="M -15 -2 C -16 -14 16 -14 15 -2 L 12 10 Q 0 20 -12 10 Z" fill="#F5E6C8" stroke="#B8772F" strokeWidth={3} strokeLinejoin="round" />
-        <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
-        <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
-      </g>
-      <g id="bell-right" transform="translate(432 608)" filter="url(#cat-shadow)">
-        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
-        <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
-        <path d="M -15 -2 C -16 -14 15 -2 L 12 10 Q 0 20 -12 10 Z" fill="#F5E6C8" stroke="#B8772F" strokeWidth={3} strokeLinejoin="round" />
-        <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
-        <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
-      </g>
-      <circle cx="400" cy="400" r="196" fill="none" stroke="#F5E6C8" strokeWidth={2} opacity={0.15} />
-    </svg>
-  </div>
-);
-
-// --- RABBIT FRAME SVG ---
-const RabbitFrameSVG = ({ className }: { className?: string }) => (
-  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <style>{`
-      .rabbit-wrap svg { width: 100%; height: 100%; overflow: visible; }
-      .rabbit-ear-l { transform-origin: 280px 180px; animation: earWiggleL 3s ease-in-out infinite; }
-      .rabbit-ear-r { transform-origin: 520px 180px; animation: earWiggleR 3s ease-in-out infinite 0.5s; }
-      @keyframes earWiggleL { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-8deg); } }
-      @keyframes earWiggleR { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(8deg); } }
-      .rabbit-tail { transform-origin: 620px 580px; animation: tailWagRb 2s ease-in-out infinite; }
-      @keyframes tailWagRb { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.05) rotate(10deg); } }
-    `}</style>
-    <svg viewBox="0 0 800 800" className="w-full h-full drop-shadow-xl rabbit-wrap" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="rb-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="6" stdDeviation={8} floodColor="#c97e6a" floodOpacity={0.2} />
-        </filter>
-      </defs>
-      <g stroke="#d9a594" strokeWidth={12} strokeLinecap="round" filter="url(#rb-shadow)">
-        <path d="M 220 420 L 100 400" />
-        <path d="M 220 480 L 100 500" />
-        <path d="M 580 420 L 700 400" />
-        <path d="M 580 480 L 700 500" />
-      </g>
-      <g className="rabbit-ear-l" filter="url(#rb-shadow)">
-        <ellipse cx="280" cy="180" rx="60" ry="140" fill="#f5bcb0" transform="rotate(-15 280 180)" />
-        <ellipse cx="280" cy="190" rx="35" ry="100" fill="#ffb7c5" transform="rotate(-15 280 180)" />
-      </g>
-      <g className="rabbit-ear-r" filter="url(#rb-shadow)">
-        <ellipse cx="520" cy="180" rx="60" ry="140" fill="#f5bcb0" transform="rotate(15 520 180)" />
-        <ellipse cx="520" cy="190" rx="35" ry="100" fill="#ffb7c5" transform="rotate(15 520 180)" />
-      </g>
-      <circle cx="400" cy="400" r="230" fill="none" stroke="#ffffff" strokeWidth={40} filter="url(#rb-shadow)" />
-      <circle cx="400" cy="400" r="210" fill="none" stroke="#fff5e8" strokeWidth={10} />
-      <g className="rabbit-tail" filter="url(#rb-shadow)">
-        <circle cx="620" cy="580" r="60" fill="#fff5f0" stroke="#ffdad2" strokeWidth={8} />
-        <text x="620" y="600" fontSize="50" textAnchor="middle" opacity="0.5">🐇</text>
-      </g>
-      <g filter="url(#rb-shadow)">
-        <g transform="translate(240, 620) rotate(-20)">
-          <circle cx="0" cy="0" r="50" fill="#f5bcb0" />
-          <text x="0" y="15" fontSize="40" textAnchor="middle" opacity="0.8">🐾</text>
-        </g>
-        <g transform="translate(560, 620) rotate(20)">
-          <circle cx="0" cy="0" r="50" fill="#f5bcb0" />
-          <text x="0" y="15" fontSize="40" textAnchor="middle" opacity="0.8">🐾</text>
-        </g>
-      </g>
-    </svg>
   </div>
 );
 
@@ -860,9 +586,6 @@ export default function StorePage() {
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
     });
-    frames.push({ id: 'f-glossy-wings', name: 'Glossy wings', type: 'Frame', price: 500000, durationDays: 7, description: 'Exclusive animated Glossy wings frame.', isCustomSVG: true });
-    frames.push({ id: 'f-kitti', name: 'Kitti', type: 'Frame', price: 600000, durationDays: 7, description: 'Exclusive animated Kitti frame.', isCustomSVG: true });
-    frames.push({ id: 'f-rabbit', name: 'Rabbit', type: 'Frame', price: 39999, durationDays: 7, description: 'Exclusive animated Rabbit frame.', isCustomSVG: true });
     return frames;
   }, []);
 
@@ -1031,38 +754,26 @@ export default function StorePage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
-                    <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                    <div className="aspect-square flex items-center justify-center p-3 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
-                        <div className="scale-110">
+                        <div className="w-full h-full flex items-center justify-center">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                               <SmartBlackRemover 
                                 src={item.videoUrl} 
                                 type="video" 
-                                className="w-full h-full"
+                                className="w-full h-full max-w-[140px] max-h-[140px]"
+                                style={{ objectFit: 'contain' }}
                               />
                             </div>
                           ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                               <SmartBlackRemover 
                                 src={item.imageUrl} 
                                 type="image" 
-                                className="w-full h-full"
+                                className="w-full h-full max-w-[140px] max-h-[140px]"
+                                style={{ objectFit: 'contain' }}
                               />
-                            </div>
-                          ) : item.isCustomSVG ? (
-                            <div className="relative flex items-center justify-center h-20 w-20">
-                              <Avatar className="absolute h-[38px] w-[38px]">
-                                <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
-                                <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
-                              </Avatar>
-                              {item.id === 'f-kitti' ? (
-                                <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
-                              ) : item.id === 'f-rabbit' ? (
-                                <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
-                              ) : (
-                                <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
-                              )}
                             </div>
                           ) : (
                             <AvatarFrame frameId={item.id} size="md">
@@ -1117,48 +828,36 @@ export default function StorePage() {
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
             
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[45vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
               
               <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36">
+                <div className="mb-4 flex items-center justify-center w-full max-w-[280px] h-[220px]">
                   {previewItem.type === 'Frame' ? (
                     previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                         <SmartBlackRemover 
                           src={previewItem.videoUrl} 
                           type="video" 
                           className="w-full h-full"
+                          style={{ objectFit: 'contain', maxWidth: '280px', maxHeight: '220px' }}
                         />
                       </div>
                     ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                         <SmartBlackRemover 
                           src={previewItem.imageUrl} 
                           type="image" 
                           className="w-full h-full"
+                          style={{ objectFit: 'contain', maxWidth: '280px', maxHeight: '220px' }}
                         />
-                      </div>
-                    ) : previewItem.isCustomSVG ? (
-                      <div className="relative flex items-center justify-center h-36 w-36 mt-4">
-                        <Avatar className="absolute h-[70px] w-[70px]">
-                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
-                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
-                        </Avatar>
-                        {previewItem.id === 'f-kitti' ? (
-                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
-                        ) : previewItem.id === 'f-rabbit' ? (
-                          <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
-                        ) : (
-                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
-                        )}
                       </div>
                     ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-24 w-24">
+                        <Avatar className="h-28 w-28">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
@@ -1166,28 +865,28 @@ export default function StorePage() {
                     )
                   ) : previewItem.type === 'Bubble' ? (
                     previewItem.isCustomSVG && previewItem.id === 'b-arise' ? (
-                      <div className="w-[240px]">
+                      <div className="w-[260px]">
                         <AriseBubbleSVG />
                       </div>
                     ) : previewItem.isCustomSVG && previewItem.id === 'b-blue-cb' ? (
-                      <div className="w-[240px]">
+                      <div className="w-[260px]">
                         <BlueCbBubbleSVG />
                       </div>
                     ) : (
                       <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                     )
                   ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
+                    <Palette className={cn("h-24 w-24 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-36 w-36" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-125 pt-2">
+                      <div className="scale-[1.3] pt-2">
                         {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
                          previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
+                    <previewItem.icon className={cn("h-24 w-24 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
 
@@ -1249,4 +948,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+  }
