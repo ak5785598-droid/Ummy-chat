@@ -62,10 +62,11 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch today's tasks (resetTrigger change pe fresh data)
+    // Fetch today's tasks
   useEffect(() => {
     if (!firestore || !user?.uid) return;
-    const today = new Date().toISOString().split('T')[0];
+    const istNow = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000));
+    const today = istNow.toISOString().split('T')[0];
     const questsRef = collection(firestore, 'users', user.uid, 'roomQuests');
 
     const unsub = onSnapshot(questsRef, (snap) => {
@@ -73,18 +74,30 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
       const achieved: string[] = [];
       const claimed: string[] = [];
 
+      // 1. Load data from Firestore
       snap.docs.forEach(doc => {
         const d = doc.data();
-        const updatedAt = d.updatedAt?.toDate() || new Date();
-        const updatedAtKey = updatedAt.toISOString().split('T')[0];
-        // Sirf aaj ke tasks dikhao (purane tasks invisible)
-        if (updatedAtKey === today) {
-          data[doc.id] = d.current || 0;
-          if (d.isCompleted) achieved.push(doc.id);
-          if (d.isClaimed) claimed.push(doc.id);
+        const updatedAt = d.updatedAt?.toDate();
+        if (updatedAt) {
+          const istUpdate = new Date(updatedAt.getTime() + (5.5 * 60 * 60 * 1000));
+          const updatedAtKey = istUpdate.toISOString().split('T')[0];
+          
+          if (updatedAtKey === today) {
+            data[doc.id] = d.current || 0;
+            if (d.isCompleted) achieved.push(doc.id);
+            if (d.isClaimed) claimed.push(doc.id);
+          }
         }
       });
-      setTaskProgress(data);
+
+      // 2. IMPORTANT: Ensure ALL tasks from ROOM_TASKS are initialized in local state
+      // This fixes the "only 2 tasks visible" issue.
+      const fullProgress: Record<string, number> = {};
+      ROOM_TASKS.forEach(t => {
+        fullProgress[t.id] = data[t.id] || 0;
+      });
+
+      setTaskProgress(fullProgress);
       setAchievedTasks(achieved);
       setClaimedTasks(claimed);
     });
