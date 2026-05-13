@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
@@ -21,19 +21,153 @@ const GoldenDollar = () => (
   </div>
 );
 
-// Fallback gifts – ye hamesha base rahega
-const FALLBACK_GIFTS: Record<string, any[]> = {
-  'Hot': [
-   { id: 'heart', name: 'Heart', price: 299, emoji: '❤️', animationId: 'heart_anim' },
-   { id: 'rose', name: 'Rose', price: 199, emoji: '🌹', animationId: 'rose_anim' },
-   { id: 'heart', name: 'popcorn', price: 499, emoji: '🍿', animationId: 'heart_anim' },
-   { id: 'rose', name: 'Teddy', price: 1999, emoji: '🧸', animationId: 'rose_anim' },
-   ], 
-  'Lucky': [
-     { id: 'apple', name: 'Apple', price: 100, emoji: '🍎', animationId: 'apple_svga_3d', isLucky: true },
-     { id: 'Strawberry', name: 'Strawberry', price:399, emoji: '🍓', animationId: 'Strawberry_svga_3d', islucky: true }, 
-     { id: 'mango', name: 'mango', price:1999, emoji: '🥭', animationId: 'mango_svga_3D', islucky: true }, 
-     ]
+// GIFT IMAGE COMPONENT WITH BLACK BACKGROUND DETECTION
+const GiftImage = ({ gift }: { gift: any }) => {
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!gift.imageUrl) {
+      setProcessedUrl(null);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = gift.imageUrl;
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setProcessedUrl(null);
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const BLACK_THRESHOLD = 45;
+      const BLACK_PIXEL_RATIO = 0.95;
+
+      // Check top edge
+      let topBlackCount = 0;
+      for (let x = 0; x < width; x++) {
+        const index = x * 4;
+        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+          topBlackCount++;
+        }
+      }
+      const topRatio = topBlackCount / width;
+
+      // Check bottom edge
+      let bottomBlackCount = 0;
+      for (let x = 0; x < width; x++) {
+        const index = ((height - 1) * width + x) * 4;
+        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+          bottomBlackCount++;
+        }
+      }
+      const bottomRatio = bottomBlackCount / width;
+
+      // Check left edge
+      let leftBlackCount = 0;
+      for (let y = 0; y < height; y++) {
+        const index = (y * width) * 4;
+        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+          leftBlackCount++;
+        }
+      }
+      const leftRatio = leftBlackCount / height;
+
+      // Check right edge
+      let rightBlackCount = 0;
+      for (let y = 0; y < height; y++) {
+        const index = (y * width + (width - 1)) * 4;
+        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+          rightBlackCount++;
+        }
+      }
+      const rightRatio = rightBlackCount / height;
+
+      // Check corners (8px radius)
+      const checkCorner = (cx: number, cy: number, radius: number = 8) => {
+        let blackPixels = 0;
+        let totalPixels = 0;
+        for (let dy = -radius; dy <= radius; dy++) {
+          for (let dx = -radius; dx <= radius; dx++) {
+            const px = Math.max(0, Math.min(width - 1, cx + dx));
+            const py = Math.max(0, Math.min(height - 1, cy + dy));
+            const i = (py * width + px) * 4;
+            totalPixels++;
+            if (data[i] < BLACK_THRESHOLD && data[i + 1] < BLACK_THRESHOLD && data[i + 2] < BLACK_THRESHOLD) {
+              blackPixels++;
+            }
+          }
+        }
+        return blackPixels / totalPixels;
+      };
+
+      const topLeftCorner = checkCorner(0, 0);
+      const topRightCorner = checkCorner(width - 1, 0);
+      const bottomLeftCorner = checkCorner(0, height - 1);
+      const bottomRightCorner = checkCorner(width - 1, height - 1);
+
+      const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
+                           bottomRatio > BLACK_PIXEL_RATIO && 
+                           leftRatio > BLACK_PIXEL_RATIO && 
+                           rightRatio > BLACK_PIXEL_RATIO;
+
+      const allCornersBlack = topLeftCorner > 0.85 && 
+                             topRightCorner > 0.85 && 
+                             bottomLeftCorner > 0.85 && 
+                             bottomRightCorner > 0.85;
+
+      const isSolidBlackBackground = allEdgesBlack && allCornersBlack;
+
+      if (isSolidBlackBackground) {
+        // Remove black background - make it transparent
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i] < BLACK_THRESHOLD && data[i + 1] < BLACK_THRESHOLD && data[i + 2] < BLACK_THRESHOLD) {
+            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            if (brightness < 15) {
+              data[i + 3] = 0; // Fully transparent for pure black
+            } else {
+              data[i + 3] = Math.max(0, Math.round((brightness / BLACK_THRESHOLD) * 255));
+              data[i] = Math.round(data[i] * 0.3);
+              data[i + 1] = Math.round(data[i + 1] * 0.3);
+              data[i + 2] = Math.round(data[i + 2] * 0.3);
+            }
+          }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        setProcessedUrl(canvas.toDataURL('image/png'));
+      } else {
+        setProcessedUrl(null);
+      }
+    };
+
+    img.onerror = () => {
+      setProcessedUrl(null);
+    };
+  }, [gift.imageUrl]);
+
+  // If no imageUrl, try icon name
+  if (!gift.imageUrl) {
+    return <span className="text-3xl">🎁</span>;
+  }
+
+  return (
+    <img 
+      src={processedUrl || gift.imageUrl} 
+      alt={gift.name} 
+      className="h-full w-full object-contain" 
+    />
+  );
 };
 
 const MULTIPLIERS = [1, 2, 5, 10, 50, 100, 499, 999];
@@ -44,9 +178,6 @@ const getTodayString = () => {
     const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
     return istDate.toISOString().split('T')[0];
 };
-
-// ab use nahi kar rahe kyunki balance simple number me dikhana hai
-// const formatCompactNumber = ... (hataya gaya)
 
 export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecipient, participants = [] }: any) {
  const { user } = useUser();
@@ -66,16 +197,15 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  const { data: dbGifts, isLoading: isGiftsLoading } = useCollection(giftsQuery);
 
+ // ALL GIFTS COME FROM DB ONLY — NO FALLBACK
  const GIFTS = useMemo(() => {
-   // --- YAHIN BADA CHANGE: hamesha FALLBACK ko base banao, fir Firestore wale add karo ---
    const groups: Record<string, any[]> = {
-     'Hot': [...(FALLBACK_GIFTS['Hot'] || [])],        // emoji wale gifts yahan se aayenge
-     'Lucky': [...(FALLBACK_GIFTS['Lucky'] || [])],
+     'Hot': [],
+     'Lucky': [],
      'Luxury': [],
      'Event': []
    };
 
-   // ab Firestore ke sare gifts ko bina condition ke add kar do
    if (dbGifts && dbGifts.length > 0) {
      dbGifts.forEach((g: any) => {
        const cat = g.category || 'Hot';
@@ -85,14 +215,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
            id: g.id || g.giftId
          });
        } else {
-         // unknown category ko 'Event' me daal do
          if (!groups['Event']) groups['Event'] = [];
          groups['Event'].push({ ...g, id: g.id || g.giftId });
        }
      });
    }
 
-   // sorting: pehle emoji wale (jinka imageUrl nahi), fir image wale
+   // Sort: non-image gifts pehle (toh image wale baad me dikhe)
    Object.keys(groups).forEach(key => {
      groups[key].sort((a, b) => {
        const aHasImage = !!a.imageUrl;
@@ -283,11 +412,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
               items.map(gift => (
                 <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
                 <div className="h-10 w-10 flex items-center justify-center mb-1 filter drop-shadow-md">
-                  {gift.imageUrl ? (
-                    <img src={gift.imageUrl} alt={gift.name} className="h-full w-full object-contain" />
-                  ) : (
-                    <span className="text-3xl">{gift.emoji || '🎁'}</span>
-                  )}
+                  <GiftImage gift={gift} />
                 </div>
                 <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
                 <div className="flex items-center gap-1 mt-0.5">
@@ -307,7 +432,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-2">
       <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-2xl border border-white/5 min-w-0 flex-1">
        <div className="shrink-0"><GoldenDollar /></div>
-       {/* Balance ab simple number me, bina K/M/B */}
        <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
          {(userProfile?.wallet?.coins || 0).toLocaleString()}
        </span>
@@ -327,4 +451,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Sheet>
   </>
  );
-           }
+      }
