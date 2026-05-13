@@ -228,11 +228,17 @@ export function useAgora(
         clientRef.current = client;
         if (isMounted) setConnectionState('CONNECTING');
 
-        client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
+                client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
           try {
             await client.subscribe(user, mediaType);
             if (mediaType === 'audio') {
+              // --- BRUTE FORCE: Set remote volume to 200% for maximum loudness ---
+              if (user.audioTrack) {
+                user.audioTrack.setVolume(200);
+              }
+
               // --- BRUTE FORCE: Force earbuds BEFORE playing remote track to prevent leak ---
+              // ONLY if earbuds are actually connected
               if (AudioRoute) {
                 AudioRoute.forceEarbuds().catch(() => {});
               }
@@ -300,13 +306,15 @@ export function useAgora(
     };
   }, [roomId, uid]);
 
-  // EFFECT 2: Speaker Management
+    // EFFECT 2: Speaker Management
   useEffect(() => {
     remoteUsers.forEach(user => {
       if (user.audioTrack) {
         if (isSpeakerMuted) {
           user.audioTrack.stop();
         } else {
+          // Increase volume for all remote users
+          user.audioTrack.setVolume(200);
           user.audioTrack.play();
         }
       }
@@ -314,7 +322,8 @@ export function useAgora(
     
     // Force earbuds when remote users change (prevent speaker switch)
     if (AudioRoute && remoteUsers.length > 0 && !isSpeakerMuted) {
-      AudioRoute.forceEarbuds().catch(() => {});
+      // Small delay to ensure tracks are playing before routing
+      setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
     }
   }, [remoteUsers, isSpeakerMuted]);
 
