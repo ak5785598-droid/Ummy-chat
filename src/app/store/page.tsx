@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,243 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- CUSTOM DOLLAR COIN ICON (NEW) ---
+// --- SMART BLACK BACKGROUND REMOVER COMPONENT ---
+const SmartBlackRemover = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  // Detect solid black background
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const EDGE_CHECK = 0.10;
+    const SOLID_THRESHOLD = 0.90;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  // Process black fade (flood fill from edges)
+  const processFrame = (video?: HTMLVideoElement) => {
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 20;
+    const ALPHA_FADE_SPEED = 0.9;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    if (type === 'video') {
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+    }
+  };
+
+  // Initialize for images
+  useEffect(() => {
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+  }, [src, type]);
+
+  // Handle image load
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+    setUseCanvas(hasBlackBg);
+    setIsReady(true);
+    if (hasBlackBg) {
+      setTimeout(() => processFrame(), 50);
+    }
+  };
+
+  // Handle video ready
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+    setUseCanvas(hasBlackBg);
+    setIsReady(true);
+    if (hasBlackBg) {
+      setTimeout(() => processFrame(video), 100);
+    }
+  };
+
+  // Cleanup video animation
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  if (type === 'video') {
+    return (
+      <div className={cn("relative", className)} style={style}>
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onCanPlay={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-contain'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
+        />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-contain bg-transparent"
+            style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)} style={style}>
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        onLoad={handleImageLoad}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-contain'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
+      />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-contain bg-transparent"
+          style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+        />
+      )}
+    </div>
+  );
+};
+
+// --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -207,7 +443,7 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- MERGED GLOSSY WINGS SVG COMPONENT ---
+// --- GLOSSY WINGS SVG ---
 const GlossyWingsSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <style>{`
@@ -246,7 +482,6 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
           <stop offset="70%" stopColor="#1e90ff" stopOpacity="0.2"/>
           <stop offset="100%" stopColor="#4169e1" stopOpacity="0"/>
         </radialGradient>
-
         <filter id="wingGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur1"/>
           <feFlood floodColor="#00bfff" floodOpacity="0.6" result="color1"/>
@@ -269,15 +504,12 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
           <feFlood floodColor="#1e90ff" floodOpacity="0.25"/>
           <feComposite in2="b" operator="in"/>
         </filter>
-
         <mask id="centerHole">
           <rect width="800" height="800" fill="white"/>
           <circle cx="400" cy="400" r="185" fill="black"/>
         </mask>
       </defs>
-
       <circle cx="400" cy="400" r="280" fill="url(#aura)" opacity="0.3" filter="url(#outerGlow)"/>
-      
       <g mask="url(#centerHole)">
         <g className="wing left-wing">
           <path d="M 323 336 C 260 298 192 268 155 259 C 138 275 152 298 175 312 C 225 335 285 355 319 361 Z" fill="url(#wingGrad)" opacity="0.96"/>
@@ -289,7 +521,6 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
           <path d="M 315 372 C 256 362 202 356 172 356 C 170 364 178 370 192 372 C 234 376 282 378 314 380 Z" fill="#b3e5fc" opacity="0.55"/>
           <path d="M 314 395 C 248 410 196 422 174 430 C 178 436 186 438 198 434 C 238 422 280 410 313 402 Z" fill="#87cefa" opacity="0.5"/>
         </g>
-        
         <g className="wing right-wing">
           <path d="M 477 336 C 540 298 608 268 645 259 C 662 275 648 298 625 312 C 575 335 515 355 481 361 Z" fill="url(#wingGradRev)" opacity="0.96"/>
           <path d="M 481 364 C 565 348 642 335 676 333 C 690 352 680 376 655 389 C 600 395 530 390 483 383 Z" fill="url(#wingGradRev)" opacity="0.94"/>
@@ -301,12 +532,10 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
           <path d="M 486 395 C 552 410 604 422 626 430 C 622 436 614 438 602 434 C 562 422 520 410 487 402 Z" fill="#87cefa" opacity="0.5"/>
         </g>
       </g>
-
       <circle cx="400" cy="400" r="188" fill="none" stroke="url(#wingGrad)" strokeWidth="3" opacity="0.9" filter="url(#softGlow)" className="ring-pulse"/>
       <circle cx="400" cy="400" r="183" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
       <circle cx="400" cy="400" r="195" fill="none" stroke="#1e90ff" strokeWidth="0.8" opacity="0.35" strokeDasharray="3 7" transform="rotate(-15 400 400)"/>
       <circle cx="400" cy="400" r="186" fill="none" stroke="#87cefa" strokeWidth="0.5" opacity="0.8"/>
-
       <g className="charm" filter="url(#softGlow)">
         <line x1="400" y1="586" x2="400" y2="575" stroke="#00bfff" strokeWidth="1.5" opacity="0.7"/>
         <circle cx="400" cy="574" r="4" fill="none" stroke="#00bfff" strokeWidth="1" opacity="0.6"/>
@@ -317,7 +546,6 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
         <path d="M 388 602 Q 376 598 372 606 Q 378 611 388 607 Z" fill="#1e90ff" opacity="0.85"/>
         <path d="M 412 602 Q 424 598 428 606 Q 422 611 412 607 Z" fill="#1e90ff" opacity="0.85"/>
       </g>
-
       <circle cx="268" cy="312" r="2.2" fill="#87cefa" className="sparkle" style={{animationDelay:'0s'}}/>
       <circle cx="532" cy="308" r="2" fill="#b3e5fc" className="sparkle" style={{animationDelay:'0.5s'}}/>
       <circle cx="238" cy="438" r="1.6" fill="#00bfff" className="sparkle" style={{animationDelay:'1.1s'}}/>
@@ -329,7 +557,7 @@ const GlossyWingsSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- KITTI FRAME SVG COMPONENT (CLEANED) ---
+// --- CAT FRAME SVG ---
 const CatFrameSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <style>{`
@@ -355,16 +583,13 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
           <stop offset="100%" stopColor="#E6A64D" />
         </linearGradient>
       </defs>
-
       <g id="whiskers" stroke="#B8772F" strokeWidth={7} strokeLinecap="round" opacity={0.95} filter="url(#cat-shadow)">
         <path d="M 176 360 Q 110 342 58 358" />
         <path d="M 172 395 Q 98 390 52 400" />
         <path d="M 176 430 Q 110 448 62 438" />
       </g>
-
       <g id="cat-tail" filter="url(#cat-shadow)">
-        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z"
-          fill="url(#cat-ringGrad)" stroke="#D1923C" strokeWidth={5} strokeLinejoin="round" />
+        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z" fill="url(#cat-ringGrad)" stroke="#D1923C" strokeWidth={5} strokeLinejoin="round" />
         <g fill="none" stroke="#B8772F" strokeLinecap="round" strokeWidth={16} opacity={1}>
           <path d="M 662 388 Q 690 410 700 438" />
           <path d="M 690 462 Q 706 482 700 508" />
@@ -373,27 +598,20 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
           <path d="M 602 594 Q 608 606 592 616" />
           <path d="M 556 604 Q 560 614 546 620" />
         </g>
-        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z"
-          fill="none" stroke="#B8772F" strokeWidth={2.5} opacity={0.15} />
+        <path d="M 612 382 C 668 348 730 388 742 452 C 754 516 722 575 670 610 C 618 645 558 648 510 627 C 486 618 484 596 506 589 C 554 602 602 590 638 560 C 672 530 688 488 676 438 C 668 404 642 385 612 382 Z" fill="none" stroke="#B8772F" strokeWidth={2.5} opacity={0.15} />
       </g>
-
       <g filter="url(#cat-shadow)">
         <circle cx="400" cy="400" r="230" fill="none" stroke="url(#cat-ringGrad)" strokeWidth={68} strokeLinecap="round" />
         <circle cx="400" cy="400" r="230" fill="none" stroke="#B8772F" strokeWidth={68} strokeLinecap="round" opacity={0.08} />
       </g>
-
       <g id="ear-left" filter="url(#cat-shadow)">
-        <path d="M 208 242 C 170 176 142 118 212 134 C 252 143 288 176 312 222 C 288 210 252 194 208 242 Z"
-          fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
+        <path d="M 208 242 C 170 176 142 118 212 134 C 252 143 288 176 312 222 C 288 210 252 194 208 242 Z" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
         <path d="M 236 218 C 212 180 196 152 230 160 C 252 165 272 183 284 206 C 268 197 250 188 236 218 Z" fill="#B8772F" />
       </g>
-
       <g id="ear-right" filter="url(#cat-shadow)">
-        <path d="M 592 242 C 630 176 658 118 588 134 C 548 143 512 176 488 222 C 512 210 548 194 592 242 Z"
-          fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
+        <path d="M 592 242 C 630 176 658 118 588 134 C 548 143 512 176 488 222 C 512 210 548 194 592 242 Z" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} strokeLinejoin="round" />
         <path d="M 564 218 C 588 180 604 152 570 160 C 548 165 528 183 516 206 C 532 197 550 188 564 218 Z" fill="#B8772F" />
       </g>
-
       <g id="paws" filter="url(#cat-shadow)">
         <g transform="translate(340 615)">
           <ellipse cx="0" cy="8" rx="42" ry="30" fill="#E6A64D" stroke="#D1923C" strokeWidth={4} />
@@ -410,7 +628,6 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
           <ellipse cx="0" cy="10" rx="18" ry="10" fill="#F5E6C8" opacity={0.2} />
         </g>
       </g>
-
       <g id="bell-left" transform="translate(368 608)" filter="url(#cat-shadow)">
         <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
         <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
@@ -418,7 +635,6 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
         <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
         <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
       </g>
-
       <g id="bell-right" transform="translate(432 608)" filter="url(#cat-shadow)">
         <rect x="-11" y="-10" width="22" height="10" rx="4" fill="#B8772F" />
         <rect x="-11" y="-10" width="22" height="10" rx="4" fill="none" stroke="#8F5E24" strokeWidth={1.5} />
@@ -426,13 +642,12 @@ const CatFrameSVG = ({ className }: { className?: string }) => (
         <ellipse cx="-5" cy="-5" rx="4" ry="2.5" fill="white" opacity={0.7} />
         <circle cx="0" cy="11" r="3.2" fill="#B8772F" stroke="#8F5E24" strokeWidth={1} />
       </g>
-
       <circle cx="400" cy="400" r="196" fill="none" stroke="#F5E6C8" strokeWidth={2} opacity={0.15} />
     </svg>
   </div>
 );
 
-// --- NEW RABBIT FRAME SVG COMPONENT ---
+// --- RABBIT FRAME SVG ---
 const RabbitFrameSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <style>{`
@@ -450,38 +665,26 @@ const RabbitFrameSVG = ({ className }: { className?: string }) => (
           <feDropShadow dx="0" dy="6" stdDeviation={8} floodColor="#c97e6a" floodOpacity={0.2} />
         </filter>
       </defs>
-
-      {/* Whiskers */}
       <g stroke="#d9a594" strokeWidth={12} strokeLinecap="round" filter="url(#rb-shadow)">
         <path d="M 220 420 L 100 400" />
         <path d="M 220 480 L 100 500" />
         <path d="M 580 420 L 700 400" />
         <path d="M 580 480 L 700 500" />
       </g>
-
-      {/* Left Ear */}
       <g className="rabbit-ear-l" filter="url(#rb-shadow)">
         <ellipse cx="280" cy="180" rx="60" ry="140" fill="#f5bcb0" transform="rotate(-15 280 180)" />
         <ellipse cx="280" cy="190" rx="35" ry="100" fill="#ffb7c5" transform="rotate(-15 280 180)" />
       </g>
-
-      {/* Right Ear */}
       <g className="rabbit-ear-r" filter="url(#rb-shadow)">
         <ellipse cx="520" cy="180" rx="60" ry="140" fill="#f5bcb0" transform="rotate(15 520 180)" />
         <ellipse cx="520" cy="190" rx="35" ry="100" fill="#ffb7c5" transform="rotate(15 520 180)" />
       </g>
-
-      {/* Main Frame Ring to act like the white border */}
       <circle cx="400" cy="400" r="230" fill="none" stroke="#ffffff" strokeWidth={40} filter="url(#rb-shadow)" />
       <circle cx="400" cy="400" r="210" fill="none" stroke="#fff5e8" strokeWidth={10} />
-
-      {/* Tail */}
       <g className="rabbit-tail" filter="url(#rb-shadow)">
         <circle cx="620" cy="580" r="60" fill="#fff5f0" stroke="#ffdad2" strokeWidth={8} />
         <text x="620" y="600" fontSize="50" textAnchor="middle" opacity="0.5">🐇</text>
       </g>
-
-      {/* Paws */}
       <g filter="url(#rb-shadow)">
         <g transform="translate(240, 620) rotate(-20)">
           <circle cx="0" cy="0" r="50" fill="#f5bcb0" />
@@ -496,7 +699,7 @@ const RabbitFrameSVG = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- NEW ARISE BUBBLE SVG COMPONENT ---
+// --- ARISE BUBBLE SVG ---
 const AriseBubbleSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <svg viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
@@ -533,29 +736,23 @@ const AriseBubbleSVG = ({ className }: { className?: string }) => (
         </filter>
         <path id="bubbleShape" d="M180 30 H710 A50 50 0 0 1 760 80 V170 A50 50 0 0 1 710 220 H265 C235 220 200 240 185 260 C165 285 140 300 115 285 C140 275 170 245 165 225 H180 A50 50 0 0 1 130 170 V80 A50 50 0 0 1 180 30 Z"/>
       </defs>
-
       <g filter="url(#outerShadow)">
         <use href="#bubbleShape" fill="url(#redFill)" stroke="url(#goldBorder)" strokeWidth="16"/>
         <use href="#bubbleShape" fill="url(#redFill)" filter="url(#innerDepth)"/>
       </g>
-
       <ellipse cx="444" cy="68" rx="285" ry="72" fill="url(#gloss)"/>
-
       <g fill="none" stroke="#5E3A05" strokeOpacity="0.58" strokeWidth="1.3">
         <path d="M155 55 c-11 0 -18 7 -16 16 2 8 11 11 17 6"/>
         <path d="M735 55 c11 0 18 7 16 16 -2 8 -11 11 -17 6"/>
         <path d="M735 195 c11 0 18 -7 16 -16 -2 -8 -11 -11 -17 -6"/>
         <path d="M235 195 c-11 0 -18 -7 -16 -16 2 -8 11 -11 17 -6"/>
       </g>
-
-      <text x="444" y="147" textAnchor="middle" fontFamily="Georgia, serif" 
-            fontSize="70" fontStyle="italic" fontWeight="600" 
-            fill="#FFFFFF" filter="url(#textGlow)">Hey ummy</text>
+      <text x="444" y="147" textAnchor="middle" fontFamily="Georgia, serif" fontSize="70" fontStyle="italic" fontWeight="600" fill="#FFFFFF" filter="url(#textGlow)">Hey ummy</text>
     </svg>
   </div>
 );
 
-// --- NEW BLUE CB BUBBLE SVG COMPONENT ---
+// --- BLUE CB BUBBLE SVG ---
 const BlueCbBubbleSVG = ({ className }: { className?: string }) => (
   <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl">
@@ -593,31 +790,13 @@ const BlueCbBubbleSVG = ({ className }: { className?: string }) => (
           <feComposite operator="in" in2="SourceGraphic"/>
           <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
-        <path id="filigreeBlue" d="M0 0 C-14 1 -22 9 -20 18 C-18 25 -10 29 -2 27 C-8 28 -14 24 -15 17 C-16 11 -12 5 -6 4 M-8 7 C-13 9 -16 14 -14 19 M-4 11 C-7 12 -9 16 -7 19"/>
       </defs>
-
       <g filter="url(#outerBlue)">
-        <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" 
-              fill="url(#blueFill)" stroke="url(#goldBorderBlue)" strokeWidth="16" strokeLinejoin="round"/>
+        <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" fill="url(#blueFill)" stroke="url(#goldBorderBlue)" strokeWidth="16" strokeLinejoin="round"/>
       </g>
-      <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" 
-            fill="url(#blueFill)" filter="url(#innerDepthBlue)" opacity="0.9"/>
-
+      <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" fill="url(#blueFill)" filter="url(#innerDepthBlue)" opacity="0.9"/>
       <ellipse cx="400" cy="65" rx="280" ry="70" fill="url(#glossBlue)"/>
-
-      <g fill="none" stroke="#7A5208" strokeOpacity="0.7" strokeWidth="1.4">
-        <use href="#filigreeBlue" transform="translate(155 55)"/>
-        <use href="#filigreeBlue" transform="translate(645 55) scale(-1 1)"/>
-        <use href="#filigreeBlue" transform="translate(645 175) scale(-1 -1)"/>
-        <use href="#filigreeBlue" transform="translate(155 175) scale(1 -1)"/>
-      </g>
-
-      <circle cx="385" cy="19" r="2.6" fill="#FFD700" fillOpacity="0.9"/>
-
-      <text x="400" y="128" textAnchor="middle" fontFamily="Georgia, serif" 
-            fontStyle="italic" fontSize="64" fill="#FFFFFF" filter="url(#textGlowBlue)">
-        Hey ummy
-      </text>
+      <text x="400" y="128" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontSize="64" fill="#FFFFFF" filter="url(#textGlowBlue)">Hey ummy</text>
     </svg>
   </div>
 );
@@ -659,79 +838,31 @@ export default function StorePage() {
   const { data: dbThemes } = useCollection(themesQuery);
 
   const dynamicThemes = useMemo(() => {
-    const baseThemes = (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
+    return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
       type: 'Theme',
       description: t.description || `High-fidelity ${t.name} background.`
     }));
-    return baseThemes;
   }, [dbThemes]);
 
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
-      frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` } as any);
+      frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
     });
-    
-    frames.push({
-      id: 'f-glossy-wings',
-      name: 'Glossy wings',
-      type: 'Frame',
-      price: 500000,
-      durationDays: 7,
-      description: 'Exclusive animated Glossy wings frame.',
-      isCustomSVG: true
-    });
-
-    frames.push({
-      id: 'f-kitti',
-      name: 'Kitti',
-      type: 'Frame',
-      price: 600000,
-      durationDays: 7,
-      description: 'Exclusive animated Kitti frame.',
-      isCustomSVG: true
-    });
-
-    // --- NEW RABBIT FRAME ADDED HERE ---
-    frames.push({
-      id: 'f-rabbit',
-      name: 'Rabbit',
-      type: 'Frame',
-      price: 39999,
-      durationDays: 7,
-      description: 'Exclusive animated Rabbit frame.',
-      isCustomSVG: true
-    });
-
+    frames.push({ id: 'f-glossy-wings', name: 'Glossy wings', type: 'Frame', price: 500000, durationDays: 7, description: 'Exclusive animated Glossy wings frame.', isCustomSVG: true });
+    frames.push({ id: 'f-kitti', name: 'Kitti', type: 'Frame', price: 600000, durationDays: 7, description: 'Exclusive animated Kitti frame.', isCustomSVG: true });
+    frames.push({ id: 'f-rabbit', name: 'Rabbit', type: 'Frame', price: 39999, durationDays: 7, description: 'Exclusive animated Rabbit frame.', isCustomSVG: true });
     return frames;
   }, []);
 
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
-    { 
-      id: 'b-arise', 
-      name: 'Arise', 
-      type: 'Bubble', 
-      price: 50999, 
-      durationDays: 7, 
-      description: 'Premium red glossy bubble with golden borders.', 
-      isCustomSVG: true 
-    },
-    {
-      id: 'b-blue-cb',
-      name: 'Blue Cb',
-      type: 'Bubble',
-      price: 49599,
-      durationDays: 7,
-      description: 'Premium blue glossy bubble with golden borders.',
-      isCustomSVG: true
-    }
+    { id: 'b-arise', name: 'Arise', type: 'Bubble', price: 50999, durationDays: 7, description: 'Premium red glossy bubble with golden borders.', isCustomSVG: true },
+    { id: 'b-blue-cb', name: 'Blue Cb', type: 'Bubble', price: 49599, durationDays: 7, description: 'Premium blue glossy bubble with golden borders.', isCustomSVG: true }
   ], []);
 
-  const waveItems = useMemo(() => [
-    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Wave')
-  ], []);
+  const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
 
   const idItems = useMemo(() => [
     { id: 'id-667276', name: 'Pink ID', type: 'ID', price: 3999999, durationDays: 7, description: 'Exclusive Premium Pink ID Number 667276 Badge.', displayId: '667276', isPinkDiamond: true },
@@ -797,7 +928,6 @@ export default function StorePage() {
   const boutiqueItems = useMemo(() => {
     return (dbStoreItems || []).map(item => ({
       ...item,
-      // If it's a dynamic item, ensure we have the correct fields mapped
       type: item.category || item.type,
       description: item.description || `Premium ${item.name} asset.`,
       isDynamic: true
@@ -895,15 +1025,19 @@ export default function StorePage() {
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden rounded-full border border-white/10 shadow-lg">
-                              <video 
+                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden shadow-lg">
+                              <SmartBlackRemover 
                                 src={item.videoUrl} 
-                                autoPlay 
-                                muted 
-                                loop 
-                                playsInline 
-                                className="w-full h-full object-contain"
-                                style={{ filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.3))' }}
+                                type="video" 
+                                className="w-full h-full"
+                              />
+                            </div>
+                          ) : item.isDynamic && item.imageUrl ? (
+                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden shadow-lg">
+                              <SmartBlackRemover 
+                                src={item.imageUrl} 
+                                type="image" 
+                                className="w-full h-full"
                               />
                             </div>
                           ) : item.isCustomSVG ? (
@@ -982,13 +1116,21 @@ export default function StorePage() {
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
                   {previewItem.type === 'Frame' ? (
-                    previewItem.isDynamic && previewItem.url ? (
-                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden rounded-full border border-white/20 shadow-2xl bg-slate-900/40">
-                         <img src={previewItem.url} alt={previewItem.name} className="w-full h-full object-contain" />
-                         <Avatar className="absolute h-[60px] w-[60px] -z-10 opacity-50">
-                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
-                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
-                        </Avatar>
+                    previewItem.isDynamic && previewItem.videoUrl ? (
+                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                        <SmartBlackRemover 
+                          src={previewItem.videoUrl} 
+                          type="video" 
+                          className="w-full h-full"
+                        />
+                      </div>
+                    ) : previewItem.isDynamic && previewItem.imageUrl ? (
+                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                        <SmartBlackRemover 
+                          src={previewItem.imageUrl} 
+                          type="image" 
+                          className="w-full h-full"
+                        />
                       </div>
                     ) : previewItem.isCustomSVG ? (
                       <div className="relative flex items-center justify-center h-32 w-32 mt-4">
@@ -1097,5 +1239,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
-
+          }
