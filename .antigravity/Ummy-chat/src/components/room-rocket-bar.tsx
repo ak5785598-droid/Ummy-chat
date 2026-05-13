@@ -20,7 +20,16 @@ const CustomBlueRocket = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, onOpenRocket }: any) {
+interface RocketBarProps {
+  progress?: number;
+  target?: number;
+  countdownUntil?: any; // Firestore Timestamp
+  onOpenRocket?: () => void;
+  rocketImage?: string;
+  rocketAnimation?: string;
+}
+
+export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, onOpenRocket, rocketImage, rocketAnimation }: RocketBarProps) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showFlight, setShowFlight] = useState(false);
 
@@ -68,7 +77,11 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
 
           {/* THE ROCKET ICON - ISME AB KOI LOGIC NAHI HAI, DIRECT NAYA ROCKET HAI */}
           <div className="absolute inset-0 flex items-center justify-center p-2">
-              <CustomBlueRocket className={cn("h-7 w-7", progressPercent >= 100 && "animate-bounce")} />
+              {rocketImage ? (
+                <img src={rocketImage} className={cn("h-7 w-7 object-contain", progressPercent >= 100 && "animate-bounce")} alt="Rocket" />
+              ) : (
+                <CustomBlueRocket className={cn("h-7 w-7", progressPercent >= 100 && "animate-bounce")} />
+              )}
           </div>
 
           {!countdownUntil && (
@@ -89,7 +102,13 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
               transition={{ duration: 2.5, ease: "easeIn" }}
               className="absolute"
             >
-              <CustomBlueRocket className="h-32 w-32" />
+              {rocketAnimation ? (
+                <video src={rocketAnimation} autoPlay muted playsInline className="h-48 w-48 object-contain" />
+              ) : rocketImage ? (
+                <img src={rocketImage} className="h-32 w-32 object-contain" alt="Flying Rocket" />
+              ) : (
+                <CustomBlueRocket className="h-32 w-32" />
+              )}
             </motion.div>
           </motion.div>
         )}

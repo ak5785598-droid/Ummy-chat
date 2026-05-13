@@ -71,12 +71,14 @@ export function RocketDialog({
   open, 
   onOpenChange, 
   currentExp = 0,
-  roomName
+  roomName,
+  rocketImage
 }: { 
   open: boolean; 
   onOpenChange: (open: boolean) => void; 
   currentExp?: number;
   roomName?: string;
+  rocketImage?: string;
 }) {
   const nextLevel = useMemo(() => 
     ROCKET_LEVELS.find(l => currentExp < l.target) || ROCKET_LEVELS[4]
@@ -112,10 +114,14 @@ export function RocketDialog({
           </button>
 
           {/* MAIN ROCKET DISPLAY */}
-          <PremiumRocketSVG 
-            colors={activeLevel?.colors || ROCKET_LEVELS[0].colors} 
-            isActive={!!activeLevel} 
-          />
+          {rocketImage ? (
+            <motion.img animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity }} src={rocketImage} className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]" alt="Custom Rocket" />
+          ) : (
+            <PremiumRocketSVG 
+              colors={activeLevel?.colors || ROCKET_LEVELS[0].colors} 
+              isActive={!!activeLevel} 
+            />
+          )}
 
           <motion.h1 
             initial={{ scale: 0.9 }} animate={{ scale: 1 }}

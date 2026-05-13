@@ -107,7 +107,7 @@ service cloud.firestore {
         // Check if user is moderator
         (resource.data.moderatorIds is list && request.auth.uid in resource.data.moderatorIds) ||
         // Allow anyone to update stats/rocket (for gifting)
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['stats', 'rocket']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'rocket', 'updatedAt']) ||
         // Admin override
         isAdmin()
       );

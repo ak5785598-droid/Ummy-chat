@@ -97,6 +97,7 @@ import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse } from '@/actions/ai-actions';
 import { RocketDialog } from '@/components/rocket-dialog';
+import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -522,6 +523,13 @@ export function RoomClient({ room }: { room: Room }) {
     return doc(firestore, 'appConfig', 'global');
   }, [firestore]);
   const { data: globalConfig } = useDoc(configRef);
+
+  // GLOBAL ROCKET CONFIG: Ek hi source se poore platform ka rocket control
+  const rocketConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'appConfig', 'rocket');
+  }, [firestore]);
+  const { data: globalRocket } = useDoc(rocketConfigRef) as { data: any };
 
   const handleFollowRoom = () => {
     if (!firestore || !currentUser || !room.id) return;
@@ -2048,6 +2056,7 @@ export function RoomClient({ room }: { room: Room }) {
         onOpenChange={setIsRocketOpen}
         currentExp={room.rocket?.progress || 0}
         roomName={room.title}
+        rocketImage={globalRocket?.imageUrl}
       />
       <RoomTasksDialog
         open={isRoomTasksOpen}
@@ -2056,6 +2065,14 @@ export function RoomClient({ room }: { room: Room }) {
         achievedTasks={achievedTasks}
         claimedTasks={claimedTasks}
         onClaim={claimTask}
+      />
+      <RoomRocketBar
+        progress={room.rocket?.progress || 0}
+        target={room.rocket?.target || 10000}
+        countdownUntil={room.rocket?.countdownUntil}
+        onOpenRocket={() => setIsRocketOpen(true)}
+        rocketImage={globalRocket?.imageUrl}
+        rocketAnimation={globalRocket?.animationUrl}
       />
 
       {/* AI AUDIO SLAVE (Mobile Bluetooth Fix) */}
