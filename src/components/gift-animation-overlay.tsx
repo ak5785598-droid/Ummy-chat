@@ -41,7 +41,7 @@ export function GiftAnimationOverlay({
   const videoRef = useRef<HTMLVideoElement>(null);
   const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // 🆕 Canvas ref for black-fade processing
+  // Canvas ref for black-fade processing
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -93,13 +93,12 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // 🆕 Black Fade Processor (Canvas Magic)
+  // Smart Black Fade Processor - Only Background, Not Foreground
   const processBlackFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
     if (!video || !canvas || video.paused || video.ended) {
-      // Stop loop if video not playing
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -110,48 +109,61 @@ export function GiftAnimationOverlay({
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    // Match canvas size to video
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
     }
 
-    // Draw current video frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    // Get pixel data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const len = data.length;
+    const width = canvas.width;
+    const height = canvas.height;
 
-    // 🎯 Superfast Black Detection Threshold
-    const BLACK_THRESHOLD = 30; // RGB < 30 = black maan lenge
-    const ALPHA_FADE_SPEED = 0.85; // 85% fade per frame (smooth)
+    // STRICT BLACK only (RGB < 8, not 30)
+    const STRICT_BLACK = 8;
+    const ALPHA_FADE_SPEED = 0.9;
+
+    // Edge detection zones (top/bottom 15% and left/right 10%)
+    const topEdgeLimit = Math.floor(height * 0.15);
+    const bottomEdgeLimit = Math.floor(height * 0.85);
+    const leftEdgeLimit = Math.floor(width * 0.10);
+    const rightEdgeLimit = Math.floor(width * 0.90);
 
     for (let i = 0; i < len; i += 4) {
+      const pixelIndex = i / 4;
+      const y = Math.floor(pixelIndex / width);
+      const x = pixelIndex % width;
+      
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       
-      // Check if pixel is black/dark
-      if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
-        // Gradually fade black pixels to transparent
+      // Check ONLY if pixel is in edge zone
+      const isInEdgeZone = 
+        y < topEdgeLimit ||      // Top edge
+        y > bottomEdgeLimit ||   // Bottom edge
+        x < leftEdgeLimit ||     // Left edge
+        x > rightEdgeLimit;      // Right edge
+      
+      // Check if pixel is STRICT pure black
+      const isStrictBlack = r < STRICT_BLACK && g < STRICT_BLACK && b < STRICT_BLACK;
+      
+      // Fade ONLY if BOTH conditions true (edge + strict black)
+      if (isInEdgeZone && isStrictBlack) {
         data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
       }
-      // Non-black pixels: untouched, full opacity rakho
+      // Center area ya non-strict-black: Kuch nahi karna
     }
 
-    // Apply modified pixels back to canvas
     ctx.putImageData(imageData, 0, 0);
-
-    // Continue processing loop (60fps target)
     animationFrameRef.current = requestAnimationFrame(processBlackFade);
   };
 
-  // 🆕 Start/Stop Black Fade Processor when video plays
+  // Start/Stop Black Fade Processor when video plays
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady) {
-      // Small delay to ensure video has started
       const startTimer = setTimeout(() => {
         processBlackFade();
       }, 100);
@@ -168,7 +180,6 @@ export function GiftAnimationOverlay({
 
   // Cleanup function
   const handleCleanup = () => {
-    // 🆕 Stop canvas processing
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -240,7 +251,7 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* MODIFIED 3D SCROLL BANNER NAME PLATE */}
+            {/* 3D SCROLL BANNER NAME PLATE */}
             {showNameplate && senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -387,7 +398,7 @@ export function GiftAnimationOverlay({
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF (Untouched) + 🆕 Canvas Overlay */}
+            {/* THE GIFT ITSELF */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -413,7 +424,7 @@ export function GiftAnimationOverlay({
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
-                  {/* 🆕 Hidden original video (for audio + timing reference) */}
+                  {/* Hidden original video (audio + timing) */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -426,11 +437,11 @@ export function GiftAnimationOverlay({
                     onCanPlay={() => setIsVideoReady(true)} 
                     onLoadedMetadata={handleVideoMetadata} 
                     onEnded={handleCleanup} 
-                    className="hidden" // Hide original, use canvas instead
+                    className="hidden"
                     crossOrigin="anonymous"
                   />
                   
-                  {/* 🆕 Canvas showing black-faded video */}
+                  {/* Canvas with black-faded video */}
                   <canvas 
                     ref={canvasRef}
                     className="w-full h-full object-contain bg-transparent"
@@ -446,7 +457,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE (Untouched) */}
+      {/* FULL SCREEN AMBIANCE */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -459,7 +470,7 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* Scroll Banner Animations Scoped Styles */}
+      {/* Scroll Banner Animations */}
       <style>{`
         .scroll-stage {
           width: 100%; max-width: 900px;
@@ -517,4 +528,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-                      }
+  }
