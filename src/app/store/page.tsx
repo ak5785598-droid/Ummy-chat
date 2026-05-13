@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- SMART BLACK BACKGROUND REMOVER COMPONENT ---
+// --- SMART BLACK BACKGROUND REMOVER COMPONENT (SIZE BADHAYA + CENTER BLACK REMOVE) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -72,7 +72,7 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
-  // Process black fade (flood fill from edges)
+  // Process black fade (flood fill from edges + center se bhi black remove)
   const processFrame = (video?: HTMLVideoElement) => {
     const canvas = canvasRef.current;
     const media = video || mediaRef.current;
@@ -94,7 +94,7 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 20;
-    const ALPHA_FADE_SPEED = 0.9;
+    const ALPHA_FADE_SPEED = 0.95; // Thoda aur aggressive fade
     const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
@@ -109,6 +109,7 @@ const SmartBlackRemover = ({
 
     const queue: [number, number][] = [];
     
+    // Edges se flood fill start
     for (let sx = 0; sx < scaledW; sx++) {
       if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
       if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
@@ -116,6 +117,14 @@ const SmartBlackRemover = ({
     for (let sy = 0; sy < scaledH; sy++) {
       if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
       if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    // CENTER SE BHI BLACK REMOVE - center point se flood fill shuru karo
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
     }
 
     let head = 0;
@@ -133,6 +142,7 @@ const SmartBlackRemover = ({
       }
     }
 
+    // Black pixels ko transparent/fade karo
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
@@ -1025,7 +1035,7 @@ export default function StorePage() {
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
                               <SmartBlackRemover 
                                 src={item.videoUrl} 
                                 type="video" 
@@ -1033,7 +1043,7 @@ export default function StorePage() {
                               />
                             </div>
                           ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative h-20 w-20 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
                               <SmartBlackRemover 
                                 src={item.imageUrl} 
                                 type="image" 
@@ -1114,10 +1124,10 @@ export default function StorePage() {
               </button>
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                <div className="mb-4 scale-[1.1] flex items-center justify-center h-28 w-28">
+                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36">
                   {previewItem.type === 'Frame' ? (
                     previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
                         <SmartBlackRemover 
                           src={previewItem.videoUrl} 
                           type="video" 
@@ -1125,7 +1135,7 @@ export default function StorePage() {
                         />
                       </div>
                     ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
                         <SmartBlackRemover 
                           src={previewItem.imageUrl} 
                           type="image" 
@@ -1133,22 +1143,22 @@ export default function StorePage() {
                         />
                       </div>
                     ) : previewItem.isCustomSVG ? (
-                      <div className="relative flex items-center justify-center h-32 w-32 mt-4">
-                        <Avatar className="absolute h-[60px] w-[60px]">
+                      <div className="relative flex items-center justify-center h-36 w-36 mt-4">
+                        <Avatar className="absolute h-[70px] w-[70px]">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                         {previewItem.id === 'f-kitti' ? (
-                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                          <CatFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
                         ) : previewItem.id === 'f-rabbit' ? (
-                          <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                          <RabbitFrameSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
                         ) : (
-                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.6]" />
+                          <GlossyWingsSVG className="absolute inset-0 z-10 w-full h-full scale-[1.8]" />
                         )}
                       </div>
                     ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-20 w-20">
+                        <Avatar className="h-24 w-24">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
@@ -1156,28 +1166,28 @@ export default function StorePage() {
                     )
                   ) : previewItem.type === 'Bubble' ? (
                     previewItem.isCustomSVG && previewItem.id === 'b-arise' ? (
-                      <div className="w-[200px]">
+                      <div className="w-[240px]">
                         <AriseBubbleSVG />
                       </div>
                     ) : previewItem.isCustomSVG && previewItem.id === 'b-blue-cb' ? (
-                      <div className="w-[200px]">
+                      <div className="w-[240px]">
                         <BlueCbBubbleSVG />
                       </div>
                     ) : (
                       <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                     )
                   ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-16 w-16 opacity-80", previewItem.color || "text-purple-400")} />
+                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-28 w-28" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-110 pt-2">
+                      <div className="scale-125 pt-2">
                         {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
                          previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-16 w-16 opacity-80", previewItem.color)} />
+                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
 
@@ -1239,4 +1249,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-          }
+        }
