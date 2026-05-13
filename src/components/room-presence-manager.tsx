@@ -154,11 +154,14 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
           updateDocumentNonBlocking(roomDocRef, resetData);
         }
 
-        // 2. Clear Stale Participants (Ghost Removal)
-        // CRITICAL FIX: Use the server-provided 'updatedAt' from the room document as our "Now" reference
-        // This prevents users with wrong system clocks from kicking active participants.
-        const serverRefTime = roomData.updatedAt?.toMillis() || Date.now();
-        const ghostThreshold = serverRefTime - 600000; // 10 Minutes threshold for high resilience
+                // 2. Clear Stale Participants (Ghost Removal)
+        // CRITICAL FIX: Do NOT use Date.now() as it relies on the owner's local clock.
+        // If the owner's clock is wrong, they will kick everyone.
+        // We use the room's own updatedAt (Server Timestamp) as the reference.
+        if (!roomData.updatedAt) return; 
+
+        const serverRefTime = roomData.updatedAt.toMillis();
+        const ghostThreshold = serverRefTime - 300000; // 5 Minutes threshold (More aggressive but safe)
         
         const snap = await getDocs(collection(firestore, 'chatRooms', roomId, 'participants'));
         const purgeBatch = writeBatch(firestore);
@@ -169,10 +172,15 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
           const p = d.data();
           const lastSeen = p.lastSeen?.toMillis?.() || 0;
           
-          // If user hasn't sent heartbeat in 10 mins relative to server time, they are a ghost
-          if (lastSeen < ghostThreshold) {
-            purgeBatch.delete(d.ref);
-            purgeCount++;
+          // Only purge if they are truly behind the server reference time
+          if (lastSeen > 0 && lastSeen < ghostThreshold) {
+            // Never purge the owner themselves in this loop
+            if (d.id !== uid) {
+              purgeBatch.delete(d.ref);
+              purgeCount++;
+            } else {
+              activeCount++;
+            }
           } else {
             activeCount++;
           }
@@ -204,30 +212,34 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     };
     document.addEventListener('visibilitychange', handleVisibility);
  
-    return () => {
+        return () => {
      if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
      if (cleanupInterval.current) clearInterval(cleanupInterval.current);
      document.removeEventListener('visibilitychange', handleVisibility);
      
-          // 🚀 PERSISTENT CLEANUP: Only remove if we are REALLY leaving (no minimized room)
-     // This is the core fix for "Keep" mode
-     const sessionEnded = !activeRoom?.id && !minimizedRoom?.id;
+     // 🚀 GRACEFUL CLEANUP: 
+     // We use a small timeout to prevent flickering during re-renders.
+     // If the component re-mounts, the timeout is implicitly cleared or ignored.
+     const sessionRoomId = activeRoom?.id || minimizedRoom?.id;
      
-     if (sessionEnded && firestore && user?.uid && roomId) {
-       console.log(`[Presence] REAL EXIT detected for room ${roomId}. Cleaning up...`);
-       const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
-       const rRef = doc(firestore, 'chatRooms', roomId);
-       const uRef = doc(firestore, 'users', user.uid);
-       const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-       
-       deleteDocumentNonBlocking(pRef);
-       updateDocumentNonBlocking(rRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
-       updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-       updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
-       hasJoinedRef.current = false;
-       lastRoomId.current = null;
-     } else {
-       console.log(`[Presence] Component update/minimize for ${roomId}. Keeping Firestore record.`);
+     if (!sessionRoomId && firestore && user?.uid && roomId) {
+       // Only delete if we are SURE the user has left the room entirely
+       setTimeout(() => {
+         // Check again if user hasn't re-joined or minimized
+         if (lastRoomId.current !== roomId) {
+            console.log(`[Presence] Cleanup executing for ${roomId}`);
+            const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
+            const rRef = doc(firestore, 'chatRooms', roomId);
+            const uRef = doc(firestore, 'users', user.uid);
+            const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+            
+            deleteDocumentNonBlocking(pRef);
+            updateDocumentNonBlocking(rRef, { participantCount: increment(-1), updatedAt: serverTimestamp() });
+            updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+            updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
+            hasJoinedRef.current = false;
+         }
+       }, 2000); 
      }
 
      cleanupInterval.current = null;
