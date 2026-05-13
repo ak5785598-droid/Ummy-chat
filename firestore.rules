@@ -13,12 +13,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    function isAdmin() {
+        function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
         request.auth.uid == '1338' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
       );
     }
 
@@ -34,15 +33,21 @@ service cloud.firestore {
     // ============================================
     // USERS COLLECTION
     // ============================================
-    match /users/{userId} {
+        match /users/{userId} {
       allow read: if true;
-      allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
+      allow write: if isAdmin();
       
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        allow write: if (isOwner(userId) && isNotBanned()) || isAdmin();
-        // Allow updating stats and wallet by others (needed for gifting)
-        allow update: if isSignedIn() && isNotBanned();
+        // Allow owner to update their own profile
+        allow update: if isOwner(userId) && isNotBanned();
+        // Special permission for Gifting: Allow others to ONLY increment diamonds and received stats
+        // This is a temporary measure because gifting is client-side.
+        allow update: if isSignedIn() && isNotBanned() && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'updatedAt']) &&
+          !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']);
+        
+        allow create: if isOwner(userId) && isNotBanned();
       }
       
       match /profileVisitors/{visitorId} {

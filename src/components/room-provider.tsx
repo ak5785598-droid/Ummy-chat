@@ -37,23 +37,33 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   const [musicStream, setMusicStream] = useState<MediaStream | null>(null);
   const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
 
+    const value = React.useMemo(() => ({ 
+    activeRoom, 
+    setActiveRoom, 
+    isMinimized, 
+    setIsMinimized,
+    minimizedRoom,
+    setMinimizedRoom,
+    roomPlaylist,
+    setRoomPlaylist,
+    isMusicEnabled,
+    setIsMusicEnabled,
+    musicStream,
+    setMusicStream,
+    isSpeakerMuted,
+    setIsSpeakerMuted
+  }), [
+    activeRoom, 
+    isMinimized, 
+    minimizedRoom, 
+    roomPlaylist, 
+    isMusicEnabled, 
+    musicStream, 
+    isSpeakerMuted
+  ]);
+
   return (
-    <RoomContext.Provider value={{ 
-      activeRoom, 
-      setActiveRoom, 
-      isMinimized, 
-      setIsMinimized,
-      minimizedRoom,
-      setMinimizedRoom,
-      roomPlaylist,
-      setRoomPlaylist,
-      isMusicEnabled,
-      setIsMusicEnabled,
-      musicStream,
-      setMusicStream,
-      isSpeakerMuted,
-      setIsSpeakerMuted
-    }}>
+    <RoomContext.Provider value={value}>
       {children}
     </RoomContext.Provider>
   );

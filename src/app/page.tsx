@@ -25,14 +25,16 @@ export default function SplashScreen() {
     // 2. Start animation instantly
     const timer = setTimeout(() => setShowContent(true), 10); // Even faster 10ms
 
-    // SMART REDIRECTION: Only move forward when 
-    // 1. Min duration (2s) reached 
+        // SMART REDIRECTION: Only move forward when 
+    // 1. Min duration reached (To show brand)
     // 2. User info is loaded (No more loading flicker)
     if (!isUserLoading && showContent) {
+      // Reduced minimum wait from 2000ms to 800ms for snappier feel
+      // but keeps enough time for the animation to look good.
       const redirectTimer = setTimeout(() => {
         const destination = user ? '/rooms' : '/login';
         router.push(destination);
-      }, 2000); 
+      }, 800); 
       return () => clearTimeout(redirectTimer);
     }
 

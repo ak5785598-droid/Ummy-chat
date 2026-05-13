@@ -392,10 +392,25 @@ export function useAgora(
     }
   }, [isMuted, localAudioTrack]);
 
-  // ROUTING ON MOUNT (One-shot fix)
+    // ROUTING ON MOUNT (One-shot fix)
   useEffect(() => {
     if (!AudioRoute) return;
+    
+    // Initial force
     AudioRoute.forceEarbuds().catch(() => {});
+
+    // Listen for device changes (Bluetooth connect/disconnect)
+    const handleDeviceChange = () => {
+      console.log('[Audio] Device change detected, re-applying routing...');
+      AudioRoute.forceEarbuds().catch(() => {});
+    };
+
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+      navigator.mediaDevices.addEventListener('devicechange', handleDeviceChange);
+      return () => {
+        navigator.mediaDevices.removeEventListener('devicechange', handleDeviceChange);
+      };
+    }
   }, []);
 
   return { 

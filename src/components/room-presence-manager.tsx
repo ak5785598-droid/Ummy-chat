@@ -209,11 +209,12 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      if (cleanupInterval.current) clearInterval(cleanupInterval.current);
      document.removeEventListener('visibilitychange', handleVisibility);
      
-     // 🚀 PERSISTENT CLEANUP: Only remove if we are REALLY leaving (no minimized room)
+          // 🚀 PERSISTENT CLEANUP: Only remove if we are REALLY leaving (no minimized room)
      // This is the core fix for "Keep" mode
      const sessionEnded = !activeRoom?.id && !minimizedRoom?.id;
      
      if (sessionEnded && firestore && user?.uid && roomId) {
+       console.log(`[Presence] REAL EXIT detected for room ${roomId}. Cleaning up...`);
        const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
        const rRef = doc(firestore, 'chatRooms', roomId);
        const uRef = doc(firestore, 'users', user.uid);
@@ -225,6 +226,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
        updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
        hasJoinedRef.current = false;
        lastRoomId.current = null;
+     } else {
+       console.log(`[Presence] Component update/minimize for ${roomId}. Keeping Firestore record.`);
      }
 
      cleanupInterval.current = null;
