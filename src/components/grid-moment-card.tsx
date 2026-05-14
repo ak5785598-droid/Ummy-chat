@@ -137,8 +137,27 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
       onClick={() => onOpenComments(moment.id, moment.username)}
       className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group cursor-pointer shadow-sm active:scale-[0.98] transition-transform"
     >
-      {/* Post Image */}
-      {moment.imageUrl ? (
+      {/* Post Content (Video or Image) */}
+      {moment.type === 'video' || moment.videoUrl ? (
+        <div className="absolute inset-0 bg-black">
+          <video
+            src={moment.videoUrl}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+          {/* Play Icon Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
+            <div className="h-8 w-8 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+               <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white text-white ml-0.5">
+                  <path d="M8 5v14l11-7z" />
+               </svg>
+            </div>
+          </div>
+        </div>
+      ) : moment.imageUrl ? (
         <Image
           src={moment.imageUrl}
           alt="Moment"

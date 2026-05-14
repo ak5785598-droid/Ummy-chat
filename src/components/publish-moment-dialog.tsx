@@ -26,8 +26,9 @@ export interface PublishMomentDialogProps {
 export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogProps) {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'image' | 'video' | null>(null);
   
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
@@ -36,15 +37,24 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
    const file = e.target.files?.[0];
    if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-     toast({ variant: 'destructive', title: 'File Too Large', description: 'Limit is 5MB for visual vibes.' });
+    const isVideo = file.type.startsWith('video/');
+    const maxSize = isVideo ? 15 * 1024 * 1024 : 5 * 1024 * 1024; // 15MB for video, 5MB for image
+    
+    if (file.size > maxSize) {
+     toast({ 
+       variant: 'destructive', 
+       title: 'File Too Large', 
+       description: `Limit is ${isVideo ? '15MB' : '5MB'} for ${isVideo ? 'reels' : 'visual vibes'}.` 
+     });
      return;
     }
-    setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    
+    setSelectedFile(file);
+    setFileType(isVideo ? 'video' : 'image');
+    setPreviewUrl(URL.createObjectURL(file));
    }
   };
 
@@ -53,13 +63,14 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
    setIsSubmitting(true);
 
    try {
-    let imageUrl = '';
-    if (selectedImage && storage) {
+    let mediaUrl = '';
+    if (selectedFile && storage) {
      const timestamp = Date.now();
-     const storagePath = `moments/${user.uid}/${timestamp}_${selectedImage.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+     const folder = fileType === 'video' ? 'videos' : 'images';
+     const storagePath = `moments/${user.uid}/${folder}/${timestamp}_${selectedFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
      const sRef = ref(storage, storagePath);
-     const result = await uploadBytes(sRef, selectedImage);
-     imageUrl = await getDownloadURL(result.ref);
+     const result = await uploadBytes(sRef, selectedFile);
+     mediaUrl = await getDownloadURL(result.ref);
     }
 
     const momentRef = collection(firestore, 'moments');
@@ -70,7 +81,8 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
      userLevel: userProfile?.level?.rich || 1,
      userCountry: userProfile?.country || 'IN',
      content: content.trim(),
-     imageUrl,
+     [fileType === 'video' ? 'videoUrl' : 'imageUrl']: mediaUrl,
+     type: fileType || 'image',
      likes: 0,
      commentsCount: 0,
      createdAt: serverTimestamp()
@@ -79,8 +91,9 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
     toast({ title: 'Moment Broadcasted', description: 'Your vibe is now live on the social galaxy.' });
     onOpenChange(false);
     setContent('');
-    setSelectedImage(null);
-    setImagePreview(null);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setFileType(null);
 
    } catch (e: any) {
     console.error("Publish Error:", e);
@@ -110,12 +123,23 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
         </div>
 
         <div className="flex flex-col items-center justify-center">
-          {imagePreview ? (
+          {previewUrl ? (
             <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden border-2 border-dashed border-purple-500 shadow-xl bg-gray-50">
-              <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+              {fileType === 'video' ? (
+                <video 
+                  src={previewUrl} 
+                  controls={false} 
+                  autoPlay 
+                  muted 
+                  loop 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <Image src={previewUrl} alt="Preview" fill className="object-cover" />
+              )}
               <button 
-                onClick={() => { setSelectedImage(null); setImagePreview(null); }}
-                className="absolute top-4 right-4 bg-black/60 p-2 rounded-full text-white backdrop-blur-md"
+                onClick={() => { setSelectedFile(null); setPreviewUrl(null); setFileType(null); }}
+                className="absolute top-4 right-4 bg-black/60 p-2 rounded-full text-white backdrop-blur-md z-10"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -126,7 +150,10 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
               className="w-full h-32 rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center gap-3 hover:bg-gray-50 transition-all group"
             >
               <Camera className="h-8 w-8 text-gray-300 group-hover:text-purple-500 transition-colors" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Add Galaxy Vibe</span>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Add Galaxy Vibe</span>
+                <span className="text-[8px] font-bold text-gray-300 mt-1 uppercase">Image or Video (max 15MB)</span>
+              </div>
             </button>
           )}
         </div>
@@ -138,12 +165,12 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
             className="w-full h-12 rounded-2xl text-sm font-headline font-black uppercase shadow-lg bg-gradient-to-r from-purple-600 to-pink-500 border-none"
           >
             {isSubmitting ? <Loader className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            Broadcast Post
+            Broadcast {fileType === 'video' ? 'Reel' : 'Post'}
           </Button>
         </div>
       </div>
       
-      <input type="file" ref={fileInputRef} onChange={handleImageChange} className="hidden" accept="image/*" />
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,video/*" />
     </DialogContent>
    </Dialog>
   );

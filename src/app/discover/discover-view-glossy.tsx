@@ -198,8 +198,20 @@ function MomentCard({ moment, index, onOpenComments }: { moment: any, index: num
             </p>
           </div>
 
-          {/* Image */}
-          {moment.imageUrl && (
+          {/* Media Content (Image or Video) */}
+          {(moment.type === 'video' || moment.videoUrl) ? (
+            <div className="relative aspect-auto min-h-[300px] w-full bg-black border-y border-slate-50 flex items-center justify-center">
+              <video 
+                src={moment.videoUrl} 
+                controls 
+                autoPlay 
+                muted 
+                loop 
+                playsInline
+                className="max-h-[600px] w-full object-contain"
+              />
+            </div>
+          ) : moment.imageUrl ? (
             <div className="relative aspect-auto min-h-[300px] w-full bg-slate-50 border-y border-slate-50">
               <Image 
                 src={moment.imageUrl} 
@@ -210,7 +222,7 @@ function MomentCard({ moment, index, onOpenComments }: { moment: any, index: num
                 className="object-contain max-h-[600px]"
               />
             </div>
-          )}
+          ) : null}
 
           {/* Actions */}
           <div className="p-5 px-7 flex items-center justify-between border-t border-slate-50 bg-slate-50/30">
