@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- SMART BLACK BACKGROUND REMOVER (SMOOTH + BADA SIZE) ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -33,9 +33,10 @@ const SmartBlackRemover = ({
   const animationFrameRef = useRef<number | null>(null);
   const [useCanvas, setUseCanvas] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Smooth black detection with tolerance
-  const detectBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+  // Detect solid black background (FAST)
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -46,46 +47,49 @@ const SmartBlackRemover = ({
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const BLACK_THRESHOLD = 30;
-    const EDGE_RATIO = 0.08;
-    const MIN_BLACK_RATIO = 0.85;
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
 
-    const checkRegion = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-      let blackPixels = 0, total = 0;
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
       for (let y = yStart; y < yEnd; y++) {
         for (let x = xStart; x < xEnd; x++) {
           const i = (y * width + x) * 4;
-          if (data[i] < BLACK_THRESHOLD && data[i+1] < BLACK_THRESHOLD && data[i+2] < BLACK_THRESHOLD) {
-            blackPixels++;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
           }
           total++;
         }
       }
-      return total > 0 ? blackPixels / total : 0;
+      return blackCount / total >= SOLID_THRESHOLD;
     };
 
-    const topEdge = Math.floor(height * EDGE_RATIO);
-    const bottomEdge = Math.floor(height * (1 - EDGE_RATIO));
-    const leftEdge = Math.floor(width * EDGE_RATIO);
-    const rightEdge = Math.floor(width * (1 - EDGE_RATIO));
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
 
-    const topRatio = checkRegion(0, width, 0, topEdge);
-    const bottomRatio = checkRegion(0, width, bottomEdge, height);
-    const leftRatio = checkRegion(0, leftEdge, 0, height);
-    const rightRatio = checkRegion(rightEdge, width, 0, height);
-
-    return topRatio >= MIN_BLACK_RATIO && bottomRatio >= MIN_BLACK_RATIO && 
-           leftRatio >= MIN_BLACK_RATIO && rightRatio >= MIN_BLACK_RATIO;
+    return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
-  // Smooth flood fill black removal (edges + center + multiple seed points)
+  // Process black fade (SMOOTH + NO GLITCH)
   const processFrame = (video?: HTMLVideoElement) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
     const canvas = canvasRef.current;
     const media = video || mediaRef.current;
-    if (!canvas || !media) return;
+    if (!canvas || !media) {
+      setIsProcessing(false);
+      return;
+    }
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
+    if (!ctx) {
+      setIsProcessing(false);
+      return;
+    }
 
     const width = 'videoWidth' in media ? media.videoWidth : media.width;
     const height = 'videoHeight' in media ? media.videoHeight : media.height;
@@ -99,72 +103,44 @@ const SmartBlackRemover = ({
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const BLACK_THRESHOLD = 25;
-    const FADE_STRENGTH = 1.0; // Full transparent for pure black
-    const scale = 3; // Better precision
+    const STRICT_BLACK = 25;
+    const ALPHA_FADE_SPEED = 0.90;
+    const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
     const visited = new Uint8Array(scaledW * scaledH);
-    const toRemove = new Uint8Array(scaledW * scaledH);
 
     const isBlack = (sx: number, sy: number) => {
       const x = Math.min(sx * scale, width - 1);
       const y = Math.min(sy * scale, height - 1);
       const i = (y * width + x) * 4;
-      return data[i] < BLACK_THRESHOLD && data[i+1] < BLACK_THRESHOLD && data[i+2] < BLACK_THRESHOLD;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
     };
 
     const queue: [number, number][] = [];
     
-    // All edges flood fill
+    // Edges se flood fill start
     for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0) && !visited[sx]) { 
-        queue.push([sx, 0]); 
-        visited[sx] = 1; 
-      }
-      if (isBlack(sx, scaledH - 1) && !visited[(scaledH - 1) * scaledW + sx]) { 
-        queue.push([sx, scaledH - 1]); 
-        visited[(scaledH - 1) * scaledW + sx] = 1; 
-      }
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
     }
     for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy) && !visited[sy * scaledW]) { 
-        queue.push([0, sy]); 
-        visited[sy * scaledW] = 1; 
-      }
-      if (isBlack(scaledW - 1, sy) && !visited[sy * scaledW + (scaledW - 1)]) { 
-        queue.push([scaledW - 1, sy]); 
-        visited[sy * scaledW + (scaledW - 1)] = 1; 
-      }
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
     }
 
-    // Multiple center seed points for better coverage
-    const centerSeeds = [
-      [Math.floor(scaledW / 2), Math.floor(scaledH / 2)],
-      [Math.floor(scaledW / 3), Math.floor(scaledH / 3)],
-      [Math.floor(2 * scaledW / 3), Math.floor(scaledH / 3)],
-      [Math.floor(scaledW / 3), Math.floor(2 * scaledH / 3)],
-      [Math.floor(2 * scaledW / 3), Math.floor(2 * scaledH / 3)],
-    ];
-
-    for (const [cx, cy] of centerSeeds) {
-      if (isBlack(cx, cy) && !visited[cy * scaledW + cx]) {
-        queue.push([cx, cy]);
-        visited[cy * scaledW + cx] = 1;
-      }
+    // Center se bhi black remove (agar center black hai)
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
     }
 
-    // BFS flood fill
     let head = 0;
     while (head < queue.length) {
       const [sx, sy] = queue[head++];
-      toRemove[sy * scaledW + sx] = 1;
-      
-      const neighbors: [number, number][] = [
-        [sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1],
-        [sx-1, sy-1], [sx+1, sy-1], [sx-1, sy+1], [sx+1, sy+1]
-      ];
-      
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
       for (const [nx, ny] of neighbors) {
         if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
           const nidx = ny * scaledW + nx;
@@ -176,23 +152,17 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Smooth alpha removal with anti-aliasing
+    // Black pixels ko transparent karo (SMOOTH)
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
-        if (toRemove[sy * scaledW + sx]) {
+        if (visited[sy * scaledW + sx]) {
           for (let dy = 0; dy < scale; dy++) {
             for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx;
-              const y = sy * scale + dy;
+              const x = sx * scale + dx, y = sy * scale + dy;
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
-                const r = data[i], g = data[i+1], b = data[i+2];
-                
-                // Smooth gradient fade based on how dark the pixel is
-                const darkness = Math.max(r, g, b);
-                if (darkness < BLACK_THRESHOLD) {
-                  const fadeAmount = 1 - (darkness / BLACK_THRESHOLD);
-                  data[i + 3] = Math.round(data[i + 3] * (1 - FADE_STRENGTH * fadeAmount));
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
                 }
               }
             }
@@ -202,50 +172,61 @@ const SmartBlackRemover = ({
     }
 
     ctx.putImageData(imageData, 0, 0);
+    setIsProcessing(false);
 
-    if (type === 'video') {
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
     }
   };
 
+  // Initialize for images
   useEffect(() => {
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete) {
-        const hasBlackBg = detectBlackBg(img, img.naturalWidth, img.naturalHeight);
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
         setIsReady(true);
         if (hasBlackBg) {
-          setTimeout(() => processFrame(), 30);
+          setTimeout(() => processFrame(), 100);
         }
       }
     }
   }, [src, type]);
 
+  // Handle image load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const hasBlackBg = detectBlackBg(img, img.naturalWidth, img.naturalHeight);
+    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
     setUseCanvas(hasBlackBg);
     setIsReady(true);
     if (hasBlackBg) {
-      setTimeout(() => processFrame(), 30);
+      setTimeout(() => processFrame(), 100);
     }
   };
 
+  // Handle video ready (FIXED GLITCH)
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
-    const hasBlackBg = detectBlackBg(video, video.videoWidth, video.videoHeight);
-    setUseCanvas(hasBlackBg);
-    setIsReady(true);
-    if (hasBlackBg) {
-      setTimeout(() => processFrame(video), 50);
+    if (video.readyState >= 2) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
     }
   };
 
+  // Cleanup video animation
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
   }, []);
@@ -260,15 +241,15 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
-          onCanPlay={handleVideoReady}
-          className={useCanvas ? 'hidden' : 'w-full h-full object-contain'}
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
           style={{ display: useCanvas ? 'none' : 'block' }}
           crossOrigin="anonymous"
         />
         {useCanvas && (
           <canvas
             ref={canvasRef}
-            className="w-full h-full object-contain bg-transparent"
+            className="w-full h-full object-cover bg-transparent"
             style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
           />
         )}
@@ -283,14 +264,14 @@ const SmartBlackRemover = ({
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        className={useCanvas ? 'hidden' : 'w-full h-full object-contain'}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
         style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
       />
       {useCanvas && (
         <canvas
           ref={canvasRef}
-          className="w-full h-full object-contain bg-transparent"
+          className="w-full h-full object-cover bg-transparent"
           style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
         />
       )}
@@ -298,7 +279,7 @@ const SmartBlackRemover = ({
   );
 };
 
-// --- CUSTOM DOLLAR COIN ICON ---
+// --- CUSTOM DOLLAR COIN ICON (SAME) ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -313,7 +294,7 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// --- CUSTOM WAVE CIRCLE UI ---
+// --- WAVE CIRCLE UI (SAME) ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
@@ -341,7 +322,61 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PINK DIAMOND ID BADGE ---
+// --- PREMIUM AVATAR FRAME COMPONENT (SAME) ---
+interface PremiumAvatarFrameProps {
+  imageUrl: string;
+  size?: number;
+  className?: string;
+}
+
+const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAvatarFrameProps) => {
+  return (
+    <div className={cn("relative flex items-center justify-center", className)} style={{ width: size, height: size }}>
+      <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-10">
+        <defs>
+          <linearGradient id="premiumGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#FDF0AD' }} />
+            <stop offset="20%" style={{ stopColor: '#D4AF37' }} />
+            <stop offset="50%" style={{ stopColor: '#FFFCEB' }} />
+            <stop offset="80%" style={{ stopColor: '#BD9731' }} />
+            <stop offset="100%" style={{ stopColor: '#8A6E00' }} />
+          </linearGradient>
+          <filter id="metalRelief" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
+            <feSpecularLighting in="blur" surfaceScale="6" specularConstant="1.2" specularExponent="35" lightingColor="white" result="specOut">
+              <fePointLight x="-5000" y="-10000" z="20000" />
+            </feSpecularLighting>
+            <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+            <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+          </filter>
+        </defs>
+        <g filter="url(#metalRelief)" stroke="#5c4300" strokeWidth="0.5">
+          <path d="M100 240 C50 240 30 180 50 130 L95 155 C80 185 85 210 100 235 Z" fill="url(#premiumGold)" />
+          <path d="M300 240 C350 240 370 180 350 130 L305 155 C320 185 315 210 300 235 Z" fill="url(#premiumGold)" />
+        </g>
+        <circle cx="200" cy="200" r="108" fill="none" stroke="#3d2d00" strokeWidth="12" />
+        <circle cx="200" cy="200" r="102" fill="none" stroke="url(#premiumGold)" strokeWidth="8" filter="url(#metalRelief)" />
+        <g filter="url(#metalRelief)">
+          <path d="M125 105 L105 40 L160 75 L200 15 L240 75 L295 40 L275 105 Z" fill="url(#premiumGold)" stroke="#5c4300" strokeWidth="1" />
+        </g>
+        <g filter="url(#metalRelief)">
+          <path d="M160 280 Q200 350 240 280 L230 265 Q200 280 170 265 Z" fill="url(#premiumGold)" stroke="#4a3700" />
+        </g>
+        <g className="animate-pulse">
+          <circle cx="200" cy="15" r="4" fill="white" />
+          <circle cx="105" cy="40" r="2" fill="white" />
+          <circle cx="295" cy="40" r="2" fill="white" />
+        </g>
+      </svg>
+      <div className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0" style={{ width: '43%', height: '43%' }}>
+        <img src={imageUrl} alt="User Avatar" className="w-full h-full object-cover brightness-105" />
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
+      </div>
+    </div>
+  );
+};
+
+// --- PINK DIAMOND ID BADGE (SAME) ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -369,13 +404,14 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#roseSilverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
   </div>
 );
 
+// --- ID BADGE ICONS (SAME) ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -428,116 +464,17 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#silverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
   </div>
 );
 
-// --- ARISE BUBBLE SVG ---
-const AriseBubbleSVG = ({ className }: { className?: string }) => (
-  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <svg viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FF3B3B"/>
-          <stop offset="48%" stopColor="#D31212"/>
-          <stop offset="100%" stopColor="#8B0000"/>
-        </linearGradient>
-        <linearGradient id="goldBorder" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#B8860B"/>
-          <stop offset="22%" stopColor="#FFD700"/>
-          <stop offset="48%" stopColor="#FFF4B3"/>
-          <stop offset="74%" stopColor="#D4AF37"/>
-          <stop offset="100%" stopColor="#8B6914"/>
-        </linearGradient>
-        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6"/>
-          <stop offset="30%" stopColor="#FFFFFF" stopOpacity="0.28"/>
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
-        </linearGradient>
-        <filter id="outerShadow">
-          <feDropShadow dx="0" dy="16" stdDeviation="14" floodOpacity="0.34"/>
-        </filter>
-        <filter id="innerDepth">
-          <feOffset dy="5"/><feGaussianBlur stdDeviation="7"/>
-          <feComposite in2="SourceAlpha" operator="out"/>
-          <feFlood floodOpacity="0.38"/><feComposite operator="in"/>
-          <feComposite in="SourceGraphic" operator="over"/>
-        </filter>
-        <filter id="textGlow">
-          <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.5"/>
-          <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#FFD700" floodOpacity="0.65"/>
-        </filter>
-        <path id="bubbleShape" d="M180 30 H710 A50 50 0 0 1 760 80 V170 A50 50 0 0 1 710 220 H265 C235 220 200 240 185 260 C165 285 140 300 115 285 C140 275 170 245 165 225 H180 A50 50 0 0 1 130 170 V80 A50 50 0 0 1 180 30 Z"/>
-      </defs>
-      <g filter="url(#outerShadow)">
-        <use href="#bubbleShape" fill="url(#redFill)" stroke="url(#goldBorder)" strokeWidth="16"/>
-        <use href="#bubbleShape" fill="url(#redFill)" filter="url(#innerDepth)"/>
-      </g>
-      <ellipse cx="444" cy="68" rx="285" ry="72" fill="url(#gloss)"/>
-      <g fill="none" stroke="#5E3A05" strokeOpacity="0.58" strokeWidth="1.3">
-        <path d="M155 55 c-11 0 -18 7 -16 16 2 8 11 11 17 6"/>
-        <path d="M735 55 c11 0 18 7 16 16 -2 8 -11 11 -17 6"/>
-        <path d="M735 195 c11 0 18 -7 16 -16 -2 -8 -11 -11 -17 -6"/>
-        <path d="M235 195 c-11 0 -18 -7 -16 -16 2 -8 11 -11 17 -6"/>
-      </g>
-      <text x="444" y="147" textAnchor="middle" fontFamily="Georgia, serif" fontSize="70" fontStyle="italic" fontWeight="600" fill="#FFFFFF" filter="url(#textGlow)">Hey ummy</text>
-    </svg>
-  </div>
-);
+// --- BUBBLE SVGs REMOVED (Arise, Blue Cb) - Only using ChatMessageBubble ---
+// --- ALL SVG FRAMES REMOVED (GlossyWings, Cat, Rabbit) ---
 
-// --- BLUE CB BUBBLE SVG ---
-const BlueCbBubbleSVG = ({ className }: { className?: string }) => (
-  <div className={cn("relative flex items-center justify-center pointer-events-none", className)}>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" className="w-full h-auto drop-shadow-xl">
-      <defs>
-        <linearGradient id="blueFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00BFFF"/>
-          <stop offset="45%" stopColor="#1E90FF"/>
-          <stop offset="100%" stopColor="#003A8C"/>
-        </linearGradient>
-        <linearGradient id="goldBorderBlue" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#B8860B"/>
-          <stop offset="25%" stopColor="#FFD700"/>
-          <stop offset="50%" stopColor="#FFF4B3"/>
-          <stop offset="75%" stopColor="#FFD700"/>
-          <stop offset="100%" stopColor="#D4AF37"/>
-        </linearGradient>
-        <linearGradient id="glossBlue" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9"/>
-          <stop offset="35%" stopColor="#FFFFFF" stopOpacity="0.35"/>
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0"/>
-        </linearGradient>
-        <filter id="outerBlue">
-          <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#00183a" floodOpacity="0.5"/>
-        </filter>
-        <filter id="innerDepthBlue">
-          <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
-          <feOffset dy="4"/>
-          <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
-          <feColorMatrix type="matrix" values="0 0 0  0 0 0  0 0 0  0 0 0 0.45 0"/>
-          <feBlend in2="SourceGraphic" mode="multiply"/>
-        </filter>
-        <filter id="textGlowBlue">
-          <feGaussianBlur stdDeviation="3"/>
-          <feFlood floodColor="#FFD700" floodOpacity="0.75"/>
-          <feComposite operator="in" in2="SourceGraphic"/>
-          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      <g filter="url(#outerBlue)">
-        <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" fill="url(#blueFill)" stroke="url(#goldBorderBlue)" strokeWidth="16" strokeLinejoin="round"/>
-      </g>
-      <path d="M140 20 H660 A60 60 0 0 1 720 80 V150 A60 60 0 0 1 660 210 H220 C205 215 180 240 120 270 C140 250 155 225 160 210 H140 A60 60 0 0 1 80 150 V80 A60 60 0 0 1 140 20 Z" fill="url(#blueFill)" filter="url(#innerDepthBlue)" opacity="0.9"/>
-      <ellipse cx="400" cy="65" rx="280" ry="70" fill="url(#glossBlue)"/>
-      <text x="400" y="128" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontSize="64" fill="#FFFFFF" filter="url(#textGlowBlue)">Hey ummy</text>
-    </svg>
-  </div>
-);
-
-// --- STORE ITEMS ---
+// --- STORE ITEMS (SAME, BUT REMOVED SVG FRAMES) ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -581,18 +518,19 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
+  // --- REMOVED SVG FRAMES (Glossy wings, Kitti, Rabbit) ---
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
     });
+    // Removed: f-glossy-wings, f-kitti, f-rabbit
     return frames;
   }, []);
 
+  // --- REMOVED CUSTOM BUBBLE SVGs (Arise, Blue Cb) ---
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
-    { id: 'b-arise', name: 'Arise', type: 'Bubble', price: 50999, durationDays: 7, description: 'Premium red glossy bubble with golden borders.', isCustomSVG: true },
-    { id: 'b-blue-cb', name: 'Blue Cb', type: 'Bubble', price: 49599, durationDays: 7, description: 'Premium blue glossy bubble with golden borders.', isCustomSVG: true }
   ], []);
 
   const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
@@ -754,25 +692,23 @@ export default function StorePage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
-                    <div className="aspect-square flex items-center justify-center p-3 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                    <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
-                        <div className="w-full h-full flex items-center justify-center">
+                        <div className="scale-110">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
                               <SmartBlackRemover 
                                 src={item.videoUrl} 
                                 type="video" 
-                                className="w-full h-full max-w-[140px] max-h-[140px]"
-                                style={{ objectFit: 'contain' }}
+                                className="w-full h-full"
                               />
                             </div>
                           ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
                               <SmartBlackRemover 
                                 src={item.imageUrl} 
                                 type="image" 
-                                className="w-full h-full max-w-[140px] max-h-[140px]"
-                                style={{ objectFit: 'contain' }}
+                                className="w-full h-full"
                               />
                             </div>
                           ) : (
@@ -785,17 +721,7 @@ export default function StorePage() {
                           )}
                         </div>
                       ) : item.type === 'Bubble' ? (
-                        item.isCustomSVG && item.id === 'b-arise' ? (
-                          <div className="w-[120px]">
-                            <AriseBubbleSVG />
-                          </div>
-                        ) : item.isCustomSVG && item.id === 'b-blue-cb' ? (
-                          <div className="w-[120px]">
-                            <BlueCbBubbleSVG />
-                          </div>
-                        ) : (
-                          <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
-                        )
+                        <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
                       ) : item.type === 'Theme' ? (
                         <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
                       ) : item.type === 'Wave' ? (
@@ -828,65 +754,53 @@ export default function StorePage() {
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
             
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[45vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
               
               <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                <div className="mb-4 flex items-center justify-center w-full max-w-[280px] h-[220px]">
+                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36">
                   {previewItem.type === 'Frame' ? (
                     previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
                         <SmartBlackRemover 
                           src={previewItem.videoUrl} 
                           type="video" 
                           className="w-full h-full"
-                          style={{ objectFit: 'contain', maxWidth: '280px', maxHeight: '220px' }}
                         />
                       </div>
                     ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
                         <SmartBlackRemover 
                           src={previewItem.imageUrl} 
                           type="image" 
                           className="w-full h-full"
-                          style={{ objectFit: 'contain', maxWidth: '280px', maxHeight: '220px' }}
                         />
                       </div>
                     ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-28 w-28">
+                        <Avatar className="h-24 w-24">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                       </AvatarFrame>
                     )
                   ) : previewItem.type === 'Bubble' ? (
-                    previewItem.isCustomSVG && previewItem.id === 'b-arise' ? (
-                      <div className="w-[260px]">
-                        <AriseBubbleSVG />
-                      </div>
-                    ) : previewItem.isCustomSVG && previewItem.id === 'b-blue-cb' ? (
-                      <div className="w-[260px]">
-                        <BlueCbBubbleSVG />
-                      </div>
-                    ) : (
-                      <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
-                    )
+                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                   ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-24 w-24 opacity-80", previewItem.color || "text-purple-400")} />
+                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-36 w-36" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-[1.3] pt-2">
+                      <div className="scale-125 pt-2">
                         {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
                          previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-24 w-24 opacity-80", previewItem.color)} />
+                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
 
@@ -948,4 +862,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-  }
+    }
