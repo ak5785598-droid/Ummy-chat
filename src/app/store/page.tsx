@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE) ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (BADA + SMOOTH) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -35,7 +35,7 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Detect solid black background (FAST)
+  // Detect solid black background
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -73,7 +73,7 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
-  // Process black fade (SMOOTH + NO GLITCH)
+  // Process black fade (SMOOTH + FAST)
   const processFrame = (video?: HTMLVideoElement) => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -129,7 +129,7 @@ const SmartBlackRemover = ({
       if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
     }
 
-    // Center se bhi black remove (agar center black hai)
+    // Center se bhi black remove
     const centerSX = Math.floor(scaledW / 2);
     const centerSY = Math.floor(scaledH / 2);
     if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
@@ -152,7 +152,7 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Black pixels ko transparent karo (SMOOTH)
+    // Black pixels ko transparent karo
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
@@ -208,7 +208,7 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Handle video ready (FIXED GLITCH)
+  // Handle video ready
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2) {
@@ -221,7 +221,7 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Cleanup video animation
+  // Cleanup
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
@@ -233,7 +233,7 @@ const SmartBlackRemover = ({
 
   if (type === 'video') {
     return (
-      <div className={cn("relative", className)} style={style}>
+      <div className={cn("relative w-full h-full", className)} style={style}>
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -258,7 +258,7 @@ const SmartBlackRemover = ({
   }
 
   return (
-    <div className={cn("relative", className)} style={style}>
+    <div className={cn("relative w-full h-full", className)} style={style}>
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
@@ -279,7 +279,7 @@ const SmartBlackRemover = ({
   );
 };
 
-// --- CUSTOM DOLLAR COIN ICON (SAME) ---
+// --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -294,7 +294,7 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// --- WAVE CIRCLE UI (SAME) ---
+// --- WAVE CIRCLE UI ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
@@ -322,7 +322,7 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PREMIUM AVATAR FRAME COMPONENT (SAME) ---
+// --- PREMIUM AVATAR FRAME COMPONENT ---
 interface PremiumAvatarFrameProps {
   imageUrl: string;
   size?: number;
@@ -376,7 +376,7 @@ const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAva
   );
 };
 
-// --- PINK DIAMOND ID BADGE (SAME) ---
+// --- PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -411,7 +411,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- ID BADGE ICONS (SAME) ---
+// --- ID BADGE ICONS ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -471,10 +471,7 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- BUBBLE SVGs REMOVED (Arise, Blue Cb) - Only using ChatMessageBubble ---
-// --- ALL SVG FRAMES REMOVED (GlossyWings, Cat, Rabbit) ---
-
-// --- STORE ITEMS (SAME, BUT REMOVED SVG FRAMES) ---
+// --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -518,17 +515,14 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  // --- REMOVED SVG FRAMES (Glossy wings, Kitti, Rabbit) ---
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
     });
-    // Removed: f-glossy-wings, f-kitti, f-rabbit
     return frames;
   }, []);
 
-  // --- REMOVED CUSTOM BUBBLE SVGs (Arise, Blue Cb) ---
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
   ], []);
@@ -692,11 +686,11 @@ export default function StorePage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
-                    <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                    <div className="aspect-square flex items-center justify-center p-2 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
-                        <div className="scale-110">
+                        <div className="w-full h-full flex items-center justify-center">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative w-28 h-28 flex items-center justify-center overflow-hidden shadow-lg rounded-full">
                               <SmartBlackRemover 
                                 src={item.videoUrl} 
                                 type="video" 
@@ -704,7 +698,7 @@ export default function StorePage() {
                               />
                             </div>
                           ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative h-24 w-24 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative w-28 h-28 flex items-center justify-center overflow-hidden shadow-lg rounded-full">
                               <SmartBlackRemover 
                                 src={item.imageUrl} 
                                 type="image" 
@@ -712,8 +706,8 @@ export default function StorePage() {
                               />
                             </div>
                           ) : (
-                            <AvatarFrame frameId={item.id} size="md">
-                              <Avatar className="h-16 w-16">
+                            <AvatarFrame frameId={item.id} size="lg">
+                              <Avatar className="w-20 h-20">
                                 <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
                                 <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                               </Avatar>
@@ -721,17 +715,21 @@ export default function StorePage() {
                           )}
                         </div>
                       ) : item.type === 'Bubble' ? (
-                        <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
+                        <div className="w-full flex items-center justify-center">
+                          <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px] scale-110">Hello Ummy</ChatMessageBubble>
+                        </div>
                       ) : item.type === 'Theme' ? (
-                        <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
+                        <Palette className={cn("h-16 w-16 opacity-50", item.color || "text-purple-400")} />
                       ) : item.type === 'Wave' ? (
-                         <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
+                         <WaveCircleIcon colorClass={item.color} size="h-28 w-28" isLovelyShine={item.id === 'w-lovelyshine'} />
                       ) : item.type === 'ID' ? (
-                           item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
-                           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
-                           <IDBadgeIcon number={item.displayId || ''} />
+                           <div className="scale-110">
+                             {item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
+                              item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
+                              <IDBadgeIcon number={item.displayId || ''} />}
+                           </div>
                       ) : item.icon ? (
-                        <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
+                        <item.icon className={cn("h-16 w-16 opacity-50", item.color)} />
                       ) : null}
                     </div>
                     <CardHeader className="text-center p-3 pb-1">
@@ -760,11 +758,11 @@ export default function StorePage() {
                 <X size={24} />
               </button>
 
-              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36">
+              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-6 pb-4 px-4">
+                <div className="mb-3 scale-110 flex items-center justify-center h-44 w-44">
                   {previewItem.type === 'Frame' ? (
                     previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative h-44 w-44 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40 rounded-full">
                         <SmartBlackRemover 
                           src={previewItem.videoUrl} 
                           type="video" 
@@ -772,7 +770,7 @@ export default function StorePage() {
                         />
                       </div>
                     ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40">
+                      <div className="relative h-44 w-44 flex items-center justify-center overflow-hidden shadow-2xl bg-slate-900/40 rounded-full">
                         <SmartBlackRemover 
                           src={previewItem.imageUrl} 
                           type="image" 
@@ -781,32 +779,32 @@ export default function StorePage() {
                       </div>
                     ) : (
                       <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-24 w-24">
+                        <Avatar className="w-32 h-32">
                           <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
                           <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
                         </Avatar>
                       </AvatarFrame>
                     )
                   ) : previewItem.type === 'Bubble' ? (
-                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
+                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm scale-125">Hello Ummy</ChatMessageBubble>
                   ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
+                    <Palette className={cn("h-24 w-24 opacity-80", previewItem.color || "text-purple-400")} />
                   ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-36 w-36" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
                   ) : previewItem.type === 'ID' ? (
-                      <div className="scale-125 pt-2">
+                      <div className="scale-150 pt-2">
                         {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
                          previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
                          <IDBadgeIcon number={previewItem.displayId || ''} />}
                       </div>
                   ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
+                    <previewItem.icon className={cn("h-24 w-24 opacity-80", previewItem.color)} />
                   ) : null}
                 </div>
 
                 <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
-                <div className="flex gap-4 mt-4 w-full justify-center">
+                <div className="flex gap-4 mt-3 w-full justify-center">
                   {[3, 7].map(days => (
                     <button 
                       key={days}
@@ -862,4 +860,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-    }
+  }
