@@ -170,7 +170,7 @@ const RoomTrophyBadge = ({ coins }: { coins: number }) => {
   const progress = Math.min((coins / target) * 100, 100);
   
   return (
-    <div className="group relative flex flex-col items-center gap-1 mt-1 cursor-pointer active:scale-95 transition-all">
+    <div className="group relative flex flex-col items-start gap-1 mt-1 cursor-pointer active:scale-95 transition-all">
       <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-yellow-500/30 rounded-full pl-1 pr-3 py-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:border-yellow-500/60 transition-colors">
         <div className="relative h-5 w-5 rounded-full bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 flex items-center justify-center shadow-lg">
           <Trophy className="h-3 w-3 text-black fill-current" />
