@@ -21,7 +21,7 @@ const GoldenDollar = () => (
   </div>
 );
 
-// GIFT IMAGE COMPONENT WITH BLACK BACKGROUND DETECTION
+// GIFT IMAGE COMPONENT - SIZE BADA AUR ROUNDED CORNERS
 const GiftImage = ({ gift }: { gift: any }) => {
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
 
@@ -165,7 +165,8 @@ const GiftImage = ({ gift }: { gift: any }) => {
     <img 
       src={processedUrl || gift.imageUrl} 
       alt={gift.name} 
-      className="h-full w-full object-contain" 
+      className="h-14 w-14 rounded-lg object-contain" 
+      // ↑ h-14 w-14 (bada), rounded-lg (rounded corners)
     />
   );
 };
@@ -189,6 +190,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
+ 
+ // Track karne ke liye ki initial selection ho chuka hai ya nahi
+ const hasInitialized = useRef(false);
+ // Track karne ke liye ki recipient manually change hua hai
+ const lastRecipientUid = useRef<string | null>(null);
 
  const giftsQuery = useMemoFirebase(() => {
    if (!firestore) return null;
@@ -239,12 +245,30 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   return participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
  }, [participants]);
 
+ // FIXED: Sirf tabhi auto-select karega jab initialRecipient change ho ya pehli baar open ho
  useEffect(() => {
-  if (open) {
-   if (initialRecipient) setSelectedUids([initialRecipient.uid]);
-   else if (seatedParticipants.length > 0) setSelectedUids([seatedParticipants[0].uid]);
+  if (!open) {
+    // Sheet band hone par reset
+    hasInitialized.current = false;
+    lastRecipientUid.current = null;
+    return;
   }
- }, [open, initialRecipient, seatedParticipants]);
+
+  // Agar initialRecipient hai aur woh change hua hai
+  if (initialRecipient) {
+    const currentUid = initialRecipient.uid;
+    if (lastRecipientUid.current !== currentUid) {
+      setSelectedUids([currentUid]);
+      lastRecipientUid.current = currentUid;
+      hasInitialized.current = true;
+    }
+  } 
+  // Agar initialRecipient nahi hai aur pehli baar open ho raha hai
+  else if (!hasInitialized.current && seatedParticipants.length > 0) {
+    setSelectedUids([seatedParticipants[0].uid]);
+    hasInitialized.current = true;
+  }
+ }, [open, initialRecipient?.uid, seatedParticipants]);
 
  const handleSend = async () => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
@@ -398,6 +422,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       </TabsList>
       
        <div className="h-[200px] overflow-y-auto no-scrollbar px-4 pt-3 pb-16 grid grid-cols-4 gap-x-2 gap-y-4 content-start">
+        {/* 4 COLUMNS - BADHE IMAGES KE LIYE GAP THODA KAM KIYA */}
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
             <Loader className="animate-spin text-cyan-400 h-6 w-6" />
@@ -411,7 +436,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
             ) : (
               items.map(gift => (
                 <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-                <div className="h-10 w-10 flex items-center justify-center mb-1 filter drop-shadow-md">
+                {/* YAHAN CONTAINER SIZE BADA KIYA: h-14 w-14 */}
+                <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
                   <GiftImage gift={gift} />
                 </div>
                 <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
@@ -451,4 +477,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Sheet>
   </>
  );
-      }
+   }
