@@ -331,7 +331,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
   const [activeGameSlug, setActiveGameSlug] = useState<string | null>(null);
-  const [now, setNow] = useState<number | null>(null);
 
   const [sessionJoinTime, setSessionJoinTime] = useState<Date | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -1155,12 +1154,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [firestore]);
   const { data: rocketConfig } = useDoc(rocketConfigRef);
 
-  useEffect(() => {
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
-
   // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
   useEffect(() => {
     if (!firestore || !room.id || !currentUser?.uid) return;
@@ -1375,16 +1368,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
 
   // ============================================================
-  // ROOM LOGIC ENGINE (OWNER ONLY) - Daily stats reset
+  // ROOM LOGIC ENGINE (OWNER ONLY) - Daily stats reset (OPTIMIZED)
   // Rocket progression is handled by the Wafa/Haza engine below (line ~1441)
+  // Check once on mount + hourly instead of every 3s
   // ============================================================
   useEffect(() => {
     if (!isOwner || !firestore || !room.id) return;
 
-    const engineInterval = setInterval(async () => {
+    const checkAndReset = () => {
       const today = getTodayString();
-
-      // LAZY STATS RESET (Daily wealth cup reset at midnight IST)
       if (room.stats?.lastWealthResetDate !== today) {
         console.log('[Room Engine] Resetting daily wealth cup for new day:', today);
         updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
@@ -1392,7 +1384,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           'stats.lastWealthResetDate': today
         });
       }
-    }, 3000);
+    };
+
+    checkAndReset();
+    const engineInterval = setInterval(checkAndReset, 3600000);
 
     return () => clearInterval(engineInterval);
   }, [isOwner, room.id, room.stats?.lastWealthResetDate, firestore]);

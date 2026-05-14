@@ -49,6 +49,7 @@ export function GiftAnimationOverlay({
   const animationFrameRef = useRef<number | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processingActiveRef = useRef(false);
+  const processBufferRef = useRef<Uint8ClampedArray | null>(null);
 
   // Load Lottie Data
   useEffect(() => {
@@ -238,7 +239,7 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing
+  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing (OPTIMIZED)
   const processBlackFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -261,12 +262,15 @@ export function GiftAnimationOverlay({
     
     const offscreen = offscreenCanvasRef.current;
     
-    // Match canvas size to video
-    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      offscreen.width = video.videoWidth;
-      offscreen.height = video.videoHeight;
+    // Use lower resolution for detection to reduce pixel processing (50% of original)
+    const processWidth = Math.min(video.videoWidth, 360);
+    const processHeight = Math.round(processWidth * (video.videoHeight / video.videoWidth) || video.videoHeight);
+    
+    if (canvas.width !== processWidth || canvas.height !== processHeight) {
+      canvas.width = processWidth;
+      canvas.height = processHeight;
+      offscreen.width = processWidth;
+      offscreen.height = processHeight;
     }
 
     const ctx = canvas.getContext('2d', { 
@@ -281,7 +285,7 @@ export function GiftAnimationOverlay({
     
     if (!ctx || !offCtx) return;
 
-    // Step 1: Draw current video frame to offscreen
+    // Step 1: Draw current video frame to offscreen at lower resolution
     offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
 
     // Step 2: Get pixel data
@@ -290,8 +294,13 @@ export function GiftAnimationOverlay({
     const width = offscreen.width;
     const height = offscreen.height;
 
-    // Step 3: Create processed data
-    const processedData = new Uint8ClampedArray(data);
+    // Step 3: Reuse processedData buffer to avoid GC pressure
+    if (!processBufferRef.current || processBufferRef.current.length !== data.length) {
+      processBufferRef.current = new Uint8ClampedArray(data);
+    } else {
+      processBufferRef.current.set(data);
+    }
+    const processedData = processBufferRef.current;
 
     // Enhanced Black Detection Parameters
     const BLACK_R_THRESHOLD = 25;    // Red channel max for black
@@ -320,27 +329,18 @@ export function GiftAnimationOverlay({
                          b <= DARK_GRAY_THRESHOLD);
       
       if (isPureBlack) {
-        // Pure black: aggressively fade to transparent
         const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
         processedData[i + 3] = newAlpha;
-        
-        // Smooth color transition to prevent harsh edges
         if (newAlpha < 20) {
-          // Near transparent: also slightly fade color
           processedData[i] = Math.floor(r * 0.9);
           processedData[i + 1] = Math.floor(g * 0.9);
           processedData[i + 2] = Math.floor(b * 0.9);
         }
       } else if (isDarkGray) {
-        // Dark gray (edge pixels): softer fade with anti-aliasing
         const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
         const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
         const newAlpha = Math.floor(a * (1 - softAlphaReduction));
-        
-        // Anti-aliasing: blend with surroundings
         processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
-        
-        // Subtle color correction for edge pixels
         if (darknessFactor > 0.5) {
           const blend = darknessFactor * 0.3;
           processedData[i] = Math.floor(r * (1 - blend));
@@ -348,7 +348,6 @@ export function GiftAnimationOverlay({
           processedData[i + 2] = Math.floor(b * (1 - blend));
         }
       }
-      // Light pixels: keep fully opaque, no modification
     }
 
     // Step 4: Apply processed data to canvas
@@ -359,6 +358,13 @@ export function GiftAnimationOverlay({
     // Step 5: Continue processing loop
     animationFrameRef.current = requestAnimationFrame(processBlackFade);
   };
+
+  // Skip canvas processing for normal-tier gifts to save CPU
+  useEffect(() => {
+    if (activeGift && videoUrl && isVideoReady) {
+      setUseCanvasProcessing(tier === 'epic' || tier === 'legendary');
+    }
+  }, [activeGift, videoUrl, isVideoReady, tier]);
 
   // Start/Stop Black Fade Processor when video plays
   useEffect(() => {

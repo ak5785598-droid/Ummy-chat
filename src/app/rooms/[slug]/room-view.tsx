@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { RoomClient } from './room-client';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -25,6 +25,7 @@ export function RoomView({ slug }: RoomViewProps) {
   const { user: currentUser, isLoading: isUserLoading } = useUser();
   const { activeRoom: currentActiveRoom, setActiveRoom, setIsMinimized } = useRoomContext();
   const { toast } = useToast();
+  const lastActiveRoomIdRef = useRef<string | null>(null);
   
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -99,12 +100,13 @@ export function RoomView({ slug }: RoomViewProps) {
 
   useEffect(() => {
     if (activeRoom && !bannedUntil && !requiresPassword && isMounted) {
-      requestAnimationFrame(() => {
-        if (activeRoom.id !== currentActiveRoom?.id) {
+      if (activeRoom.id !== lastActiveRoomIdRef.current) {
+        lastActiveRoomIdRef.current = activeRoom.id;
+        requestAnimationFrame(() => {
           setActiveRoom(activeRoom);
-        }
-        setIsMinimized(false);
-      });
+          setIsMinimized(false);
+        });
+      }
     }
   }, [activeRoom, currentActiveRoom?.id, setActiveRoom, setIsMinimized, bannedUntil, requiresPassword, isMounted]);
 

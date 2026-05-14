@@ -41,7 +41,20 @@ export function useCollection<T = any>(
     const unsubscribe = onSnapshot(query, 
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
-        setData(results);
+        setData(prev => {
+          if (prev && prev.length === results.length) {
+            const changed = results.some((r, i) => {
+              const p = prev[i];
+              if (p.id !== r.id) return true;
+              for (const key in r) {
+                if (r[key] !== p[key]) return true;
+              }
+              return false;
+            });
+            if (!changed) return prev;
+          }
+          return results;
+        });
         setIsLoading(false);
         setError(null);
       },
