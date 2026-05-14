@@ -38,7 +38,6 @@ export function GiftAnimationOverlay({
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [showNameplate, setShowNameplate] = useState(false);
   const [useCanvasProcessing, setUseCanvasProcessing] = useState(false);
-  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const detectionVideoRef = useRef<HTMLVideoElement>(null);
@@ -48,6 +47,8 @@ export function GiftAnimationOverlay({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const processingActiveRef = useRef(false);
 
   // Load Lottie Data
   useEffect(() => {
@@ -61,7 +62,7 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Check if video has solid black background on all sides
+  // Advanced black background detection with edge sampling
   const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
@@ -70,7 +71,6 @@ export function GiftAnimationOverlay({
         return;
       }
 
-      // Set canvas size
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
@@ -80,7 +80,6 @@ export function GiftAnimationOverlay({
         return;
       }
 
-      // Draw first frame
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -88,108 +87,114 @@ export function GiftAnimationOverlay({
       const width = canvas.width;
       const height = canvas.height;
 
-      const BLACK_THRESHOLD = 45; // Max RGB value to consider as black
-      const BLACK_PIXEL_RATIO = 0.95; // 95% of edge pixels must be black
+      const BLACK_THRESHOLD = 35;
+      const BLACK_PIXEL_RATIO = 0.92;
 
-      // Check top edge (first row)
+      // Check multiple rows on each edge for better accuracy
+      const EDGE_DEPTH = 5; // Check 5 pixels deep from edge
+
+      // Check top edge (multiple rows)
       let topBlackCount = 0;
-      for (let x = 0; x < width; x++) {
-        const index = (0 * width + x) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          topBlackCount++;
+      let topTotal = 0;
+      for (let y = 0; y < EDGE_DEPTH; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          topTotal++;
+          if (data[index] < BLACK_THRESHOLD && 
+              data[index + 1] < BLACK_THRESHOLD && 
+              data[index + 2] < BLACK_THRESHOLD) {
+            topBlackCount++;
+          }
         }
       }
-      const topRatio = topBlackCount / width;
+      const topRatio = topBlackCount / topTotal;
 
-      // Check bottom edge (last row)
+      // Check bottom edge (multiple rows)
       let bottomBlackCount = 0;
-      for (let x = 0; x < width; x++) {
-        const index = ((height - 1) * width + x) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          bottomBlackCount++;
+      let bottomTotal = 0;
+      for (let y = height - EDGE_DEPTH; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          bottomTotal++;
+          if (data[index] < BLACK_THRESHOLD && 
+              data[index + 1] < BLACK_THRESHOLD && 
+              data[index + 2] < BLACK_THRESHOLD) {
+            bottomBlackCount++;
+          }
         }
       }
-      const bottomRatio = bottomBlackCount / width;
+      const bottomRatio = bottomBlackCount / bottomTotal;
 
-      // Check left edge (first column)
+      // Check left edge (multiple columns)
       let leftBlackCount = 0;
+      let leftTotal = 0;
       for (let y = 0; y < height; y++) {
-        const index = (y * width + 0) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          leftBlackCount++;
+        for (let x = 0; x < EDGE_DEPTH; x++) {
+          const index = (y * width + x) * 4;
+          leftTotal++;
+          if (data[index] < BLACK_THRESHOLD && 
+              data[index + 1] < BLACK_THRESHOLD && 
+              data[index + 2] < BLACK_THRESHOLD) {
+            leftBlackCount++;
+          }
         }
       }
-      const leftRatio = leftBlackCount / height;
+      const leftRatio = leftBlackCount / leftTotal;
 
-      // Check right edge (last column)
+      // Check right edge (multiple columns)
       let rightBlackCount = 0;
+      let rightTotal = 0;
       for (let y = 0; y < height; y++) {
-        const index = (y * width + (width - 1)) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          rightBlackCount++;
+        for (let x = width - EDGE_DEPTH; x < width; x++) {
+          const index = (y * width + x) * 4;
+          rightTotal++;
+          if (data[index] < BLACK_THRESHOLD && 
+              data[index + 1] < BLACK_THRESHOLD && 
+              data[index + 2] < BLACK_THRESHOLD) {
+            rightBlackCount++;
+          }
         }
       }
-      const rightRatio = rightBlackCount / height;
+      const rightRatio = rightBlackCount / rightTotal;
 
-      // Also check corners to ensure black is joined
-      // Check if top-left, top-right, bottom-left, bottom-right corners are black
-      const checkCorner = (x: number, y: number, radius: number = 10) => {
+      // Check corners with larger radius
+      const checkCorner = (startX: number, startY: number, radius: number = 15) => {
         let blackPixels = 0;
         let totalPixels = 0;
-        for (let dy = -radius; dy <= radius; dy++) {
-          for (let dx = -radius; dx <= radius; dx++) {
-            const px = Math.max(0, Math.min(width - 1, x + dx));
-            const py = Math.max(0, Math.min(height - 1, y + dy));
-            const index = (py * width + px) * 4;
-            totalPixels++;
-            if (data[index] < BLACK_THRESHOLD && 
-                data[index + 1] < BLACK_THRESHOLD && 
-                data[index + 2] < BLACK_THRESHOLD) {
-              blackPixels++;
+        for (let dy = 0; dy < radius; dy++) {
+          for (let dx = 0; dx < radius; dx++) {
+            const px = startX + dx;
+            const py = startY + dy;
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              const index = (py * width + px) * 4;
+              totalPixels++;
+              if (data[index] < BLACK_THRESHOLD && 
+                  data[index + 1] < BLACK_THRESHOLD && 
+                  data[index + 2] < BLACK_THRESHOLD) {
+                blackPixels++;
+              }
             }
           }
         }
-        return blackPixels / totalPixels;
+        return blackPixels / Math.max(totalPixels, 1);
       };
 
       const topLeftCorner = checkCorner(0, 0);
-      const topRightCorner = checkCorner(width - 1, 0);
-      const bottomLeftCorner = checkCorner(0, height - 1);
-      const bottomRightCorner = checkCorner(width - 1, height - 1);
+      const topRightCorner = checkCorner(width - 15, 0);
+      const bottomLeftCorner = checkCorner(0, height - 15);
+      const bottomRightCorner = checkCorner(width - 15, height - 15);
 
-      // All edges must be predominantly black (>95%)
-      // AND all corners must be black (>90%) to ensure black is joined
       const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
                            bottomRatio > BLACK_PIXEL_RATIO && 
                            leftRatio > BLACK_PIXEL_RATIO && 
                            rightRatio > BLACK_PIXEL_RATIO;
 
-      const allCornersBlack = topLeftCorner > 0.9 && 
-                             topRightCorner > 0.9 && 
-                             bottomLeftCorner > 0.9 && 
-                             bottomRightCorner > 0.9;
+      const allCornersBlack = topLeftCorner > 0.85 && 
+                             topRightCorner > 0.85 && 
+                             bottomLeftCorner > 0.85 && 
+                             bottomRightCorner > 0.85;
 
       const isSolidBlackBackground = allEdgesBlack && allCornersBlack;
-
-      console.log('Black Background Detection:', {
-        topRatio: (topRatio * 100).toFixed(1) + '%',
-        bottomRatio: (bottomRatio * 100).toFixed(1) + '%',
-        leftRatio: (leftRatio * 100).toFixed(1) + '%',
-        rightRatio: (rightRatio * 100).toFixed(1) + '%',
-        topLeftCorner: (topLeftCorner * 100).toFixed(1) + '%',
-        topRightCorner: (topRightCorner * 100).toFixed(1) + '%',
-        bottomLeftCorner: (bottomLeftCorner * 100).toFixed(1) + '%',
-        bottomRightCorner: (bottomRightCorner * 100).toFixed(1) + '%',
-        isSolidBlackBackground
-      });
 
       resolve(isSolidBlackBackground);
     });
@@ -200,7 +205,8 @@ export function GiftAnimationOverlay({
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
-      setUseCanvasProcessing(false); // Reset canvas flag
+      setUseCanvasProcessing(false);
+      processingActiveRef.current = false;
       
       setShowNameplate(true);
       if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
@@ -232,7 +238,7 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Black Fade Processor (Canvas Magic) - Only for solid black background videos
+  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing
   const processBlackFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -242,60 +248,129 @@ export function GiftAnimationOverlay({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      processingActiveRef.current = false;
       return;
     }
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
+    processingActiveRef.current = true;
 
+    // Create offscreen canvas for processing if not exists
+    if (!offscreenCanvasRef.current) {
+      offscreenCanvasRef.current = document.createElement('canvas');
+    }
+    
+    const offscreen = offscreenCanvasRef.current;
+    
     // Match canvas size to video
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      offscreen.width = video.videoWidth;
+      offscreen.height = video.videoHeight;
     }
 
-    // Draw current video frame
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d', { 
+      willReadFrequently: true,
+      alpha: true 
+    });
+    
+    const offCtx = offscreen.getContext('2d', { 
+      willReadFrequently: true,
+      alpha: true 
+    });
+    
+    if (!ctx || !offCtx) return;
 
-    // Get pixel data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Step 1: Draw current video frame to offscreen
+    offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
+
+    // Step 2: Get pixel data
+    const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
     const data = imageData.data;
-    const len = data.length;
+    const width = offscreen.width;
+    const height = offscreen.height;
 
-    // Black Detection Threshold
-    const BLACK_THRESHOLD = 30; // RGB < 30 = black
-    const ALPHA_FADE_SPEED = 0.85; // 85% fade per frame (smooth)
+    // Step 3: Create processed data
+    const processedData = new Uint8ClampedArray(data);
 
-    for (let i = 0; i < len; i += 4) {
+    // Enhanced Black Detection Parameters
+    const BLACK_R_THRESHOLD = 25;    // Red channel max for black
+    const BLACK_G_THRESHOLD = 25;    // Green channel max for black  
+    const BLACK_B_THRESHOLD = 25;    // Blue channel max for black
+    const DARK_GRAY_THRESHOLD = 45;  // For edge transition pixels
+    const ALPHA_REDUCTION = 0.92;    // 92% opacity reduction per frame (smooth but fast)
+
+    for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
+      const a = data[i + 3];
       
-      // Check if pixel is black/dark
-      if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
-        // Gradually fade black pixels to transparent
-        data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+      // Skip already transparent pixels
+      if (a === 0) continue;
+      
+      // Check if pixel is pure black
+      const isPureBlack = (r <= BLACK_R_THRESHOLD && 
+                          g <= BLACK_G_THRESHOLD && 
+                          b <= BLACK_B_THRESHOLD);
+      
+      // Check if pixel is very dark (near black transition)
+      const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
+                         g <= DARK_GRAY_THRESHOLD && 
+                         b <= DARK_GRAY_THRESHOLD);
+      
+      if (isPureBlack) {
+        // Pure black: aggressively fade to transparent
+        const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
+        processedData[i + 3] = newAlpha;
+        
+        // Smooth color transition to prevent harsh edges
+        if (newAlpha < 20) {
+          // Near transparent: also slightly fade color
+          processedData[i] = Math.floor(r * 0.9);
+          processedData[i + 1] = Math.floor(g * 0.9);
+          processedData[i + 2] = Math.floor(b * 0.9);
+        }
+      } else if (isDarkGray) {
+        // Dark gray (edge pixels): softer fade with anti-aliasing
+        const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
+        const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
+        const newAlpha = Math.floor(a * (1 - softAlphaReduction));
+        
+        // Anti-aliasing: blend with surroundings
+        processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
+        
+        // Subtle color correction for edge pixels
+        if (darknessFactor > 0.5) {
+          const blend = darknessFactor * 0.3;
+          processedData[i] = Math.floor(r * (1 - blend));
+          processedData[i + 1] = Math.floor(g * (1 - blend));
+          processedData[i + 2] = Math.floor(b * (1 - blend));
+        }
       }
-      // Non-black pixels: untouched, full opacity
+      // Light pixels: keep fully opaque, no modification
     }
 
-    // Apply modified pixels back to canvas
-    ctx.putImageData(imageData, 0, 0);
+    // Step 4: Apply processed data to canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const processedImageData = new ImageData(processedData, width, height);
+    ctx.putImageData(processedImageData, 0, 0);
 
-    // Continue processing loop (60fps target)
+    // Step 5: Continue processing loop
     animationFrameRef.current = requestAnimationFrame(processBlackFade);
   };
 
   // Start/Stop Black Fade Processor when video plays
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
-      // Small delay to ensure video has started
       const startTimer = setTimeout(() => {
+        processingActiveRef.current = true;
         processBlackFade();
       }, 100);
       
       return () => {
         clearTimeout(startTimer);
+        processingActiveRef.current = false;
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
           animationFrameRef.current = null;
@@ -306,7 +381,8 @@ export function GiftAnimationOverlay({
 
   // Cleanup function
   const handleCleanup = () => {
-    // Stop canvas processing
+    processingActiveRef.current = false;
+    
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -316,11 +392,19 @@ export function GiftAnimationOverlay({
       clearTimeout(nameplateTimerRef.current);
       nameplateTimerRef.current = null;
     }
+    
     setActiveGift(null);
     setLottieData(null);
     setIsVideoReady(false);
     setShowNameplate(false);
     setUseCanvasProcessing(false);
+    
+    // Clear canvases
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+    
     onComplete();
   };
 
@@ -338,45 +422,47 @@ export function GiftAnimationOverlay({
     setIsVideoReady(true);
     
     if (videoRef.current) {
-      // Wait a tiny bit for the first frame to render
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Detect if video has solid black background
       const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
       setUseCanvasProcessing(hasSolidBlackBg);
       
       if (hasSolidBlackBg) {
-        console.log('✅ Using canvas processing - Video has solid black background');
+        console.log('✅ Canvas processing activated - Perfect clear video with black background removed');
       } else {
-        console.log('❌ NOT using canvas processing - Video does not have solid black background');
+        console.log('❌ Standard playback - No black background detected');
       }
     }
   };
 
-  // Handle Video Auto-play Force & Sound
+  // Handle Video Auto-play with enhanced fallback
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
           videoRef.current!.defaultMuted = false;
           videoRef.current!.muted = false;
-          videoRef.current!.playbackRate = 1.15; 
+          videoRef.current!.playbackRate = 1.0; // Normal speed for quality
+          videoRef.current!.setAttribute('playsinline', 'true');
+          videoRef.current!.setAttribute('webkit-playsinline', 'true');
           
           videoRef.current!.load();
           
           const playPromise = videoRef.current!.play();
           if (playPromise !== undefined) {
             await playPromise;
+            console.log('✅ Video playing with sound');
           }
         } catch (err) {
-          console.warn('Video Playback with sound failed, trying fallback:', err);
+          console.warn('Video with sound failed, trying muted fallback:', err);
           try {
             if (videoRef.current) {
               videoRef.current.muted = true;
               await videoRef.current.play();
+              console.log('⚠️ Video playing muted');
             }
           } catch (e) {
-            console.error('Fallback video play also failed', e);
+            console.error('Complete video play failure', e);
           }
         }
       };
@@ -405,7 +491,7 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* 3D SCROLL BANNER NAME PLATE */}
+            {/* 3D SCROLL BANNER NAME PLATE - UNCHANGED */}
             {showNameplate && senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -593,20 +679,41 @@ export function GiftAnimationOverlay({
                     onEnded={handleCleanup} 
                     className={useCanvasProcessing ? "hidden" : "w-full h-full object-contain"}
                     crossOrigin="anonymous"
+                    style={{
+                      filter: useCanvasProcessing ? 'none' : 'none',
+                      imageRendering: 'crisp-edges',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden'
+                    }}
                   />
                   
-                  {/* Canvas showing black-faded video - Only shown when black background detected */}
+                  {/* Enhanced Canvas showing perfectly clean black-removed video */}
                   {useCanvasProcessing && (
                     <canvas 
                       ref={canvasRef}
-                      className="w-full h-full object-contain bg-transparent"
+                      className="w-full h-full object-contain"
                       style={{ 
                         display: isVideoReady ? 'block' : 'none',
-                        background: 'transparent'
+                        background: 'transparent',
+                        imageRendering: 'auto',
+                        mixBlendMode: 'normal',
+                        isolation: 'isolate',
+                        filter: 'none',
+                        opacity: 1
                       }}
                     />
                   )}
                 </motion.div>
+              ) : imageUrl ? (
+                <motion.img 
+                  src={imageUrl} 
+                  alt={giftName || 'Gift'} 
+                  className="max-h-[280px] object-contain drop-shadow-2xl"
+                  initial={{ scale: 0, rotateZ: -20 }}
+                  animate={{ scale: 1, rotateZ: 0 }}
+                  exit={{ scale: 0, rotateZ: 20, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                />
               ) : null} 
             </div>
           </motion.div>
@@ -684,4 +791,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-    }
+        }
