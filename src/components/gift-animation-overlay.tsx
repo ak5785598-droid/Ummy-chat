@@ -41,10 +41,9 @@ export function GiftAnimationOverlay({
   const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const detectionVideoRef = useRef<HTMLVideoElement>(null);
   const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Canvas refs for black-fade processing and detection
+  // Canvas refs for transparency processing and detection
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -61,8 +60,8 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Check if video has solid black background on all sides
-  const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
+  // Check if checkerboard pattern is CONNECTED on ALL 4 sides
+  const detectTransparencyPattern = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
       if (!canvas) {
@@ -70,7 +69,6 @@ export function GiftAnimationOverlay({
         return;
       }
 
-      // Set canvas size
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
@@ -80,7 +78,6 @@ export function GiftAnimationOverlay({
         return;
       }
 
-      // Draw first frame
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -88,110 +85,126 @@ export function GiftAnimationOverlay({
       const width = canvas.width;
       const height = canvas.height;
 
-      const BLACK_THRESHOLD = 45; // Max RGB value to consider as black
-      const BLACK_PIXEL_RATIO = 0.95; // 95% of edge pixels must be black
+      const CHECK_SIZE = 8;
+      const WHITE_THRESHOLD = 200;
+      const GRAY_MIN = 100;
+      const GRAY_MAX = 170;
+      const COLOR_VARIANCE_THRESHOLD = 30;
 
-      // Check top edge (first row)
-      let topBlackCount = 0;
-      for (let x = 0; x < width; x++) {
-        const index = (0 * width + x) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          topBlackCount++;
+      // Function to check if a checker square is valid
+      const isCheckerSquare = (startX: number, startY: number): boolean => {
+        if (startX < 0 || startY < 0 || startX + CHECK_SIZE > width || startY + CHECK_SIZE > height) {
+          return false;
         }
-      }
-      const topRatio = topBlackCount / width;
 
-      // Check bottom edge (last row)
-      let bottomBlackCount = 0;
-      for (let x = 0; x < width; x++) {
-        const index = ((height - 1) * width + x) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          bottomBlackCount++;
-        }
-      }
-      const bottomRatio = bottomBlackCount / width;
+        let avgR = 0, avgG = 0, avgB = 0;
+        let pixelCount = 0;
 
-      // Check left edge (first column)
-      let leftBlackCount = 0;
-      for (let y = 0; y < height; y++) {
-        const index = (y * width + 0) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          leftBlackCount++;
-        }
-      }
-      const leftRatio = leftBlackCount / height;
-
-      // Check right edge (last column)
-      let rightBlackCount = 0;
-      for (let y = 0; y < height; y++) {
-        const index = (y * width + (width - 1)) * 4;
-        if (data[index] < BLACK_THRESHOLD && 
-            data[index + 1] < BLACK_THRESHOLD && 
-            data[index + 2] < BLACK_THRESHOLD) {
-          rightBlackCount++;
-        }
-      }
-      const rightRatio = rightBlackCount / height;
-
-      // Also check corners to ensure black is joined
-      // Check if top-left, top-right, bottom-left, bottom-right corners are black
-      const checkCorner = (x: number, y: number, radius: number = 10) => {
-        let blackPixels = 0;
-        let totalPixels = 0;
-        for (let dy = -radius; dy <= radius; dy++) {
-          for (let dx = -radius; dx <= radius; dx++) {
-            const px = Math.max(0, Math.min(width - 1, x + dx));
-            const py = Math.max(0, Math.min(height - 1, y + dy));
+        for (let dy = 0; dy < CHECK_SIZE; dy++) {
+          for (let dx = 0; dx < CHECK_SIZE; dx++) {
+            const px = startX + dx;
+            const py = startY + dy;
             const index = (py * width + px) * 4;
-            totalPixels++;
-            if (data[index] < BLACK_THRESHOLD && 
-                data[index + 1] < BLACK_THRESHOLD && 
-                data[index + 2] < BLACK_THRESHOLD) {
-              blackPixels++;
-            }
+            
+            avgR += data[index];
+            avgG += data[index + 1];
+            avgB += data[index + 2];
+            pixelCount++;
           }
         }
-        return blackPixels / totalPixels;
+
+        avgR /= pixelCount;
+        avgG /= pixelCount;
+        avgB /= pixelCount;
+
+        const avgBrightness = (avgR + avgG + avgB) / 3;
+        const colorVariance = Math.max(Math.abs(avgR - avgG), Math.abs(avgG - avgB), Math.abs(avgR - avgB));
+
+        const isLightChecker = avgBrightness > WHITE_THRESHOLD && colorVariance < COLOR_VARIANCE_THRESHOLD;
+        const isDarkChecker = avgBrightness >= GRAY_MIN && avgBrightness <= GRAY_MAX && colorVariance < COLOR_VARIANCE_THRESHOLD;
+
+        return isLightChecker || isDarkChecker;
       };
 
-      const topLeftCorner = checkCorner(0, 0);
-      const topRightCorner = checkCorner(width - 1, 0);
-      const bottomLeftCorner = checkCorner(0, height - 1);
-      const bottomRightCorner = checkCorner(width - 1, height - 1);
+      // Check ALL 4 sides - poora edge strip scan karo
+      // TOP edge - poora row scan
+      let topCheckerCount = 0;
+      let topTotalSquares = 0;
+      for (let x = 0; x < width - CHECK_SIZE; x += CHECK_SIZE) {
+        if (isCheckerSquare(x, 0)) topCheckerCount++;
+        topTotalSquares++;
+      }
+      const topRatio = topCheckerCount / topTotalSquares;
 
-      // All edges must be predominantly black (>95%)
-      // AND all corners must be black (>90%) to ensure black is joined
-      const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
-                           bottomRatio > BLACK_PIXEL_RATIO && 
-                           leftRatio > BLACK_PIXEL_RATIO && 
-                           rightRatio > BLACK_PIXEL_RATIO;
+      // BOTTOM edge - poora row scan
+      let bottomCheckerCount = 0;
+      let bottomTotalSquares = 0;
+      const bottomY = height - CHECK_SIZE;
+      for (let x = 0; x < width - CHECK_SIZE; x += CHECK_SIZE) {
+        if (isCheckerSquare(x, bottomY)) bottomCheckerCount++;
+        bottomTotalSquares++;
+      }
+      const bottomRatio = bottomCheckerCount / bottomTotalSquares;
 
-      const allCornersBlack = topLeftCorner > 0.9 && 
-                             topRightCorner > 0.9 && 
-                             bottomLeftCorner > 0.9 && 
-                             bottomRightCorner > 0.9;
+      // LEFT edge - poora column scan
+      let leftCheckerCount = 0;
+      let leftTotalSquares = 0;
+      for (let y = 0; y < height - CHECK_SIZE; y += CHECK_SIZE) {
+        if (isCheckerSquare(0, y)) leftCheckerCount++;
+        leftTotalSquares++;
+      }
+      const leftRatio = leftCheckerCount / leftTotalSquares;
 
-      const isSolidBlackBackground = allEdgesBlack && allCornersBlack;
+      // RIGHT edge - poora column scan
+      let rightCheckerCount = 0;
+      let rightTotalSquares = 0;
+      const rightX = width - CHECK_SIZE;
+      for (let y = 0; y < height - CHECK_SIZE; y += CHECK_SIZE) {
+        if (isCheckerSquare(rightX, y)) rightCheckerCount++;
+        rightTotalSquares++;
+      }
+      const rightRatio = rightCheckerCount / rightTotalSquares;
 
-      console.log('Black Background Detection:', {
+      // CORNERS bhi check karo - connection ke liye zaroori hai
+      const topLeftCorner = isCheckerSquare(0, 0);
+      const topRightCorner = isCheckerSquare(width - CHECK_SIZE, 0);
+      const bottomLeftCorner = isCheckerSquare(0, height - CHECK_SIZE);
+      const bottomRightCorner = isCheckerSquare(width - CHECK_SIZE, height - CHECK_SIZE);
+
+      // MINIMUM 70% checkerboard hona chahiye har side pe
+      const CHECKERBOARD_THRESHOLD = 0.7;
+
+      const allSidesConnected = 
+        topRatio > CHECKERBOARD_THRESHOLD && 
+        bottomRatio > CHECKERBOARD_THRESHOLD && 
+        leftRatio > CHECKERBOARD_THRESHOLD && 
+        rightRatio > CHECKERBOARD_THRESHOLD;
+
+      const allCornersConnected = 
+        topLeftCorner && 
+        topRightCorner && 
+        bottomLeftCorner && 
+        bottomRightCorner;
+
+      const isFullyConnected = allSidesConnected && allCornersConnected;
+
+      console.log('🔍 Full Frame Transparency Detection:', {
         topRatio: (topRatio * 100).toFixed(1) + '%',
         bottomRatio: (bottomRatio * 100).toFixed(1) + '%',
         leftRatio: (leftRatio * 100).toFixed(1) + '%',
         rightRatio: (rightRatio * 100).toFixed(1) + '%',
-        topLeftCorner: (topLeftCorner * 100).toFixed(1) + '%',
-        topRightCorner: (topRightCorner * 100).toFixed(1) + '%',
-        bottomLeftCorner: (bottomLeftCorner * 100).toFixed(1) + '%',
-        bottomRightCorner: (bottomRightCorner * 100).toFixed(1) + '%',
-        isSolidBlackBackground
+        topLeft: topLeftCorner ? '✅' : '❌',
+        topRight: topRightCorner ? '✅' : '❌',
+        bottomLeft: bottomLeftCorner ? '✅' : '❌',
+        bottomRight: bottomRightCorner ? '✅' : '❌',
+        allSidesConnected,
+        allCornersConnected,
+        verdict: isFullyConnected ? 
+          '✅ ALL SIDES CONNECTED - Canvas Processing ON' : 
+          '❌ NOT CONNECTED - Normal Video Playback'
       });
 
-      resolve(isSolidBlackBackground);
+      resolve(isFullyConnected);
     });
   };
 
@@ -200,7 +213,7 @@ export function GiftAnimationOverlay({
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
-      setUseCanvasProcessing(false); // Reset canvas flag
+      setUseCanvasProcessing(false);
       
       setShowNameplate(true);
       if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
@@ -208,18 +221,18 @@ export function GiftAnimationOverlay({
         setShowNameplate(false);
       }, 3500);
 
-      // 1. Play Sound
+      // Play Sound
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // 2. Haptics
+      // Haptics
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic
+      // Dynamic Timeout Logic
       if (!videoUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
@@ -232,8 +245,8 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Black Fade Processor (Canvas Magic) - Only for solid black background videos
-  const processBlackFade = () => {
+  // FULL FRAME Transparency Processor - Poora video scan karega
+  const processTransparency = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
@@ -248,50 +261,50 @@ export function GiftAnimationOverlay({
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    // Match canvas size to video
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
     }
 
-    // Draw current video frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Get pixel data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const len = data.length;
 
-    // Black Detection Threshold
-    const BLACK_THRESHOLD = 30; // RGB < 30 = black
-    const ALPHA_FADE_SPEED = 0.85; // 85% fade per frame (smooth)
+    const WHITE_THRESHOLD = 200;
+    const GRAY_MIN = 100;
+    const GRAY_MAX = 170;
+    const COLOR_VARIANCE_THRESHOLD = 30;
 
+    // POORA FRAME SCAN - har ek pixel check hoga
     for (let i = 0; i < len; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       
-      // Check if pixel is black/dark
-      if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
-        // Gradually fade black pixels to transparent
-        data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+      const brightness = (r + g + b) / 3;
+      const colorVariance = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+      
+      const isLightChecker = brightness > WHITE_THRESHOLD && colorVariance < COLOR_VARIANCE_THRESHOLD;
+      const isDarkChecker = brightness >= GRAY_MIN && brightness <= GRAY_MAX && colorVariance < COLOR_VARIANCE_THRESHOLD;
+      
+      // Checkerboard pixels ko transparent karo - poore frame mein kahin bhi ho
+      if (isLightChecker || isDarkChecker) {
+        data[i + 3] = 0;
       }
-      // Non-black pixels: untouched, full opacity
     }
 
-    // Apply modified pixels back to canvas
     ctx.putImageData(imageData, 0, 0);
 
-    // Continue processing loop (60fps target)
-    animationFrameRef.current = requestAnimationFrame(processBlackFade);
+    animationFrameRef.current = requestAnimationFrame(processTransparency);
   };
 
-  // Start/Stop Black Fade Processor when video plays
+  // Start/Stop Transparency Processor
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
-      // Small delay to ensure video has started
       const startTimer = setTimeout(() => {
-        processBlackFade();
+        processTransparency();
       }, 100);
       
       return () => {
@@ -306,7 +319,6 @@ export function GiftAnimationOverlay({
 
   // Cleanup function
   const handleCleanup = () => {
-    // Stop canvas processing
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -333,27 +345,25 @@ export function GiftAnimationOverlay({
     }, duration + 500); 
   };
 
-  // Handle Video Ready - Detect black background
+  // Handle Video Ready - Detect CONNECTED transparency checkerboard
   const handleVideoCanPlay = async () => {
     setIsVideoReady(true);
     
     if (videoRef.current) {
-      // Wait a tiny bit for the first frame to render
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Detect if video has solid black background
-      const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
-      setUseCanvasProcessing(hasSolidBlackBg);
+      const hasConnectedTransparency = await detectTransparencyPattern(videoRef.current);
+      setUseCanvasProcessing(hasConnectedTransparency);
       
-      if (hasSolidBlackBg) {
-        console.log('✅ Using canvas processing - Video has solid black background');
+      if (hasConnectedTransparency) {
+        console.log('✅ Canvas ON - Checkerboard connected on ALL 4 sides');
       } else {
-        console.log('❌ NOT using canvas processing - Video does not have solid black background');
+        console.log('❌ Canvas OFF - Sides not connected, normal playback');
       }
     }
   };
 
-  // Handle Video Auto-play Force & Sound
+  // Handle Video Auto-play
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
@@ -595,7 +605,7 @@ export function GiftAnimationOverlay({
                     crossOrigin="anonymous"
                   />
                   
-                  {/* Canvas showing black-faded video - Only shown when black background detected */}
+                  {/* Canvas showing transparency-processed video - Only when ALL sides connected */}
                   {useCanvasProcessing && (
                     <canvas 
                       ref={canvasRef}
@@ -684,4 +694,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-  }
+        }
