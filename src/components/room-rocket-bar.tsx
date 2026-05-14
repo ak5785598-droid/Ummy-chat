@@ -5,8 +5,7 @@ import { Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
-import { useDoc } from '@/hooks/use-firestore';
-import { firestore } from '@/lib/firebase';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
 // --- 1. NEW PREMIUM GOLD ROCKET (Direct SVG - Fallback) ---
 const CustomGoldRocket = ({ className }: { className?: string }) => (
@@ -34,9 +33,10 @@ const CustomGoldRocket = ({ className }: { className?: string }) => (
 export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, onOpenRocket }: any) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showFlight, setShowFlight] = useState(false);
+  const firestore = useFirestore();
 
   // FETCH DYNAMIC CONFIG
-  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, []);
+  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, [firestore]);
   const { data: rocketConfig } = useDoc(configRef);
 
   const finalTarget = rocketConfig?.target || target;

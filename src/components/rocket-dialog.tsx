@@ -21,8 +21,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
-import { useDoc } from '@/hooks/use-firestore';
-import { firestore } from '@/lib/firebase';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
 const ROCKET_LEVELS = [
   { level: 1, name: 'Scout-1', target: 5000, colors: { primary: '#3b82f6', secondary: '#1d4ed8', flame: '#60a5fa' } },
@@ -84,7 +83,8 @@ export function RocketDialog({
   currentExp?: number;
   roomName?: string;
 }) {
-  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, []);
+  const firestore = useFirestore();
+  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, [firestore]);
   const { data: rocketConfig } = useDoc(configRef);
 
   const nextLevel = useMemo(() => 
