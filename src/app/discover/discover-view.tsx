@@ -41,6 +41,7 @@ export default function DiscoverView() {
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
   const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState<'photos' | 'reels'>('photos');
   // Defaulting to recommend logic as before, without changing the core functionality
   const [activeTab, setActiveTab] = useState<'recommend' | 'following'>('recommend');
   
@@ -84,7 +85,15 @@ export default function DiscoverView() {
   const { data: recommendMoments, isLoading: isLoadingRecommend } = useCollection(recommendQuery);
   const { data: followingMoments, isLoading: isLoadingFollowing } = useCollection(followingMomentsQuery);
 
-  const activeMoments = activeTab === 'recommend' ? recommendMoments : followingMoments;
+  const rawMoments = activeTab === 'recommend' ? recommendMoments : followingMoments;
+  const filteredMoments = useMemo(() => {
+    if (!rawMoments) return [];
+    if (activeSection === 'reels') {
+      return rawMoments.filter((m: any) => m.type === 'video' || m.videoUrl);
+    }
+    return rawMoments.filter((m: any) => m.type !== 'video' && !m.videoUrl);
+  }, [rawMoments, activeSection]);
+
   const isLoading = activeTab === 'recommend' ? isLoadingRecommend : isLoadingFollowing;
 
   if (theme === 'GLOSSY') {
@@ -100,30 +109,18 @@ export default function DiscoverView() {
       )}>
         
         {/* --- FIXED: Top 20Vh Purple & White Mix Gradient --- */}
-        {/* Iski transparency aur opacity ko waisa hi rakha hai taaki header ke through achhe se dikhe */}
         <div className="absolute top-0 left-0 right-0 h-[20vh] bg-gradient-to-b from-purple-300 via-purple-100/80 to-transparent pointer-events-none z-10" />
 
-        {/* Subtle Background Elements */}
-        {DESIGN_TOKENS.appBackground !== '#FF91B5' && (
-          <div className="fixed inset-0 z-0">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-slate-50 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-slate-50/50 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
-          </div>
-        )}
-
-        {/* Discovery Header - Fixed Height & Title with Top Right Button */}
-        {/* bg-white/20 kiya gaya hai taaki upar wala purple color achhe se shine kare */}
+        {/* Discovery Header */}
         <header className={cn(
           "shrink-0 pt-12 pb-4 px-6 z-50 border-b border-black/5 bg-white/20 backdrop-blur-xl",
           DESIGN_TOKENS.appBackground === '#FF91B5' && "bg-[#FF91B5]/40 border-white/10"
         )}>
           <div className="flex items-center justify-between max-w-2xl mx-auto relative h-10">
-            {/* Title */}
             <span className="text-sm md:text-base font-black tracking-tight text-slate-800 uppercase drop-shadow-sm">
               Post a Day with Ummy
             </span>
             
-            {/* Glossy 3D Post Button Moved to Top Right */}
             <motion.button 
               initial={{ scale: 0, rotate: -20 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -142,7 +139,7 @@ export default function DiscoverView() {
         <main className="flex-1 overflow-y-auto no-scrollbar relative z-20 px-2 py-4 pb-40">
           {isLoading ? null : (
             <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
-              {activeMoments?.map((moment: any, idx: number) => (
+              {filteredMoments?.map((moment: any, idx: number) => (
                 <GridMomentCard 
                   key={moment.id} 
                   moment={moment} 
@@ -157,13 +154,13 @@ export default function DiscoverView() {
                 />
               ))}
 
-              {(!activeMoments || activeMoments.length === 0) && (
+              {(!filteredMoments || filteredMoments.length === 0) && (
                 <div className="col-span-2 py-24 text-center space-y-4 opacity-30 flex flex-col items-center">
                   <Compass className="h-16 w-16 text-slate-400" />
                   <div className="space-y-1">
-                    <p className="font-headline font-black uppercase text-lg">Silence in the Galaxy</p>
+                    <p className="font-headline font-black uppercase text-lg">No {activeSection === 'reels' ? 'Reels' : 'Photos'} Yet</p>
                     <p className="text-[10px] font-bold uppercase tracking-widest">
-                      Share the first moment of the day
+                      Share the first {activeSection === 'reels' ? 'video' : 'moment'} of the day
                     </p>
                   </div>
                 </div>
@@ -171,6 +168,34 @@ export default function DiscoverView() {
             </div>
           )}
         </main>
+
+        {/* --- BOTTOM SECTION SWITCHER --- */}
+        <div className="absolute bottom-24 left-0 right-0 z-50 flex justify-center px-6">
+          <div className="bg-white/40 backdrop-blur-2xl border border-white/40 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
+            <button 
+              onClick={() => setActiveSection('photos')}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                activeSection === 'photos' 
+                  ? "bg-white text-purple-600 shadow-md scale-105" 
+                  : "text-slate-600 hover:bg-white/20"
+              )}
+            >
+              Photos
+            </button>
+            <button 
+              onClick={() => setActiveSection('reels')}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                activeSection === 'reels' 
+                  ? "bg-white text-purple-600 shadow-md scale-105" 
+                  : "text-slate-600 hover:bg-white/20"
+              )}
+            >
+              Reels
+            </button>
+          </div>
+        </div>
 
         {/* Dialogs & Sheets */}
         <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />

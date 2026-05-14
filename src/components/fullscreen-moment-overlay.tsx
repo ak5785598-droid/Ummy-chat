@@ -35,7 +35,8 @@ export function FullscreenMomentOverlay({
   onOpenComments
 }: FullscreenMomentOverlayProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Default to muted for safety
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [direction, setDirection] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useUser();
@@ -45,7 +46,22 @@ export function FullscreenMomentOverlay({
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
+    // When section changes or modal opens, we reset interaction if it's a video
+    if (moment?.type === 'video' || moment?.videoUrl) {
+       // We try to keep muted until first tap
+    }
   }, [initialIndex]);
+
+  const handleInitialInteraction = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      setIsMuted(false);
+      if (videoRef.current) {
+        videoRef.current.muted = false;
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  };
 
   // Like Logic
   const likeRef = firestore && user && moment ? doc(firestore, 'moments', moment.id, 'likes', user.uid) : null;
@@ -88,6 +104,7 @@ export function FullscreenMomentOverlay({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        onClick={handleInitialInteraction}
         className="fixed inset-0 z-[200] bg-black flex flex-col items-center justify-center overflow-hidden touch-none"
       >
         <motion.div
@@ -102,11 +119,11 @@ export function FullscreenMomentOverlay({
             if (info.offset.y < -100) handleSwipe('up');
             else if (info.offset.y > 100) handleSwipe('down');
           }}
-          className="relative w-full h-full flex items-center justify-center"
+          className="relative w-full h-full flex items-center justify-center max-w-[500px] mx-auto bg-slate-900 shadow-2xl"
         >
           {/* Media Content */}
           {moment.type === 'video' || moment.videoUrl ? (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full flex items-center justify-center bg-black">
               <video
                 ref={videoRef}
                 src={moment.videoUrl}
@@ -114,21 +131,34 @@ export function FullscreenMomentOverlay({
                 loop
                 muted={isMuted}
                 playsInline
-                className="w-full h-full object-contain md:object-cover"
+                className="w-full h-full object-cover" // Instagram style is always object-cover for portrait
               />
-              {/* Mute Button */}
-              <button 
-                onClick={() => setIsMuted(!isMuted)}
-                className="absolute top-20 right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
-              >
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </button>
+              
+              {/* Tap to Unmute Indicator */}
+              {!hasInteracted && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 z-20 pointer-events-none">
+                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-full border border-white/20 animate-pulse">
+                    <VolumeX className="h-8 w-8 text-white" />
+                  </div>
+                  <span className="text-white text-[10px] font-black uppercase tracking-widest mt-4 drop-shadow-lg">Tap to Unmute</span>
+                </div>
+              )}
+
+              {/* Mute Button (Visible after interaction) */}
+              {hasInteracted && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                  className="absolute top-20 right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
+                >
+                  {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </button>
+              )}
             </div>
           ) : (
             <img 
               src={moment.imageUrl} 
               alt="Full Moment" 
-              className="w-full h-full object-contain md:object-cover"
+              className="w-full h-full object-cover"
             />
           )}
 
@@ -151,15 +181,18 @@ export function FullscreenMomentOverlay({
                 <AvatarImage src={moment.avatarUrl} className="object-cover" />
                 <AvatarFallback className="bg-slate-900 text-white font-black">{moment.username?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-headline font-black text-white text-lg drop-shadow-lg italic">{moment.username}</span>
-                  <div className="px-2 py-0.5 bg-yellow-400 rounded-lg flex items-center gap-1 shadow-lg">
+                  <span className="font-headline font-black text-white text-lg drop-shadow-lg italic truncate">{moment.username}</span>
+                  <button className="px-3 py-1 bg-white/20 backdrop-blur-md border border-white/30 rounded-lg text-[10px] font-black text-white uppercase tracking-tighter hover:bg-white hover:text-slate-900 transition-all">
+                    Follow
+                  </button>
+                  <div className="px-2 py-0.5 bg-yellow-400 rounded-lg flex items-center gap-1 shadow-lg shrink-0">
                     <Crown className="h-3 w-3 text-slate-900" />
                     <span className="text-[10px] font-black text-slate-900">Lv.{moment.userLevel || 1}</span>
                   </div>
                 </div>
-                <p className="text-white/80 text-sm font-medium line-clamp-2 drop-shadow-md pr-10">
+                <p className="text-white/80 text-sm font-medium line-clamp-2 drop-shadow-md pr-4 leading-tight">
                   {moment.content}
                 </p>
               </div>

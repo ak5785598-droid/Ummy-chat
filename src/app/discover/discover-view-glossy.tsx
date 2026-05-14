@@ -42,6 +42,7 @@ export function DiscoverViewGlossy() {
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
   const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [activeSection, setActiveSection] = useState<'photos' | 'reels'>('photos');
 
   // Filter moments from last 24 hours
   const discoveryQuery = useMemoFirebase(() => {
@@ -57,7 +58,14 @@ export function DiscoverViewGlossy() {
     );
   }, [firestore]);
 
-  const { data: moments, isLoading } = useCollection(discoveryQuery);
+  const { data: rawMoments, isLoading } = useCollection(discoveryQuery);
+  const moments = useMemo(() => {
+    if (!rawMoments) return [];
+    if (activeSection === 'reels') {
+      return rawMoments.filter((m: any) => m.type === 'video' || m.videoUrl);
+    }
+    return rawMoments.filter((m: any) => m.type !== 'video' && !m.videoUrl);
+  }, [rawMoments, activeSection]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
@@ -108,14 +116,42 @@ export function DiscoverViewGlossy() {
                 <div className="py-24 text-center space-y-4 opacity-30 flex flex-col items-center">
                   <Compass className="h-16 w-16 text-slate-400" />
                   <div className="space-y-1">
-                    <p className="font-headline font-black uppercase text-lg text-slate-900">Silence in the Galaxy</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Share the first moment of the day</p>
+                    <p className="font-headline font-black uppercase text-lg text-slate-900">No {activeSection === 'reels' ? 'Reels' : 'Photos'} Yet</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Share the first {activeSection === 'reels' ? 'video' : 'moment'} of the day</p>
                   </div>
                 </div>
               )}
             </>
           )}
         </main>
+      </div>
+
+      {/* --- GLOSSY SECTION SWITCHER --- */}
+      <div className="fixed bottom-24 left-0 right-0 z-[110] flex justify-center px-6">
+        <div className="bg-white/80 backdrop-blur-2xl border border-white rounded-full p-1.5 flex items-center gap-1 shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
+          <button 
+            onClick={() => setActiveSection('photos')}
+            className={cn(
+              "px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all",
+              activeSection === 'photos' 
+                ? "bg-slate-900 text-white shadow-xl scale-105" 
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
+          >
+            Photos
+          </button>
+          <button 
+            onClick={() => setActiveSection('reels')}
+            className={cn(
+              "px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all",
+              activeSection === 'reels' 
+                ? "bg-slate-900 text-white shadow-xl scale-105" 
+                : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+            )}
+          >
+            Reels
+          </button>
+        </div>
       </div>
 
       {/* Floating Post Button (Flaming Heart) */}
