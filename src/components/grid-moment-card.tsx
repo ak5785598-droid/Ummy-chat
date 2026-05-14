@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { doc, increment, setDoc, deleteDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle, Loader } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle, Loader, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,7 @@ interface GridMomentCardProps {
   moment: any;
   index: number;
   onOpenComments: (id: string, user: string) => void;
+  onOpenFullscreen: (index: number) => void;
 }
 
 const REPORT_REASONS = [
@@ -129,12 +130,26 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
     }
   };
 
+  // View Count Tracking Logic
+  useEffect(() => {
+    const incrementViews = async () => {
+      if (!firestore || !moment.id) return;
+      try {
+        await updateDocumentNonBlocking(doc(firestore, 'moments', moment.id), {
+          views: increment(1)
+        });
+      } catch (e) {}
+    };
+    // Increment once per session per card render
+    incrementViews();
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05 }}
-      onClick={() => onOpenComments(moment.id, moment.username)}
+      onClick={() => onOpenFullscreen(index)}
       className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group cursor-pointer shadow-sm active:scale-[0.98] transition-transform"
     >
       {/* Post Content (Video or Image) */}
@@ -207,6 +222,10 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 pr-0.5">
+          <div className="flex items-center gap-0.5 opacity-80">
+            <Eye className="h-3 w-3 text-white drop-shadow-md" />
+            <span className="text-[8px] font-black text-white drop-shadow-md">{moment.views || 0}</span>
+          </div>
           <button 
             onClick={handleLike}
             className="flex items-center gap-0.5 transition-all active:scale-125"

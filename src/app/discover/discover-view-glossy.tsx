@@ -15,7 +15,8 @@ import {
   Flame,
   Globe,
   Crown,
-  History
+  History,
+  Eye
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, limit, orderBy, where, Timestamp, doc, increment } from 'firebase/firestore';
@@ -26,6 +27,7 @@ import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import { PublishMomentDialog } from '@/components/publish-moment-dialog';
 import { MomentCommentsSheet } from '@/components/moment-comments-sheet';
+import { FullscreenMomentOverlay } from '@/components/fullscreen-moment-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 
@@ -39,6 +41,7 @@ export function DiscoverViewGlossy() {
   const [showPublish, setShowPublish] = useState(false);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
   const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Filter moments from last 24 hours
   const discoveryQuery = useMemoFirebase(() => {
@@ -95,6 +98,9 @@ export function DiscoverViewGlossy() {
                     setSelectedMomentId(id);
                     setSelectedMomentUser(username);
                   }}
+                  onOpenFullscreen={(idx) => {
+                    setSelectedIndex(idx);
+                  }}
                 />
               ))}
 
@@ -122,6 +128,17 @@ export function DiscoverViewGlossy() {
 
       <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
 
+      <FullscreenMomentOverlay 
+        open={selectedIndex !== null}
+        initialIndex={selectedIndex || 0}
+        moments={moments || []}
+        onClose={() => setSelectedIndex(null)}
+        onOpenComments={(id, username) => {
+          setSelectedMomentId(id);
+          setSelectedMomentUser(username);
+        }}
+      />
+
       <MomentCommentsSheet 
         momentId={selectedMomentId} 
         open={!!selectedMomentId} 
@@ -132,13 +149,27 @@ export function DiscoverViewGlossy() {
   );
 }
 
-function MomentCard({ moment, index, onOpenComments }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void }) {
+function MomentCard({ moment, index, onOpenComments, onOpenFullscreen }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void, onOpenFullscreen: (idx: number) => void }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(moment.likes || 0);
 
-  const handleLike = async () => {
+  // View Count Tracking Logic
+  useEffect(() => {
+    const incrementViews = async () => {
+      if (!firestore || !moment.id) return;
+      try {
+        await updateDocumentNonBlocking(doc(firestore, 'moments', moment.id), {
+          views: increment(1)
+        });
+      } catch (e) {}
+    };
+    incrementViews();
+  }, []);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!firestore || !user) return;
     setLiked(!liked);
     setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
@@ -157,8 +188,9 @@ function MomentCard({ moment, index, onOpenComments }: { moment: any, index: num
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
+      onClick={() => onOpenFullscreen(index)}
     >
-      <Card className="bg-white border-white shadow-xl rounded-[2.5rem] overflow-hidden">
+      <Card className="bg-white border-white shadow-xl rounded-[2.5rem] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform">
         <CardContent className="p-0">
           {/* Header */}
           <div className="p-6 flex items-center justify-between">
@@ -227,6 +259,11 @@ function MomentCard({ moment, index, onOpenComments }: { moment: any, index: num
           {/* Actions */}
           <div className="p-5 px-7 flex items-center justify-between border-t border-slate-50 bg-slate-50/30">
             <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2 text-slate-300">
+                <Eye className="h-5 w-5" />
+                <span className="text-xs font-black">{moment.views || 0}</span>
+              </div>
+
               <button 
                 onClick={handleLike}
                 className={cn(

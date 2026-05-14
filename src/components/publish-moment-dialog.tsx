@@ -84,6 +84,7 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
      [fileType === 'video' ? 'videoUrl' : 'imageUrl']: mediaUrl,
      type: fileType || 'image',
      likes: 0,
+     views: 0,
      commentsCount: 0,
      createdAt: serverTimestamp()
     });

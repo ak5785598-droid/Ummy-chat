@@ -32,6 +32,7 @@ import { useDoc } from '@/firebase';
 import { DiscoverViewGlossy } from './discover-view-glossy';
 import { GridMomentCard } from '@/components/grid-moment-card';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
+import { FullscreenMomentOverlay } from '@/components/fullscreen-moment-overlay';
 
 export default function DiscoverView() {
   const firestore = useFirestore();
@@ -39,6 +40,7 @@ export default function DiscoverView() {
   const [showPublish, setShowPublish] = useState(false);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
   const [selectedMomentUser, setSelectedMomentUser] = useState<string | undefined>();
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   // Defaulting to recommend logic as before, without changing the core functionality
   const [activeTab, setActiveTab] = useState<'recommend' | 'following'>('recommend');
   
@@ -149,6 +151,9 @@ export default function DiscoverView() {
                     setSelectedMomentId(id);
                     setSelectedMomentUser(username);
                   }}
+                  onOpenFullscreen={(idx) => {
+                    setSelectedIndex(idx);
+                  }}
                 />
               ))}
 
@@ -169,6 +174,17 @@ export default function DiscoverView() {
 
         {/* Dialogs & Sheets */}
         <PublishMomentDialog open={showPublish} onOpenChange={setShowPublish} />
+
+        <FullscreenMomentOverlay 
+          open={selectedIndex !== null}
+          initialIndex={selectedIndex || 0}
+          moments={activeMoments || []}
+          onClose={() => setSelectedIndex(null)}
+          onOpenComments={(id, username) => {
+            setSelectedMomentId(id);
+            setSelectedMomentUser(username);
+          }}
+        />
 
         <MomentCommentsSheet 
           momentId={selectedMomentId} 
