@@ -165,17 +165,33 @@ function hashUidToNumber(uid: string): number {
 }
 
 // --- HAZA STYLE COMPONENTS ---
-const RoomTrophyBadge = ({ coins }: { coins: number }) => (
-  <div className="w-fit flex items-center gap-1 bg-[#FFB300]/10 border border-[#FFB300]/30 rounded-full pl-0.5 pr-2 py-0.5 mt-1 cursor-pointer active:scale-95 transition-transform">
-    <div className="bg-[#FFB300] rounded-full p-0.5 shrink-0">
-      <Trophy className="h-2.5 w-2.5 text-black fill-current" />
+const RoomTrophyBadge = ({ coins }: { coins: number }) => {
+  const target = 2500000; // Level 1 Goal: 2.5M
+  const progress = Math.min((coins / target) * 100, 100);
+  
+  return (
+    <div className="group relative flex flex-col items-center gap-1 mt-1 cursor-pointer active:scale-95 transition-all">
+      <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-yellow-500/30 rounded-full pl-1 pr-3 py-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:border-yellow-500/60 transition-colors">
+        <div className="relative h-5 w-5 rounded-full bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 flex items-center justify-center shadow-lg">
+          <Trophy className="h-3 w-3 text-black fill-current" />
+          <div className="absolute inset-0 rounded-full bg-white/20 animate-shine" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black text-yellow-500 leading-none tracking-tighter">
+            {coins >= 1000000 ? `${(coins / 1000000).toFixed(2)}M` : coins.toLocaleString()}
+          </span>
+          <div className="h-1 w-12 bg-white/10 rounded-full mt-0.5 overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full transition-all duration-1000"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+        <ChevronDown className="h-3 w-3 text-yellow-500/40 group-hover:text-yellow-500 transition-colors" />
+      </div>
     </div>
-    <span className="text-[10px] font-black text-[#FFB300] leading-none whitespace-nowrap">
-      {coins >= 1000000 ? `${(coins / 1000000).toFixed(1)}M` : coins.toLocaleString()}
-    </span>
-    <ChevronDown className="h-2.5 w-2.5 text-[#FFB300]/50 shrink-0" />
-  </div>
-);
+  );
+};
 
 const Seat = memo(({
   index,

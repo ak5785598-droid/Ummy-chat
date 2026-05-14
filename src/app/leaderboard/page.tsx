@@ -77,13 +77,36 @@ const DailyCountdown = () => {
   );
 };
 
-// --- CircleAvatar (UPDATED: Strictly Golden Borders) ---
-const CircleAvatar = ({ src, fallback, size = "md" }: { src?: string, fallback: string, size?: "sm" | "md" | "lg" }) => {
+// --- Rank Badge (NEW: CSS Based Premium Badge) ---
+const RankBadge = ({ rank }: { rank: number }) => {
+  const colors = {
+    1: "from-yellow-300 via-yellow-500 to-yellow-700 shadow-[0_0_20px_rgba(212,175,55,0.6)]",
+    2: "from-slate-300 via-slate-400 to-slate-500 shadow-[0_0_15px_rgba(192,192,192,0.4)]",
+    3: "from-orange-400 via-orange-500 to-orange-700 shadow-[0_0_15px_rgba(205,127,50,0.4)]",
+  };
+  
+  return (
+    <div className={cn(
+      "absolute -top-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center z-20 border-2 border-white/20",
+      colors[rank as keyof typeof colors]
+    )}>
+      <span className="text-sm font-black text-white drop-shadow-md italic">{rank}</span>
+      {rank === 1 && <Crown className="absolute -top-4 h-5 w-5 text-yellow-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] animate-bounce" />}
+    </div>
+  );
+};
+
+const CircleAvatar = ({ src, fallback, size = "md", rank }: { src?: string, fallback: string, size?: "sm" | "md" | "lg", rank?: number }) => {
   const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
-  const goldenGlow = "shadow-[0_0_15px_rgba(212,175,55,0.6)] border-[#D4AF37]"; // Pure Gold Theme
+  const getBorderColor = () => {
+    if (rank === 1) return "border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.6)]";
+    if (rank === 2) return "border-slate-400 shadow-[0_0_15px_rgba(148,163,184,0.4)]";
+    if (rank === 3) return "border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]";
+    return "border-[#D4AF37]/30 shadow-[0_0_10px_rgba(212,175,55,0.1)]";
+  };
 
   return (
-    <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2 bg-slate-900", sizes[size], goldenGlow)}>
+    <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2 bg-slate-900", sizes[size], getBorderColor())}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
           <AvatarFallback className="bg-slate-900 text-[#D4AF37] font-black rounded-full">{fallback}</AvatarFallback>
@@ -132,12 +155,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top2 && (
         <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
            <div className="relative mb-2">
-             <img 
-               src="/images/leaderboard/rank2.png" 
-               alt="Rank 2" 
-               className="absolute -top-10 left-1/2 -translate-x-1/2 w-14 h-14 z-20 drop-shadow-[0_0_10px_rgba(192,192,192,0.5)]"
-             />
-             <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" />
+             <RankBadge rank={2} />
+             <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" rank={2} />
            </div>
            <div className="w-full bg-gradient-to-b from-slate-400/20 to-transparent border-t-2 border-slate-400/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top2.username || top2.name || 'User'}</span>
@@ -149,12 +168,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top1 && (
         <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex-1 flex flex-col items-center z-10 -translate-y-4 scale-110">
            <div className="relative mb-2">
-             <img 
-               src="/images/leaderboard/rank1.png" 
-               alt="Rank 1" 
-               className="absolute -top-12 left-1/2 -translate-x-1/2 w-16 h-16 z-20 drop-shadow-[0_0_20px_rgba(212,175,55,0.8)]"
-             />
-             <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" />
+             <RankBadge rank={1} />
+             <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} />
            </div>
            <div className="w-full bg-gradient-to-b from-[#D4AF37]/30 to-transparent border-t-2 border-[#D4AF37] pt-6 pb-2 flex flex-col items-center rounded-t-lg shadow-[0_-10px_20px_rgba(212,175,55,0.2)]">
              <span className="text-[11px] font-black uppercase text-white truncate w-24 text-center drop-shadow-md">{top1.username || top1.name || 'User'}</span>
@@ -166,12 +181,8 @@ const RankingList = ({ items, type, isLoading }: { items: any[] | null, type: st
       {top3 && (
         <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center">
            <div className="relative mb-2">
-             <img 
-               src="/images/leaderboard/rank3.png" 
-               alt="Rank 3" 
-               className="absolute -top-10 left-1/2 -translate-x-1/2 w-14 h-14 z-20 drop-shadow-[0_0_10px_rgba(205,127,50,0.5)]"
-             />
-             <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" />
+             <RankBadge rank={3} />
+             <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" rank={3} />
            </div>
            <div className="w-full bg-gradient-to-b from-orange-400/20 to-transparent border-t-2 border-orange-400/60 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top3.username || top3.name || 'User'}</span>

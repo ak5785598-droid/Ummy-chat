@@ -154,22 +154,30 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 
 const ContributorAvatar = ({ contributor, rank }: { contributor: any, rank: number }) => {
  const colors = [
-  "border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]", // Gold
-  "border-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.4)]", // Silver
-  "border-orange-400 shadow-[0_0_15px_rgba(251,146,60,0.4)]", // Bronze
+  "from-yellow-300 via-yellow-500 to-yellow-700 shadow-[0_0_15px_rgba(234,179,8,0.4)]", // Gold
+  "from-slate-300 via-slate-400 to-slate-500 shadow-[0_0_15px_rgba(148,163,184,0.4)]", // Silver
+  "from-orange-400 via-orange-500 to-orange-700 shadow-[0_0_15px_rgba(249,115,22,0.4)]", // Bronze
  ];
- const badges = ["🥇", "🥈", "🥉"];
 
  return (
-  <div className="flex flex-col items-center gap-1">
+  <div className="flex flex-col items-center gap-1 group">
    <div className="relative">
-    <Avatar className={cn("h-11 w-11 border-2", colors[rank - 1])}>
+    <div className={cn(
+     "absolute -top-3 -right-1 w-6 h-6 rounded-full bg-gradient-to-br flex items-center justify-center z-20 border border-white/20 shadow-lg transition-transform group-hover:scale-110",
+     colors[rank - 1]
+    )}>
+     <span className="text-[10px] font-black text-white italic drop-shadow-md">{rank}</span>
+     {rank === 1 && <Crown className="absolute -top-2.5 h-3.5 w-3.5 text-yellow-300 drop-shadow-md animate-pulse" />}
+    </div>
+    <Avatar className={cn(
+     "h-14 w-14 border-2 transition-all duration-300 group-hover:border-white",
+     rank === 1 ? "border-yellow-400" : rank === 2 ? "border-slate-400" : "border-orange-500"
+    )}>
      <AvatarImage src={contributor.avatarUrl || undefined} className="object-cover" />
-     <AvatarFallback className="bg-slate-100 text-[10px] font-bold">{rank}</AvatarFallback>
+     <AvatarFallback className="bg-slate-100 text-[10px] font-black">{(contributor.username || 'U').charAt(0)}</AvatarFallback>
     </Avatar>
-    <div className="absolute -top-2 -right-1 text-sm drop-shadow-md">{badges[rank - 1]}</div>
    </div>
-   <span className="text-[8px] font-black uppercase text-gray-400 truncate w-14 text-center mt-1">{contributor.username || '...'}</span>
+   <span className="text-[9px] font-black uppercase text-slate-400 truncate w-16 text-center mt-1 group-hover:text-slate-600 transition-colors">{contributor.username || '...'}</span>
   </div>
  );
 };

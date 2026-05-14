@@ -61,9 +61,16 @@ export function RoomSupportDialog({
   levelPoints = 0
 }: RoomSupportDialogProps) {
   
-  // Calculate Room Level based on points (simplistic mapping for now)
-  const roomLevel = Math.floor(Math.sqrt(levelPoints / 1000)) || 0;
-  const roomCoins = roomStats?.weeklyGifts || 0;
+  // Link with Room Trophy (Daily Gifts)
+  const roomCoins = roomStats?.dailyGifts || 0;
+  
+  // Find current goal level based on dailyGifts
+  const currentGoal = [...GOALS_REWARDS].reverse().find(g => {
+    const targetCoins = parseFloat(g.roomCoins.replace('M', '')) * 1000000;
+    return roomCoins >= targetCoins;
+  }) || (roomCoins > 0 ? GOALS_REWARDS[GOALS_REWARDS.length - 1] : { level: 0 });
+
+  const roomLevel = currentGoal.level;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

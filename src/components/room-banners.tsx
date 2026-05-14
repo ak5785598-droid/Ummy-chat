@@ -111,24 +111,8 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
                   <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" unoptimized />
                 )}
                 
-                {/* Visual Flair */}
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/40" />
-                
-                {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-1.5 text-center">
-                  <div className="mb-1 p-1 bg-white/20 rounded-lg backdrop-blur-md border border-white/10">
-                    <banner.icon className="h-5 w-5 text-white drop-shadow-glow" />
-                  </div>
-                  <h4 className="text-[9px] font-black uppercase tracking-tighter text-white leading-tight mb-1 drop-shadow-md">
-                    {banner.title}
-                  </h4>
-                  <div className="mt-auto bg-black/40 px-1.5 py-0.5 rounded-full border border-white/5">
-                    <span className="text-[7px] font-bold text-yellow-300/90 whitespace-nowrap">
-                      {banner.subtitle}
-                    </span>
-                  </div>
-                </div>
+                {/* Content Overlay - REMOVED TEXT AND ICONS PER USER REQUEST */}
+                <div className="absolute inset-0" />
 
                 {/* Animated Shine Effect */}
                 <div className="absolute inset-x-0 h-10 -top-10 bg-white/10 blur-xl animate-[shine_3s_infinite]" />
