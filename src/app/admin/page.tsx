@@ -717,6 +717,18 @@ function AdminPageContent() {
   const giftFileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
+  // ROCKET MANAGEMENT STATE
+  const [rocketName, setRocketName] = useState("");
+  const [rocketTarget, setRocketTarget] = useState("10000");
+  const [isUploadingRocket, setIsUploadingRocket] = useState(false);
+  const [rocketImageFile, setRocketImageFile] = useState<File | null>(null);
+  const [rocketVideoFile, setRocketVideoFile] = useState<File | null>(null);
+  const [rocketImagePreview, setRocketImagePreview] = useState("");
+  const [rocketVideoPreview, setRocketVideoPreview] = useState("");
+  
+  const rocketImageInputRef = useRef<HTMLInputElement>(null);
+  const rocketVideoInputRef = useRef<HTMLInputElement>(null);
+
   const giftsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, "giftList"), orderBy("createdAt", "desc"));
@@ -784,6 +796,19 @@ function AdminPageContent() {
     return doc(firestore, "appConfig", "roomBanners");
   }, [firestore, isAuthorized]);
   const { data: roomBannerConfig } = useDoc(roomBannerConfigRef);
+
+  const rocketConfigRef = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return doc(firestore, "appConfig", "rocket");
+  }, [firestore, isAuthorized]);
+  const { data: rocketConfig } = useDoc(rocketConfigRef);
+
+  useEffect(() => {
+    if (rocketConfig) {
+      setRocketName(rocketConfig.name || "");
+      setRocketTarget(rocketConfig.target?.toString() || "10000");
+    }
+  }, [rocketConfig]);
 
   const handleUpdateGlobalNotice = () => {
     if (!firestore || !isAuthorized || !configRef) return;
@@ -1910,6 +1935,55 @@ function AdminPageContent() {
     }
   };
 
+  const handleSaveRocket = async () => {
+    if (!firestore || !rocketConfigRef) return;
+    setIsUploadingRocket(true);
+    try {
+      let imageUrl = rocketConfig?.imageUrl || "";
+      let videoUrl = rocketConfig?.videoUrl || "";
+
+      // 1. Upload Rocket Image (Icon)
+      if (rocketImageFile) {
+        const iRef = ref(storage!, `rocket/icon_${Date.now()}_${rocketImageFile.name}`);
+        const iRes = await uploadBytes(iRef, rocketImageFile);
+        imageUrl = await getDownloadURL(iRes.ref);
+      }
+
+      // 2. Upload Rocket Animation Video
+      if (rocketVideoFile) {
+        const vRef = ref(storage!, `rocket/anim_${Date.now()}_${rocketVideoFile.name}`);
+        const vRes = await uploadBytes(vRef, rocketVideoFile);
+        videoUrl = await getDownloadURL(vRes.ref);
+      }
+
+      // 3. Save to Firestore
+      await setDoc(rocketConfigRef, {
+        name: rocketName,
+        target: parseInt(rocketTarget) || 10000,
+        imageUrl,
+        videoUrl,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      setRocketImageFile(null);
+      setRocketVideoFile(null);
+      
+      toast({
+        title: "Rocket Hub Synchronized",
+        description: "The room rocket configuration is now live.",
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Sync Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsUploadingRocket(false);
+    }
+  };
+
 
   const handleBulkRestoreGifts = async () => {
     if (!firestore || !isAuthorized) return;
@@ -2582,6 +2656,12 @@ function AdminPageContent() {
                   <Gift className="h-4 w-4" /> Gift Management
                 </TabsTrigger>
                 <TabsTrigger
+                  value="rocket-hub"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-red-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Rocket className="h-4 w-4" /> Rocket Hub
+                </TabsTrigger>
+                <TabsTrigger
                   value="loading-screen"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -2615,6 +2695,124 @@ function AdminPageContent() {
             </ScrollArea>
           </div>
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="rocket-hub" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-red-600">
+                    <Rocket className="h-6 w-6" /> Rocket Hub
+                  </CardTitle>
+                  <CardDescription>
+                    Configure the room rocket's visual frequency and target.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-8">
+                  <div className="p-6 bg-red-50 rounded-3xl border-2 border-red-100 flex flex-col gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-red-400">Rocket Name</Label>
+                        <Input 
+                          value={rocketName} 
+                          onChange={e => setRocketName(e.target.value)} 
+                          placeholder="e.g. Supernova Rocket" 
+                          className="h-12 rounded-xl border-red-200 bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-red-400">Target XP (Goal)</Label>
+                        <Input 
+                          type="number"
+                          value={rocketTarget} 
+                          onChange={e => setRocketTarget(e.target.value)} 
+                          placeholder="10000" 
+                          className="h-12 rounded-xl border-red-200 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-red-500">1. Rocket Icon (Image)</Label>
+                        <div 
+                          onClick={() => rocketImageInputRef.current?.click()}
+                          className="aspect-video border-2 border-dashed border-red-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-red-100/30 cursor-pointer transition-all overflow-hidden relative group"
+                        >
+                          {rocketImagePreview || rocketConfig?.imageUrl ? (
+                            <img src={rocketImagePreview || rocketConfig?.imageUrl} alt="Preview" className="h-full w-full object-contain p-4" />
+                          ) : (
+                            <>
+                              <ImageIcon className="h-8 w-8 text-red-200" />
+                              <span className="text-[10px] font-bold uppercase text-red-300">Select Rocket Icon</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={rocketImageInputRef} 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setRocketImageFile(f);
+                                setRocketImagePreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">2. Launch Animation (Video)</Label>
+                        <div 
+                          onClick={() => rocketVideoInputRef.current?.click()}
+                          className="aspect-video border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
+                        >
+                          {rocketVideoPreview || rocketConfig?.videoUrl ? (
+                            <video src={rocketVideoPreview || rocketConfig?.videoUrl} autoPlay muted loop className="h-full w-full object-contain" />
+                          ) : (
+                            <>
+                              <Video className="h-8 w-8 text-indigo-200" />
+                              <span className="text-[10px] font-bold uppercase text-indigo-300">Select Launch Video</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={rocketVideoInputRef} 
+                            className="hidden" 
+                            accept="video/*" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setRocketVideoFile(f);
+                                setRocketVideoPreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleSaveRocket}
+                      disabled={isUploadingRocket}
+                      className="h-16 rounded-[1.5rem] bg-red-600 hover:bg-red-700 text-white font-black uppercase text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all"
+                    >
+                      {isUploadingRocket ? (
+                        <div className="flex items-center gap-3">
+                          <Loader className="animate-spin h-6 w-6" />
+                          <span>Syncing Rocket...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-6 w-6" />
+                          <span>Synchronize Rocket Hub</span>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="gift-management" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
                 <CardHeader className="px-0">

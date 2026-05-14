@@ -93,7 +93,7 @@ const DollarCoin3DIcon = ({ className }: { className?: string }) => (
  * Handles the high-fidelity dispatch of Gold Coins to tribe members by ID.
  * Hardened with a Fresh Database Verification Handshake to prevent unauthorized transfers after revocation.
  */
-export function SellerTransferDialog() {
+export function SellerTransferDialog({ trigger }: { trigger?: React.ReactNode }) {
  const [open, setOpen] = useState(false);
  const [recipientId, setRecipientId] = useState('');
  const [amount, setAmount] = useState('');
@@ -234,17 +234,19 @@ export function SellerTransferDialog() {
  return (
   <Dialog open={open} onOpenChange={setOpen}>
    <DialogTrigger asChild>
-    <button 
-     type="button"
-     className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
-    >
-     <div className="flex items-center gap-4">
-      <div className="h-10 w-10 p-1.5 rounded-xl flex items-center justify-center transition-colors bg-red-50 text-red-500 shadow-sm border border-red-100">
-       <MoneyBag3DIcon className="h-full w-full" />
-      </div>
-      <span className="font-medium text-[16px] text-[#1F2937]">Seller Center</span>
-     </div>
-    </button>
+    {trigger || (
+      <button 
+       type="button"
+       className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/50 active:bg-slate-100/50 transition-all text-left group"
+      >
+       <div className="flex items-center gap-4">
+        <div className="h-10 w-10 p-1.5 rounded-xl flex items-center justify-center transition-colors bg-red-50 text-red-500 shadow-sm border border-red-100">
+         <MoneyBag3DIcon className="h-full w-full" />
+        </div>
+        <span className="font-medium text-[16px] text-[#1F2937]">Seller Center</span>
+       </div>
+      </button>
+    )}
    </DialogTrigger>
    
    {/* DialogContent me dvh ka logic set hai taaki mobile keyboard aane par auto-push up ho jaye */}

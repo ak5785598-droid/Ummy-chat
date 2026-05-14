@@ -20,6 +20,9 @@ import {
 } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/hooks/use-firestore';
+import { firestore } from '@/lib/firebase';
 
 const ROCKET_LEVELS = [
   { level: 1, name: 'Scout-1', target: 5000, colors: { primary: '#3b82f6', secondary: '#1d4ed8', flame: '#60a5fa' } },
@@ -81,6 +84,9 @@ export function RocketDialog({
   currentExp?: number;
   roomName?: string;
 }) {
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, []);
+  const { data: rocketConfig } = useDoc(configRef);
+
   const nextLevel = useMemo(() => 
     ROCKET_LEVELS.find(l => currentExp < l.target) || ROCKET_LEVELS[4]
   , [currentExp]);
@@ -89,7 +95,7 @@ export function RocketDialog({
     [...ROCKET_LEVELS].reverse().find(l => currentExp >= l.target) || null
   , [currentExp]);
 
-  const progress = Math.min((currentExp / nextLevel.target) * 100, 100);
+  const progress = Math.min((currentExp / (rocketConfig?.target || nextLevel.target)) * 100, 100);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,16 +125,30 @@ export function RocketDialog({
           </button>
 
           {/* MAIN ROCKET DISPLAY */}
-          <PremiumRocketSVG 
-            colors={activeLevel?.colors || ROCKET_LEVELS[0].colors} 
-            isActive={!!activeLevel} 
-          />
+          <div className="relative w-44 h-44 flex items-center justify-center">
+            {rocketConfig?.imageUrl ? (
+              <motion.img 
+                src={rocketConfig.imageUrl} 
+                alt="Rocket" 
+                animate={!!activeLevel ? {
+                  y: [0, -10, 0],
+                } : {}}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]" 
+              />
+            ) : (
+              <PremiumRocketSVG 
+                colors={activeLevel?.colors || ROCKET_LEVELS[0].colors} 
+                isActive={!!activeLevel} 
+              />
+            )}
+          </div>
 
           <motion.h1 
             initial={{ scale: 0.9 }} animate={{ scale: 1 }}
             className="mt-6 text-3xl font-black italic tracking-widest text-white uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
           >
-            {activeLevel ? activeLevel.name : 'SYSTEM OFFLINE'}
+            {rocketConfig?.name || (activeLevel ? activeLevel.name : 'SYSTEM OFFLINE')}
           </motion.h1>
         </div>
 
@@ -137,7 +157,7 @@ export function RocketDialog({
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Next Evolution</span>
-              <span className="text-white text-lg font-bold">{nextLevel.name}</span>
+              <span className="text-white text-lg font-bold">{rocketConfig?.name || nextLevel.name}</span>
             </div>
             <div className="text-right">
               <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Current XP</span>
@@ -157,7 +177,7 @@ export function RocketDialog({
 
           <div className="flex justify-between items-center text-[10px] font-black text-white/20 uppercase tracking-tighter">
             <span>Level {activeLevel?.level || 0}</span>
-            <span>{nextLevel.target.toLocaleString()} XP Target</span>
+            <span>{(rocketConfig?.target || nextLevel.target).toLocaleString()} XP Target</span>
           </div>
 
           {/* ACTION BUTTONS */}

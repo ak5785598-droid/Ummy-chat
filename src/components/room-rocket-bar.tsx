@@ -4,8 +4,11 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/hooks/use-firestore';
+import { firestore } from '@/lib/firebase';
 
-// --- 1. NEW PREMIUM GOLD ROCKET (Direct SVG) ---
+// --- 1. NEW PREMIUM GOLD ROCKET (Direct SVG - Fallback) ---
 const CustomGoldRocket = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn("drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]", className)}>
     {/* Fins */}
@@ -32,7 +35,12 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showFlight, setShowFlight] = useState(false);
 
-  const progressPercent = Math.min(100, Math.max(0, (progress / target) * 100));
+  // FETCH DYNAMIC CONFIG
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'rocket') : null, []);
+  const { data: rocketConfig } = useDoc(configRef);
+
+  const finalTarget = rocketConfig?.target || target;
+  const progressPercent = Math.min(100, Math.max(0, (progress / finalTarget) * 100));
 
   useEffect(() => {
     if (!countdownUntil) return;
@@ -42,7 +50,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
       const diff = Math.max(0, Math.floor((end - now) / 1000));
       setTimeLeft(diff);
       if (diff === 2 && !showFlight) setShowFlight(true);
-      if (diff === 0) { clearInterval(timer); setTimeout(() => setShowFlight(false), 3000); }
+      if (diff === 0) { clearInterval(timer); setTimeout(() => setShowFlight(false), 5000); }
     }, 1000);
     return () => clearInterval(timer);
   }, [countdownUntil, showFlight]);
@@ -87,8 +95,14 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
               />
             </svg>
 
-            {/* THE ROCKET ICON - Compact Size (Restored) */}
-            <CustomGoldRocket className={cn("h-7.5 w-7.5 relative z-10 transition-transform duration-500 group-hover:scale-110", progressPercent >= 100 && "animate-bounce")} />
+            {/* THE ROCKET ICON - Dynamic or Fallback */}
+            <div className={cn("h-7.5 w-7.5 relative z-10 transition-transform duration-500 group-hover:scale-110 flex items-center justify-center", progressPercent >= 100 && "animate-bounce")}>
+              {rocketConfig?.imageUrl ? (
+                <img src={rocketConfig.imageUrl} alt="Rocket" className="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+              ) : (
+                <CustomGoldRocket className="h-full w-full" />
+              )}
+            </div>
           </div>
 
           {!countdownUntil && (
@@ -106,18 +120,35 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
         )}
       </div>
 
-      {/* FLYING ANIMATION */}
+      {/* FLYING ANIMATION / VIDEO LAUNCH */}
       <AnimatePresence>
         {showFlight && (
-          <motion.div className="fixed inset-0 z-[100] pointer-events-none">
-            <motion.div
-              initial={{ x: "80vw", y: "80vh", rotate: -45, scale: 0.5 }}
-              animate={{ x: ["80vw", "40vw", "-20vw"], y: ["80vh", "20vh", "-20vh"], scale: [0.5, 2.5, 0.5], rotate: [-45, -45, -90] }}
-              transition={{ duration: 2.5, ease: "easeIn" }}
-              className="absolute"
-            >
-              <CustomGoldRocket className="h-40 w-40" />
-            </motion.div>
+          <motion.div className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center">
+            {rocketConfig?.videoUrl ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1.2 }}
+                exit={{ opacity: 0, scale: 2 }}
+                className="w-full h-full max-w-[500px] flex items-center justify-center"
+              >
+                <video 
+                  src={rocketConfig.videoUrl} 
+                  autoPlay 
+                  muted 
+                  playsInline
+                  className="w-full h-auto object-contain"
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ x: "80vw", y: "80vh", rotate: -45, scale: 0.5 }}
+                animate={{ x: ["80vw", "40vw", "-20vw"], y: ["80vh", "20vh", "-20vh"], scale: [0.5, 2.5, 0.5], rotate: [-45, -45, -90] }}
+                transition={{ duration: 2.5, ease: "easeIn" }}
+                className="absolute"
+              >
+                <CustomGoldRocket className="h-40 w-40" />
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

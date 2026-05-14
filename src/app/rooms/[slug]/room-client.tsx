@@ -806,7 +806,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     }
 
     // TRIGGER 1: Start Countdown when goal reached
-    if (rocket.progress >= rocket.target && !rocket.countdownUntil) {
+    const currentTarget = rocketConfig?.target || rocket.target || 10000;
+    if (rocket.progress >= currentTarget && !rocket.countdownUntil) {
       console.log('[Rocket] Goal reached! Starting 60s countdown...');
       const launchTime = new Date(now + 60000);
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
@@ -1131,6 +1132,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return doc(firestore, 'appConfig', 'global');
   }, [firestore]);
   const { data: globalConfig } = useDoc(configRef);
+
+  const rocketConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'appConfig', 'rocket');
+  }, [firestore]);
+  const { data: rocketConfig } = useDoc(rocketConfigRef);
 
   useEffect(() => {
     setNow(Date.now());

@@ -117,7 +117,8 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  const isOwner = user?.uid === room.ownerId;
  const isOfficialHelpRoom = room.id === 'ummy-help';
  const userIsOfficial = userProfile?.tags?.some((t: string) => ['Admin', 'Official', 'Super Admin'].includes(t));
- const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner;
+ const isSupremeCreator = user?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
+ const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner || isSupremeCreator;
 
  const participantsQuery = useMemoFirebase(() => {
   if (!firestore || !room.id) return null;
@@ -136,18 +137,18 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  const filteredThemes = useMemo(() => {
   const baseline = ROOM_THEMES.filter(theme => {
    if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
-   if (userIsOfficial || isOwner) return true;
+   if (userIsOfficial || isOwner || isSupremeCreator) return true;
    return theme.category === 'entertainment' || theme.category === 'general';
   });
 
   const dynamic = (customThemes || []).filter(theme => {
    if (isOfficialHelpRoom) return theme.category === 'help' || theme.category === 'general';
-   if (userIsOfficial || isOwner) return true;
+   if (userIsOfficial || isOwner || isSupremeCreator) return true;
    return theme.category === 'entertainment' || theme.category === 'general';
   });
 
   return [...baseline, ...dynamic];
- }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes]);
+ }, [isOfficialHelpRoom, userIsOfficial, isOwner, isSupremeCreator, customThemes]);
 
  const handleUpdate = (field: string, value: any) => {
   if (!firestore) return;
@@ -295,6 +296,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
         <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
         <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
         <SettingItem label="Administrators" onClick={() => setIsManagingAdmins(true)} />
+
        </div>
      </ScrollArea>
 

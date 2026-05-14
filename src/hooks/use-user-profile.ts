@@ -76,6 +76,7 @@ export interface UserProfile {
   idColor?: 'red' | 'blue' | 'purple' | 'none';
   isBudgetId?: boolean;
   isOnline?: boolean;
+  currentRoomId?: string;
   svip?: number;
   familyId?: string;
   familyRole?: string;
