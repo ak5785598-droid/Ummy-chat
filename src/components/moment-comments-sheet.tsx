@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -10,9 +10,9 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Loader, MessageCircle } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp, doc, increment } from 'firebase/firestore';
+import { Send, Loader, MessageCircle, Heart, CornerDownRight, X } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, doc, increment, runTransaction } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -23,11 +23,101 @@ interface MomentCommentsSheetProps {
   momentUsername?: string;
 }
 
+function CommentRow({
+  momentId,
+  comment,
+  depth,
+  onReply,
+}: {
+  momentId: string;
+  comment: any;
+  depth: number;
+  onReply: (commentId: string, username: string) => void;
+}) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const likeRef =
+    firestore && user && depth === 0
+      ? doc(firestore, 'moments', momentId, 'comments', comment.id, 'likes', user.uid)
+      : null;
+  const { data: likeDoc } = useDoc(likeRef);
+  const isLiked = !!likeDoc;
+
+  const handleToggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!firestore || !user || depth !== 0) return;
+    const commentRef = doc(firestore, 'moments', momentId, 'comments', comment.id);
+    const likeDocRef = doc(firestore, 'moments', momentId, 'comments', comment.id, 'likes', user.uid);
+    const uid = user.uid;
+
+    runTransaction(firestore, async (tx) => {
+      const snap = await tx.get(likeDocRef);
+      if (snap.exists()) {
+        tx.delete(likeDocRef);
+        tx.update(commentRef, { likesCount: increment(-1) });
+      } else {
+        tx.set(likeDocRef, { userId: uid, createdAt: serverTimestamp() });
+        tx.update(commentRef, { likesCount: increment(1) });
+      }
+    }).catch(() => {});
+  };
+
+  return (
+    <div className="space-y-2" style={{ paddingLeft: depth * 16 }}>
+      <div className="flex gap-4">
+        <Avatar className={cn('shrink-0 shadow-sm border border-slate-100', depth === 0 ? 'h-10 w-10' : 'h-8 w-8')}>
+          <AvatarImage src={comment.avatarUrl} className="object-cover" />
+          <AvatarFallback className="bg-slate-50 text-slate-300 font-black">{comment.username?.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="space-y-1 flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-headline font-black text-[13px] text-slate-900 tracking-tight truncate">{comment.username}</span>
+            <span className="text-[9px] font-bold text-slate-300 uppercase shrink-0">
+              {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+            </span>
+          </div>
+          <p className="text-[13px] text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl rounded-tl-none border border-slate-100/50">
+            {comment.text}
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReply(comment.id, comment.username || 'User');
+              }}
+              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 transition-colors flex items-center gap-1"
+            >
+              <CornerDownRight className="h-3 w-3" />
+              Reply
+            </button>
+
+            {depth === 0 && (
+              <button
+                onClick={handleToggleLike}
+                className={cn(
+                  'text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1',
+                  isLiked ? 'text-red-500' : 'text-slate-400 hover:text-red-500',
+                )}
+              >
+                <Heart className={cn('h-3 w-3', isLiked && 'fill-current')} />
+                <span>{comment.likesCount || 0}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUsername }: MomentCommentsSheetProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const commentsQuery = useMemoFirebase(() => {
@@ -39,6 +129,34 @@ export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUserna
   }, [firestore, momentId]);
 
   const { data: comments, isLoading } = useCollection(commentsQuery);
+
+  const threaded = useMemo(() => {
+    const list = (comments || []).map((c: any) => ({
+      ...c,
+      parentId: c.parentId ?? null,
+      likesCount: c.likesCount ?? 0,
+    }));
+
+    const byParent = new Map<string | null, any[]>();
+    for (const c of list) {
+      const p = c.parentId || null;
+      const arr = byParent.get(p) || [];
+      arr.push(c);
+      byParent.set(p, arr);
+    }
+
+    const build = (parentId: string | null, depth: number): { comment: any; depth: number }[] => {
+      const children = byParent.get(parentId) || [];
+      const out: { comment: any; depth: number }[] = [];
+      for (const child of children) {
+        out.push({ comment: child, depth });
+        out.push(...build(child.id, depth + 1));
+      }
+      return out;
+    };
+
+    return build(null, 0);
+  }, [comments]);
 
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -56,12 +174,14 @@ export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUserna
         username: user.displayName || 'User',
         avatarUrl: user.photoURL || '',
         createdAt: serverTimestamp(),
+        parentId: replyTo?.id || null,
       });
 
       // Increment comments count on main moment
       await updateDocumentNonBlocking(doc(firestore, 'moments', momentId), {
         commentsCount: increment(1)
       });
+      setReplyTo(null);
     } catch (error) {
       console.error('Comment error:', error);
     } finally {
@@ -74,6 +194,10 @@ export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUserna
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments]);
+
+  useEffect(() => {
+    if (!open) setReplyTo(null);
+  }, [open]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -101,25 +225,16 @@ export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUserna
               </div>
             ) : (
               <div className="space-y-6">
-                {comments?.map((comment) => (
-                  <div key={comment.id} className="flex gap-4">
-                    <Avatar className="h-10 w-10 shrink-0 shadow-sm border border-slate-100">
-                      <AvatarImage src={comment.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-slate-50 text-slate-300 font-black">{comment.username?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-headline font-black text-[13px] text-slate-900 tracking-tight">{comment.username}</span>
-                        <span className="text-[9px] font-bold text-slate-300 uppercase">
-                          {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
-                        </span>
-                      </div>
-                      <p className="text-[13px] text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-2xl rounded-tl-none border border-slate-100/50">
-                        {comment.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                {momentId &&
+                  threaded.map(({ comment, depth }) => (
+                    <CommentRow
+                      key={comment.id}
+                      momentId={momentId}
+                      comment={comment}
+                      depth={depth}
+                      onReply={(id, username) => setReplyTo({ id, username })}
+                    />
+                  ))}
                 
                 {(!comments || comments.length === 0) && (
                   <div className="py-20 text-center space-y-4 opacity-30 flex flex-col items-center">
@@ -135,12 +250,27 @@ export function MomentCommentsSheet({ momentId, open, onOpenChange, momentUserna
 
         {/* Input Area */}
         <div className="p-6 border-t border-slate-50 bg-white/50 backdrop-blur-xl shrink-0 pb-12">
+          {replyTo && (
+            <div className="mb-3 flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Replying to</p>
+                <p className="text-sm font-bold text-slate-900 truncate">@{replyTo.username}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                className="h-9 w-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-900"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           <form onSubmit={handleSend} className="relative flex items-center gap-3">
              <div className="relative flex-1 group">
                 <input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Share a vibe..."
+                  placeholder={replyTo ? `Reply to @${replyTo.username}...` : "Share a vibe..."}
                   className="w-full h-14 bg-slate-100/80 border border-slate-200 rounded-2xl px-6 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-slate-900"
                 />
                 <button

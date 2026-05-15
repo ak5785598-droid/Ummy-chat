@@ -16,7 +16,8 @@ import {
   Globe,
   Crown,
   History,
-  Eye
+  Eye,
+  Users
 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, limit, orderBy, where, Timestamp, doc, increment } from 'firebase/firestore';
@@ -30,6 +31,7 @@ import { MomentCommentsSheet } from '@/components/moment-comments-sheet';
 import { FullscreenMomentOverlay } from '@/components/fullscreen-moment-overlay';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Discovery Dimension - Post Of The Day
@@ -198,21 +200,9 @@ export function DiscoverViewGlossy() {
 function MomentCard({ moment, index, onOpenComments, onOpenFullscreen }: { moment: any, index: number, onOpenComments: (id: string, user: string) => void, onOpenFullscreen: (idx: number) => void }) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(moment.likes || 0);
-
-  // View Count Tracking Logic
-  useEffect(() => {
-    const incrementViews = async () => {
-      if (!firestore || !moment.id) return;
-      try {
-        await updateDocumentNonBlocking(doc(firestore, 'moments', moment.id), {
-          views: increment(1)
-        });
-      } catch (e) {}
-    };
-    incrementViews();
-  }, []);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -226,6 +216,35 @@ function MomentCard({ moment, index, onOpenComments, onOpenFullscreen }: { momen
       });
     } catch (e) {
       console.error("Like error:", e);
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const appLink = origin ? `${origin}/discover?moment=${moment.id}` : '';
+    const mediaUrl = moment.videoUrl || moment.imageUrl || '';
+    const shareUrl = mediaUrl || appLink;
+    const shareTextParts = [];
+    if (moment.content) shareTextParts.push(moment.content);
+    if (appLink && appLink !== shareUrl) shareTextParts.push(appLink);
+    const shareText = shareTextParts.join('\n');
+
+    try {
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        // @ts-expect-error - Web Share API typing depends on lib dom version
+        await navigator.share({ title: 'Ummy', text: shareText || undefined, url: shareUrl || undefined });
+        return;
+      }
+    } catch (err) {}
+
+    try {
+      const toCopy = shareUrl || shareText;
+      if (!toCopy) return;
+      await navigator.clipboard.writeText(toCopy);
+      toast({ title: 'Link copied' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Share failed' });
     }
   };
   
@@ -309,6 +328,10 @@ function MomentCard({ moment, index, onOpenComments, onOpenFullscreen }: { momen
                 <Eye className="h-5 w-5" />
                 <span className="text-xs font-black">{moment.views || 0}</span>
               </div>
+              <div className="flex items-center gap-2 text-slate-300">
+                <Users className="h-5 w-5" />
+                <span className="text-xs font-black">{moment.reach || 0}</span>
+              </div>
 
               <button 
                 onClick={handleLike}
@@ -330,7 +353,7 @@ function MomentCard({ moment, index, onOpenComments, onOpenFullscreen }: { momen
               </button>
             </div>
 
-            <button className="text-slate-300 hover:text-slate-900 transition-colors">
+            <button onClick={handleShare} className="text-slate-300 hover:text-slate-900 transition-colors">
               <Share2 className="h-5 w-5" />
             </button>
           </div>

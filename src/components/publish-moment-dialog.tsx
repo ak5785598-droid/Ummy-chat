@@ -85,6 +85,7 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
      type: fileType || 'image',
      likes: 0,
      views: 0,
+     reach: 0,
      commentsCount: 0,
      createdAt: serverTimestamp()
     });

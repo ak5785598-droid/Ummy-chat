@@ -12,12 +12,14 @@ import {
   ChevronUp, 
   ChevronDown,
   Eye,
+  Users,
   Crown
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { doc, increment, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface FullscreenMomentOverlayProps {
   moments: any[];
@@ -41,8 +43,31 @@ export function FullscreenMomentOverlay({
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const moment = moments[currentIndex];
+
+  useEffect(() => {
+    if (!open) return;
+    if (!firestore || !user || !moment?.id) return;
+
+    const momentId = moment.id;
+    const uid = user.uid;
+    const reachRef = doc(firestore, 'moments', momentId, 'reach', uid);
+    const momentRef = doc(firestore, 'moments', momentId);
+
+    const timer = setTimeout(() => {
+      runTransaction(firestore, async (tx) => {
+        tx.update(momentRef, { views: increment(1) });
+        const snap = await tx.get(reachRef);
+        if (snap.exists()) return;
+        tx.set(reachRef, { userId: uid, createdAt: serverTimestamp() });
+        tx.update(momentRef, { reach: increment(1) });
+      }).catch(() => {});
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [open, firestore, user, moment?.id]);
 
   const setMuted = (nextMuted: boolean) => {
     setIsMuted(nextMuted);
@@ -103,6 +128,36 @@ export function FullscreenMomentOverlay({
         await updateDocumentNonBlocking(momentRef, { likes: increment(-1) });
       }
     } catch (err) {}
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!moment) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const appLink = origin ? `${origin}/discover?moment=${moment.id}` : '';
+    const mediaUrl = moment.videoUrl || moment.imageUrl || '';
+    const shareUrl = mediaUrl || appLink;
+    const shareTextParts = [];
+    if (moment.content) shareTextParts.push(moment.content);
+    if (appLink && appLink !== shareUrl) shareTextParts.push(appLink);
+    const shareText = shareTextParts.join('\n');
+
+    try {
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        // @ts-expect-error - Web Share API typing depends on lib dom version
+        await navigator.share({ title: 'Ummy', text: shareText || undefined, url: shareUrl || undefined });
+        return;
+      }
+    } catch (err) {}
+
+    try {
+      const toCopy = shareUrl || shareText;
+      if (!toCopy) return;
+      await navigator.clipboard.writeText(toCopy);
+      toast({ title: 'Link copied' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Share failed' });
+    }
   };
 
   const handleSwipe = (dir: 'up' | 'down') => {
@@ -254,7 +309,14 @@ export function FullscreenMomentOverlay({
               <span className="text-white text-xs font-black drop-shadow-md">{moment.views || 0}</span>
             </div>
 
-            <button className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 shadow-xl">
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 shadow-xl">
+                <Users className="h-5 w-5" />
+              </div>
+              <span className="text-white text-xs font-black drop-shadow-md">{moment.reach || 0}</span>
+            </div>
+
+            <button onClick={handleShare} className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 shadow-xl">
               <Share2 className="h-5 w-5" />
             </button>
           </div>

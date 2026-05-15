@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { doc, increment, setDoc, deleteDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle, Loader, Eye } from 'lucide-react';
+import { Heart, MessageCircle, MoreHorizontal, ShieldAlert, Flag, AlertTriangle, Loader, Eye, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -130,20 +130,6 @@ export function GridMomentCard({ moment, index, onOpenComments, onOpenFullscreen
     }
   };
 
-  // View Count Tracking Logic
-  useEffect(() => {
-    const incrementViews = async () => {
-      if (!firestore || !moment.id) return;
-      try {
-        await updateDocumentNonBlocking(doc(firestore, 'moments', moment.id), {
-          views: increment(1)
-        });
-      } catch (e) {}
-    };
-    // Increment once per session per card render
-    incrementViews();
-  }, []);
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -224,6 +210,10 @@ export function GridMomentCard({ moment, index, onOpenComments, onOpenFullscreen
           <div className="flex items-center gap-0.5 opacity-80">
             <Eye className="h-3 w-3 text-white drop-shadow-md" />
             <span className="text-[8px] font-black text-white drop-shadow-md">{moment.views || 0}</span>
+          </div>
+          <div className="flex items-center gap-0.5 opacity-70">
+            <Users className="h-3 w-3 text-white drop-shadow-md" />
+            <span className="text-[8px] font-black text-white drop-shadow-md">{moment.reach || 0}</span>
           </div>
           <button 
             onClick={handleLike}
