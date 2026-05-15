@@ -100,7 +100,8 @@ import {
   Timestamp,
   where,
   writeBatch,
-  onSnapshot
+  onSnapshot,
+  getDocs
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL, getBytes } from 'firebase/storage';
 import { AvatarFrame } from '@/components/avatar-frame';
@@ -345,9 +346,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [initialChatRecipient, setInitialChatRecipient] = useState<any>(null);
   const [userInteracted, setUserInteracted] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [musicProgress, setMusicProgress] = useState(0);
-  const [musicDuration, setMusicDuration] = useState(0);
-  const [musicCurrentTime, setMusicCurrentTime] = useState(0);
+  const [musicState, setMusicState] = useState({ duration: 0, currentTime: 0, progress: 0 });
   const [isRepeatEnabled, setIsRepeatEnabled] = useState(false);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
@@ -417,19 +416,18 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const storage = useStorage();
   const router = useRouter();
 
-  // --- BOUTIQUE SYNC: Fetch all store items for frame/bubble configs ---
+  // --- BOUTIQUE SYNC: Fetch all store items for frame/bubble configs (one-time fetch, static data) ---
   const [storeLibrary, setStoreLibrary] = useState<Record<string, any>>({});
   useEffect(() => {
     if (!firestore) return;
     const q = query(collection(firestore, 'storeItems'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    getDocs(q).then((snapshot) => {
       const items: Record<string, any> = {};
       snapshot.docs.forEach(d => {
         items[d.id] = d.data();
       });
       setStoreLibrary(items);
-    });
-    return () => unsubscribe();
+    }).catch(() => {});
   }, [firestore]);
 
   // MUSIC LIBRARY FETCH: Needed for Next/Previous and Auto-play logic
@@ -560,12 +558,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     }
   }, []);
 
-  // ROOM THEMES & SYNC
-  const themesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'roomThemes'));
+  // ROOM THEMES & SYNC (one-time fetch, static data)
+  const [dbThemes, setDbThemes] = useState<any[]>([]);
+  useEffect(() => {
+    if (!firestore) return;
+    getDocs(query(collection(firestore, 'roomThemes'))).then((snapshot) => {
+      setDbThemes(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    }).catch(() => {});
   }, [firestore]);
-  const { data: dbThemes } = useCollection<any>(themesQuery);
 
   // --- DERIVE PARTICIPANTS & SEAT STATUS ---
   const participantsQuery = useMemoFirebase(() => {
@@ -954,14 +954,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const handleTimeUpdate = () => {
       if (audio.duration && !isNaN(audio.duration)) {
-        setMusicDuration(audio.duration);
-        setMusicCurrentTime(audio.currentTime);
-        setMusicProgress((audio.currentTime / audio.duration) * 100);
+        setMusicState({
+          duration: audio.duration,
+          currentTime: audio.currentTime,
+          progress: (audio.currentTime / audio.duration) * 100,
+        });
       }
     };
 
     const handleLoadedMetadata = () => {
-      if (audio.duration) setMusicDuration(audio.duration);
+      if (audio.duration) setMusicState(prev => ({ ...prev, duration: audio.duration }));
     };
 
     audio.addEventListener('ended', handleEnded);
@@ -2809,7 +2811,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                   {room.currentMusicTitle || roomMusicLibrary.find(t => t.url === room.currentMusicUrl)?.name || 'Syncing frequency...'}
                 </p>
                 <p className="text-[9px] text-white/50">
-                  {formatTime(musicCurrentTime)} / {formatTime(musicDuration)}
+                  {formatTime(musicState.currentTime)} / {formatTime(musicState.duration)}
                 </p>
               </div>
               {/* Close Button - Only hides player, music continues */}
@@ -2826,12 +2828,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               <input
                 type="range"
                 min="0"
-                max={musicDuration || 100}
-                value={musicCurrentTime}
+                max={musicState.duration || 100}
+                value={musicState.currentTime}
                 onChange={(e) => {
                   if (canManageRoom) {
                     const seekVal = parseFloat(e.target.value);
-                    setMusicCurrentTime(seekVal);
+                    setMusicState(prev => ({ ...prev, currentTime: seekVal }));
                     handleSeekMusic(seekVal);
                   }
                 }}
@@ -2844,7 +2846,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               />
               {/* Tooltip for seeking */}
               <div className="absolute -top-4 right-0 text-[8px] font-bold text-white/40 uppercase tracking-widest">
-                {Math.floor(musicCurrentTime / 60)}:{Math.floor(musicCurrentTime % 60).toString().padStart(2, '0')} / {Math.floor(musicDuration / 60)}:{Math.floor(musicDuration % 60).toString().padStart(2, '0')}
+                {Math.floor(musicState.currentTime / 60)}:{Math.floor(musicState.currentTime % 60).toString().padStart(2, '0')} / {Math.floor(musicState.duration / 60)}:{Math.floor(musicState.duration % 60).toString().padStart(2, '0')}
               </div>
             </div>
 

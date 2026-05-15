@@ -13,9 +13,9 @@ export function VoiceActivityProvider({ children }: { children: ReactNode }) {
   const [speakingVolumes, setSpeakingVolumes] = useState<Record<string, number>>({});
   const lastUpdateRef = useRef<number>(0);
   const nextVolumesRef = useRef<Record<string, number> | null>(null);
+  const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const setVolumes = useCallback((volumes: Record<string, number>) => {
-    // THROTTLE: Only update once every 100ms to save CPU
     const now = Date.now();
     nextVolumesRef.current = volumes;
     
@@ -23,12 +23,26 @@ export function VoiceActivityProvider({ children }: { children: ReactNode }) {
       setSpeakingVolumes(volumes);
       lastUpdateRef.current = now;
       nextVolumesRef.current = null;
+    } else if (!flushTimerRef.current) {
+      // Schedule a flush for the remaining throttle window
+      flushTimerRef.current = setTimeout(() => {
+        if (nextVolumesRef.current) {
+          setSpeakingVolumes(nextVolumesRef.current);
+          lastUpdateRef.current = Date.now();
+          nextVolumesRef.current = null;
+        }
+        flushTimerRef.current = null;
+      }, 100 - (now - lastUpdateRef.current));
     }
   }, []);
 
   // Flush any pending volume update on unmount
   useEffect(() => {
     return () => {
+      if (flushTimerRef.current) {
+        clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
       if (nextVolumesRef.current) {
         setSpeakingVolumes(nextVolumesRef.current);
       }

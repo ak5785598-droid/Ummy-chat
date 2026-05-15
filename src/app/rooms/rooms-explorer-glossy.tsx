@@ -18,6 +18,7 @@ import {
   where, 
   doc, 
   limit, 
+  getDocs,
 } from 'firebase/firestore';
 import { 
   Trophy, 
@@ -115,16 +116,28 @@ export function RoomsExplorerGlossy() {
   { id: "Party", label: t.home.categories.party }
  ];
 
- const roomsQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(
-   collection(firestore, 'chatRooms'), 
-   orderBy('participantCount', 'desc'),
-   limit(100)
-  );
- }, [firestore]);
+ const [roomsData, setRoomsData] = useState<any[]>([]);
+ const [isRoomsLoading, setIsRoomsLoading] = useState(true);
 
- const { data: roomsData, isLoading: isRoomsLoading } = useCollection(roomsQuery);
+ useEffect(() => {
+   if (!firestore || !isHydrated) return;
+
+   const fetchRooms = async () => {
+     try {
+       const q = query(collection(firestore, 'chatRooms'), orderBy('participantCount', 'desc'), limit(50));
+       const snap = await getDocs(q);
+       setRoomsData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+     } catch (e) {
+       console.error('[Rooms] Fetch failed:', e);
+     } finally {
+       setIsRoomsLoading(false);
+     }
+   };
+
+   fetchRooms(); // Initial fetch
+   const interval = setInterval(fetchRooms, 60000); // Refresh every 60s
+   return () => clearInterval(interval);
+ }, [firestore, isHydrated]);
 
  const myRoomQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isHydrated) return null;

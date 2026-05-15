@@ -85,6 +85,7 @@ export function useAgora(
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
   const onVolumeChangeRef = useRef(onVolumeChange);
+  const speakerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep ref in sync
   useEffect(() => {
@@ -323,8 +324,15 @@ export function useAgora(
     // Force earbuds when remote users change (prevent speaker switch)
     if (AudioRoute && remoteUsers.length > 0 && !isSpeakerMuted) {
       // Small delay to ensure tracks are playing before routing
-      setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
+      speakerTimeoutRef.current = setTimeout(() => AudioRoute.forceEarbuds().catch(() => {}), 500);
     }
+
+    return () => {
+      if (speakerTimeoutRef.current) {
+        clearTimeout(speakerTimeoutRef.current);
+        speakerTimeoutRef.current = null;
+      }
+    };
   }, [remoteUsers, isSpeakerMuted]);
 
   // EFFECT 3: Microphone Management (Native Earbud Compatible)

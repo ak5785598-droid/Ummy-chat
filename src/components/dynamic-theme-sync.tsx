@@ -143,7 +143,6 @@ export function DynamicThemeSync() {
     else if (theme === 'GLOSSY') document.body.classList.add('theme-glossy');
     else document.body.classList.add('theme-classic');
 
-    console.log(`[ThemeEngine] Path: ${pathname} | Theme: ${theme} 🏁`);
   }, [config, pathname]);
 
   return null; // Side-effect only component
