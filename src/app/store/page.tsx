@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket } from 'lucide-react';
-import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -681,7 +681,17 @@ export default function StorePage() {
     }));
   }, [dbStoreItems]);
 
-  const allItems = [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...boutiqueItems];
+  const allItems = useMemo(() => {
+    return [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...boutiqueItems];
+  }, [frameItems, bubbleItems, dynamicThemes, waveItems, idItems, entryItems, boutiqueItems]);
+
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config } = useDoc(configRef);
+  const storeNotForSale = (config?.storeNotForSale || {}) as Record<string, boolean>;
+
+  const allItemsWithFlags = useMemo(() => {
+    return allItems.map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }));
+  }, [allItems, storeNotForSale]);
 
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
@@ -690,6 +700,10 @@ export default function StorePage() {
 
   const handlePurchase = async (item: any, duration: number) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
+    if (item?.notForSale) {
+      toast({ variant: 'destructive', title: 'Not for sale', description: 'Ye item abhi store me available nahi hai.' });
+      return;
+    }
     const finalPrice = getCalculatedPrice(item.price, duration);
 
     if ((userProfile.wallet?.coins || 0) < finalPrice) {
@@ -807,11 +821,14 @@ export default function StorePage() {
           {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {allItems.filter(i => category === 'All' || i.type === category).map(item => (
+                {allItemsWithFlags.filter(i => category === 'All' || i.type === category).map(item => (
                   <Card 
                     key={item.id} 
-                    onClick={() => setPreviewItem(item)} 
-                    className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white"
+                    onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
+                    className={cn(
+                      "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all text-white",
+                      item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
+                    )}
                   >
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
@@ -862,8 +879,14 @@ export default function StorePage() {
                     </CardHeader>
                     <CardFooter className="flex flex-col gap-3 p-3 pt-1">
                       <div className="flex items-center justify-center gap-1.5 text-sm w-full">
-                        <DollarCoinIcon className="h-4 w-4" />
-                        <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                        {item.notForSale ? (
+                          <span className="text-red-400 font-black uppercase tracking-widest text-[10px]">Not for sale</span>
+                        ) : (
+                          <>
+                            <DollarCoinIcon className="h-4 w-4" />
+                            <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                          </>
+                        )}
                       </div>
                     </CardFooter>
                   </Card>

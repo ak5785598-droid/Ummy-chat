@@ -46,6 +46,7 @@ import {
   Timestamp,
   updateDoc,
   getDoc,
+  deleteField,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
@@ -129,10 +130,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { format } from "date-fns";
 import Image from "next/image";
+import { AVATAR_FRAMES } from "@/constants/avatar-frames";
 
 import { useSearchParams, useRouter } from "next/navigation";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
+
+const ADMIN_STATIC_STORE_ITEMS = [
+  { id: "heart-bubble", name: "Heart Bubble", type: "Bubble" },
+  { id: "love-bubble", name: "Love Bubble", type: "Bubble" },
+  { id: "royal-gold-bubble", name: "Royal Gold", type: "Bubble" },
+  { id: "w-lovelyshine", name: "Lovely Shine", type: "Wave" },
+  { id: "w-waveflew", name: "Waveflew", type: "Wave" },
+  { id: "w-tonepink", name: "Tone Pink", type: "Wave" },
+  { id: "w-vox", name: "Vox", type: "Wave" },
+  { id: "w-reso", name: "Reso", type: "Wave" },
+  { id: "w-echo", name: "Echo", type: "Wave" },
+] as const;
 
 const AUTHORITY_ROLES = [
   { id: "Super Admin", label: "Super Admin", icon: Zap, color: "text-red-500" },
@@ -575,6 +589,12 @@ function AdminPageContent() {
   const [targetUserForRewards, setTargetUserForRewards] = useState<any>(null);
   const [coinDispatchAmount, setCoinDispatchAmount] = useState("");
   const [isDispatching, setIsDispatching] = useState(false);
+  const [grantAssetInput, setGrantAssetInput] = useState("");
+  const [grantDaysInput, setGrantDaysInput] = useState("7");
+  const [isGrantingAsset, setIsGrantingAsset] = useState(false);
+  const [notForSaleCategory, setNotForSaleCategory] = useState("All");
+  const [notForSaleSearch, setNotForSaleSearch] = useState("");
+  const [manualNotForSaleId, setManualNotForSaleId] = useState("");
 
   const [recordSearchId, setRecordSearchId] = useState("");
   const [targetUserForRecord, setTargetUserForRecord] = useState<any>(null);
@@ -768,6 +788,27 @@ function AdminPageContent() {
     return doc(firestore, "appConfig", "global");
   }, [firestore, isAuthorized]);
   const { data: config } = useDoc(configRef);
+  const storeNotForSale = (config?.storeNotForSale || {}) as Record<string, boolean>;
+
+  const storeCatalog = useMemo(() => {
+    const items: any[] = [];
+
+    (Object.values(AVATAR_FRAMES) as any[]).forEach((f) => {
+      items.push({ id: f.id, name: f.name, type: "Frame" });
+    });
+
+    (customThemes || []).forEach((t: any) => {
+      items.push({ id: t.id, name: t.name, type: "Theme" });
+    });
+
+    (dbStoreItems || []).forEach((i: any) => {
+      items.push({ id: i.id, name: i.name, type: i.category || i.type || "Other" });
+    });
+
+    ADMIN_STATIC_STORE_ITEMS.forEach((i) => items.push(i));
+
+    return items;
+  }, [customThemes, dbStoreItems]);
 
   const rechargeQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -1548,6 +1589,42 @@ function AdminPageContent() {
       [`inventory.${type}`]: arrayUnion(itemId),
     });
     toast({ title: "Asset Dispatched" });
+  };
+
+  const setNotForSaleFlag = (assetId: string, enabled: boolean) => {
+    if (!firestore || !isAuthorized || !configRef) return;
+    const updateData: any = { updatedAt: serverTimestamp() };
+    updateData[`storeNotForSale.${assetId}`] = enabled ? true : deleteField();
+    updateDoc(configRef, updateData).then(() => toast({ title: enabled ? "Not for sale enabled" : "Not for sale removed" }));
+  };
+
+  const handleGrantAssetToUser = async () => {
+    if (!firestore || !targetUserForRewards || !grantAssetInput.trim() || isGrantingAsset) return;
+    const days = parseInt(grantDaysInput) || 0;
+    if (days <= 0) return;
+
+    setIsGrantingAsset(true);
+    try {
+      const q = grantAssetInput.trim().toLowerCase();
+      const match = storeCatalog.find((i: any) => (i.id || "").toLowerCase() === q) || storeCatalog.find((i: any) => (i.name || "").toLowerCase() === q);
+      const assetId = (match?.id || grantAssetInput.trim()).toString();
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + days);
+
+      const pRef = doc(firestore, "users", targetUserForRewards.id, "profile", targetUserForRewards.id);
+      await updateDocumentNonBlocking(pRef, {
+        "inventory.ownedItems": arrayUnion(assetId),
+        [`inventory.expiries.${assetId}`]: Timestamp.fromDate(expiryDate),
+        updatedAt: serverTimestamp(),
+      });
+      toast({ title: "Asset sent to bag" });
+      setGrantAssetInput("");
+      setGrantDaysInput("7");
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Failed", description: e?.message || "Unknown error" });
+    } finally {
+      setIsGrantingAsset(false);
+    }
   };
 
   const handleBanUser = () => {
@@ -3834,6 +3911,86 @@ function AdminPageContent() {
                       ))}
                     </div>
                   </div>
+
+                  <div className="space-y-4 pt-10">
+                    <h3 className="text-sm font-bold uppercase text-slate-400">Not For Sale Control</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        placeholder="Search asset name or id..."
+                        value={notForSaleSearch}
+                        onChange={(e) => setNotForSaleSearch(e.target.value)}
+                        className="h-14 rounded-2xl border-2"
+                      />
+                      <Select value={notForSaleCategory} onValueChange={setNotForSaleCategory}>
+                        <SelectTrigger className="bg-slate-50 border-2 border-slate-100 rounded-2xl h-14 font-bold">
+                          <SelectValue placeholder="Category" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl border-2">
+                          {["All", "Frame", "Theme", "Bubble", "Wave", "ID", "Entry", "Other"].map((c) => (
+                            <SelectItem key={c} value={c} className="font-bold">
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <Input
+                        placeholder="Manual Asset ID..."
+                        value={manualNotForSaleId}
+                        onChange={(e) => setManualNotForSaleId(e.target.value)}
+                        className="h-14 rounded-2xl border-2"
+                      />
+                      <Button
+                        onClick={() => manualNotForSaleId.trim() && setNotForSaleFlag(manualNotForSaleId.trim(), true)}
+                        className="h-14 rounded-2xl bg-black text-white font-bold uppercase"
+                      >
+                        Mark Not For Sale
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => manualNotForSaleId.trim() && setNotForSaleFlag(manualNotForSaleId.trim(), false)}
+                        className="h-14 rounded-2xl font-bold uppercase"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {storeCatalog
+                        .filter((i: any) => (notForSaleCategory === "All" ? true : (i.type || "Other") === notForSaleCategory))
+                        .filter((i: any) => {
+                          const q = notForSaleSearch.trim().toLowerCase();
+                          if (!q) return true;
+                          return (i.name || "").toLowerCase().includes(q) || (i.id || "").toLowerCase().includes(q);
+                        })
+                        .slice(0, 60)
+                        .map((i: any) => {
+                          const isNfs = !!storeNotForSale[i.id];
+                          return (
+                            <div
+                              key={i.id}
+                              className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between gap-4"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-bold text-sm truncate">{i.name}</p>
+                                <p className="text-[10px] font-bold uppercase text-slate-400 truncate">{i.type} • {i.id}</p>
+                              </div>
+                              <Button
+                                variant={isNfs ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNotForSaleFlag(i.id, !isNfs)}
+                                className="text-[10px] font-black uppercase shrink-0"
+                              >
+                                {isNfs ? "Not For Sale" : "For Sale"}
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -5460,6 +5617,45 @@ function AdminPageContent() {
                             </Button>
                           ))}
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4>Send Asset</h4>
+                      <div className="flex flex-col gap-4">
+                        <Input
+                          placeholder="Asset name or id..."
+                          value={grantAssetInput}
+                          onChange={(e) => setGrantAssetInput(e.target.value)}
+                          className="h-14"
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          {[3, 7, 15, 30].map((d) => (
+                            <Button
+                              key={d}
+                              type="button"
+                              variant={grantDaysInput === String(d) ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setGrantDaysInput(String(d))}
+                              className="text-[10px] font-bold uppercase"
+                            >
+                              {d} Days
+                            </Button>
+                          ))}
+                          <Input
+                            placeholder="Custom"
+                            value={grantDaysInput}
+                            onChange={(e) => setGrantDaysInput(e.target.value.replace(/\D/g, ""))}
+                            className="h-10 w-24"
+                          />
+                        </div>
+                        <Button
+                          onClick={handleGrantAssetToUser}
+                          disabled={isGrantingAsset}
+                          className="h-14 w-full bg-black text-white font-black uppercase"
+                        >
+                          {isGrantingAsset ? <Loader className="animate-spin" /> : <>Send to Bag</>}
+                        </Button>
                       </div>
                     </div>
                   </div>

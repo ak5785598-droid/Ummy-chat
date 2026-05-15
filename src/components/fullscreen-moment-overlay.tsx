@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { 
-  X, 
+  ArrowLeft,
   Heart, 
   MessageCircle, 
   Share2, 
@@ -185,13 +185,17 @@ export function FullscreenMomentOverlay({
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-          {/* Close Button */}
-          <button 
-            onClick={onClose}
-            className="absolute top-6 left-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          <div className="absolute top-0 left-0 right-0 z-50 pt-safe">
+            <div className="flex items-center justify-between px-4 pt-3">
+              <button 
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                className="h-10 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
+              >
+                <ArrowLeft className="h-5 w-5" />
+                <span className="text-[10px] font-black uppercase tracking-widest ml-2">Back</span>
+              </button>
+            </div>
+          </div>
 
           {/* Bottom Info Section */}
           <div className="absolute bottom-10 left-6 right-20 z-50 space-y-4">
