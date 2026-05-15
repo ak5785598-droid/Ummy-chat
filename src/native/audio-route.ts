@@ -7,12 +7,16 @@ declare global {
       overrideOutputToEarbuds(success: () => void, error: (err: string) => void): void;
       overrideOutputToSpeaker(success: () => void, error: (err: string) => void): void;
       getCurrentAudioRoute(success: (route: string) => void, error: (err: string) => void): void;
+      keepAwake(success: () => void, error: (err: string) => void): void;
+      allowSleep(success: () => void, error: (err: string) => void): void;
     };
     plugins?: {
       audioRoute?: {
         overrideOutputToEarbuds(success: () => void, error: (err: string) => void): void;
         overrideOutputToSpeaker(success: () => void, error: (err: string) => void): void;
         getCurrentAudioRoute(success: (route: string) => void, error: (err: string) => void): void;
+        keepAwake(success: () => void, error: (err: string) => void): void;
+        allowSleep(success: () => void, error: (err: string) => void): void;
       };
     };
   }
@@ -33,6 +37,16 @@ export interface AudioRoutePlugin {
    * Get current audio route
    */
   getCurrentRoute(): Promise<string>;
+  
+  /**
+   * Keep screen awake (prevent sleep)
+   */
+  keepAwake(): Promise<void>;
+  
+  /**
+   * Allow screen to sleep normally
+   */
+  allowSleep(): Promise<void>;
   
   /**
    * Check if plugin is available
@@ -85,6 +99,38 @@ const CordovaAudioRoute: AudioRoutePlugin = {
       
       if (window.plugins?.audioRoute?.getCurrentAudioRoute) {
         window.plugins.audioRoute.getCurrentAudioRoute(resolve, reject);
+        return;
+      }
+      
+      reject('AudioRoute plugin not available');
+    });
+  },
+
+  keepAwake(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (window.AudioRoute?.keepAwake) {
+        window.AudioRoute.keepAwake(resolve, reject);
+        return;
+      }
+      
+      if (window.plugins?.audioRoute?.keepAwake) {
+        window.plugins.audioRoute.keepAwake(resolve, reject);
+        return;
+      }
+      
+      reject('AudioRoute plugin not available');
+    });
+  },
+
+  allowSleep(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (window.AudioRoute?.allowSleep) {
+        window.AudioRoute.allowSleep(resolve, reject);
+        return;
+      }
+      
+      if (window.plugins?.audioRoute?.allowSleep) {
+        window.plugins.audioRoute.allowSleep(resolve, reject);
         return;
       }
       

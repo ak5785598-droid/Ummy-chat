@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.PowerManager;
 import java.util.List;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -13,6 +14,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "AudioRoute")
 public class AudioRoutePlugin extends Plugin {
+
+    private PowerManager.WakeLock wakeLock;
 
     /**
      * Force audio output to earpiece/headset/bluetooth
@@ -25,6 +28,9 @@ public class AudioRoutePlugin extends Plugin {
             call.reject("AudioManager not available");
             return;
         }
+        
+        // Set communication mode to prevent hands-free switch when mic activates
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
         
         // Mute speaker
         audioManager.setSpeakerphoneOn(false);
@@ -133,5 +139,45 @@ public class AudioRoutePlugin extends Plugin {
         }
         
         call.resolve(new JSObject().put("route", isSpeakerOn ? "earpiece" : "speaker"));
+    }
+
+    /**
+     * Keep screen awake (prevent sleep)
+     */
+    @PluginMethod
+    public void keepAwake(PluginCall call) {
+        PowerManager powerManager = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
+        
+        if (powerManager == null) {
+            call.reject("PowerManager not available");
+            return;
+        }
+        
+        // Release existing wake lock if any
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+        
+        // Acquire new wake lock - SCREEN_BRIGHT_WAKE_LOCK keeps screen on
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "Ummy:ScreenWakeLock"
+        );
+        wakeLock.acquire(10 * 60 * 1000L); // 10 minutes timeout as safety
+        
+        call.resolve();
+    }
+
+    /**
+     * Allow screen to sleep normally
+     */
+    @PluginMethod
+    public void allowSleep(PluginCall call) {
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+        
+        call.resolve();
     }
 }

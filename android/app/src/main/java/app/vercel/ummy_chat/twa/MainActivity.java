@@ -8,7 +8,8 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Explicitly register Firebase Authentication plugin for stability
+        // Explicitly register plugins for stability
         registerPlugin(FirebaseAuthenticationPlugin.class);
+        registerPlugin(AudioRoutePlugin.class);
     }
 }

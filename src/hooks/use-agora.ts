@@ -347,6 +347,11 @@ export function useAgora(
         try {
           console.log('[Agora] Creating Native Microphone Track...');
           
+          // --- FIX: Force earbuds BEFORE creating mic track to prevent OS hands-free switch ---
+          if (AudioRoute) {
+            AudioRoute.forceEarbuds().catch(() => {});
+          }
+          
           // --- MIC FIX: Explicitly find and use bluetooth mic ID ---
           const bluetoothMicId = await getBestMicrophoneId();
           
@@ -366,7 +371,7 @@ export function useAgora(
           }
           console.log('[Agora] Vocal Track Published: ', bluetoothMicId ? 'Bluetooth' : 'Default');
 
-          // Force Speakerphone or Earbuds via routing AFTER mic is published
+          // Force Speakerphone or Earbuds via routing AFTER mic is published (backup)
           if (AudioRoute) {
             AudioRoute.forceEarbuds().catch(() => {});
             // Force again after a delay to ensure it sticks
@@ -406,6 +411,11 @@ export function useAgora(
     if (localAudioTrack) {
       localAudioTrack.setEnabled(!isMuted).catch(() => {});
       console.log(`[Agora] Mic ${isMuted ? 'MUTED' : 'UNMUTED'} via setEnabled`);
+      
+      // FIX: Force earbuds again when unmuting to prevent speaker switch
+      if (!isMuted && AudioRoute) {
+        AudioRoute.forceEarbuds().catch(() => {});
+      }
     }
   }, [isMuted, localAudioTrack]);
 

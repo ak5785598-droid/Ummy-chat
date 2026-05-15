@@ -1,30 +1,33 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { CordovaAudioRoute } from '@/native/audio-route';
+
+const isNativePlatform = Capacitor.isNativePlatform();
+const NativeAudioRoute = isNativePlatform ? CordovaAudioRoute : null;
 
 export function useScreenWakeLock(shouldKeepAwake: boolean) {
-  const wakeLockRef = useRef<any>(null);
-
   useEffect(() => {
     const acquireWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator && !wakeLockRef.current) {
-          wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
-          wakeLockRef.current.addEventListener('release', () => {
-            wakeLockRef.current = null;
-          });
+        if (NativeAudioRoute?.isAvailable()) {
+          await NativeAudioRoute.keepAwake();
+        } else if ('wakeLock' in navigator) {
+          await (navigator as any).wakeLock.request('screen');
         }
       } catch {
-        wakeLockRef.current = null;
+        // Silent fail — wake lock is best-effort
       }
     };
 
     const releaseWakeLock = async () => {
-      if (wakeLockRef.current) {
-        try {
-          await wakeLockRef.current.release();
-        } catch {}
-        wakeLockRef.current = null;
+      try {
+        if (NativeAudioRoute?.isAvailable()) {
+          await NativeAudioRoute.allowSleep();
+        }
+      } catch {
+        // Silent fail
       }
     };
 
@@ -35,7 +38,7 @@ export function useScreenWakeLock(shouldKeepAwake: boolean) {
     }
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && shouldKeepAwake && !wakeLockRef.current) {
+      if (document.visibilityState === 'visible' && shouldKeepAwake) {
         acquireWakeLock();
       }
     };
@@ -43,7 +46,9 @@ export function useScreenWakeLock(shouldKeepAwake: boolean) {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      releaseWakeLock();
+      if (!shouldKeepAwake) {
+        releaseWakeLock();
+      }
     };
   }, [shouldKeepAwake]);
 }
