@@ -43,15 +43,11 @@ export function useCollection<T = any>(
         const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
         setData(prev => {
           if (prev && prev.length === results.length) {
-            const changed = results.some((r, i) => {
-              const p = prev[i];
-              if (p.id !== r.id) return true;
-              for (const key in r) {
-                if (r[key] !== p[key]) return true;
-              }
-              return false;
-            });
-            if (!changed) return prev;
+            const prevIds = new Set(prev.map(p => p.id));
+            const resultsIds = new Set(results.map(r => r.id));
+            const sameIds = prevIds.size === resultsIds.size && 
+              [...prevIds].every(id => resultsIds.has(id));
+            if (sameIds) return prev;
           }
           return results;
         });

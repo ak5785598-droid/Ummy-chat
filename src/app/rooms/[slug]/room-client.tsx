@@ -784,7 +784,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         clearTimeout(messageProcessTimeoutRef.current);
       }
     };
-  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, participantsData]);
+  }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, room.moderatorIds]);
 
   // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
   useEffect(() => {

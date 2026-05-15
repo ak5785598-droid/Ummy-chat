@@ -111,17 +111,17 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     heartbeatInterval.current = setInterval(() => {
      setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
      
-     // ⚡ QUEST TRACKING: Stay 15 Mins
-     if (!hasStayAwarded.current) {
-       stayTimeRef.current += 15;
-       if (stayTimeRef.current >= 900) { // 15 minutes
-         console.log('[Missions] Stay time reached! Awarding progress...');
-         const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
-         updateDocumentNonBlocking(questRef, { current: increment(15) });
-         hasStayAwarded.current = true;
-       }
-     }
-    }, 15000);
+      // ⚡ QUEST TRACKING: Stay 15 Mins
+      if (!hasStayAwarded.current) {
+        stayTimeRef.current += 30;
+        if (stayTimeRef.current >= 900) { // 15 minutes
+          console.log('[Missions] Stay time reached! Awarding progress...');
+          const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
+          updateDocumentNonBlocking(questRef, { current: increment(30) });
+          hasStayAwarded.current = true;
+        }
+      }
+     }, 30000);
     // CLEANUP: Periodic task to purge stale sessions and sync counter
     // Only run by Room Owner to prevent "race conditions" and clock-skew issues from multiple moderators
     if (!cleanupInterval.current && isOwner) {
