@@ -1241,11 +1241,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   useEffect(() => { isCaptionsEnabledRef.current = isCaptionsEnabled; }, [isCaptionsEnabled]);
 
   useEffect(() => {
+    isCaptionsEnabledRef.current = isCaptionsEnabled;
     if (!isCaptionsEnabled || !isHydrated) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn('[Captions] Speech Recognition not supported.');
+      toast({ variant: 'destructive', title: 'Live Subtitles Unavailable', description: 'Captions require Chrome or Edge browser.' });
       return;
     }
 
@@ -1292,6 +1294,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     recognition.onerror = (event: any) => {
       console.error('[Captions] Error:', event.error);
+      if (event.error === 'not-allowed') {
+        toast({ variant: 'destructive', title: 'Mic Access Denied', description: 'Live captions ke liye microphone permission chahiye.' });
+      } else if (event.error === 'no-speech') {
+        // Silent — no speech detected is normal
+      } else {
+        toast({ variant: 'destructive', title: 'Captions Error', description: `Speech recognition error: ${event.error}` });
+      }
     };
 
     // KEY FIX: Use ref instead of state variable to avoid stale closure
