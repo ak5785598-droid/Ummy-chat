@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- FIXED SMART BLACK BACKGROUND REMOVER (NO BLUE CARD + STABLE + LOCKED) ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH + NO BLUE FADE) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -28,14 +28,13 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [useCanvas, setUseCanvas] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
-  const blackBackgroundRemovedRef = useRef(false); // LOCK: ek baar remove ho gaya to wapas nahi aayega
+  const lastProcessedSrc = useRef('');
 
   // Detect solid black background (FAST)
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
@@ -75,7 +74,7 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
-  // Process black fade (SMOOTH + NO GLITCH + LOCKED)
+  // Process black fade (SMOOTH + NO GLITCH + NO BLUE FADE CARD)
   const processFrame = (video?: HTMLVideoElement) => {
     if (processingRef.current) return;
     processingRef.current = true;
@@ -87,7 +86,7 @@ const SmartBlackRemover = ({
       return;
     }
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true }); // ALPHA ENABLED
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
       processingRef.current = false;
       return;
@@ -101,24 +100,13 @@ const SmartBlackRemover = ({
       canvas.height = height;
     }
 
-    // Clear canvas with TRANSPARENT background (NO BLUE CARD)
+    // Clear canvas with fully transparent background - NO BLUE FADE CARD
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(media, 0, 0, width, height);
-
-    // Agar black pehle hi remove ho chuka hai to dobara process mat karo (LOCK)
-    if (blackBackgroundRemovedRef.current) {
-      processingRef.current = false;
-      if (type === 'video' && video) {
-        animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
-      }
-      return;
-    }
-
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
-    const ALPHA_FADE_SPEED = 0.92; // Thoda smooth fade
     const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
@@ -128,7 +116,7 @@ const SmartBlackRemover = ({
       const x = Math.min(sx * scale, width - 1);
       const y = Math.min(sy * scale, height - 1);
       const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK && data[i+3] > 200; // Alpha check
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
     };
 
     const queue: [number, number][] = [];
@@ -166,31 +154,27 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Black pixels ko ekdum transparent karo (CLEAN CUT)
-    let hasBlackPixels = false;
+    // Black pixels ko COMPLETELY TRANSPARENT karo (alpha = 0) - NO FADE, NO BLUE CARD
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
-          hasBlackPixels = true;
           for (let dy = 0; dy < scale; dy++) {
             for (let dx = 0; dx < scale; dx++) {
               const x = sx * scale + dx, y = sy * scale + dy;
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
                 if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  // COMPLETELY REMOVE BLACK (alpha = 0)
-                  data[i + 3] = 0;
+                  // COMPLETELY REMOVE - alpha = 0, RGB bhi 0 karo
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
                 }
               }
             }
           }
         }
       }
-    }
-
-    // LOCK: Agar black remove ho gaya to future frames me skip karo
-    if (hasBlackPixels) {
-      blackBackgroundRemovedRef.current = true;
     }
 
     ctx.putImageData(imageData, 0, 0);
@@ -206,9 +190,16 @@ const SmartBlackRemover = ({
 
   // Initialize for images
   useEffect(() => {
+    // Reset when src changes
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
-      if (img.complete) {
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
         setIsReady(true);
@@ -217,31 +208,31 @@ const SmartBlackRemover = ({
         }
       }
     }
-  }, [src, type]);
+  }, [src, type, isReady]);
 
   // Handle image load
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-    setUseCanvas(hasBlackBg);
-    setIsReady(true);
-    if (hasBlackBg) {
-      setTimeout(() => processFrame(), 50);
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
     }
   };
 
-  // Handle video ready (FIXED - NO GLITCH)
+  // Handle video ready (FIXED GLITCH - pehle frame skip karo)
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
-    if (video.readyState >= 2) {
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
       setUseCanvas(hasBlackBg);
       setIsReady(true);
       if (hasBlackBg) {
-        setTimeout(() => {
-          blackBackgroundRemovedRef.current = false; // Reset for new video
-          processFrame(video);
-        }, 100);
+        // Thoda delay do taki video ka pehla frame render ho jaye
+        setTimeout(() => processFrame(video), 150);
       }
     }
   };
@@ -254,13 +245,12 @@ const SmartBlackRemover = ({
         animationFrameRef.current = null;
       }
       processingRef.current = false;
-      blackBackgroundRemovedRef.current = false; // Reset on unmount
     };
   }, []);
 
   if (type === 'video') {
     return (
-      <div ref={containerRef} className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -279,11 +269,22 @@ const SmartBlackRemover = ({
             className="w-full h-full object-cover"
             style={{ 
               display: isReady ? 'block' : 'none', 
-              background: 'transparent', // FORCE TRANSPARENT - NO BLUE CARD
-              position: 'absolute',
-              top: 0,
-              left: 0
+              background: 'transparent',
+              // Ensure no background color shows
+              backgroundColor: 'transparent'
             }}
+          />
+        )}
+        {/* Fallback: agar canvas load nahi hua to original video dikhao bina background ke */}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
           />
         )}
       </div>
@@ -291,7 +292,7 @@ const SmartBlackRemover = ({
   }
 
   return (
-    <div ref={containerRef} className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
@@ -307,11 +308,18 @@ const SmartBlackRemover = ({
           className="w-full h-full object-cover"
           style={{ 
             display: isReady ? 'block' : 'none', 
-            background: 'transparent', // FORCE TRANSPARENT - NO BLUE CARD
-            position: 'absolute',
-            top: 0,
-            left: 0
+            background: 'transparent',
+            backgroundColor: 'transparent'
           }}
+        />
+      )}
+      {/* Fallback: agar canvas load nahi hua to original image dikhao */}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
         />
       )}
     </div>
@@ -872,19 +880,21 @@ export default function StorePage() {
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
                           {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
                               <SmartBlackRemover 
                                 src={item.videoUrl} 
                                 type="video" 
                                 className="w-full h-full"
+                                style={{ background: 'transparent' }}
                               />
                             </div>
                           ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden shadow-lg">
+                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
                               <SmartBlackRemover 
                                 src={item.imageUrl} 
                                 type="image" 
                                 className="w-full h-full"
+                                style={{ background: 'transparent' }}
                               />
                             </div>
                           ) : (
@@ -946,22 +956,24 @@ export default function StorePage() {
               </button>
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36">
+                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36" style={{ background: 'transparent' }}>
                   {previewItem.type === 'Frame' ? (
                     previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-transparent"> {/* BG-TRANSPARENT */}
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
                         <SmartBlackRemover 
                           src={previewItem.videoUrl} 
                           type="video" 
                           className="w-full h-full"
+                          style={{ background: 'transparent' }}
                         />
                       </div>
                     ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden shadow-2xl bg-transparent"> {/* BG-TRANSPARENT */}
+                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
                         <SmartBlackRemover 
                           src={previewItem.imageUrl} 
                           type="image" 
                           className="w-full h-full"
+                          style={{ background: 'transparent' }}
                         />
                       </div>
                     ) : (
@@ -1079,4 +1091,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-    }
+        }
