@@ -339,7 +339,7 @@ const CompactVideoAvatarFrame = ({
   children: React.ReactNode;
   avatarSize?: number;
 }) => {
-  const frameSize = avatarSize * 1.55;
+  const frameSize = avatarSize * 1.65;
   const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
   
   if (!frameMediaUrl) {
@@ -357,7 +357,7 @@ const CompactVideoAvatarFrame = ({
         />
       </div>
       {/* Avatar Layer - Frame ke andar centered */}
-      <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize }}>
+       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginleft: '-4px' }}>
         {children}
       </div>
     </div>
