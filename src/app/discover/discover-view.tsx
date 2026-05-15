@@ -203,7 +203,7 @@ export default function DiscoverView() {
         <FullscreenMomentOverlay 
           open={selectedIndex !== null}
           initialIndex={selectedIndex || 0}
-          moments={activeMoments || []}
+          moments={filteredMoments || []}
           onClose={() => setSelectedIndex(null)}
           onOpenComments={(id, username) => {
             setSelectedMomentId(id);
