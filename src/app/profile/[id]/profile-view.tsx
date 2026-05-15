@@ -339,7 +339,7 @@ const CompactVideoAvatarFrame = ({
   children: React.ReactNode;
   avatarSize?: number;
 }) => {
-  const frameSize = avatarSize * 1.35;
+  const frameSize = avatarSize * 1.55;
   const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
   
   if (!frameMediaUrl) {
