@@ -96,6 +96,13 @@ export default function DiscoverView() {
 
   const isLoading = activeTab === 'recommend' ? isLoadingRecommend : isLoadingFollowing;
 
+  useEffect(() => {
+    if (activeSection !== 'reels') return;
+    if (filteredMoments.length === 0) return;
+    if (selectedIndex !== null) return;
+    setSelectedIndex(0);
+  }, [activeSection, filteredMoments.length, selectedIndex]);
+
   if (theme === 'GLOSSY') {
     return <DiscoverViewGlossy />;
   }
@@ -137,7 +144,19 @@ export default function DiscoverView() {
         </header>
 
         <main className="flex-1 overflow-y-auto no-scrollbar relative z-20 px-2 py-4 pb-40">
-          {isLoading ? null : (
+          {isLoading ? null : activeSection === 'reels' ? (
+            <>
+              {(!filteredMoments || filteredMoments.length === 0) && (
+                <div className="py-24 text-center space-y-4 opacity-30 flex flex-col items-center">
+                  <Compass className="h-16 w-16 text-slate-400" />
+                  <div className="space-y-1">
+                    <p className="font-headline font-black uppercase text-lg">No Reels Yet</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Share the first video of the day</p>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
             <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
               {filteredMoments?.map((moment: any, idx: number) => (
                 <GridMomentCard 
@@ -158,10 +177,8 @@ export default function DiscoverView() {
                 <div className="col-span-2 py-24 text-center space-y-4 opacity-30 flex flex-col items-center">
                   <Compass className="h-16 w-16 text-slate-400" />
                   <div className="space-y-1">
-                    <p className="font-headline font-black uppercase text-lg">No {activeSection === 'reels' ? 'Reels' : 'Photos'} Yet</p>
-                    <p className="text-[10px] font-bold uppercase tracking-widest">
-                      Share the first {activeSection === 'reels' ? 'video' : 'moment'} of the day
-                    </p>
+                    <p className="font-headline font-black uppercase text-lg">No Photos Yet</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Share the first moment of the day</p>
                   </div>
                 </div>
               )}
@@ -204,7 +221,10 @@ export default function DiscoverView() {
           open={selectedIndex !== null}
           initialIndex={selectedIndex || 0}
           moments={filteredMoments || []}
-          onClose={() => setSelectedIndex(null)}
+          onClose={() => {
+            setSelectedIndex(null);
+            if (activeSection === 'reels') setActiveSection('photos');
+          }}
           onOpenComments={(id, username) => {
             setSelectedMomentId(id);
             setSelectedMomentUser(username);

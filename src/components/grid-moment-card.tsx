@@ -41,7 +41,7 @@ const REPORT_REASONS = [
   "Other"
 ];
 
-export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCardProps) {
+export function GridMomentCard({ moment, index, onOpenComments, onOpenFullscreen }: GridMomentCardProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -52,7 +52,7 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
   const isLiked = !!likeDoc;
 
   const [localLiked, setLocalLiked] = useState(false);
-  const [localLikesCount, setLocalLikesCount] = useState(moment.likes || 0);
+  const [localLikesCount, setLocalLikesCount] = useState<number>(moment.likes || 0);
   const [reportOpen, setReportOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [isReporting, setIsReporting] = useState(false);
@@ -72,7 +72,7 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
 
     const newLiked = !localLiked;
     setLocalLiked(newLiked);
-    setLocalLikesCount(prev => newLiked ? prev + 1 : prev - 1);
+    setLocalLikesCount((prev: number) => newLiked ? prev + 1 : prev - 1);
 
     try {
       const momentRef = doc(firestore, 'moments', moment.id);
@@ -91,7 +91,7 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
     } catch (err) {
       console.error("Like error:", err);
       setLocalLiked(!newLiked);
-      setLocalLikesCount(prev => !newLiked ? prev + 1 : prev - 1);
+      setLocalLikesCount((prev: number) => !newLiked ? prev + 1 : prev - 1);
     }
   };
 
@@ -158,10 +158,9 @@ export function GridMomentCard({ moment, index, onOpenComments }: GridMomentCard
           <video
             src={moment.videoUrl}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            autoPlay
             muted
-            loop
             playsInline
+            preload="metadata"
           />
           {/* Play Icon Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">

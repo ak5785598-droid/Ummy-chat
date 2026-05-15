@@ -44,6 +44,14 @@ export function FullscreenMomentOverlay({
 
   const moment = moments[currentIndex];
 
+  const setMuted = (nextMuted: boolean) => {
+    setIsMuted(nextMuted);
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = nextMuted;
+    if (!nextMuted) v.play().catch(() => {});
+  };
+
   useEffect(() => {
     setCurrentIndex(initialIndex);
     // When section changes or modal opens, we reset interaction if it's a video
@@ -52,14 +60,25 @@ export function FullscreenMomentOverlay({
     }
   }, [initialIndex]);
 
+  useEffect(() => {
+    if (open) return;
+    setHasInteracted(false);
+    setIsMuted(true);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!(moment?.type === 'video' || moment?.videoUrl)) return;
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = isMuted;
+    v.play().catch(() => {});
+  }, [open, moment?.id, isMuted]);
+
   const handleInitialInteraction = () => {
     if (!hasInteracted) {
       setHasInteracted(true);
-      setIsMuted(false);
-      if (videoRef.current) {
-        videoRef.current.muted = false;
-        videoRef.current.play().catch(() => {});
-      }
+      setMuted(false);
     }
   };
 
@@ -119,7 +138,7 @@ export function FullscreenMomentOverlay({
             if (info.offset.y < -100) handleSwipe('up');
             else if (info.offset.y > 100) handleSwipe('down');
           }}
-          className="relative w-full h-full flex items-center justify-center max-w-[500px] mx-auto bg-slate-900 shadow-2xl"
+          className="relative w-full h-full flex items-center justify-center bg-black"
         >
           {/* Media Content */}
           {moment.type === 'video' || moment.videoUrl ? (
@@ -147,7 +166,7 @@ export function FullscreenMomentOverlay({
               {/* Mute Button (Visible after interaction) */}
               {hasInteracted && (
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                  onClick={(e) => { e.stopPropagation(); setMuted(!isMuted); }}
                   className="absolute top-20 right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
                 >
                   {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}

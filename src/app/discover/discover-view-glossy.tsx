@@ -67,6 +67,13 @@ export function DiscoverViewGlossy() {
     return rawMoments.filter((m: any) => m.type !== 'video' && !m.videoUrl);
   }, [rawMoments, activeSection]);
 
+  useEffect(() => {
+    if (activeSection !== 'reels') return;
+    if (moments.length === 0) return;
+    if (selectedIndex !== null) return;
+    setSelectedIndex(0);
+  }, [activeSection, moments.length, selectedIndex]);
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#F4F7FE] font-sans">
       <ThemeColorMeta color="#ffffff" />
@@ -97,7 +104,7 @@ export function DiscoverViewGlossy() {
             </div>
           ) : (
             <>
-              {moments?.map((moment, idx) => (
+              {activeSection === 'reels' ? null : moments?.map((moment, idx) => (
                 <MomentCard 
                   key={moment.id} 
                   moment={moment} 
@@ -168,7 +175,10 @@ export function DiscoverViewGlossy() {
         open={selectedIndex !== null}
         initialIndex={selectedIndex || 0}
         moments={moments || []}
-        onClose={() => setSelectedIndex(null)}
+        onClose={() => {
+          setSelectedIndex(null);
+          if (activeSection === 'reels') setActiveSection('photos');
+        }}
         onOpenComments={(id, username) => {
           setSelectedMomentId(id);
           setSelectedMomentUser(username);
