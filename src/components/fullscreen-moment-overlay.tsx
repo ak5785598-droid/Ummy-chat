@@ -20,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { doc, increment, serverTimestamp, setDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 interface FullscreenMomentOverlayProps {
   moments: any[];
@@ -134,38 +136,53 @@ export function FullscreenMomentOverlay({
     e.stopPropagation();
     e.preventDefault();
     if (!moment) return;
+
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const appLink = origin ? `${origin}/discover?moment=${moment.id}` : '';
     const shareTextParts: string[] = [];
     if (moment.username) shareTextParts.push(`@${moment.username} on Ummy`);
     if (moment.content) shareTextParts.push(moment.content);
     const shareText = shareTextParts.join('\n');
-    const shareUrl = appLink;
 
-    // Try native Web Share API first (works on Android/iOS)
+    // Capacitor native app - use @capacitor/share plugin
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Share.share({
+          title: 'Ummy',
+          text: shareText || undefined,
+          url: appLink || undefined,
+          dialogTitle: 'Share on Ummy',
+        });
+        return;
+      } catch (err: any) {
+        // User cancelled share sheet - that's fine
+        if (err?.message?.includes('cancel') || err?.message?.includes('Cancel')) return;
+        // Fall through to clipboard on error
+      }
+    }
+
+    // Web browser - use Web Share API
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
           title: 'Ummy',
           text: shareText || undefined,
-          url: shareUrl || undefined,
+          url: appLink || undefined,
         });
-        return; // Success - native share sheet opened
+        return;
       } catch (err: any) {
-        // AbortError = user dismissed the share sheet, that's fine
         if (err?.name === 'AbortError') return;
-        // Any other error: fall through to clipboard
+        // Fall through to clipboard
       }
     }
 
-    // Fallback: copy link to clipboard
+    // Final fallback: copy link to clipboard
     try {
-      const toCopy = shareUrl || shareText;
+      const toCopy = appLink || shareText;
       if (!toCopy) return;
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
         await navigator.clipboard.writeText(toCopy);
       } else {
-        // Legacy fallback for older WebViews
         const el = document.createElement('textarea');
         el.value = toCopy;
         el.style.position = 'fixed';
