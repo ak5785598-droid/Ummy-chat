@@ -3315,22 +3315,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         participants={participants}
         roomId={room.id}
         room={room}
-        isAIListening={isAIListening}
-        onToggleAIListening={toggleAIListening}
         onOpenGames={() => setIsRoomGamesOpen(true)}
         onSelectGame={(slug) => {
           setActiveGameSlug(slug);
           setIsRoomPlayOpen(false);
         }}
         onPlayLocalMusic={handlePlayLocalMusic}
-        isCaptionsEnabled={isCaptionsEnabled}
-        onToggleCaptions={() => {
-          setIsCaptionsEnabled(!isCaptionsEnabled);
-          toast({ 
-            title: !isCaptionsEnabled ? 'Live Subtitles ON 🎙️' : 'Live Subtitles OFF 🔇',
-            description: !isCaptionsEnabled ? 'Bolne par translated captions dikhenge.' : 'Voice translation band ho gayi hai.'
-          });
-        }}
         onSyncSharedMusic={(track) => {
           // When music is synced from dialog, play it locally
           if (musicAudioRef.current && track?.url) {
@@ -3464,6 +3454,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         room={room}
         isAIVoiceEnabled={isAIVoiceEnabled}
         onToggleAIVoice={toggleAIVoice}
+        isAIListening={isAIListening}
+        onToggleAIListening={toggleAIListening}
         isCaptionsEnabled={isCaptionsEnabled}
         onToggleCaptions={() => setIsCaptionsEnabled(!isCaptionsEnabled)}
       />

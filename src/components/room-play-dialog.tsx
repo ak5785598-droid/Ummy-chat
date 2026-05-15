@@ -49,16 +49,12 @@ interface RoomPlayDialogProps {
   participants?: RoomParticipant[];
   roomId?: string;
   room?: any;
-  isAIListening: boolean;
-  onToggleAIListening: () => void;
   onOpenGames: () => void;
   onSelectGame?: (slug: string) => void;
   onPlayLocalMusic?: (file: File) => void;
   onClearChat?: () => void;
   onSyncSharedMusic?: (track: any) => void;
   onToggleMiniPlayer?: () => void;
-  isCaptionsEnabled?: boolean;
-  onToggleCaptions?: () => void;
   defaultView?: 'grid' | 'music';
 }
 
@@ -72,16 +68,12 @@ export function RoomPlayDialog({
   participants = [], 
   roomId, 
   room,
-  isAIListening,
-  onToggleAIListening,
   onOpenGames,
   onSelectGame,
   onPlayLocalMusic,
   onClearChat,
   onSyncSharedMusic,
   onToggleMiniPlayer,
-  isCaptionsEnabled = false,
-  onToggleCaptions,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
@@ -415,26 +407,6 @@ export function RoomPlayDialog({
       // Glossy Blue Music
       color: 'from-cyan-400 to-blue-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-cyan-400/50', 
       onClick: () => { setView('music'); onToggleMiniPlayer?.(); } 
-    },
-    { 
-      id: 'ai-listening', 
-      label: isAIListening ? 'AI Listening' : 'AI Listen', 
-      icon: <Bot className="h-7 w-7 text-white drop-shadow-md" />, 
-      // Glossy Purple AI Robot (Turns to Red/Rose when active)
-      color: isAIListening 
-        ? 'from-rose-400 to-red-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(225,29,72,0.5)] border border-rose-400/50' 
-        : 'from-fuchsia-400 to-purple-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(168,85,247,0.5)] border border-fuchsia-400/50', 
-      onClick: onToggleAIListening 
-    },
-    { 
-      id: 'live-captions', 
-      label: isCaptionsEnabled ? 'Captions ON' : 'Live Sub', 
-      icon: <Zap className="h-7 w-7 text-white drop-shadow-md" />, 
-      // Glossy Cyan/Indigo Sparkle
-      color: isCaptionsEnabled 
-        ? 'from-cyan-400 to-indigo-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(79,70,229,0.5)] border border-cyan-400/50' 
-        : 'from-slate-400 to-slate-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(0,0,0,0.5)] border border-slate-400/50', 
-      onClick: onToggleCaptions 
     },
   ];
 

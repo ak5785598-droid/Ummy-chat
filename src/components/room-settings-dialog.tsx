@@ -60,6 +60,8 @@ interface RoomSettingsDialogProps {
  onOpenChange?: (open: boolean) => void;
  isAIVoiceEnabled?: boolean;
  onToggleAIVoice?: () => void;
+ isAIListening?: boolean;
+ onToggleAIListening?: () => void;
  isCaptionsEnabled?: boolean;
  onToggleCaptions?: () => void;
 }
@@ -91,7 +93,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
  */
-export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, isAIVoiceEnabled, onToggleAIVoice, isCaptionsEnabled, onToggleCaptions }: RoomSettingsDialogProps) {
+export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, isAIVoiceEnabled, onToggleAIVoice, isAIListening, onToggleAIListening, isCaptionsEnabled, onToggleCaptions }: RoomSettingsDialogProps) {
  const router = useRouter();
  const [internalOpen, setInternalOpen] = useState(false);
 
@@ -282,6 +284,17 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
             checked={isAIVoiceEnabled || false} 
             onCheckedChange={onToggleAIVoice} 
           />
+        </SettingItem>
+
+        {/* AI Listen Toggle */}
+        <SettingItem label="AI Listen" showChevron={false}>
+          <div className="flex flex-col items-end gap-1">
+            <Switch 
+              checked={isAIListening || false} 
+              onCheckedChange={onToggleAIListening} 
+            />
+            <span className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Bolo, AI Sunt Hai</span>
+          </div>
         </SettingItem>
 
         {/* Voice Captions (Subtitles) Toggle */}
