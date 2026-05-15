@@ -4,6 +4,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
 import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useScreenWakeLock } from '@/hooks/use-screen-wake-lock';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDoc } from 'firebase/firestore';
 
 /**
@@ -16,6 +17,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
+  useScreenWakeLock(!!(activeRoom || minimizedRoom));
   
   const lastRoomId = useRef<string | null>(null);
   const hasJoinedRef = useRef<boolean>(false);
