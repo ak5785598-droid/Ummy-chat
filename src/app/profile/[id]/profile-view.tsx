@@ -153,7 +153,7 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
-    const ALPHA_FADE_SPEED = 0.90;
+    const ALPHA_FADE_SPEED = 1.0; // FULL REMOVE - koi fade blur card nahi dikhega
     const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
@@ -208,7 +208,7 @@ const SmartBlackRemover = ({
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
                 if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+                  data[i + 3] = 0; // PURA REMOVE - alpha 0, ekdum transparent
                 }
               }
             }
@@ -292,7 +292,7 @@ const SmartBlackRemover = ({
         {useCanvas && (
           <canvas
             ref={canvasRef}
-            className="w-full h-full object-cover bg-transparent"
+            className="w-full h-full object-cover"
             style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
           />
         )}
@@ -314,7 +314,7 @@ const SmartBlackRemover = ({
       {useCanvas && (
         <canvas
           ref={canvasRef}
-          className="w-full h-full object-cover bg-transparent"
+          className="w-full h-full object-cover"
           style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
         />
       )}
@@ -324,6 +324,7 @@ const SmartBlackRemover = ({
 
 // --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
 // Yeh component automatic avatar size detect karega aur video frame overlay karega
+// Bss white border hide hoga frame ke andar, baki avatar clear dikhega
 const CompactVideoAvatarFrame = ({ 
   frameMediaUrl, 
   children,
@@ -344,15 +345,33 @@ const CompactVideoAvatarFrame = ({
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
-      {/* Video/Image Frame Layer - Avatar ke upar overlap */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
-        <SmartBlackRemover 
-          src={frameMediaUrl} 
-          type={isVideo ? 'video' : 'image'} 
-          className="w-full h-full"
-        />
+      {/* Video/Image Frame Layer - Avatar ke upar overlap, lekin white border frame ke andar hide hoga */}
+      <div 
+        className="absolute z-10 pointer-events-none" 
+        style={{ 
+          inset: 0,
+          // Avatar ka white border hide karne ke liye clip-path use karenge
+          // Frame ke center mein avatar circle area ko clip kar denge
+          clipPath: `circle(${avatarSize / 2 + 2}px at center)`,
+          // Isse frame ka content avatar ke white border ke bahar dikhega, lekin border ke andar frame hide hoga
+        }}
+      >
+        <div 
+          className="absolute w-full h-full" 
+          style={{ 
+            inset: 0,
+            // Ye ensure karega ki frame sirf avatar ke bahar dikhe, andar nahi
+            clipPath: `circle(${frameSize / 2}px at center)`,
+          }}
+        >
+          <SmartBlackRemover 
+            src={frameMediaUrl} 
+            type={isVideo ? 'video' : 'image'} 
+            className="w-full h-full"
+          />
+        </div>
       </div>
-      {/* Avatar Layer - Frame ke andar centered */}
+      {/* Avatar Layer - Frame ke andar centered, white border visible rahega lekin frame uske upar hoga */}
       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize }}>
         {children}
       </div>
@@ -1348,7 +1367,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {/* Header Info */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
-                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- SIZE THODA CHOTA KIYA HAI --- */}
+                {/* --- AVATAR WITH VIDEO FRAME OVERLAY - WHITE BORDER FRAME KE ANDAR HIDE HOGA --- */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
@@ -1527,4 +1546,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-      }
+}
