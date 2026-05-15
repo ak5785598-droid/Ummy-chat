@@ -16,7 +16,7 @@ import { ChatMessageBubble } from '@/components/chat-message-bubble';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 import { AvatarFrame } from '@/components/avatar-frame';
 
-// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE) ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -33,7 +33,7 @@ const SmartBlackRemover = ({
   const animationFrameRef = useRef<number | null>(null);
   const [useCanvas, setUseCanvas] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = useRef(false);
 
   // Detect solid black background (FAST)
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
@@ -75,19 +75,19 @@ const SmartBlackRemover = ({
 
   // Process black fade (SMOOTH + NO GLITCH)
   const processFrame = (video?: HTMLVideoElement) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
+    if (processingRef.current) return;
+    processingRef.current = true;
 
     const canvas = canvasRef.current;
     const media = video || mediaRef.current;
     if (!canvas || !media) {
-      setIsProcessing(false);
+      processingRef.current = false;
       return;
     }
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
-      setIsProcessing(false);
+      processingRef.current = false;
       return;
     }
 
@@ -172,7 +172,7 @@ const SmartBlackRemover = ({
     }
 
     ctx.putImageData(imageData, 0, 0);
-    setIsProcessing(false);
+    processingRef.current = false;
 
     if (type === 'video' && video) {
       if (animationFrameRef.current) {
@@ -191,7 +191,7 @@ const SmartBlackRemover = ({
         setUseCanvas(hasBlackBg);
         setIsReady(true);
         if (hasBlackBg) {
-          setTimeout(() => processFrame(), 100);
+          setTimeout(() => processFrame(), 50);
         }
       }
     }
@@ -204,7 +204,7 @@ const SmartBlackRemover = ({
     setUseCanvas(hasBlackBg);
     setIsReady(true);
     if (hasBlackBg) {
-      setTimeout(() => processFrame(), 100);
+      setTimeout(() => processFrame(), 50);
     }
   };
 
@@ -216,7 +216,7 @@ const SmartBlackRemover = ({
       setUseCanvas(hasBlackBg);
       setIsReady(true);
       if (hasBlackBg) {
-        setTimeout(() => processFrame(video), 150);
+        setTimeout(() => processFrame(video), 100);
       }
     }
   };
@@ -228,6 +228,7 @@ const SmartBlackRemover = ({
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
+      processingRef.current = false;
     };
   }, []);
 
@@ -404,7 +405,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#roseSilverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
@@ -464,14 +465,14 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
         <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
         <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#silverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
         <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
-        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" scale="0.7" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
         <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
       </svg>
     </div>
   </div>
 );
 
-// --- ENTRY TICKET ICON (Naya) ---
+// --- ENTRY TICKET ICON ---
 const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: string; className?: string }) => {
   if (variant === 'platinum') {
     return (
@@ -523,7 +524,6 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
     );
   }
 
-  // golden default
   return (
     <div className={cn("relative", className)}>
       <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_12px_rgba(252,213,53,0.5)]">
@@ -546,10 +546,7 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
-// --- BUBBLE SVGs REMOVED (Arise, Blue Cb) - Only using ChatMessageBubble ---
-// --- ALL SVG FRAMES REMOVED (GlossyWings, Cat, Rabbit) ---
-
-// --- STORE ITEMS (SAME, BUT REMOVED SVG FRAMES) ---
+// --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -571,6 +568,7 @@ export default function StorePage() {
   
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (previewItem) {
@@ -593,17 +591,14 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  // --- REMOVED SVG FRAMES (Glossy wings, Kitti, Rabbit) ---
   const frameItems = useMemo(() => {
     const frames: any[] = [];
     (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
       frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
     });
-    // Removed: f-glossy-wings, f-kitti, f-rabbit
     return frames;
   }, []);
 
-  // --- REMOVED CUSTOM BUBBLE SVGs (Arise, Blue Cb) ---
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
   ], []);
@@ -664,7 +659,6 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  // --- NAINA ENTRY ITEMS (Naya Section) ---
   const entryItems = useMemo(() => [
     { id: 'entry-golden', name: 'Golden Entry', type: 'Entry', price: 1000000, durationDays: 7, description: 'Premium Golden entry pass with exclusive golden trim.', variant: 'golden' },
     { id: 'entry-platinum', name: 'Platinum Entry', type: 'Entry', price: 2500000, durationDays: 7, description: 'Exclusive Platinum entry pass with diamond shine.', variant: 'platinum' },
@@ -694,48 +688,89 @@ export default function StorePage() {
     return Math.floor((basePrice / 7) * 3);
   };
 
-  const handlePurchase = (item: any, duration: number) => {
-    if (!userProfile || !user || !firestore) return;
+  const handlePurchase = async (item: any, duration: number) => {
+    if (!userProfile || !user || !firestore || isProcessing) return;
     const finalPrice = getCalculatedPrice(item.price, duration);
 
     if ((userProfile.wallet?.coins || 0) < finalPrice) {
-      toast({ variant: 'destructive', title: 'Insufficient Coins' });
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Aapke paas enough coins nahi hai.' });
       return;
     }
 
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + duration);
-    
-    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-    const userRef = doc(firestore, 'users', user.uid);
-    
-    const updateData = { 
-      'wallet.coins': increment(-finalPrice), 
-      'inventory.ownedItems': arrayUnion(item.id),
-      [`inventory.expiries.${item.id}`]: Timestamp.fromDate(expiryDate),
-      'updatedAt': serverTimestamp() 
-    };
+    setIsProcessing(true);
+    try {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + duration);
+      
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const userRef = doc(firestore, 'users', user.uid);
+      
+      const updateData = { 
+        'wallet.coins': increment(-finalPrice), 
+        'inventory.ownedItems': arrayUnion(item.id),
+        [`inventory.expiries.${item.id}`]: Timestamp.fromDate(expiryDate),
+        'updatedAt': serverTimestamp() 
+      };
 
-    updateDocumentNonBlocking(profileRef, updateData);
-    updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-finalPrice), 'updatedAt': serverTimestamp() });
-    toast({ title: 'Purchase Successful' });
-    setPreviewItem(null);
+      await updateDocumentNonBlocking(profileRef, updateData);
+      await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(-finalPrice), 'updatedAt': serverTimestamp() });
+      
+      toast({ title: 'Purchase Successful!', description: `${item.name} ko successfully khareed liya gaya.` });
+      setPreviewItem(null);
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast({ variant: 'destructive', title: 'Purchase Failed', description: 'Kuch error aa gaya. Dubara try karein.' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleEquipToggle = (item: any) => {
-    if (!userProfile || !user || !firestore) return;
-    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-    const userRef = doc(firestore, 'users', user.uid);
-    let field = `inventory.active${item.type}`;
-    const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
-    const updateData = { [field]: isActive ? 'None' : item.id, updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(profileRef, updateData);
-    updateDocumentNonBlocking(userRef, updateData);
-    toast({ title: isActive ? `${item.type} Unequipped` : 'Item Equipped' });
-    setPreviewItem(null);
+  const handleEquipToggle = async (item: any) => {
+    if (!userProfile || !user || !firestore || isProcessing) return;
+    
+    setIsProcessing(true);
+    try {
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const userRef = doc(firestore, 'users', user.uid);
+      let field = `inventory.active${item.type}`;
+      const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
+      
+      // AGAR FRAME EQUIP HO RAHA HAI TOH VIDEO URL BHI SAVE KARO
+      const updateData: any = { 
+        [field]: isActive ? 'None' : item.id, 
+        updatedAt: serverTimestamp() 
+      };
+      
+      // Frame equip/unequip ke time videoUrl bhi save karo
+      if (item.type === 'Frame') {
+        if (!isActive && (item.videoUrl || item.imageUrl)) {
+          updateData['inventory.activeFrameMediaUrl'] = item.videoUrl || item.imageUrl || null;
+        } else if (isActive) {
+          updateData['inventory.activeFrameMediaUrl'] = null;
+        }
+      }
+      
+      await updateDocumentNonBlocking(profileRef, updateData);
+      await updateDocumentNonBlocking(userRef, updateData);
+      
+      toast({ 
+        title: isActive ? `${item.type} Unequipped` : 'Item Equipped!', 
+        description: isActive ? `${item.name} ko hata diya gaya.` : `${item.name} successfully equip ho gaya.`
+      });
+      setPreviewItem(null);
+    } catch (error) {
+      console.error('Equip error:', error);
+      toast({ variant: 'destructive', title: 'Action Failed', description: 'Kuch error aa gaya. Dubara try karein.' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  if (isProfileLoading) return null;
+  if (isProfileLoading) return (
+    <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] flex items-center justify-center">
+      <Loader className="animate-spin h-8 w-8 text-[#FCD535]" />
+    </div>
+  );
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
@@ -773,7 +808,11 @@ export default function StorePage() {
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItems.filter(i => category === 'All' || i.type === category).map(item => (
-                  <Card key={item.id} onClick={() => setPreviewItem(item)} className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white">
+                  <Card 
+                    key={item.id} 
+                    onClick={() => setPreviewItem(item)} 
+                    className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 transition-all text-white"
+                  >
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
@@ -930,8 +969,10 @@ export default function StorePage() {
                     const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
                     isOwned ? handleEquipToggle(previewItem) : handlePurchase(previewItem, selectedDuration);
                   }}
+                  disabled={isProcessing}
                   className={cn(
                     "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                    isProcessing && "opacity-70 cursor-not-allowed",
                     userProfile?.inventory?.ownedItems?.includes(previewItem.id)
                       ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
                         ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
@@ -939,7 +980,9 @@ export default function StorePage() {
                       : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" 
                   )}
                 >
-                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
+                  {isProcessing ? (
+                    <Loader className="animate-spin h-4 w-4" />
+                  ) : userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
                     ? (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip') 
                     : 'Buy'}
                 </Button>
@@ -950,4 +993,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
+    }
