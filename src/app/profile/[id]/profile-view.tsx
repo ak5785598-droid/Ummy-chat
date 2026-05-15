@@ -153,7 +153,7 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
-    const ALPHA_FADE_SPEED = 1.0; // FULL REMOVE - koi fade blur card nahi dikhega
+    const ALPHA_FADE_SPEED = 1.0; // Changed from 0.90 to 1.0 - Complete removal, no fade blur
     const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
@@ -208,7 +208,7 @@ const SmartBlackRemover = ({
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
                 if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i + 3] = 0; // PURA REMOVE - alpha 0, ekdum transparent
+                  data[i + 3] = 0; // Directly set to 0 - complete removal, no fade
                 }
               }
             }
@@ -293,7 +293,11 @@ const SmartBlackRemover = ({
           <canvas
             ref={canvasRef}
             className="w-full h-full object-cover"
-            style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+            style={{ 
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              // No mix-blend-mode, no opacity tricks - pure transparent
+            }}
           />
         )}
       </div>
@@ -315,7 +319,10 @@ const SmartBlackRemover = ({
         <canvas
           ref={canvasRef}
           className="w-full h-full object-cover"
-          style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+          style={{ 
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+          }}
         />
       )}
     </div>
@@ -323,8 +330,6 @@ const SmartBlackRemover = ({
 };
 
 // --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
-// Yeh component automatic avatar size detect karega aur video frame overlay karega
-// Bss white border hide hoga frame ke andar, baki avatar clear dikhega
 const CompactVideoAvatarFrame = ({ 
   frameMediaUrl, 
   children,
@@ -334,44 +339,24 @@ const CompactVideoAvatarFrame = ({
   children: React.ReactNode;
   avatarSize?: number;
 }) => {
-  // Frame size avatar se thoda bada hoga (proportional)
-  const frameSize = avatarSize * 1.35; // 35% bada for frame overlay
+  const frameSize = avatarSize * 1.35;
   const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
   
   if (!frameMediaUrl) {
-    // Agar frame media URL nahi hai toh normal children render karo
     return <>{children}</>;
   }
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
-      {/* Video/Image Frame Layer - Avatar ke upar overlap, lekin white border frame ke andar hide hoga */}
-      <div 
-        className="absolute z-10 pointer-events-none" 
-        style={{ 
-          inset: 0,
-          // Avatar ka white border hide karne ke liye clip-path use karenge
-          // Frame ke center mein avatar circle area ko clip kar denge
-          clipPath: `circle(${avatarSize / 2 + 2}px at center)`,
-          // Isse frame ka content avatar ke white border ke bahar dikhega, lekin border ke andar frame hide hoga
-        }}
-      >
-        <div 
-          className="absolute w-full h-full" 
-          style={{ 
-            inset: 0,
-            // Ye ensure karega ki frame sirf avatar ke bahar dikhe, andar nahi
-            clipPath: `circle(${frameSize / 2}px at center)`,
-          }}
-        >
-          <SmartBlackRemover 
-            src={frameMediaUrl} 
-            type={isVideo ? 'video' : 'image'} 
-            className="w-full h-full"
-          />
-        </div>
+      {/* Video/Image Frame Layer - Avatar ke upar overlap */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <SmartBlackRemover 
+          src={frameMediaUrl} 
+          type={isVideo ? 'video' : 'image'} 
+          className="w-full h-full"
+        />
       </div>
-      {/* Avatar Layer - Frame ke andar centered, white border visible rahega lekin frame uske upar hoga */}
+      {/* Avatar Layer - Frame ke andar centered */}
       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize }}>
         {children}
       </div>
@@ -379,8 +364,7 @@ const CompactVideoAvatarFrame = ({
   );
 };
 
-// --- NEW 3D GLOSSY OFFICIAL, SELLER, SERVICE & HOST TAGS ---
-
+// --- 3D GLOSSY TAGS ---
 const SVGA_OfficialTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
@@ -1367,7 +1351,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {/* Header Info */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
-                {/* --- AVATAR WITH VIDEO FRAME OVERLAY - WHITE BORDER FRAME KE ANDAR HIDE HOGA --- */}
+                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
@@ -1546,4 +1530,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
+  }
