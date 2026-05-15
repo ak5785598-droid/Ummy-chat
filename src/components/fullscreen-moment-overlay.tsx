@@ -112,7 +112,7 @@ export function FullscreenMomentOverlay({
   const { data: likeDoc } = useDoc(likeRef);
   const isLiked = !!likeDoc;
 
-  const handleLike = async (e: React.MouseEvent) => {
+  const handleLike = async (e: React.PointerEvent) => {
     e.stopPropagation();
     if (!firestore || !user || !moment) return;
 
@@ -130,7 +130,7 @@ export function FullscreenMomentOverlay({
     } catch (err) {}
   };
 
-  const handleShare = async (e: React.MouseEvent) => {
+  const handleShare = async (e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (!moment) return;
@@ -243,7 +243,8 @@ export function FullscreenMomentOverlay({
               {/* Mute Button (Visible after interaction) */}
               {hasInteracted && (
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setMuted(!isMuted); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => { e.stopPropagation(); setMuted(!isMuted); }}
                   style={{ top: 'max(80px, calc(env(safe-area-inset-top) + 56px))' }}
                   className="absolute right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
                 >
@@ -264,9 +265,12 @@ export function FullscreenMomentOverlay({
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
           <div className="absolute top-0 left-0 right-0 z-50">
-            <div className="flex items-center justify-between px-4 pt-safe">
+            <div
+              className="flex items-center justify-between px-4 pt-safe"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <button 
-                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                onPointerUp={(e) => { e.stopPropagation(); onClose(); }}
                 className="h-10 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -300,11 +304,16 @@ export function FullscreenMomentOverlay({
             </div>
           </div>
 
-          {/* Right Action Bar */}
-          <div className="absolute right-4 z-50 flex flex-col items-center gap-6" style={{ bottom: 'max(96px, calc(env(safe-area-inset-bottom) + 80px))' }}>
+          {/* Right Action Bar - uses onPointerUp to work correctly inside Framer Motion drag container */}
+          <div
+            className="absolute right-4 z-50 flex flex-col items-center gap-6"
+            style={{ bottom: 'max(96px, calc(env(safe-area-inset-bottom) + 80px))' }}
+            // Stop drag events from propagating so buttons always register taps on mobile
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <div className="flex flex-col items-center gap-1">
               <button 
-                onClick={handleLike}
+                onPointerUp={handleLike}
                 className={cn(
                   "h-12 w-12 rounded-full flex items-center justify-center transition-all active:scale-125 shadow-xl border border-white/10 backdrop-blur-md",
                   isLiked ? "bg-red-500 text-white" : "bg-black/40 text-white"
@@ -317,7 +326,7 @@ export function FullscreenMomentOverlay({
 
             <div className="flex flex-col items-center gap-1">
               <button 
-                onClick={() => onOpenComments(moment.id, moment.username)}
+                onPointerUp={(e) => { e.stopPropagation(); onOpenComments(moment.id, moment.username); }}
                 className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 shadow-xl"
               >
                 <MessageCircle className="h-6 w-6" />
@@ -339,7 +348,10 @@ export function FullscreenMomentOverlay({
               <span className="text-white text-xs font-black drop-shadow-md">{moment.reach || 0}</span>
             </div>
 
-            <button onClick={handleShare} className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 shadow-xl">
+            <button
+              onPointerUp={handleShare}
+              className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/10 active:scale-90 shadow-xl"
+            >
               <Share2 className="h-5 w-5" />
             </button>
           </div>
