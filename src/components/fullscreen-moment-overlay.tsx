@@ -132,29 +132,51 @@ export function FullscreenMomentOverlay({
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     if (!moment) return;
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const appLink = origin ? `${origin}/discover?moment=${moment.id}` : '';
-    const mediaUrl = moment.videoUrl || moment.imageUrl || '';
-    const shareUrl = mediaUrl || appLink;
-    const shareTextParts = [];
+    const shareTextParts: string[] = [];
+    if (moment.username) shareTextParts.push(`@${moment.username} on Ummy`);
     if (moment.content) shareTextParts.push(moment.content);
-    if (appLink && appLink !== shareUrl) shareTextParts.push(appLink);
     const shareText = shareTextParts.join('\n');
+    const shareUrl = appLink;
 
-    try {
-      if (typeof navigator !== 'undefined' && 'share' in navigator) {
-        // @ts-expect-error - Web Share API typing depends on lib dom version
-        await navigator.share({ title: 'Ummy', text: shareText || undefined, url: shareUrl || undefined });
-        return;
+    // Try native Web Share API first (works on Android/iOS)
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'Ummy',
+          text: shareText || undefined,
+          url: shareUrl || undefined,
+        });
+        return; // Success - native share sheet opened
+      } catch (err: any) {
+        // AbortError = user dismissed the share sheet, that's fine
+        if (err?.name === 'AbortError') return;
+        // Any other error: fall through to clipboard
       }
-    } catch (err) {}
+    }
 
+    // Fallback: copy link to clipboard
     try {
       const toCopy = shareUrl || shareText;
       if (!toCopy) return;
-      await navigator.clipboard.writeText(toCopy);
-      toast({ title: 'Link copied' });
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(toCopy);
+      } else {
+        // Legacy fallback for older WebViews
+        const el = document.createElement('textarea');
+        el.value = toCopy;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+      toast({ title: 'Link copied!' });
     } catch (err) {
       toast({ variant: 'destructive', title: 'Share failed' });
     }
@@ -222,7 +244,8 @@ export function FullscreenMomentOverlay({
               {hasInteracted && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); setMuted(!isMuted); }}
-                  className="absolute top-20 right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
+                  style={{ top: 'max(80px, calc(env(safe-area-inset-top) + 56px))' }}
+                  className="absolute right-6 z-50 h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
                 >
                   {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
                 </button>
@@ -240,8 +263,8 @@ export function FullscreenMomentOverlay({
           <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
 
-          <div className="absolute top-0 left-0 right-0 z-50 pt-safe">
-            <div className="flex items-center justify-between px-4 pt-3">
+          <div className="absolute top-0 left-0 right-0 z-50">
+            <div className="flex items-center justify-between px-4 pt-safe">
               <button 
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
                 className="h-10 px-3 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20"
@@ -253,7 +276,7 @@ export function FullscreenMomentOverlay({
           </div>
 
           {/* Bottom Info Section */}
-          <div className="absolute bottom-10 left-6 right-20 z-50 space-y-4">
+          <div className="absolute left-6 right-20 z-50 space-y-4" style={{ bottom: 'max(40px, calc(env(safe-area-inset-bottom) + 24px))' }}>
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 border-2 border-white/40 shadow-xl">
                 <AvatarImage src={moment.avatarUrl} className="object-cover" />
@@ -278,7 +301,7 @@ export function FullscreenMomentOverlay({
           </div>
 
           {/* Right Action Bar */}
-          <div className="absolute right-4 bottom-24 z-50 flex flex-col items-center gap-6">
+          <div className="absolute right-4 z-50 flex flex-col items-center gap-6" style={{ bottom: 'max(96px, calc(env(safe-area-inset-bottom) + 80px))' }}>
             <div className="flex flex-col items-center gap-1">
               <button 
                 onClick={handleLike}
