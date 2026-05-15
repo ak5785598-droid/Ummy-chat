@@ -1348,13 +1348,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {/* Header Info */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
-                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- */}
+                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- SIZE THODA CHOTA KIYA HAI --- */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
-                  avatarSize={100}
+                  avatarSize={88}
                 >
                   <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                    <Avatar className="h-[100px] w-[100px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
@@ -1527,4 +1527,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-            }
+      }
