@@ -9,6 +9,11 @@
       "launchAutoHide": true,
       "backgroundColor": "#ff8ebb"
     },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#00000000",
+      "overlaysWebView": true
+    },
     "FirebaseAuthentication": {
       "skipNativeAuth": false,
       "providers": [
