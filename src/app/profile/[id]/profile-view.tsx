@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Loader,
@@ -30,9 +30,9 @@ import {
   DollarSign,
   HelpCircle,
   Check,
-  Crown, // Added Crown for the new Medal UI
-  Gift, // Added for Gift tab
-  Activity as ActivityIcon // Added for Activity tab
+  Crown,
+  Gift,
+  Activity as ActivityIcon
 } from 'lucide-react';
 import { GoldCoinIcon } from '@/components/icons';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -66,6 +66,299 @@ import {
 import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
+
+// --- SMART BLACK BACKGROUND REMOVER FOR VIDEO FRAMES ---
+const SmartBlackRemover = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const ALPHA_FADE_SPEED = 0.90;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i + 3] = Math.max(0, data[i + 3] * (1 - ALPHA_FADE_SPEED));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    processingRef.current = false;
+
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+    }
+  };
+
+  useEffect(() => {
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+  }, [src, type]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+    setUseCanvas(hasBlackBg);
+    setIsReady(true);
+    if (hasBlackBg) {
+      setTimeout(() => processFrame(), 50);
+    }
+  };
+
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 100);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+    };
+  }, []);
+
+  if (type === 'video') {
+    return (
+      <div className={cn("relative", className)} style={style}>
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
+        />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-cover bg-transparent"
+            style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)} style={style}>
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        onLoad={handleImageLoad}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
+      />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover bg-transparent"
+          style={{ display: isReady ? 'block' : 'none', background: 'transparent' }}
+        />
+      )}
+    </div>
+  );
+};
+
+// --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
+// Yeh component automatic avatar size detect karega aur video frame overlay karega
+const CompactVideoAvatarFrame = ({ 
+  frameMediaUrl, 
+  children,
+  avatarSize = 100 
+}: { 
+  frameMediaUrl: string | null; 
+  children: React.ReactNode;
+  avatarSize?: number;
+}) => {
+  // Frame size avatar se thoda bada hoga (proportional)
+  const frameSize = avatarSize * 1.35; // 35% bada for frame overlay
+  const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
+  
+  if (!frameMediaUrl) {
+    // Agar frame media URL nahi hai toh normal children render karo
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
+      {/* Video/Image Frame Layer - Avatar ke upar overlap */}
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <SmartBlackRemover 
+          src={frameMediaUrl} 
+          type={isVideo ? 'video' : 'image'} 
+          className="w-full h-full"
+        />
+      </div>
+      {/* Avatar Layer - Frame ke andar centered */}
+      <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize }}>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 // --- NEW 3D GLOSSY OFFICIAL, SELLER, SERVICE & HOST TAGS ---
 
@@ -653,7 +946,7 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
-// --- NEW MEDAL MODAL COMPONENT (UI AS PER IMAGE) ---
+// --- MEDAL MODAL COMPONENT ---
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
 
@@ -661,21 +954,18 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
   return (
     <div className="fixed inset-0 z-[999] bg-[#0A0217] text-white flex flex-col font-outfit overflow-hidden animate-in fade-in duration-200 pt-6">
       
-      {/* Header */}
       <div className="flex items-center px-4 h-14 relative shrink-0">
         <ChevronLeft className="h-6 w-6 cursor-pointer active:scale-90 transition-transform" onClick={onClose} />
         <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-medium tracking-wide">Medal</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-10 custom-scrollbar">
-        {/* Current Medal Section */}
         <div className="flex items-center justify-center gap-3 mt-6 text-[#cfb284] text-[13px] font-medium">
           <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-[#cfb284]/60"></div>
           <span className="tracking-widest uppercase">Current Medal</span>
           <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-[#cfb284]/60"></div>
         </div>
 
-        {/* 2x5 Grid of Empty Slots */}
         <div className="grid grid-cols-5 gap-3 px-6 mt-6">
           {Array.from({length: 10}).map((_, i) => (
             <div key={i} className="aspect-square rounded-xl bg-white/[0.02] border border-white/[0.08] border-dashed flex items-center justify-center shadow-inner">
@@ -684,7 +974,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
           ))}
         </div>
 
-        {/* Obtained Info Box */}
         <div className="mt-8 mb-4 flex justify-center">
           <div className="relative overflow-hidden group px-6 py-1.5 rounded-full border border-blue-500/30 bg-gradient-to-r from-blue-900/20 via-blue-800/20 to-blue-900/20 shadow-[0_0_15px_rgba(30,58,138,0.3)]">
             <span className="text-sm text-indigo-200/90 font-medium">Obtained Medal(s): 0 </span>
@@ -693,7 +982,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex justify-around mt-6 border-b border-white/10 px-4">
           <button 
             onClick={() => setActiveTab('Achievement')} 
@@ -715,12 +1003,10 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
           </button>
         </div>
 
-        {/* Medals List Grid */}
         <div className="grid grid-cols-2 gap-4 p-4 mt-2">
           
           {activeTab === 'Achievement' && (
             <>
-              {/* Decabillionaire */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
@@ -732,7 +1018,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
                  <span className="text-[14px] font-medium text-white tracking-wide">Decabillionaire</span>
               </div>
 
-              {/* Charm Legend */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
@@ -744,7 +1029,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
                  <span className="text-[14px] font-medium text-white tracking-wide">Charm Legend</span>
               </div>
 
-              {/* Billionaire */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
@@ -756,7 +1040,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
                  <span className="text-[14px] font-medium text-white tracking-wide">Billionaire</span>
               </div>
 
-              {/* Charm Luminary */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
@@ -772,7 +1055,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 
           {activeTab === 'Gift' && (
             <>
-              {/* Dummy Gift Card 1 */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-pink-200 via-pink-400 to-pink-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.15)] p-1">
@@ -784,7 +1066,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
                  <span className="text-[14px] font-medium text-white tracking-wide">Top Gifter</span>
               </div>
 
-              {/* Dummy Gift Card 2 */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-pink-300 via-pink-500 to-pink-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.1)] p-1">
@@ -800,7 +1081,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 
           {activeTab === 'Activity' && (
             <>
-              {/* Dummy Activity Card 1 */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-green-200 via-green-400 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.15)] p-1">
@@ -812,7 +1092,6 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
                  <span className="text-[14px] font-medium text-white tracking-wide">Event Master</span>
               </div>
 
-              {/* Dummy Activity Card 2 */}
               <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
                  <div className="h-24 w-24 bg-gradient-to-br from-green-300 via-green-500 to-green-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.1)] p-1">
@@ -842,17 +1121,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const { user: currentUser, isUserLoading } = useUser();
   const { userProfile: profile, isLoading: isProfileLoading } = useUserProfile(profileId || undefined);
 
-  // 1. Live ID ke liye state (NEW)
   const [liveID, setLiveID] = useState<string | null>(null);
-
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
   const [socialOpen, setSocialOpen] = useState(false);
   const [socialTab, setSocialTab] = useState<'followers' | 'following' | 'friends' | 'visitors'>('followers');
   const [fullViewOpen, setFullViewOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [api, setApi] = useState<CarouselApi>();
-
-  // --- NEW STATE FOR MEDAL MODAL ---
   const [medalModalOpen, setMedalModalOpen] = useState(false);
 
   const isOwnProfile = currentUser?.uid === profileId;
@@ -901,7 +1176,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     recordVisit();
   }, [firestore, currentUser, profileId, isOwnProfile]);
 
-  // 2. Real-time Listener: Database se connect rehne ke liye
   useEffect(() => {
     if (!firestore ||!profileId) return;
     const userRef = doc(firestore, 'users', profileId);
@@ -913,12 +1187,8 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return () => unsubscribe();
   }, [firestore, profileId]);
 
-  // 2. Deterministic Fallback ID (Instant)
   const [fallbackID] = useState(() => {
-    // Force Creator ID to 0000 instantly
     if (profileId === CREATOR_ID) return '0000';
-
-    // Generate a consistent 6-digit number from the profileId
     let hash = 0;
     const str = profileId || 'fallback';
     for (let i = 0; i < str.length; i++) {
@@ -928,23 +1198,16 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   });
 
   const currentDBId = liveID || profile?.accountNumber;
-
-  // Strict check for 6-digit numbers or Creator's 0000
   const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
-
-  // NEVER show "Syncing..." or undefined. Always show DB ID or Fallback.
   const displayID = isCorrectFormat? String(currentDBId) : fallbackID;
 
-  // 3. Sync and Transaction Logic (STRICTLY LOCKED)
   useEffect(() => {
     const syncUserID = async () => {
       if (!isOwnProfile ||!profile ||!firestore ||!profileId) return;
-
-      const currentID = profile.accountNumber; // Sirf profile state par rely karenge shuru mein
+      const currentID = profile.accountNumber;
       const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      // 🛑 PERMANENT LOCK CHECK 1: Agar ek baar valid ID mil chuki hai, toh aage transaction karne ki zarurat hi nahi.
       if ((isCreator && currentID === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
         return;
       }
@@ -954,13 +1217,12 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           const uRef = doc(firestore, 'users', profileId);
           const userSnap = await transaction.get(uRef);
 
-          // 🛑 PERMANENT LOCK CHECK 2: Agar backend database me pehle se assign ho gaya hai, toh yahi lock kar do.
           if (userSnap.exists()) {
             const dbID = userSnap.data().accountNumber;
             const isDbIdValid = /^\d{6}$/.test(String(dbID));
 
             if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
-              return; // ID already exist aur valid hai, naya generate nahi hoga
+              return;
             }
           }
 
@@ -969,7 +1231,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           if (isCreator) {
             finalNumber = '0000';
           } else {
-            // Unique 6-Digit generate karne ka loop
             let isUnique = false;
             while (!isUnique) {
               const randomID = Math.floor(100000 + Math.random() * 900000).toString();
@@ -984,7 +1245,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             }
           }
 
-          // Database ke dono folders (users aur profile) mein update
           const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
           transaction.update(uRef, { accountNumber: finalNumber });
           transaction.update(pRef, { accountNumber: finalNumber });
@@ -995,7 +1255,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     };
 
     syncUserID();
-  }, [isOwnProfile, profile, firestore, profileId]); // Isme se `liveID` hata diya taaki infinite loop band ho jaye.
+  }, [isOwnProfile, profile, firestore, profileId]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore ||!currentUser ||!profileId || currentUser.uid === profileId) return null;
@@ -1032,6 +1292,12 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
+  // --- ACTIVE FRAME MEDIA URL NIKALNA ---
+  const activeFrameMediaUrl = useMemo(() => {
+    if (!profile?.inventory?.activeFrameMediaUrl) return null;
+    return profile.inventory.activeFrameMediaUrl;
+  }, [profile]);
+
   if (isUserLoading || isProfileLoading ||!profile) return (
     <AppLayout>
       <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
@@ -1040,21 +1306,22 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
+
   if (!isOwnProfile) {
-  return (
-    <FullProfileDialog
-      open={true}
-      onOpenChange={(open) => {
-        if (!open) router.back();
-      }}
-      profile={profile}
-      stats={stats}
-      followData={followData}
-      onFollow={handleFollow}
-      isProcessingFollow={isProcessingFollow}
-      isOwnProfile={false}
-    />
-  );
+    return (
+      <FullProfileDialog
+        open={true}
+        onOpenChange={(open) => {
+          if (!open) router.back();
+        }}
+        profile={profile}
+        stats={stats}
+        followData={followData}
+        onFollow={handleFollow}
+        isProcessingFollow={isProcessingFollow}
+        isOwnProfile={false}
+      />
+    );
   }
 
   // --- OWN PROFILE VIEW ---
@@ -1081,12 +1348,18 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             {/* Header Info */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
-                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
-                  <Avatar className="h-[100px] w-[100px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
-                    <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </AvatarFrame>
+                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- */}
+                <CompactVideoAvatarFrame 
+                  frameMediaUrl={activeFrameMediaUrl} 
+                  avatarSize={100}
+                >
+                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <Avatar className="h-[100px] w-[100px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+                </CompactVideoAvatarFrame>
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1095,9 +1368,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
                 </div>
                 
-                {/* --- MODIFIED ID AND TAGS SECTION HERE --- */}
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  {/* ID Block */}
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
                     {profile.tags?.includes('Official') ? (
                       <SVGA_GlossyID
@@ -1111,14 +1382,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                     )}
                   </div>
 
-                  {/* Tags Block - Sitting directly next to ID */}
                   {profile.tags?.includes('Official') && <SVGA_OfficialTag />}
                   {profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t)) && <SVGA_SellerTag />}
                   {profile.tags?.includes('Service') && <SVGA_ServiceTag />}
                   {profile.tags?.includes('Host') && <SVGA_HostTag />}
                 </div>
-                {/* --- MODIFIED ID AND TAGS SECTION ENDS --- */}
-
               </div>
             </div>
 
@@ -1166,9 +1434,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             <div className="flex justify-between items-center px-4 mt-6">
               <IconButton customIcon={SVGA_LevelCrown} label="Level" onClick={() => router.push('/level')} />
               <IconButton customIcon={SVGA_StoreCart} label="Store" onClick={() => router.push('/store')} />
-              {/* --- MEDAL BUTTON UPDATED --- */}
               <IconButton customIcon={SVGA_MedalStar} label="Medal" onClick={() => setMedalModalOpen(true)} />
-              {/* --- TASK BUTTON UPDATED --- */}
               <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/room-tasks')} />
             </div>
 
@@ -1227,7 +1493,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 )}
               </div>
 
-              {/* Settings Section */}
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem
                   customIcon={SVGA_Settings}
@@ -1262,5 +1527,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
-
+            }
