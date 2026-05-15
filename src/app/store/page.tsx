@@ -896,6 +896,7 @@ export default function StorePage() {
           ))}
         </Tabs>
 
+        {/* PREVIEW CARD WITH EQUIP/UNEQUIP LOGIC */}
         {previewItem && (
           <>
             <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
@@ -956,41 +957,65 @@ export default function StorePage() {
 
                 <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
-                <div className="flex gap-4 mt-4 w-full justify-center">
-                  {[3, 7].map(days => (
-                    <button 
-                      key={days}
-                      onClick={() => setSelectedDuration(days)}
-                      className={cn(
-                        "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                        selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
-                      )}
-                    >
-                      <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
-                      {selectedDuration === days && (
-                        <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
-                          <Check size={12} strokeWidth={3} className="text-black" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {/* SIRF TAB DIKHAO JAB ITEM OWNED NA HO (Buy case) */}
+                {!userProfile?.inventory?.ownedItems?.includes(previewItem.id) && (
+                  <div className="flex gap-4 mt-4 w-full justify-center">
+                    {[3, 7].map(days => (
+                      <button 
+                        key={days}
+                        onClick={() => setSelectedDuration(days)}
+                        className={cn(
+                          "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                          selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
+                        )}
+                      >
+                        <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                        {selectedDuration === days && (
+                          <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                            <Check size={12} strokeWidth={3} className="text-black" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
+              {/* BOTTOM BAR - EQUIP/UNEQUIP LOGIC YAHAN HAI */}
               <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
-                  <div className="flex items-center gap-2">
-                    <DollarCoinIcon className="w-5 h-5" />
-                    <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                      {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                  {/* Agar item already owned hai toh price ki jagah status dikhao */}
+                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) ? (
+                    <span className={cn(
+                      "text-sm font-medium px-3 py-1 rounded-full",
+                      userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                        ? "bg-[#FCD535]/20 text-[#FCD535]"
+                        : "bg-green-500/20 text-green-400"
+                    )}>
+                      {userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                        ? "Currently Equipped"
+                        : "Owned"}
                     </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <DollarCoinIcon className="w-5 h-5" />
+                      <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                        {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <Button 
                   onClick={() => {
                     const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    isOwned ? handleEquipToggle(previewItem) : handlePurchase(previewItem, selectedDuration);
+                    if (isOwned) {
+                      // EQUIP YA UNEQUIP KARO
+                      handleEquipToggle(previewItem);
+                    } else {
+                      // BUY KARO
+                      handlePurchase(previewItem, selectedDuration);
+                    }
                   }}
                   disabled={isProcessing}
                   className={cn(
@@ -1016,4 +1041,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-    }
+  }
