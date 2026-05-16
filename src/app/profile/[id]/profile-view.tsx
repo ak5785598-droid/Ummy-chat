@@ -357,7 +357,7 @@ const CompactVideoAvatarFrame = ({
         />
       </div>
       {/* Avatar Layer - Frame ke andar centered */}
-       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginleft: '-4px' }}>
+       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginLeft: '-4px' }}>
         {children}
       </div>
     </div>
@@ -1204,17 +1204,26 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
   const displayID = isCorrectFormat? String(currentDBId) : fallbackID;
 
+  // ✅ PERMANENT ID LOCK LOGIC - Sirf pehli baar generate hogi, fir kabhi change nahi hogi
   useEffect(() => {
     const syncUserID = async () => {
       if (!isOwnProfile ||!profile ||!firestore ||!profileId) return;
+      
       const currentID = profile.accountNumber;
       const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      if ((isCreator && currentID === '0000') || (!isCreator && currentID && isStrictlySixDigits)) {
-        return;
+      // Agar creator hai aur ID '0000' hai - lock hai, change mat karo
+      if (isCreator && currentID === '0000') {
+        return; // Locked permanently
       }
 
+      // Agar normal user hai aur already valid 6-digit ID hai - lock hai, change mat karo
+      if (!isCreator && currentID && isStrictlySixDigits) {
+        return; // Locked permanently - ID mil gayi, ab kabhi change nahi hogi
+      }
+
+      // Sirf pehli baar generate karo jab koi valid ID nahi hai
       try {
         await runTransaction(firestore, async (transaction) => {
           const uRef = doc(firestore, 'users', profileId);
@@ -1224,36 +1233,65 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             const dbID = userSnap.data().accountNumber;
             const isDbIdValid = /^\d{6}$/.test(String(dbID));
 
+            // Double check - agar database mein already valid ID hai toh wahi lock rahegi
             if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
-              return;
+              return; // Already locked, kuch mat karo
             }
           }
 
+          // Pehli baar ID generate ho rahi hai
           let finalNumber = '';
 
           if (isCreator) {
             finalNumber = '0000';
           } else {
+            // Unique 6-digit ID generate karo
             let isUnique = false;
-            while (!isUnique) {
+            let attempts = 0;
+            const maxAttempts = 10; // Infinite loop se bachne ke liye
+            
+            while (!isUnique && attempts < maxAttempts) {
               const randomID = Math.floor(100000 + Math.random() * 900000).toString();
               const idRef = doc(firestore, 'assigned_ids', randomID);
               const idSnap = await transaction.get(idRef);
 
               if (!idSnap.exists()) {
-                transaction.set(idRef, { uid: profileId, createdAt: serverTimestamp() });
+                // ID reserve karo taaki koi aur na le sake
+                transaction.set(idRef, { 
+                  uid: profileId, 
+                  createdAt: serverTimestamp(),
+                  lockedPermanently: true // Permanent lock mark
+                });
                 finalNumber = randomID;
                 isUnique = true;
               }
+              attempts++;
+            }
+
+            // Agar 10 attempts mein bhi unique ID nahi mili (very rare)
+            if (!isUnique) {
+              const fallbackRandom = Math.floor(100000 + Math.random() * 900000).toString();
+              finalNumber = fallbackRandom;
             }
           }
 
+          // ID set karo - yeh sirf ek baar hoga
           const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-          transaction.update(uRef, { accountNumber: finalNumber });
-          transaction.update(pRef, { accountNumber: finalNumber });
+          transaction.update(uRef, { 
+            accountNumber: finalNumber,
+            accountNumberLocked: true, // Permanent lock flag
+            accountNumberLockedAt: serverTimestamp()
+          });
+          transaction.update(pRef, { 
+            accountNumber: finalNumber,
+            accountNumberLocked: true // Permanent lock flag
+          });
         });
+        
+        console.log('✅ ID permanently locked:', finalNumber);
       } catch (err: any) {
-        console.warn("❌ ID Generation me error aaya ya access denied: ", err);
+        console.warn("❌ ID Generation mein error: ", err);
+        // Agar transaction fail ho jaye toh kuch mat karo, ID already set ho sakti hai
       }
     };
 
@@ -1348,9 +1386,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
-            {/* Header Info */}
+            {/* Header Info - AVATAR THODA LEFT SHIFT KIYA */}
             <div className="flex items-center gap-1 mb-0 pt-0">
-              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
+              {/* ✅ Avatar container ko thoda left shift - marginLeft: '-6px' */}
+              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
                 {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
@@ -1530,4 +1569,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-  }
+    }
