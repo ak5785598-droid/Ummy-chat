@@ -554,8 +554,11 @@ const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- STATIC STORE ITEMS (Sirf Wave ke liye, Bubble hata diye) ---
+// --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
+  { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
+  { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
+  { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 7, description: 'Exclusive premium gold trimmed bubble.', icon: Crown, color: 'text-yellow-400' },
   { id: 'w-lovelyshine', name: 'Lovely Shine', type: 'Wave', price: 59999, durationDays: 7, description: 'Magical blue glow with floating hearts.', icon: Activity, color: 'text-blue-400' },
   { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
   { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
@@ -581,7 +584,6 @@ export default function StorePage() {
     }
   }, [previewItem]);
 
-  // THEME - sirf Firestore se dynamic themes, koi extra card nahi
   const themesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
@@ -589,7 +591,7 @@ export default function StorePage() {
 
   const { data: dbThemes } = useCollection(themesQuery);
 
-  const themeItems = useMemo(() => {
+  const dynamicThemes = useMemo(() => {
     return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
       type: 'Theme',
@@ -597,33 +599,33 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  // BUBBLE - sirf Firestore se dynamic bubbles
-  const bubbleQuery = useMemoFirebase(() => {
+  // Frame items without SVG frames - sirf image/video based frames
+  const storeItemsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const { data: dbStoreItems } = useCollection(bubbleQuery);
+  const { data: dbStoreItems } = useCollection(storeItemsQuery);
 
-  // Frame items - ONLY from Firestore
+  // Boutique items (dynamic store items from Firestore)
+  const boutiqueItems = useMemo(() => {
+    return (dbStoreItems || []).map(item => ({
+      ...item,
+      type: item.category || item.type,
+      description: item.description || `Premium ${item.name} asset.`,
+      isDynamic: true
+    }));
+  }, [dbStoreItems]);
+
+  // Frame items - ONLY from boutique (Firestore), no static SVG frames
   const frameItems = useMemo(() => {
-    return (dbStoreItems || []).filter(item => item.category === 'Frame').map(item => ({
-      ...item,
-      type: 'Frame',
-      isDynamic: true
-    }));
-  }, [dbStoreItems]);
+    return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
+  }, [boutiqueItems]);
 
-  // Bubble items - ONLY from Firestore, strictly imageUrl show hoga
-  const bubbleItems = useMemo(() => {
-    return (dbStoreItems || []).filter(item => item.category === 'Bubble').map(item => ({
-      ...item,
-      type: 'Bubble',
-      isDynamic: true
-    }));
-  }, [dbStoreItems]);
+  const bubbleItems = useMemo(() => [
+    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
+  ], []);
 
-  // Wave items - static hi rahenge
   const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
 
   const idItems = useMemo(() => [
@@ -686,21 +688,14 @@ export default function StorePage() {
     { id: 'entry-diamond', name: 'Diamond Entry', type: 'Entry', price: 5000000, durationDays: 7, description: 'Ultra Premium Diamond entry pass - rarest of all.', variant: 'diamond' },
   ], []);
 
-  // Other boutique items jo Frame/Bubble/Theme nahi hain
-  const otherBoutiqueItems = useMemo(() => {
-    return (dbStoreItems || []).filter(item => 
-      item.category !== 'Frame' && item.category !== 'Bubble'
-    ).map(item => ({
-      ...item,
-      type: item.category || item.type,
-      description: item.description || `Premium ${item.name} asset.`,
-      isDynamic: true
-    }));
-  }, [dbStoreItems]);
+  // Filter boutique items to exclude Frame type (already in frameItems)
+  const nonFrameBoutiqueItems = useMemo(() => {
+    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame');
+  }, [boutiqueItems]);
 
   const allItems = useMemo(() => {
-    return [...frameItems, ...bubbleItems, ...themeItems, ...waveItems, ...idItems, ...entryItems, ...otherBoutiqueItems];
-  }, [frameItems, bubbleItems, themeItems, waveItems, idItems, entryItems, otherBoutiqueItems]);
+    return [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...nonFrameBoutiqueItems];
+  }, [frameItems, bubbleItems, dynamicThemes, waveItems, idItems, entryItems, nonFrameBoutiqueItems]);
 
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
   const { data: config } = useDoc(configRef);
@@ -771,6 +766,7 @@ export default function StorePage() {
         updatedAt: serverTimestamp() 
       };
       
+      // Frame equip/unequip ke time videoUrl bhi save karo
       if (item.type === 'Frame') {
         if (!isActive && (item.videoUrl || item.imageUrl)) {
           updateData['inventory.activeFrameMediaUrl'] = item.videoUrl || item.imageUrl || null;
@@ -797,7 +793,6 @@ export default function StorePage() {
 
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
-    // Frame ke liye
     if (item.type === 'Frame') {
       if (item.isDynamic && item.videoUrl) {
         return (
@@ -823,46 +818,18 @@ export default function StorePage() {
           </div>
         );
       }
+      // Fallback icon for frame
       return <FramePlaceholderIcon className="h-12 w-12" />;
     }
     
-    // BUBBLE - STRICTLY imageUrl show hoga, koi fallback nahi
     if (item.type === 'Bubble') {
-      return (
-        <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-contain"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <span className="text-gray-500 text-xs">No Image</span>
-          )}
-        </div>
-      );
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
     }
     
-    // THEME - STRICTLY imageUrl show hoga, koi fallback nahi
     if (item.type === 'Theme') {
-      return (
-        <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-cover rounded-lg"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <span className="text-gray-500 text-xs">No Image</span>
-          )}
-        </div>
-      );
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // WAVE - static WaveCircleIcon hi rahega
     if (item.type === 'Wave') {
       return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
@@ -877,6 +844,7 @@ export default function StorePage() {
       return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
     }
     
+    // Default icon for other types
     if (item.icon) {
       return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
     }
@@ -886,7 +854,6 @@ export default function StorePage() {
 
   // Helper to render preview card icon
   const renderPreviewIcon = (item: any) => {
-    // Frame ke liye
     if (item.type === 'Frame') {
       if (item.isDynamic && item.videoUrl) {
         return (
@@ -919,43 +886,14 @@ export default function StorePage() {
       );
     }
     
-    // BUBBLE - STRICTLY imageUrl show hoga, koi fallback nahi
     if (item.type === 'Bubble') {
-      return (
-        <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-contain"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <span className="text-gray-500 text-sm">No Iteam</span>
-          )}
-        </div>
-      );
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
     }
     
-    // THEME - STRICTLY imageUrl show hoga, koi fallback nahi
     if (item.type === 'Theme') {
-      return (
-        <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-          {item.imageUrl ? (
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-cover rounded-lg"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <span className="text-gray-500 text-sm">No Iteam</span>
-          )}
-        </div>
-      );
+      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
     }
     
-    // WAVE - static WaveCircleIcon hi rahega
     if (item.type === 'Wave') {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
@@ -1078,6 +1016,7 @@ export default function StorePage() {
 
                 <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
+                {/* SIRF TAB DIKHAO JAB ITEM OWNED NA HO (Buy case) */}
                 {!userProfile?.inventory?.ownedItems?.includes(previewItem.id) && (
                   <div className="flex gap-4 mt-4 w-full justify-center">
                     {[3, 7].map(days => (
@@ -1101,6 +1040,7 @@ export default function StorePage() {
                 )}
               </div>
 
+              {/* BOTTOM BAR - EQUIP/UNEQUIP LOGIC */}
               <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
                   {userProfile?.inventory?.ownedItems?.includes(previewItem.id) ? (
@@ -1157,4 +1097,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+                     }
