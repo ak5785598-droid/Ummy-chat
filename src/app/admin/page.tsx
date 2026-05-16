@@ -773,6 +773,18 @@ function AdminPageContent() {
   const [isUploadingMedal, setIsUploadingMedal] = useState(false);
   const medalImageInputRef = useRef<HTMLInputElement>(null);
 
+  const levelsListQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
+  }, [firestore, isAuthorized]);
+  const { data: levelsList, isLoading: isLoadingLevels } = useCollection(levelsListQuery);
+
+  const medalsListQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "medals"), orderBy("updatedAt", "desc"));
+  }, [firestore, isAuthorized]);
+  const { data: medalsList, isLoading: isLoadingMedals } = useCollection(medalsListQuery);
+
   const giftsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, "giftList"), orderBy("createdAt", "desc"));
@@ -2167,6 +2179,28 @@ function AdminPageContent() {
       toast({ variant: "destructive", title: "Sync Failed", description: err.message });
     } finally {
       setIsUploadingMedal(false);
+    }
+  };
+
+  const handleDeleteLevel = async (levelId: string) => {
+    if (!firestore || !isAuthorized) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "levels", levelId));
+      toast({ title: "Level Deleted", description: "Level has been removed." });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Delete Failed", description: err.message });
+    }
+  };
+
+  const handleDeleteMedal = async (medalId: string) => {
+    if (!firestore || !isAuthorized) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "medals", medalId));
+      toast({ title: "Medal Deleted", description: "Medal has been removed." });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Delete Failed", description: err.message });
     }
   };
 
@@ -6341,6 +6375,35 @@ function AdminPageContent() {
                       </Button>
                     </TabsContent>
                   </Tabs>
+
+                  {/* Existing Levels List */}
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Existing Levels</h3>
+                    {isLoadingLevels ? (
+                      <div className="flex justify-center py-8"><Loader className="h-6 w-6 animate-spin text-cyan-600" /></div>
+                    ) : levelsList && levelsList.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {levelsList.map((level: any) => (
+                          <div key={level.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {level.imageUrl ? (
+                              <img src={level.imageUrl} alt={level.name} className="h-10 w-10 rounded-lg object-cover" />
+                            ) : (
+                              <div className="h-10 w-10 rounded-lg bg-cyan-100 flex items-center justify-center"><Trophy className="h-5 w-5 text-cyan-600" /></div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate">{level.name}</p>
+                              <p className="text-[10px] text-slate-500">{level.range || ""}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteLevel(level.id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-4">No levels added yet.</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -6491,6 +6554,35 @@ function AdminPageContent() {
                       </Button>
                     </TabsContent>
                   </Tabs>
+
+                  {/* Existing Medals List */}
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Existing Medals</h3>
+                    {isLoadingMedals ? (
+                      <div className="flex justify-center py-8"><Loader className="h-6 w-6 animate-spin text-amber-500" /></div>
+                    ) : medalsList && medalsList.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {medalsList.map((medal: any) => (
+                          <div key={medal.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {medal.imageUrl ? (
+                              <img src={medal.imageUrl} alt={medal.name} className="h-10 w-10 rounded-lg object-cover" />
+                            ) : (
+                              <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center"><Award className="h-5 w-5 text-amber-600" /></div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate">{medal.name}</p>
+                              <p className="text-[10px] text-slate-500 capitalize">{medal.category || ""} • {medal.tier || ""}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteMedal(medal.id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-4">No medals added yet.</p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

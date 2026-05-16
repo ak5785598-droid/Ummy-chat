@@ -356,6 +356,7 @@ export function FullProfileDialog({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const firestore = useFirestore();
   
   // STRICT ID LOCK: State ke through generate function ko sirf ek baar call kiya,
   // Taki agar profile.accountNumber na ho toh yeh lock ho jaye aur automatically change na ho.
@@ -371,9 +372,6 @@ export function FullProfileDialog({
     return () => clearInterval(intervalId);
   }, [api, images.filter(Boolean).length]);
 
-  if (!profile) return null;
-
-  const firestore = useFirestore();
   const medalsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, "medals"));
