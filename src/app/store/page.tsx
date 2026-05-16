@@ -13,8 +13,6 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
-import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
-import { AvatarFrame } from '@/components/avatar-frame';
 
 // --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH + NO BLUE FADE) ---
 const SmartBlackRemover = ({ 
@@ -223,7 +221,7 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Handle video ready (FIXED GLITCH - pehle frame skip karo)
+  // Handle video ready - TURANT PROCESS KARO NO DELAY
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
@@ -231,8 +229,8 @@ const SmartBlackRemover = ({
       setUseCanvas(hasBlackBg);
       setIsReady(true);
       if (hasBlackBg) {
-        // Thoda delay do taki video ka pehla frame render ho jaye
-        setTimeout(() => processFrame(video), 150);
+        // Turant process karo bina delay ke
+        processFrame(video);
       }
     }
   };
@@ -270,7 +268,6 @@ const SmartBlackRemover = ({
             style={{ 
               display: isReady ? 'block' : 'none', 
               background: 'transparent',
-              // Ensure no background color shows
               backgroundColor: 'transparent'
             }}
           />
@@ -365,60 +362,6 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
       <div className={cn("absolute inset-0 rounded-full border-[6px] opacity-30", borderColor)} />
       <div className={cn("absolute inset-[3px] rounded-full border-[8px] shadow-inner", borderColor)} />
       <div className={cn("absolute inset-[10px] rounded-full border-[1px] opacity-50", borderColor)} />
-    </div>
-  );
-};
-
-// --- PREMIUM AVATAR FRAME COMPONENT (SAME) ---
-interface PremiumAvatarFrameProps {
-  imageUrl: string;
-  size?: number;
-  className?: string;
-}
-
-const PremiumAvatarFrame = ({ imageUrl, size = 120, className = "" }: PremiumAvatarFrameProps) => {
-  return (
-    <div className={cn("relative flex items-center justify-center", className)} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 400 400" className="absolute inset-0 w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)] z-10">
-        <defs>
-          <linearGradient id="premiumGold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#FDF0AD' }} />
-            <stop offset="20%" style={{ stopColor: '#D4AF37' }} />
-            <stop offset="50%" style={{ stopColor: '#FFFCEB' }} />
-            <stop offset="80%" style={{ stopColor: '#BD9731' }} />
-            <stop offset="100%" style={{ stopColor: '#8A6E00' }} />
-          </linearGradient>
-          <filter id="metalRelief" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
-            <feSpecularLighting in="blur" surfaceScale="6" specularConstant="1.2" specularExponent="35" lightingColor="white" result="specOut">
-              <fePointLight x="-5000" y="-10000" z="20000" />
-            </feSpecularLighting>
-            <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
-            <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
-          </filter>
-        </defs>
-        <g filter="url(#metalRelief)" stroke="#5c4300" strokeWidth="0.5">
-          <path d="M100 240 C50 240 30 180 50 130 L95 155 C80 185 85 210 100 235 Z" fill="url(#premiumGold)" />
-          <path d="M300 240 C350 240 370 180 350 130 L305 155 C320 185 315 210 300 235 Z" fill="url(#premiumGold)" />
-        </g>
-        <circle cx="200" cy="200" r="108" fill="none" stroke="#3d2d00" strokeWidth="12" />
-        <circle cx="200" cy="200" r="102" fill="none" stroke="url(#premiumGold)" strokeWidth="8" filter="url(#metalRelief)" />
-        <g filter="url(#metalRelief)">
-          <path d="M125 105 L105 40 L160 75 L200 15 L240 75 L295 40 L275 105 Z" fill="url(#premiumGold)" stroke="#5c4300" strokeWidth="1" />
-        </g>
-        <g filter="url(#metalRelief)">
-          <path d="M160 280 Q200 350 240 280 L230 265 Q200 280 170 265 Z" fill="url(#premiumGold)" stroke="#4a3700" />
-        </g>
-        <g className="animate-pulse">
-          <circle cx="200" cy="15" r="4" fill="white" />
-          <circle cx="105" cy="40" r="2" fill="white" />
-          <circle cx="295" cy="40" r="2" fill="white" />
-        </g>
-      </svg>
-      <div className="absolute overflow-hidden rounded-full border-[3px] border-[#1a1300] z-0" style={{ width: '43%', height: '43%' }}>
-        <img src={imageUrl} alt="User Avatar" className="w-full h-full object-cover brightness-105" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none" />
-      </div>
     </div>
   );
 };
@@ -592,6 +535,43 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
+// --- SIMPLE VIDEO/IMAGE FRAME DISPLAY (NO SVG FRAMES) ---
+const SimpleFrameDisplay = ({ item, size = "h-32 w-32" }: { item: any, size?: string }) => {
+  if (item.isDynamic && item.videoUrl) {
+    return (
+      <div className={cn("relative flex items-center justify-center overflow-hidden", size)} style={{ background: 'transparent' }}>
+        <SmartBlackRemover 
+          src={item.videoUrl} 
+          type="video" 
+          className="w-full h-full"
+          style={{ background: 'transparent' }}
+        />
+      </div>
+    );
+  }
+  
+  if (item.isDynamic && item.imageUrl) {
+    return (
+      <div className={cn("relative flex items-center justify-center overflow-hidden", size)} style={{ background: 'transparent' }}>
+        <SmartBlackRemover 
+          src={item.imageUrl} 
+          type="image" 
+          className="w-full h-full"
+          style={{ background: 'transparent' }}
+        />
+      </div>
+    );
+  }
+  
+  // Fallback - simple avatar
+  return (
+    <Avatar className={size}>
+      <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
+      <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
+    </Avatar>
+  );
+};
+
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -637,13 +617,23 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
+  // Frame items seedhe firestore se aayenge, AVATAR_FRAMES import nahi karenge
+  const frameItemsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'avatarFrames'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: dbFrames } = useCollection(frameItemsQuery);
+
   const frameItems = useMemo(() => {
-    const frames: any[] = [];
-    (Object.values(AVATAR_FRAMES) as AvatarFrameConfig[]).forEach(f => {
-      frames.push({ ...f, type: 'Frame', price: 0, description: `Premium ${f.tier} identity frame.` });
-    });
-    return frames;
-  }, []);
+    return (dbFrames || []).map(f => ({
+      ...f,
+      type: 'Frame',
+      price: f.price || 0,
+      description: f.description || `Premium ${f.tier || 'standard'} identity frame.`,
+      isDynamic: true // Firestore frames hamesha dynamic hote hain
+    }));
+  }, [dbFrames]);
 
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
@@ -879,32 +869,7 @@ export default function StorePage() {
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                       {item.type === 'Frame' ? (
                         <div className="scale-110">
-                          {item.isDynamic && item.videoUrl ? (
-                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-                              <SmartBlackRemover 
-                                src={item.videoUrl} 
-                                type="video" 
-                                className="w-full h-full"
-                                style={{ background: 'transparent' }}
-                              />
-                            </div>
-                          ) : item.isDynamic && item.imageUrl ? (
-                            <div className="relative h-32 w-32 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-                              <SmartBlackRemover 
-                                src={item.imageUrl} 
-                                type="image" 
-                                className="w-full h-full"
-                                style={{ background: 'transparent' }}
-                              />
-                            </div>
-                          ) : (
-                            <AvatarFrame frameId={item.id} size="md">
-                              <Avatar className="h-16 w-16">
-                                <AvatarImage src={`https://picsum.photos/seed/${item.id}/200`} />
-                                <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
-                              </Avatar>
-                            </AvatarFrame>
-                          )}
+                          <SimpleFrameDisplay item={item} size="h-32 w-32" />
                         </div>
                       ) : item.type === 'Bubble' ? (
                         <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
@@ -958,32 +923,7 @@ export default function StorePage() {
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36" style={{ background: 'transparent' }}>
                   {previewItem.type === 'Frame' ? (
-                    previewItem.isDynamic && previewItem.videoUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-                        <SmartBlackRemover 
-                          src={previewItem.videoUrl} 
-                          type="video" 
-                          className="w-full h-full"
-                          style={{ background: 'transparent' }}
-                        />
-                      </div>
-                    ) : previewItem.isDynamic && previewItem.imageUrl ? (
-                      <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-                        <SmartBlackRemover 
-                          src={previewItem.imageUrl} 
-                          type="image" 
-                          className="w-full h-full"
-                          style={{ background: 'transparent' }}
-                        />
-                      </div>
-                    ) : (
-                      <AvatarFrame frameId={previewItem.id} size="xl">
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage src={`https://picsum.photos/seed/${previewItem.id}/200`} />
-                          <AvatarFallback className="bg-[#2A3644] text-gray-300">U</AvatarFallback>
-                        </Avatar>
-                      </AvatarFrame>
-                    )
+                    <SimpleFrameDisplay item={previewItem} size="h-36 w-36" />
                   ) : previewItem.type === 'Bubble' ? (
                     <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
                   ) : previewItem.type === 'Theme' ? (
@@ -1060,10 +1000,8 @@ export default function StorePage() {
                   onClick={() => {
                     const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
                     if (isOwned) {
-                      // EQUIP YA UNEQUIP KARO
                       handleEquipToggle(previewItem);
                     } else {
-                      // BUY KARO
                       handlePurchase(previewItem, selectedDuration);
                     }
                   }}
@@ -1091,4 +1029,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+}
