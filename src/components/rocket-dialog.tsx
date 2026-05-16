@@ -99,20 +99,20 @@ export function RocketDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[385px] p-0 bg-[#050810] border-none rounded-[3.5rem] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
+      <DialogContent className="max-w-[385px] p-0 bg-[#050810] border-none rounded-none overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
         <DialogHeader className="sr-only">
           <DialogTitle>Rocket Status</DialogTitle>
           <DialogDescription>View the current rocket evolution level and progress in {roomName}.</DialogDescription>
         </DialogHeader>
         
-        {/* HEADER AREA - BLUE SPACE THEME */}
-        <div className="relative h-[280px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">
+        {/* FULL COVER ROCKET SECTION */}
+        <div className="relative w-full h-[450px] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#020617_100%)]">
           {/* Animated Falling Stars */}
           <div className="absolute inset-0 overflow-hidden opacity-30">
             {[...Array(12)].map((_, i) => (
               <motion.div
                 key={i}
-                animate={{ y: [-20, 400], opacity: [0, 1, 0] }}
+                animate={{ y: [-20, 500], opacity: [0, 1, 0] }}
                 transition={{ duration: Math.random() * 2 + 1, repeat: Infinity, delay: Math.random() * 3 }}
                 className="absolute w-[1px] h-12 bg-blue-400"
                 style={{ left: `${Math.random() * 100}%` }}
@@ -124,17 +124,18 @@ export function RocketDialog({
             <X size={20} />
           </button>
 
-          {/* MAIN ROCKET DISPLAY */}
-          <div className="relative w-44 h-44 flex items-center justify-center">
+          {/* FULL COVER ROCKET IMAGE */}
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center">
             {rocketConfig?.imageUrl ? (
               <motion.img 
                 src={rocketConfig.imageUrl} 
                 alt="Rocket" 
                 animate={!!activeLevel ? {
-                  y: [0, -10, 0],
+                  y: [0, -8, 0],
+                  scale: [1, 1.02, 1]
                 } : {}}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]" 
+                className="w-full h-full object-cover drop-shadow-[0_0_40px_rgba(59,130,246,0.6)]" 
               />
             ) : (
               <PremiumRocketSVG 
@@ -142,52 +143,6 @@ export function RocketDialog({
                 isActive={!!activeLevel} 
               />
             )}
-          </div>
-
-          <motion.h1 
-            initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-            className="mt-6 text-3xl font-black italic tracking-widest text-white uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-          >
-            {rocketConfig?.name || (activeLevel ? activeLevel.name : 'SYSTEM OFFLINE')}
-          </motion.h1>
-        </div>
-
-        {/* PROGRESS SECTION */}
-        <div className="p-6 pt-4 flex flex-col gap-5">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Next Evolution</span>
-              <span className="text-white text-lg font-bold">{rocketConfig?.name || nextLevel.name}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Current XP</span>
-              <div className="text-white font-mono font-bold">{currentExp.toLocaleString()}</div>
-            </div>
-          </div>
-
-          {/* CUSTOM PROGRESS BAR */}
-          <div className="relative h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1.5, ease: 'easeOut' }}
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 shadow-[0_0_20px_rgba(37,99,235,0.5)]"
-            />
-          </div>
-
-          <div className="flex justify-between items-center text-[10px] font-black text-white/20 uppercase tracking-tighter">
-            <span>Level {activeLevel?.level || 0}</span>
-            <span>{(rocketConfig?.target || nextLevel.target).toLocaleString()} XP Target</span>
-          </div>
-
-          {/* ACTION BUTTONS */}
-          <div className="grid grid-cols-2 gap-3 mt-2">
-            <button className="py-4 rounded-3xl bg-white/5 border border-white/10 text-white font-bold text-xs hover:bg-white/10 transition-all">
-              Mission Logs
-            </button>
-            <button className="py-4 rounded-3xl bg-blue-600 text-white font-bold text-xs shadow-[0_4px_15px_rgba(37,99,235,0.3)] hover:scale-105 active:scale-95 transition-all">
-              Boost Sync
-            </button>
           </div>
         </div>
       </DialogContent>
