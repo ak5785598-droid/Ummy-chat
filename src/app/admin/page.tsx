@@ -773,6 +773,15 @@ function AdminPageContent() {
   const [isUploadingMedal, setIsUploadingMedal] = useState(false);
   const medalImageInputRef = useRef<HTMLInputElement>(null);
 
+  // MEDAL ASSIGNMENT STATE
+  const [medalAssignSearchMode, setMedalAssignSearchMode] = useState<"id" | "name">("id");
+  const [medalAssignSearchId, setMedalAssignSearchId] = useState("");
+  const [targetUserForMedal, setTargetUserForMedal] = useState<any>(null);
+  const [isSearchingMedal, setIsSearchingMedal] = useState(false);
+  const [selectedMedalForAssign, setSelectedMedalForAssign] = useState("");
+  const [isAssigningMedal, setIsAssigningMedal] = useState(false);
+  const [userMedals, setUserMedals] = useState<string[]>([]);
+
   const levelsListQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
@@ -2201,6 +2210,71 @@ function AdminPageContent() {
     } catch (err: any) {
       console.error(err);
       toast({ variant: "destructive", title: "Delete Failed", description: err.message });
+    }
+  };
+
+  const handleMedalUserSearch = async () => {
+    if (!firestore || !medalAssignSearchId.trim()) return;
+    setIsSearchingMedal(true);
+    try {
+      let foundUser = null;
+      if (medalAssignSearchMode === "id") {
+        const qAcc = query(collection(firestore, "users"), where("accountNumber", "==", medalAssignSearchId.trim()), limit(1));
+        const snapAcc = await getDocs(qAcc);
+        if (!snapAcc.empty) foundUser = { ...snapAcc.docs[0].data(), id: snapAcc.docs[0].id };
+      } else {
+        const qName = query(collection(firestore, "users"), where("username", ">=", medalAssignSearchId.trim()), where("username", "<=", medalAssignSearchId.trim() + "\uf8ff"), limit(1));
+        const snapName = await getDocs(qName);
+        if (!snapName.empty) foundUser = { ...snapName.docs[0].data(), id: snapName.docs[0].id };
+      }
+      if (foundUser) {
+        const profileRef = doc(firestore, "users", foundUser.id, "profile", foundUser.id);
+        const profileSnap = await getDoc(profileRef);
+        if (profileSnap.exists()) {
+          foundUser = { ...foundUser, ...profileSnap.data() };
+        }
+        setTargetUserForMedal(foundUser);
+        setUserMedals((foundUser as any).medals || []);
+      } else {
+        toast({ variant: "destructive", title: "User Not Found" });
+        setTargetUserForMedal(null);
+        setUserMedals([]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Search Failed", description: err.message });
+    } finally {
+      setIsSearchingMedal(false);
+    }
+  };
+
+  const handleAssignMedalToUser = async () => {
+    if (!firestore || !targetUserForMedal || !selectedMedalForAssign) return;
+    setIsAssigningMedal(true);
+    try {
+      const profileRef = doc(firestore, "users", targetUserForMedal.id, "profile", targetUserForMedal.id);
+      await updateDoc(profileRef, { medals: arrayUnion(selectedMedalForAssign) });
+      setUserMedals(prev => prev.includes(selectedMedalForAssign) ? prev : [...prev, selectedMedalForAssign]);
+      setSelectedMedalForAssign("");
+      toast({ title: "Medal Assigned", description: `${selectedMedalForAssign} added to ${targetUserForMedal.username}` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Assign Failed", description: err.message });
+    } finally {
+      setIsAssigningMedal(false);
+    }
+  };
+
+  const handleRemoveMedalFromUser = async (medalId: string) => {
+    if (!firestore || !targetUserForMedal) return;
+    try {
+      const profileRef = doc(firestore, "users", targetUserForMedal.id, "profile", targetUserForMedal.id);
+      await updateDoc(profileRef, { medals: arrayRemove(medalId) });
+      setUserMedals(prev => prev.filter(m => m !== medalId));
+      toast({ title: "Medal Removed", description: `${medalId} removed from ${targetUserForMedal.username}` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Remove Failed", description: err.message });
     }
   };
 
@@ -6582,6 +6656,81 @@ function AdminPageContent() {
                     ) : (
                       <p className="text-xs text-slate-400 text-center py-4">No medals added yet.</p>
                     )}
+                  </div>
+
+                  {/* Assign Medal to User */}
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Assign Medal to User</h3>
+                    <div className="flex flex-col gap-4">
+                      <SearchToggle mode={medalAssignSearchMode} setMode={setMedalAssignSearchMode} />
+                      <div className="flex gap-4">
+                        <Input
+                          placeholder="Search user..."
+                          value={medalAssignSearchId}
+                          onChange={e => setMedalAssignSearchId(e.target.value)}
+                          onKeyDown={e => e.key === "Enter" && handleMedalUserSearch()}
+                          className="h-12 rounded-xl"
+                        />
+                        <Button onClick={handleMedalUserSearch} disabled={isSearchingMedal} className="h-12 px-8 rounded-xl">
+                          {isSearchingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Find"}
+                        </Button>
+                      </div>
+
+                      {targetUserForMedal && (
+                        <div className="mt-4 p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-6">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-14 w-14">
+                              <AvatarImage src={targetUserForMedal.photoURL || targetUserForMedal.avatarUrl || undefined} />
+                              <AvatarFallback>{targetUserForMedal.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-bold text-slate-800">{targetUserForMedal.username}</p>
+                              <p className="text-xs text-slate-500">ID: {targetUserForMedal.accountNumber || targetUserForMedal.id}</p>
+                            </div>
+                          </div>
+
+                          {/* Current Medals */}
+                          <div>
+                            <p className="text-[10px] font-bold uppercase text-slate-400 mb-2">Current Medals</p>
+                            {userMedals.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {userMedals.map(mId => (
+                                  <span key={mId} className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
+                                    {mId}
+                                    <button onClick={() => handleRemoveMedalFromUser(mId)} className="ml-1 text-amber-600 hover:text-red-600 transition-colors">
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400">No medals assigned.</p>
+                            )}
+                          </div>
+
+                          {/* Assign New Medal */}
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            <Select value={selectedMedalForAssign} onValueChange={setSelectedMedalForAssign}>
+                              <SelectTrigger className="h-12 rounded-xl flex-1">
+                                <SelectValue placeholder="Select a medal to assign" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {medalsList?.map((m: any) => (
+                                  <SelectItem key={m.id} value={m.id}>{m.name} ({m.category})</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              onClick={handleAssignMedalToUser}
+                              disabled={isAssigningMedal || !selectedMedalForAssign}
+                              className="h-12 px-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase tracking-wider"
+                            >
+                              {isAssigningMedal ? <Loader className="animate-spin h-5 w-5" /> : "Assign Medal"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
