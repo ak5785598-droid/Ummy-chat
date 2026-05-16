@@ -34,7 +34,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showFlight, setShowFlight] = useState(false);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
-  const [videoEnded, setVideoEnded] = useState(false); // Track karega video khatam hui ya nahi
+  const [videoEnded, setVideoEnded] = useState(false);
   const firestore = useFirestore();
 
   // FETCH DYNAMIC CONFIG
@@ -52,18 +52,14 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
       const diff = Math.max(0, Math.floor((end - now) / 1000));
       setTimeLeft(diff);
       
-      // Jab 2 second bache, tabhi flight show karo agar pehle show nahi hua
       if (diff === 2 && !showFlight && !videoEnded) {
         setShowFlight(true);
       }
       
-      // Jab time khatam ho jaye
       if (diff === 0) {
         clearInterval(timer);
-        // 5 second baad flight hide karo
         setTimeout(() => {
           setShowFlight(false);
-          // Video khatam hone ke baad bottom sheet kholo
           setShowBottomSheet(true);
         }, 5000);
       }
@@ -71,14 +67,12 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
     return () => clearInterval(timer);
   }, [countdownUntil, showFlight, videoEnded]);
 
-  // Jab video khatam ho jaye
   const handleVideoEnded = () => {
     setVideoEnded(true);
     setShowFlight(false);
     setShowBottomSheet(true);
   };
 
-  // Rocket click handler
   const handleRocketClick = () => {
     if (onOpenRocket) {
       onOpenRocket();
@@ -88,13 +82,13 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
 
   return (
     <>
-      {/* MAIN ROCKET BUTTON - Kuch touch nahi kiya */}
+      {/* MAIN ROCKET BUTTON */}
       <div 
         onClick={handleRocketClick} 
         className="fixed bottom-[68px] right-2 z-[40] flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all group"
       >
         
-        {/* Timer/Status Bubble - Same rahega */}
+        {/* Timer/Status Bubble */}
         <AnimatePresence>
           {countdownUntil && timeLeft !== null && (
             <motion.div 
@@ -109,12 +103,12 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
           )}
         </AnimatePresence>
 
-        {/* Rocket Circle - Same rahega */}
+        {/* Rocket Circle */}
         <div className={cn(
           "relative p-1.5 rounded-2xl transition-all duration-300 shadow-xl border overflow-hidden",
           "bg-gradient-to-br from-amber-500/10 to-orange-600/20 backdrop-blur-sm border-amber-500/30 group-hover:border-amber-500/50 shadow-amber-900/20"
         )}>
-          {/* Progress Ring - Same rahega */}
+          {/* Progress Ring */}
           <div className="relative h-12 w-12 flex items-center justify-center">
             <svg className="absolute inset-0 w-full h-full -rotate-90">
               <circle cx="24" cy="24" r="21" fill="transparent" className="stroke-white/5" strokeWidth="2" />
@@ -128,7 +122,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
               />
             </svg>
 
-            {/* ROCKET ICON - Same rahega */}
+            {/* ROCKET ICON */}
             <div className={cn("h-7.5 w-7.5 relative z-10 transition-transform duration-500 group-hover:scale-110 flex items-center justify-center", progressPercent >= 100 && "animate-bounce")}>
               {rocketConfig?.imageUrl ? (
                 <img src={rocketConfig.imageUrl} alt="Rocket" className="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
@@ -145,7 +139,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
           )}
         </div>
 
-        {/* Percentage Label - Same rahega */}
+        {/* Percentage Label */}
         {!countdownUntil && (
           <div className="bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10 shadow-lg">
             <span className="text-[8px] font-black text-amber-400 tracking-tighter uppercase">{Math.round(progressPercent)}% READY</span>
@@ -153,7 +147,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
         )}
       </div>
 
-      {/* FLYING ANIMATION / VIDEO LAUNCH - Video neeche se start hogi */}
+      {/* FLYING ANIMATION / VIDEO LAUNCH */}
       <AnimatePresence>
         {showFlight && (
           <motion.div className="fixed inset-0 z-[100] pointer-events-none flex items-end justify-center">
@@ -189,7 +183,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
         )}
       </AnimatePresence>
 
-      {/* 50VH BOTTOM SHEET - Rocket Image Full Card Cover Karega */}
+      {/* 50VH BOTTOM SHEET - Full Image Card with Square Corners */}
       <AnimatePresence>
         {showBottomSheet && (
           <>
@@ -202,23 +196,15 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
               className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm"
             />
             
-            {/* Bottom Sheet */}
+            {/* Bottom Sheet with Square Corners */}
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[100] h-[50vh] rounded-t-3xl overflow-hidden"
+              className="fixed bottom-0 left-0 right-0 z-[100] h-[50vh] overflow-hidden"
             >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowBottomSheet(false)}
-                className="absolute top-4 right-4 z-20 bg-black/50 backdrop-blur-sm text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/70 transition-colors border border-white/20"
-              >
-                ✕
-              </button>
-
-              {/* Rocket Image - Full Card Cover */}
+              {/* Full Image Card - No buttons, just image */}
               <div className="relative w-full h-full">
                 {rocketConfig?.imageUrl ? (
                   <motion.img
@@ -239,28 +225,6 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
                     <CustomGoldRocket className="w-48 h-48" />
                   </motion.div>
                 )}
-
-                {/* Gradient Overlay at bottom for progress info */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 pt-16">
-                  {/* Progress Bar */}
-                  <div className="w-full max-w-[280px] mx-auto">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-amber-400 text-sm font-bold">ROCKET FUEL</span>
-                      <span className="text-white text-sm font-bold">{Math.round(progressPercent)}%</span>
-                    </div>
-                    <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden border border-amber-500/20 backdrop-blur-sm">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressPercent}%` }}
-                        transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
-                        className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                      />
-                    </div>
-                    <p className="text-white/60 text-xs mt-2 text-center">
-                      {progress}/{finalTarget} coins collected
-                    </p>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </>
@@ -268,4 +232,4 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
       </AnimatePresence>
     </>
   );
-                    }
+                        }
