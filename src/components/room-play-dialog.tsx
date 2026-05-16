@@ -11,15 +11,22 @@ import {
 import { 
   ChevronLeft, 
   Loader, 
+  MessageSquare, 
+  MessageSquareOff, 
   Volume2, 
   VolumeX, 
+  Music, 
   Search, 
   Play, 
   Upload, 
   FileAudio, 
   Power,
+  Trash2,
   Zap,
-  Bot
+  Bot,
+  Gamepad2,
+  Gift,
+  Youtube
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -349,11 +356,8 @@ export function RoomPlayDialog({
       label: 'Clean', 
       onClick: handleClearChat, 
       active: isClearingChat,
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-        </svg>
-      ),
+      icon: <Trash2 className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Red Dustbin
       color: 'bg-gradient-to-b from-red-400 to-red-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border-red-400/50 text-white'
     },
     { 
@@ -361,16 +365,8 @@ export function RoomPlayDialog({
       label: 'Public Msg', 
       onClick: handleToggleChatMute, 
       active: !isChatMuted,
-      icon: isChatMuted ? (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white/50">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-          <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="2"/>
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-        </svg>
-      ),
+      icon: isChatMuted ? <MessageSquareOff className="h-7 w-7 text-white/50" /> : <MessageSquare className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Green Msg (Gray if muted)
       color: isChatMuted 
         ? 'bg-gradient-to-b from-slate-600 to-slate-800 shadow-inner border-slate-600' 
         : 'bg-gradient-to-b from-green-400 to-green-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(34,197,94,0.5)] border-green-400/50 text-white' 
@@ -378,13 +374,10 @@ export function RoomPlayDialog({
     { 
       id: 'gift-effects', 
       label: 'Gift Effects', 
-      onClick: () => {},
+      onClick: () => {}, // toast({ title: 'Premium Feature', description: 'Gift effects are always active for Sovereign members! ✨' }), 
       active: true,
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M20 12V8H14V6H20V2H4v4h6v2H4v4h6v2H4v4h16v-4h-6v-2h6zM12 18V6h4v2h-2v2h2v2h-2v2h2v2h-2v2h2v2h-2v2h-2z"/>
-        </svg>
-      ),
+      icon: <Gift className="h-7 w-7 text-white drop-shadow-md" />,
+      // Glossy Orange Gift
       color: 'bg-gradient-to-b from-orange-400 to-orange-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(249,115,22,0.5)] border-orange-400/50 text-white' 
     }
   ];
@@ -405,33 +398,24 @@ export function RoomPlayDialog({
     { 
       id: 'game-selector', 
       label: 'Games', 
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-        </svg>
-      ),
+      icon: <Gamepad2 className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Golden Games
       color: 'from-yellow-400 to-amber-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(245,158,11,0.5)] border border-yellow-400/50', 
       onClick: () => { onOpenGames(); onOpenChange(false); } 
     },
     { 
       id: 'music', 
       label: 'Music', 
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-        </svg>
-      ),
+      icon: <Music className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Blue Music
       color: 'from-cyan-400 to-blue-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-cyan-400/50', 
       onClick: () => { setView('music'); onToggleMiniPlayer?.(); } 
     },
     { 
       id: 'youtube', 
       label: 'YouTube', 
-      icon: (
-        <svg viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white drop-shadow-md">
-          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-        </svg>
-      ),
+      icon: <Youtube className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Red YouTube
       color: 'from-red-500 to-red-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(239,68,68,0.5)] border border-red-500/50', 
       onClick: () => { onOpenYouTube?.(); } 
     },
@@ -620,9 +604,7 @@ export function RoomPlayDialog({
                      <div className="space-y-1">
                         {roomMusicLibrary.length === 0 && (
                         <div className="text-center py-12 text-white/40">
-                            <svg viewBox="0 0 24 24" fill="currentColor" className="h-12 w-12 mx-auto mb-3 opacity-20">
-                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                            </svg>
+                            <Music className="h-12 w-12 mx-auto mb-3 opacity-20" />
                             <p className="text-sm font-medium">No tracks in library</p>
                             <p className="text-xs mt-1">Add frequencies to the room sync.</p>
                         </div>
