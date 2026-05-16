@@ -28,9 +28,11 @@ import {
 } from "@/components/ui/carousel";
 import { GoldCoinIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 // Registries
-import { MEDAL_REGISTRY } from '@/constants/medals';
+import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
@@ -371,6 +373,13 @@ export function FullProfileDialog({
 
   if (!profile) return null;
 
+  const firestore = useFirestore();
+  const medalsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "medals"));
+  }, [firestore]);
+  const { data: firestoreMedals } = useCollection(medalsQuery);
+
   const ownedItems = profile.inventory?.ownedItems || [];
   const medals = profile.medals || [];
   const receivedGifts = profile.stats?.receivedGifts || {};
@@ -591,7 +600,11 @@ export function FullProfileDialog({
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
                   {medals.map((medalId: string) => {
-                    const medal = MEDAL_REGISTRY[medalId];
+                    const fsMedal = firestoreMedals?.find((m: any) => m.id === medalId);
+                    const staticMedal = MEDAL_REGISTRY[medalId];
+                    const medal: MedalConfig | null = fsMedal
+                      ? { id: fsMedal.id, name: fsMedal.name, imageUrl: fsMedal.imageUrl, description: fsMedal.description || '', tier: fsMedal.tier || 'common' }
+                      : staticMedal || null;
                     if (!medal) return null;
                     return (
                       <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group">

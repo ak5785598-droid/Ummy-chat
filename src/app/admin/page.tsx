@@ -96,6 +96,7 @@ import {
   Monitor,
   Trophy,
   Crown,
+  Award,
   Home,
   X,
   Copy,
@@ -748,6 +749,29 @@ function AdminPageContent() {
   
   const rocketImageInputRef = useRef<HTMLInputElement>(null);
   const rocketVideoInputRef = useRef<HTMLInputElement>(null);
+
+  // LEVEL MANAGEMENT STATE
+  const [levelTab, setLevelTab] = useState("budget");
+  const [levelName, setLevelName] = useState("");
+  const [levelRange, setLevelRange] = useState("");
+  const [levelBudget, setLevelBudget] = useState("");
+  const [levelReward, setLevelReward] = useState("");
+  const [levelFrameId, setLevelFrameId] = useState("");
+  const [levelImageFile, setLevelImageFile] = useState<File | null>(null);
+  const [levelImagePreview, setLevelImagePreview] = useState("");
+  const [isUploadingLevel, setIsUploadingLevel] = useState(false);
+  const levelImageInputRef = useRef<HTMLInputElement>(null);
+
+  // MEDAL MANAGEMENT STATE
+  const [medalTab, setMedalTab] = useState("achievement");
+  const [medalId, setMedalId] = useState("");
+  const [medalName, setMedalName] = useState("");
+  const [medalDescription, setMedalDescription] = useState("");
+  const [medalTier, setMedalTier] = useState<"common" | "rare" | "epic" | "legendary">("common");
+  const [medalImageFile, setMedalImageFile] = useState<File | null>(null);
+  const [medalImagePreview, setMedalImagePreview] = useState("");
+  const [isUploadingMedal, setIsUploadingMedal] = useState(false);
+  const medalImageInputRef = useRef<HTMLInputElement>(null);
 
   const giftsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -2062,6 +2086,91 @@ function AdminPageContent() {
   };
 
 
+  const handleLevelUpload = async () => {
+    if (!firestore || !storage || !isAuthorized) return;
+    if (!levelName.trim() || !levelRange.trim()) {
+      toast({ variant: "destructive", title: "Missing Info", description: "Level name and range are required." });
+      return;
+    }
+    setIsUploadingLevel(true);
+    try {
+      let imageUrl = "";
+      if (levelImageFile) {
+        const iRef = ref(storage, `levels/${Date.now()}_${levelImageFile.name}`);
+        const iRes = await uploadBytes(iRef, levelImageFile);
+        imageUrl = await getDownloadURL(iRes.ref);
+      }
+      const levelData: any = {
+        name: levelName,
+        range: levelRange,
+        imageUrl,
+        updatedAt: serverTimestamp(),
+      };
+      if (levelTab === "budget") levelData.budget = levelBudget;
+      if (levelTab === "rewards") levelData.reward = levelReward;
+      if (levelTab === "frame") levelData.frameId = levelFrameId;
+
+      const levelRef = doc(collection(firestore, "levels"));
+      await setDoc(levelRef, levelData, { merge: true });
+
+      setLevelName("");
+      setLevelRange("");
+      setLevelBudget("");
+      setLevelReward("");
+      setLevelFrameId("");
+      setLevelImageFile(null);
+      setLevelImagePreview("");
+      toast({ title: "Level Synchronized", description: `Level "${levelName}" is now live.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Sync Failed", description: err.message });
+    } finally {
+      setIsUploadingLevel(false);
+    }
+  };
+
+  const handleMedalUpload = async () => {
+    if (!firestore || !storage || !isAuthorized) return;
+    if (!medalId.trim() || !medalName.trim()) {
+      toast({ variant: "destructive", title: "Missing Info", description: "Medal ID and name are required." });
+      return;
+    }
+    setIsUploadingMedal(true);
+    try {
+      let imageUrl = "";
+      if (medalImageFile) {
+        const iRef = ref(storage, `medals/${Date.now()}_${medalImageFile.name}`);
+        const iRes = await uploadBytes(iRef, medalImageFile);
+        imageUrl = await getDownloadURL(iRes.ref);
+      }
+      const medalData = {
+        id: medalId,
+        name: medalName,
+        description: medalDescription,
+        tier: medalTier,
+        category: medalTab,
+        imageUrl,
+        updatedAt: serverTimestamp(),
+      };
+      const medalRef = doc(firestore, "medals", medalId);
+      await setDoc(medalRef, medalData, { merge: true });
+
+      setMedalId("");
+      setMedalName("");
+      setMedalDescription("");
+      setMedalTier("common");
+      setMedalImageFile(null);
+      setMedalImagePreview("");
+      toast({ title: "Medal Synchronized", description: `Medal "${medalName}" is now live.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Sync Failed", description: err.message });
+    } finally {
+      setIsUploadingMedal(false);
+    }
+  };
+
+
   const handleBulkRestoreGifts = async () => {
     if (!firestore || !isAuthorized) return;
     setIsAddingGift(true);
@@ -2767,6 +2876,18 @@ function AdminPageContent() {
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
                   <RefreshCcw className="h-4 w-4" /> System Control
+                </TabsTrigger>
+                <TabsTrigger
+                  value="level-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-cyan-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Trophy className="h-4 w-4" /> Level Management
+                </TabsTrigger>
+                <TabsTrigger
+                  value="medal-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-amber-500 data-[state=active]:text-white shadow-lg"
+                >
+                  <Award className="h-4 w-4" /> Medal Management
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -6108,6 +6229,270 @@ function AdminPageContent() {
             </TabsContent>
             <TabsContent value="moderation-reports">
                <ReportsManager firestore={firestore} isAuthorized={isAuthorized} />
+            </TabsContent>
+
+            {/* LEVEL MANAGEMENT TAB */}
+            <TabsContent value="level-management" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-cyan-600">
+                    <Trophy className="h-6 w-6" /> Level Management
+                  </CardTitle>
+                  <CardDescription>Configure level budgets, rewards, and frames with custom images.</CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-6">
+                  <Tabs value={levelTab} onValueChange={setLevelTab}>
+                    <TabsList className="grid w-full grid-cols-3 h-12 rounded-2xl">
+                      <TabsTrigger value="budget" className="rounded-xl font-bold uppercase text-xs">Budget</TabsTrigger>
+                      <TabsTrigger value="rewards" className="rounded-xl font-bold uppercase text-xs">Rewards</TabsTrigger>
+                      <TabsTrigger value="frame" className="rounded-xl font-bold uppercase text-xs">Frame</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="budget" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Name</Label>
+                          <Input value={levelName} onChange={e => setLevelName(e.target.value)} placeholder="e.g. Bronze Tier" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Range</Label>
+                          <Input value={levelRange} onChange={e => setLevelRange(e.target.value)} placeholder="e.g. Lv.0 - Lv.10" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Budget Value</Label>
+                          <Input value={levelBudget} onChange={e => setLevelBudget(e.target.value)} placeholder="e.g. 5000" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Level Badge Image</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleLevelUpload} disabled={isUploadingLevel || !levelName.trim() || !levelRange.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-cyan-600 hover:bg-cyan-700 shadow-lg shadow-cyan-900/20">
+                        {isUploadingLevel ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Level Budget"}
+                      </Button>
+                    </TabsContent>
+
+                    <TabsContent value="rewards" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Name</Label>
+                          <Input value={levelName} onChange={e => setLevelName(e.target.value)} placeholder="e.g. Gold Tier" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Range</Label>
+                          <Input value={levelRange} onChange={e => setLevelRange(e.target.value)} placeholder="e.g. Lv.20 - Lv.35" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Reward Description</Label>
+                          <Input value={levelReward} onChange={e => setLevelReward(e.target.value)} placeholder="e.g. 2x EXP Boost" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Reward Icon</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleLevelUpload} disabled={isUploadingLevel || !levelName.trim() || !levelRange.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-cyan-600 hover:bg-cyan-700 shadow-lg shadow-cyan-900/20">
+                        {isUploadingLevel ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Level Reward"}
+                      </Button>
+                    </TabsContent>
+
+                    <TabsContent value="frame" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Name</Label>
+                          <Input value={levelName} onChange={e => setLevelName(e.target.value)} placeholder="e.g. Platinum Frame" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Level Range</Label>
+                          <Input value={levelRange} onChange={e => setLevelRange(e.target.value)} placeholder="e.g. Lv.50 - Lv.75" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-cyan-400">Frame ID</Label>
+                          <Input value={levelFrameId} onChange={e => setLevelFrameId(e.target.value)} placeholder="e.g. frame_platinum" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Frame Preview</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleLevelUpload} disabled={isUploadingLevel || !levelName.trim() || !levelRange.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-cyan-600 hover:bg-cyan-700 shadow-lg shadow-cyan-900/20">
+                        {isUploadingLevel ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Level Frame"}
+                      </Button>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* MEDAL MANAGEMENT TAB */}
+            <TabsContent value="medal-management" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-amber-500">
+                    <Award className="h-6 w-6" /> Medal Management
+                  </CardTitle>
+                  <CardDescription>Configure achievement, gift, and activity medals with custom images.</CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-6">
+                  <Tabs value={medalTab} onValueChange={setMedalTab}>
+                    <TabsList className="grid w-full grid-cols-3 h-12 rounded-2xl">
+                      <TabsTrigger value="achievement" className="rounded-xl font-bold uppercase text-xs">Achievement</TabsTrigger>
+                      <TabsTrigger value="gift" className="rounded-xl font-bold uppercase text-xs">Gift</TabsTrigger>
+                      <TabsTrigger value="activity" className="rounded-xl font-bold uppercase text-xs">Activity</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="achievement" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal ID</Label>
+                          <Input value={medalId} onChange={e => setMedalId(e.target.value.toLowerCase().replace(/\s+/g, "-"))} placeholder="e.g. top-contributor" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal Name</Label>
+                          <Input value={medalName} onChange={e => setMedalName(e.target.value)} placeholder="e.g. Top Contributor" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Description</Label>
+                          <Textarea value={medalDescription} onChange={e => setMedalDescription(e.target.value)} placeholder="Awarded for outstanding contributions" className="h-24 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Tier</Label>
+                          <Select value={medalTier} onValueChange={v => setMedalTier(v as any)}>
+                            <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="common">Common</SelectItem>
+                              <SelectItem value="rare">Rare</SelectItem>
+                              <SelectItem value="epic">Epic</SelectItem>
+                              <SelectItem value="legendary">Legendary</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleMedalUpload} disabled={isUploadingMedal || !medalId.trim() || !medalName.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-900/20">
+                        {isUploadingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Achievement Medal"}
+                      </Button>
+                    </TabsContent>
+
+                    <TabsContent value="gift" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal ID</Label>
+                          <Input value={medalId} onChange={e => setMedalId(e.target.value.toLowerCase().replace(/\s+/g, "-"))} placeholder="e.g. generous-giver" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal Name</Label>
+                          <Input value={medalName} onChange={e => setMedalName(e.target.value)} placeholder="e.g. Generous Giver" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Description</Label>
+                          <Textarea value={medalDescription} onChange={e => setMedalDescription(e.target.value)} placeholder="Awarded for top gifters" className="h-24 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Tier</Label>
+                          <Select value={medalTier} onValueChange={v => setMedalTier(v as any)}>
+                            <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="common">Common</SelectItem>
+                              <SelectItem value="rare">Rare</SelectItem>
+                              <SelectItem value="epic">Epic</SelectItem>
+                              <SelectItem value="legendary">Legendary</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleMedalUpload} disabled={isUploadingMedal || !medalId.trim() || !medalName.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-900/20">
+                        {isUploadingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Gift Medal"}
+                      </Button>
+                    </TabsContent>
+
+                    <TabsContent value="activity" className="mt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal ID</Label>
+                          <Input value={medalId} onChange={e => setMedalId(e.target.value.toLowerCase().replace(/\s+/g, "-"))} placeholder="e.g. event-champion" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Medal Name</Label>
+                          <Input value={medalName} onChange={e => setMedalName(e.target.value)} placeholder="e.g. Event Champion" className="h-12 rounded-xl" />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Description</Label>
+                          <Textarea value={medalDescription} onChange={e => setMedalDescription(e.target.value)} placeholder="Awarded for event participation" className="h-24 rounded-xl" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase text-amber-400">Tier</Label>
+                          <Select value={medalTier} onValueChange={v => setMedalTier(v as any)}>
+                            <SelectTrigger className="h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="common">Common</SelectItem>
+                              <SelectItem value="rare">Rare</SelectItem>
+                              <SelectItem value="epic">Epic</SelectItem>
+                              <SelectItem value="legendary">Legendary</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
+                          <div className="flex items-center gap-4">
+                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
+                            }} />
+                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
+                          </div>
+                        </div>
+                      </div>
+                      <Button onClick={handleMedalUpload} disabled={isUploadingMedal || !medalId.trim() || !medalName.trim()} className="w-full h-14 rounded-xl font-bold uppercase tracking-widest bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-900/20">
+                        {isUploadingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Activity Medal"}
+                      </Button>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
             </TabsContent>
           </div>
         </Tabs>

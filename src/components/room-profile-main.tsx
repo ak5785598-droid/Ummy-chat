@@ -52,7 +52,9 @@ import { GoldCoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { CPProposeDialog } from '@/components/cp-propose-dialog';
 import { BudgetTag } from '@/components/budget-tag';
-import { MEDAL_REGISTRY } from '@/constants/medals';
+import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,6 +122,12 @@ export function RoomProfileMain({
   isInSeat
 }: RoomProfileMainProps) {
   const { userProfile: profile, isLoading } = useUserProfile(userId || undefined);
+  const firestore = useFirestore();
+  const medalsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "medals"));
+  }, [firestore]);
+  const { data: firestoreMedals } = useCollection(medalsQuery);
   const { toast } = useToast();
   const router = useRouter();
   const [showPropose, setShowPropose] = React.useState(false);
@@ -258,7 +266,11 @@ export function RoomProfileMain({
             {profile.medals && profile.medals.length > 0 && (
               <div className="flex flex-wrap justify-center gap-3 mb-2 px-6">
                 {profile.medals.map(medalId => {
-                  const medal = MEDAL_REGISTRY[medalId];
+                  const fsMedal = firestoreMedals?.find((m: any) => m.id === medalId);
+                  const staticMedal = MEDAL_REGISTRY[medalId];
+                  const medal: MedalConfig | null = fsMedal
+                    ? { id: fsMedal.id, name: fsMedal.name, imageUrl: fsMedal.imageUrl, description: fsMedal.description || '', tier: fsMedal.tier || 'common' }
+                    : staticMedal || null;
                   if (!medal) return null;
                   return (
                     <div key={medalId} className="group relative cursor-pointer">

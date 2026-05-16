@@ -4,30 +4,33 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, HelpCircle, User } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { calculateLevelProgress } from '@/lib/level-utils';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function UserLevelPage() {
   const router = useRouter();
   const { user } = useUser();
+  const firestore = useFirestore();
   const { userProfile } = useUserProfile(user?.uid);
   
-  // Modal state manage karne ke liye
   const [showRules, setShowRules] = useState(false);
 
-  // Aapka purana logic same hai
   const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
+
+  const levelsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
+  }, [firestore]);
+  const { data: levels } = useCollection(levelsQuery);
 
   return (
     <AppLayout>
-      {/* Main Container - Black Background */}
       <div className="relative min-h-screen bg-black font-sans pb-20 overflow-hidden text-white">
         
-        {/* Top 30VH Glossy Purple Mixing */}
         <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-purple-800/50 via-purple-900/20 to-transparent pointer-events-none blur-xl" />
 
-        {/* Top Header */}
         <header className="relative z-10 p-6 pt-safe flex items-center justify-between">
           <button 
             onClick={() => router.back()} 
@@ -42,24 +45,21 @@ export default function UserLevelPage() {
 
         <div className="relative z-10 p-6 space-y-8">
           
-          {/* Sea Blue Glossy Card */}
           <div className="bg-[#005f73]/40 backdrop-blur-md border border-[#0a9396]/40 shadow-[0_0_20px_rgba(10,147,150,0.15)] rounded-2xl p-5">
             
-            {/* 1st Row: User Avatar & Name */}
             <div className="flex items-center gap-3 mb-5">
               <div className="h-12 w-12 rounded-full bg-gray-700/50 overflow-hidden flex items-center justify-center border border-white/20">
-                {userProfile?.photoURL ? (
-                  <img src={userProfile.photoURL} alt="Avatar" className="h-full w-full object-cover" />
+                {userProfile && 'photoURL' in userProfile && userProfile.photoURL ? (
+                  <img src={userProfile.photoURL as string} alt="Avatar" className="h-full w-full object-cover" />
                 ) : (
                   <User className="h-6 w-6 text-gray-300" />
                 )}
               </div>
               <div className="text-lg font-semibold tracking-wide text-white">
-                {userProfile?.name || 'Username'}
+                {userProfile && 'name' in userProfile ? (userProfile.name as string) : 'Username'}
               </div>
             </div>
 
-            {/* 2nd Row: Loading Patti & Level */}
             <div className="flex items-center gap-4 mb-3">
               <div className="flex-1 h-2 bg-black/60 rounded-full overflow-hidden shadow-inner">
                 <div 
@@ -72,7 +72,6 @@ export default function UserLevelPage() {
               </span>
             </div>
 
-            {/* 3rd Row: Need Exp & Question Mark Icon */}
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-gray-300 tracking-wide">
                 Need {stats.remainingToLevelUp.toLocaleString()} Exp For Lv.{stats.nextLevel}
@@ -86,29 +85,48 @@ export default function UserLevelPage() {
             </div>
           </div>
 
-          {/* Budget Section (6 Cards) */}
           <div className="space-y-4 pt-4">
             <h2 className="text-lg font-bold tracking-wider text-gray-200">Budget</h2>
             
             <div className="grid grid-cols-3 gap-3">
-              {[
-                'Lv.0 - Lv.10',
-                'Lv.20 - Lv.35',
-                'Lv.40 - Lv.56',
-                'Lv.63 - Lv.75',
-                'Lv.78 - Lv.87',
-                'Lv.88 - Lv.99'
-              ].map((range, idx) => (
-                <div 
-                  key={idx} 
-                  className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start"
-                >
-                  <span className="text-[10px] font-semibold text-gray-400 tracking-wider">
-                    {range}
-                  </span>
-                  {/* Aap in cards ke andar future me koi data dalna chaho to yahan daal sakte ho */}
-                </div>
-              ))}
+              {levels && levels.length > 0 ? (
+                levels.map((level: any, idx: number) => (
+                  <div 
+                    key={level.id || idx} 
+                    className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start overflow-hidden"
+                  >
+                    {level.imageUrl && (
+                      <img src={level.imageUrl} alt={level.name} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                    )}
+                    <span className="text-[10px] font-semibold text-gray-400 tracking-wider relative z-10">
+                      {level.range || `Lv.${idx}`}
+                    </span>
+                    {level.budget && (
+                      <span className="text-[9px] font-bold text-cyan-300 relative z-10 mt-1">
+                        {level.budget}
+                      </span>
+                    )}
+                  </div>
+                ))
+              ) : (
+                [
+                  'Lv.0 - Lv.10',
+                  'Lv.20 - Lv.35',
+                  'Lv.40 - Lv.56',
+                  'Lv.63 - Lv.75',
+                  'Lv.78 - Lv.87',
+                  'Lv.88 - Lv.99'
+                ].map((range, idx) => (
+                  <div 
+                    key={idx} 
+                    className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start"
+                  >
+                    <span className="text-[10px] font-semibold text-gray-400 tracking-wider">
+                      {range}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -166,7 +184,6 @@ export default function UserLevelPage() {
 
         </div>
 
-        {/* --- Rules Modal (Glossy Sea Blue Center Card) --- */}
         {showRules && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/70 backdrop-blur-sm">
             <div className="w-full max-w-sm bg-[#005f73]/70 backdrop-blur-xl border border-[#0a9396]/50 shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -181,7 +198,6 @@ export default function UserLevelPage() {
                 <h2 className="text-lg font-bold flex-1 text-center -ml-6">Rules</h2>
               </div>
 
-              {/* Rules Content from Image */}
               <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5">
                 
                 <div className="space-y-2">
