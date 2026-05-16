@@ -26,6 +26,7 @@ import {
  useFirestore
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useRoomContext } from '@/components/room-provider';
 import { 
  signOut,
  GoogleAuthProvider,
@@ -75,6 +76,7 @@ export default function SettingsPage() {
  const firestore = useFirestore();
  const { user, isUserLoading } = useUser();
  const { isLoading: isProfileLoading } = useUserProfile(user?.uid);
+ const { setActiveRoom, setMinimizedRoom } = useRoomContext();
  const router = useRouter();
  const { toast } = useToast();
  const { t, language, setLanguage } = useTranslation();
@@ -191,6 +193,15 @@ export default function SettingsPage() {
  const handleLogout = async () => {
   if (!auth || !user || !firestore) return;
   try {
+   // STEP 1: Clear room state FIRST to trigger cleanup effects
+   setActiveRoom(null);
+   setMinimizedRoom(null);
+
+   // STEP 2: Wait for React cleanup effects to fire
+   // (Agora client.leave + RoomPresenceManager participant deletion)
+   await new Promise(resolve => setTimeout(resolve, 2000));
+
+   // STEP 3: Now do Firestore cleanup
    const userRef = doc(firestore, 'users', user.uid);
    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    
