@@ -7,6 +7,9 @@ import { Loader, Phone, X, ChevronDown, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { useBiometricAuth } from '@/hooks/use-biometric-auth';
+import { BiometricLoginButton } from '@/components/biometric-login-button';
+import { LoginBackground } from '@/components/login-background';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -43,6 +46,14 @@ export default function LoginPage() {
   const { userProfile, isLoading: isProfileLoading, error: profileError } = useUserProfile(user?.uid || undefined, { suppressGlobalError: true });
   const firestore = useFirestore();
   const { toast } = useToast();
+  const {
+    isAvailable: isBiometricAvailable,
+    isEnabled: isBiometricEnabled,
+    isLoading: isBiometricLoading,
+    error: biometricError,
+    authenticate: authenticateWithBiometric,
+    enable: enableBiometric,
+  } = useBiometricAuth();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [banInfo, setBanInfo] = useState<{ isBanned: boolean; bannedUntil: any } | null>(null);
@@ -162,6 +173,17 @@ export default function LoginPage() {
           console.log("✅ User logged in via Redirect:", result.user.uid);
           setIsSigningIn(true);
           await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
+          
+          // Enable biometric if available and not already enabled
+          if (isBiometricAvailable && !isBiometricEnabled && Capacitor.isNativePlatform() && auth.currentUser) {
+            const idToken = await auth.currentUser.getIdToken();
+            await enableBiometric(idToken);
+            toast({
+              title: 'Biometric Enabled',
+              description: 'You can now login with Face ID / Fingerprint.',
+            });
+          }
+          
           router.replace('/rooms');
         }
       } catch (error: any) {
@@ -177,7 +199,7 @@ export default function LoginPage() {
     };
 
     checkRedirect();
-  }, [auth, isAuthLoading, user]);
+  }, [auth, isAuthLoading, user, isBiometricAvailable, isBiometricEnabled, enableBiometric, toast]);
 
   // SILENT BAN DETECTION & REDIRECT LOGIC
   useEffect(() => {
@@ -226,6 +248,17 @@ export default function LoginPage() {
       if (event.result?.user) {
         setIsSigningIn(true);
         await syncUserIdentity(event.result.user.uid, event.result.user.phoneNumber || null, null);
+        
+        // Enable biometric if available and not already enabled
+        if (isBiometricAvailable && !isBiometricEnabled && Capacitor.isNativePlatform() && auth.currentUser) {
+          const idToken = await auth.currentUser.getIdToken();
+          await enableBiometric(idToken);
+          toast({
+            title: 'Biometric Enabled',
+            description: 'You can now login with Face ID / Fingerprint.',
+          });
+        }
+        
         setShowPhonePopup(false);
         router.push('/rooms');
       }
@@ -379,6 +412,17 @@ const accountNumber = await generateNumericID(firestore, uid);
                 userCredential.user.email,
                 userCredential.user.displayName
               );
+              
+              // Enable biometric if available and not already enabled
+              if (isBiometricAvailable && !isBiometricEnabled && Capacitor.isNativePlatform() && auth.currentUser) {
+                const idToken = await auth.currentUser.getIdToken();
+                await enableBiometric(idToken);
+                toast({
+                  title: 'Biometric Enabled',
+                  description: 'You can now login with Face ID / Fingerprint.',
+                });
+              }
+              
               router.replace('/rooms');
               return; // Success
             }
@@ -491,6 +535,17 @@ const accountNumber = await generateNumericID(firestore, uid);
         });
         if (result.user) {
           await syncUserIdentity(result.user.uid, result.user.phoneNumber || null, null);
+          
+          // Enable biometric if available and not already enabled
+          if (isBiometricAvailable && !isBiometricEnabled && Capacitor.isNativePlatform() && auth.currentUser) {
+            const idToken = await auth.currentUser.getIdToken();
+            await enableBiometric(idToken);
+            toast({
+              title: 'Biometric Enabled',
+              description: 'You can now login with Face ID / Fingerprint.',
+            });
+          }
+          
           setShowPhonePopup(false);
           router.push('/rooms');
         }
@@ -500,6 +555,17 @@ const accountNumber = await generateNumericID(firestore, uid);
       const result = await confirmationResult!.confirm(verificationCode);
       if (result.user) {
         await syncUserIdentity(result.user.uid, result.user.phoneNumber, null);
+        
+        // Enable biometric if available and not already enabled
+        if (isBiometricAvailable && !isBiometricEnabled && Capacitor.isNativePlatform() && auth.currentUser) {
+          const idToken = await auth.currentUser.getIdToken();
+          await enableBiometric(idToken);
+          toast({
+            title: 'Biometric Enabled',
+            description: 'You can now login with Face ID / Fingerprint.',
+          });
+        }
+        
         setShowPhonePopup(false);
         router.push('/rooms');
       }
@@ -507,6 +573,21 @@ const accountNumber = await generateNumericID(firestore, uid);
       toast({ variant: 'destructive', title: 'Invalid Code', description: 'Incorrect or expired verification code.' });
     } finally {
       setIsSigningIn(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const token = await authenticateWithBiometric();
+    if (token) {
+      // Token is valid, navigate to rooms
+      router.replace('/rooms');
+    } else {
+      // Authentication failed or no token
+      toast({
+        variant: 'destructive',
+        title: 'Biometric Login Failed',
+        description: biometricError || 'Please use another login method.',
+      });
     }
   };
 
@@ -519,14 +600,8 @@ const accountNumber = await generateNumericID(firestore, uid);
   }
 
   return (
-    <div
-      className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden"
-      style={{
-        backgroundImage: `url('/images/login_bg.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
-    >
+    <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden">
+      <LoginBackground fallbackImage={activeBg} />
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
@@ -547,6 +622,22 @@ const accountNumber = await generateNumericID(firestore, uid);
           </div>
 
           <div className="space-y-3">
+            {isBiometricAvailable && (
+              <BiometricLoginButton
+                onClick={handleBiometricLogin}
+                isLoading={isBiometricLoading}
+                error={biometricError}
+              />
+            )}
+
+            {isBiometricAvailable && (
+              <div className="flex items-center gap-2">
+                <span className="h-px flex-1 bg-white/30" />
+                <span className="text-xs text-white/70 uppercase">OR</span>
+                <span className="h-px flex-1 bg-white/30" />
+              </div>
+            )}
+
             <button
               onClick={handleFacebookSignIn}
               disabled={isSigningIn}

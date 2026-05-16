@@ -28,3 +28,6 @@ project(':capacitor-splash-screen').projectDir = new File('../node_modules/.pnpm
 
 include ':capacitor-status-bar'
 project(':capacitor-status-bar').projectDir = new File('../node_modules/.pnpm/@capacitor+status-bar@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/status-bar/android')
+
+include ':capacitor-biometric-auth'
+project(':capacitor-biometric-auth').projectDir = new File('../node_modules/.pnpm/capacitor-biometric-auth@0.1.1/node_modules/capacitor-biometric-auth/android')
