@@ -7,34 +7,17 @@ import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 
-// --- 1. NEW PREMIUM GOLD ROCKET (Direct SVG - Fallback) ---
-const CustomGoldRocket = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn("drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]", className)}>
-    {/* Fins */}
-    <path d="M25 70 Q15 80 20 100 L35 100 Q40 80 35 70 Z" fill="url(#goldGrad)" stroke="#F59E0B" strokeWidth="1"/>
-    <path d="M75 70 Q85 80 80 100 L65 100 Q60 80 65 70 Z" fill="url(#goldGrad)" stroke="#F59E0B" strokeWidth="1"/>
-    {/* Body */}
-    <path d="M50 10 C30 40 30 80 35 105 L65 105 C70 80 70 40 50 10 Z" fill="url(#goldGrad)" stroke="#FCD34D" strokeWidth="1.5"/>
-    {/* Window */}
-    <circle cx="50" cy="45" r="7" fill="#1A1A1A" stroke="#F59E0B" strokeWidth="2"/>
-    {/* Flame Effect if Launching */}
-    <path d="M40 105 Q50 125 60 105" stroke="#EF4444" strokeWidth="3" strokeLinecap="round" className="animate-pulse" />
-    
-    <defs>
-      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stopColor="#FDE68A" />
-        <stop offset="50%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#D97706" />
-      </linearGradient>
-    </defs>
-  </svg>
-);
-
-export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, onOpenRocket }: any) {
+export function RoomRocketBar({ 
+  progress = 0, 
+  target = 10000, 
+  countdownUntil, 
+  onOpenRocket 
+}: any) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showFlight, setShowFlight] = useState(false);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [videoEnded, setVideoEnded] = useState(false);
+  const [isClicked, setIsClicked] = useState(false); // Click state for glow
   const firestore = useFirestore();
 
   // FETCH DYNAMIC CONFIG
@@ -74,6 +57,10 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
   };
 
   const handleRocketClick = () => {
+    // GLOW EFFECT ON CLICK
+    setIsClicked(true);
+    setTimeout(() => setIsClicked(false), 1500); // Glow lasts 1.5 seconds
+    
     if (onOpenRocket) {
       onOpenRocket();
     }
@@ -82,7 +69,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
 
   return (
     <>
-      {/* MAIN ROCKET BUTTON */}
+      {/* MAIN ROCKET BUTTON - ImageUrl wala rocket clickable */}
       <div 
         onClick={handleRocketClick} 
         className="fixed bottom-[68px] right-2 z-[40] flex flex-col items-center gap-2 cursor-pointer active:scale-95 transition-all group"
@@ -103,10 +90,11 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
           )}
         </AnimatePresence>
 
-        {/* Rocket Circle */}
+        {/* Rocket Circle - ImageUrl wala rocket yahan hai */}
         <div className={cn(
           "relative p-1.5 rounded-2xl transition-all duration-300 shadow-xl border overflow-hidden",
-          "bg-gradient-to-br from-amber-500/10 to-orange-600/20 backdrop-blur-sm border-amber-500/30 group-hover:border-amber-500/50 shadow-amber-900/20"
+          "bg-gradient-to-br from-amber-500/10 to-orange-600/20 backdrop-blur-sm border-amber-500/30 group-hover:border-amber-500/50 shadow-amber-900/20",
+          isClicked && "border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.8)]" // GLOW effect on click
         )}>
           {/* Progress Ring */}
           <div className="relative h-12 w-12 flex items-center justify-center">
@@ -122,10 +110,21 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
               />
             </svg>
 
-            {/* ROCKET ICON */}
-            <div className={cn("h-7.5 w-7.5 relative z-10 transition-transform duration-500 group-hover:scale-110 flex items-center justify-center", progressPercent >= 100 && "animate-bounce")}>
+            {/* ROCKET ICON - JO IMAGEURL SE AAYEGA */}
+            <div className={cn(
+              "h-7.5 w-7.5 relative z-10 transition-all duration-500 flex items-center justify-center",
+              progressPercent >= 100 && "animate-bounce",
+              isClicked && "scale-110" // Scale up on click
+            )}>
               {rocketConfig?.imageUrl ? (
-                <img src={rocketConfig.imageUrl} alt="Rocket" className="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                <img 
+                  src={rocketConfig.imageUrl} 
+                  alt="Rocket" 
+                  className={cn(
+                    "h-full w-full object-contain transition-all duration-500",
+                    isClicked && "drop-shadow-[0_0_20px_rgba(255,215,0,0.9)]" // GOLDEN GLOW on click
+                  )} 
+                />
               ) : (
                 <CustomGoldRocket className="h-full w-full" />
               )}
@@ -157,7 +156,7 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ opacity: 0, scale: 2 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="w-full h-[50vh] flex items-center justify-center"
+                className="w-full h-[60vh] flex items-center justify-center"
               >
                 <video 
                   src={rocketConfig.videoUrl} 
@@ -183,53 +182,107 @@ export function RoomRocketBar({ progress = 0, target = 10000, countdownUntil, on
         )}
       </AnimatePresence>
 
-      {/* 50VH BOTTOM SHEET - Full Image Card with Square Corners */}
+      {/* BOTTOM SHEET - ImageUrl wala rocket full screen */}
       <AnimatePresence>
         {showBottomSheet && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowBottomSheet(false)}
-              className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm"
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-[100] h-[60vh] overflow-hidden"
+          >
+            {/* Background */}
+            <canvas 
+              id="rocketCanvas"
+              className="absolute inset-0 w-full h-full"
+              style={{ 
+                background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 100%)',
+                mixBlendMode: 'overlay'
+              }}
             />
             
-            {/* Bottom Sheet with Square Corners */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[100] h-[50vh] overflow-hidden"
-            >
-              {/* Full Image Card - No buttons, just image */}
-              <div className="relative w-full h-full">
-                {rocketConfig?.imageUrl ? (
-                  <motion.img
-                    initial={{ scale: 1.2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    src={rocketConfig.imageUrl}
-                    alt="Rocket"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
+            {/* Rocket Image - ImageUrl wala rocket full screen */}
+            <div className="relative w-full h-full">
+              {rocketConfig?.imageUrl ? (
+                <motion.img
+                  initial={{ scale: 1.2, opacity: 0, filter: 'brightness(0.8) blur(10px)' }}
+                  animate={{ 
+                    scale: 1, 
+                    opacity: 1, 
+                    filter: 'brightness(1) blur(0px)',
+                    transition: { duration: 0.8, ease: "easeOut" }
+                  }}
+                  exit={{ 
+                    scale: 0.8, 
+                    opacity: 0, 
+                    filter: 'brightness(1.5) blur(20px)',
+                    transition: { duration: 0.4 }
+                  }}
+                  src={rocketConfig.imageUrl}
+                  alt="Rocket"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="w-full h-full flex items-center justify-center bg-gradient-to-b from-amber-900/20 via-purple-900/20 to-orange-900/40"
+                >
+                  <CustomGoldRocket className="w-56 h-56" />
+                </motion.div>
+              )}
+
+              {/* Floating Particles Effect */}
+              <div className="absolute inset-0 pointer-events-none">
+                {[...Array(20)].map((_, i) => (
                   <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="w-full h-full flex items-center justify-center bg-gradient-to-b from-amber-900/20 to-orange-900/40"
-                  >
-                    <CustomGoldRocket className="w-48 h-48" />
-                  </motion.div>
-                )}
+                    key={i}
+                    className="absolute w-1 h-1 bg-amber-400 rounded-full"
+                    initial={{ 
+                      x: Math.random() * 100 + "%", 
+                      y: "100%",
+                      opacity: 0 
+                    }}
+                    animate={{ 
+                      y: "-10%",
+                      opacity: [0, 1, 0],
+                      scale: [0, 1.5, 0]
+                    }}
+                    transition={{
+                      duration: 2 + Math.random() * 3,
+                      repeat: Infinity,
+                      delay: Math.random() * 2,
+                      ease: "easeOut"
+                    }}
+                  />
+                ))}
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
   );
-                        }
+}
+
+// CustomGoldRocket component (fallback if ImageUrl not available)
+const CustomGoldRocket = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn("drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]", className)}>
+    <path d="M25 70 Q15 80 20 100 L35 100 Q40 80 35 70 Z" fill="url(#goldGrad)" stroke="#F59E0B" strokeWidth="1"/>
+    <path d="M75 70 Q85 80 80 100 L65 100 Q60 80 65 70 Z" fill="url(#goldGrad)" stroke="#F59E0B" strokeWidth="1"/>
+    <path d="M50 10 C30 40 30 80 35 105 L65 105 C70 80 70 40 50 10 Z" fill="url(#goldGrad)" stroke="#FCD34D" strokeWidth="1.5"/>
+    <circle cx="50" cy="45" r="7" fill="#1A1A1A" stroke="#F59E0B" strokeWidth="2"/>
+    <path d="M40 105 Q50 125 60 105" stroke="#EF4444" strokeWidth="3" strokeLinecap="round" className="animate-pulse" />
+    
+    <defs>
+      <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#FDE68A" />
+        <stop offset="50%" stopColor="#F59E0B" />
+        <stop offset="100%" stopColor="#D97706" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+}
