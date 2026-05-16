@@ -622,10 +622,12 @@ export default function StorePage() {
     return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
   }, [boutiqueItems]);
 
+  // Bubble items - ab imageUrl show karega agar available hai
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
   ], []);
 
+  // Wave items - ab imageUrl show karega agar available hai
   const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
 
   const idItems = useMemo(() => [
@@ -793,6 +795,7 @@ export default function StorePage() {
 
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
+    // Frame ke liye
     if (item.type === 'Frame') {
       if (item.isDynamic && item.videoUrl) {
         return (
@@ -822,15 +825,54 @@ export default function StorePage() {
       return <FramePlaceholderIcon className="h-12 w-12" />;
     }
     
+    // BUBBLE - imageUrl show karo agar available hai, warna default ChatMessageBubble
     if (item.type === 'Bubble') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
     }
     
+    // THEME - imageUrl show karo agar available hai, warna default Palette icon
     if (item.type === 'Theme') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-cover rounded-lg"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
+    // WAVE - imageUrl show karo agar available hai, warna default WaveCircleIcon
     if (item.type === 'Wave') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
@@ -854,6 +896,7 @@ export default function StorePage() {
 
   // Helper to render preview card icon
   const renderPreviewIcon = (item: any) => {
+    // Frame ke liye
     if (item.type === 'Frame') {
       if (item.isDynamic && item.videoUrl) {
         return (
@@ -886,15 +929,54 @@ export default function StorePage() {
       );
     }
     
+    // BUBBLE - imageUrl show karo agar available hai, warna default ChatMessageBubble
     if (item.type === 'Bubble') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
     }
     
+    // THEME - imageUrl show karo agar available hai, warna default Palette icon
     if (item.type === 'Theme') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-cover rounded-lg"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
     }
     
+    // WAVE - imageUrl show karo agar available hai, warna default WaveCircleIcon
     if (item.type === 'Wave') {
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <img 
+              src={item.imageUrl} 
+              alt={item.name} 
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
+          </div>
+        );
+      }
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
@@ -1097,4 +1179,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-                     }
+      }
