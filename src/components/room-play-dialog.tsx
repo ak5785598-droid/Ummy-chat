@@ -9,23 +9,24 @@ import {
  DialogDescription
 } from '@/components/ui/dialog';
 import { 
- ChevronLeft, 
- Loader, 
- MessageSquare, 
- MessageSquareOff, 
- Volume2, 
- VolumeX, 
- Music, 
- Search, 
- Play, 
- Upload, 
- FileAudio, 
- Power,
- Trash2,
- Zap,
- Bot,
- Gamepad2,
- Gift
+  ChevronLeft, 
+  Loader, 
+  MessageSquare, 
+  MessageSquareOff, 
+  Volume2, 
+  VolumeX, 
+  Music, 
+  Search, 
+  Play, 
+  Upload, 
+  FileAudio, 
+  Power,
+  Trash2,
+  Zap,
+  Bot,
+  Gamepad2,
+  Gift,
+  Youtube
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,7 @@ interface RoomPlayDialogProps {
   onClearChat?: () => void;
   onSyncSharedMusic?: (track: any) => void;
   onToggleMiniPlayer?: () => void;
+  onOpenYouTube?: () => void;
   defaultView?: 'grid' | 'music';
 }
 
@@ -74,6 +76,7 @@ export function RoomPlayDialog({
   onClearChat,
   onSyncSharedMusic,
   onToggleMiniPlayer,
+  onOpenYouTube,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
@@ -407,6 +410,14 @@ export function RoomPlayDialog({
       // Glossy Blue Music
       color: 'from-cyan-400 to-blue-600 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-cyan-400/50', 
       onClick: () => { setView('music'); onToggleMiniPlayer?.(); } 
+    },
+    { 
+      id: 'youtube', 
+      label: 'YouTube', 
+      icon: <Youtube className="h-7 w-7 text-white drop-shadow-md" />, 
+      // Glossy Red YouTube
+      color: 'from-red-500 to-red-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(239,68,68,0.5)] border border-red-500/50', 
+      onClick: () => { onOpenYouTube?.(); } 
     },
   ];
 
