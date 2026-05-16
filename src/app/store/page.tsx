@@ -14,7 +14,317 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
-// --- CUSTOM DOLLAR COIN ICON ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH + NO BLUE FADE) ---
+const SmartBlackRemover = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+  const lastProcessedSrc = useRef('');
+
+  // Detect solid black background (FAST)
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  // Process black fade (SMOOTH + NO GLITCH + NO BLUE FADE CARD)
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    // Clear canvas with fully transparent background - NO BLUE FADE CARD
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    // Edges se flood fill start
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    // Center se bhi black remove (agar center black hai)
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+
+    // Black pixels ko COMPLETELY TRANSPARENT karo (alpha = 0) - NO FADE, NO BLUE CARD
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  // COMPLETELY REMOVE - alpha = 0, RGB bhi 0 karo
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    processingRef.current = false;
+
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+    }
+  };
+
+  // Initialize for images
+  useEffect(() => {
+    // Reset when src changes
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+  }, [src, type, isReady]);
+
+  // Handle image load
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
+    }
+  };
+
+  // Handle video ready (FIXED GLITCH - pehle frame skip karo)
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        // Thoda delay do taki video ka pehla frame render ho jaye
+        setTimeout(() => processFrame(video), 150);
+      }
+    }
+  };
+
+  // Cleanup video animation
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+    };
+  }, []);
+
+  if (type === 'video') {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
+        />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-cover"
+            style={{ 
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              // Ensure no background color shows
+              backgroundColor: 'transparent'
+            }}
+          />
+        )}
+        {/* Fallback: agar canvas load nahi hua to original video dikhao bina background ke */}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        onLoad={handleImageLoad}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
+      />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+      )}
+      {/* Fallback: agar canvas load nahi hua to original image dikhao */}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      )}
+    </div>
+  );
+};
+
+// --- CUSTOM DOLLAR COIN ICON (SAME) ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -29,7 +339,7 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// --- WAVE CIRCLE UI ---
+// --- WAVE CIRCLE UI (SAME) ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
@@ -57,7 +367,7 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PINK DIAMOND ID BADGE ---
+// --- PINK DIAMOND ID BADGE (SAME) ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -92,7 +402,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- RED ID BADGE ICON (sss) ---
+// --- ID BADGE ICONS (SAME) ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -118,7 +428,6 @@ const IDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- SILVER BLUE ID BADGE ICON ---
 const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#0C3E8A] to-[#1D5DC2] rounded-r-full border-[1px] border-t-[#4A85E6] border-b-[#072456] border-r-[#4A85E6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -227,24 +536,6 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
-// --- FRAME ICON FOR STORE CARDS (Simple icon, no SVG frames) ---
-const FramePlaceholderIcon = ({ className }: { className?: string }) => (
-  <div className={cn("flex items-center justify-center", className)}>
-    <svg viewBox="0 0 60 60" className="w-full h-full">
-      <defs>
-        <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FCD535" />
-          <stop offset="100%" stopColor="#D4AF37" />
-        </linearGradient>
-      </defs>
-      <rect x="5" y="5" width="50" height="50" rx="10" fill="none" stroke="url(#frameGrad)" strokeWidth="3" />
-      <rect x="12" y="12" width="36" height="36" rx="6" fill="none" stroke="url(#frameGrad)" strokeWidth="1.5" opacity="0.5" />
-      <circle cx="30" cy="30" r="12" fill="url(#frameGrad)" opacity="0.3" />
-      <circle cx="30" cy="30" r="6" fill="url(#frameGrad)" opacity="0.6" />
-    </svg>
-  </div>
-);
-
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -290,29 +581,7 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  // Frame items without SVG frames - sirf image/video based frames
-  const storeItemsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
-
-  const { data: dbStoreItems } = useCollection(storeItemsQuery);
-
-  // Boutique items (dynamic store items from Firestore)
-  const boutiqueItems = useMemo(() => {
-    return (dbStoreItems || []).map(item => ({
-      ...item,
-      type: item.category || item.type,
-      description: item.description || `Premium ${item.name} asset.`,
-      isDynamic: true
-    }));
-  }, [dbStoreItems]);
-
-  // Frame items - ONLY from boutique (Firestore), no static SVG frames
-  const frameItems = useMemo(() => {
-    return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
-  }, [boutiqueItems]);
-
+  // Frame items ab sirf simple honge, koi SVG ya image frame nahi
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
   ], []);
@@ -379,14 +648,26 @@ export default function StorePage() {
     { id: 'entry-diamond', name: 'Diamond Entry', type: 'Entry', price: 5000000, durationDays: 7, description: 'Ultra Premium Diamond entry pass - rarest of all.', variant: 'diamond' },
   ], []);
 
-  // Filter boutique items to exclude Frame type (already in frameItems)
-  const nonFrameBoutiqueItems = useMemo(() => {
-    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame');
-  }, [boutiqueItems]);
+  const storeItemsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
 
+  const { data: dbStoreItems } = useCollection(storeItemsQuery);
+
+  const boutiqueItems = useMemo(() => {
+    return (dbStoreItems || []).map(item => ({
+      ...item,
+      type: item.category || item.type,
+      description: item.description || `Premium ${item.name} asset.`,
+      isDynamic: true
+    }));
+  }, [dbStoreItems]);
+
+  // allItems ab frameItems ko include nahi karta
   const allItems = useMemo(() => {
-    return [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...nonFrameBoutiqueItems];
-  }, [frameItems, bubbleItems, dynamicThemes, waveItems, idItems, entryItems, nonFrameBoutiqueItems]);
+    return [...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...boutiqueItems];
+  }, [bubbleItems, dynamicThemes, waveItems, idItems, entryItems, boutiqueItems]);
 
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
   const { data: config } = useDoc(configRef);
@@ -457,15 +738,6 @@ export default function StorePage() {
         updatedAt: serverTimestamp() 
       };
       
-      // Frame equip/unequip ke time videoUrl bhi save karo
-      if (item.type === 'Frame') {
-        if (!isActive && (item.videoUrl || item.imageUrl)) {
-          updateData['inventory.activeFrameMediaUrl'] = item.videoUrl || item.imageUrl || null;
-        } else if (isActive) {
-          updateData['inventory.activeFrameMediaUrl'] = null;
-        }
-      }
-      
       await updateDocumentNonBlocking(profileRef, updateData);
       await updateDocumentNonBlocking(userRef, updateData);
       
@@ -480,144 +752,6 @@ export default function StorePage() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  // Helper to render store card icon
-  const renderStoreCardIcon = (item: any) => {
-    if (item.type === 'Frame') {
-      if (item.isDynamic && item.videoUrl) {
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <video 
-              src={item.videoUrl} 
-              autoPlay 
-              muted 
-              loop 
-              playsInline 
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          </div>
-        );
-      }
-      if (item.isDynamic && item.imageUrl) {
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          </div>
-        );
-      }
-      // Fallback icon for frame
-      return <FramePlaceholderIcon className="h-12 w-12" />;
-    }
-    
-    if (item.type === 'Bubble') {
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
-    }
-    
-    if (item.type === 'Theme') {
-      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
-    }
-    
-    if (item.type === 'Wave') {
-      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
-    }
-    
-    if (item.type === 'ID') {
-      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
-      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
-      return <IDBadgeIcon number={item.displayId || ''} />;
-    }
-    
-    if (item.type === 'Entry') {
-      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
-    }
-    
-    // Default icon for other types
-    if (item.icon) {
-      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
-    }
-    
-    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
-  };
-
-  // Helper to render preview card icon
-  const renderPreviewIcon = (item: any) => {
-    if (item.type === 'Frame') {
-      if (item.isDynamic && item.videoUrl) {
-        return (
-          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <video 
-              src={item.videoUrl} 
-              autoPlay 
-              muted 
-              loop 
-              playsInline 
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          </div>
-        );
-      }
-      if (item.isDynamic && item.imageUrl) {
-        return (
-          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <img 
-              src={item.imageUrl} 
-              alt={item.name} 
-              className="w-full h-full object-cover"
-              crossOrigin="anonymous"
-            />
-          </div>
-        );
-      }
-      return (
-        <div className="h-36 w-36 flex items-center justify-center">
-          <FramePlaceholderIcon className="h-24 w-24" />
-        </div>
-      );
-    }
-    
-    if (item.type === 'Bubble') {
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
-    }
-    
-    if (item.type === 'Theme') {
-      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
-    }
-    
-    if (item.type === 'Wave') {
-      return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
-    }
-    
-    if (item.type === 'ID') {
-      return (
-        <div className="scale-125 pt-2">
-          {item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
-           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
-           <IDBadgeIcon number={item.displayId || ''} />}
-        </div>
-      );
-    }
-    
-    if (item.type === 'Entry') {
-      return (
-        <div className="scale-125">
-          <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
-        </div>
-      );
-    }
-    
-    if (item.icon) {
-      return <item.icon className={cn("h-20 w-20 opacity-80", item.color)} />;
-    }
-    
-    return <ShoppingBag className="h-20 w-20 opacity-80 text-gray-400" />;
   };
 
   if (isProfileLoading) return (
@@ -643,10 +777,10 @@ export default function StorePage() {
           <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">Store</h1>
         </header>
 
-        <Tabs defaultValue="Frame" className="w-full">
+        <Tabs defaultValue="Theme" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-              {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
+              {['All', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
                 <TabsTrigger 
                   key={cat} 
                   value={cat} 
@@ -658,7 +792,7 @@ export default function StorePage() {
             </TabsList>
           </div>
 
-          {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
+          {['All', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItemsWithFlags.filter(i => category === 'All' || i.type === category).map(item => (
@@ -671,7 +805,21 @@ export default function StorePage() {
                     )}
                   >
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                      {renderStoreCardIcon(item)}
+                      {item.type === 'Bubble' ? (
+                        <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
+                      ) : item.type === 'Theme' ? (
+                        <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
+                      ) : item.type === 'Wave' ? (
+                         <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
+                      ) : item.type === 'ID' ? (
+                           item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
+                           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
+                           <IDBadgeIcon number={item.displayId || ''} />
+                      ) : item.type === 'Entry' ? (
+                        <EntryTicketIcon variant={item.variant} className="w-28 h-14" />
+                      ) : item.icon ? (
+                        <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
+                      ) : null}
                     </div>
                     <CardHeader className="text-center p-3 pb-1">
                       <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
@@ -708,7 +856,25 @@ export default function StorePage() {
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36" style={{ background: 'transparent' }}>
-                  {renderPreviewIcon(previewItem)}
+                  {previewItem.type === 'Bubble' ? (
+                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
+                  ) : previewItem.type === 'Theme' ? (
+                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
+                  ) : previewItem.type === 'Wave' ? (
+                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
+                  ) : previewItem.type === 'ID' ? (
+                      <div className="scale-125 pt-2">
+                        {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
+                         previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
+                         <IDBadgeIcon number={previewItem.displayId || ''} />}
+                      </div>
+                  ) : previewItem.type === 'Entry' ? (
+                    <div className="scale-125">
+                      <EntryTicketIcon variant={previewItem.variant} className="w-36 h-18" />
+                    </div>
+                  ) : previewItem.icon ? (
+                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
+                  ) : null}
                 </div>
 
                 <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
@@ -740,6 +906,7 @@ export default function StorePage() {
               {/* BOTTOM BAR - EQUIP/UNEQUIP LOGIC */}
               <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
+                  {/* Agar item already owned hai toh price ki jagah status dikhao */}
                   {userProfile?.inventory?.ownedItems?.includes(previewItem.id) ? (
                     <span className={cn(
                       "text-sm font-medium px-3 py-1 rounded-full",
@@ -794,4 +961,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
+      }
