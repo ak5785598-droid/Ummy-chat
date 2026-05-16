@@ -268,7 +268,6 @@ const SmartBlackRemover = ({
             style={{ 
               display: isReady ? 'block' : 'none', 
               background: 'transparent',
-              // Ensure no background color shows
               backgroundColor: 'transparent'
             }}
           />
@@ -324,7 +323,7 @@ const SmartBlackRemover = ({
   );
 };
 
-// --- CUSTOM DOLLAR COIN ICON (SAME) ---
+// --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -339,7 +338,7 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// --- WAVE CIRCLE UI (SAME) ---
+// --- WAVE CIRCLE UI ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
@@ -367,7 +366,7 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PINK DIAMOND ID BADGE (SAME) ---
+// --- PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -402,7 +401,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- ID BADGE ICONS (SAME) ---
+// --- RED ID BADGE ICON (sss) ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -428,6 +427,7 @@ const IDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
+// --- SILVER BLUE ID BADGE ICON ---
 const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#0C3E8A] to-[#1D5DC2] rounded-r-full border-[1px] border-t-[#4A85E6] border-b-[#072456] border-r-[#4A85E6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -536,6 +536,24 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
+// --- FRAME ICON FOR STORE CARDS (Simple icon, no SVG frames) ---
+const FramePlaceholderIcon = ({ className }: { className?: string }) => (
+  <div className={cn("flex items-center justify-center", className)}>
+    <svg viewBox="0 0 60 60" className="w-full h-full">
+      <defs>
+        <linearGradient id="frameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FCD535" />
+          <stop offset="100%" stopColor="#D4AF37" />
+        </linearGradient>
+      </defs>
+      <rect x="5" y="5" width="50" height="50" rx="10" fill="none" stroke="url(#frameGrad)" strokeWidth="3" />
+      <rect x="12" y="12" width="36" height="36" rx="6" fill="none" stroke="url(#frameGrad)" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="30" cy="30" r="12" fill="url(#frameGrad)" opacity="0.3" />
+      <circle cx="30" cy="30" r="6" fill="url(#frameGrad)" opacity="0.6" />
+    </svg>
+  </div>
+);
+
 // --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
@@ -581,7 +599,29 @@ export default function StorePage() {
     }));
   }, [dbThemes]);
 
-  // Frame items ab sirf simple honge, koi SVG ya image frame nahi
+  // Frame items without SVG frames - sirf image/video based frames
+  const storeItemsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: dbStoreItems } = useCollection(storeItemsQuery);
+
+  // Boutique items (dynamic store items from Firestore)
+  const boutiqueItems = useMemo(() => {
+    return (dbStoreItems || []).map(item => ({
+      ...item,
+      type: item.category || item.type,
+      description: item.description || `Premium ${item.name} asset.`,
+      isDynamic: true
+    }));
+  }, [dbStoreItems]);
+
+  // Frame items - ONLY from boutique (Firestore), no static SVG frames
+  const frameItems = useMemo(() => {
+    return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
+  }, [boutiqueItems]);
+
   const bubbleItems = useMemo(() => [
     ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
   ], []);
@@ -648,26 +688,14 @@ export default function StorePage() {
     { id: 'entry-diamond', name: 'Diamond Entry', type: 'Entry', price: 5000000, durationDays: 7, description: 'Ultra Premium Diamond entry pass - rarest of all.', variant: 'diamond' },
   ], []);
 
-  const storeItemsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'storeItems'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  // Filter boutique items to exclude Frame type (already in frameItems)
+  const nonFrameBoutiqueItems = useMemo(() => {
+    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame');
+  }, [boutiqueItems]);
 
-  const { data: dbStoreItems } = useCollection(storeItemsQuery);
-
-  const boutiqueItems = useMemo(() => {
-    return (dbStoreItems || []).map(item => ({
-      ...item,
-      type: item.category || item.type,
-      description: item.description || `Premium ${item.name} asset.`,
-      isDynamic: true
-    }));
-  }, [dbStoreItems]);
-
-  // allItems ab frameItems ko include nahi karta
   const allItems = useMemo(() => {
-    return [...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...boutiqueItems];
-  }, [bubbleItems, dynamicThemes, waveItems, idItems, entryItems, boutiqueItems]);
+    return [...frameItems, ...bubbleItems, ...dynamicThemes, ...waveItems, ...idItems, ...entryItems, ...nonFrameBoutiqueItems];
+  }, [frameItems, bubbleItems, dynamicThemes, waveItems, idItems, entryItems, nonFrameBoutiqueItems]);
 
   const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
   const { data: config } = useDoc(configRef);
@@ -738,6 +766,15 @@ export default function StorePage() {
         updatedAt: serverTimestamp() 
       };
       
+      // Frame equip/unequip ke time videoUrl bhi save karo
+      if (item.type === 'Frame') {
+        if (!isActive && (item.videoUrl || item.imageUrl)) {
+          updateData['inventory.activeFrameMediaUrl'] = item.videoUrl || item.imageUrl || null;
+        } else if (isActive) {
+          updateData['inventory.activeFrameMediaUrl'] = null;
+        }
+      }
+      
       await updateDocumentNonBlocking(profileRef, updateData);
       await updateDocumentNonBlocking(userRef, updateData);
       
@@ -752,6 +789,138 @@ export default function StorePage() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Helper to render store card icon
+  const renderStoreCardIcon = (item: any) => {
+    if (item.type === 'Frame') {
+      if (item.isDynamic && item.videoUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={item.videoUrl} 
+              type="video" 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      if (item.isDynamic && item.imageUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={item.imageUrl} 
+              type="image" 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      // Fallback icon for frame
+      return <FramePlaceholderIcon className="h-12 w-12" />;
+    }
+    
+    if (item.type === 'Bubble') {
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
+    }
+    
+    if (item.type === 'Theme') {
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
+    }
+    
+    if (item.type === 'Wave') {
+      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
+    }
+    
+    if (item.type === 'ID') {
+      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
+      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
+      return <IDBadgeIcon number={item.displayId || ''} />;
+    }
+    
+    if (item.type === 'Entry') {
+      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
+    }
+    
+    // Default icon for other types
+    if (item.icon) {
+      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
+    }
+    
+    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
+  };
+
+  // Helper to render preview card icon
+  const renderPreviewIcon = (item: any) => {
+    if (item.type === 'Frame') {
+      if (item.isDynamic && item.videoUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={item.videoUrl} 
+              type="video" 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      if (item.isDynamic && item.imageUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={item.imageUrl} 
+              type="image" 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return (
+        <div className="h-36 w-36 flex items-center justify-center">
+          <FramePlaceholderIcon className="h-24 w-24" />
+        </div>
+      );
+    }
+    
+    if (item.type === 'Bubble') {
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
+    }
+    
+    if (item.type === 'Theme') {
+      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
+    }
+    
+    if (item.type === 'Wave') {
+      return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
+    }
+    
+    if (item.type === 'ID') {
+      return (
+        <div className="scale-125 pt-2">
+          {item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
+           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
+           <IDBadgeIcon number={item.displayId || ''} />}
+        </div>
+      );
+    }
+    
+    if (item.type === 'Entry') {
+      return (
+        <div className="scale-125">
+          <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
+        </div>
+      );
+    }
+    
+    if (item.icon) {
+      return <item.icon className={cn("h-20 w-20 opacity-80", item.color)} />;
+    }
+    
+    return <ShoppingBag className="h-20 w-20 opacity-80 text-gray-400" />;
   };
 
   if (isProfileLoading) return (
@@ -777,10 +946,10 @@ export default function StorePage() {
           <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">Store</h1>
         </header>
 
-        <Tabs defaultValue="Theme" className="w-full">
+        <Tabs defaultValue="Frame" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-              {['All', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
+              {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
                 <TabsTrigger 
                   key={cat} 
                   value={cat} 
@@ -792,7 +961,7 @@ export default function StorePage() {
             </TabsList>
           </div>
 
-          {['All', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
+          {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
             <TabsContent key={category} value={category}>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {allItemsWithFlags.filter(i => category === 'All' || i.type === category).map(item => (
@@ -805,21 +974,7 @@ export default function StorePage() {
                     )}
                   >
                     <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                      {item.type === 'Bubble' ? (
-                        <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>
-                      ) : item.type === 'Theme' ? (
-                        <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />
-                      ) : item.type === 'Wave' ? (
-                         <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />
-                      ) : item.type === 'ID' ? (
-                           item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
-                           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
-                           <IDBadgeIcon number={item.displayId || ''} />
-                      ) : item.type === 'Entry' ? (
-                        <EntryTicketIcon variant={item.variant} className="w-28 h-14" />
-                      ) : item.icon ? (
-                        <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />
-                      ) : null}
+                      {renderStoreCardIcon(item)}
                     </div>
                     <CardHeader className="text-center p-3 pb-1">
                       <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
@@ -856,25 +1011,7 @@ export default function StorePage() {
 
               <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                 <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36" style={{ background: 'transparent' }}>
-                  {previewItem.type === 'Bubble' ? (
-                    <ChatMessageBubble bubbleId={previewItem.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>
-                  ) : previewItem.type === 'Theme' ? (
-                    <Palette className={cn("h-20 w-20 opacity-80", previewItem.color || "text-purple-400")} />
-                  ) : previewItem.type === 'Wave' ? (
-                    <WaveCircleIcon colorClass={previewItem.color} size="h-32 w-32" isLovelyShine={previewItem.id === 'w-lovelyshine'} />
-                  ) : previewItem.type === 'ID' ? (
-                      <div className="scale-125 pt-2">
-                        {previewItem.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={previewItem.displayId || ''} /> :
-                         previewItem.isSilver ? <SilverBlueIDBadgeIcon number={previewItem.displayId || ''} /> : 
-                         <IDBadgeIcon number={previewItem.displayId || ''} />}
-                      </div>
-                  ) : previewItem.type === 'Entry' ? (
-                    <div className="scale-125">
-                      <EntryTicketIcon variant={previewItem.variant} className="w-36 h-18" />
-                    </div>
-                  ) : previewItem.icon ? (
-                    <previewItem.icon className={cn("h-20 w-20 opacity-80", previewItem.color)} />
-                  ) : null}
+                  {renderPreviewIcon(previewItem)}
                 </div>
 
                 <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
@@ -906,7 +1043,6 @@ export default function StorePage() {
               {/* BOTTOM BAR - EQUIP/UNEQUIP LOGIC */}
               <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
-                  {/* Agar item already owned hai toh price ki jagah status dikhao */}
                   {userProfile?.inventory?.ownedItems?.includes(previewItem.id) ? (
                     <span className={cn(
                       "text-sm font-medium px-3 py-1 rounded-full",
@@ -961,4 +1097,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-      }
+                     }
