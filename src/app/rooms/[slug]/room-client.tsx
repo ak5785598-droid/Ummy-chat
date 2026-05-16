@@ -139,6 +139,7 @@ import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
+import { YouTubeDialog } from '@/components/youtube-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -328,6 +329,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isChestOpen, setIsChestOpen] = useState(false);
   const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
+  const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -3100,16 +3102,25 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </div>
           </button>
 
-           <button
-             onClick={() => {
-               setPortalDefaultView('grid');
-               setIsRoomPlayOpen(true);
-             }}
-             className="h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform bg-black/40 border border-white/10 shadow-lg"
-           >
-             <LayoutGrid className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
-           </button>
-        </div>
+            <button
+              onClick={() => {
+                setPortalDefaultView('grid');
+                setIsRoomPlayOpen(true);
+              }}
+              className="h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform bg-black/40 border border-white/10 shadow-lg"
+            >
+              <LayoutGrid className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
+            </button>
+
+            <button
+              onClick={() => setIsYouTubeOpen(true)}
+              className="h-11 w-11 rounded-full flex items-center justify-center active:scale-90 transition-transform bg-black/40 border border-white/10 shadow-lg"
+            >
+              <svg className="h-6 w-6 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            </button>
+         </div>
       </footer>
 
 
@@ -3471,6 +3482,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setShowExitDialog(false);
           handleExit();
         }}
+      />
+
+      <YouTubeDialog
+        open={isYouTubeOpen}
+        onOpenChange={setIsYouTubeOpen}
+        roomId={room.id}
+        userId={currentUser?.uid || ''}
+        isHost={isOwner || canManageRoom}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
