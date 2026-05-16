@@ -111,6 +111,59 @@ export default function UserLevelPage() {
               ))}
             </div>
           </div>
+
+          {/* Rewards Section (6 Cards) - Naya Add Kiya Hai */}
+          <div className="space-y-4 pt-4">
+            <h2 className="text-lg font-bold tracking-wider text-gray-200">Rewards</h2>
+            
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                'Lv.0 - Lv.10',
+                'Lv.20 - Lv.35',
+                'Lv.40 - Lv.56',
+                'Lv.63 - Lv.75',
+                'Lv.78 - Lv.87',
+                'Lv.88 - Lv.99'
+              ].map((range, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start"
+                >
+                  <span className="text-[10px] font-semibold text-gray-400 tracking-wider">
+                    {range}
+                  </span>
+                  {/* Aap in cards ke andar future me koi data dalna chaho to yahan daal sakte ho */}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Frames Section (6 Cards) - Naya Add Kiya Hai */}
+          <div className="space-y-4 pt-4">
+            <h2 className="text-lg font-bold tracking-wider text-gray-200">Frames</h2>
+            
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                'Lv.0 - Lv.10',
+                'Lv.20 - Lv.35',
+                'Lv.40 - Lv.56',
+                'Lv.63 - Lv.75',
+                'Lv.78 - Lv.87',
+                'Lv.88 - Lv.99'
+              ].map((range, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative h-24 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-2 flex flex-col items-start"
+                >
+                  <span className="text-[10px] font-semibold text-gray-400 tracking-wider">
+                    {range}
+                  </span>
+                  {/* Aap in cards ke andar future me koi data dalna chaho to yahan daal sakte ho */}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         {/* --- Rules Modal (Glossy Sea Blue Center Card) --- */}
@@ -175,5 +228,4 @@ export default function UserLevelPage() {
       </div>
     </AppLayout>
   );
-}
-
+                  }
