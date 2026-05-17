@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader, ExternalLink } from 'lucide-react';
+import { X, Loader, ExternalLink, Play } from 'lucide-react';
+import { Browser } from '@capacitor/browser';
 
 interface NetMirrorDialogProps {
   open: boolean;
@@ -13,7 +14,43 @@ interface NetMirrorDialogProps {
 const NETMIRROR_URL = 'https://netmirror.gg';
 
 export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogProps) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleOpenNetMirror = async () => {
+    try {
+      setIsOpen(true);
+      setError(null);
+      
+      await Browser.open({
+        url: NETMIRROR_URL,
+        windowName: '_self',
+        presentationStyle: 'popover',
+      });
+      
+      // Listen for browser closed event
+      Browser.addListener('browserFinished', () => {
+        setIsOpen(false);
+      });
+    } catch (err: any) {
+      console.error('[NetMirror] Failed to open browser:', err);
+      setError('Failed to open NetMirror. Please try again.');
+      setIsOpen(false);
+    }
+  };
+
+  const handleOpenExternal = async () => {
+    try {
+      await Browser.open({
+        url: NETMIRROR_URL,
+        windowName: '_blank',
+      });
+    } catch (err) {
+      console.error('[NetMirror] Failed to open external browser:', err);
+      // Fallback to window.open
+      window.open(NETMIRROR_URL, '_blank');
+    }
+  };
 
   if (!open) return null;
 
@@ -25,56 +62,109 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] bg-black"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
         >
-          {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-white">NetMirror</h2>
-                <p className="text-[10px] text-slate-400">Movies & Series</p>
-              </div>
-            </div>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => onOpenChange(false)}
+          />
+          
+          {/* Dialog Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-sm bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50"
+          >
+            {/* Close Button */}
             <button 
               onClick={() => onOpenChange(false)}
-              className="p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
+              className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
             >
               <X className="h-5 w-5 text-white" />
             </button>
-          </div>
 
-          {/* Iframe Container - Full Screen */}
-          <div className="w-full h-full bg-black relative">
-            <iframe
-              src={NETMIRROR_URL}
-              className="w-full h-full border-0"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write"
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-downloads"
-              title="NetMirror Streaming"
-              onLoad={() => setIsLoading(false)}
-            />
-            
-            {/* Loading State Overlay */}
-            {isLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-0">
-                <Loader className="h-10 w-10 animate-spin text-red-500 mb-3" />
-                <p className="text-sm text-slate-400">Loading NetMirror...</p>
+            {/* Content */}
+            <div className="p-6 flex flex-col items-center text-center space-y-5">
+              {/* Logo */}
+              <div className="h-16 w-16 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/30">
+                <svg viewBox="0 0 24 24" className="h-10 w-10 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
+                </svg>
               </div>
-            )}
-          </div>
 
-          {/* Bottom Info Bar */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 p-3 bg-gradient-to-t from-black/80 to-transparent">
-            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400">
-              <ExternalLink className="h-3 w-3" />
-              <span>For best experience, download the NetMirror APK</span>
+              {/* Title */}
+              <div>
+                <h2 className="text-xl font-bold text-white">NetMirror</h2>
+                <p className="text-sm text-slate-400 mt-1">Movies & Series Streaming</p>
+              </div>
+
+              {/* Description */}
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Watch thousands of movies and TV series with original audio and HD quality.
+                Sign in with Google to start watching.
+              </p>
+
+              {/* Error Message */}
+              {error && (
+                <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+                  {error}
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="w-full space-y-3 pt-2">
+                {/* Primary Button - Open in App Browser */}
+                <button
+                  onClick={handleOpenNetMirror}
+                  disabled={isOpen}
+                  className="w-full py-3.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 rounded-xl text-white font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
+                >
+                  {isOpen ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      Opening...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-5 w-5" />
+                      Open NetMirror
+                    </>
+                  )}
+                </button>
+
+                {/* Secondary Button - Open in External Browser */}
+                <button
+                  onClick={handleOpenExternal}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-medium text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open in Browser
+                </button>
+              </div>
+
+              {/* Info */}
+              <div className="pt-2 space-y-2">
+                <div className="flex items-start gap-2 text-[11px] text-slate-500">
+                  <span className="text-red-400 mt-0.5">•</span>
+                  <p>Google Sign-In supported</p>
+                </div>
+                <div className="flex items-start gap-2 text-[11px] text-slate-500">
+                  <span className="text-red-400 mt-0.5">•</span>
+                  <p>HD streaming with original audio</p>
+                </div>
+                <div className="flex items-start gap-2 text-[11px] text-slate-500">
+                  <span className="text-red-400 mt-0.5">•</span>
+                  <p>50+ OTT apps and sites</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

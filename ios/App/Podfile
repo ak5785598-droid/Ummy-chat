@@ -14,6 +14,7 @@ def capacitor_pods
   pod 'CapacitorCommunityTextToSpeech', :path => '../../node_modules/.pnpm/@capacitor-community+text-t_fb937920d3a079673765134c8c96b927/node_modules/@capacitor-community/text-to-speech'
   pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/.pnpm/@capacitor-firebase+authent_6c322dd14cb2f27c49f9fd07dd185a28/node_modules/@capacitor-firebase/authentication'
   pod 'CapacitorApp', :path => '../../node_modules/.pnpm/@capacitor+app@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/app'
+  pod 'CapacitorBrowser', :path => '../../node_modules/.pnpm/@capacitor+browser@7.0.5_@capacitor+core@7.0.0/node_modules/@capacitor/browser'
   pod 'CapacitorDevice', :path => '../../node_modules/.pnpm/@capacitor+device@7.0.5_@capacitor+core@7.0.0/node_modules/@capacitor/device'
   pod 'CapacitorHaptics', :path => '../../node_modules/.pnpm/@capacitor+haptics@7.0.5_@capacitor+core@7.0.0/node_modules/@capacitor/haptics'
   pod 'CapacitorPreferences', :path => '../../node_modules/.pnpm/@capacitor+preferences@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/preferences'
