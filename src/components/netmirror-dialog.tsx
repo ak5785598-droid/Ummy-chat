@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader, Monitor } from 'lucide-react';
+import { X, Loader, ExternalLink } from 'lucide-react';
 
 interface NetMirrorDialogProps {
   open: boolean;
@@ -13,6 +13,8 @@ interface NetMirrorDialogProps {
 const NETMIRROR_URL = 'https://netmirror.gg';
 
 export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogProps) {
+  const [isLoading, setIsLoading] = useState(true);
+
   if (!open) return null;
 
   return (
@@ -23,77 +25,56 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-[200] bg-black"
         >
-          {/* Backdrop - same as YouTube */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/30"
-            onClick={() => onOpenChange(false)}
-          />
-          
-          {/* Dialog Container - same structure as YouTube */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-2xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col max-h-[85vh]"
-          >
-            {/* Close Button */}
+          {/* Header */}
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white">NetMirror</h2>
+                <p className="text-[10px] text-slate-400">Movies & Series</p>
+              </div>
+            </div>
             <button 
               onClick={() => onOpenChange(false)}
-              className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
+              className="p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
             >
               <X className="h-5 w-5 text-white" />
             </button>
+          </div>
 
-            {/* Header */}
-            <div className="p-4 border-b border-slate-800 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white">NetMirror</h2>
-                  <p className="text-xs text-slate-400">Movies & Series</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Iframe Container */}
-            <div className="flex-1 bg-black relative min-h-[400px] sm:min-h-0">
-              <iframe
-                src={NETMIRROR_URL}
-                className="w-full h-full border-0"
-                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
-                title="NetMirror Streaming"
-              />
-              
-              {/* Loading State Overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 pointer-events-none z-0">
+          {/* Iframe Container - Full Screen */}
+          <div className="w-full h-full bg-black relative">
+            <iframe
+              src={NETMIRROR_URL}
+              className="w-full h-full border-0"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+              title="NetMirror Streaming"
+              onLoad={() => setIsLoading(false)}
+            />
+            
+            {/* Loading State Overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-0">
                 <Loader className="h-10 w-10 animate-spin text-red-500 mb-3" />
                 <p className="text-sm text-slate-400">Loading NetMirror...</p>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Info Footer */}
-            <div className="p-3 bg-slate-800/50 text-xs text-slate-400 space-y-1 shrink-0 border-t border-slate-800">
-              <div className="flex items-start gap-2">
-                <span className="text-red-400 mt-0.5">•</span>
-                <p>Browse and watch movies/series directly</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-red-400 mt-0.5">•</span>
-                <p>Use NetMirror's built-in player for best experience</p>
-              </div>
+          {/* Bottom Info Bar */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 p-3 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400">
+              <ExternalLink className="h-3 w-3" />
+              <span>For best experience, download the NetMirror APK</span>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
