@@ -3644,7 +3644,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onCloseForAll={isOwner || isModerator ? handleCloseYouTubeForAll : undefined}
       />
 
-      {process.env.NEXT_PUBLIC_ENABLE_NETMIRROR === 'true' && (
+      {(process.env.NEXT_PUBLIC_ENABLE_NETMIRROR !== 'false') && (
         <NetMirrorDialog
           open={isNetMirrorOpen}
           onOpenChange={setIsNetMirrorOpen}
