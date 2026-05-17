@@ -142,6 +142,7 @@ import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { YouTubeDialog } from '@/components/youtube-dialog';
 import { NetMirrorDialog } from '@/components/netmirror-dialog';
+import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -335,6 +336,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
+  const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -3444,6 +3446,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onToggleMiniPlayer={() => setShowMiniPlayer(true)}
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -3595,9 +3598,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onCloseForAll={isOwner || isModerator ? handleCloseYouTubeForAll : undefined}
       />
 
-      <NetMirrorDialog
-        open={isNetMirrorOpen}
-        onOpenChange={setIsNetMirrorOpen}
+      {process.env.NEXT_PUBLIC_ENABLE_NETMIRROR === 'true' && (
+        <NetMirrorDialog
+          open={isNetMirrorOpen}
+          onOpenChange={setIsNetMirrorOpen}
+          isHost={isOwner || canManageRoom}
+        />
+      )}
+
+      <ScreenMirrorDialog
+        open={isScreenMirrorOpen}
+        onOpenChange={setIsScreenMirrorOpen}
         roomId={room.id}
         userId={currentUser?.uid || ''}
         isHost={isOwner || canManageRoom}

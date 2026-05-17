@@ -27,7 +27,8 @@ import {
   Gamepad2,
   Gift,
   Youtube,
-  Monitor
+  Monitor,
+  Cast
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,7 @@ interface RoomPlayDialogProps {
   onToggleMiniPlayer?: () => void;
   onOpenYouTube?: () => void;
   onOpenNetMirror?: () => void;
+  onOpenScreenMirror?: () => void;
   defaultView?: 'grid' | 'music';
 }
 
@@ -80,6 +82,7 @@ export function RoomPlayDialog({
   onToggleMiniPlayer,
   onOpenYouTube,
   onOpenNetMirror,
+  onOpenScreenMirror,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
@@ -426,6 +429,13 @@ export function RoomPlayDialog({
       color: 'from-purple-500 to-purple-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(168,85,247,0.5)] border border-purple-500/50', 
       onClick: () => { onOpenNetMirror?.(); onOpenChange(false); } 
     },
+    { 
+      id: 'screenmirror', 
+      label: 'Screen Mirror', 
+      icon: <Cast className="h-7 w-7 text-white drop-shadow-md" />, 
+      color: 'from-blue-500 to-blue-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-blue-500/50', 
+      onClick: () => { onOpenScreenMirror?.(); onOpenChange(false); } 
+    },
   ];
 
   return (
@@ -485,7 +495,7 @@ export function RoomPlayDialog({
 
                 {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
-                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'netmirror').map(item => (
+                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'netmirror' || item.id === 'screenmirror').map(item => (
                     <button 
                       key={item.id} 
                       onClick={item.onClick}
