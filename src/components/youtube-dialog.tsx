@@ -174,12 +174,12 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost }: Yo
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
         >
-          {/* Backdrop - semi-transparent so room visible */}
+          {/* Backdrop - light dim so room clearly visible */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            className="absolute inset-0 bg-black/30"
             onClick={() => onOpenChange(false)}
           />
           
