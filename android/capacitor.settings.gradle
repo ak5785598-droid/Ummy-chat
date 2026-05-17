@@ -20,6 +20,9 @@ project(':capacitor-device').projectDir = new File('../node_modules/.pnpm/@capac
 include ':capacitor-haptics'
 project(':capacitor-haptics').projectDir = new File('../node_modules/.pnpm/@capacitor+haptics@7.0.5_@capacitor+core@7.0.0/node_modules/@capacitor/haptics/android')
 
+include ':capacitor-inappbrowser'
+project(':capacitor-inappbrowser').projectDir = new File('../node_modules/.pnpm/@capacitor+inappbrowser@2.5.5_@capacitor+core@7.0.0/node_modules/@capacitor/inappbrowser/android')
+
 include ':capacitor-preferences'
 project(':capacitor-preferences').projectDir = new File('../node_modules/.pnpm/@capacitor+preferences@7.0.0_@capacitor+core@7.0.0/node_modules/@capacitor/preferences/android')
 

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader, ExternalLink, Play } from 'lucide-react';
-import { Browser } from '@capacitor/browser';
+import { InAppBrowser } from '@capacitor/inappbrowser';
 
 interface NetMirrorDialogProps {
   open: boolean;
@@ -12,6 +12,9 @@ interface NetMirrorDialogProps {
 }
 
 const NETMIRROR_URL = 'https://netmirror.gg';
+
+// Desktop User-Agent to bypass mobile detection
+const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,18 +25,47 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
       setIsOpen(true);
       setError(null);
       
-      await Browser.open({
+      // Open with InAppBrowser WebView using desktop User-Agent
+      await InAppBrowser.openInWebView({
         url: NETMIRROR_URL,
-        windowName: '_self',
-        presentationStyle: 'popover',
+        options: {
+          showURL: false,
+          showToolbar: true,
+          clearCache: false,
+          clearSessionCache: false,
+          mediaPlaybackRequiresUserAction: false,
+          closeButtonText: 'Done',
+          toolbarPosition: 0, // TOP
+          showNavigationButtons: true,
+          leftToRight: false,
+          customWebViewUserAgent: DESKTOP_USER_AGENT,
+          android: {
+            allowZoom: false,
+            hardwareBack: true,
+            pauseMedia: false,
+          },
+          iOS: {
+            allowOverScroll: false,
+            enableViewportScale: true,
+            allowInLineMediaPlayback: true,
+            surpressIncrementalRendering: false,
+            viewStyle: 2, // FULL_SCREEN
+            animationEffect: 2, // COVER_VERTICAL
+            allowsBackForwardNavigationGestures: true,
+          },
+        },
       });
       
       // Listen for browser closed event
-      Browser.addListener('browserFinished', () => {
+      InAppBrowser.addListener('browserClosed', () => {
         setIsOpen(false);
       });
+      
+      InAppBrowser.addListener('browserPageLoaded', () => {
+        console.log('[NetMirror] Page loaded');
+      });
     } catch (err: any) {
-      console.error('[NetMirror] Failed to open browser:', err);
+      console.error('[NetMirror] Failed to open InAppBrowser:', err);
       setError('Failed to open NetMirror. Please try again.');
       setIsOpen(false);
     }
@@ -41,13 +73,13 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
 
   const handleOpenExternal = async () => {
     try {
-      await Browser.open({
+      // Fallback: open in external browser
+      await InAppBrowser.openInExternalBrowser({
         url: NETMIRROR_URL,
-        windowName: '_blank',
       });
     } catch (err) {
       console.error('[NetMirror] Failed to open external browser:', err);
-      // Fallback to window.open
+      // Ultimate fallback
       window.open(NETMIRROR_URL, '_blank');
     }
   };
@@ -119,7 +151,7 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
 
               {/* Buttons */}
               <div className="w-full space-y-3 pt-2">
-                {/* Primary Button - Open in App Browser */}
+                {/* Primary Button - Open in App Browser (Desktop Mode) */}
                 <button
                   onClick={handleOpenNetMirror}
                   disabled={isOpen}
