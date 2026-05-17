@@ -29,14 +29,22 @@ export function MovieBrowserDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState<TMDBMovie | null>(null);
   const [showActions, setShowActions] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const { toast } = useToast();
+  const apiKeyMissing = !process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
   const fetchTrending = useCallback(async () => {
     setIsLoading(true);
-    const results = await getTrendingMovies(1);
-    setMovies(results);
+    const result = await getTrendingMovies(1);
+    if (result.error) {
+      setApiError(result.error);
+      toast({ variant: 'destructive', title: 'Movies Error', description: result.error });
+    } else {
+      setApiError(null);
+    }
+    setMovies(result.movies);
     setIsLoading(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (open && !searchQuery) {
@@ -50,8 +58,11 @@ export function MovieBrowserDialog({
       return;
     }
     setIsSearching(true);
-    const results = await searchMovies(searchQuery, 1);
-    setMovies(results);
+    const result = await searchMovies(searchQuery, 1);
+    if (result.error) {
+      toast({ variant: 'destructive', title: 'Search Error', description: result.error });
+    }
+    setMovies(result.movies);
     setIsSearching(false);
   };
 
@@ -149,6 +160,20 @@ export function MovieBrowserDialog({
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-4">
+              {apiKeyMissing && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4">
+                  <p className="text-xs text-amber-400 font-bold mb-1">API Key Missing</p>
+                  <p className="text-xs text-amber-300/70">NEXT_PUBLIC_TMDB_API_KEY is not set in Vercel environment variables.</p>
+                  <p className="text-[10px] text-white/30 mt-2">Go to Vercel Dashboard → Settings → Environment Variables → Add the key → Redeploy.</p>
+                </div>
+              )}
+              {apiError && !apiKeyMissing && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-4">
+                  <p className="text-xs text-red-400 font-bold mb-1">API Error</p>
+                  <p className="text-xs text-red-300/70">{apiError}</p>
+                  <p className="text-[10px] text-white/30 mt-2">Add NEXT_PUBLIC_TMDB_API_KEY to Vercel env vars and redeploy.</p>
+                </div>
+              )}
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                   <Loader className="h-8 w-8 text-purple-400 animate-spin" />
