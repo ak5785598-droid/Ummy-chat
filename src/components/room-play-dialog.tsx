@@ -28,6 +28,7 @@ import {
   Gift,
   Youtube,
   Monitor,
+  Film,
   Cast
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,7 +60,7 @@ interface RoomPlayDialogProps {
   onSyncSharedMusic?: (track: any) => void;
   onToggleMiniPlayer?: () => void;
   onOpenYouTube?: () => void;
-  onOpenNetMirror?: () => void;
+  onOpenMovies?: () => void;
   onOpenScreenMirror?: () => void;
   defaultView?: 'grid' | 'music';
 }
@@ -81,7 +82,7 @@ export function RoomPlayDialog({
   onSyncSharedMusic,
   onToggleMiniPlayer,
   onOpenYouTube,
-  onOpenNetMirror,
+  onOpenMovies,
   onOpenScreenMirror,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
@@ -423,15 +424,11 @@ export function RoomPlayDialog({
       onClick: () => { onOpenYouTube?.(); onOpenChange(false); } 
     },
     { 
-      id: 'netmirror', 
-      label: 'NetMirror', 
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-5 w-5 text-white drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
-        </svg>
-      ), 
-      color: 'from-red-600 to-red-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border border-red-600/50', 
-      onClick: () => { onOpenNetMirror?.(); onOpenChange(false); } 
+      id: 'movies', 
+      label: 'Movies', 
+      icon: <Film className="h-7 w-7 text-white drop-shadow-md" />, 
+      color: 'from-purple-500 to-violet-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(147,51,234,0.5)] border border-purple-500/50', 
+      onClick: () => { onOpenMovies?.(); onOpenChange(false); } 
     },
     { 
       id: 'screenmirror', 
@@ -499,7 +496,7 @@ export function RoomPlayDialog({
 
                 {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
-                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'netmirror' || item.id === 'screenmirror').map(item => (
+                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'movies' || item.id === 'screenmirror').map(item => (
                     <button 
                       key={item.id} 
                       onClick={item.onClick}

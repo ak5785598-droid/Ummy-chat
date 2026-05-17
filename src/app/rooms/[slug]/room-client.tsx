@@ -141,7 +141,10 @@ import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { YouTubeDialog } from '@/components/youtube-dialog';
-import { NetMirrorDialog } from '@/components/netmirror-dialog';
+import { MovieBrowserDialog } from '@/components/movie-browser-dialog';
+import { MoviePlayer } from '@/components/movie-player';
+import { MovieSyncBanner } from '@/components/movie-sync-banner';
+import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
@@ -335,7 +338,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
-  const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
+  const [isMoviesOpen, setIsMoviesOpen] = useState(false);
+  const [isMoviePlayerOpen, setIsMoviePlayerOpen] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null } | null>(null);
+  const [roomMovie, setRoomMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; startedBy: string } | null>(null);
+  const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -1272,6 +1279,28 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (!target || target.type === 'all') return true;
     return target.uid === currentUser?.uid;
   }, [screenShareTargetDoc, currentUser?.uid]);
+
+  // MOVIE SYNC: Listen for host's movie selection
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const unsubscribe = onSnapshot(doc(firestore, 'chatRooms', room.id), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.currentMovie) {
+          setRoomMovie({
+            tmdbId: data.currentMovie.tmdbId,
+            title: data.currentMovie.title,
+            posterPath: data.currentMovie.posterPath || null,
+            startedBy: data.currentMovie.startedBy || 'Host',
+          });
+          setIsMovieBannerDismissed(false);
+        } else {
+          setRoomMovie(null);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, room.id]);
 
   // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
   useEffect(() => {
@@ -2361,16 +2390,55 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     }
   };
 
-  // AUTO-DISABLE NETMIRROR WHEN YOUTUBE STARTS
+  // MOVIE HANDLERS
+  const handlePlayMovieForRoom = async (movie: TMDBMovie) => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    await updateDocumentNonBlocking(roomRef, {
+      currentMovie: {
+        tmdbId: movie.id,
+        title: movie.title,
+        posterPath: movie.poster_path || null,
+        startedAt: serverTimestamp(),
+        startedBy: currentUser.uid,
+      },
+      updatedAt: serverTimestamp(),
+    });
+    toast({ title: 'Movie Synced', description: `${movie.title} is now playing for the room.` });
+  };
+
+  const handleWatchPersonal = (movie: TMDBMovie) => {
+    setSelectedMovie({ tmdbId: movie.id, title: movie.title, posterPath: movie.poster_path || null });
+    setIsMoviePlayerOpen(true);
+  };
+
+  const handleJoinRoomMovie = () => {
+    if (roomMovie) {
+      setSelectedMovie({ tmdbId: roomMovie.tmdbId, title: roomMovie.title, posterPath: roomMovie.posterPath });
+      setIsMoviePlayerOpen(true);
+    }
+  };
+
+  const handleStopRoomMovie = async () => {
+    if (!firestore || !room.id || !canManageRoom) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    await updateDocumentNonBlocking(roomRef, {
+      currentMovie: null,
+      updatedAt: serverTimestamp(),
+    });
+    toast({ title: 'Movie Stopped', description: 'Movie playback ended for the room.' });
+  };
+
+  // AUTO-DISABLE MOVIES WHEN YOUTUBE STARTS
   useEffect(() => {
-    if (isYouTubeOpen && isNetMirrorOpen) {
-      setIsNetMirrorOpen(false);
+    if (isYouTubeOpen && isMoviePlayerOpen) {
+      setIsMoviePlayerOpen(false);
       toast({
-        title: 'NetMirror Paused',
-        description: 'YouTube is now active. NetMirror has been paused.',
+        title: 'Movie Paused',
+        description: 'YouTube is now active. Movie has been paused.',
       });
     }
-  }, [isYouTubeOpen, isNetMirrorOpen]);
+  }, [isYouTubeOpen, isMoviePlayerOpen]);
 
 
   const handleSilence = (uid: string, current: boolean) => {
@@ -3491,7 +3559,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }}
         onToggleMiniPlayer={() => setShowMiniPlayer(true)}
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
-        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
@@ -3644,13 +3712,30 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onCloseForAll={isOwner || isModerator ? handleCloseYouTubeForAll : undefined}
       />
 
-      {(process.env.NEXT_PUBLIC_ENABLE_NETMIRROR !== 'false') && (
-        <NetMirrorDialog
-          open={isNetMirrorOpen}
-          onOpenChange={setIsNetMirrorOpen}
-          isHost={isOwner || canManageRoom}
-        />
-      )}
+      <MovieBrowserDialog
+        open={isMoviesOpen}
+        onOpenChange={setIsMoviesOpen}
+        isHost={isOwner || canManageRoom}
+        onPlayForRoom={handlePlayMovieForRoom}
+        onWatchPersonal={handleWatchPersonal}
+      />
+
+      <MoviePlayer
+        open={isMoviePlayerOpen}
+        onOpenChange={setIsMoviePlayerOpen}
+        tmdbId={selectedMovie?.tmdbId || 0}
+        title={selectedMovie?.title || ''}
+        posterPath={selectedMovie?.posterPath}
+      />
+
+      <MovieSyncBanner
+        visible={!!roomMovie && !isMoviePlayerOpen && !isMovieBannerDismissed && roomMovie.startedBy !== currentUser?.uid}
+        movieTitle={roomMovie?.title || ''}
+        posterPath={roomMovie?.posterPath}
+        startedBy={roomMovie?.startedBy === currentUser?.uid ? 'You' : (roomMovie?.startedBy ? 'Host' : 'Host')}
+        onJoin={handleJoinRoomMovie}
+        onDismiss={() => setIsMovieBannerDismissed(true)}
+      />
 
       <ScreenMirrorDialog
         open={isScreenMirrorOpen}
