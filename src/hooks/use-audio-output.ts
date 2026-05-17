@@ -31,6 +31,12 @@ export function useAudioOutput() {
   });
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const stateRef = useRef(state);
+  
+  // Keep ref in sync with state (doesn't trigger re-renders)
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Get all audio output devices
   const refreshDevices = useCallback(async () => {
@@ -87,7 +93,8 @@ export function useAudioOutput() {
         await audio.setSinkId(deviceId);
         console.log('[AudioOutput] Routed to:', deviceId);
         
-        const selectedDevice = state.devices.find(d => d.deviceId === deviceId);
+        const currentDevices = stateRef.current.devices;
+        const selectedDevice = currentDevices.find(d => d.deviceId === deviceId);
         const isSpeakerDevice = deviceId === 'default' || 
                           (selectedDevice?.label.toLowerCase().includes('speaker') ?? false);
         
@@ -102,14 +109,14 @@ export function useAudioOutput() {
     } catch (e) {
       console.error('[AudioOutput] Failed to set output:', e);
     }
-  }, [state.devices]);
+  }, []);
 
   // Toggle between speaker and earbuds/headphones
   const toggleOutput = useCallback(async (audioElement?: HTMLAudioElement | null) => {
     // NATIVE: Try native plugin first
     if (NativeAudioRoute?.isAvailable()) {
       try {
-        if (state.isSpeaker) {
+        if (stateRef.current.isSpeaker) {
           await NativeAudioRoute.forceEarbuds();
           setState(prev => ({ ...prev, isSpeaker: false }));
           console.log('[AudioOutput-Native] Routed to earbuds');
@@ -128,9 +135,9 @@ export function useAudioOutput() {
     const audio = audioElement || audioRef.current;
     if (!audio) return;
 
-    if (state.isSpeaker) {
+    if (stateRef.current.isSpeaker) {
       // Try to find earbuds/headphones
-      const earbudDevice = state.devices.find(d => 
+      const earbudDevice = stateRef.current.devices.find(d => 
         d.label.toLowerCase().includes('bluetooth') || 
         d.label.toLowerCase().includes('airpods') ||
         d.label.toLowerCase().includes('buds') ||
@@ -144,7 +151,7 @@ export function useAudioOutput() {
         await setOutputDevice(earbudDevice.deviceId, audio);
       } else {
         // Try non-default device
-        const nonDefault = state.devices.find(d => d.deviceId !== 'default' && d.deviceId !== '');
+        const nonDefault = stateRef.current.devices.find(d => d.deviceId !== 'default' && d.deviceId !== '');
         if (nonDefault) {
           await setOutputDevice(nonDefault.deviceId, audio);
         }
@@ -153,7 +160,7 @@ export function useAudioOutput() {
       // Switch to default (speaker)
       await setOutputDevice('default', audio);
     }
-  }, [state.isSpeaker, state.devices, setOutputDevice]);
+  }, [setOutputDevice]);
 
   // Force earbuds if available
   const forceEarbuds = useCallback(async (audioElement?: HTMLAudioElement | null) => {
@@ -174,7 +181,8 @@ export function useAudioOutput() {
     if (!audio) return false;
 
     // Try to find any non-speaker device
-    const earbudDevice = state.devices.find(d => 
+    const currentDevices = stateRef.current.devices;
+    const earbudDevice = currentDevices.find(d => 
       d.label.toLowerCase().includes('bluetooth') || 
       d.label.toLowerCase().includes('airpods') || 
       d.label.toLowerCase().includes('buds') ||
@@ -190,7 +198,7 @@ export function useAudioOutput() {
       return true;
     }
     return false;
-  }, [state.devices, setOutputDevice]);
+  }, [setOutputDevice]);
 
   // Register audio element
   const registerAudioElement = useCallback((element: HTMLAudioElement | null) => {

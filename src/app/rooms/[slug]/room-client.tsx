@@ -420,8 +420,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // --- BOUTIQUE SYNC: Fetch all store items for frame/bubble configs (one-time fetch, static data) ---
   const [storeLibrary, setStoreLibrary] = useState<Record<string, any>>({});
+  const storeLibraryFetchedRef = useRef(false);
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || storeLibraryFetchedRef.current) return;
+    storeLibraryFetchedRef.current = true;
     const q = query(collection(firestore, 'storeItems'));
     getDocs(q).then((snapshot) => {
       const items: Record<string, any> = {};
@@ -582,10 +584,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
 
-  const participants = useMemo(() => {
-    if (!participantsData) return [];
-    return participantsData;
-  }, [participantsData]);
+  const participants = participantsData || [];
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !sessionJoinTime) return null;
