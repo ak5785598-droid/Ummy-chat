@@ -13,6 +13,7 @@ interface YouTubeDialogProps {
   roomId: string;
   userId: string;
   isHost: boolean;
+  onCloseForAll?: () => void;
 }
 
 interface YouTubeVideo {
@@ -42,7 +43,7 @@ interface YouTubeState {
 
 const YOUTUBE_API_KEY = 'AIzaSyCpgMk-aZA6EzMBeSjPN9QVGeKvK1Pyduo';
 
-export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost }: YouTubeDialogProps) {
+export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost, onCloseForAll }: YouTubeDialogProps) {
   const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const [urlInput, setUrlInput] = useState('');
@@ -193,7 +194,13 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost }: Yo
           >
             {/* Close button */}
             <button 
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                if (isHost && onCloseForAll) {
+                  onCloseForAll();
+                } else {
+                  onOpenChange(false);
+                }
+              }}
               className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
             >
               <X className="h-5 w-5 text-white" />

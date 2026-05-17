@@ -81,6 +81,12 @@ export function useAgora(
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const [connectionState, setConnectionState] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED');
   const [currentOutputDevice, setCurrentOutputDevice] = useState<string>('default');
+  
+  // Screen sharing state
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [screenTrack, setScreenTrack] = useState<any>(null);
+  const [remoteScreenTrack, setRemoteScreenTrack] = useState<any>(null);
+  const screenTrackRef = useRef<any>(null);
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
@@ -251,12 +257,34 @@ export function useAgora(
               }
               
               if (isMounted) setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
+            } else if (mediaType === 'video') {
+              // Check if this is a screen share track
+              try {
+                const trackType = user.videoTrack?.getTrackType?.();
+                const stats = user.videoTrack?.getVideoPlaybackStats?.();
+                if (trackType === 'screen' || stats?.videoSourceType === 'screen') {
+                  setRemoteScreenTrack(user.videoTrack);
+                  console.log('[Agora] Remote screen share detected from:', user.uid);
+                }
+              } catch (e) {
+                // Not a screen track, ignore
+              }
             }
           } catch (e) {}
         });
 
         client.on('user-unpublished', (user: IAgoraRTCRemoteUser) => {
           if (isMounted) setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+          // Check if screen track was unpublished
+          if (remoteScreenTrack) {
+            try {
+              const stats = remoteScreenTrack?.getVideoPlaybackStats?.();
+              if (stats?.userId === user.uid) {
+                setRemoteScreenTrack(null);
+                console.log('[Agora] Remote screen share stopped');
+              }
+            } catch (e) {}
+          }
         });
 
         client.on('connection-state-change', (curState: string) => {
@@ -440,6 +468,70 @@ export function useAgora(
     }
   }, []);
 
+  // SCREEN SHARING FUNCTIONS
+  const startScreenShare = useCallback(async (quality: '480p' | '720p' | '1080p' = '720p') => {
+    const client = clientRef.current;
+    if (!client || !AgoraRTC) {
+      console.error('[NetMirror] Agora not initialized');
+      return;
+    }
+
+    try {
+      console.log('[NetMirror] Starting screen share with quality:', quality);
+      
+      const encoderConfig = quality === '1080p' ? '1080p_1' : quality === '720p' ? '720p_1' : '480p_1';
+      
+      // Create screen video track
+      const track = await AgoraRTC.createScreenVideoTrack({
+        encoderConfig,
+        optimizationMode: 'detail',
+        screenSourceType: 'screen',
+      });
+      
+      // Create microphone audio track for voice commentary
+      const micTrack = await AgoraRTC.createMicrophoneAudioTrack({
+        AEC: true,
+        ANS: true,
+        AGC: true,
+      });
+      
+      // Publish both tracks
+      await client.publish([track, micTrack]);
+      
+      screenTrackRef.current = { video: track, audio: micTrack };
+      setScreenTrack(track);
+      setIsScreenSharing(true);
+      
+      console.log('[NetMirror] Screen sharing started successfully');
+    } catch (err) {
+      console.error('[NetMirror] Failed to start screen share:', err);
+      throw err;
+    }
+  }, []);
+
+  const stopScreenShare = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client) return;
+
+    try {
+      if (screenTrackRef.current) {
+        const { video, audio } = screenTrackRef.current;
+        
+        await client.unpublish([video, audio]);
+        video.close();
+        audio.close();
+        
+        screenTrackRef.current = null;
+        setScreenTrack(null);
+        setIsScreenSharing(false);
+        
+        console.log('[NetMirror] Screen sharing stopped');
+      }
+    } catch (err) {
+      console.error('[NetMirror] Failed to stop screen share:', err);
+    }
+  }, []);
+
   return { 
     localAudioTrack, 
     remoteUsers, 
@@ -448,6 +540,12 @@ export function useAgora(
     toggleAudioOutput,
     forceEarbudsOutput,
     currentOutputDevice,
-    isSpeaker: currentOutputDevice === 'default'
+    isSpeaker: currentOutputDevice === 'default',
+    // Screen sharing
+    startScreenShare,
+    stopScreenShare,
+    isScreenSharing,
+    screenTrack,
+    remoteScreenTrack,
   };
 }

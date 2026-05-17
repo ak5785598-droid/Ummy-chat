@@ -141,6 +141,7 @@ import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { YouTubeDialog } from '@/components/youtube-dialog';
+import { NetMirrorDialog } from '@/components/netmirror-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -332,6 +333,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
+  const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
+  const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -1073,7 +1076,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     remoteUsers,
     toggleAudioOutput,
     forceEarbudsOutput,
-    isSpeaker: isVoiceSpeaker 
+    isSpeaker: isVoiceSpeaker,
+    startScreenShare,
+    stopScreenShare,
+    isScreenSharing,
+    remoteScreenTrack,
   } = useAgora(
     room?.id,
     isInSeat,
@@ -2276,6 +2283,47 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     router.push('/rooms'); // Exit should also go to Home (/rooms)
   };
 
+  // YOUTUBE HIDE/CLOSE HANDLERS
+  const handleCloseYouTubeForAll = async () => {
+    if (!isOwner && !isModerator) return;
+    
+    if (firestore && room.id) {
+      try {
+        const youtubeRef = doc(firestore, 'chatRooms', room.id, 'youtube', 'state');
+        const { deleteDoc } = await import('firebase/firestore');
+        await deleteDoc(youtubeRef);
+      } catch (e) {
+        console.error('[YouTube] Failed to close for all:', e);
+      }
+    }
+    
+    setIsYouTubeOpen(false);
+    setIsYouTubeHidden(false);
+  };
+
+  const handleYouTubeOpenChange = (open: boolean) => {
+    if (!open && !isOwner && !isModerator) {
+      // User closing = hide for them only
+      setIsYouTubeHidden(true);
+    } else {
+      setIsYouTubeOpen(open);
+      if (open) {
+        setIsYouTubeHidden(false);
+      }
+    }
+  };
+
+  // AUTO-DISABLE NETMIRROR WHEN YOUTUBE STARTS
+  useEffect(() => {
+    if (isYouTubeOpen && isNetMirrorOpen) {
+      setIsNetMirrorOpen(false);
+      toast({
+        title: 'NetMirror Paused',
+        description: 'YouTube is now active. NetMirror has been paused.',
+      });
+    }
+  }, [isYouTubeOpen, isNetMirrorOpen]);
+
 
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
@@ -3394,7 +3442,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           }
         }}
         onToggleMiniPlayer={() => setShowMiniPlayer(true)}
-        onOpenYouTube={() => { setIsYouTubeOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
+        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -3538,11 +3587,24 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       />
 
       <YouTubeDialog
-        open={isYouTubeOpen}
-        onOpenChange={setIsYouTubeOpen}
+        open={isYouTubeOpen && !isYouTubeHidden}
+        onOpenChange={handleYouTubeOpenChange}
         roomId={room.id}
         userId={currentUser?.uid || ''}
         isHost={isOwner || canManageRoom}
+        onCloseForAll={isOwner || isModerator ? handleCloseYouTubeForAll : undefined}
+      />
+
+      <NetMirrorDialog
+        open={isNetMirrorOpen}
+        onOpenChange={setIsNetMirrorOpen}
+        roomId={room.id}
+        userId={currentUser?.uid || ''}
+        isHost={isOwner || canManageRoom}
+        startScreenShare={startScreenShare}
+        stopScreenShare={stopScreenShare}
+        isScreenSharing={isScreenSharing}
+        remoteScreenTrack={remoteScreenTrack}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
