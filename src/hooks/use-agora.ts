@@ -529,10 +529,10 @@ export function useAgora(
         setScreenTrack(null);
         setIsScreenSharing(false);
         
-        console.log('[NetMirror] Screen sharing stopped');
+        console.log('[ScreenMirror] Screen sharing stopped');
       }
     } catch (err) {
-      console.error('[NetMirror] Failed to stop screen share:', err);
+      console.error('[ScreenMirror] Failed to stop screen share:', err);
     }
   }, []);
 

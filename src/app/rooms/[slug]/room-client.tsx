@@ -2404,18 +2404,20 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       },
       updatedAt: serverTimestamp(),
     });
-    toast({ title: 'Movie Synced', description: `${movie.title} is now playing for the room.` });
+    toast({ title: 'Movie Mirror Synced', description: `${movie.title} is now playing for the room.` });
   };
 
   const handleWatchPersonal = (movie: TMDBMovie) => {
     setSelectedMovie({ tmdbId: movie.id, title: movie.title, posterPath: movie.poster_path || null });
     setIsMoviePlayerOpen(true);
+    setIsMoviesOpen(false);
   };
 
   const handleJoinRoomMovie = () => {
     if (roomMovie) {
       setSelectedMovie({ tmdbId: roomMovie.tmdbId, title: roomMovie.title, posterPath: roomMovie.posterPath });
       setIsMoviePlayerOpen(true);
+      setIsMoviesOpen(false);
     }
   };
 
@@ -2426,7 +2428,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       currentMovie: null,
       updatedAt: serverTimestamp(),
     });
-    toast({ title: 'Movie Stopped', description: 'Movie playback ended for the room.' });
+    toast({ title: 'Movie Mirror Stopped', description: 'Movie playback ended for the room.' });
   };
 
   // AUTO-DISABLE MOVIES WHEN YOUTUBE STARTS
@@ -2434,7 +2436,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (isYouTubeOpen && isMoviePlayerOpen) {
       setIsMoviePlayerOpen(false);
       toast({
-        title: 'Movie Paused',
+        title: 'Movie Mirror Paused',
         description: 'YouTube is now active. Movie has been paused.',
       });
     }

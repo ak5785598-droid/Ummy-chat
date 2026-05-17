@@ -85,7 +85,7 @@ export function MovieBrowserDialog({
       setSelectedMovie(null);
       setShowActions(false);
       onOpenChange(false);
-      toast({ title: 'Movie Synced', description: `${selectedMovie.title} is now playing for the room.` });
+      toast({ title: 'Movie Mirror Synced', description: `${selectedMovie.title} is now playing for the room.` });
     }
   };
 
@@ -134,8 +134,8 @@ export function MovieBrowserDialog({
                   <Film className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Movies</h2>
-                  <p className="text-xs text-slate-400">Browse & watch full movies</p>
+                  <h2 className="text-lg font-bold text-white">Movie Mirror</h2>
+                  <p className="text-xs text-slate-400">Stream full movies in-app</p>
                 </div>
               </div>
             </div>

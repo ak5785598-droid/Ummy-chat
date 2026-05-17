@@ -425,7 +425,7 @@ export function RoomPlayDialog({
     },
     { 
       id: 'movies', 
-      label: 'Movies', 
+      label: 'Movie Mirror', 
       icon: <Film className="h-7 w-7 text-white drop-shadow-md" />, 
       color: 'from-purple-500 to-violet-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(147,51,234,0.5)] border border-purple-500/50', 
       onClick: () => { onOpenMovies?.(); onOpenChange(false); } 

@@ -114,7 +114,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-white truncate">{title}</h3>
-                    <p className="text-[10px] text-white/40">Movie Player</p>
+                    <p className="text-[10px] text-white/40">Movie Mirror</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -176,6 +176,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   key={`${provider}-${tmdbId}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                   onLoad={handleIframeLoad}
