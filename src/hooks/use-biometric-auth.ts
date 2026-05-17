@@ -8,22 +8,27 @@ interface BiometricAuthPlugin {
 }
 
 let BiometricAuth: BiometricAuthPlugin | null = null;
+let pluginLoadAttempted = false;
 
 // Lazy load the plugin only on native platforms
 const loadBiometricPlugin = async (): Promise<BiometricAuthPlugin | null> => {
   if (!Capacitor.isNativePlatform()) return null;
-  if (BiometricAuth) return BiometricAuth;
+  if (BiometricAuth || pluginLoadAttempted) return BiometricAuth;
+
+  pluginLoadAttempted = true;
 
   try {
+    // Try to dynamically import the biometric plugin
+    // This will fail gracefully if plugin is not installed
     const module = await import('capacitor-biometric-auth');
-    // Try different export names based on package version
     BiometricAuth = (module as any).CapacitorBiometricAuth || 
                     (module as any).BiometricAuth || 
                     (module as any).default || 
                     null;
     return BiometricAuth;
   } catch (error) {
-    console.warn('[Biometric] Failed to load plugin:', error);
+    // Plugin not available - this is expected if capacitor-biometric-auth is not installed
+    console.info('[Biometric] Plugin not available, using fallback login methods');
     return null;
   }
 };
