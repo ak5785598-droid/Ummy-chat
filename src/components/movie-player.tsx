@@ -176,7 +176,6 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   key={`${provider}-${tmdbId}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                   onLoad={handleIframeLoad}
@@ -186,7 +185,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
               <div className="flex items-center justify-center gap-2 text-[10px] text-white/30">
                 <span>Provider: {currentProvider.label}</span>
                 <span>•</span>
-                <span>Switch if ads are intrusive</span>
+                <span>Ads? Use Browser button or switch provider</span>
               </div>
             </div>
           </motion.div>
