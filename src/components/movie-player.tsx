@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ExternalLink, Film } from 'lucide-react';
+import { X, ChevronDown, ExternalLink, Film, RefreshCw } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -34,6 +34,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
   const [isLoading, setIsLoading] = useState(true);
   const [showProviders, setShowProviders] = useState(false);
   const [provider, setProvider] = useState(() => getPreferredProvider());
+  const [resetCount, setResetCount] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +71,11 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
 
   const handleOpenInBrowser = () => {
     window.open(videoUrl, '_blank');
+  };
+
+  const handleReset = () => {
+    setResetCount(c => c + 1);
+    setIsLoading(true);
   };
 
   if (!open) return null;
@@ -118,6 +124,14 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
+                    title="Reset player if stuck on ads"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Reset
+                  </button>
                   <button
                     onClick={handleOpenInBrowser}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
@@ -173,7 +187,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                 )}
                 <iframe
                   ref={iframeRef}
-                  key={`${provider}-${tmdbId}`}
+                  key={`${provider}-${tmdbId}-${resetCount}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
@@ -185,7 +199,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
               <div className="flex items-center justify-center gap-2 text-[10px] text-white/30">
                 <span>Provider: {currentProvider.label}</span>
                 <span>•</span>
-                <span>Ads? Use Browser button or switch provider</span>
+                <span>Ads? Click Reset or use Browser</span>
               </div>
             </div>
           </motion.div>
