@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 
 interface YouTubePlayerProps {
   videoId: string;
+  title?: string;
   isPlaying: boolean;
   currentTime: number;
   volume: number;
@@ -46,6 +47,7 @@ function loadYouTubeAPI(): Promise<void> {
 
 export function YouTubePlayer({
   videoId,
+  title,
   isPlaying,
   currentTime,
   volume,
@@ -190,13 +192,25 @@ export function YouTubePlayer({
 
   return (
     <div className={cn('w-full bg-black rounded-xl overflow-hidden', className)}>
-      <div className="relative aspect-video w-full">
+      {/* Video Container */}
+      <div className="relative aspect-video w-full bg-black">
         <div ref={containerRef} className="absolute inset-0" />
+        
+        {/* Video Title Overlay */}
+        {title && (
+          <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/80 to-transparent">
+            <p className="text-sm text-white font-medium truncate pr-8">{title}</p>
+          </div>
+        )}
       </div>
 
-      <div className="p-3 bg-slate-900 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 w-10">{formatTime(localTime)}</span>
+      {/* Controls Section */}
+      <div className="p-3 bg-slate-900/95 backdrop-blur-sm space-y-3 border-t border-slate-800">
+        {/* Progress Bar */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-400 w-12 text-right font-mono tabular-nums">
+            {formatTime(localTime)}
+          </span>
           <input
             type="range"
             min={0}
@@ -204,33 +218,55 @@ export function YouTubePlayer({
             step={0.5}
             value={localTime}
             onChange={handleSeek}
-            className="flex-1 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-red-500"
+            className="flex-1 h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-red-500 hover:accent-red-400 transition-all"
           />
-          <span className="text-xs text-slate-400 w-10 text-right">{formatTime(duration)}</span>
+          <span className="text-xs text-slate-400 w-12 font-mono tabular-nums">
+            {formatTime(duration)}
+          </span>
         </div>
 
+        {/* Control Buttons */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button onClick={handleTogglePlay} className="p-2 rounded-full hover:bg-slate-800 transition-colors">
-              {isPlaying ? <Pause className="h-4 w-4 text-white" /> : <Play className="h-4 w-4 text-white" />}
+          <div className="flex items-center gap-1">
+            {/* Play/Pause */}
+            <button 
+              onClick={handleTogglePlay}
+              className="p-2.5 rounded-full hover:bg-slate-800 active:scale-90 transition-all"
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5 text-white" />
+              ) : (
+                <Play className="h-5 w-5 text-white" />
+              )}
             </button>
-            <button onClick={handleToggleMute} className="p-2 rounded-full hover:bg-slate-800 transition-colors">
-              {isMuted ? <VolumeX className="h-4 w-4 text-white" /> : <Volume2 className="h-4 w-4 text-white" />}
+            
+            {/* Volume */}
+            <button 
+              onClick={handleToggleMute}
+              className="p-2.5 rounded-full hover:bg-slate-800 active:scale-90 transition-all"
+            >
+              {isMuted ? (
+                <VolumeX className="h-5 w-5 text-white" />
+              ) : (
+                <Volume2 className="h-5 w-5 text-white" />
+              )}
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Skip Controls */}
+          <div className="flex items-center gap-1">
             <button
               onClick={() => onSeek(Math.max(0, localTime - 10))}
-              className="p-2 rounded-full hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-full hover:bg-slate-800 active:scale-90 transition-all"
             >
-              <SkipBack className="h-4 w-4 text-white" />
+              <SkipBack className="h-5 w-5 text-white" />
             </button>
+            
             <button
               onClick={() => onSeek(Math.min(duration, localTime + 10))}
-              className="p-2 rounded-full hover:bg-slate-800 transition-colors"
+              className="p-2.5 rounded-full hover:bg-slate-800 active:scale-90 transition-all"
             >
-              <SkipForward className="h-4 w-4 text-white" />
+              <SkipForward className="h-5 w-5 text-white" />
             </button>
           </div>
         </div>
