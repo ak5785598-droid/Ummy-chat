@@ -136,6 +136,7 @@ import { ExitRoomDialog } from '@/components/exit-room-dialog';
 import { RoomSoundboard } from '@/components/room-soundboard';
 import { LiveBackground } from '@/components/live-background';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { useMediaPreloader } from '@/hooks/use-media-preloader';
 import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
@@ -313,6 +314,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     receiverName?: string,
     imageUrl?: string, 
     animationUrl?: string,
+    videoUrl?: string,
     soundUrl?: string,
     tier?: 'normal' | 'epic' | 'legendary',
     targetSeat?: number
@@ -433,6 +435,65 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       setStoreLibrary(items);
     }).catch(() => {});
   }, [firestore]);
+
+  // MEDIA PRELOADER: Preload gift videos and frame videos in background
+  const { preloadBatch } = useMediaPreloader({ enabled: true, maxConcurrent: 4 });
+  const mediaPreloadedRef = useRef(false);
+  
+  useEffect(() => {
+    if (!firestore || mediaPreloadedRef.current) return;
+    
+    // Fetch gifts and store items, then preload their media
+    const preloadMedia = async () => {
+      mediaPreloadedRef.current = true;
+      
+      try {
+        // Fetch gifts
+        const giftsQuery = query(collection(firestore, 'giftList'));
+        const giftsSnap = await getDocs(giftsQuery);
+        const giftVideos: string[] = [];
+        const giftImages: string[] = [];
+        const giftAnimations: string[] = [];
+        
+        giftsSnap.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.videoUrl) giftVideos.push(data.videoUrl);
+          if (data.imageUrl) giftImages.push(data.imageUrl);
+          if (data.animationUrl) giftAnimations.push(data.animationUrl);
+          if (data.soundUrl) giftImages.push(data.soundUrl); // Preload sounds as images (browser caches them)
+        });
+
+        // Fetch store items for frame videos
+        const storeQuery = query(collection(firestore, 'storeItems'));
+        const storeSnap = await getDocs(storeQuery);
+        const frameVideos: string[] = [];
+        const frameImages: string[] = [];
+        
+        storeSnap.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.videoUrl) frameVideos.push(data.videoUrl);
+          if (data.imageUrl) frameImages.push(data.imageUrl);
+        });
+
+        // Combine all URLs
+        const allVideos = [...giftVideos, ...frameVideos];
+        const allImages = [...giftImages, ...frameImages];
+
+        console.log(`[Media Preloader] Preloading ${allVideos.length} videos, ${allImages.length} images`);
+        
+        // Preload in batches (non-blocking)
+        if (allVideos.length > 0 || allImages.length > 0) {
+          preloadBatch({ video: allVideos, image: allImages });
+        }
+      } catch (e) {
+        console.warn('[Media Preloader] Failed to preload media:', e);
+      }
+    };
+
+    // Delay preload to not block initial room render
+    const timer = setTimeout(preloadMedia, 2000);
+    return () => clearTimeout(timer);
+  }, [firestore, preloadBatch]);
 
   // MUSIC LIBRARY FETCH: Needed for Next/Previous and Auto-play logic
   const { data: roomMusicLibrary = [] } = useCollection(

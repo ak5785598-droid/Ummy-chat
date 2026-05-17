@@ -159,6 +159,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
               muted 
               loop 
               playsInline 
+              preload="metadata"
               className="w-full h-full object-contain"
               style={{
                 filter: `url(#remove-black-background) drop-shadow(0 0 8px ${glowColor})`

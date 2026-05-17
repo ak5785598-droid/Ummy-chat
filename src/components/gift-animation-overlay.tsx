@@ -6,6 +6,7 @@ import Lottie from "lottie-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
 import { cn } from '@/lib/utils';
+import { getCachedVideo, isMediaCached } from '@/hooks/use-media-preloader';
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
@@ -36,6 +37,7 @@ export function GiftAnimationOverlay({
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showNameplate, setShowNameplate] = useState(false);
   const [useCanvasProcessing, setUseCanvasProcessing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -206,6 +208,7 @@ export function GiftAnimationOverlay({
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
+      setIsVideoLoading(!!videoUrl); // Show loading if video gift
       setUseCanvasProcessing(false);
       processingActiveRef.current = false;
       
@@ -426,6 +429,7 @@ export function GiftAnimationOverlay({
   // Handle Video Ready - Detect black background
   const handleVideoCanPlay = async () => {
     setIsVideoReady(true);
+    setIsVideoLoading(false);
     
     if (videoRef.current) {
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -434,9 +438,9 @@ export function GiftAnimationOverlay({
       setUseCanvasProcessing(hasSolidBlackBg);
       
       if (hasSolidBlackBg) {
-        console.log('✅ Canvas processing activated - Perfect clear video with black background removed');
+        console.log('[Gift Video] Canvas processing activated - black background removed');
       } else {
-        console.log('❌ Standard playback - No black background detected');
+        console.log('[Gift Video] Standard playback - no black background detected');
       }
     }
   };
@@ -446,29 +450,41 @@ export function GiftAnimationOverlay({
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
-          videoRef.current!.defaultMuted = false;
-          videoRef.current!.muted = false;
-          videoRef.current!.playbackRate = 1.0; // Normal speed for quality
-          videoRef.current!.setAttribute('playsinline', 'true');
-          videoRef.current!.setAttribute('webkit-playsinline', 'true');
+          const video = videoRef.current!;
           
-          videoRef.current!.load();
+          // Check if we have a cached version
+          const cachedVideo = getCachedVideo(videoUrl);
+          if (cachedVideo && cachedVideo.readyState >= 2) {
+            // Use cached video - copy state to our ref
+            video.src = cachedVideo.src;
+            video.currentTime = 0;
+            console.log('[Gift Video] Using cached video for instant playback');
+          } else {
+            // Load from network
+            video.defaultMuted = false;
+            video.muted = false;
+            video.playbackRate = 1.0;
+            video.setAttribute('playsinline', 'true');
+            video.setAttribute('webkit-playsinline', 'true');
+            video.preload = 'auto';
+            video.load();
+          }
           
-          const playPromise = videoRef.current!.play();
+          const playPromise = video.play();
           if (playPromise !== undefined) {
             await playPromise;
-            console.log('✅ Video playing with sound');
+            console.log('[Gift Video] Playing successfully');
           }
         } catch (err) {
-          console.warn('Video with sound failed, trying muted fallback:', err);
+          console.warn('[Gift Video] Playback failed, trying muted fallback:', err);
           try {
             if (videoRef.current) {
               videoRef.current.muted = true;
               await videoRef.current.play();
-              console.log('⚠️ Video playing muted');
+              console.log('[Gift Video] Playing muted');
             }
           } catch (e) {
-            console.error('Complete video play failure', e);
+            console.error('[Gift Video] Complete playback failure', e);
           }
         }
       };
@@ -670,6 +686,16 @@ export function GiftAnimationOverlay({
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
+                  {/* Loading state while video buffers */}
+                  {isVideoLoading && !isVideoReady && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className={cn(
+                        "h-16 w-16 rounded-full border-4 border-t-transparent animate-spin",
+                        tier === 'legendary' ? "border-yellow-400" : tier === 'epic' ? "border-purple-500" : "border-cyan-400"
+                      )} />
+                    </div>
+                  )}
+                  
                   {/* Hidden original video (for audio + timing reference) */}
                   <video 
                     ref={videoRef}
