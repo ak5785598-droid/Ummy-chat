@@ -337,6 +337,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
+  const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
   const [micInviteData, setMicInviteData] = useState<{ inviterName: string; inviterAvatar?: string; targetSeatIndex: number } | null>(null);
@@ -1226,6 +1227,51 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return doc(firestore, 'appConfig', 'rocket');
   }, [firestore]);
   const { data: rocketConfig } = useDoc(rocketConfigRef);
+
+  // SCREEN SHARE TARGET COORDINATION
+  const [screenShareTargetDoc, setScreenShareTargetDoc] = useState<any>(null);
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const screenShareRef = doc(firestore, 'chatRooms', room.id, 'features', 'screenShare');
+    const unsubscribe = onSnapshot(screenShareRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setScreenShareTargetDoc(snapshot.data());
+      } else {
+        setScreenShareTargetDoc(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, room.id]);
+
+  // Wrapper for startScreenShare that sets Firestore target
+  const handleStartScreenShare = async (quality: '480p' | '720p' | '1080p', target: { type: 'all' | 'specific', uid?: string, name?: string }) => {
+    if (firestore && room.id && currentUser?.uid) {
+      const screenShareRef = doc(firestore, 'chatRooms', room.id, 'features', 'screenShare');
+      await updateDocumentNonBlocking(screenShareRef, {
+        target,
+        startedBy: currentUser.uid,
+        startedAt: serverTimestamp(),
+        quality,
+      });
+    }
+    await startScreenShare(quality, target);
+  };
+
+  const handleStopScreenShare = async () => {
+    if (firestore && room.id) {
+      const screenShareRef = doc(firestore, 'chatRooms', room.id, 'features', 'screenShare');
+      await deleteDocumentNonBlocking(screenShareRef);
+    }
+    await stopScreenShare();
+  };
+
+  // Check if current user should see the screen share
+  const shouldShowScreenShare = useMemo(() => {
+    if (!screenShareTargetDoc) return false;
+    const target = screenShareTargetDoc.target;
+    if (!target || target.type === 'all') return true;
+    return target.uid === currentUser?.uid;
+  }, [screenShareTargetDoc, currentUser?.uid]);
 
   // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
   useEffect(() => {
@@ -3612,10 +3658,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         roomId={room.id}
         userId={currentUser?.uid || ''}
         isHost={isOwner || canManageRoom}
-        startScreenShare={startScreenShare}
-        stopScreenShare={stopScreenShare}
+        startScreenShare={handleStartScreenShare}
+        stopScreenShare={handleStopScreenShare}
         isScreenSharing={isScreenSharing}
-        remoteScreenTrack={remoteScreenTrack}
+        remoteScreenTrack={shouldShowScreenShare ? remoteScreenTrack : null}
+        participants={participants.map(p => ({
+          uid: p.uid,
+          name: p.name || 'Unknown',
+          avatarUrl: p.avatarUrl,
+          isHost: p.uid === room.ownerId,
+        }))}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `

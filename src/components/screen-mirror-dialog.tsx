@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader, Monitor, Wifi, WifiOff } from 'lucide-react';
+import { X, Loader, Monitor, Wifi, WifiOff, Users, User, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScreenMirrorDialogProps {
@@ -11,10 +11,11 @@ interface ScreenMirrorDialogProps {
   roomId: string;
   userId: string;
   isHost: boolean;
-  startScreenShare: (quality: '480p' | '720p' | '1080p') => Promise<void>;
+  startScreenShare: (quality: '480p' | '720p' | '1080p', target: { type: 'all' | 'specific', uid?: string, name?: string }) => Promise<void>;
   stopScreenShare: () => Promise<void>;
   isScreenSharing: boolean;
   remoteScreenTrack: any;
+  participants: Array<{ uid: string; name: string; avatarUrl?: string; isHost?: boolean }>;
 }
 
 export function ScreenMirrorDialog({
@@ -27,10 +28,14 @@ export function ScreenMirrorDialog({
   stopScreenShare,
   isScreenSharing,
   remoteScreenTrack,
+  participants,
 }: ScreenMirrorDialogProps) {
   const [quality, setQuality] = useState<'480p' | '720p' | '1080p'>('720p');
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [targetType, setTargetType] = useState<'all' | 'specific'>('all');
+  const [selectedTarget, setSelectedTarget] = useState<{ uid: string; name: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Display remote screen share
@@ -45,10 +50,22 @@ export function ScreenMirrorDialog({
     };
   }, [remoteScreenTrack]);
 
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setTargetType('all');
+      setSelectedTarget(null);
+      setSearchQuery('');
+    }
+  }, [open]);
+
   const handleStart = async () => {
     setIsStarting(true);
     try {
-      await startScreenShare(quality);
+      const target = targetType === 'all' 
+        ? { type: 'all' as const }
+        : { type: 'specific' as const, uid: selectedTarget?.uid, name: selectedTarget?.name };
+      await startScreenShare(quality, target);
     } catch (e) {
       console.error('[ScreenMirror] Failed to start:', e);
     } finally {
@@ -66,6 +83,13 @@ export function ScreenMirrorDialog({
       setIsStopping(false);
     }
   };
+
+  const filteredParticipants = participants.filter(p => 
+    p.uid !== userId && (
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.uid.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  );
 
   if (!open) return null;
 
@@ -149,6 +173,100 @@ export function ScreenMirrorDialog({
                 </div>
               )}
 
+              {/* Target Selection (Host only, when not sharing) */}
+              {isHost && !isScreenSharing && (
+                <div className="space-y-3">
+                  <label className="text-sm text-slate-400 font-medium">Share With</label>
+                  
+                  {/* Target Type Toggle */}
+                  <div className="flex bg-slate-800 p-1 rounded-xl">
+                    <button
+                      onClick={() => setTargetType('all')}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
+                        targetType === 'all' 
+                          ? "bg-blue-600 text-white shadow-lg" 
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      <Users className="h-4 w-4" />
+                      All Users
+                    </button>
+                    <button
+                      onClick={() => setTargetType('specific')}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
+                        targetType === 'specific' 
+                          ? "bg-blue-600 text-white shadow-lg" 
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      <User className="h-4 w-4" />
+                      Specific User
+                    </button>
+                  </div>
+
+                  {/* Specific User Selection */}
+                  {targetType === 'specific' && (
+                    <div className="space-y-2">
+                      {/* Search */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Search by name or ID..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* User List */}
+                      <div className="max-h-40 overflow-y-auto space-y-1 rounded-xl border border-slate-800 bg-slate-800/50 p-1">
+                        {filteredParticipants.length === 0 ? (
+                          <p className="text-center text-xs text-slate-500 py-4">No users found</p>
+                        ) : (
+                          filteredParticipants.map((p) => (
+                            <button
+                              key={p.uid}
+                              onClick={() => setSelectedTarget({ uid: p.uid, name: p.name })}
+                              className={cn(
+                                "w-full flex items-center gap-3 p-2.5 rounded-lg transition-all text-left",
+                                selectedTarget?.uid === p.uid
+                                  ? "bg-blue-600/20 border border-blue-500/50"
+                                  : "hover:bg-slate-700/50 border border-transparent"
+                              )}
+                            >
+                              <div className="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
+                                {p.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">{p.name}</p>
+                                <p className="text-[10px] text-slate-500 truncate">{p.uid}</p>
+                              </div>
+                              {selectedTarget?.uid === p.uid && (
+                                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Target Summary */}
+                  <div className="p-3 bg-slate-800/50 rounded-xl text-xs text-slate-400">
+                    {targetType === 'all' ? (
+                      <p>Screen will be shared with <span className="text-blue-400 font-bold">all room members</span></p>
+                    ) : selectedTarget ? (
+                      <p>Screen will be shared with <span className="text-blue-400 font-bold">{selectedTarget.name}</span> only</p>
+                    ) : (
+                      <p>Select a user to share with</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Screen Preview / Remote View */}
               <div className="aspect-video bg-black rounded-xl overflow-hidden relative border border-slate-800">
                 {remoteScreenTrack ? (
@@ -162,7 +280,9 @@ export function ScreenMirrorDialog({
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
                     <Loader className="h-10 w-10 animate-spin text-blue-500" />
                     <p className="text-sm">Sharing your screen...</p>
-                    <p className="text-xs text-slate-600">Quality: {quality}</p>
+                    <p className="text-xs text-slate-600">
+                      Quality: {quality} • {targetType === 'all' ? 'All users' : selectedTarget?.name || 'Selecting...'}
+                    </p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
@@ -175,7 +295,7 @@ export function ScreenMirrorDialog({
                         {isHost ? 'Start mirroring to share your screen' : 'Waiting for host to start...'}
                       </p>
                       <p className="text-xs text-slate-600 mt-1">
-                        {isHost ? 'Select quality and tap Start' : 'Screen share will appear here'}
+                        {isHost ? 'Select quality and target, then tap Start' : 'Screen share will appear here'}
                       </p>
                     </div>
                   </div>
@@ -188,8 +308,8 @@ export function ScreenMirrorDialog({
                   {!isScreenSharing ? (
                     <button
                       onClick={handleStart}
-                      disabled={isStarting}
-                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                      disabled={isStarting || (targetType === 'specific' && !selectedTarget)}
+                      className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                       {isStarting ? (
                         <>
@@ -229,7 +349,7 @@ export function ScreenMirrorDialog({
               <div className="p-3 bg-slate-800/50 rounded-xl text-xs text-slate-400 space-y-1.5">
                 <div className="flex items-start gap-2">
                   <span className="text-blue-400 mt-0.5">•</span>
-                  <p>Screen + Audio will be shared with all room members</p>
+                  <p>Screen + Audio will be shared with selected target</p>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-blue-400 mt-0.5">•</span>

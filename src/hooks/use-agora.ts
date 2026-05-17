@@ -87,6 +87,7 @@ export function useAgora(
   const [screenTrack, setScreenTrack] = useState<any>(null);
   const [remoteScreenTrack, setRemoteScreenTrack] = useState<any>(null);
   const screenTrackRef = useRef<any>(null);
+  const screenShareTargetRef = useRef<{ type: 'all' | 'specific', uid?: string, name?: string }>({ type: 'all' });
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const isProcessingConnectionRef = useRef(false);
@@ -469,15 +470,18 @@ export function useAgora(
   }, []);
 
   // SCREEN SHARING FUNCTIONS
-  const startScreenShare = useCallback(async (quality: '480p' | '720p' | '1080p' = '720p') => {
+  const startScreenShare = useCallback(async (quality: '480p' | '720p' | '1080p' = '720p', target: { type: 'all' | 'specific', uid?: string, name?: string } = { type: 'all' }) => {
     const client = clientRef.current;
     if (!client || !AgoraRTC) {
-      console.error('[NetMirror] Agora not initialized');
+      console.error('[ScreenMirror] Agora not initialized');
       return;
     }
 
     try {
-      console.log('[NetMirror] Starting screen share with quality:', quality);
+      console.log('[ScreenMirror] Starting screen share with quality:', quality, 'target:', target);
+      
+      // Store target for metadata
+      screenShareTargetRef.current = target;
       
       const encoderConfig = quality === '1080p' ? '1080p_1' : quality === '720p' ? '720p_1' : '480p_1';
       
@@ -502,9 +506,9 @@ export function useAgora(
       setScreenTrack(track);
       setIsScreenSharing(true);
       
-      console.log('[NetMirror] Screen sharing started successfully');
+      console.log('[ScreenMirror] Screen sharing started successfully');
     } catch (err) {
-      console.error('[NetMirror] Failed to start screen share:', err);
+      console.error('[ScreenMirror] Failed to start screen share:', err);
       throw err;
     }
   }, []);
