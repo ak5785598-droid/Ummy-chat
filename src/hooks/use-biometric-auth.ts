@@ -1,7 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CapacitorBiometricAuth } from 'capacitor-biometric-auth';
-import { SecureStorage } from '@/lib/secure-storage';
 import { Capacitor } from '@capacitor/core';
+import { SecureStorage } from '@/lib/secure-storage';
+
+interface BiometricAuthPlugin {
+  isAvailable: () => Promise<{ available: boolean }>;
+  authenticate: (options?: { title?: string; subtitle?: string; description?: string }) => Promise<{ success: boolean; message?: string }>;
+}
+
+let BiometricAuth: BiometricAuthPlugin | null = null;
+
+// Lazy load the plugin only on native platforms
+const loadBiometricPlugin = async (): Promise<BiometricAuthPlugin | null> => {
+  if (!Capacitor.isNativePlatform()) return null;
+  if (BiometricAuth) return BiometricAuth;
+
+  try {
+    const module = await import('capacitor-biometric-auth');
+    // Try different export names based on package version
+    BiometricAuth = (module as any).CapacitorBiometricAuth || 
+                    (module as any).BiometricAuth || 
+                    (module as any).default || 
+                    null;
+    return BiometricAuth;
+  } catch (error) {
+    console.warn('[Biometric] Failed to load plugin:', error);
+    return null;
+  }
+};
 
 export interface BiometricAuthState {
   isAvailable: boolean;
@@ -26,11 +51,17 @@ export function useBiometricAuth() {
 
     const checkAvailability = async () => {
       try {
-        const result = await CapacitorBiometricAuth.isAvailable();
+        const plugin = await loadBiometricPlugin();
+        if (!plugin) {
+          setState(prev => ({ ...prev, isAvailable: false }));
+          return;
+        }
+
+        const result = await plugin.isAvailable();
         const enabled = await SecureStorage.isBiometricEnabled();
         setState(prev => ({
           ...prev,
-          isAvailable: result.available || false,
+          isAvailable: result?.available || false,
           isEnabled: enabled,
         }));
       } catch (error) {
@@ -51,13 +82,23 @@ export function useBiometricAuth() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const result = await CapacitorBiometricAuth.authenticate({
+      const plugin = await loadBiometricPlugin();
+      if (!plugin) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: 'Biometric plugin not loaded',
+        }));
+        return null;
+      }
+
+      const result = await plugin.authenticate({
         title: 'Login to Ummy',
         subtitle: 'Use your biometric credential to login',
         description: 'Authenticate to access your account',
       });
 
-      if (result.success) {
+      if (result?.success) {
         const token = await SecureStorage.getToken();
         setState(prev => ({ ...prev, isLoading: false }));
         return token;
@@ -65,7 +106,7 @@ export function useBiometricAuth() {
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: result.message || 'Authentication failed',
+          error: result?.message || 'Authentication failed',
         }));
         return null;
       }
