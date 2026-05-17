@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader, ExternalLink, Play } from 'lucide-react';
+import { X, Loader, ExternalLink, Play, Smartphone, Globe } from 'lucide-react';
 import { InAppBrowser } from '@capacitor/inappbrowser';
 
 interface NetMirrorDialogProps {
@@ -13,19 +13,62 @@ interface NetMirrorDialogProps {
 
 const NETMIRROR_URL = 'https://netmirror.gg';
 
-// Desktop User-Agent to bypass mobile detection
+// Desktop User-Agent to bypass mobile detection (for WebView fallback)
 const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // PRIMARY: System Browser (Chrome Custom Tabs) - Cloudflare trusted
   const handleOpenNetMirror = async () => {
     try {
       setIsOpen(true);
       setError(null);
       
-      // Open with InAppBrowser WebView using desktop User-Agent
+      await InAppBrowser.openInSystemBrowser({
+        url: NETMIRROR_URL,
+        options: {
+          android: {
+            showTitle: true,
+            hideToolbarOnScroll: false,
+            viewStyle: 1, // FULL_SCREEN
+            startAnimation: 0, // FADE_IN
+            exitAnimation: 1, // FADE_OUT
+          },
+          iOS: {
+            closeButtonText: 2, // DONE
+            viewStyle: 2, // FULL_SCREEN
+            animationEffect: 2, // COVER_VERTICAL
+            enableBarsCollapsing: true,
+            enableReadersMode: false,
+          },
+        },
+      });
+      
+      InAppBrowser.addListener('browserClosed', () => {
+        setIsOpen(false);
+      });
+
+      // Cloudflare detection
+      InAppBrowser.addListener('browserPageNavigationCompleted', (data) => {
+        if (data.url?.includes('cloudflare') || data.url?.includes('security')) {
+          setError('Cloudflare verification detected. If stuck, try "Try In-App Browser" or "Open in External Browser"');
+        }
+      });
+    } catch (err: any) {
+      console.error('[NetMirror] Failed to open System Browser:', err);
+      setError('Failed to open NetMirror. Please try another option.');
+      setIsOpen(false);
+    }
+  };
+
+  // SECONDARY: WebView with desktop User-Agent - fallback
+  const handleOpenInAppBrowser = async () => {
+    try {
+      setIsOpen(true);
+      setError(null);
+      
       await InAppBrowser.openInWebView({
         url: NETMIRROR_URL,
         options: {
@@ -35,7 +78,7 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
           clearSessionCache: false,
           mediaPlaybackRequiresUserAction: false,
           closeButtonText: 'Done',
-          toolbarPosition: 0, // TOP
+          toolbarPosition: 0,
           showNavigationButtons: true,
           leftToRight: false,
           customWebViewUserAgent: DESKTOP_USER_AGENT,
@@ -49,37 +92,31 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
             enableViewportScale: true,
             allowInLineMediaPlayback: true,
             surpressIncrementalRendering: false,
-            viewStyle: 2, // FULL_SCREEN
-            animationEffect: 2, // COVER_VERTICAL
+            viewStyle: 2,
+            animationEffect: 2,
             allowsBackForwardNavigationGestures: true,
           },
         },
       });
       
-      // Listen for browser closed event
       InAppBrowser.addListener('browserClosed', () => {
         setIsOpen(false);
       });
-      
-      InAppBrowser.addListener('browserPageLoaded', () => {
-        console.log('[NetMirror] Page loaded');
-      });
     } catch (err: any) {
-      console.error('[NetMirror] Failed to open InAppBrowser:', err);
-      setError('Failed to open NetMirror. Please try again.');
+      console.error('[NetMirror] Failed to open WebView:', err);
+      setError('Failed to open NetMirror. Please try another option.');
       setIsOpen(false);
     }
   };
 
+  // TERTIARY: External Browser - ultimate fallback
   const handleOpenExternal = async () => {
     try {
-      // Fallback: open in external browser
       await InAppBrowser.openInExternalBrowser({
         url: NETMIRROR_URL,
       });
     } catch (err) {
       console.error('[NetMirror] Failed to open external browser:', err);
-      // Ultimate fallback
       window.open(NETMIRROR_URL, '_blank');
     }
   };
@@ -144,14 +181,14 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
 
               {/* Error Message */}
               {error && (
-                <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+                <div className="w-full p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-400">
                   {error}
                 </div>
               )}
 
               {/* Buttons */}
               <div className="w-full space-y-3 pt-2">
-                {/* Primary Button - Open in App Browser (Desktop Mode) */}
+                {/* Primary Button - System Browser (Recommended) */}
                 <button
                   onClick={handleOpenNetMirror}
                   disabled={isOpen}
@@ -169,15 +206,35 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
                     </>
                   )}
                 </button>
+                <p className="text-[10px] text-slate-500 -mt-2">Recommended • Cloudflare verification works</p>
 
-                {/* Secondary Button - Open in External Browser */}
+                {/* Secondary Button - WebView (Fallback) */}
+                <button
+                  onClick={handleOpenInAppBrowser}
+                  disabled={isOpen}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800/50 rounded-xl text-slate-300 font-medium text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Try In-App Browser
+                </button>
+                <p className="text-[10px] text-slate-500 -mt-2">If above doesn't work • Desktop mode</p>
+
+                {/* Tertiary Button - External Browser (Ultimate Fallback) */}
                 <button
                   onClick={handleOpenExternal}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 font-medium text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-slate-800/50 hover:bg-slate-800 rounded-xl text-slate-400 font-medium text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
-                  <ExternalLink className="h-4 w-4" />
-                  Open in Browser
+                  <Globe className="h-4 w-4" />
+                  Open in External Browser
                 </button>
+                <p className="text-[10px] text-slate-600 -mt-2">Opens in Chrome app • Always works</p>
+              </div>
+
+              {/* Warning Box */}
+              <div className="w-full p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  <span className="text-amber-400 font-bold">⚠️ Note:</span> If you see "Verify you are human" and it's stuck, use <span className="text-white font-medium">"Open in External Browser"</span> option.
+                </p>
               </div>
 
               {/* Info */}
