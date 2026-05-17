@@ -425,8 +425,12 @@ export function RoomPlayDialog({
     { 
       id: 'netmirror', 
       label: 'NetMirror', 
-      icon: <Monitor className="h-7 w-7 text-white drop-shadow-md" />, 
-      color: 'from-purple-500 to-purple-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(168,85,247,0.5)] border border-purple-500/50', 
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5 text-white drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
+        </svg>
+      ), 
+      color: 'from-red-600 to-red-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border border-red-600/50', 
       onClick: () => { onOpenNetMirror?.(); onOpenChange(false); } 
     },
     { 

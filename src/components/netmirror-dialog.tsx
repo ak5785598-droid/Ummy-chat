@@ -10,7 +10,7 @@ interface NetMirrorDialogProps {
   isHost: boolean;
 }
 
-const NETMIRROR_URL = 'https://netmirror.world';
+const NETMIRROR_URL = 'https://netmirror.gg';
 
 export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogProps) {
   if (!open) return null;
@@ -53,8 +53,10 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
             {/* Header */}
             <div className="p-4 border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center">
-                  <Monitor className="h-4 w-4 text-white" />
+                <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 3H8L16 13V3H19V21H16L8 11V21H5V3Z" fill="currentColor"/>
+                  </svg>
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">NetMirror</h2>
@@ -75,7 +77,7 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
               
               {/* Loading State Overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 pointer-events-none z-0">
-                <Loader className="h-10 w-10 animate-spin text-purple-500 mb-3" />
+                <Loader className="h-10 w-10 animate-spin text-red-500 mb-3" />
                 <p className="text-sm text-slate-400">Loading NetMirror...</p>
               </div>
             </div>
@@ -83,11 +85,11 @@ export function NetMirrorDialog({ open, onOpenChange, isHost }: NetMirrorDialogP
             {/* Info Footer */}
             <div className="p-3 bg-slate-800/50 text-xs text-slate-400 space-y-1 shrink-0 border-t border-slate-800">
               <div className="flex items-start gap-2">
-                <span className="text-purple-400 mt-0.5">•</span>
+                <span className="text-red-400 mt-0.5">•</span>
                 <p>Browse and watch movies/series directly</p>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-purple-400 mt-0.5">•</span>
+                <span className="text-red-400 mt-0.5">•</span>
                 <p>Use NetMirror's built-in player for best experience</p>
               </div>
             </div>
