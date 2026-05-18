@@ -3893,15 +3893,18 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       {/* LOOT SYSTEM */}
       <AiVoiceAnnouncer enabled={true} language="hi-IN" />
       
-      <LootBoxDisplay
-        levels={lootLevels}
-        currentProgress={roomGiftsSent}
-        isGateOpen={isLootGateOpen}
-        canOpenGate={true}
-        onOpenGate={() => setIsLootGateOpen(true)}
-        currentLevelIndex={currentLootLevelIndex}
-        className="absolute bottom-20 left-4 right-4 z-40"
-      />
+      {!isAnyDialogShowing && (
+        <div className="absolute left-3 bottom-[270px] z-40">
+          <LootBoxDisplay
+            levels={lootLevels}
+            currentProgress={roomGiftsSent}
+            isGateOpen={isLootGateOpen}
+            canOpenGate={true}
+            onOpenGate={() => setIsLootGateOpen(true)}
+            currentLevelIndex={currentLootLevelIndex}
+          />
+        </div>
+      )}
 
       <LootGate
         isOpen={isLootGateOpen}
