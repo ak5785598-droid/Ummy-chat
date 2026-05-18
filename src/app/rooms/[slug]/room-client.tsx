@@ -3791,7 +3791,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onComplete={() => setActiveGift(null)} 
       />
       <LuckyRainOverlay
-        active={isLuckyRainActive}
+        active={false} // DISABLED: Causing app hangs when rocket is full
         onComplete={() => setIsLuckyRainActive(false)}
       />
     </div>
