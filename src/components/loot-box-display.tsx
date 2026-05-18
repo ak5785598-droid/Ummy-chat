@@ -140,7 +140,7 @@ export function LootBoxDisplay({
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="absolute bottom-[70px] left-0 z-50 w-[280px] bg-gradient-to-br from-purple-900/95 via-indigo-900/95 to-slate-900/95 backdrop-blur-xl rounded-3xl border border-purple-500/30 p-5 shadow-2xl shadow-purple-500/30"
+              className="absolute bottom-[70px] right-0 z-50 w-[280px] bg-gradient-to-br from-purple-900/95 via-indigo-900/95 to-slate-900/95 backdrop-blur-xl rounded-3xl border border-purple-500/30 p-5 shadow-2xl shadow-purple-500/30"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
