@@ -108,8 +108,9 @@ import { AvatarFrame } from '@/components/avatar-frame';
 import { useRouter } from 'next/navigation';
 import { useRoomContext } from '@/components/room-provider';
 import { getUmmyAIResponse, moderateMessage, translateMessage, detectEmotion } from '@/actions/ai-actions';
-import { RocketDialog } from '@/components/rocket-dialog';
-import { RoomRocketBar } from '@/components/room-rocket-bar';
+// DISABLED: Rocket system replaced by Loot Box
+// import { RocketDialog } from '@/components/rocket-dialog';
+// import { RoomRocketBar } from '@/components/room-rocket-bar';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -334,7 +335,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isRoomSupportOpen, setIsRoomSupportOpen] = useState(false);
   const [isSpinOpen, setIsSpinOpen] = useState(false);
   const [isChestOpen, setIsChestOpen] = useState(false);
-  const [isRocketOpen, setIsRocketOpen] = useState(false);
+  // DISABLED: Rocket state
+  // const [isRocketOpen, setIsRocketOpen] = useState(false);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
@@ -865,23 +867,20 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   useEffect(() => {
     if (!firestore || !room.id) return;
 
-    // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
-    const sortedParticipants = [...(participantsData || [])]
-      .filter(p => p && p.uid)
-      .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-    const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
-    let electedLeaderUid = sortedParticipants[0]?.uid;
-    if (ownerOnline) electedLeaderUid = room.ownerId;
-    const isAIProcessor = currentUser?.uid === electedLeaderUid;
+  // DISABLED: Rocket Logic
+  /*
+  useEffect(() => {
+    if (!firestore || !room.id) return;
 
-    if (!isAIProcessor) return;
+    // 1. LEADERSHIP SYNC: Only the elected AI Processor handles rocket state shifts
+    if (currentUser?.uid !== room.ownerId && !room.moderatorIds?.includes(currentUser?.uid)) return;
 
     const rocket = room.rocket || { progress: 0, target: 10000, countdownUntil: null };
-    const now = Date.now();
+    const hasResetRocketRef = useRef(false);
 
-    // 0. DAILY RESET: Check if 24 hours have passed since last reset
+    // 24h Reset Logic
     const lastReset = (rocket as any).lastReset?.toDate?.() || new Date(0);
-    const hoursSinceReset = (now - lastReset.getTime()) / (1000 * 60 * 60);
+    const hoursSinceReset = (Date.now() - lastReset.getTime()) / (1000 * 60 * 60);
 
     if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
       hasResetRocketRef.current = true;
@@ -890,16 +889,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         'rocket.progress': 0,
         'rocket.countdownUntil': null,
         'rocket.lastReset': Timestamp.fromDate(new Date()),
-        'dailyWealth': 0 // RESET ROOM CUP COINS
       });
-      return; // Exit early, reset will trigger re-render
     }
 
-    // TRIGGER 1: Start Countdown when goal reached
     const currentTarget = rocketConfig?.target || rocket.target || 10000;
     if (rocket.progress >= currentTarget && !rocket.countdownUntil) {
       console.log('[Rocket] Goal reached! Starting 60s countdown...');
-      const launchTime = new Date(now + 60000);
+      const launchTime = new Date(Date.now() + 60000);
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.countdownUntil': Timestamp.fromDate(launchTime)
       });
@@ -908,20 +904,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     // TRIGGER 2: Launch Rocket when countdown finishes
     if (rocket.countdownUntil) {
       const launchTime = rocket.countdownUntil.toDate().getTime();
-      if (now >= launchTime) {
+      if (Date.now() >= launchTime) {
         console.log('[Rocket] Launching! Firing Lucky Rain...');
-
-        // Dispatch Lucky Rain Message
-        const msgRef = doc(collection(firestore, 'chatRooms', room.id, 'messages'));
-        setDocumentNonBlocking(msgRef, {
-          type: 'lucky-rain',
-          content: '🚀 ROOM ROCKET LAUNCHED! COLLECT YOUR REWARDS! 💰✨',
-          senderId: 'SYSTEM_BOT',
-          senderName: 'Ummy AI',
-          senderAvatar: 'https://img.icons8.com/isometric/512/rocket.png',
-          timestamp: serverTimestamp()
-        }, { merge: true });
-
+        // ... trigger lucky rain ...
+        
         // Reset Rocket State
         updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
           'rocket.progress': 0,
@@ -930,6 +916,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       }
     }
   }, [room.rocket, participantsData, currentUser?.uid, room.ownerId, firestore, room.id]);
+  */
 
   // ============================================================
   // MUSIC SYNC ENGINE - High-Fidelity Multi-user Sync
@@ -1229,11 +1216,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [firestore]);
   const { data: globalConfig } = useDoc(configRef);
 
-  const rocketConfigRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'appConfig', 'rocket');
-  }, [firestore]);
-  const { data: rocketConfig } = useDoc(rocketConfigRef);
+  // DISABLED: Rocket config
+  // const rocketConfigRef = useMemoFirebase(() => {
+  //   return doc(firestore, 'appConfig', 'rocket');
+  // }, [firestore]);
+  // const { data: rocketConfig } = useDoc(rocketConfigRef);
+  const rocketConfig = null;
 
   // SCREEN SHARE TARGET COORDINATION
   const [screenShareTargetDoc, setScreenShareTargetDoc] = useState<any>(null);
@@ -2658,7 +2646,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
-  const isAnyDialogShowing = isEmojiPickerOpen || isGiftPickerOpen || isRocketOpen || 
+  const isAnyDialogShowing = isEmojiPickerOpen || isGiftPickerOpen || /* isRocketOpen || */ 
     isRoomTasksOpen || isUserProfileCardOpen || isRoomSettingsOpen || 
     isRoomInfoOpen || isUserListOpen || isShareOpen || isSeatMenuOpen || 
     isRoomPlayOpen || isRoomGamesOpen || isMessagesOpen || isFollowersOpen || 
@@ -2676,10 +2664,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onMinimize={handleMinimize}
         onConfirmExit={handleExit}
       />
-      <RocketDialog
-        open={isRocketOpen}
-        onOpenChange={setIsRocketOpen}
-        currentExp={room.rocket?.progress || 0}
+        {/* DISABLED: Rocket Dialog
+        <RocketDialog
+          open={isRocketOpen}
+          onOpenChange={setIsRocketOpen}
+          currentExp={room.rocket?.progress || 0}
+          ...
+        />
+        */}
         roomName={room.title}
       />
       <RoomTasksDialog
@@ -3237,7 +3229,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       )}
 
 
-      {/* ROCKET PROGRESS BAR - Floating at bottom right */}
+      {/* DISABLED: Rocket Progress Bar
       {!isAnyDialogShowing && (
         <RoomRocketBar
           progress={room.rocket?.progress || 0}
@@ -3246,6 +3238,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           onOpenRocket={() => setIsRocketOpen(true)}
         />
       )}
+      */}
 
 
       <footer className="relative z-50 px-4 flex items-center justify-between pt-2 h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom,8px)]">

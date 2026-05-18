@@ -738,17 +738,31 @@ function AdminPageContent() {
   const giftFileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
-  // ROCKET MANAGEMENT STATE
-  const [rocketName, setRocketName] = useState("");
-  const [rocketTarget, setRocketTarget] = useState("10000");
-  const [isUploadingRocket, setIsUploadingRocket] = useState(false);
-  const [rocketImageFile, setRocketImageFile] = useState<File | null>(null);
-  const [rocketVideoFile, setRocketVideoFile] = useState<File | null>(null);
-  const [rocketImagePreview, setRocketImagePreview] = useState("");
-  const [rocketVideoPreview, setRocketVideoPreview] = useState("");
-  
-  const rocketImageInputRef = useRef<HTMLInputElement>(null);
-  const rocketVideoInputRef = useRef<HTMLInputElement>(null);
+  // LOOT MANAGEMENT STATE
+  const [lootLevels, setLootLevels] = useState<any[]>([
+    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", voice: "Ghar khulne wala hai!" },
+    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", voice: "Bank taiyaar hai!" },
+    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", voice: "Car aa gayi!" },
+    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", voice: "Hotel khul gaya!" },
+    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", voice: "Bus aa rahi hai!" },
+    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", voice: "Train ready hai!" },
+    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", voice: "Jahaaz taiyaar hai!" },
+    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", voice: "Hawai jahaaz udne wala hai!" },
+  ]);
+  const [selectedLevel, setSelectedLevel] = useState<string>("home");
+  const [lootRewards, setLootRewards] = useState<any[]>([
+    { id: "coins-common", name: "Coins", type: "coins", rarity: "common", value: 100, icon: "" },
+    { id: "frame-common", name: "Frame", type: "frame", rarity: "common", value: 1, icon: "" },
+    { id: "badge-rare", name: "Badge", type: "badge", rarity: "rare", value: 1, icon: "" },
+    { id: "special-legendary", name: "Special Item", type: "special", rarity: "legendary", value: 1, icon: "" },
+    { id: "theme-epic", name: "Room Theme", type: "theme", rarity: "epic", value: 1, icon: "" },
+  ]);
+  const [lootConfig, setLootConfig] = useState({
+    entryLimit: 20,
+    duration: 60,
+    gatePriority: "top_sender",
+  });
+  const [isSavingLoot, setIsSavingLoot] = useState(false);
 
   // LEVEL MANAGEMENT STATE
   const [levelTab, setLevelTab] = useState("budget");
@@ -883,18 +897,23 @@ function AdminPageContent() {
   }, [firestore, isAuthorized]);
   const { data: roomBannerConfig } = useDoc(roomBannerConfigRef);
 
-  const rocketConfigRef = useMemoFirebase(() => {
+  const lootConfigRef = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
-    return doc(firestore, "appConfig", "rocket");
+    return doc(firestore, "appConfig", "lootSettings");
   }, [firestore, isAuthorized]);
-  const { data: rocketConfig } = useDoc(rocketConfigRef);
+  const { data: lootConfigData } = useDoc(lootConfigRef);
 
   useEffect(() => {
-    if (rocketConfig) {
-      setRocketName(rocketConfig.name || "");
-      setRocketTarget(rocketConfig.target?.toString() || "10000");
+    if (lootConfigData) {
+      setLootLevels(lootConfigData.levels || lootLevels);
+      setLootRewards(lootConfigData.rewards || lootRewards);
+      setLootConfig({
+        entryLimit: lootConfigData.entryLimit || 20,
+        duration: lootConfigData.duration || 60,
+        gatePriority: lootConfigData.gatePriority || "top_sender",
+      });
     }
-  }, [rocketConfig]);
+  }, [lootConfigData]);
 
   const handleUpdateGlobalNotice = () => {
     if (!firestore || !isAuthorized || !configRef) return;
@@ -2057,42 +2076,22 @@ function AdminPageContent() {
     }
   };
 
-  const handleSaveRocket = async () => {
-    if (!firestore || !rocketConfigRef) return;
-    setIsUploadingRocket(true);
+  const handleSaveLoot = async () => {
+    if (!firestore || !lootConfigRef) return;
+    setIsSavingLoot(true);
     try {
-      let imageUrl = rocketConfig?.imageUrl || "";
-      let videoUrl = rocketConfig?.videoUrl || "";
-
-      // 1. Upload Rocket Image (Icon)
-      if (rocketImageFile) {
-        const iRef = ref(storage!, `rocket/icon_${Date.now()}_${rocketImageFile.name}`);
-        const iRes = await uploadBytes(iRef, rocketImageFile);
-        imageUrl = await getDownloadURL(iRes.ref);
-      }
-
-      // 2. Upload Rocket Animation Video
-      if (rocketVideoFile) {
-        const vRef = ref(storage!, `rocket/anim_${Date.now()}_${rocketVideoFile.name}`);
-        const vRes = await uploadBytes(vRef, rocketVideoFile);
-        videoUrl = await getDownloadURL(vRes.ref);
-      }
-
-      // 3. Save to Firestore
-      await setDoc(rocketConfigRef, {
-        name: rocketName,
-        target: parseInt(rocketTarget) || 10000,
-        imageUrl,
-        videoUrl,
+      await setDoc(lootConfigRef, {
+        levels: lootLevels,
+        rewards: lootRewards,
+        entryLimit: lootConfig.entryLimit,
+        duration: lootConfig.duration,
+        gatePriority: lootConfig.gatePriority,
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      setRocketImageFile(null);
-      setRocketVideoFile(null);
-      
       toast({
-        title: "Rocket Hub Synchronized",
-        description: "The room rocket configuration is now live.",
+        title: "Loot Management Synchronized",
+        description: "All loot levels, rewards, and settings are now live.",
       });
     } catch (err: any) {
       console.error(err);
@@ -2102,8 +2101,36 @@ function AdminPageContent() {
         description: err.message,
       });
     } finally {
-      setIsUploadingRocket(false);
+      setIsSavingLoot(false);
     }
+  };
+
+  const handleUpdateLevelThreshold = (levelId: string, newThreshold: number) => {
+    setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, threshold: newThreshold } : l));
+  };
+
+  const handleUpdateLevelVoice = (levelId: string, newVoice: string) => {
+    setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, voice: newVoice } : l));
+  };
+
+  const handleAddReward = () => {
+    const newReward = {
+      id: `reward-${Date.now()}`,
+      name: "New Reward",
+      type: "coins",
+      rarity: "common",
+      value: 100,
+      icon: "",
+    };
+    setLootRewards(prev => [...prev, newReward]);
+  };
+
+  const handleUpdateReward = (rewardId: string, field: string, value: any) => {
+    setLootRewards(prev => prev.map(r => r.id === rewardId ? { ...r, [field]: value } : r));
+  };
+
+  const handleRemoveReward = (rewardId: string) => {
+    setLootRewards(prev => prev.filter(r => r.id !== rewardId));
   };
 
 
@@ -2950,10 +2977,10 @@ function AdminPageContent() {
                   <Gift className="h-4 w-4" /> Gift Management
                 </TabsTrigger>
                 <TabsTrigger
-                  value="rocket-hub"
-                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-red-600 data-[state=active]:text-white shadow-lg"
+                  value="loot-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-purple-600 data-[state=active]:text-white shadow-lg"
                 >
-                  <Rocket className="h-4 w-4" /> Rocket Hub
+                  <Gift className="h-4 w-4" /> Loot Management
                 </TabsTrigger>
                 <TabsTrigger
                   value="loading-screen"
@@ -3001,120 +3028,192 @@ function AdminPageContent() {
             </ScrollArea>
           </div>
           <div className="flex-1 w-full min-w-0">
-            <TabsContent value="rocket-hub" className="m-0 space-y-6">
+            <TabsContent value="loot-management" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
                 <CardHeader className="px-0">
-                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-red-600">
-                    <Rocket className="h-6 w-6" /> Rocket Hub
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-purple-600">
+                    <Gift className="h-6 w-6" /> Loot Management
                   </CardTitle>
                   <CardDescription>
-                    Configure the room rocket's visual frequency and target.
+                    Configure loot box levels, rewards, thresholds, and Hindi voice announcements.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 space-y-8">
-                  <div className="p-6 bg-red-50 rounded-3xl border-2 border-red-100 flex flex-col gap-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* GLOBAL SETTINGS */}
+                  <div className="p-6 bg-purple-50 rounded-3xl border-2 border-purple-100 space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-purple-600">Global Settings</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase text-red-400">Rocket Name</Label>
-                        <Input 
-                          value={rocketName} 
-                          onChange={e => setRocketName(e.target.value)} 
-                          placeholder="e.g. Supernova Rocket" 
-                          className="h-12 rounded-xl border-red-200 bg-white"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase text-red-400">Target XP (Goal)</Label>
+                        <Label className="text-[10px] font-bold uppercase text-purple-400">Entry Limit (Fastest Clickers)</Label>
                         <Input 
                           type="number"
-                          value={rocketTarget} 
-                          onChange={e => setRocketTarget(e.target.value)} 
-                          placeholder="10000" 
-                          className="h-12 rounded-xl border-red-200 bg-white"
+                          value={lootConfig.entryLimit} 
+                          onChange={e => setLootConfig(prev => ({ ...prev, entryLimit: parseInt(e.target.value) || 20 }))} 
+                          className="h-12 rounded-xl border-purple-200 bg-white"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-red-500">1. Rocket Icon (Image)</Label>
-                        <div 
-                          onClick={() => rocketImageInputRef.current?.click()}
-                          className="aspect-video border-2 border-dashed border-red-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-red-100/30 cursor-pointer transition-all overflow-hidden relative group"
-                        >
-                          {rocketImagePreview || rocketConfig?.imageUrl ? (
-                            <img src={rocketImagePreview || rocketConfig?.imageUrl} alt="Preview" className="h-full w-full object-contain p-4" />
-                          ) : (
-                            <>
-                              <ImageIcon className="h-8 w-8 text-red-200" />
-                              <span className="text-[10px] font-bold uppercase text-red-300">Select Rocket Icon</span>
-                            </>
-                          )}
-                          <input 
-                            type="file" 
-                            ref={rocketImageInputRef} 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={e => {
-                              const f = e.target.files?.[0];
-                              if (f) {
-                                setRocketImageFile(f);
-                                setRocketImagePreview(URL.createObjectURL(f));
-                              }
-                            }}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-purple-400">Looting Duration (Seconds)</Label>
+                        <Input 
+                          type="number"
+                          value={lootConfig.duration} 
+                          onChange={e => setLootConfig(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))} 
+                          className="h-12 rounded-xl border-purple-200 bg-white"
+                        />
                       </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">2. Launch Animation (Video)</Label>
-                        <div 
-                          onClick={() => rocketVideoInputRef.current?.click()}
-                          className="aspect-video border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
-                        >
-                          {rocketVideoPreview || rocketConfig?.videoUrl ? (
-                            <video src={rocketVideoPreview || rocketConfig?.videoUrl} autoPlay muted loop className="h-full w-full object-contain" />
-                          ) : (
-                            <>
-                              <Video className="h-8 w-8 text-indigo-200" />
-                              <span className="text-[10px] font-bold uppercase text-indigo-300">Select Launch Video</span>
-                            </>
-                          )}
-                          <input 
-                            type="file" 
-                            ref={rocketVideoInputRef} 
-                            className="hidden" 
-                            accept="video/*" 
-                            onChange={e => {
-                              const f = e.target.files?.[0];
-                              if (f) {
-                                setRocketVideoFile(f);
-                                setRocketVideoPreview(URL.createObjectURL(f));
-                              }
-                            }}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-purple-400">Gate Opener Priority</Label>
+                        <Select value={lootConfig.gatePriority} onValueChange={(v) => setLootConfig(prev => ({ ...prev, gatePriority: v }))}>
+                          <SelectTrigger className="h-12 rounded-xl border-purple-200 bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="top_sender">Top Sender → 2nd → 3rd → Owner</SelectItem>
+                            <SelectItem value="owner_first">Owner → Top Sender → 2nd → 3rd</SelectItem>
+                            <SelectItem value="random">Random Eligible User</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-
-                    <Button
-                      onClick={handleSaveRocket}
-                      disabled={isUploadingRocket}
-                      className="h-16 rounded-[1.5rem] bg-red-600 hover:bg-red-700 text-white font-black uppercase text-lg shadow-xl shadow-red-500/20 active:scale-95 transition-all"
-                    >
-                      {isUploadingRocket ? (
-                        <div className="flex items-center gap-3">
-                          <Loader className="animate-spin h-6 w-6" />
-                          <span>Syncing Rocket...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <CheckCircle2 className="h-6 w-6" />
-                          <span>Synchronize Rocket Hub</span>
-                        </div>
-                      )}
-                    </Button>
                   </div>
+
+                  {/* LEVEL CONFIGURATION */}
+                  <div className="p-6 bg-indigo-50 rounded-3xl border-2 border-indigo-100 space-y-6">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-indigo-600">Level Configuration</h3>
+                    <div className="space-y-4">
+                      {lootLevels.map((level) => (
+                        <div key={level.id} className="p-4 bg-white rounded-2xl border border-indigo-100 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-bold uppercase text-indigo-700">{level.name}</h4>
+                            <Badge variant="outline" className="border-indigo-300 text-indigo-600">Threshold: {level.threshold.toLocaleString()}</Badge>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Threshold (Coins)</Label>
+                              <Input 
+                                type="number"
+                                value={level.threshold} 
+                                onChange={e => handleUpdateLevelThreshold(level.id, parseInt(e.target.value) || 0)} 
+                                className="h-10 rounded-xl border-indigo-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Hindi Voice Message</Label>
+                              <Input 
+                                value={level.voice} 
+                                onChange={e => handleUpdateLevelVoice(level.id, e.target.value)} 
+                                placeholder="e.g. Ghar khulne wala hai!"
+                                className="h-10 rounded-xl border-indigo-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Image/Animation URL</Label>
+                              <Input 
+                                value={level.image || ""} 
+                                onChange={e => setLootLevels(prev => prev.map(l => l.id === level.id ? { ...l, image: e.target.value } : l))} 
+                                placeholder="https://..."
+                                className="h-10 rounded-xl border-indigo-200 bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* REWARDS CONFIGURATION */}
+                  <div className="p-6 bg-pink-50 rounded-3xl border-2 border-pink-100 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-black uppercase tracking-widest text-pink-600">Rewards Pool</h3>
+                      <Button onClick={handleAddReward} size="sm" className="rounded-xl bg-pink-600 hover:bg-pink-700">
+                        <Plus className="h-4 w-4 mr-2" /> Add Reward
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {lootRewards.map((reward) => (
+                        <div key={reward.id} className="p-4 bg-white rounded-2xl border border-pink-100 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-pink-400">Name</Label>
+                              <Input 
+                                value={reward.name} 
+                                onChange={e => handleUpdateReward(reward.id, "name", e.target.value)} 
+                                className="h-10 rounded-xl border-pink-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-pink-400">Type</Label>
+                              <Select value={reward.type} onValueChange={(v) => handleUpdateReward(reward.id, "type", v)}>
+                                <SelectTrigger className="h-10 rounded-xl border-pink-200 bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="coins">Coins</SelectItem>
+                                  <SelectItem value="frame">Frame</SelectItem>
+                                  <SelectItem value="badge">Badge</SelectItem>
+                                  <SelectItem value="special">Special Item</SelectItem>
+                                  <SelectItem value="theme">Room Theme</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-pink-400">Rarity</Label>
+                              <Select value={reward.rarity} onValueChange={(v) => handleUpdateReward(reward.id, "rarity", v)}>
+                                <SelectTrigger className="h-10 rounded-xl border-pink-200 bg-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="common">Common</SelectItem>
+                                  <SelectItem value="rare">Rare</SelectItem>
+                                  <SelectItem value="epic">Epic</SelectItem>
+                                  <SelectItem value="legendary">Legendary</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-pink-400">Value/Quantity</Label>
+                              <Input 
+                                type="number"
+                                value={reward.value} 
+                                onChange={e => handleUpdateReward(reward.id, "value", parseInt(e.target.value) || 0)} 
+                                className="h-10 rounded-xl border-pink-200 bg-white"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-pink-400">Action</Label>
+                              <Button 
+                                onClick={() => handleRemoveReward(reward.id)} 
+                                variant="destructive" 
+                                size="sm"
+                                className="h-10 rounded-xl w-full"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* SAVE BUTTON */}
+                  <Button
+                    onClick={handleSaveLoot}
+                    disabled={isSavingLoot}
+                    className="h-16 rounded-[1.5rem] bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-lg shadow-xl shadow-purple-500/20 active:scale-95 transition-all"
+                  >
+                    {isSavingLoot ? (
+                      <div className="flex items-center gap-3">
+                        <Loader className="animate-spin h-6 w-6" />
+                        <span>Syncing Loot...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-6 w-6" />
+                        <span>Synchronize Loot Management</span>
+                      </div>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
