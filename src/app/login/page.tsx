@@ -591,10 +591,22 @@ const accountNumber = await generateNumericID(firestore, uid);
     }
   };
 
-  if (isAuthLoading || user) {
+  if (isAuthLoading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
         <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
+      </div>
+    );
+  }
+
+  // Prevent "Pink Screen of Death" for logged-in users waiting for ban check
+  // If user is logged in but banInfo is not set yet, show a verifying state
+  // This allows the BanDialog to render once banInfo is set
+  if (user && !banInfo) {
+    return (
+      <div className="flex h-[100dvh] w-full flex-col items-center justify-center bg-gradient-to-br from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
+        <UmmyLogoIcon className="h-24 w-24 animate-pulse" />
+        <p className="mt-4 text-white font-bold animate-pulse">Verifying account...</p>
       </div>
     );
   }
