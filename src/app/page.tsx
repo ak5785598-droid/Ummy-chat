@@ -34,7 +34,7 @@ export default function SplashScreen() {
       const redirectTimer = setTimeout(() => {
         const destination = user ? '/rooms' : '/login';
         router.push(destination);
-      }, 800); 
+      }, 300); 
       return () => clearTimeout(redirectTimer);
     }
 
