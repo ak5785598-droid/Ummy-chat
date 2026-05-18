@@ -3894,7 +3894,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       <AiVoiceAnnouncer enabled={true} language="hi-IN" />
       
       {!isAnyDialogShowing && (
-        <div className="absolute left-3 bottom-[270px] z-40">
+        <div className="absolute right-3 bottom-[80px] z-40">
           <LootBoxDisplay
             levels={lootLevels}
             currentProgress={roomGiftsSent}

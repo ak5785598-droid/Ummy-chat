@@ -97,6 +97,7 @@ import {
   Trophy,
   Crown,
   Award,
+  Smile,
   Home,
   X,
   Copy,
@@ -796,6 +797,17 @@ function AdminPageContent() {
   const [isAssigningMedal, setIsAssigningMedal] = useState(false);
   const [userMedals, setUserMedals] = useState<string[]>([]);
 
+  // EMOJI MANAGEMENT STATE
+  const [emojiName, setEmojiName] = useState("");
+  const [emojiDisplayTime, setEmojiDisplayTime] = useState("3");
+  const [emojiImageFile, setEmojiImageFile] = useState<File | null>(null);
+  const [emojiAnimationFile, setEmojiAnimationFile] = useState<File | null>(null);
+  const [emojiImagePreview, setEmojiImagePreview] = useState("");
+  const [emojiAnimationPreview, setEmojiAnimationPreview] = useState("");
+  const [isUploadingEmoji, setIsUploadingEmoji] = useState(false);
+  const emojiImageInputRef = useRef<HTMLInputElement>(null);
+  const emojiAnimationInputRef = useRef<HTMLInputElement>(null);
+
   const levelsListQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
     return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
@@ -807,6 +819,12 @@ function AdminPageContent() {
     return query(collection(firestore, "medals"), orderBy("updatedAt", "desc"));
   }, [firestore, isAuthorized]);
   const { data: medalsList, isLoading: isLoadingMedals } = useCollection(medalsListQuery);
+
+  const emojisQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "customEmojis"), orderBy("createdAt", "desc"));
+  }, [firestore, isAuthorized]);
+  const { data: emojisList, isLoading: isLoadingEmojis } = useCollection(emojisQuery);
 
   const giftsQuery = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -2240,6 +2258,71 @@ function AdminPageContent() {
     }
   };
 
+  const handleEmojiUpload = async () => {
+    if (!firestore || !storage || !isAuthorized) return;
+    if (!emojiName.trim()) {
+      toast({ variant: "destructive", title: "Missing Info", description: "Emoji name is required." });
+      return;
+    }
+    if (!emojiImageFile && !emojiAnimationFile) {
+      toast({ variant: "destructive", title: "Missing File", description: "Upload emoji image or animation." });
+      return;
+    }
+    setIsUploadingEmoji(true);
+    try {
+      let imageUrl = "";
+      let animationUrl = "";
+
+      if (emojiImageFile) {
+        const iRef = ref(storage, `emojis/${Date.now()}_${emojiImageFile.name}`);
+        const iRes = await uploadBytes(iRef, emojiImageFile);
+        imageUrl = await getDownloadURL(iRes.ref);
+      }
+
+      if (emojiAnimationFile) {
+        const aRef = ref(storage, `emojis/anim_${Date.now()}_${emojiAnimationFile.name}`);
+        const aRes = await uploadBytes(aRef, emojiAnimationFile);
+        animationUrl = await getDownloadURL(aRes.ref);
+      }
+
+      const emojiData = {
+        name: emojiName,
+        imageUrl,
+        animationUrl,
+        displayTime: parseInt(emojiDisplayTime) || 3,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      const emojiRef = doc(collection(firestore, "customEmojis"));
+      await setDoc(emojiRef, emojiData, { merge: true });
+
+      setEmojiName("");
+      setEmojiDisplayTime("3");
+      setEmojiImageFile(null);
+      setEmojiAnimationFile(null);
+      setEmojiImagePreview("");
+      setEmojiAnimationPreview("");
+      toast({ title: "Emoji Synchronized", description: `Emoji "${emojiName}" is now live.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Sync Failed", description: err.message });
+    } finally {
+      setIsUploadingEmoji(false);
+    }
+  };
+
+  const handleDeleteEmoji = async (emojiId: string) => {
+    if (!firestore || !isAuthorized) return;
+    try {
+      await deleteDocumentNonBlocking(doc(firestore, "customEmojis", emojiId));
+      toast({ title: "Emoji Deleted", description: "Emoji has been removed." });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Delete Failed", description: err.message });
+    }
+  };
+
   const handleMedalUserSearch = async () => {
     if (!firestore || !medalAssignSearchId.trim()) return;
     setIsSearchingMedal(true);
@@ -3023,6 +3106,12 @@ function AdminPageContent() {
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-amber-500 data-[state=active]:text-white shadow-lg"
                 >
                   <Award className="h-4 w-4" /> Medal Management
+                </TabsTrigger>
+                <TabsTrigger
+                  value="emoji-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-emerald-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Smile className="h-4 w-4" /> Emoji Management
                 </TabsTrigger>
               </TabsList>
             </ScrollArea>
@@ -6830,6 +6919,154 @@ function AdminPageContent() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="emoji-management" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl p-4 sm:p-8 bg-white">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-emerald-600">
+                    <Smile className="h-6 w-6" /> Emoji Management
+                  </CardTitle>
+                  <CardDescription>Upload custom emojis with images, animations, and display time settings.</CardDescription>
+                </CardHeader>
+                <CardContent className="px-0 space-y-6">
+                  {/* Upload Section */}
+                  <div className="p-6 bg-emerald-50 rounded-3xl border-2 border-emerald-100 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-emerald-400">Emoji Name</Label>
+                        <Input 
+                          value={emojiName} 
+                          onChange={e => setEmojiName(e.target.value)} 
+                          placeholder="e.g. Heart Eyes" 
+                          className="h-12 rounded-xl border-emerald-200 bg-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase text-emerald-400">Display Time (Seconds)</Label>
+                        <Input 
+                          type="number"
+                          value={emojiDisplayTime} 
+                          onChange={e => setEmojiDisplayTime(e.target.value)} 
+                          placeholder="3" 
+                          className="h-12 rounded-xl border-emerald-200 bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Emoji Image (Static)</Label>
+                        <div 
+                          onClick={() => emojiImageInputRef.current?.click()}
+                          className="aspect-square border-2 border-dashed border-emerald-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-emerald-100/30 cursor-pointer transition-all overflow-hidden relative"
+                        >
+                          {emojiImagePreview ? (
+                            <img src={emojiImagePreview} alt="Preview" className="h-full w-full object-contain p-4" />
+                          ) : (
+                            <>
+                              <ImageIcon className="h-8 w-8 text-emerald-200" />
+                              <span className="text-[10px] font-bold uppercase text-emerald-300">Select Image</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={emojiImageInputRef} 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setEmojiImageFile(f);
+                                setEmojiImagePreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Emoji Animation (Optional)</Label>
+                        <div 
+                          onClick={() => emojiAnimationInputRef.current?.click()}
+                          className="aspect-square border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
+                        >
+                          {emojiAnimationPreview ? (
+                            <video src={emojiAnimationPreview} autoPlay muted loop className="h-full w-full object-contain" />
+                          ) : (
+                            <>
+                              <Video className="h-8 w-8 text-indigo-200" />
+                              <span className="text-[10px] font-bold uppercase text-indigo-300">Select Animation</span>
+                            </>
+                          )}
+                          <input 
+                            type="file" 
+                            ref={emojiAnimationInputRef} 
+                            className="hidden" 
+                            accept="video/*,.gif" 
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) {
+                                setEmojiAnimationFile(f);
+                                setEmojiAnimationPreview(URL.createObjectURL(f));
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleEmojiUpload}
+                      disabled={isUploadingEmoji || !emojiName.trim() || (!emojiImageFile && !emojiAnimationFile)}
+                      className="h-16 rounded-[1.5rem] bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-lg shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                    >
+                      {isUploadingEmoji ? (
+                        <div className="flex items-center gap-3">
+                          <Loader className="animate-spin h-6 w-6" />
+                          <span>Syncing Emoji...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <CheckCircle2 className="h-6 w-6" />
+                          <span>Synchronize Emoji</span>
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Existing Emojis List */}
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Existing Emojis</h3>
+                    {isLoadingEmojis ? (
+                      <div className="flex justify-center py-8"><Loader className="h-6 w-6 animate-spin text-emerald-500" /></div>
+                    ) : emojisList && emojisList.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {emojisList.map((emoji: any) => (
+                          <div key={emoji.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            {emoji.imageUrl ? (
+                              <img src={emoji.imageUrl} alt={emoji.name} className="h-10 w-10 rounded-lg object-cover" />
+                            ) : emoji.animationUrl ? (
+                              <video src={emoji.animationUrl} autoPlay muted loop className="h-10 w-10 rounded-lg object-cover" />
+                            ) : (
+                              <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center"><Smile className="h-5 w-5 text-emerald-600" /></div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate">{emoji.name}</p>
+                              <p className="text-[10px] text-slate-500">{emoji.displayTime || 3}s display</p>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteEmoji(emoji.id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 text-center py-4">No emojis added yet.</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
