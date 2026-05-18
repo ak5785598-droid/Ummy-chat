@@ -111,6 +111,10 @@ import { getUmmyAIResponse, moderateMessage, translateMessage, detectEmotion } f
 // DISABLED: Rocket system replaced by Loot Box
 // import { RocketDialog } from '@/components/rocket-dialog';
 // import { RoomRocketBar } from '@/components/room-rocket-bar';
+import { AiVoiceAnnouncer } from '@/components/ai-voice-announcer';
+import { LootBoxDisplay } from '@/components/loot-box-display';
+import { LootGate } from '@/components/loot-gate';
+import { LootingRoom } from '@/components/looting-room';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
 import { DailyRewardDialog } from '@/components/daily-reward-dialog';
@@ -337,6 +341,19 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isChestOpen, setIsChestOpen] = useState(false);
   // DISABLED: Rocket state
   // const [isRocketOpen, setIsRocketOpen] = useState(false);
+
+  // LOOT SYSTEM STATE
+  const [lootLevels, setLootLevels] = useState<any[]>([]);
+  const [lootRewards, setLootRewards] = useState<any[]>([]);
+  const [lootConfig, setLootConfigState] = useState({ entryLimit: 20, duration: 60, gatePriority: "top_sender" });
+  const [isLootGateOpen, setIsLootGateOpen] = useState(false);
+  const [isLootingActive, setIsLootingActive] = useState(false);
+  const [lootGateEntries, setLootGateEntries] = useState<string[]>([]);
+  const [hasEnteredLoot, setHasEnteredLoot] = useState(false);
+  const [collectedLootItems, setCollectedLootItems] = useState<any[]>([]);
+  const [lootTimeRemaining, setLootTimeRemaining] = useState(60);
+  const [currentLootLevelIndex, setCurrentLootLevelIndex] = useState(0);
+  const [roomGiftsSent, setRoomGiftsSent] = useState(0);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
@@ -794,6 +811,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           requestAnimationFrame(() => {
             chunk.forEach(msg => {
               if (msg.type === 'gift' && msg.giftId) {
+                // INCREMENT ROOM GIFT COUNTER FOR LOOT PROGRESSION
+                setRoomGiftsSent(prev => prev + (msg.giftValue || 1));
+
                 // TRIGGER LOCAL ANIMATION:
                 setActiveGift({
                   giftId: msg.giftId,
@@ -864,9 +884,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [firestoreMessages, currentUser?.uid, canManageRoom, room.ownerId, room.moderatorIds]);
 
   // --- ROOM ROCKET SYSTEM ENGINE (Wafa/Haza Style) ---
-  useEffect(() => {
-    if (!firestore || !room.id) return;
-
   // DISABLED: Rocket Logic
   /*
   useEffect(() => {
@@ -1038,6 +1055,52 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
   }, [roomMusicLibrary, room?.id, room?.currentMusicId, isRepeatEnabled]);
+
+  // LOOT TIMER
+  useEffect(() => {
+    if (!isLootingActive || lootTimeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setLootTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsLootingActive(false);
+          setHasEnteredLoot(false);
+          setLootGateEntries([]);
+          setCollectedLootItems([]);
+          // Announce end in Hindi
+          if ((window as any).__announceLoot) {
+            (window as any).__announceLoot("Loot samapt! Agli baar phir aana!");
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLootingActive, lootTimeRemaining]);
+
+  // LOOT LEVEL PROGRESSION
+  useEffect(() => {
+    if (lootLevels.length === 0) return;
+
+    let newIndex = 0;
+    for (let i = lootLevels.length - 1; i >= 0; i--) {
+      if (roomGiftsSent >= lootLevels[i].threshold) {
+        newIndex = i;
+        break;
+      }
+    }
+
+    if (newIndex !== currentLootLevelIndex) {
+      setCurrentLootLevelIndex(newIndex);
+      // Announce level up in Hindi
+      if ((window as any).__announceLoot && lootLevels[newIndex]?.voice) {
+        (window as any).__announceLoot(lootLevels[newIndex].voice);
+      }
+    }
+  }, [roomGiftsSent, lootLevels, currentLootLevelIndex]);
 
   const { userProfile } = useUserProfile(currentUser?.uid);
 
@@ -1222,6 +1285,25 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   // }, [firestore]);
   // const { data: rocketConfig } = useDoc(rocketConfigRef);
   const rocketConfig = null;
+
+  // LOOT SYSTEM CONFIG
+  const lootConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'appConfig', 'lootSettings');
+  }, [firestore]);
+  const { data: lootSettingsData } = useDoc(lootConfigRef);
+
+  useEffect(() => {
+    if (lootSettingsData) {
+      setLootLevels(lootSettingsData.levels || []);
+      setLootRewards(lootSettingsData.rewards || []);
+      setLootConfigState({
+        entryLimit: lootSettingsData.entryLimit || 20,
+        duration: lootSettingsData.duration || 60,
+        gatePriority: lootSettingsData.gatePriority || "top_sender",
+      });
+    }
+  }, [lootSettingsData]);
 
   // SCREEN SHARE TARGET COORDINATION
   const [screenShareTargetDoc, setScreenShareTargetDoc] = useState<any>(null);
@@ -2669,11 +2751,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           open={isRocketOpen}
           onOpenChange={setIsRocketOpen}
           currentExp={room.rocket?.progress || 0}
-          ...
+          roomName={room.title}
         />
         */}
-        roomName={room.title}
-      />
       <RoomTasksDialog
         open={isRoomTasksOpen}
         onOpenChange={setIsRoomTasksOpen}
@@ -3786,6 +3866,63 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       <LuckyRainOverlay
         active={false} // DISABLED: Causing app hangs when rocket is full
         onComplete={() => setIsLuckyRainActive(false)}
+      />
+
+      {/* LOOT SYSTEM */}
+      <AiVoiceAnnouncer enabled={true} language="hi-IN" />
+      
+      {lootLevels.length > 0 && (
+        <LootBoxDisplay
+          levels={lootLevels}
+          currentProgress={roomGiftsSent}
+          isGateOpen={isLootGateOpen}
+          canOpenGate={true}
+          onOpenGate={() => setIsLootGateOpen(true)}
+          currentLevelIndex={currentLootLevelIndex}
+          className="absolute bottom-20 left-4 right-4 z-40"
+        />
+      )}
+
+      <LootGate
+        isOpen={isLootGateOpen}
+        levelName={lootLevels[currentLootLevelIndex]?.name || "Home"}
+        levelImage={lootLevels[currentLootLevelIndex]?.image}
+        entryLimit={lootConfig.entryLimit}
+        currentEntries={lootGateEntries.length}
+        timeRemaining={lootTimeRemaining}
+        onEnter={() => {
+          if (currentUser?.uid && !hasEnteredLoot) {
+            setLootGateEntries(prev => [...prev, currentUser.uid]);
+            setHasEnteredLoot(true);
+            setTimeout(() => {
+              setIsLootGateOpen(false);
+              setIsLootingActive(true);
+              setLootTimeRemaining(lootConfig.duration);
+            }, 500);
+          }
+        }}
+        hasEntered={hasEnteredLoot}
+        onClose={() => setIsLootGateOpen(false)}
+      />
+
+      <LootingRoom
+        active={isLootingActive}
+        rewards={lootRewards}
+        timeRemaining={lootTimeRemaining}
+        onCollect={(item) => {
+          setCollectedLootItems(prev => [...prev, item]);
+          // Announce in Hindi
+          if ((window as any).__announceLoot) {
+            (window as any).__announceLoot(`${item.reward.name} mila!`);
+          }
+        }}
+        onClose={() => {
+          setIsLootingActive(false);
+          setHasEnteredLoot(false);
+          setLootGateEntries([]);
+          setCollectedLootItems([]);
+        }}
+        collectedItems={collectedLootItems}
       />
     </div>
   );
