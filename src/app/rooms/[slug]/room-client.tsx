@@ -375,7 +375,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [collectedLootItems, setCollectedLootItems] = useState<any[]>([]);
   const [lootTimeRemaining, setLootTimeRemaining] = useState(60);
   const [currentLootLevelIndex, setCurrentLootLevelIndex] = useState(0);
-  const [roomGiftsSent, setRoomGiftsSent] = useState(0);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
@@ -833,9 +832,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           requestAnimationFrame(() => {
             chunk.forEach(msg => {
               if (msg.type === 'gift' && msg.giftId) {
-                // INCREMENT ROOM GIFT COUNTER FOR LOOT PROGRESSION
-                setRoomGiftsSent(prev => prev + (msg.giftValue || 1));
-
                 // TRIGGER LOCAL ANIMATION:
                 setActiveGift({
                   giftId: msg.giftId,
@@ -1107,9 +1103,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   useEffect(() => {
     if (lootLevels.length === 0) return;
 
+    const totalGifts = room.stats?.dailyGifts || 0;
+    const lastLevelThreshold = lootLevels[lootLevels.length - 1]?.threshold || 500000;
+    
+    // Calculate effective progress with looping
+    const effectiveProgress = totalGifts % lastLevelThreshold;
+    
     let newIndex = 0;
     for (let i = lootLevels.length - 1; i >= 0; i--) {
-      if (roomGiftsSent >= lootLevels[i].threshold) {
+      if (effectiveProgress >= lootLevels[i].threshold) {
         newIndex = i;
         break;
       }
@@ -1118,11 +1120,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (newIndex !== currentLootLevelIndex) {
       setCurrentLootLevelIndex(newIndex);
       // Announce level up in Hindi
-      if ((window as any).__announceLoot && lootLevels[newIndex]?.voice) {
-        (window as any).__announceLoot(lootLevels[newIndex].voice);
+      if (lootLevels[newIndex]?.voice) {
+        const announce = (window as any).__announceLoot;
+        if (announce) {
+          setTimeout(() => announce(lootLevels[newIndex].voice), 300);
+        }
       }
     }
-  }, [roomGiftsSent, lootLevels, currentLootLevelIndex]);
+  }, [room.stats?.dailyGifts, lootLevels, currentLootLevelIndex]);
 
   const { userProfile } = useUserProfile(currentUser?.uid);
 
@@ -3897,9 +3902,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <div className="absolute right-3 bottom-[80px] z-40">
           <LootBoxDisplay
             levels={lootLevels}
-            currentProgress={roomGiftsSent}
+            currentProgress={room.stats?.dailyGifts || 0}
             isGateOpen={isLootGateOpen}
-            canOpenGate={true}
+            canOpenGate={(room.stats?.dailyGifts || 0) >= (lootLevels[currentLootLevelIndex]?.threshold || 0)}
             onOpenGate={() => setIsLootGateOpen(true)}
             currentLevelIndex={currentLootLevelIndex}
           />

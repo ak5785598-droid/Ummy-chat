@@ -49,16 +49,20 @@ export function LootBoxDisplay({
   const currentLevel = levels[currentLevelIndex];
   const nextLevel = levels[currentLevelIndex + 1];
   
+  // Calculate progress within current level
+  const lastLevelThreshold = levels[levels.length - 1]?.threshold || 500000;
+  const effectiveProgress = currentProgress % lastLevelThreshold;
+  
   const progressPercent = nextLevel
     ? Math.min(
         Math.max(
-          ((currentProgress - currentLevel.threshold) /
+          ((effectiveProgress - currentLevel.threshold) /
             (nextLevel.threshold - currentLevel.threshold)) * 100,
           0
         ),
         100
       )
-    : 100;
+    : effectiveProgress >= currentLevel.threshold ? 100 : 0;
 
   if (isGateOpen) return null;
 
@@ -168,7 +172,7 @@ export function LootBoxDisplay({
               {/* Progress Info */}
               <div className="mb-4 p-3 bg-white/5 rounded-2xl">
                 <div className="flex justify-between text-xs mb-2">
-                  <span className="text-purple-300">{currentProgress.toLocaleString()} coins</span>
+                  <span className="text-purple-300">{effectiveProgress.toLocaleString()} coins</span>
                   <span className="text-purple-300">
                     {nextLevel ? `${nextLevel.threshold.toLocaleString()} to ${nextLevel.name}` : "MAX"}
                   </span>
