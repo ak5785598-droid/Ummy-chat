@@ -342,10 +342,32 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   // DISABLED: Rocket state
   // const [isRocketOpen, setIsRocketOpen] = useState(false);
 
-  // LOOT SYSTEM STATE
-  const [lootLevels, setLootLevels] = useState<any[]>([]);
-  const [lootRewards, setLootRewards] = useState<any[]>([]);
-  const [lootConfig, setLootConfigState] = useState({ entryLimit: 20, duration: 60, gatePriority: "top_sender" });
+  // LOOT SYSTEM DEFAULTS
+  const DEFAULT_LOOT_LEVELS = [
+    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", voice: "Ghar khulne wala hai!" },
+    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", voice: "Bank taiyaar hai!" },
+    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", voice: "Car aa gayi!" },
+    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", voice: "Hotel khul gaya!" },
+    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", voice: "Bus aa rahi hai!" },
+    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", voice: "Train ready hai!" },
+    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", voice: "Jahaaz taiyaar hai!" },
+    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", voice: "Hawai jahaaz udne wala hai!" },
+  ];
+
+  const DEFAULT_LOOT_REWARDS = [
+    { id: "coins-common", name: "Coins", type: "coins", rarity: "common", value: 100, icon: "" },
+    { id: "frame-common", name: "Frame", type: "frame", rarity: "common", value: 1, icon: "" },
+    { id: "badge-rare", name: "Badge", type: "badge", rarity: "rare", value: 1, icon: "" },
+    { id: "special-legendary", name: "Special Item", type: "special", rarity: "legendary", value: 1, icon: "" },
+    { id: "theme-epic", name: "Room Theme", type: "theme", rarity: "epic", value: 1, icon: "" },
+  ];
+
+  const DEFAULT_LOOT_CONFIG = { entryLimit: 20, duration: 60, gatePriority: "top_sender" };
+
+  // LOOT SYSTEM STATE (with defaults)
+  const [lootLevels, setLootLevels] = useState<any[]>(DEFAULT_LOOT_LEVELS);
+  const [lootRewards, setLootRewards] = useState<any[]>(DEFAULT_LOOT_REWARDS);
+  const [lootConfig, setLootConfigState] = useState(DEFAULT_LOOT_CONFIG);
   const [isLootGateOpen, setIsLootGateOpen] = useState(false);
   const [isLootingActive, setIsLootingActive] = useState(false);
   const [lootGateEntries, setLootGateEntries] = useState<string[]>([]);
@@ -1295,8 +1317,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   useEffect(() => {
     if (lootSettingsData) {
-      setLootLevels(lootSettingsData.levels || []);
-      setLootRewards(lootSettingsData.rewards || []);
+      setLootLevels(lootSettingsData.levels || DEFAULT_LOOT_LEVELS);
+      setLootRewards(lootSettingsData.rewards || DEFAULT_LOOT_REWARDS);
       setLootConfigState({
         entryLimit: lootSettingsData.entryLimit || 20,
         duration: lootSettingsData.duration || 60,
@@ -3871,17 +3893,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       {/* LOOT SYSTEM */}
       <AiVoiceAnnouncer enabled={true} language="hi-IN" />
       
-      {lootLevels.length > 0 && (
-        <LootBoxDisplay
-          levels={lootLevels}
-          currentProgress={roomGiftsSent}
-          isGateOpen={isLootGateOpen}
-          canOpenGate={true}
-          onOpenGate={() => setIsLootGateOpen(true)}
-          currentLevelIndex={currentLootLevelIndex}
-          className="absolute bottom-20 left-4 right-4 z-40"
-        />
-      )}
+      <LootBoxDisplay
+        levels={lootLevels}
+        currentProgress={roomGiftsSent}
+        isGateOpen={isLootGateOpen}
+        canOpenGate={true}
+        onOpenGate={() => setIsLootGateOpen(true)}
+        currentLevelIndex={currentLootLevelIndex}
+        className="absolute bottom-20 left-4 right-4 z-40"
+      />
 
       <LootGate
         isOpen={isLootGateOpen}
