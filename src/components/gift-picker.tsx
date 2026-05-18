@@ -343,25 +343,26 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    const recipientSeat = recipientObj?.seatIndex || 1;
    const recipientName = recipientObj?.name || 'Someone';
 
-   const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
-    batch.set(msgRef, {
-      type: 'gift',
-      senderId: user.uid,
-      senderName: userProfile.username,
-      giftId: selectedGift.id,
-      giftName: selectedGift.name,
-      animationId: selectedGift.animationId,
-      imageUrl: selectedGift.imageUrl || null,
-      animationUrl: selectedGift.animationUrl || null,
-      videoUrl: selectedGift.videoUrl || null,
-      soundUrl: selectedGift.soundUrl || null,
-      tier: selectedGift.tier || 'normal',
-      recipientId: firstRecipientUid,
-      receiverName: recipientName,
-      recipientSeat: recipientSeat,
-      text: `sent ${selectedGift.name} x${qty} to ${recipientName}`,
-      timestamp: serverTimestamp()
-    });
+    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
+     batch.set(msgRef, {
+       type: 'gift',
+       senderId: user.uid,
+       senderName: userProfile.username,
+       giftId: selectedGift.id,
+       giftName: selectedGift.name,
+       giftValue: totalCost,
+       animationId: selectedGift.animationId,
+       imageUrl: selectedGift.imageUrl || null,
+       animationUrl: selectedGift.animationUrl || null,
+       videoUrl: selectedGift.videoUrl || null,
+       soundUrl: selectedGift.soundUrl || null,
+       tier: selectedGift.tier || 'normal',
+       recipientId: firstRecipientUid,
+       receiverName: recipientName,
+       recipientSeat: recipientSeat,
+       text: `sent ${selectedGift.name} x${qty} to ${recipientName}`,
+       timestamp: serverTimestamp()
+     });
 
    await batch.commit();
 
