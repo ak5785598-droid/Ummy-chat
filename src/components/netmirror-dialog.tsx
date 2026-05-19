@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Loader, Play, ExternalLink, Smartphone, Globe } from 'lucide-react';
+import { Search, X, Loader, Play, ExternalLink, Smartphone, Globe, AlertCircle } from 'lucide-react';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface NetMirrorDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ const NETMIRROR_APP_PACKAGE = 'com.movie.NetMirror';
 
 export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, onCloseForAll }: NetMirrorDialogProps) {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [movieTitle, setMovieTitle] = useState('');
   const [movieUrl, setMovieUrl] = useState('');
   const [netMirrorState, setNetMirrorState] = useState<NetMirrorState | null>(null);
@@ -75,19 +77,43 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
   }, [netMirrorRef, isHost]);
 
   const openNetMirrorApp = useCallback(() => {
-    // Try to open Android app via intent
-    const appUrl = `intent://#Intent;scheme=https;package=${NETMIRROR_APP_PACKAGE};end`;
-    window.location.href = appUrl;
+    const appPackage = NETMIRROR_APP_PACKAGE;
+    const playStoreUrl = `https://play.google.com/store/apps/details?id=${appPackage}`;
     
-    // Fallback to web after delay
-    setTimeout(() => {
+    // Check if user is on Android
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    if (isAndroid) {
+      // On Android: Try to open app via intent
+      toast({
+        title: 'Opening NetMirror App...',
+        description: 'If app is not installed, Play Store will open.',
+      });
+      
+      const intentUrl = `intent://#Intent;scheme=https;package=${appPackage};end`;
+      window.location.href = intentUrl;
+      
+      // Fallback to Play Store if app not installed
+      setTimeout(() => {
+        window.open(playStoreUrl, '_blank');
+      }, 2000);
+    } else {
+      // On Desktop/iOS: Open web version directly
+      toast({
+        title: 'Opening NetMirror Web',
+        description: 'App is only available on Android. Opening web version...',
+      });
       window.open(NETMIRROR_WEB_URL, '_blank');
-    }, 1000);
-  }, []);
+    }
+  }, [toast]);
 
   const openNetMirrorWeb = useCallback(() => {
+    toast({
+      title: 'Opening NetMirror Web',
+      description: 'Note: Web version shows ads on every click.',
+    });
     window.open(NETMIRROR_WEB_URL, '_blank');
-  }, []);
+  }, [toast]);
 
   const isWatching = netMirrorState?.isActive && netMirrorState.movieTitle;
 
