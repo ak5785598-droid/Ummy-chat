@@ -1,6 +1,7 @@
 'use client';
 
 import { Capacitor } from '@capacitor/core';
+import { InAppBrowser } from '@capacitor/inappbrowser';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
@@ -2594,8 +2595,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     setIsNetMirrorWatchOpen(false);
   }, []);
 
-  const handleJoinNetMirror = useCallback(() => {
-    window.open('https://netmirror.world', '_blank');
+  const handleJoinNetMirror = useCallback(async () => {
+    if (Capacitor.isNativePlatform()) {
+      await InAppBrowser.openInSystemBrowser({
+        url: 'https://netmirror.world',
+        options: {
+          android: {
+            showTitle: true,
+            hideToolbarOnScroll: false,
+          },
+          iOS: {
+            closeButtonText: 2,
+          },
+        },
+      });
+    } else {
+      window.open('https://netmirror.world', '_blank');
+    }
     toast({ 
       title: 'NetMirror Opened', 
       description: 'Find the same movie the host is watching.',
