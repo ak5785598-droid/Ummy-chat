@@ -2594,6 +2594,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     setIsNetMirrorWatchOpen(false);
   }, []);
 
+  const handleJoinNetMirror = useCallback(() => {
+    window.open('https://netmirror.world', '_blank');
+    toast({ 
+      title: 'NetMirror Opened', 
+      description: 'Find the same movie the host is watching.',
+    });
+  }, [toast]);
+
   const handleDismissNetMirrorIndicator = useCallback(() => {
     setNetMirrorSession(null);
   }, []);
@@ -3954,6 +3962,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         movieTitle={netMirrorSession?.movieTitle || ''}
         startedBy={netMirrorSession?.startedBy || ''}
         currentUserId={currentUser?.uid || ''}
+        onJoin={handleJoinNetMirror}
         onDismiss={handleDismissNetMirrorIndicator}
       />
 
