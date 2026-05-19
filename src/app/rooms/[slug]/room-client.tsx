@@ -215,7 +215,8 @@ const Seat = memo(({
   isSeatMuted,
   roomOwnerId,
   roomModeratorIds = [],
-  theme
+  theme,
+  customEmojiMap
 }: {
   index: number;
   occupant?: RoomParticipant;
@@ -226,6 +227,7 @@ const Seat = memo(({
   roomOwnerId: string;
   roomModeratorIds: string[];
   theme: any;
+  customEmojiMap?: Map<string, any>;
 }) => {
   const { user } = useUser();
   const { speakingVolumes } = useVoiceActivityContext();
@@ -240,7 +242,11 @@ const Seat = memo(({
   return (
     <div className="flex flex-col items-center gap-1 w-full">
       <div className="relative overflow-visible">
-        <EmojiReactionOverlay emoji={occupant?.activeEmoji} size="sm" />
+        <EmojiReactionOverlay 
+          emoji={occupant?.activeEmoji} 
+          customEmojiData={occupant?.activeEmoji ? customEmojiMap?.get(occupant.activeEmoji) : undefined}
+          size="sm" 
+        />
 
         {occupant && (
           <VoiceWaveIndicator
@@ -1319,6 +1325,27 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return doc(firestore, 'appConfig', 'lootSettings');
   }, [firestore]);
   const { data: lootSettingsData } = useDoc(lootConfigRef);
+
+  // CUSTOM EMOJIS
+  const customEmojisQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "customEmojis"), orderBy("createdAt", "desc"));
+  }, [firestore]);
+  const { data: customEmojis } = useCollection(customEmojisQuery);
+
+  // Create emoji ID to data map
+  const customEmojiMap = useMemo(() => {
+    const map = new Map();
+    if (customEmojis) {
+      customEmojis.forEach((emoji: any) => {
+        map.set(emoji.id || emoji.name?.toLowerCase().replace(/\s+/g, '-'), {
+          ...emoji,
+          isCustom: true
+        });
+      });
+    }
+    return map;
+  }, [customEmojis]);
 
   useEffect(() => {
     if (lootSettingsData) {
@@ -2977,13 +3004,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <div className="shrink-0 flex flex-col items-center gap-0.5 w-full overflow-visible mb-0 mt-0">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
-            <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+            <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
           </div>
 
           {/* 2x4 Grid Seats */}
           <div className="w-full grid grid-cols-4 gap-y-3 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
-              <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} />
+              <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
             ))}
           </div>
         </div>

@@ -741,14 +741,14 @@ function AdminPageContent() {
 
   // LOOT MANAGEMENT STATE
   const [lootLevels, setLootLevels] = useState<any[]>([
-    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", voice: "Ghar khulne wala hai!" },
-    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", voice: "Bank taiyaar hai!" },
-    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", voice: "Car aa gayi!" },
-    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", voice: "Hotel khul gaya!" },
-    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", voice: "Bus aa rahi hai!" },
-    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", voice: "Train ready hai!" },
-    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", voice: "Jahaaz taiyaar hai!" },
-    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", voice: "Hawai jahaaz udne wala hai!" },
+    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", videoUrl: "", voice: "Ghar khulne wala hai!" },
+    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", videoUrl: "", voice: "Bank taiyaar hai!" },
+    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", videoUrl: "", voice: "Car aa gayi!" },
+    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", videoUrl: "", voice: "Hotel khul gaya!" },
+    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", videoUrl: "", voice: "Bus aa rahi hai!" },
+    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", videoUrl: "", voice: "Train ready hai!" },
+    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", videoUrl: "", voice: "Jahaaz taiyaar hai!" },
+    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", videoUrl: "", voice: "Hawai jahaaz udne wala hai!" },
   ]);
   const [selectedLevel, setSelectedLevel] = useState<string>("home");
   const [lootRewards, setLootRewards] = useState<any[]>([
@@ -764,6 +764,10 @@ function AdminPageContent() {
     gatePriority: "top_sender",
   });
   const [isSavingLoot, setIsSavingLoot] = useState(false);
+  
+  // LOOT VIDEO UPLOAD STATE
+  const [uploadingLevelVideo, setUploadingLevelVideo] = useState<string | null>(null);
+  const lootVideoInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
   // LEVEL MANAGEMENT STATE
   const [levelTab, setLevelTab] = useState("budget");
@@ -2151,6 +2155,24 @@ function AdminPageContent() {
     setLootRewards(prev => prev.filter(r => r.id !== rewardId));
   };
 
+  const handleUploadLevelVideo = async (levelId: string, file: File) => {
+    if (!firestore || !storage || !isAuthorized) return;
+    setUploadingLevelVideo(levelId);
+    try {
+      const videoRef = ref(storage, `loot/videos/${levelId}_${Date.now()}_${file.name}`);
+      const uploadRes = await uploadBytes(videoRef, file);
+      const videoUrl = await getDownloadURL(uploadRes.ref);
+      
+      setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, videoUrl } : l));
+      toast({ title: "Video Uploaded", description: `Video for ${levelId} level uploaded successfully.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Upload Failed", description: err.message });
+    } finally {
+      setUploadingLevelVideo(null);
+    }
+  };
+
 
   const handleLevelUpload = async () => {
     if (!firestore || !storage || !isAuthorized) return;
@@ -3166,7 +3188,7 @@ function AdminPageContent() {
                     </div>
                   </div>
 
-                  {/* LEVEL CONFIGURATION */}
+                   {/* LEVEL CONFIGURATION */}
                   <div className="p-6 bg-indigo-50 rounded-3xl border-2 border-indigo-100 space-y-6">
                     <h3 className="text-sm font-black uppercase tracking-widest text-indigo-600">Level Configuration</h3>
                     <div className="space-y-4">
@@ -3176,7 +3198,7 @@ function AdminPageContent() {
                             <h4 className="text-sm font-bold uppercase text-indigo-700">{level.name}</h4>
                             <Badge variant="outline" className="border-indigo-300 text-indigo-600">Threshold: {level.threshold.toLocaleString()}</Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Threshold (Coins)</Label>
                               <Input 
@@ -3196,13 +3218,45 @@ function AdminPageContent() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Image/Animation URL</Label>
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Image URL</Label>
                               <Input 
                                 value={level.image || ""} 
                                 onChange={e => setLootLevels(prev => prev.map(l => l.id === level.id ? { ...l, image: e.target.value } : l))} 
                                 placeholder="https://..."
                                 className="h-10 rounded-xl border-indigo-200 bg-white"
                               />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="file" 
+                                  accept="video/*" 
+                                  ref={el => lootVideoInputRefs.current[level.id] = el}
+                                  className="hidden"
+                                  onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadLevelVideo(level.id, file);
+                                  }}
+                                />
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => lootVideoInputRefs.current[level.id]?.click()}
+                                  disabled={uploadingLevelVideo === level.id}
+                                  className="h-10 rounded-xl flex-1"
+                                >
+                                  {uploadingLevelVideo === level.id ? (
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Upload Video"
+                                  )}
+                                </Button>
+                                {level.videoUrl && (
+                                  <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 const Emoji3DRenderer = ({ type }: { type: string }) => {
   const defs = (
@@ -223,24 +224,49 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
   }
 };
 
-export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | null, size?: string }) {
-  const [activeEmoji, setActiveEmoji] = useState<{ id: number, type: string } | null>(null);
+export function EmojiReactionOverlay({ 
+  emoji, 
+  customEmojiData,
+  size = 'md' 
+}: { 
+  emoji?: string | null, 
+  customEmojiData?: any,
+  size?: string 
+}) {
+  const [activeEmoji, setActiveEmoji] = useState<{ id: number, type: string, data?: any } | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     if (emoji) {
       if (timerRef.current) clearTimeout(timerRef.current);
-      const newEmoji = { id: Date.now(), type: emoji };
+      
+      const displayTime = customEmojiData?.displayTime ? customEmojiData.displayTime * 1000 : 3500;
+      
+      const newEmoji = { 
+        id: Date.now(), 
+        type: emoji,
+        data: customEmojiData
+      };
       setActiveEmoji(newEmoji);
-      timerRef.current = setTimeout(() => setActiveEmoji(null), 3500);
+      
+      timerRef.current = setTimeout(() => setActiveEmoji(null), displayTime);
     } else {
       setActiveEmoji(null);
     }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [emoji]);
+    return () => { 
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = '';
+      }
+    };
+  }, [emoji, customEmojiData]);
 
   if (!activeEmoji) return null;
   const sizeClasses: Record<string, string> = { sm: 'w-16 h-16', md: 'w-24 h-24', lg: 'w-32 h-32' };
+
+  const isCustomEmoji = activeEmoji.data?.isCustom || activeEmoji.data?.imageUrl || activeEmoji.data?.animationUrl;
 
   return (
     <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none rounded-full">
@@ -253,7 +279,36 @@ export function EmojiReactionOverlay({ emoji, size = 'md' }: { emoji?: string | 
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
-          <Emoji3DRenderer type={activeEmoji.type} />
+          {isCustomEmoji ? (
+            // Custom emoji: show video or image
+            activeEmoji.data?.animationUrl ? (
+              <video
+                ref={videoRef}
+                src={activeEmoji.data.animationUrl}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-contain"
+              />
+            ) : activeEmoji.data?.imageUrl ? (
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 0.5 }}
+              >
+                <Image
+                  src={activeEmoji.data.imageUrl}
+                  alt={activeEmoji.data.name || 'Emoji'}
+                  width={96}
+                  height={96}
+                  className="object-contain"
+                  unoptimized
+                />
+              </motion.div>
+            ) : null
+          ) : (
+            // Built-in SVG emoji
+            <Emoji3DRenderer type={activeEmoji.type} />
+          )}
         </motion.div>
       </AnimatePresence>
     </div>

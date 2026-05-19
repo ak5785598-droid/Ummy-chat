@@ -1,16 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
- Dialog, 
- DialogContent, 
- DialogHeader, 
- DialogTitle 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle 
 } from '@/components/ui/dialog';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, serverTimestamp, collection, query, orderBy } from 'firebase/firestore';
+import Image from 'next/image';
 
-// --- ULTRA HD 3D EMOJI DESIGNS ---
+// --- BUILT-IN SVG EMOJI DESIGNS ---
 const EmojiHD = ({ type }: { type: string }) => {
   const defs = (
     <defs>
@@ -227,52 +228,108 @@ const REACTIONS = [
 ];
 
 export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: boolean, onOpenChange: (open: boolean) => void, roomId: string }) {
- const { user } = useUser();
- const firestore = useFirestore();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
- const handleSendEmoji = (emojiId: string) => {
-  if (!firestore || !roomId || !user) return;
-  const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
-  updateDocumentNonBlocking(pRef, { activeEmoji: emojiId, updatedAt: serverTimestamp() });
-  onOpenChange(false);
- };
+  // Fetch custom emojis from Firestore
+  const customEmojisQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "customEmojis"), orderBy("createdAt", "desc"));
+  }, [firestore]);
 
- return (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-   <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
-    <div className="flex flex-col h-full">
-      {/* Visual Top Handle */}
-      <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
-      
-      <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-       <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
-      </DialogHeader>
+  const { data: customEmojis } = useCollection(customEmojisQuery);
 
-      {/* Grid Container - Fixed height for 9 Emojis view, scrollable for others */}
-      <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
-        <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
-          {REACTIONS.map((item) => (
-           <button 
-             key={item.id} 
-             onClick={() => handleSendEmoji(item.id)} 
-             className="flex flex-col items-center gap-2 group transition-all active:scale-90"
-           >
-            <div className="h-16 w-16 drop-shadow-2xl group-hover:scale-110 duration-200">
-              <EmojiHD type={item.id} />
+  // Merge built-in emojis with custom emojis (custom replaces built-in if same ID)
+  const mergedEmojis = useMemo(() => {
+    const emojiMap = new Map();
+    
+    // Add built-in emojis first
+    REACTIONS.forEach(emoji => {
+      emojiMap.set(emoji.id, { ...emoji, isCustom: false });
+    });
+    
+    // Override with custom emojis if they exist
+    if (customEmojis) {
+      customEmojis.forEach((custom: any) => {
+        // If custom emoji has same ID as built-in, replace it
+        // Or add new custom emoji
+        emojiMap.set(custom.id || custom.name.toLowerCase().replace(/\s+/g, '-'), {
+          id: custom.id || custom.name.toLowerCase().replace(/\s+/g, '-'),
+          label: custom.name,
+          imageUrl: custom.imageUrl,
+          animationUrl: custom.animationUrl,
+          displayTime: custom.displayTime || 3,
+          isCustom: true
+        });
+      });
+    }
+    
+    return Array.from(emojiMap.values());
+  }, [customEmojis]);
+
+  const handleSendEmoji = (emojiId: string) => {
+    if (!firestore || !roomId || !user) return;
+    const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
+    updateDocumentNonBlocking(pRef, { activeEmoji: emojiId, updatedAt: serverTimestamp() });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
+        <div className="flex flex-col h-full">
+          {/* Visual Top Handle */}
+          <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
+          
+          <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
+            <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
+          </DialogHeader>
+
+          {/* Grid Container - Fixed height for 9 Emojis view, scrollable for others */}
+          <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
+            <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
+              {mergedEmojis.map((item: any) => (
+                <button 
+                  key={item.id} 
+                  onClick={() => handleSendEmoji(item.id)} 
+                  className="flex flex-col items-center gap-2 group transition-all active:scale-90"
+                >
+                  <div className="h-16 w-16 drop-shadow-2xl group-hover:scale-110 duration-200 flex items-center justify-center">
+                    {item.isCustom && item.imageUrl ? (
+                      <Image 
+                        src={item.imageUrl} 
+                        alt={item.label} 
+                        width={64} 
+                        height={64} 
+                        className="object-contain"
+                        unoptimized
+                      />
+                    ) : item.isCustom && item.animationUrl ? (
+                      <video 
+                        src={item.animationUrl} 
+                        autoPlay 
+                        muted 
+                        loop 
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <EmojiHD type={item.id} />
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter group-hover:text-yellow-400 transition-colors">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
             </div>
-            <span className="text-[10px] font-bold text-white/40 uppercase tracking-tighter group-hover:text-yellow-400 transition-colors">
-              {item.label}
-            </span>
-           </button>
-          ))}
+          </div>
         </div>
-      </div>
-    </div>
-    <style jsx global>{`
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.3); border-radius: 10px; }
-    `}</style>
-   </DialogContent>
-  </Dialog>
- );
+        <style jsx global>{`
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(234,179,8,0.3); border-radius: 10px; }
+        `}</style>
+      </DialogContent>
+    </Dialog>
+  );
 }
