@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Loader, Play, ExternalLink, Smartphone, Globe, AlertCircle } from 'lucide-react';
+import { Search, X, Loader, Play, ExternalLink, Smartphone, Globe, AlertCircle, Monitor } from 'lucide-react';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -201,8 +201,8 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
                   onClick={handleWatchInRoom}
                   className="flex flex-col items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 rounded-xl text-white font-bold text-xs transition-all active:scale-95 shadow-lg shadow-purple-600/20"
                 >
-                  <Play className="h-5 w-5 fill-current" />
-                  <span>In Room</span>
+                  <Monitor className="h-5 w-5" />
+                  <span>Watch Together</span>
                 </button>
               </div>
 

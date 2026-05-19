@@ -152,7 +152,8 @@ import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
 import { NetMirrorDialog } from '@/components/netmirror-dialog';
-import { NetMirrorPlayer } from '@/components/netmirror-player';
+import { NetMirrorWatchTogether } from '@/components/netmirror-watch-together';
+import { NetMirrorRoomIndicator } from '@/components/netmirror-room-indicator';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -393,9 +394,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
-  const [isNetMirrorPlayerOpen, setIsNetMirrorPlayerOpen] = useState(false);
-  const [netMirrorPlayerUrl, setNetMirrorPlayerUrl] = useState('');
-  const [netMirrorPlayerTitle, setNetMirrorPlayerTitle] = useState('');
+  const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
+  const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; startedBy: string; isActive: boolean } | null>(null);
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
@@ -1427,6 +1427,29 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         } else {
           setRoomMovie(null);
         }
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, room.id]);
+
+  // NETMIRROR SESSION: Listen for active watch together session
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const netMirrorRef = doc(firestore, 'chatRooms', room.id, 'netmirror', 'state');
+    const unsubscribe = onSnapshot(netMirrorRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.isActive && data.movieTitle) {
+          setNetMirrorSession({
+            movieTitle: data.movieTitle,
+            startedBy: data.startedBy || 'Host',
+            isActive: true,
+          });
+        } else {
+          setNetMirrorSession(null);
+        }
+      } else {
+        setNetMirrorSession(null);
       }
     });
     return () => unsubscribe();
@@ -2561,48 +2584,27 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     toast({ title: 'Movie Mirror Stopped', description: 'Movie playback ended for the room.' });
   };
 
-  // NETMIRROR PLAYER HANDLERS
-  const handleWatchNetMirrorInRoom = useCallback((url: string, title: string) => {
-    setNetMirrorPlayerUrl(url);
-    setNetMirrorPlayerTitle(title);
-    setIsNetMirrorPlayerOpen(true);
+  // NETMIRROR WATCH TOGETHER HANDLERS
+  const handleOpenNetMirrorWatch = useCallback(() => {
+    setIsNetMirrorWatchOpen(true);
     setIsNetMirrorOpen(false);
-    
-    // Also sync to Firestore for room awareness
-    if (firestore && room.id && currentUser?.uid) {
-      const roomRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomRef, {
-        netmirrorSession: {
-          movieTitle: title,
-          movieUrl: url,
-          startedAt: serverTimestamp(),
-          startedBy: currentUser.uid,
-          isActive: true,
-          embedMode: 'iframe',
-        },
-        updatedAt: serverTimestamp(),
-      });
-    }
-    
-    toast({ title: 'NetMirror in Room', description: `${title} is now playing in the room.` });
-  }, [firestore, room.id, currentUser?.uid]);
+  }, []);
 
-  const handleCloseNetMirrorPlayer = useCallback(() => {
-    setIsNetMirrorPlayerOpen(false);
-    setNetMirrorPlayerUrl('');
-    setNetMirrorPlayerTitle('');
-    
-    // Update Firestore
-    if (firestore && room.id && currentUser?.uid) {
-      const roomRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomRef, {
-        netmirrorSession: {
-          isActive: false,
-        },
-        updatedAt: serverTimestamp(),
-      });
-    }
-  }, [firestore, room.id, currentUser?.uid]);
+  const handleCloseNetMirrorWatch = useCallback(() => {
+    setIsNetMirrorWatchOpen(false);
+  }, []);
+
+  const handleJoinNetMirror = useCallback(() => {
+    window.open('https://netmirror.world', '_blank');
+    toast({ 
+      title: 'NetMirror Opened', 
+      description: 'Find the same movie the host is watching.',
+    });
+  }, [toast]);
+
+  const handleDismissNetMirrorIndicator = useCallback(() => {
+    setNetMirrorSession(null);
+  }, []);
 
   // AUTO-DISABLE MOVIES WHEN YOUTUBE STARTS
   useEffect(() => {
@@ -3943,16 +3945,25 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onCloseForAll={() => {
           setIsNetMirrorOpen(false);
         }}
-        onWatchInRoom={handleWatchNetMirrorInRoom}
+        onWatchInRoom={handleOpenNetMirrorWatch}
       />
 
-      <NetMirrorPlayer
-        open={isNetMirrorPlayerOpen}
-        onOpenChange={setIsNetMirrorPlayerOpen}
-        movieUrl={netMirrorPlayerUrl}
-        movieTitle={netMirrorPlayerTitle}
+      <NetMirrorWatchTogether
+        open={isNetMirrorWatchOpen}
+        onOpenChange={setIsNetMirrorWatchOpen}
+        roomId={room.id}
+        userId={currentUser?.uid || ''}
         isHost={isOwner || canManageRoom}
-        onCloseForAll={handleCloseNetMirrorPlayer}
+        onCloseForAll={handleCloseNetMirrorWatch}
+      />
+
+      <NetMirrorRoomIndicator
+        isActive={netMirrorSession?.isActive || false}
+        movieTitle={netMirrorSession?.movieTitle || ''}
+        startedBy={netMirrorSession?.startedBy || ''}
+        currentUserId={currentUser?.uid || ''}
+        onJoin={handleJoinNetMirror}
+        onDismiss={handleDismissNetMirrorIndicator}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
