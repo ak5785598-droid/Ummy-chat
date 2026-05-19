@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Loader, Play, ExternalLink, Smartphone, Globe, AlertCircle, Monitor } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { InAppBrowser } from '@capacitor/inappbrowser';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -115,27 +113,12 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
     }
   }, [toast]);
 
-  const openNetMirrorWeb = useCallback(async () => {
+  const openNetMirrorWeb = useCallback(() => {
     toast({
       title: 'Opening NetMirror Web',
       description: 'Note: Web version shows ads on every click.',
     });
-    if (Capacitor.isNativePlatform()) {
-      await InAppBrowser.openInSystemBrowser({
-        url: NETMIRROR_WEB_URL,
-        options: {
-          android: {
-            showTitle: true,
-            hideToolbarOnScroll: false,
-          },
-          iOS: {
-            closeButtonText: 2,
-          },
-        },
-      });
-    } else {
-      window.open(NETMIRROR_WEB_URL, '_blank');
-    }
+    window.open(NETMIRROR_WEB_URL, '_blank');
   }, [toast]);
 
   const handleWatchInRoom = useCallback(() => {

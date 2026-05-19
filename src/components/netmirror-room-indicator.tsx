@@ -3,8 +3,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Play } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { InAppBrowser } from '@capacitor/inappbrowser';
 
 interface NetMirrorRoomIndicatorProps {
   isActive: boolean;
@@ -15,25 +13,6 @@ interface NetMirrorRoomIndicatorProps {
   onDismiss: () => void;
 }
 
-const openNetMirrorUrl = async (url: string) => {
-  if (Capacitor.isNativePlatform()) {
-    await InAppBrowser.openInSystemBrowser({
-      url,
-      options: {
-        android: {
-          showTitle: true,
-          hideToolbarOnScroll: false,
-        },
-        iOS: {
-          closeButtonText: 2,
-        },
-      },
-    });
-  } else {
-    window.open(url, '_blank');
-  }
-};
-
 export function NetMirrorRoomIndicator({ 
   isActive, 
   movieTitle, 
@@ -42,11 +21,6 @@ export function NetMirrorRoomIndicator({
   onJoin,
   onDismiss 
 }: NetMirrorRoomIndicatorProps) {
-  const handleJoinClick = async () => {
-    await openNetMirrorUrl('https://netmirror.world');
-    onJoin();
-  };
-
   if (!isActive || !movieTitle) return null;
 
   const isHost = startedBy === currentUserId;
@@ -80,7 +54,7 @@ export function NetMirrorRoomIndicator({
               
               <div className="flex gap-1.5">
                 <button
-                  onClick={handleJoinClick}
+                  onClick={onJoin}
                   className="flex-1 h-7 bg-red-600 hover:bg-red-700 rounded-lg text-white text-[10px] font-bold transition-colors active:scale-95 flex items-center justify-center gap-1"
                 >
                   <ExternalLink className="h-3 w-3" />

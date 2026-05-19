@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, ArrowLeft, Loader, AlertCircle, Monitor } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { InAppBrowser } from '@capacitor/inappbrowser';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -19,25 +17,6 @@ interface NetMirrorWatchTogetherProps {
 }
 
 const NETMIRROR_WEB_URL = 'https://netmirror.world';
-
-const openNetMirrorUrl = async (url: string) => {
-  if (Capacitor.isNativePlatform()) {
-    await InAppBrowser.openInSystemBrowser({
-      url,
-      options: {
-        android: {
-          showTitle: true,
-          hideToolbarOnScroll: false,
-        },
-        iOS: {
-          closeButtonText: 2,
-        },
-      },
-    });
-  } else {
-    window.open(url, '_blank');
-  }
-};
 
 export function NetMirrorWatchTogether({ 
   open, 
@@ -58,25 +37,15 @@ export function NetMirrorWatchTogether({
     return doc(firestore, 'chatRooms', roomId, 'netmirror', 'state');
   }, [firestore, roomId]);
 
-  const handleOpenNetMirror = useCallback(async () => {
+  const handleOpenNetMirror = useCallback(() => {
     setIsOpening(true);
     setIsExternalOpen(true);
-    try {
-      await openNetMirrorUrl(NETMIRROR_WEB_URL);
-      toast({
-        title: 'NetMirror Opened',
-        description: 'Find your movie, then come back and share the title.',
-      });
-    } catch (error) {
-      console.error('Failed to open NetMirror:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to Open',
-        description: 'Could not open NetMirror. Please try again.',
-      });
-    } finally {
-      setIsOpening(false);
-    }
+    window.open(NETMIRROR_WEB_URL, '_blank');
+    toast({
+      title: 'NetMirror Opened',
+      description: 'Switch back to this tab when ready to share.',
+    });
+    setIsOpening(false);
   }, [toast]);
 
   const handleShareToRoom = useCallback(() => {
@@ -184,7 +153,7 @@ export function NetMirrorWatchTogether({
                 ) : (
                   <>
                     <Monitor className="h-5 w-5" />
-                    Open NetMirror
+                    Open NetMirror in Browser
                   </>
                 )}
               </button>
@@ -237,11 +206,9 @@ export function NetMirrorWatchTogether({
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs text-blue-400 font-bold mb-1">NetMirror Opened</p>
+                      <p className="text-xs text-blue-400 font-bold mb-1">NetMirror Opened in Browser</p>
                       <p className="text-[10px] text-blue-300/70">
-                        {Capacitor.isNativePlatform() 
-                          ? 'Close the browser when done and come back here.' 
-                          : 'Switch back to this tab after finding your movie.'}
+                        Switch back to this tab after finding your movie. Click "Back to Room" when done.
                       </p>
                     </div>
                   </div>
