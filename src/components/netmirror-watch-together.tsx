@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, ArrowLeft, Loader, AlertCircle, Monitor } from 'lucide-react';
+import { X, ArrowLeft, ExternalLink, AlertCircle } from 'lucide-react';
 import { useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 interface NetMirrorWatchTogetherProps {
@@ -29,24 +29,11 @@ export function NetMirrorWatchTogether({
   const firestore = useFirestore();
   const { toast } = useToast();
   const [movieTitle, setMovieTitle] = useState('');
-  const [isOpening, setIsOpening] = useState(false);
-  const [isExternalOpen, setIsExternalOpen] = useState(false);
 
   const netMirrorRef = useMemoFirebase(() => {
     if (!firestore || !roomId) return null;
     return doc(firestore, 'chatRooms', roomId, 'netmirror', 'state');
   }, [firestore, roomId]);
-
-  const handleOpenNetMirror = useCallback(() => {
-    setIsOpening(true);
-    setIsExternalOpen(true);
-    window.open(NETMIRROR_WEB_URL, '_blank');
-    toast({
-      title: 'NetMirror Opened',
-      description: 'Switch back to this tab when ready to share.',
-    });
-    setIsOpening(false);
-  }, [toast]);
 
   const handleShareToRoom = useCallback(() => {
     if (!netMirrorRef || !isHost || !movieTitle.trim()) return;
@@ -82,12 +69,6 @@ export function NetMirrorWatchTogether({
       onOpenChange(false);
     }
   }, [isHost, onCloseForAll, onOpenChange]);
-
-  useEffect(() => {
-    if (!open) {
-      setIsExternalOpen(false);
-    }
-  }, [open]);
 
   if (!open) return null;
 
@@ -142,36 +123,20 @@ export function NetMirrorWatchTogether({
 
             {/* Content */}
             <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Primary Action Button */}
-              <button
-                onClick={handleOpenNetMirror}
-                disabled={isOpening}
-                className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isOpening ? (
-                  <Loader className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <Monitor className="h-5 w-5" />
-                    Open NetMirror in Browser
-                  </>
-                )}
-              </button>
-
               {/* Instructions */}
               <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
                 <p className="text-xs font-bold text-slate-300 mb-2">How it works:</p>
                 <ol className="text-[11px] text-slate-400 space-y-1.5 list-decimal list-inside">
-                  <li>Click button above to open NetMirror</li>
-                  <li>Find the movie you want to watch</li>
-                  <li>Enter movie title below and share to room</li>
+                  <li>Enter the movie/series name below</li>
+                  <li>Click "Share to Room" to notify everyone</li>
                   <li>Users will see "Join" button in room</li>
+                  <li>Chat together while watching!</li>
                 </ol>
               </div>
 
               {/* Host Share Section */}
               {isHost && (
-                <div className="space-y-3 pt-2 border-t border-slate-800">
+                <div className="space-y-3">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Share Movie to Room</p>
                   
                   <input
@@ -200,15 +165,15 @@ export function NetMirrorWatchTogether({
                 </div>
               )}
 
-              {/* External Open Notice */}
-              {isExternalOpen && (
+              {/* Note for non-hosts */}
+              {!isHost && (
                 <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs text-blue-400 font-bold mb-1">NetMirror Opened in Browser</p>
+                      <p className="text-xs text-blue-400 font-bold mb-1">Waiting for Host</p>
                       <p className="text-[10px] text-blue-300/70">
-                        Switch back to this tab after finding your movie. Click "Back to Room" when done.
+                        The host will share a movie title. You'll see a "Join" button in the room to watch together.
                       </p>
                     </div>
                   </div>
