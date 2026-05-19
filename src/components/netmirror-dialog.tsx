@@ -14,6 +14,7 @@ interface NetMirrorDialogProps {
   userId: string;
   isHost: boolean;
   onCloseForAll?: () => void;
+  onWatchInRoom?: (movieUrl: string, movieTitle: string) => void;
 }
 
 interface NetMirrorState {
@@ -27,7 +28,7 @@ interface NetMirrorState {
 const NETMIRROR_WEB_URL = 'https://netmirror.world';
 const NETMIRROR_APP_PACKAGE = 'com.movie.NetMirror';
 
-export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, onCloseForAll }: NetMirrorDialogProps) {
+export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, onCloseForAll, onWatchInRoom }: NetMirrorDialogProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [movieTitle, setMovieTitle] = useState('');
@@ -120,6 +121,14 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
     window.open(NETMIRROR_WEB_URL, '_blank');
   }, [toast]);
 
+  const handleWatchInRoom = useCallback(() => {
+    if (!onWatchInRoom) return;
+    const title = movieTitle.trim() || 'NetMirror Session';
+    const url = movieUrl.trim() || NETMIRROR_WEB_URL;
+    onWatchInRoom(url, title);
+    onOpenChange(false);
+  }, [onWatchInRoom, movieTitle, movieUrl, onOpenChange]);
+
   const isWatching = netMirrorState?.isActive && netMirrorState.movieTitle;
 
   return (
@@ -173,20 +182,27 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
               </div>
 
               {/* Open Options */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={openNetMirrorApp}
-                  className="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl text-white font-bold text-sm transition-all active:scale-95 shadow-lg shadow-red-600/20"
+                  className="flex flex-col items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl text-white font-bold text-xs transition-all active:scale-95 shadow-lg shadow-red-600/20"
                 >
-                  <Smartphone className="h-4 w-4" />
-                  Open App
+                  <Smartphone className="h-5 w-5" />
+                  <span>App</span>
                 </button>
                 <button
                   onClick={openNetMirrorWeb}
-                  className="flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-bold text-sm border border-slate-700 transition-all active:scale-95"
+                  className="flex flex-col items-center justify-center gap-1.5 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-white font-bold text-xs border border-slate-700 transition-all active:scale-95"
                 >
-                  <Globe className="h-4 w-4" />
-                  Open Web
+                  <Globe className="h-5 w-5" />
+                  <span>Web</span>
+                </button>
+                <button
+                  onClick={handleWatchInRoom}
+                  className="flex flex-col items-center justify-center gap-1.5 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 rounded-xl text-white font-bold text-xs transition-all active:scale-95 shadow-lg shadow-purple-600/20"
+                >
+                  <Play className="h-5 w-5 fill-current" />
+                  <span>In Room</span>
                 </button>
               </div>
 

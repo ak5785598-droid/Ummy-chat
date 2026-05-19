@@ -152,6 +152,7 @@ import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
 import { NetMirrorDialog } from '@/components/netmirror-dialog';
+import { NetMirrorPlayer } from '@/components/netmirror-player';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -392,6 +393,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
+  const [isNetMirrorPlayerOpen, setIsNetMirrorPlayerOpen] = useState(false);
+  const [netMirrorPlayerUrl, setNetMirrorPlayerUrl] = useState('');
+  const [netMirrorPlayerTitle, setNetMirrorPlayerTitle] = useState('');
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
@@ -2557,6 +2561,49 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     toast({ title: 'Movie Mirror Stopped', description: 'Movie playback ended for the room.' });
   };
 
+  // NETMIRROR PLAYER HANDLERS
+  const handleWatchNetMirrorInRoom = useCallback((url: string, title: string) => {
+    setNetMirrorPlayerUrl(url);
+    setNetMirrorPlayerTitle(title);
+    setIsNetMirrorPlayerOpen(true);
+    setIsNetMirrorOpen(false);
+    
+    // Also sync to Firestore for room awareness
+    if (firestore && room.id && currentUser?.uid) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      updateDocumentNonBlocking(roomRef, {
+        netmirrorSession: {
+          movieTitle: title,
+          movieUrl: url,
+          startedAt: serverTimestamp(),
+          startedBy: currentUser.uid,
+          isActive: true,
+          embedMode: 'iframe',
+        },
+        updatedAt: serverTimestamp(),
+      });
+    }
+    
+    toast({ title: 'NetMirror in Room', description: `${title} is now playing in the room.` });
+  }, [firestore, room.id, currentUser?.uid]);
+
+  const handleCloseNetMirrorPlayer = useCallback(() => {
+    setIsNetMirrorPlayerOpen(false);
+    setNetMirrorPlayerUrl('');
+    setNetMirrorPlayerTitle('');
+    
+    // Update Firestore
+    if (firestore && room.id && currentUser?.uid) {
+      const roomRef = doc(firestore, 'chatRooms', room.id);
+      updateDocumentNonBlocking(roomRef, {
+        netmirrorSession: {
+          isActive: false,
+        },
+        updatedAt: serverTimestamp(),
+      });
+    }
+  }, [firestore, room.id, currentUser?.uid]);
+
   // AUTO-DISABLE MOVIES WHEN YOUTUBE STARTS
   useEffect(() => {
     if (isYouTubeOpen && isMoviePlayerOpen) {
@@ -3896,6 +3943,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onCloseForAll={() => {
           setIsNetMirrorOpen(false);
         }}
+        onWatchInRoom={handleWatchNetMirrorInRoom}
+      />
+
+      <NetMirrorPlayer
+        open={isNetMirrorPlayerOpen}
+        onOpenChange={setIsNetMirrorPlayerOpen}
+        movieUrl={netMirrorPlayerUrl}
+        movieTitle={netMirrorPlayerTitle}
+        isHost={isOwner || canManageRoom}
+        onCloseForAll={handleCloseNetMirrorPlayer}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `
