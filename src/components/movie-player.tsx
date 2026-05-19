@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ExternalLink, Film, RefreshCw } from 'lucide-react';
+import { X, ChevronDown, ExternalLink, Film, RefreshCw, ArrowLeft } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -113,9 +113,20 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
             </button>
 
             <div className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800 gap-2">
+                {/* LEFT: Back to Room Button */}
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-bold transition-all active:scale-95 shrink-0"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  <span className="hidden sm:inline">Back to Room</span>
+                  <span className="sm:hidden">Back</span>
+                </button>
+
+                {/* CENTER: Movie Title */}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center shrink-0">
                     <Film className="h-4 w-4 text-white" />
                   </div>
                   <div className="min-w-0">
@@ -123,14 +134,16 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                     <p className="text-[10px] text-white/40">Movie Mirror</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* RIGHT: Controls */}
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleReset}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
                     title="Reset player if stuck on ads"
                   >
                     <RefreshCw className="h-3 w-3" />
-                    Reset
+                    <span className="hidden sm:inline">Reset</span>
                   </button>
                   <button
                     onClick={handleOpenInBrowser}
@@ -138,7 +151,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                     title="Open in external browser"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    Browser
+                    <span className="hidden sm:inline">Browser</span>
                   </button>
                   <div ref={dropdownRef} className="relative">
                     <button
@@ -194,6 +207,15 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   allowFullScreen
                   onLoad={handleIframeLoad}
                 />
+                
+                {/* Floating Back to Room Button - Always visible above iframe */}
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="absolute bottom-3 left-3 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold shadow-lg backdrop-blur-sm transition-all active:scale-95"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Back to Room
+                </button>
               </div>
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-white/30">
