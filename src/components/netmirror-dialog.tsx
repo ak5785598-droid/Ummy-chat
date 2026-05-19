@@ -82,9 +82,13 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
     
     // Check if user is on Android
     const isAndroid = /Android/i.test(navigator.userAgent);
+    // Check if running in WebView (common in Capacitor/Cordova apps)
+    const isWebView = /wv|WebView/i.test(navigator.userAgent) || 
+                      (window as any).Capacitor !== undefined ||
+                      (window as any).cordova !== undefined;
     
-    if (isAndroid) {
-      // On Android: Try to open app via intent
+    if (isAndroid && !isWebView) {
+      // On native Android browser: Try to open app via intent
       toast({
         title: 'Opening NetMirror App...',
         description: 'If app is not installed, Play Store will open.',
@@ -98,10 +102,11 @@ export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, on
         window.open(playStoreUrl, '_blank');
       }, 2000);
     } else {
-      // On Desktop/iOS: Open web version directly
+      // On WebView/Desktop/iOS: Open web version directly
+      // WebView doesn't support intent:// scheme
       toast({
-        title: 'Opening NetMirror Web',
-        description: 'App is only available on Android. Opening web version...',
+        title: 'Opening NetMirror',
+        description: isWebView ? 'Opening in browser...' : 'App is only available on Android. Opening web version...',
       });
       window.open(NETMIRROR_WEB_URL, '_blank');
     }
