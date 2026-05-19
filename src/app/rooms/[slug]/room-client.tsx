@@ -151,6 +151,7 @@ import { MoviePlayer } from '@/components/movie-player';
 import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
+import { NetMirrorDialog } from '@/components/netmirror-dialog';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -390,6 +391,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [roomMovie, setRoomMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; startedBy: string } | null>(null);
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
+  const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
@@ -3690,6 +3692,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -3882,6 +3885,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           avatarUrl: p.avatarUrl,
           isHost: p.uid === room.ownerId,
         }))}
+      />
+
+      <NetMirrorDialog
+        open={isNetMirrorOpen}
+        onOpenChange={setIsNetMirrorOpen}
+        roomId={room.id}
+        userId={currentUser?.uid || ''}
+        isHost={isOwner || canManageRoom}
+        onCloseForAll={() => {
+          setIsNetMirrorOpen(false);
+        }}
       />
 
       <style dangerouslySetInnerHTML={{ __html: `

@@ -62,6 +62,7 @@ interface RoomPlayDialogProps {
   onOpenYouTube?: () => void;
   onOpenMovies?: () => void;
   onOpenScreenMirror?: () => void;
+  onOpenNetMirror?: () => void;
   defaultView?: 'grid' | 'music';
 }
 
@@ -84,6 +85,7 @@ export function RoomPlayDialog({
   onOpenYouTube,
   onOpenMovies,
   onOpenScreenMirror,
+  onOpenNetMirror,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
@@ -436,6 +438,13 @@ export function RoomPlayDialog({
       icon: <Cast className="h-7 w-7 text-white drop-shadow-md" />, 
       color: 'from-blue-500 to-blue-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(59,130,246,0.5)] border border-blue-500/50', 
       onClick: () => { onOpenScreenMirror?.(); onOpenChange(false); } 
+    },
+    { 
+      id: 'netmirror', 
+      label: 'NetMirror', 
+      icon: <span className="text-white font-black text-lg drop-shadow-md">N</span>, 
+      color: 'from-red-600 to-red-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border border-red-600/50', 
+      onClick: () => { onOpenNetMirror?.(); onOpenChange(false); } 
     },
   ];
 
