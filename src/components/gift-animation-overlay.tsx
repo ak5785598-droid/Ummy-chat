@@ -65,7 +65,7 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Advanced black background detection with edge sampling
+  // Black background detection with edge sampling (kaali background check karta hai)
   const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
@@ -94,7 +94,7 @@ export function GiftAnimationOverlay({
       const BLACK_PIXEL_RATIO = 0.92;
 
       // Check multiple rows on each edge for better accuracy
-      const EDGE_DEPTH = 5; // Check 5 pixels deep from edge
+      const EDGE_DEPTH = 5; // 5 pixels deep from edge check karo
 
       // Check top edge (multiple rows)
       let topBlackCount = 0;
@@ -203,12 +203,150 @@ export function GiftAnimationOverlay({
     });
   };
 
+  // White/light background detection (safed background check karta hai)
+  const detectWhiteBackground = (video: HTMLVideoElement): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const canvas = detectionCanvasRef.current;
+      if (!canvas) {
+        resolve(false);
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        resolve(false);
+        return;
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const WHITE_THRESHOLD = 220; // White ke liye high threshold
+      const WHITE_PIXEL_RATIO = 0.92;
+
+      // Check multiple rows on each edge
+      const EDGE_DEPTH = 5;
+
+      // Check top edge
+      let topWhiteCount = 0;
+      let topTotal = 0;
+      for (let y = 0; y < EDGE_DEPTH; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          topTotal++;
+          if (data[index] > WHITE_THRESHOLD && 
+              data[index + 1] > WHITE_THRESHOLD && 
+              data[index + 2] > WHITE_THRESHOLD) {
+            topWhiteCount++;
+          }
+        }
+      }
+      const topRatio = topWhiteCount / topTotal;
+
+      // Check bottom edge
+      let bottomWhiteCount = 0;
+      let bottomTotal = 0;
+      for (let y = height - EDGE_DEPTH; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const index = (y * width + x) * 4;
+          bottomTotal++;
+          if (data[index] > WHITE_THRESHOLD && 
+              data[index + 1] > WHITE_THRESHOLD && 
+              data[index + 2] > WHITE_THRESHOLD) {
+            bottomWhiteCount++;
+          }
+        }
+      }
+      const bottomRatio = bottomWhiteCount / bottomTotal;
+
+      // Check left edge
+      let leftWhiteCount = 0;
+      let leftTotal = 0;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < EDGE_DEPTH; x++) {
+          const index = (y * width + x) * 4;
+          leftTotal++;
+          if (data[index] > WHITE_THRESHOLD && 
+              data[index + 1] > WHITE_THRESHOLD && 
+              data[index + 2] > WHITE_THRESHOLD) {
+            leftWhiteCount++;
+          }
+        }
+      }
+      const leftRatio = leftWhiteCount / leftTotal;
+
+      // Check right edge
+      let rightWhiteCount = 0;
+      let rightTotal = 0;
+      for (let y = 0; y < height; y++) {
+        for (let x = width - EDGE_DEPTH; x < width; x++) {
+          const index = (y * width + x) * 4;
+          rightTotal++;
+          if (data[index] > WHITE_THRESHOLD && 
+              data[index + 1] > WHITE_THRESHOLD && 
+              data[index + 2] > WHITE_THRESHOLD) {
+            rightWhiteCount++;
+          }
+        }
+      }
+      const rightRatio = rightWhiteCount / rightTotal;
+
+      // Check corners with larger radius
+      const checkCorner = (startX: number, startY: number, radius: number = 15) => {
+        let whitePixels = 0;
+        let totalPixels = 0;
+        for (let dy = 0; dy < radius; dy++) {
+          for (let dx = 0; dx < radius; dx++) {
+            const px = startX + dx;
+            const py = startY + dy;
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+              const index = (py * width + px) * 4;
+              totalPixels++;
+              if (data[index] > WHITE_THRESHOLD && 
+                  data[index + 1] > WHITE_THRESHOLD && 
+                  data[index + 2] > WHITE_THRESHOLD) {
+                whitePixels++;
+              }
+            }
+          }
+        }
+        return whitePixels / Math.max(totalPixels, 1);
+      };
+
+      const topLeftCorner = checkCorner(0, 0);
+      const topRightCorner = checkCorner(width - 15, 0);
+      const bottomLeftCorner = checkCorner(0, height - 15);
+      const bottomRightCorner = checkCorner(width - 15, height - 15);
+
+      const allEdgesWhite = topRatio > WHITE_PIXEL_RATIO && 
+                           bottomRatio > WHITE_PIXEL_RATIO && 
+                           leftRatio > WHITE_PIXEL_RATIO && 
+                           rightRatio > WHITE_PIXEL_RATIO;
+
+      const allCornersWhite = topLeftCorner > 0.85 && 
+                             topRightCorner > 0.85 && 
+                             bottomLeftCorner > 0.85 && 
+                             bottomRightCorner > 0.85;
+
+      const isSolidWhiteBackground = allEdgesWhite && allCornersWhite;
+
+      resolve(isSolidWhiteBackground);
+    });
+  };
+
   // Animation trigger logic
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
-      setIsVideoLoading(!!videoUrl); // Show loading if video gift
+      setIsVideoLoading(!!videoUrl); // Agar video hai to loading dikhao
       setUseCanvasProcessing(false);
       processingActiveRef.current = false;
       
@@ -218,13 +356,13 @@ export function GiftAnimationOverlay({
         setShowNameplate(false);
       }, 3500);
 
-      // 1. Play Sound
+      // 1. Sound play karo
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // 2. Haptics
+      // 2. Haptics do
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
@@ -242,8 +380,8 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing (OPTIMIZED)
-  const processBlackFade = () => {
+  // Super Advanced White/Black Fade Processor (safed aur kaala dono background remove karta hai)
+  const processBackgroundFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
@@ -305,12 +443,12 @@ export function GiftAnimationOverlay({
     }
     const processedData = processBufferRef.current;
 
-    // Enhanced Black Detection Parameters
-    const BLACK_R_THRESHOLD = 25;    // Red channel max for black
-    const BLACK_G_THRESHOLD = 25;    // Green channel max for black  
-    const BLACK_B_THRESHOLD = 25;    // Blue channel max for black
-    const DARK_GRAY_THRESHOLD = 45;  // For edge transition pixels
-    const ALPHA_REDUCTION = 0.92;    // 92% opacity reduction per frame (smooth but fast)
+    // BLACK & WHITE Background Removal Parameters (Dono ke liye parameters)
+    const BLACK_THRESHOLD = 30;     // Black pixel ki maximum value
+    const WHITE_THRESHOLD = 225;    // White pixel ki minimum value  
+    const DARK_GRAY_THRESHOLD = 50;  // Dark gray transition ke liye
+    const LIGHT_GRAY_THRESHOLD = 200; // Light gray transition ke liye
+    const ALPHA_REDUCTION = 0.93;    // 93% opacity reduction per frame
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -322,15 +460,26 @@ export function GiftAnimationOverlay({
       if (a === 0) continue;
       
       // Check if pixel is pure black
-      const isPureBlack = (r <= BLACK_R_THRESHOLD && 
-                          g <= BLACK_G_THRESHOLD && 
-                          b <= BLACK_B_THRESHOLD);
+      const isPureBlack = (r <= BLACK_THRESHOLD && 
+                          g <= BLACK_THRESHOLD && 
+                          b <= BLACK_THRESHOLD);
+      
+      // Check if pixel is pure white
+      const isPureWhite = (r >= WHITE_THRESHOLD && 
+                          g >= WHITE_THRESHOLD && 
+                          b >= WHITE_THRESHOLD);
       
       // Check if pixel is very dark (near black transition)
       const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
                          g <= DARK_GRAY_THRESHOLD && 
                          b <= DARK_GRAY_THRESHOLD);
       
+      // Check if pixel is very light (near white transition)
+      const isLightGray = (r >= LIGHT_GRAY_THRESHOLD && 
+                          g >= LIGHT_GRAY_THRESHOLD && 
+                          b >= LIGHT_GRAY_THRESHOLD);
+      
+      // BLACK BACKGROUND PROCESSING
       if (isPureBlack) {
         const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
         processedData[i + 3] = newAlpha;
@@ -351,6 +500,28 @@ export function GiftAnimationOverlay({
           processedData[i + 2] = Math.floor(b * (1 - blend));
         }
       }
+      
+      // WHITE BACKGROUND PROCESSING (Naya logic for white)
+      else if (isPureWhite) {
+        const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
+        processedData[i + 3] = newAlpha;
+        if (newAlpha < 20) {
+          processedData[i] = Math.min(255, Math.floor(r * 1.1));
+          processedData[i + 1] = Math.min(255, Math.floor(g * 1.1));
+          processedData[i + 2] = Math.min(255, Math.floor(b * 1.1));
+        }
+      } else if (isLightGray) {
+        const lightnessFactor = ((r + g + b) / (3 * LIGHT_GRAY_THRESHOLD)) - 0.7;
+        const softAlphaReduction = ALPHA_REDUCTION * lightnessFactor * 0.6;
+        const newAlpha = Math.floor(a * (1 - softAlphaReduction));
+        processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
+        if (lightnessFactor > 0.4) {
+          const blend = lightnessFactor * 0.25;
+          processedData[i] = Math.min(255, Math.floor(r * (1 + blend)));
+          processedData[i + 1] = Math.min(255, Math.floor(g * (1 + blend)));
+          processedData[i + 2] = Math.min(255, Math.floor(b * (1 + blend)));
+        }
+      }
     }
 
     // Step 4: Apply processed data to canvas
@@ -359,7 +530,7 @@ export function GiftAnimationOverlay({
     ctx.putImageData(processedImageData, 0, 0);
 
     // Step 5: Continue processing loop
-    animationFrameRef.current = requestAnimationFrame(processBlackFade);
+    animationFrameRef.current = requestAnimationFrame(processBackgroundFade);
   };
 
   // Skip canvas processing for normal-tier gifts to save CPU
@@ -369,12 +540,12 @@ export function GiftAnimationOverlay({
     }
   }, [activeGift, videoUrl, isVideoReady, tier]);
 
-  // Start/Stop Black Fade Processor when video plays
+  // Start/Stop Background Fade Processor when video plays
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
       const startTimer = setTimeout(() => {
         processingActiveRef.current = true;
-        processBlackFade();
+        processBackgroundFade();
       }, 100);
       
       return () => {
@@ -426,7 +597,7 @@ export function GiftAnimationOverlay({
     }, duration + 500); 
   };
 
-  // Handle Video Ready - Detect black background
+  // Handle Video Ready - Detect both black and white backgrounds
   const handleVideoCanPlay = async () => {
     setIsVideoReady(true);
     setIsVideoLoading(false);
@@ -434,13 +605,20 @@ export function GiftAnimationOverlay({
     if (videoRef.current) {
       await new Promise(resolve => setTimeout(resolve, 50));
       
+      // Dono background check karo - kaala aur safed
       const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
-      setUseCanvasProcessing(hasSolidBlackBg);
+      const hasSolidWhiteBg = await detectWhiteBackground(videoRef.current);
+      
+      // Kisi bhi solid background ke liye canvas processing on karo
+      const needsProcessing = hasSolidBlackBg || hasSolidWhiteBg;
+      setUseCanvasProcessing(needsProcessing);
       
       if (hasSolidBlackBg) {
-        console.log('[Gift Video] Canvas processing activated - black background removed');
+        console.log('[Gift Video] Canvas processing activated - BLACK background removed');
+      } else if (hasSolidWhiteBg) {
+        console.log('[Gift Video] Canvas processing activated - WHITE background removed');
       } else {
-        console.log('[Gift Video] Standard playback - no black background detected');
+        console.log('[Gift Video] Standard playback - no solid background detected');
       }
     }
   };
@@ -719,7 +897,7 @@ export function GiftAnimationOverlay({
                     }}
                   />
                   
-                  {/* Enhanced Canvas showing perfectly clean black-removed video */}
+                  {/* Enhanced Canvas showing perfectly clean background-removed video */}
                   {useCanvasProcessing && (
                     <canvas 
                       ref={canvasRef}
@@ -823,4 +1001,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-        }
+              }
