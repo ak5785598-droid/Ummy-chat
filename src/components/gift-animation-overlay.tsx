@@ -40,12 +40,13 @@ export function GiftAnimationOverlay({
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showNameplate, setShowNameplate] = useState(false);
   const [useCanvasProcessing, setUseCanvasProcessing] = useState(false);
+  const [backgroundType, setBackgroundType] = useState<'black' | 'white' | null>(null); // Track karega kaunsa background hai
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const detectionVideoRef = useRef<HTMLVideoElement>(null);
   const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Canvas refs for black-fade processing and detection
+  // Canvas refs for background-fade processing and detection
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -65,7 +66,7 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Black background detection with edge sampling (kaali background check karta hai)
+  // Black background detection with edge sampling
   const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
@@ -94,7 +95,7 @@ export function GiftAnimationOverlay({
       const BLACK_PIXEL_RATIO = 0.92;
 
       // Check multiple rows on each edge for better accuracy
-      const EDGE_DEPTH = 5; // 5 pixels deep from edge check karo
+      const EDGE_DEPTH = 5;
 
       // Check top edge (multiple rows)
       let topBlackCount = 0;
@@ -203,7 +204,7 @@ export function GiftAnimationOverlay({
     });
   };
 
-  // White/light background detection (safed background check karta hai)
+  // White/light background detection
   const detectWhiteBackground = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
@@ -228,7 +229,7 @@ export function GiftAnimationOverlay({
       const width = canvas.width;
       const height = canvas.height;
 
-      const WHITE_THRESHOLD = 220; // White ke liye high threshold
+      const WHITE_THRESHOLD = 240;
       const WHITE_PIXEL_RATIO = 0.92;
 
       // Check multiple rows on each edge
@@ -346,8 +347,9 @@ export function GiftAnimationOverlay({
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
-      setIsVideoLoading(!!videoUrl); // Agar video hai to loading dikhao
+      setIsVideoLoading(!!videoUrl);
       setUseCanvasProcessing(false);
+      setBackgroundType(null); // Reset background type
       processingActiveRef.current = false;
       
       setShowNameplate(true);
@@ -356,13 +358,13 @@ export function GiftAnimationOverlay({
         setShowNameplate(false);
       }, 3500);
 
-      // 1. Sound play karo
+      // 1. Play Sound
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // 2. Haptics do
+      // 2. Haptics
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
@@ -380,12 +382,12 @@ export function GiftAnimationOverlay({
     }
   }, [giftId, soundUrl, videoUrl]);
 
-  // Super Advanced White/Black Fade Processor (safed aur kaala dono background remove karta hai)
+  // Advanced Background Fade Processor (Black OR White - dono ek saath nahi)
   const processBackgroundFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (!video || !canvas || video.paused || video.ended) {
+    if (!video || !canvas || video.paused || video.ended || !backgroundType) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -443,83 +445,94 @@ export function GiftAnimationOverlay({
     }
     const processedData = processBufferRef.current;
 
-    // BLACK & WHITE Background Removal Parameters (Dono ke liye parameters)
-    const BLACK_THRESHOLD = 30;     // Black pixel ki maximum value
-    const WHITE_THRESHOLD = 225;    // White pixel ki minimum value  
-    const DARK_GRAY_THRESHOLD = 50;  // Dark gray transition ke liye
-    const LIGHT_GRAY_THRESHOLD = 200; // Light gray transition ke liye
-    const ALPHA_REDUCTION = 0.93;    // 93% opacity reduction per frame
+    const ALPHA_REDUCTION = 0.93; // 93% opacity reduction per frame
 
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
-      
-      // Skip already transparent pixels
-      if (a === 0) continue;
-      
-      // Check if pixel is pure black
-      const isPureBlack = (r <= BLACK_THRESHOLD && 
-                          g <= BLACK_THRESHOLD && 
-                          b <= BLACK_THRESHOLD);
-      
-      // Check if pixel is pure white
-      const isPureWhite = (r >= WHITE_THRESHOLD && 
-                          g >= WHITE_THRESHOLD && 
-                          b >= WHITE_THRESHOLD);
-      
-      // Check if pixel is very dark (near black transition)
-      const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
-                         g <= DARK_GRAY_THRESHOLD && 
-                         b <= DARK_GRAY_THRESHOLD);
-      
-      // Check if pixel is very light (near white transition)
-      const isLightGray = (r >= LIGHT_GRAY_THRESHOLD && 
-                          g >= LIGHT_GRAY_THRESHOLD && 
-                          b >= LIGHT_GRAY_THRESHOLD);
-      
-      // BLACK BACKGROUND PROCESSING
-      if (isPureBlack) {
-        const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
-        processedData[i + 3] = newAlpha;
-        if (newAlpha < 20) {
-          processedData[i] = Math.floor(r * 0.9);
-          processedData[i + 1] = Math.floor(g * 0.9);
-          processedData[i + 2] = Math.floor(b * 0.9);
-        }
-      } else if (isDarkGray) {
-        const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
-        const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
-        const newAlpha = Math.floor(a * (1 - softAlphaReduction));
-        processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
-        if (darknessFactor > 0.5) {
-          const blend = darknessFactor * 0.3;
-          processedData[i] = Math.floor(r * (1 - blend));
-          processedData[i + 1] = Math.floor(g * (1 - blend));
-          processedData[i + 2] = Math.floor(b * (1 - blend));
+    // BLACK BACKGROUND PROCESSING (Only if backgroundType is 'black')
+    if (backgroundType === 'black') {
+      const BLACK_THRESHOLD = 30;
+      const DARK_GRAY_THRESHOLD = 50;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        // Skip already transparent pixels
+        if (a === 0) continue;
+        
+        const isPureBlack = (r <= BLACK_THRESHOLD && 
+                            g <= BLACK_THRESHOLD && 
+                            b <= BLACK_THRESHOLD);
+        
+        const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
+                           g <= DARK_GRAY_THRESHOLD && 
+                           b <= DARK_GRAY_THRESHOLD);
+        
+        if (isPureBlack) {
+          const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
+          processedData[i + 3] = newAlpha;
+          if (newAlpha < 20) {
+            processedData[i] = Math.floor(r * 0.9);
+            processedData[i + 1] = Math.floor(g * 0.9);
+            processedData[i + 2] = Math.floor(b * 0.9);
+          }
+        } else if (isDarkGray) {
+          const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
+          const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
+          const newAlpha = Math.floor(a * (1 - softAlphaReduction));
+          processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
+          if (darknessFactor > 0.5) {
+            const blend = darknessFactor * 0.3;
+            processedData[i] = Math.floor(r * (1 - blend));
+            processedData[i + 1] = Math.floor(g * (1 - blend));
+            processedData[i + 2] = Math.floor(b * (1 - blend));
+          }
         }
       }
-      
-      // WHITE BACKGROUND PROCESSING (Naya logic for white)
-      else if (isPureWhite) {
-        const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
-        processedData[i + 3] = newAlpha;
-        if (newAlpha < 20) {
-          processedData[i] = Math.min(255, Math.floor(r * 1.1));
-          processedData[i + 1] = Math.min(255, Math.floor(g * 1.1));
-          processedData[i + 2] = Math.min(255, Math.floor(b * 1.1));
-        }
-      } else if (isLightGray) {
-        const lightnessFactor = ((r + g + b) / (3 * LIGHT_GRAY_THRESHOLD)) - 0.7;
-        const softAlphaReduction = ALPHA_REDUCTION * lightnessFactor * 0.6;
-        const newAlpha = Math.floor(a * (1 - softAlphaReduction));
-        processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
-        if (lightnessFactor > 0.4) {
-          const blend = lightnessFactor * 0.25;
-          processedData[i] = Math.min(255, Math.floor(r * (1 + blend)));
-          processedData[i + 1] = Math.min(255, Math.floor(g * (1 + blend)));
-          processedData[i + 2] = Math.min(255, Math.floor(b * (1 + blend)));
+    }
+
+    // WHITE BACKGROUND PROCESSING (Only if backgroundType is 'white')
+    if (backgroundType === 'white') {
+      const WHITE_THRESHOLD = 225;
+      const LIGHT_GRAY_THRESHOLD = 200;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        // Skip already transparent pixels
+        if (a === 0) continue;
+        
+        const isPureWhite = (r >= WHITE_THRESHOLD && 
+                            g >= WHITE_THRESHOLD && 
+                            b >= WHITE_THRESHOLD);
+        
+        const isLightGray = (r >= LIGHT_GRAY_THRESHOLD && 
+                            g >= LIGHT_GRAY_THRESHOLD && 
+                            b >= LIGHT_GRAY_THRESHOLD);
+        
+        if (isPureWhite) {
+          const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
+          processedData[i + 3] = newAlpha;
+          if (newAlpha < 20) {
+            processedData[i] = Math.min(255, Math.floor(r * 1.1));
+            processedData[i + 1] = Math.min(255, Math.floor(g * 1.1));
+            processedData[i + 2] = Math.min(255, Math.floor(b * 1.1));
+          }
+        } else if (isLightGray) {
+          const lightnessFactor = ((r + g + b) / (3 * LIGHT_GRAY_THRESHOLD)) - 0.7;
+          const softAlphaReduction = ALPHA_REDUCTION * lightnessFactor * 0.6;
+          const newAlpha = Math.floor(a * (1 - softAlphaReduction));
+          processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
+          if (lightnessFactor > 0.4) {
+            const blend = lightnessFactor * 0.25;
+            processedData[i] = Math.min(255, Math.floor(r * (1 + blend)));
+            processedData[i + 1] = Math.min(255, Math.floor(g * (1 + blend)));
+            processedData[i + 2] = Math.min(255, Math.floor(b * (1 + blend)));
+          }
         }
       }
     }
@@ -535,14 +548,14 @@ export function GiftAnimationOverlay({
 
   // Skip canvas processing for normal-tier gifts to save CPU
   useEffect(() => {
-    if (activeGift && videoUrl && isVideoReady) {
+    if (activeGift && videoUrl && isVideoReady && backgroundType) {
       setUseCanvasProcessing(tier === 'epic' || tier === 'legendary');
     }
-  }, [activeGift, videoUrl, isVideoReady, tier]);
+  }, [activeGift, videoUrl, isVideoReady, tier, backgroundType]);
 
   // Start/Stop Background Fade Processor when video plays
   useEffect(() => {
-    if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
+    if (activeGift && videoUrl && isVideoReady && useCanvasProcessing && backgroundType) {
       const startTimer = setTimeout(() => {
         processingActiveRef.current = true;
         processBackgroundFade();
@@ -557,7 +570,7 @@ export function GiftAnimationOverlay({
         }
       };
     }
-  }, [activeGift, videoUrl, isVideoReady, useCanvasProcessing]);
+  }, [activeGift, videoUrl, isVideoReady, useCanvasProcessing, backgroundType]);
 
   // Cleanup function
   const handleCleanup = () => {
@@ -578,6 +591,7 @@ export function GiftAnimationOverlay({
     setIsVideoReady(false);
     setShowNameplate(false);
     setUseCanvasProcessing(false);
+    setBackgroundType(null);
     
     // Clear canvases
     if (canvasRef.current) {
@@ -597,7 +611,7 @@ export function GiftAnimationOverlay({
     }, duration + 500); 
   };
 
-  // Handle Video Ready - Detect both black and white backgrounds
+  // Handle Video Ready - Detect background type (BLACK pehle check, WHITE baad mein - DONO EK SAATH NAHI)
   const handleVideoCanPlay = async () => {
     setIsVideoReady(true);
     setIsVideoLoading(false);
@@ -605,20 +619,26 @@ export function GiftAnimationOverlay({
     if (videoRef.current) {
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // Dono background check karo - kaala aur safed
+      // BLACK background check pehle
       const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
-      const hasSolidWhiteBg = await detectWhiteBackground(videoRef.current);
-      
-      // Kisi bhi solid background ke liye canvas processing on karo
-      const needsProcessing = hasSolidBlackBg || hasSolidWhiteBg;
-      setUseCanvasProcessing(needsProcessing);
       
       if (hasSolidBlackBg) {
+        // Black mil gaya to black set karo, white check hi mat karo
+        setBackgroundType('black');
         console.log('[Gift Video] Canvas processing activated - BLACK background removed');
-      } else if (hasSolidWhiteBg) {
-        console.log('[Gift Video] Canvas processing activated - WHITE background removed');
       } else {
-        console.log('[Gift Video] Standard playback - no solid background detected');
+        // Black nahi mila to ab white check karo
+        const hasSolidWhiteBg = await detectWhiteBackground(videoRef.current);
+        
+        if (hasSolidWhiteBg) {
+          // White mil gaya to white set karo
+          setBackgroundType('white');
+          console.log('[Gift Video] Canvas processing activated - WHITE background removed');
+        } else {
+          // Dono nahi mila to kuch mat karo
+          setBackgroundType(null);
+          console.log('[Gift Video] Standard playback - no solid background detected');
+        }
       }
     }
   };
@@ -898,7 +918,7 @@ export function GiftAnimationOverlay({
                   />
                   
                   {/* Enhanced Canvas showing perfectly clean background-removed video */}
-                  {useCanvasProcessing && (
+                  {useCanvasProcessing && backgroundType && (
                     <canvas 
                       ref={canvasRef}
                       className="w-full h-full object-contain"
@@ -1001,4 +1021,4 @@ export function GiftAnimationOverlay({
       `}</style>
     </div>
   );
-              }
+}
