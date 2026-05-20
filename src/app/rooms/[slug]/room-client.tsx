@@ -24,6 +24,7 @@ import {
   LayoutGrid,
   X,
   Film,
+  Tv,
   Plus,
   SmilePlus,
   MessageSquare,
@@ -148,7 +149,7 @@ import { useRoomTasks } from '@/hooks/use-room-tasks';
 import { useAudioOutput } from '@/hooks/use-audio-output';
 import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { YouTubeDialog } from '@/components/youtube-dialog';
-import { MovieBrowserDialog } from '@/components/movie-browser-dialog';
+import { EntertainmentHubDialog } from '@/components/entertainment-hub-dialog';
 import { MoviePlayer } from '@/components/movie-player';
 import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
@@ -391,7 +392,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
   const [isMoviesOpen, setIsMoviesOpen] = useState(false);
   const [isMoviePlayerOpen, setIsMoviePlayerOpen] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null } | null>(null);
+  const [selectedMovie, setSelectedMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; mediaType?: 'movie' | 'tv'; season?: number; episode?: number; episodeName?: string } | null>(null);
   const [roomMovie, setRoomMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; startedBy: string } | null>(null);
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const movieDragControls = useDragControls();
@@ -2587,9 +2588,38 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   };
 
   const handleWatchPersonal = (movie: TMDBMovie) => {
-    setSelectedMovie({ tmdbId: movie.id, title: movie.title, posterPath: movie.poster_path || null });
+    setSelectedMovie({ tmdbId: movie.id, title: movie.title, posterPath: movie.poster_path || null, mediaType: 'movie' });
     setIsMoviePlayerOpen(true);
     setIsMoviesOpen(false);
+  };
+
+  // TV SHOW HANDLERS
+  const handleWatchTVPersonal = (show: any, season: number, episode: number, episodeName?: string) => {
+    setSelectedMovie({ tmdbId: show.id, title: show.name, posterPath: show.poster_path || null, mediaType: 'tv', season, episode, episodeName });
+    setIsMoviePlayerOpen(true);
+    setIsMoviesOpen(false);
+  };
+
+  const handlePlayTVForRoom = async (show: any, season: number, episode: number, episodeName?: string) => {
+    if (!firestore || !room.id || !currentUser?.uid) return;
+    const roomRef = doc(firestore, 'chatRooms', room.id);
+    await updateDocumentNonBlocking(roomRef, {
+      currentMovie: {
+        tmdbId: show.id,
+        title: `${show.name} S${season}E${episode}`,
+        posterPath: show.poster_path || null,
+        startedAt: serverTimestamp(),
+        startedBy: currentUser.uid,
+        mediaType: 'tv',
+        season,
+        episode,
+      },
+      updatedAt: serverTimestamp(),
+    });
+    setSelectedMovie({ tmdbId: show.id, title: show.name, posterPath: show.poster_path || null, mediaType: 'tv', season, episode, episodeName });
+    setIsMoviePlayerOpen(true);
+    setIsMoviesOpen(false);
+    toast({ title: '📺 Series Synced', description: `${show.name} S${season}E${episode} is now playing for the room.` });
   };
 
   const handleJoinRoomMovie = () => {
@@ -3947,8 +3977,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               >
                 <img src="https://img.icons8.com/ios-glyphs/30/ffffff/drag-reorder.png" className="h-4 w-4 opacity-70" alt="Drag" />
               </button>
-              <Film className="h-4 w-4 text-purple-400 shrink-0" />
-              <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}</span>
+              {selectedMovie.mediaType === 'tv' ? <Tv className="h-4 w-4 text-blue-400 shrink-0" /> : <Film className="h-4 w-4 text-purple-400 shrink-0" />}
+              <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}{selectedMovie.mediaType === 'tv' && selectedMovie.season ? ` S${selectedMovie.season}E${selectedMovie.episode}` : ''}</span>
             </div>
             <div className="flex items-center gap-2">
               {canManageRoom && roomMovie?.tmdbId === selectedMovie.tmdbId && (
@@ -3968,11 +3998,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </div>
           </div>
 
-          {/* iframe — sandboxed to allow video player scripts & popups to run but block top-level parent redirects */}
           <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
             <iframe
-              key={`vidlink-inroom-${selectedMovie.tmdbId}`}
-              src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
+              key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}`}
+              src={
+                selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+                  ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
+                  : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+              }
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               allowFullScreen
@@ -3982,12 +4015,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         </motion.div>
       )}
 
-      <MovieBrowserDialog
+      <EntertainmentHubDialog
         open={isMoviesOpen}
         onOpenChange={setIsMoviesOpen}
         isHost={isOwner || canManageRoom}
-        onPlayForRoom={handlePlayMovieForRoom}
-        onWatchPersonal={handleWatchPersonal}
+        onPlayMovieForRoom={handlePlayMovieForRoom}
+        onWatchMoviePersonal={handleWatchPersonal}
+        onWatchTVPersonal={handleWatchTVPersonal}
+        onPlayTVForRoom={handlePlayTVForRoom}
       />
 
       {/* Fullscreen MoviePlayer is commented out in favor of the in-room integrated player

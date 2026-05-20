@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Film } from 'lucide-react';
+import { X, Film, Tv } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -10,23 +10,44 @@ interface MoviePlayerProps {
   tmdbId: number;
   title: string;
   posterPath?: string | null;
+  // TV support
+  mediaType?: 'movie' | 'tv';
+  season?: number;
+  episode?: number;
+  episodeName?: string;
 }
 
-export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: MoviePlayerProps) {
+export function MoviePlayer({
+  open,
+  onOpenChange,
+  tmdbId,
+  title,
+  posterPath,
+  mediaType = 'movie',
+  season,
+  episode,
+  episodeName,
+}: MoviePlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const videoUrl = `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
+  const videoUrl = mediaType === 'tv' && season && episode
+    ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+    : `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
 
   useEffect(() => {
     if (open) {
       setIsLoading(true);
     }
-  }, [open, tmdbId]);
+  }, [open, tmdbId, season, episode]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
+
+  const subtitle = mediaType === 'tv' && season && episode
+    ? `Season ${season} • Episode ${episode}${episodeName ? ` — ${episodeName}` : ''}`
+    : 'Movie Mirror';
 
   if (!open) return null;
 
@@ -63,15 +84,15 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
             </button>
 
             <div className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
-              {/* Movie Title */}
+              {/* Title */}
               <div className="flex items-center justify-center pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center">
-                    <Film className="h-4 w-4 text-white" />
+                  <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${mediaType === 'tv' ? 'bg-gradient-to-br from-blue-500 to-cyan-600' : 'bg-gradient-to-br from-purple-500 to-violet-700'}`}>
+                    {mediaType === 'tv' ? <Tv className="h-4 w-4 text-white" /> : <Film className="h-4 w-4 text-white" />}
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white">{title}</h3>
-                    <p className="text-[10px] text-white/40">Movie Mirror</p>
+                    <p className="text-[10px] text-white/40">{subtitle}</p>
                   </div>
                 </div>
               </div>
@@ -81,13 +102,15 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   <div className="absolute inset-0 flex items-center justify-center z-10">
                     <div className="flex flex-col items-center gap-3">
                       <div className="h-8 w-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
-                      <p className="text-xs text-white/50">Loading movie...</p>
+                      <p className="text-xs text-white/50">
+                        {mediaType === 'tv' ? 'Loading episode...' : 'Loading movie...'}
+                      </p>
                     </div>
                   </div>
                 )}
                 <iframe
                   ref={iframeRef}
-                  key={`vidlink-${tmdbId}`}
+                  key={`vidlink-${mediaType}-${tmdbId}-${season}-${episode}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
