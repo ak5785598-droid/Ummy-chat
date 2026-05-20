@@ -128,7 +128,15 @@ export function RoomsExplorerGlossy() {
      try {
        const q = query(collection(firestore, 'chatRooms'), orderBy('participantCount', 'desc'), limit(50));
        const snap = await getDocs(q);
-       setRoomsData(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+       const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+       
+       // DEDUPLICATE: Remove duplicate rooms by ID
+       const uniqueRooms = rooms.filter((room, index, self) => 
+         index === self.findIndex(r => r.id === room.id)
+       );
+       
+       console.log('[Rooms Glossy] Fetched:', rooms.length, 'Unique:', uniqueRooms.length);
+       setRoomsData(uniqueRooms);
      } catch (e) {
        console.error('[Rooms] Fetch failed:', e);
      } finally {
@@ -196,16 +204,21 @@ export function RoomsExplorerGlossy() {
   return bannerConfig.slides;
  }, [bannerConfig, isHydrated]);
 
-  const displayRooms = useMemo(() => {
-   if (!roomsData || !isHydrated) return [];
-   
-   let filtered = roomsData.filter(room => {
+   const displayRooms = useMemo(() => {
+    if (!roomsData || !isHydrated) return [];
+    
+    // Debug: Log help rooms found
+    const helpRooms = roomsData.filter(r => r.id === 'ummy-help-center');
+    console.log('[Rooms Glossy] Help rooms found:', helpRooms.map(r => ({ id: r.id, ownerId: r.ownerId })));
+    
+    let filtered = roomsData.filter(room => {
      const cat = room.category || 'Chat';
      const matchesCategory = activeCategory === "All" || cat === activeCategory;
      const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
      
-     // Help room always visible (24/7)
-     const isHelpRoom = room.id === 'ummy-help-center';
+     // Help room always visible (24/7) - ONLY if owned by App Creator
+     const APP_CREATOR_UID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+     const isHelpRoom = room.id === 'ummy-help-center' && room.ownerId === APP_CREATOR_UID;
      if (isHelpRoom) return matchesCategory && !isDecommissioned;
      
      // Check Realtime Database presence for instant online status
