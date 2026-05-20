@@ -3070,14 +3070,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        {/* IN-ROOM INTEGRATED MOVIE PLAYER - FIXED OVERLAY ABOVE BANNER */}
+        {/* IN-ROOM MOVIE PLAYER — overlays banner area, stays below room header */}
         {isMoviePlayerOpen && selectedMovie && (
-          <div className="fixed inset-x-0 top-0 z-[200] flex flex-col animate-in slide-in-from-top duration-300"
-               style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-            {/* Dimmed backdrop behind player but doesn't block room */}
-            <div className="w-full bg-black/95 shadow-2xl border-b border-purple-500/30">
-              {/* Header Bar */}
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-slate-700/40">
+          <div className="absolute inset-0 z-[50] flex flex-col animate-in fade-in duration-200">
+            {/* Dark overlay behind player */}
+            <div className="absolute inset-0 bg-black/80" onClick={() => setIsMoviePlayerOpen(false)} />
+
+            {/* Player card — centered vertically in the banner area */}
+            <div className="relative w-full flex flex-col shadow-2xl">
+              {/* Title bar */}
+              <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-purple-500/30">
                 <div className="flex items-center gap-2 min-w-0">
                   <Film className="h-4 w-4 text-purple-400 shrink-0" />
                   <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}</span>
@@ -3100,27 +3102,21 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 </div>
               </div>
 
-              {/* Video Frame
-                  sandbox rules:
-                  - allow-scripts        → player JS runs
-                  - allow-same-origin    → player can access its own cookies/storage
-                  - allow-forms          → player form submissions work
-                  - allow-presentation   → fullscreen works
-                  - allow-popups         → vidlink.pro popup check passes (won't show "Disable Sandbox")
-                  - allow-top-navigation is intentionally OMITTED → ads can't redirect the main app */}
-              <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '55vw' }}>
+              {/* iframe — NO sandbox: vidlink.pro detects all sandbox variants.
+                  Modern browsers block cross-origin iframe → parent navigation by default. */}
+              <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
                 <iframe
                   key={`vidlink-inroom-${selectedMovie.tmdbId}`}
                   src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                 />
               </div>
             </div>
           </div>
         )}
+
 
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
