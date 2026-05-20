@@ -22,6 +22,7 @@ import {
   Mail,
   LayoutGrid,
   X,
+  Film,
   Plus,
   SmilePlus,
   MessageSquare,
@@ -2557,6 +2558,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       },
       updatedAt: serverTimestamp(),
     });
+    setSelectedMovie({ tmdbId: movie.id, title: movie.title, posterPath: movie.poster_path || null });
+    setIsMoviePlayerOpen(true);
+    setIsMoviesOpen(false);
     toast({ title: 'Movie Mirror Synced', description: `${movie.title} is now playing for the room.` });
   };
 
@@ -3065,6 +3069,47 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             ))}
           </div>
         </div>
+
+        {/* IN-ROOM INTEGRATED MOVIE PLAYER */}
+        {isMoviePlayerOpen && selectedMovie && (
+          <div className="w-full px-3 py-1.5 shrink-0 animate-in slide-in-from-top duration-300">
+            <div className="relative bg-slate-900/90 border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
+              <div className="flex items-center justify-between px-3 py-2 bg-slate-800/80 border-b border-slate-700/50">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Film className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                  <span className="text-xs font-bold text-white truncate">{selectedMovie.title}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {canManageRoom && roomMovie?.tmdbId === selectedMovie.tmdbId && (
+                    <button
+                      onClick={handleStopRoomMovie}
+                      className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
+                    >
+                      Stop For All
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsMoviePlayerOpen(false)}
+                    className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="relative aspect-video bg-black">
+                <iframe
+                  key={`vidlink-inroom-${selectedMovie.tmdbId}`}
+                  src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
+                  className="w-full h-full border-0"
+                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
         <div className="flex-1 w-full overflow-hidden mt-0.5 relative flex flex-col">
@@ -3901,6 +3946,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onWatchPersonal={handleWatchPersonal}
       />
 
+      {/* Fullscreen MoviePlayer is commented out in favor of the in-room integrated player
       <MoviePlayer
         open={isMoviePlayerOpen}
         onOpenChange={setIsMoviePlayerOpen}
@@ -3908,6 +3954,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         title={selectedMovie?.title || ''}
         posterPath={selectedMovie?.posterPath}
       />
+      */}
 
       <MovieSyncBanner
         visible={!!roomMovie && !isMoviePlayerOpen && !isMovieBannerDismissed && roomMovie.startedBy !== currentUser?.uid}

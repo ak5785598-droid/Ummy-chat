@@ -92,6 +92,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   onLoad={handleIframeLoad}
                 />
               </div>
