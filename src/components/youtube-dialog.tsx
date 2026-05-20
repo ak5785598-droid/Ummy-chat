@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { Search, X, Loader, Play, Link as LinkIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { YouTubePlayer } from './youtube-player';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
@@ -51,6 +52,8 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost, onCl
   const [isSearching, setIsSearching] = useState(false);
   const [youtubeState, setYoutubeState] = useState<YouTubeState | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const dragControls = useDragControls();
 
   const youtubeRef = useMemoFirebase(() => {
     if (!firestore || !roomId) return null;
@@ -168,145 +171,277 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost, onCl
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
-        >
-          {/* Backdrop - light dim so room clearly visible */}
+        youtubeState?.videoId ? (
+          /* FLOATING DRAGGABLE PLAYBACK CARD */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragMomentum={false}
+            className="fixed z-[130] w-[95vw] max-w-lg bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col"
+            style={{
+              top: '25%',
+              left: '2.5%',
+            }}
+          >
+            {/* Custom Header with Drag control */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-red-500/30 select-none">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Drag button */}
+                <button
+                  onPointerDown={(e) => dragControls.start(e)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white cursor-grab active:cursor-grabbing touch-none select-none"
+                  title="Drag Player"
+                >
+                  <img src="https://img.icons8.com/ios-glyphs/30/ffffff/drag-reorder.png" className="h-4 w-4 opacity-70" alt="Drag" />
+                </button>
+                
+                <Play className="h-4 w-4 text-red-500 fill-red-500 shrink-0" />
+                <span className="text-xs font-bold text-white truncate max-w-[180px]">
+                  {youtubeState.title || 'YouTube Player'}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {isHost && (
+                  <>
+                    <button
+                      onClick={() => setShowSearch(!showSearch)}
+                      className={cn(
+                        "p-1.5 rounded-full text-white/60 hover:text-white transition-all border",
+                        showSearch ? "bg-red-600 border-red-600 text-white" : "hover:bg-white/10 border-white/10"
+                      )}
+                      title="Search Video"
+                    >
+                      <Search className="h-3.5 w-3.5" />
+                    </button>
+                    {onCloseForAll && (
+                      <button
+                        onClick={onCloseForAll}
+                        className="px-2 py-0.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
+                      >
+                        Stop For All
+                      </button>
+                    )}
+                  </>
+                )}
+                
+                <button
+                  onClick={() => onOpenChange(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Compact Search/Paste interface inside floating card (Host Only) */}
+            {isHost && showSearch && (
+              <div className="p-3 bg-slate-900 border-b border-slate-800 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                {/* Search Bar */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && searchYouTube()}
+                      placeholder="Search YouTube..."
+                      className="w-full h-8 pl-9 pr-4 bg-slate-800 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 border border-slate-700"
+                    />
+                  </div>
+                  <button
+                    onClick={searchYouTube}
+                    disabled={isSearching}
+                    className="h-8 px-3 bg-red-600 hover:bg-red-700 rounded-lg text-white text-xs font-bold disabled:opacity-50 transition-colors"
+                  >
+                    {isSearching ? <Loader className="h-3.5 w-3.5 animate-spin" /> : 'Search'}
+                  </button>
+                </div>
+
+                {/* URL Input */}
+                <div className="flex gap-2">
+                  <input
+                    value={urlInput}
+                    onChange={e => setUrlInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleUrlPaste()}
+                    placeholder="Paste YouTube URL..."
+                    className="flex-1 h-8 px-3 bg-slate-800 rounded-lg text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-red-500 border border-slate-700"
+                  />
+                  <button
+                    onClick={handleUrlPaste}
+                    className="h-8 px-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white text-xs font-bold border border-slate-700 transition-colors"
+                  >
+                    <LinkIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Search Results */}
+                {results.length > 0 && (
+                  <div className="grid grid-cols-3 gap-1.5 max-h-[160px] overflow-y-auto pt-1 no-scrollbar">
+                    {results.map((v) => (
+                      <button
+                        key={v.id.videoId}
+                        onClick={() => {
+                          selectVideo(v);
+                          setShowSearch(false);
+                        }}
+                        className="group relative rounded-lg overflow-hidden bg-slate-800 hover:ring-1 hover:ring-red-500 transition-all text-left"
+                      >
+                        <img
+                          src={v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url}
+                          alt={v.snippet.title}
+                          className="w-full aspect-video object-cover"
+                        />
+                        <div className="p-1">
+                          <p className="text-[10px] text-white truncate">{v.snippet.title}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Video Player */}
+            <div className="relative w-full aspect-video bg-black">
+              <YouTubePlayer
+                videoId={youtubeState.videoId}
+                title={youtubeState.title}
+                isPlaying={youtubeState.isPlaying}
+                currentTime={youtubeState.currentTime}
+                volume={youtubeState.volume || 80}
+                onPlay={handlePlay}
+                onPause={handlePause}
+                onSeek={handleSeek}
+                onVolumeChange={handleVolume}
+                onReady={() => setPlayerReady(true)}
+              />
+            </div>
+          </motion.div>
+        ) : (
+          /* STANDARD CENTERED MODAL DIALOG (SEARCH & SELECT) */
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/30"
-            onClick={() => onOpenChange(false)}
-          />
-          
-          {/* Video Container - centered */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-2xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
           >
-            {/* Close button */}
-            <button 
-              onClick={() => {
-                if (isHost && onCloseForAll) {
-                  onCloseForAll();
-                } else {
-                  onOpenChange(false);
-                }
-              }}
-              className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/50"
+              onClick={() => onOpenChange(false)}
+            />
+            
+            {/* Dialog Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-2xl bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 z-10"
             >
-              <X className="h-5 w-5 text-white" />
-            </button>
+              {/* Close button */}
+              <button 
+                onClick={() => onOpenChange(false)}
+                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all active:scale-90"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
 
-            {/* Content area */}
-            <div className="p-4 space-y-4 max-h-[85vh] overflow-y-auto">
-              {/* Header */}
-              <div className="flex items-center gap-3 pb-2 border-b border-slate-800">
-                <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
-                  <Play className="h-4 w-4 text-white fill-white" />
+              {/* Content area */}
+              <div className="p-4 space-y-4 max-h-[85vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-800">
+                  <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
+                    <Play className="h-4 w-4 text-white fill-white" />
+                  </div>
+                  <h2 className="text-lg font-bold text-white">YouTube Player</h2>
                 </div>
-                <h2 className="text-lg font-bold text-white">YouTube</h2>
-              </div>
 
-              {isHost && (
-                <>
-                  {/* Search Bar */}
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                {isHost ? (
+                  <>
+                    {/* Search Bar */}
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <input
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && searchYouTube()}
+                          placeholder="Search YouTube..."
+                          className="w-full h-10 pl-10 pr-4 bg-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 border border-slate-700"
+                        />
+                      </div>
+                      <button
+                        onClick={searchYouTube}
+                        disabled={isSearching}
+                        className="h-10 px-4 bg-red-600 hover:bg-red-700 rounded-xl text-white text-sm font-bold disabled:opacity-50 transition-colors active:scale-95"
+                      >
+                        {isSearching ? <Loader className="h-4 w-4 animate-spin" /> : 'Search'}
+                      </button>
+                    </div>
+
+                    {/* URL Input */}
+                    <div className="flex gap-2">
                       <input
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && searchYouTube()}
-                        placeholder="Search YouTube..."
-                        className="w-full h-10 pl-10 pr-4 bg-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 border border-slate-700"
+                        value={urlInput}
+                        onChange={e => setUrlInput(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleUrlPaste()}
+                        placeholder="Or paste YouTube URL..."
+                        className="flex-1 h-10 px-4 bg-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 border border-slate-700"
                       />
+                      <button
+                        onClick={handleUrlPaste}
+                        className="h-10 px-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-white text-sm font-bold border border-slate-700 transition-colors active:scale-95"
+                      >
+                        <LinkIcon className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button
-                      onClick={searchYouTube}
-                      disabled={isSearching}
-                      className="h-10 px-4 bg-red-600 hover:bg-red-700 rounded-xl text-white text-sm font-bold disabled:opacity-50 transition-colors active:scale-95"
-                    >
-                      {isSearching ? <Loader className="h-4 w-4 animate-spin" /> : 'Search'}
-                    </button>
+
+                    {/* Search Results */}
+                    {results.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {results.map((v) => (
+                          <button
+                            key={v.id.videoId}
+                            onClick={() => selectVideo(v)}
+                            className="group relative rounded-xl overflow-hidden bg-slate-800 hover:ring-2 hover:ring-red-500 transition-all active:scale-95 text-left"
+                          >
+                            <img
+                              src={v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url}
+                              alt={v.snippet.title}
+                              className="w-full aspect-video object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Play className="h-8 w-8 text-white animate-pulse" />
+                            </div>
+                            <div className="p-2">
+                              <p className="text-xs text-white truncate">{v.snippet.title}</p>
+                              <p className="text-[10px] text-slate-400 truncate">{v.snippet.channelTitle}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-40 text-slate-500 text-sm gap-2">
+                    <Play className="h-10 w-10 text-slate-700 animate-pulse" />
+                    <p>Waiting for host to select a video...</p>
                   </div>
-
-                  {/* URL Input */}
-                  <div className="flex gap-2">
-                    <input
-                      value={urlInput}
-                      onChange={e => setUrlInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleUrlPaste()}
-                      placeholder="Or paste YouTube URL..."
-                      className="flex-1 h-10 px-4 bg-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 border border-slate-700"
-                    />
-                    <button
-                      onClick={handleUrlPaste}
-                      className="h-10 px-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-white text-sm font-bold border border-slate-700 transition-colors active:scale-95"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Search Results */}
-                  {results.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {results.map((v) => (
-                        <button
-                          key={v.id.videoId}
-                          onClick={() => selectVideo(v)}
-                          className="group relative rounded-xl overflow-hidden bg-slate-800 hover:ring-2 hover:ring-red-500 transition-all active:scale-95"
-                        >
-                          <img
-                            src={v.snippet.thumbnails.medium?.url || v.snippet.thumbnails.default?.url}
-                            alt={v.snippet.title}
-                            className="w-full aspect-video object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Play className="h-8 w-8 text-white" />
-                          </div>
-                          <div className="p-2">
-                            <p className="text-xs text-white truncate">{v.snippet.title}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{v.snippet.channelTitle}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Video Player */}
-              {youtubeState?.videoId ? (
-                <YouTubePlayer
-                  videoId={youtubeState.videoId}
-                  title={youtubeState.title}
-                  isPlaying={youtubeState.isPlaying}
-                  currentTime={youtubeState.currentTime}
-                  volume={youtubeState.volume || 80}
-                  onPlay={handlePlay}
-                  onPause={handlePause}
-                  onSeek={handleSeek}
-                  onVolumeChange={handleVolume}
-                  onReady={() => setPlayerReady(true)}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-slate-500 text-sm gap-2">
-                  <Play className="h-10 w-10 text-slate-700" />
-                  <p>{isHost ? 'Search or paste a YouTube URL to start' : 'Waiting for host to select a video...'}</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )
       )}
     </AnimatePresence>
   );

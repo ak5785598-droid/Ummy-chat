@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
+import { motion, useDragControls } from 'framer-motion';
 import {
   Mic,
   MicOff,
@@ -393,6 +394,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [selectedMovie, setSelectedMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null } | null>(null);
   const [roomMovie, setRoomMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; startedBy: string } | null>(null);
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
+  const movieDragControls = useDragControls();
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
@@ -1451,6 +1453,26 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }
       } else {
         setNetMirrorSession(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, room.id]);
+
+  // YOUTUBE SYNC: Listen for active YouTube state in the room
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const youtubeStateRef = doc(firestore, 'chatRooms', room.id, 'youtube', 'state');
+    const unsubscribe = onSnapshot(youtubeStateRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.videoId) {
+          setIsYouTubeOpen(true);
+          setIsYouTubeHidden(false);
+        } else {
+          setIsYouTubeOpen(false);
+        }
+      } else {
+        setIsYouTubeOpen(false);
       }
     });
     return () => unsubscribe();
@@ -3070,51 +3092,63 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        {/* IN-ROOM MOVIE PLAYER — overlays banner area, stays below room header */}
+        {/* IN-ROOM MOVIE PLAYER — overlays room center, stays above banners and seats, below room header */}
         {isMoviePlayerOpen && selectedMovie && (
-          <div className="absolute inset-0 z-[50] flex flex-col animate-in fade-in duration-200">
-            {/* Dark overlay behind player */}
-            <div className="absolute inset-0 bg-black/80" onClick={() => setIsMoviePlayerOpen(false)} />
-
-            {/* Player card — centered vertically in the banner area */}
-            <div className="relative w-full flex flex-col shadow-2xl">
-              {/* Title bar */}
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-purple-500/30">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Film className="h-4 w-4 text-purple-400 shrink-0" />
-                  <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {canManageRoom && roomMovie?.tmdbId === selectedMovie.tmdbId && (
-                    <button
-                      onClick={handleStopRoomMovie}
-                      className="px-2 py-0.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
-                    >
-                      Stop For All
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setIsMoviePlayerOpen(false)}
-                    className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+          <motion.div
+            drag
+            dragListener={false}
+            dragControls={movieDragControls}
+            dragMomentum={false}
+            className="fixed z-[130] w-[95vw] max-w-lg bg-slate-900 border border-purple-500/30 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col"
+            style={{
+              top: '25%',
+              left: '2.5%',
+            }}
+          >
+            {/* Title / Drag bar */}
+            <div className="flex items-center justify-between px-3 py-2 bg-slate-900/95 border-b border-purple-500/30 select-none">
+              <div className="flex items-center gap-2 min-w-0">
+                {/* Drag button */}
+                <button
+                  onPointerDown={(e) => movieDragControls.start(e)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white cursor-grab active:cursor-grabbing touch-none select-none"
+                  title="Drag Player"
+                >
+                  <img src="https://img.icons8.com/ios-glyphs/30/ffffff/drag-reorder.png" className="h-4 w-4 opacity-70" alt="Drag" />
+                </button>
+                <Film className="h-4 w-4 text-purple-400 shrink-0" />
+                <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}</span>
               </div>
-
-              {/* iframe — NO sandbox: vidlink.pro detects all sandbox variants.
-                  Modern browsers block cross-origin iframe → parent navigation by default. */}
-              <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
-                <iframe
-                  key={`vidlink-inroom-${selectedMovie.tmdbId}`}
-                  src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
-                  className="w-full h-full border-0"
-                  allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
+              <div className="flex items-center gap-2">
+                {canManageRoom && roomMovie?.tmdbId === selectedMovie.tmdbId && (
+                  <button
+                    onClick={handleStopRoomMovie}
+                    className="px-2 py-0.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
+                  >
+                    Stop For All
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsMoviePlayerOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
-          </div>
+
+            {/* iframe — sandboxed to allow video player scripts & popups to run but block top-level parent redirects */}
+            <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
+              <iframe
+                key={`vidlink-inroom-${selectedMovie.tmdbId}`}
+                src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
+                className="w-full h-full border-0"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
+              />
+            </div>
+          </motion.div>
         )}
 
 
