@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ExternalLink, Film, RefreshCw, ArrowLeft } from 'lucide-react';
+import { X, Film } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -12,70 +12,20 @@ interface MoviePlayerProps {
   posterPath?: string | null;
 }
 
-const PROVIDERS = [
-  { id: 'vidlink', label: 'VidLink', url: (id: number) => `https://vidlink.pro/movie/${id}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true` },
-  { id: 'vidbinge', label: 'VidBinge', url: (id: number) => `https://www.vidbinge.to/movie/${id}` },
-  { id: '2embed', label: '2embed', url: (id: number) => `https://www.2embed.cc/embed/${id}` },
-];
-
-const STORAGE_KEY = 'ummy-movie-provider';
-
-function getPreferredProvider(): string {
-  if (typeof window === 'undefined') return 'vidlink';
-  return localStorage.getItem(STORAGE_KEY) || 'vidlink';
-}
-
-function setPreferredProvider(id: string) {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, id);
-}
-
 export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: MoviePlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [showProviders, setShowProviders] = useState(false);
-  const [provider, setProvider] = useState(() => getPreferredProvider());
-  const [resetCount, setResetCount] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currentProvider = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
-  const videoUrl = currentProvider.url(tmdbId);
+  const videoUrl = `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
 
   useEffect(() => {
     if (open) {
       setIsLoading(true);
-      setProvider(getPreferredProvider());
     }
   }, [open, tmdbId]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
-  };
-
-  const handleProviderChange = useCallback((id: string) => {
-    setProvider(id);
-    setPreferredProvider(id);
-    setShowProviders(false);
-    setIsLoading(true);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowProviders(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleOpenInBrowser = () => {
-    window.open(videoUrl, '_blank');
-  };
-
-  const handleReset = () => {
-    setResetCount(c => c + 1);
-    setIsLoading(true);
   };
 
   if (!open) return null;
@@ -113,78 +63,15 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
             </button>
 
             <div className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800 gap-2">
-                {/* LEFT: Back to Room Button */}
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-bold transition-all active:scale-95 shrink-0"
-                >
-                  <ArrowLeft className="h-3 w-3" />
-                  <span className="hidden sm:inline">Back to Room</span>
-                  <span className="sm:hidden">Back</span>
-                </button>
-
-                {/* CENTER: Movie Title */}
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center shrink-0">
+              {/* Movie Title */}
+              <div className="flex items-center justify-center pb-2 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center">
                     <Film className="h-4 w-4 text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-white truncate">{title}</h3>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">{title}</h3>
                     <p className="text-[10px] text-white/40">Movie Mirror</p>
-                  </div>
-                </div>
-
-                {/* RIGHT: Controls */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={handleReset}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
-                    title="Reset player if stuck on ads"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    <span className="hidden sm:inline">Reset</span>
-                  </button>
-                  <button
-                    onClick={handleOpenInBrowser}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
-                    title="Open in external browser"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    <span className="hidden sm:inline">Browser</span>
-                  </button>
-                  <div ref={dropdownRef} className="relative">
-                    <button
-                      onClick={() => setShowProviders(!showProviders)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-bold transition-all active:scale-95"
-                    >
-                      {currentProvider.label}
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                    <AnimatePresence>
-                      {showProviders && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -5 }}
-                          className="absolute right-0 top-full mt-1 w-32 bg-slate-800 rounded-xl border border-slate-700/50 shadow-xl overflow-hidden z-50"
-                        >
-                          {PROVIDERS.map((p) => (
-                            <button
-                              key={p.id}
-                              onClick={() => handleProviderChange(p.id)}
-                              className={`w-full px-3 py-2 text-left text-xs font-medium transition-colors ${
-                                p.id === provider
-                                  ? 'bg-purple-600/20 text-purple-400'
-                                  : 'text-white/60 hover:bg-white/5 hover:text-white'
-                              }`}
-                            >
-                              {p.label}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
               </div>
@@ -200,28 +87,13 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                 )}
                 <iframe
                   ref={iframeRef}
-                  key={`${provider}-${tmdbId}-${resetCount}`}
+                  key={`vidlink-${tmdbId}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                   onLoad={handleIframeLoad}
                 />
-                
-                {/* Floating Back to Room Button - Always visible above iframe */}
-                <button
-                  onClick={() => onOpenChange(false)}
-                  className="absolute bottom-3 left-3 z-30 flex items-center gap-1.5 px-3 py-2 rounded-full bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold shadow-lg backdrop-blur-sm transition-all active:scale-95"
-                >
-                  <ArrowLeft className="h-3 w-3" />
-                  Back to Room
-                </button>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-[10px] text-white/30">
-                <span>Provider: {currentProvider.label}</span>
-                <span>•</span>
-                <span>Ads? Click Reset or use Browser</span>
               </div>
             </div>
           </motion.div>
