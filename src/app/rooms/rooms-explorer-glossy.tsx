@@ -226,15 +226,20 @@ export function RoomsExplorerGlossy() {
       const matchesCategory = activeCategory === "All" || cat === activeCategory;
       const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
       
-      // Help room always visible (24/7) - ONLY if owned by App Creator
-      const APP_CREATOR_UID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-      const isHelpRoom = (
-        room.id === 'ummy-help-center' || 
-        (room.name && room.name.toLowerCase().includes('help')) ||
-        (room.title && room.title.toLowerCase().includes('help'))
-      ) && room.ownerId === APP_CREATOR_UID;
-      
-      if (isHelpRoom) return matchesCategory && !isDecommissioned;
+       // Help room always visible (24/7) - ONLY if owned by App Creator
+       const APP_CREATOR_UID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+       const looksLikeHelp = (
+         room.id === 'ummy-help-center' || 
+         (room.name && room.name.toLowerCase().includes('help')) ||
+         (room.title && room.title.toLowerCase().includes('help'))
+       );
+       
+       // Block ALL duplicate help rooms (not owned by App Creator) regardless of online/pinned status
+       if (looksLikeHelp && room.ownerId !== APP_CREATOR_UID) return false;
+       
+       const isHelpRoom = looksLikeHelp && room.ownerId === APP_CREATOR_UID;
+       
+       if (isHelpRoom) return matchesCategory && !isDecommissioned;
      
      // Check Realtime Database presence for instant online status
      const hasOnlineUsers = roomsWithUsers.has(room.id);
