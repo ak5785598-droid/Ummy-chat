@@ -3741,7 +3741,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
-        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenNetMirror={() => { /* DISABLED: NetMirror temporarily disabled */ }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -3936,7 +3936,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }))}
       />
 
-      <NetMirrorDialog
+      {/* DISABLED: NetMirror temporarily disabled */}
+      {/* <NetMirrorDialog
         open={isNetMirrorOpen}
         onOpenChange={setIsNetMirrorOpen}
         roomId={room.id}
@@ -3964,7 +3965,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         currentUserId={currentUser?.uid || ''}
         onJoin={handleJoinNetMirror}
         onDismiss={handleDismissNetMirrorIndicator}
-      />
+      /> */}
 
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
