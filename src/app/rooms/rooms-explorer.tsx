@@ -345,25 +345,40 @@ function RoomsExplorerClassic() {
    const displayRooms = useMemo(() => {
     if (!roomsData || !isHydrated) return [];
     
-    // Debug: Log help rooms found
-    const helpRooms = roomsData.filter(r => r.id === 'ummy-help-center');
-    console.log('[Rooms Classic] Help rooms found:', helpRooms.map(r => ({ id: r.id, ownerId: r.ownerId })));
+    // Debug: Log all rooms with "help" in name
+    const helpRooms = roomsData.filter(r => 
+      r.id === 'ummy-help-center' || 
+      (r.name && r.name.toLowerCase().includes('help')) ||
+      (r.title && r.title.toLowerCase().includes('help'))
+    );
+    console.log('[Rooms Classic] All help-related rooms:', helpRooms.map(r => ({ 
+      id: r.id, 
+      name: r.name, 
+      title: r.title, 
+      ownerId: r.ownerId,
+      isPinned: r.isPinned 
+    })));
     
     // Pre-sort by participant count and pin status once
-   const sorted = [...roomsData].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0);
-   });
+    const sorted = [...roomsData].sort((a, b) => {
+     if (a.isPinned && !b.isPinned) return -1;
+     if (!a.isPinned && b.isPinned) return 1;
+     return (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0);
+    });
 
-   return sorted.filter(room => {
-      const cat = room.category || 'Chat';
-      const matchesCategory = activeCategory === "All" || cat === activeCategory;
-      const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
-      
+    return sorted.filter(room => {
+       const cat = room.category || 'Chat';
+       const matchesCategory = activeCategory === "All" || cat === activeCategory;
+       const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
+       
        // Help room always visible (24/7) - ONLY if owned by App Creator
        const APP_CREATOR_UID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-       const isHelpRoom = room.id === 'ummy-help-center' && room.ownerId === APP_CREATOR_UID;
+       const isHelpRoom = (
+         room.id === 'ummy-help-center' || 
+         (room.name && room.name.toLowerCase().includes('help')) ||
+         (room.title && room.title.toLowerCase().includes('help'))
+       ) && room.ownerId === APP_CREATOR_UID;
+       
        if (isHelpRoom) return matchesCategory && !isDecommissioned;
       
       // Check Realtime Database presence for instant online status
