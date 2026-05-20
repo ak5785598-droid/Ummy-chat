@@ -3070,46 +3070,58 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        {/* IN-ROOM INTEGRATED MOVIE PLAYER */}
+        {/* IN-ROOM INTEGRATED MOVIE PLAYER - FIXED OVERLAY ABOVE BANNER */}
         {isMoviePlayerOpen && selectedMovie && (
-          <div className="w-full px-3 py-1.5 shrink-0 animate-in slide-in-from-top duration-300">
-            <div className="relative bg-slate-900/90 border border-purple-500/30 rounded-2xl overflow-hidden shadow-xl">
-              <div className="flex items-center justify-between px-3 py-2 bg-slate-800/80 border-b border-slate-700/50">
+          <div className="fixed inset-x-0 top-0 z-[200] flex flex-col animate-in slide-in-from-top duration-300"
+               style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+            {/* Dimmed backdrop behind player but doesn't block room */}
+            <div className="w-full bg-black/95 shadow-2xl border-b border-purple-500/30">
+              {/* Header Bar */}
+              <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border-b border-slate-700/40">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Film className="h-3.5 w-3.5 text-purple-400 shrink-0" />
-                  <span className="text-xs font-bold text-white truncate">{selectedMovie.title}</span>
+                  <Film className="h-4 w-4 text-purple-400 shrink-0" />
+                  <span className="text-xs font-bold text-white truncate max-w-[180px]">{selectedMovie.title}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {canManageRoom && roomMovie?.tmdbId === selectedMovie.tmdbId && (
                     <button
                       onClick={handleStopRoomMovie}
-                      className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
+                      className="px-2 py-0.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold active:scale-95 transition-all"
                     >
                       Stop For All
                     </button>
                   )}
                   <button
                     onClick={() => setIsMoviePlayerOpen(false)}
-                    className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90"
+                    className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
-              
-              <div className="relative aspect-video bg-black">
+
+              {/* Video Frame
+                  sandbox rules:
+                  - allow-scripts        → player JS runs
+                  - allow-same-origin    → player can access its own cookies/storage
+                  - allow-forms          → player form submissions work
+                  - allow-presentation   → fullscreen works
+                  - allow-popups         → vidlink.pro popup check passes (won't show "Disable Sandbox")
+                  - allow-top-navigation is intentionally OMITTED → ads can't redirect the main app */}
+              <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', maxHeight: '55vw' }}>
                 <iframe
                   key={`vidlink-inroom-${selectedMovie.tmdbId}`}
                   src={`https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                 />
               </div>
             </div>
           </div>
         )}
+
 
         {/* CHAT & ANNOUNCEMENT SECTION (Wafa-Style) - Starts immediately below seats */}
         <div className="flex-1 w-full overflow-hidden mt-0.5 relative flex flex-col">
