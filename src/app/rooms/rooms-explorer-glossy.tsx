@@ -20,6 +20,7 @@ import {
   limit, 
   getDocs,
 } from 'firebase/firestore';
+import { getDatabase, ref as dbRef, onValue } from 'firebase/database';
 import { 
   Trophy, 
   Ghost,
@@ -116,8 +117,9 @@ export function RoomsExplorerGlossy() {
   { id: "Party", label: t.home.categories.party }
  ];
 
- const [roomsData, setRoomsData] = useState<any[]>([]);
- const [isRoomsLoading, setIsRoomsLoading] = useState(true);
+  const [roomsData, setRoomsData] = useState<any[]>([]);
+  const [isRoomsLoading, setIsRoomsLoading] = useState(true);
+  const [roomsWithUsers, setRoomsWithUsers] = useState<Set<string>>(new Set());
 
  useEffect(() => {
    if (!firestore || !isHydrated) return;
@@ -134,10 +136,45 @@ export function RoomsExplorerGlossy() {
      }
    };
 
-   fetchRooms(); // Initial fetch
-   const interval = setInterval(fetchRooms, 60000); // Refresh every 60s
-   return () => clearInterval(interval);
- }, [firestore, isHydrated]);
+    fetchRooms(); // Initial fetch
+    const interval = setInterval(fetchRooms, 60000); // Refresh every 60s
+    return () => clearInterval(interval);
+  }, [firestore, isHydrated]);
+
+  // REALTIME DATABASE PRESENCE: Track which rooms have online users
+  useEffect(() => {
+    console.log('[Rooms Glossy] Realtime DB listener useEffect triggered, isHydrated:', isHydrated);
+    if (!isHydrated) return;
+    
+    try {
+      const db = getDatabase();
+      console.log('[Rooms Glossy] Database instance:', db ? 'OK' : 'NULL');
+      const presenceRef = dbRef(db, 'roomPresence');
+      
+      console.log('[Rooms Glossy] Realtime DB listener starting...');
+      
+      const unsubscribe = onValue(presenceRef, (snapshot) => {
+        const allPresence = snapshot.val() || {};
+        const roomIds = new Set<string>();
+        
+        console.log('[Rooms Glossy] Realtime DB presence data:', allPresence);
+        
+        Object.keys(allPresence).forEach(roomId => {
+          const usersInRoom = allPresence[roomId];
+          if (usersInRoom && Object.keys(usersInRoom).length > 0) {
+            roomIds.add(roomId);
+          }
+        });
+        
+        console.log('[Rooms Glossy] Rooms with online users:', Array.from(roomIds));
+        setRoomsWithUsers(roomIds);
+      });
+      
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('[Rooms Glossy] Realtime DB presence listener failed:', e);
+    }
+  }, [isHydrated]);
 
  const myRoomQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isHydrated) return null;
@@ -159,17 +196,24 @@ export function RoomsExplorerGlossy() {
   return bannerConfig.slides;
  }, [bannerConfig, isHydrated]);
 
- const displayRooms = useMemo(() => {
-  if (!roomsData || !isHydrated) return [];
-  
-  let filtered = roomsData.filter(room => {
-   const cat = room.category || 'Chat';
-   const matchesCategory = activeCategory === "All" || cat === activeCategory;
-   const hasUsers = (room.participantCount || 0) > 0;
-   const isPinned = room.isPinned === true;
-   const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
-   return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
-  });
+  const displayRooms = useMemo(() => {
+   if (!roomsData || !isHydrated) return [];
+   
+   let filtered = roomsData.filter(room => {
+     const cat = room.category || 'Chat';
+     const matchesCategory = activeCategory === "All" || cat === activeCategory;
+     const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
+     
+     // Help room always visible (24/7)
+     const isHelpRoom = room.id === 'ummy-help-center';
+     if (isHelpRoom) return matchesCategory && !isDecommissioned;
+     
+     // Check Realtime Database presence for instant online status
+     const hasOnlineUsers = roomsWithUsers.has(room.id);
+     const isPinned = room.isPinned === true;
+     
+     return matchesCategory && (hasOnlineUsers || isPinned) && !isDecommissioned;
+    });
 
   return [...filtered].sort((a, b) => {
    if (a.isPinned && !b.isPinned) return -1;

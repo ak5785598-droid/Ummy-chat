@@ -424,6 +424,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [showVolumePopup, setShowVolumePopup] = useState(false);
   const [isLuckyRainActive, setIsLuckyRainActive] = useState(false);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   // Audio output routing (Speaker vs Earbuds)
   const { 
@@ -716,6 +717,26 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const participants = participantsData || [];
 
+  const onlineParticipants = useMemo(() => {
+    if (!participantsData || onlineUserIds.size === 0) return participantsData || [];
+    return participantsData.filter(p => onlineUserIds.has(p.uid));
+  }, [participantsData, onlineUserIds]);
+
+  // REALTIME DATABASE PRESENCE LISTENER: Track online users in room
+  useEffect(() => {
+    if (!room?.id || !database) return;
+    
+    const presenceRef = dbRef(database, `roomPresence/${room.id}`);
+    
+    const unsubscribe = onValue(presenceRef, (snapshot) => {
+      const presenceData = snapshot.val() || {};
+      const userIds = new Set(Object.keys(presenceData));
+      setOnlineUserIds(userIds);
+    });
+    
+    return () => unsubscribe();
+  }, [room?.id, database]);
+
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !room.id || !sessionJoinTime) return null;
     try {
@@ -819,14 +840,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     messageProcessTimeoutRef.current = setTimeout(() => {
       // GLOBAL AI LEADERSHIP ELECTION V5 (ROBUST):
-      const onlineMods = (participantsData || [])
+      const onlineMods = (onlineParticipants || [])
         .filter(p => p && p.uid && room.moderatorIds?.includes(p.uid))
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
 
-      const sortedParticipants = [...(participantsData || [])]
+      const sortedParticipants = [...(onlineParticipants || [])]
         .filter(p => p && p.uid)
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+      const ownerOnline = onlineParticipants?.some(p => p.uid === room.ownerId);
 
       let electedLeaderUid = sortedParticipants[0]?.uid;
       if (ownerOnline) electedLeaderUid = room.ownerId;
@@ -1046,10 +1067,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       }
 
       // LEADERSHIP SYNC: Only the owner or designated leader triggers auto-play
-      const sortedParts = [...(participantsData || [])]
+      const sortedParts = [...(onlineParticipants || [])]
         .filter(p => p && p.uid)
         .sort((a, b) => (a.uid || '').localeCompare(b.uid || ''));
-      const ownerOnline = participantsData?.some(p => p.uid === room.ownerId);
+      const ownerOnline = onlineParticipants?.some(p => p.uid === room.ownerId);
       let electedLeaderUid = sortedParts[0]?.uid;
       if (ownerOnline) electedLeaderUid = room.ownerId;
       
@@ -1148,7 +1169,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const { userProfile } = useUserProfile(currentUser?.uid);
 
 
-  const currentUserParticipant = participants.find(p => p.uid === currentUser?.uid);
+  const currentUserParticipant = onlineParticipants.find(p => p.uid === currentUser?.uid);
   const isInSeat = !!currentUserParticipant && currentUserParticipant.seatIndex > 0;
 
   const {
@@ -1505,14 +1526,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   // Initialize Room Tasks Hook
   const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
     room?.id || 'pending',
-    participants || [],
+    onlineParticipants || [],
     room?.ownerId || '',
     canManageRoom || false
   );
 
   const onlineCount = useMemo(() => {
-    return participants.length || 0;
-  }, [participants]);
+    return onlineParticipants.length || 0;
+  }, [onlineParticipants]);
 
   // RECENT VISIT TRACKING (For "Me" Section)
   useEffect(() => {
@@ -2261,7 +2282,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         } else if (upperResponse.includes('[CMD:MUTE:')) {
           const username = aiResponse.match(/\[CMD:MUTE:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
-            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            const target = onlineParticipants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
               handleSilence(target.uid, false);
               // toast({ title: 'Sovereign Master', description: `Silence enforced on ${username}.` });
@@ -2270,7 +2291,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         } else if (upperResponse.includes('[CMD:UNMUTE:')) {
           const username = aiResponse.match(/\[CMD:UNMUTE:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
-            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            const target = onlineParticipants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
               handleSilence(target.uid, true);
               // toast({ title: 'Sovereign Master', description: `Voice restored to ${username}.` });
@@ -2279,7 +2300,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         } else if (upperResponse.includes('[CMD:KICK:')) {
           const username = aiResponse.match(/\[CMD:KICK:(.*?)\]/i)?.[1];
           if (username && isAdminAction) {
-            const target = participants.find(p => p.name?.toLowerCase() === username.toLowerCase());
+            const target = onlineParticipants.find(p => p.name?.toLowerCase() === username.toLowerCase());
             if (target) {
               // Check if AI command can kick this user (follow same hierarchy)
               const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
@@ -2692,7 +2713,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (!firestore || !room.id || !currentUser?.uid) return;
 
     // PERMISSION HIERARCHY CHECK
-    const targetUser = participants.find(p => p.uid === uid);
+    const targetUser = onlineParticipants.find(p => p.uid === uid);
     const isAppCreator = currentUser?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
     const isRoomOwner = currentUser?.uid === room.ownerId;
     const targetIsRoomOwner = uid === room.ownerId;
@@ -2763,7 +2784,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     setIsSeatMenuOpen(false);
     setIsUserProfileCardOpen(false);
     if (!isSelf) {
-      const targetUser = participants.find(p => p.uid === uid);
+      const targetUser = onlineParticipants.find(p => p.uid === uid);
       toast({ title: 'User Unseated', description: `${targetUser?.name || 'Member'} has been removed from the seat.` });
     }
   };
@@ -3111,13 +3132,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <div className="shrink-0 flex flex-col items-center gap-0.5 w-full overflow-visible mb-0 mt-0">
           {/* Host Seat (Top Centered) */}
           <div className="w-24">
-            <Seat index={1} label="NO.1" theme={currentTheme} occupant={participants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
+            <Seat index={1} label="NO.1" theme={currentTheme} occupant={onlineParticipants.find(p => p.seatIndex === 1)} isLocked={room.lockedSeats?.includes(1)} isSeatMuted={room.mutedSeats?.includes(1)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
           </div>
 
           {/* 2x4 Grid Seats */}
           <div className="w-full grid grid-cols-4 gap-y-3 px-2">
             {[2, 3, 4, 5, 6, 7, 8, 9].map(idx => (
-              <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={participants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
+              <Seat key={idx} index={idx} label={`NO.${idx}`} theme={currentTheme} occupant={onlineParticipants.find(p => p.seatIndex === idx)} isLocked={room.lockedSeats?.includes(idx)} isSeatMuted={room.mutedSeats?.includes(idx)} onClick={handleSeatClick} roomOwnerId={room.ownerId} roomModeratorIds={room.moderatorIds || []} customEmojiMap={customEmojiMap} />
             ))}
           </div>
         </div>
@@ -3693,7 +3714,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         open={isUserListOpen} 
         onOpenChange={setIsUserListOpen} 
         roomId={room.id} 
-        participants={participants} 
+        participants={onlineParticipants} 
         onUserClick={(uid) => {
           setSelectedParticipantUid(uid);
           setIsUserProfileCardOpen(true);
@@ -3779,7 +3800,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       <RoomPlayDialog
         open={isRoomPlayOpen}
         onOpenChange={setIsRoomPlayOpen}
-        participants={participants}
+        participants={onlineParticipants}
         roomId={room.id}
         room={room}
         onOpenGames={() => setIsRoomGamesOpen(true)}
@@ -3834,7 +3855,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenChange={setIsGiftPickerOpen}
         roomId={room.id}
         recipient={giftRecipient}
-        participants={participants}
+        participants={onlineParticipants}
         onSuccess={() => triggerTask('gift_once')}
       />
 
@@ -3846,9 +3867,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         isLocked={room.lockedSeats?.includes(selectedSeatIdx || 0) || false}
         isSeatMuted={room.mutedSeats?.includes(selectedSeatIdx || 0) || false}
         occupantUid={selectedParticipantUid}
-        occupantName={participants.find(p => p.uid === selectedParticipantUid)?.name}
-        occupantAvatarUrl={participants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
-        isMuted={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
+        occupantName={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.name}
+        occupantAvatarUrl={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.avatarUrl}
+        isMuted={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
         canManage={canManageRoom}
         currentUserId={currentUser?.uid}
         currentUserName={userProfile?.username}
@@ -3868,7 +3889,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenChange={setIsAudienceInviteOpen}
         seatIndex={selectedSeatIdx}
         roomId={room.id}
-        participants={participants}
+        participants={onlineParticipants}
         inviterName={userProfile?.username || currentUser?.displayName || 'User'}
         inviterAvatar={userProfile?.avatarUrl}
         inviterId={currentUser?.uid || ''}
@@ -3900,7 +3921,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         roomOwnerId={room.ownerId}
         roomModeratorIds={room.moderatorIds || []}
         onSilence={handleSilence}
-        isSilenced={participants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
+        isSilenced={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.isMuted || false}
         onKick={handleKick}
         onLeaveSeat={handleLeaveSeat}
         onToggleMod={handleToggleMod}
@@ -3908,7 +3929,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenChat={handleOpenChatFromProfile}
         onMention={handleMention}
         isMe={selectedParticipantUid === currentUser?.uid}
-        isInSeat={participants.find(p => p.uid === selectedParticipantUid)?.seatIndex !== undefined && (participants.find(p => p.uid === selectedParticipantUid)?.seatIndex ?? 0) > 0}
+        isInSeat={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.seatIndex !== undefined && (onlineParticipants.find(p => p.uid === selectedParticipantUid)?.seatIndex ?? 0) > 0}
       />
 
       <RoomInfoDialog
@@ -4054,7 +4075,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         stopScreenShare={handleStopScreenShare}
         isScreenSharing={isScreenSharing}
         remoteScreenTrack={shouldShowScreenShare ? remoteScreenTrack : null}
-        participants={participants.map(p => ({
+        participants={onlineParticipants.map(p => ({
           uid: p.uid,
           name: p.name || 'Unknown',
           avatarUrl: p.avatarUrl,

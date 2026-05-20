@@ -22,6 +22,7 @@ import {
   limit, 
   getDocs,
 } from 'firebase/firestore';
+import { getDatabase, ref as dbRef, onValue } from 'firebase/database';
 import { 
   Trophy, 
   Ghost,
@@ -256,8 +257,9 @@ function RoomsExplorerClassic() {
    { id: "Party", label: t.home.categories.party }
   ];
 
- const [roomsData, setRoomsData] = useState<any[]>([]);
- const [isRoomsLoading, setIsRoomsLoading] = useState(true);
+  const [roomsData, setRoomsData] = useState<any[]>([]);
+  const [isRoomsLoading, setIsRoomsLoading] = useState(true);
+  const [roomsWithUsers, setRoomsWithUsers] = useState<Set<string>>(new Set());
 
  useEffect(() => {
    if (!firestore || !isHydrated) return;
@@ -274,10 +276,43 @@ function RoomsExplorerClassic() {
      }
    };
 
-   fetchRooms(); // Initial fetch
-   const interval = setInterval(fetchRooms, 60000); // Refresh every 60s
-   return () => clearInterval(interval);
- }, [firestore, isHydrated]);
+    fetchRooms(); // Initial fetch
+    const interval = setInterval(fetchRooms, 60000); // Refresh every 60s
+    return () => clearInterval(interval);
+  }, [firestore, isHydrated]);
+
+  // REALTIME DATABASE PRESENCE: Track which rooms have online users
+  useEffect(() => {
+    if (!isHydrated) return;
+    
+    try {
+      const db = getDatabase();
+      const presenceRef = dbRef(db, 'roomPresence');
+      
+      console.log('[Rooms] Realtime DB listener starting...');
+      
+      const unsubscribe = onValue(presenceRef, (snapshot) => {
+        const allPresence = snapshot.val() || {};
+        const roomIds = new Set<string>();
+        
+        console.log('[Rooms] Realtime DB presence data:', allPresence);
+        
+        Object.keys(allPresence).forEach(roomId => {
+          const usersInRoom = allPresence[roomId];
+          if (usersInRoom && Object.keys(usersInRoom).length > 0) {
+            roomIds.add(roomId);
+          }
+        });
+        
+        console.log('[Rooms] Rooms with online users:', Array.from(roomIds));
+        setRoomsWithUsers(roomIds);
+      });
+      
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('[Rooms] Realtime DB presence listener failed:', e);
+    }
+  }, [isHydrated]);
 
  const myRoomQuery = useMemoFirebase(() => {
    if (!firestore || !user?.uid || !isHydrated) return null;
@@ -310,24 +345,21 @@ function RoomsExplorerClassic() {
    });
 
    return sorted.filter(room => {
-    const cat = room.category || 'Chat';
-    const matchesCategory = activeCategory === "All" || cat === activeCategory;
-    
-    // 🐞 STRICT FIX: Ab ye logic definitely check karega. 
-    // Agar participantCount proper updated na ho, tab bhi arrays check honge aur room dikhega!
-    const pCount = Number(room.participantCount) || 0;
-    const pIdsLength = Array.isArray(room.participantIds) ? room.participantIds.length : 0;
-    const activeLength = Array.isArray(room.activeUsers) ? room.activeUsers.length : 0;
-    const onlineLength = Array.isArray(room.onlineUsers) ? room.onlineUsers.length : 0;
-    
-    const hasUsers = pCount >= 1 || pIdsLength >= 1 || activeLength >= 1 || onlineLength >= 1;
-    
-    const isPinned = room.isPinned === true;
-    const isDecommissioned = room.id === 'ummy-help-center' || (room.name && room.name.toUpperCase().includes('SYNCHRONIZING'));
-    
-    return matchesCategory && (hasUsers || isPinned) && !isDecommissioned;
-   });
-  }, [roomsData, activeCategory, isHydrated]);
+      const cat = room.category || 'Chat';
+      const matchesCategory = activeCategory === "All" || cat === activeCategory;
+      const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
+      
+      // Help room always visible (24/7)
+      const isHelpRoom = room.id === 'ummy-help-center';
+      if (isHelpRoom) return matchesCategory && !isDecommissioned;
+      
+      // Check Realtime Database presence for instant online status
+      const hasOnlineUsers = roomsWithUsers.has(room.id);
+      const isPinned = room.isPinned === true;
+      
+      return matchesCategory && (hasOnlineUsers || isPinned) && !isDecommissioned;
+     });
+   }, [roomsData, activeCategory, isHydrated, roomsWithUsers]);
 
 
   // STABILITY GUARD: Combine all signals for final flip.

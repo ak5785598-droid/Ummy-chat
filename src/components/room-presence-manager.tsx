@@ -6,6 +6,8 @@ import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, 
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useScreenWakeLock } from '@/hooks/use-screen-wake-lock';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDoc } from 'firebase/firestore';
+import { getDatabase, ref as dbRef, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
+import { App } from '@capacitor/app';
 
 /**
  * Maintains Firestore presence while a room is active.
@@ -25,6 +27,8 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
   const cleanupInterval = useRef<NodeJS.Timeout | null>(null);
   const stayTimeRef = useRef<number>(0);
   const hasStayAwarded = useRef<boolean>(false);
+  const presenceRef = useRef<any>(null);
+  const appStateListener = useRef<any>(null);
 
   const latestRoomRef = useRef({ activeRoomId: activeRoom?.id || null, minimizedRoomId: minimizedRoom?.id || null });
   latestRoomRef.current = {
@@ -210,6 +214,44 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
     };
  
     performJoin();
+
+    // REALTIME DATABASE PRESENCE: Instant removal on disconnect
+    if (user && roomId) {
+      const db = getDatabase();
+      const presencePath = `roomPresence/${roomId}/${user.uid}`;
+      presenceRef.current = dbRef(db, presencePath);
+      
+      onDisconnect(presenceRef.current).remove();
+      
+      set(presenceRef.current, {
+        uid: user.uid,
+        name: userMetadata.username || 'Guest',
+        avatarUrl: userMetadata.avatarUrl || null,
+        joinedAt: dbServerTimestamp(),
+        lastSeen: dbServerTimestamp(),
+        isOnline: true
+      });
+      
+      App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive && presenceRef.current) {
+          console.log('[Presence] App backgrounded, removing from room');
+          set(presenceRef.current, null);
+        } else if (isActive && presenceRef.current) {
+          console.log('[Presence] App foregrounded, re-adding to room');
+          set(presenceRef.current, {
+            uid: user.uid,
+            name: userMetadata.username || 'Guest',
+            avatarUrl: userMetadata.avatarUrl || null,
+            joinedAt: dbServerTimestamp(),
+            lastSeen: dbServerTimestamp(),
+            isOnline: true
+          });
+          onDisconnect(presenceRef.current).remove();
+        }
+      }).then(listener => {
+        appStateListener.current = listener;
+      });
+    }
  
     // Visibility Listener: Instant refresh upon returning to app
     const handleVisibility = () => {
@@ -224,6 +266,16 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
      if (cleanupInterval.current) clearInterval(cleanupInterval.current);
      document.removeEventListener('visibilitychange', handleVisibility);
+     
+     if (appStateListener.current) {
+       appStateListener.current.remove();
+       appStateListener.current = null;
+     }
+     
+     if (presenceRef.current) {
+       set(presenceRef.current, null);
+       presenceRef.current = null;
+     }
      
      // 🚀 GRACEFUL CLEANUP: 
      // We use a small timeout to prevent flickering during re-renders.
