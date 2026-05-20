@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useUser, useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp, increment, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, increment, getDoc, onSnapshot } from 'firebase/firestore';
 
 /**
  * Elite Global Presence Manager.
@@ -108,25 +108,27 @@ export function GlobalPresenceManager() {
   };
  }, [user?.uid, firestore, auth]);
 
- // Track current room ID for safety net
- useEffect(() => {
-  if (!user || !firestore) return;
-  
-  const userRef = doc(firestore, 'users', user.uid);
-  const checkRoom = async () => {
-   try {
-    const snap = await getDoc(userRef);
-    const data = snap.data();
-    if (data?.currentRoomId) {
-     lastRoomIdRef.current = data.currentRoomId;
-    }
-   } catch (e) {}
-  };
-  
-  checkRoom();
-  const interval = setInterval(checkRoom, 15000);
-  return () => clearInterval(interval);
- }, [user?.uid, firestore]);
+  // Track current room ID for safety net reactively to eliminate battery-draining polling
+  useEffect(() => {
+   if (!user || !firestore) return;
+   
+   const userRef = doc(firestore, 'users', user.uid);
+   const unsubscribe = onSnapshot(userRef, 
+    (snap) => {
+     if (snap.exists()) {
+      const data = snap.data();
+      if (data?.currentRoomId) {
+       lastRoomIdRef.current = data.currentRoomId;
+      } else {
+       lastRoomIdRef.current = null;
+      }
+     }
+    },
+    () => {}
+   );
+   
+   return () => unsubscribe();
+  }, [user?.uid, firestore]);
 
  return null;
 }

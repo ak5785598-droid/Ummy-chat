@@ -26,6 +26,12 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
   const stayTimeRef = useRef<number>(0);
   const hasStayAwarded = useRef<boolean>(false);
 
+  const latestRoomRef = useRef({ activeRoomId: activeRoom?.id || null, minimizedRoomId: minimizedRoom?.id || null });
+  latestRoomRef.current = {
+    activeRoomId: activeRoom?.id || null,
+    minimizedRoomId: minimizedRoom?.id || null
+  };
+
   const userMetadata = useMemo(() => ({
    username: userProfile?.username,
    avatarUrl: userProfile?.avatarUrl,
@@ -222,13 +228,14 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      // 🚀 GRACEFUL CLEANUP: 
      // We use a small timeout to prevent flickering during re-renders.
      // If the component re-mounts, the timeout is implicitly cleared or ignored.
-     const sessionRoomId = activeRoom?.id || minimizedRoom?.id;
+     const currentSessionRoomId = latestRoomRef.current.activeRoomId || latestRoomRef.current.minimizedRoomId;
      
-     if (!sessionRoomId && firestore && user?.uid && roomId) {
+     if (!currentSessionRoomId && firestore && user?.uid && roomId) {
        // Only delete if we are SURE the user has left the room entirely
        setTimeout(() => {
          // Check again if user hasn't re-joined or minimized
-         if (lastRoomId.current !== roomId) {
+         const currentSessionRoomIdAfterTimeout = latestRoomRef.current.activeRoomId || latestRoomRef.current.minimizedRoomId;
+         if (!currentSessionRoomIdAfterTimeout) {
             console.log(`[Presence] Cleanup executing for ${roomId}`);
             const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
             const rRef = doc(firestore, 'chatRooms', roomId);
@@ -240,6 +247,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
             updateDocumentNonBlocking(uRef, { currentRoomId: null, updatedAt: serverTimestamp() });
             updateDocumentNonBlocking(profRef, { currentRoomId: null, updatedAt: serverTimestamp() });
             hasJoinedRef.current = false;
+            lastRoomId.current = null; // Reset lastRoomId to allow re-joining
          }
        }, 2000); 
      }

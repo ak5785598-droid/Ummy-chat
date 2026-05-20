@@ -235,22 +235,48 @@ export function useDoc<T = any>(docRef: any, options?: { suppressGlobalError?: b
   return { data, isLoading: !isHydrated || isLoading, error };
 }
 
+function serializeQuery(query: any): string {
+  if (!query) return '';
+  try {
+    // If it's directly a collection, path is simple
+    if (query.path) return `coll:${query.path}`;
+    
+    const internal = query._query || query;
+    const path = internal.path?.toString() || '';
+    
+    // Extract filters safely
+    const filters = internal.filters?.map((f: any) => {
+      const prop = f.field?.toString() || f.property?.toString() || '';
+      const op = f.op?.toString() || '';
+      const val = f.value?.toString?.() || String(f.value || '');
+      return `${prop}:${op}:${val}`;
+    }).join(',') || '';
+    
+    // Extract sorting orders safely
+    const orders = internal.explicitOrderBy?.map((o: any) => {
+      const field = o.field?.toString() || '';
+      const dir = o.dir?.toString() || '';
+      return `${field}:${dir}`;
+    }).join(',') || '';
+    
+    // Extract limit
+    const limit = internal.limit || '';
+    
+    return `path:${path}|filters:${filters}|orders:${orders}|limit:${limit}`;
+  } catch (e) {
+    return query.path || String(query);
+  }
+}
+
 export function useCollection<T = any>(query: any, options?: { silent?: boolean }) {
   const { isHydrated } = useFirebase();
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // We use a simplified key for query deduplication (stringified query)
-  // For production, a more robust hashing of the query object is recommended.
+  // Safely serialize the query to check for actual structural changes
   const queryKey = useMemo(() => {
-    if (!query) return null;
-    try {
-      // Firebase queries are complex, but we can try to get a stable identifier
-      return JSON.stringify(query._query || query);
-    } catch {
-      return null;
-    }
+    return serializeQuery(query);
   }, [query]);
 
   useEffect(() => {
@@ -259,24 +285,7 @@ export function useCollection<T = any>(query: any, options?: { silent?: boolean 
       return;
     }
 
-    // Use queryKey or fall back to a new listener if we can't identify it
-    if (!queryKey) {
-      const unsub = onSnapshot(query, 
-        (snap) => {
-          setData(snap.docs.map(d => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) })) as T[]);
-          setIsLoading(false);
-        },
-        (err) => {
-          setError(err);
-          setIsLoading(false);
-        }
-      );
-      return unsub;
-    }
-
-    // Shared Collection Logic (similar to useDoc)
-    // For simplicity in this first optimization pass, we'll focus heavily on useDoc 
-    // as it is the primary culprit in Profile hooks.
+    setIsLoading(true);
     const unsubscribe = onSnapshot(query, 
       (snapshot: any) => {
         const docs = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data({ serverTimestamps: 'estimate' }) })) as T[];
@@ -295,3 +304,4 @@ export function useCollection<T = any>(query: any, options?: { silent?: boolean 
 
   return { data, isLoading: !isHydrated || isLoading, error };
 }
+

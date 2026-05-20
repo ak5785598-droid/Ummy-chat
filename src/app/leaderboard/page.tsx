@@ -228,25 +228,25 @@ function LeaderboardContent() {
 
  useEffect(() => { setMounted(true); }, []);
  
- const richQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), where('wallet.dailySpent', '>', 0), orderBy('wallet.dailySpent', 'desc'), limit(50));
- }, [firestore]);
+  const richQuery = useMemoFirebase(() => {
+     if (!firestore || rankingType !== 'rich') return null;
+     return query(collection(firestore, 'users'), where('wallet.dailySpent', '>', 0), orderBy('wallet.dailySpent', 'desc'), limit(50));
+  }, [firestore, rankingType]);
 
- const charmQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(collection(firestore, 'users'), where('stats.dailyGiftsReceived', '>', 0), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50));
- }, [firestore]);
+  const charmQuery = useMemoFirebase(() => {
+   if (!firestore || rankingType !== 'charm') return null;
+   return query(collection(firestore, 'users'), where('stats.dailyGiftsReceived', '>', 0), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50));
+  }, [firestore, rankingType]);
 
- const roomsQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(collection(firestore, 'chatRooms'), where('stats.dailyGifts', '>', 0), orderBy('stats.dailyGifts', 'desc'), limit(50));
- }, [firestore]);
+  const roomsQuery = useMemoFirebase(() => {
+   if (!firestore || rankingType !== 'rooms') return null;
+   return query(collection(firestore, 'chatRooms'), where('stats.dailyGifts', '>', 0), orderBy('stats.dailyGifts', 'desc'), limit(50));
+  }, [firestore, rankingType]);
 
- const gamesQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(collection(firestore, 'users'), where('stats.dailyGameWins', '>', 0), orderBy('stats.dailyGameWins', 'desc'), limit(50));
- }, [firestore]);
+  const gamesQuery = useMemoFirebase(() => {
+   if (!firestore || rankingType !== 'games') return null;
+   return query(collection(firestore, 'users'), where('stats.dailyGameWins', '>', 0), orderBy('stats.dailyGameWins', 'desc'), limit(50));
+  }, [firestore, rankingType]);
 
  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
