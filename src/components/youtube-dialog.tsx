@@ -181,7 +181,7 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost, onCl
             dragListener={false}
             dragControls={dragControls}
             dragMomentum={false}
-            className="fixed z-[130] w-[95vw] max-w-lg bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col"
+            className="fixed z-[99999] transform translate-z-0 w-[95vw] max-w-lg bg-slate-900 border border-slate-700/50 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col"
             style={{
               top: '25%',
               left: '2.5%',
@@ -329,7 +329,7 @@ export function YouTubeDialog({ open, onOpenChange, roomId, userId, isHost, onCl
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
+            className="fixed inset-0 z-[99999] transform translate-z-0 flex items-center justify-center p-3 sm:p-4"
           >
             {/* Backdrop */}
             <motion.div

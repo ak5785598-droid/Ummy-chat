@@ -38,7 +38,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-[99999] transform translate-z-0 flex items-center justify-center p-3 sm:p-4"
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -92,7 +92,7 @@ export function MoviePlayer({ open, onOpenChange, tmdbId, title, posterPath }: M
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                   onLoad={handleIframeLoad}
                 />
               </div>
