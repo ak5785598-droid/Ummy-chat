@@ -2160,7 +2160,9 @@ function AdminPageContent() {
   };
 
   const handleUploadLevelVideo = async (levelId: string, file: File) => {
-    if (!firestore || !storage || !isAuthorized) return;
+    if (!storage) { toast({ variant: "destructive", title: "Storage Error", description: "Firebase Storage not initialized." }); return; }
+    if (!isAuthorized) { toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to upload." }); return; }
+    
     setUploadingLevelVideo(levelId);
     try {
       const videoRef = ref(storage, `loot/videos/${levelId}_${Date.now()}_${file.name}`);
@@ -2178,7 +2180,9 @@ function AdminPageContent() {
   };
 
   const handleUploadLootLevelImage = async (levelId: string, file: File) => {
-    if (!firestore || !storage || !isAuthorized) return;
+    if (!storage) { toast({ variant: "destructive", title: "Storage Error", description: "Firebase Storage not initialized." }); return; }
+    if (!isAuthorized) { toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to upload." }); return; }
+    
     setUploadingLootImage(levelId);
     try {
       const imageRef = ref(storage, `loot/images/${levelId}_${Date.now()}_${file.name}`);
@@ -2303,7 +2307,8 @@ function AdminPageContent() {
   };
 
   const handleEmojiUpload = async () => {
-    if (!firestore || !storage || !isAuthorized) return;
+    if (!storage) { toast({ variant: "destructive", title: "Storage Error", description: "Firebase Storage not initialized." }); return; }
+    if (!isAuthorized) { toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to upload." }); return; }
     if (!emojiName.trim()) {
       toast({ variant: "destructive", title: "Missing Info", description: "Emoji name is required." });
       return;
@@ -3242,30 +3247,28 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Image</Label>
                               <div className="flex gap-2">
-                                <div className="relative flex-1">
+                                <label className="flex-1 cursor-pointer">
                                   <input 
                                     type="file" 
                                     accept="image/*" 
+                                    className="hidden"
                                     onChange={e => {
                                       const file = e.target.files?.[0];
                                       if (file) handleUploadLootLevelImage(level.id, file);
                                     }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                   />
-                                  <Button 
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={uploadingLootImage === level.id}
-                                    className="h-10 rounded-xl w-full pointer-events-none"
-                                  >
+                                  <div className={cn(
+                                    "h-10 rounded-xl w-full flex items-center justify-center text-sm font-medium transition-colors",
+                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+                                    uploadingLootImage === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
+                                  )}>
                                     {uploadingLootImage === level.id ? (
                                       <Loader className="h-4 w-4 animate-spin" />
                                     ) : (
                                       "Upload Image"
                                     )}
-                                  </Button>
-                                </div>
+                                  </div>
+                                </label>
                                 {level.image && (
                                   <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
                                 )}
@@ -3274,30 +3277,28 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>
                               <div className="flex gap-2">
-                                <div className="relative flex-1">
+                                <label className="flex-1 cursor-pointer">
                                   <input 
                                     type="file" 
                                     accept="video/*" 
+                                    className="hidden"
                                     onChange={e => {
                                       const file = e.target.files?.[0];
                                       if (file) handleUploadLevelVideo(level.id, file);
                                     }}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                   />
-                                  <Button 
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={uploadingLevelVideo === level.id}
-                                    className="h-10 rounded-xl w-full pointer-events-none"
-                                  >
+                                  <div className={cn(
+                                    "h-10 rounded-xl w-full flex items-center justify-center text-sm font-medium transition-colors",
+                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+                                    uploadingLevelVideo === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
+                                  )}>
                                     {uploadingLevelVideo === level.id ? (
                                       <Loader className="h-4 w-4 animate-spin" />
                                     ) : (
                                       "Upload Video"
                                     )}
-                                  </Button>
-                                </div>
+                                  </div>
+                                </label>
                                 {level.videoUrl && (
                                   <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
                                 )}
@@ -7059,10 +7060,7 @@ function AdminPageContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Emoji Image (Static)</Label>
-                        <div 
-                          onClick={() => emojiImageInputRef.current?.click()}
-                          className="aspect-square border-2 border-dashed border-emerald-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-emerald-100/30 cursor-pointer transition-all overflow-hidden relative"
-                        >
+                        <label className="aspect-square border-2 border-dashed border-emerald-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-emerald-100/30 cursor-pointer transition-all overflow-hidden relative block">
                           {emojiImagePreview ? (
                             <img src={emojiImagePreview} alt="Preview" className="h-full w-full object-contain p-4" />
                           ) : (
@@ -7073,7 +7071,6 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            ref={emojiImageInputRef} 
                             className="hidden" 
                             accept="image/*" 
                             onChange={e => {
@@ -7084,15 +7081,12 @@ function AdminPageContent() {
                               }
                             }}
                           />
-                        </div>
+                        </label>
                       </div>
 
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Emoji Animation (Optional)</Label>
-                        <div 
-                          onClick={() => emojiAnimationInputRef.current?.click()}
-                          className="aspect-square border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
-                        >
+                        <label className="aspect-square border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative block">
                           {emojiAnimationPreview ? (
                             <video src={emojiAnimationPreview} autoPlay muted loop className="h-full w-full object-contain" />
                           ) : (
@@ -7103,7 +7097,6 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            ref={emojiAnimationInputRef} 
                             className="hidden" 
                             accept="video/*,.gif" 
                             onChange={e => {
@@ -7114,7 +7107,7 @@ function AdminPageContent() {
                               }
                             }}
                           />
-                        </div>
+                        </label>
                       </div>
                     </div>
 
