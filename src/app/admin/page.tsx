@@ -768,6 +768,10 @@ function AdminPageContent() {
   // LOOT VIDEO UPLOAD STATE
   const [uploadingLevelVideo, setUploadingLevelVideo] = useState<string | null>(null);
   const lootVideoInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
+  
+  // LOOT IMAGE UPLOAD STATE
+  const [uploadingLootImage, setUploadingLootImage] = useState<string | null>(null);
+  const lootImageInputRefs = useRef<{[key: string]: HTMLInputElement | null}>({});
 
   // LEVEL MANAGEMENT STATE
   const [levelTab, setLevelTab] = useState("budget");
@@ -2173,6 +2177,24 @@ function AdminPageContent() {
     }
   };
 
+  const handleUploadLootLevelImage = async (levelId: string, file: File) => {
+    if (!firestore || !storage || !isAuthorized) return;
+    setUploadingLootImage(levelId);
+    try {
+      const imageRef = ref(storage, `loot/images/${levelId}_${Date.now()}_${file.name}`);
+      const uploadRes = await uploadBytes(imageRef, file);
+      const imageUrl = await getDownloadURL(uploadRes.ref);
+      
+      setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, image: imageUrl } : l));
+      toast({ title: "Image Uploaded", description: `Image for ${levelId} level uploaded successfully.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Upload Failed", description: err.message });
+    } finally {
+      setUploadingLootImage(null);
+    }
+  };
+
 
   const handleLevelUpload = async () => {
     if (!firestore || !storage || !isAuthorized) return;
@@ -3218,13 +3240,36 @@ function AdminPageContent() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Image URL</Label>
-                              <Input 
-                                value={level.image || ""} 
-                                onChange={e => setLootLevels(prev => prev.map(l => l.id === level.id ? { ...l, image: e.target.value } : l))} 
-                                placeholder="https://..."
-                                className="h-10 rounded-xl border-indigo-200 bg-white"
-                              />
+                              <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Image</Label>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  ref={el => lootImageInputRefs.current[level.id] = el}
+                                  className="hidden"
+                                  onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadLootLevelImage(level.id, file);
+                                  }}
+                                />
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => lootImageInputRefs.current[level.id]?.click()}
+                                  disabled={uploadingLootImage === level.id}
+                                  className="h-10 rounded-xl flex-1"
+                                >
+                                  {uploadingLootImage === level.id ? (
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Upload Image"
+                                  )}
+                                </Button>
+                                {level.image && (
+                                  <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
+                                )}
+                              </div>
                             </div>
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>

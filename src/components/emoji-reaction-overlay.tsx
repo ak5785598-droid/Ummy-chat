@@ -269,7 +269,7 @@ export function EmojiReactionOverlay({
   const isCustomEmoji = activeEmoji.data?.isCustom || activeEmoji.data?.imageUrl || activeEmoji.data?.animationUrl;
 
   return (
-    <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none rounded-full">
+    <div className="absolute inset-0 z-[200] flex items-center justify-center pointer-events-none rounded-full">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeEmoji.id}
