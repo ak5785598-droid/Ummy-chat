@@ -111,7 +111,7 @@ export function LootBoxDisplay({
         </div>
 
         {/* Open Gate Icon Overlay */}
-        {canOpenGate && progressPercent >= 100 && (
+        {canOpenGate && (
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 1.5 }}
@@ -161,7 +161,7 @@ export function LootBoxDisplay({
                     Level {currentLevelIndex + 1} of {levels.length}
                   </p>
                 </div>
-                {canOpenGate && progressPercent >= 100 && (
+                {canOpenGate && (
                   <Button
                     onClick={onOpenGate}
                     size="sm"
