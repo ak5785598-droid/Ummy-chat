@@ -122,16 +122,22 @@ export function LootGate({
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.5, type: "spring" }}
-                    className="text-6xl"
+                    className="w-24 h-24 mx-auto mb-2 flex items-center justify-center"
                   >
-                    {levelName === "Home" && "🏠"}
-                    {levelName === "Bank" && "🏦"}
-                    {levelName === "Car" && "🚗"}
-                    {levelName === "Hotel" && "🏨"}
-                    {levelName === "Bus" && "🚌"}
-                    {levelName === "Train" && "🚂"}
-                    {levelName === "Ship" && "🚢"}
-                    {levelName === "Aeroplane" && "✈️"}
+                    {levelImage ? (
+                      <img src={levelImage} alt={levelName} className="w-full h-full object-contain rounded-2xl" />
+                    ) : (
+                      <div className="text-6xl">
+                        {levelName === "Home" && "🏠"}
+                        {levelName === "Bank" && "🏦"}
+                        {levelName === "Car" && "🚗"}
+                        {levelName === "Hotel" && "🏨"}
+                        {levelName === "Bus" && "🚌"}
+                        {levelName === "Train" && "🚂"}
+                        {levelName === "Ship" && "🚢"}
+                        {levelName === "Aeroplane" && "✈️"}
+                      </div>
+                    )}
                   </motion.div>
 
                   <h2 className="text-3xl font-black text-white uppercase tracking-wider">
