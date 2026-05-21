@@ -2162,6 +2162,7 @@ function AdminPageContent() {
   const handleUploadLevelVideo = async (levelId: string, file: File) => {
     if (!storage) { toast({ variant: "destructive", title: "Storage Error", description: "Firebase Storage not initialized." }); return; }
     if (!isAuthorized) { toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to upload." }); return; }
+    if (!lootConfigRef) { toast({ variant: "destructive", title: "Config Error", description: "Loot config not loaded." }); return; }
     
     setUploadingLevelVideo(levelId);
     try {
@@ -2169,8 +2170,19 @@ function AdminPageContent() {
       const uploadRes = await uploadBytes(videoRef, file);
       const videoUrl = await getDownloadURL(uploadRes.ref);
       
-      setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, videoUrl } : l));
-      toast({ title: "Video Uploaded", description: `Video for ${levelId} level uploaded successfully.` });
+      const updatedLevels = lootLevels.map(l => l.id === levelId ? { ...l, videoUrl } : l);
+      setLootLevels(updatedLevels);
+      
+      await setDoc(lootConfigRef, {
+        levels: updatedLevels,
+        rewards: lootRewards,
+        entryLimit: lootConfig.entryLimit,
+        duration: lootConfig.duration,
+        gatePriority: lootConfig.gatePriority,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      
+      toast({ title: "Video Uploaded & Synced", description: `Video for ${levelId} level is now live in the room.` });
     } catch (err: any) {
       console.error(err);
       toast({ variant: "destructive", title: "Upload Failed", description: err.message });
@@ -2182,6 +2194,7 @@ function AdminPageContent() {
   const handleUploadLootLevelImage = async (levelId: string, file: File) => {
     if (!storage) { toast({ variant: "destructive", title: "Storage Error", description: "Firebase Storage not initialized." }); return; }
     if (!isAuthorized) { toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to upload." }); return; }
+    if (!lootConfigRef) { toast({ variant: "destructive", title: "Config Error", description: "Loot config not loaded." }); return; }
     
     setUploadingLootImage(levelId);
     try {
@@ -2189,8 +2202,19 @@ function AdminPageContent() {
       const uploadRes = await uploadBytes(imageRef, file);
       const imageUrl = await getDownloadURL(uploadRes.ref);
       
-      setLootLevels(prev => prev.map(l => l.id === levelId ? { ...l, image: imageUrl } : l));
-      toast({ title: "Image Uploaded", description: `Image for ${levelId} level uploaded successfully.` });
+      const updatedLevels = lootLevels.map(l => l.id === levelId ? { ...l, image: imageUrl } : l);
+      setLootLevels(updatedLevels);
+      
+      await setDoc(lootConfigRef, {
+        levels: updatedLevels,
+        rewards: lootRewards,
+        entryLimit: lootConfig.entryLimit,
+        duration: lootConfig.duration,
+        gatePriority: lootConfig.gatePriority,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      
+      toast({ title: "Image Uploaded & Synced", description: `Image for ${levelId} level is now live in the room.` });
     } catch (err: any) {
       console.error(err);
       toast({ variant: "destructive", title: "Upload Failed", description: err.message });
@@ -3247,27 +3271,29 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Image</Label>
                               <div className="flex gap-2">
-                                <label className="flex-1 cursor-pointer">
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    className="hidden"
-                                    onChange={e => {
-                                      const file = e.target.files?.[0];
-                                      if (file) handleUploadLootLevelImage(level.id, file);
-                                    }}
-                                  />
-                                  <div className={cn(
-                                    "h-10 rounded-xl w-full flex items-center justify-center text-sm font-medium transition-colors",
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  id={`loot-img-${level.id}`}
+                                  style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                                  onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadLootLevelImage(level.id, file);
+                                  }}
+                                />
+                                <label 
+                                  htmlFor={`loot-img-${level.id}`}
+                                  className={cn(
+                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 text-sm font-medium transition-colors cursor-pointer select-none",
                                     "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
                                     uploadingLootImage === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
-                                  )}>
-                                    {uploadingLootImage === level.id ? (
-                                      <Loader className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      "Upload Image"
-                                    )}
-                                  </div>
+                                  )}
+                                >
+                                  {uploadingLootImage === level.id ? (
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Upload Image"
+                                  )}
                                 </label>
                                 {level.image && (
                                   <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
@@ -3277,27 +3303,29 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>
                               <div className="flex gap-2">
-                                <label className="flex-1 cursor-pointer">
-                                  <input 
-                                    type="file" 
-                                    accept="video/*" 
-                                    className="hidden"
-                                    onChange={e => {
-                                      const file = e.target.files?.[0];
-                                      if (file) handleUploadLevelVideo(level.id, file);
-                                    }}
-                                  />
-                                  <div className={cn(
-                                    "h-10 rounded-xl w-full flex items-center justify-center text-sm font-medium transition-colors",
+                                <input 
+                                  type="file" 
+                                  accept="video/*" 
+                                  id={`loot-vid-${level.id}`}
+                                  style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                                  onChange={e => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadLevelVideo(level.id, file);
+                                  }}
+                                />
+                                <label 
+                                  htmlFor={`loot-vid-${level.id}`}
+                                  className={cn(
+                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 text-sm font-medium transition-colors cursor-pointer select-none",
                                     "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
                                     uploadingLevelVideo === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
-                                  )}>
-                                    {uploadingLevelVideo === level.id ? (
-                                      <Loader className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      "Upload Video"
-                                    )}
-                                  </div>
+                                  )}
+                                >
+                                  {uploadingLevelVideo === level.id ? (
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Upload Video"
+                                  )}
                                 </label>
                                 {level.videoUrl && (
                                   <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
@@ -7071,7 +7099,8 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            className="hidden" 
+                            id="emoji-image-input"
+                            style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
                             accept="image/*" 
                             onChange={e => {
                               const f = e.target.files?.[0];
@@ -7097,7 +7126,8 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            className="hidden" 
+                            id="emoji-animation-input"
+                            style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
                             accept="video/*,.gif" 
                             onChange={e => {
                               const f = e.target.files?.[0];
