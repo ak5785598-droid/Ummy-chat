@@ -3247,7 +3247,7 @@ function AdminPageContent() {
                                   type="file" 
                                   accept="image/*" 
                                   ref={el => lootImageInputRefs.current[level.id] = el}
-                                  className="hidden"
+                                  className="sr-only"
                                   onChange={e => {
                                     const file = e.target.files?.[0];
                                     if (file) handleUploadLootLevelImage(level.id, file);
@@ -3281,7 +3281,7 @@ function AdminPageContent() {
                                   type="file" 
                                   accept="video/*" 
                                   ref={el => lootVideoInputRefs.current[level.id] = el}
-                                  className="hidden"
+                                  className="sr-only"
                                   onChange={e => {
                                     const file = e.target.files?.[0];
                                     if (file) handleUploadLevelVideo(level.id, file);
