@@ -275,9 +275,9 @@ function RoomsExplorerClassic() {
          index === self.findIndex(r => r.id === room.id)
        );
        
-       console.log('[Rooms Classic] Fetched:', rooms.length, 'Unique:', uniqueRooms.length);
-       setRoomsData(uniqueRooms);
-     } catch (e) {
+        setRoomsData(uniqueRooms);
+        setIsRoomsLoading(false);
+      } catch (e) {
        console.error('[Rooms] Fetch failed:', e);
      } finally {
        setIsRoomsLoading(false);
@@ -289,38 +289,33 @@ function RoomsExplorerClassic() {
     return () => clearInterval(interval);
   }, [firestore, isHydrated]);
 
-  // REALTIME DATABASE PRESENCE: Track which rooms have online users
-  useEffect(() => {
-    if (!isHydrated) return;
-    
-    try {
-      const db = getDatabase();
-      const presenceRef = dbRef(db, 'roomPresence');
-      
-      console.log('[Rooms] Realtime DB listener starting...');
-      
-      const unsubscribe = onValue(presenceRef, (snapshot) => {
-        const allPresence = snapshot.val() || {};
-        const roomIds = new Set<string>();
-        
-        console.log('[Rooms] Realtime DB presence data:', allPresence);
-        
-        Object.keys(allPresence).forEach(roomId => {
-          const usersInRoom = allPresence[roomId];
-          if (usersInRoom && Object.keys(usersInRoom).length > 0) {
-            roomIds.add(roomId);
-          }
-        });
-        
-        console.log('[Rooms] Rooms with online users:', Array.from(roomIds));
-        setRoomsWithUsers(roomIds);
-      });
-      
-      return () => unsubscribe();
-    } catch (e) {
-      console.warn('[Rooms] Realtime DB presence listener failed:', e);
-    }
-  }, [isHydrated]);
+   // REALTIME DATABASE PRESENCE: Track which rooms have online users
+   useEffect(() => {
+     if (!isHydrated) return;
+     
+     try {
+       const db = getDatabase();
+       const presenceRef = dbRef(db, 'roomPresence');
+       
+       const unsubscribe = onValue(presenceRef, (snapshot) => {
+         const allPresence = snapshot.val() || {};
+         const roomIds = new Set<string>();
+         
+         Object.keys(allPresence).forEach(roomId => {
+           const usersInRoom = allPresence[roomId];
+           if (usersInRoom && Object.keys(usersInRoom).length > 0) {
+             roomIds.add(roomId);
+           }
+         });
+         
+         setRoomsWithUsers(roomIds);
+       });
+       
+       return () => unsubscribe();
+     } catch (e) {
+       console.warn('[Rooms] Realtime DB presence listener failed:', e);
+     }
+   }, [isHydrated]);
 
  const myRoomQuery = useMemoFirebase(() => {
    if (!firestore || !user?.uid || !isHydrated) return null;
@@ -342,37 +337,22 @@ function RoomsExplorerClassic() {
   return bannerConfig.slides;
  }, [bannerConfig, isHydrated]);
 
-   const displayRooms = useMemo(() => {
-    if (!roomsData || !isHydrated) return [];
-    
-    // Debug: Log all rooms with "help" in name
-    const helpRooms = roomsData.filter(r => 
-      r.id === 'ummy-help-center' || 
-      (r.name && r.name.toLowerCase().includes('help')) ||
-      (r.title && r.title.toLowerCase().includes('help'))
-    );
-    console.log('[Rooms Classic] All help-related rooms:', helpRooms.map(r => ({ 
-      id: r.id, 
-      name: r.name, 
-      title: r.title, 
-      ownerId: r.ownerId,
-      isPinned: r.isPinned 
-    })));
-    
-    // Pre-sort by participant count and pin status once
-    const sorted = [...roomsData].sort((a, b) => {
-     if (a.isPinned && !b.isPinned) return -1;
-     if (!a.isPinned && b.isPinned) return 1;
-     return (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0);
-    });
+    const displayRooms = useMemo(() => {
+     if (!roomsData || !isHydrated) return [];
+     
+     const ORIGINAL_HELP_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+     
+     const sorted = [...roomsData].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return (Number(b.participantCount) || 0) - (Number(a.participantCount) || 0);
+     });
 
-    return sorted.filter(room => {
-       const cat = room.category || 'Chat';
-       const matchesCategory = activeCategory === "All" || cat === activeCategory;
-       const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
-       
-        // Strictly allow ONLY the original help room by ID
-        const ORIGINAL_HELP_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+     return sorted.filter(room => {
+        const cat = room.category || 'Chat';
+        const matchesCategory = activeCategory === "All" || cat === activeCategory;
+        const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
+        
         const isOriginalHelp = room.id === ORIGINAL_HELP_ID;
         const looksLikeHelp = (
           room.id === ORIGINAL_HELP_ID || 
@@ -380,18 +360,15 @@ function RoomsExplorerClassic() {
           (room.title && room.title.toLowerCase().includes('help'))
         );
         
-        // Block ALL other help-like rooms (duplicates) regardless of owner or status
         if (looksLikeHelp && !isOriginalHelp) return false;
-        
         if (isOriginalHelp) return matchesCategory && !isDecommissioned;
-      
-      // Check Realtime Database presence for instant online status
-      const hasOnlineUsers = roomsWithUsers.has(room.id);
-      const isPinned = room.isPinned === true;
-      
-      return matchesCategory && (hasOnlineUsers || isPinned) && !isDecommissioned;
-     });
-   }, [roomsData, activeCategory, isHydrated, roomsWithUsers]);
+       
+       const hasOnlineUsers = roomsWithUsers.has(room.id);
+       const isPinned = room.isPinned === true;
+       
+       return matchesCategory && (hasOnlineUsers || isPinned) && !isDecommissioned;
+      });
+    }, [roomsData, activeCategory, isHydrated, roomsWithUsers]);
 
 
   // STABILITY GUARD: Combine all signals for final flip.
