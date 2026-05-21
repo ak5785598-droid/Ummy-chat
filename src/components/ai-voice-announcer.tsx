@@ -59,6 +59,25 @@ export function AiVoiceAnnouncer({
     [enabled]
   );
 
+  const processTextForSpeech = useCallback((text: string): string => {
+    // Fix alphanumeric spelling issues (e.g., "C A R" -> "Car")
+    let processed = text.replace(/([A-Za-z])\s+(?=[A-Za-z])/g, '$1');
+    
+    // Common Hinglish/English phonetic mappings for better TTS
+    const replacements: Record<string, string> = {
+      "Aeroplane": "Airplane",
+      "Loot": "Loot",
+      "Gate": "Gate",
+      "Level": "Level"
+    };
+    
+    Object.entries(replacements).forEach(([key, value]) => {
+      processed = processed.replace(new RegExp(key, 'gi'), value);
+    });
+    
+    return processed;
+  }, []);
+
   const processQueue = useCallback(() => {
     if (queueRef.current.length === 0 || !synthRef.current) {
       isSpeakingRef.current = false;
@@ -66,7 +85,8 @@ export function AiVoiceAnnouncer({
     }
 
     isSpeakingRef.current = true;
-    const text = queueRef.current.shift()!;
+    const rawText = queueRef.current.shift()!;
+    const text = processTextForSpeech(rawText);
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language;
@@ -87,7 +107,7 @@ export function AiVoiceAnnouncer({
     };
 
     synthRef.current.speak(utterance);
-  }, [language, rate, pitch, volume]);
+  }, [language, rate, pitch, volume, processTextForSpeech]);
 
   useEffect(() => {
     (window as any).__announceLoot = speak;

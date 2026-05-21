@@ -82,11 +82,11 @@ export function LootBoxDisplay({
         )}
       >
         {/* Level Icon */}
-        <div className="text-xl leading-none mb-0.5 w-full h-full flex items-center justify-center overflow-hidden">
+        <div className="w-full h-full flex items-center justify-center overflow-hidden rounded-xl">
           {currentLevel?.image ? (
-            <img src={currentLevel.image} alt={currentLevel.name} className="w-full h-full object-cover rounded-lg" />
+            <img src={currentLevel.image} alt={currentLevel.name} className="w-full h-full object-contain" />
           ) : (
-            levelIcons[currentLevel?.id] || ""
+            <span className="text-xl leading-none">{levelIcons[currentLevel?.id] || ""}</span>
           )}
         </div>
 
@@ -217,9 +217,9 @@ export function LootBoxDisplay({
                           "✅"
                         ) : isCurrent ? (
                           level.image ? (
-                            <img src={level.image} alt={level.name} className="w-full h-full object-cover rounded-full" />
+                            <img src={level.image} alt={level.name} className="w-full h-full object-contain rounded-full" />
                           ) : (
-                            levelIcons[level.id] || ""
+                            <span className="text-base">{levelIcons[level.id] || ""}</span>
                           )
                         ) : (
                           <Lock className="h-3.5 w-3.5 text-slate-500" />

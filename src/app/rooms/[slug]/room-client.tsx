@@ -4172,6 +4172,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         isOpen={isLootGateOpen}
         levelName={lootLevels[currentLootLevelIndex]?.name || "Home"}
         levelImage={lootLevels[currentLootLevelIndex]?.image}
+        levelVideo={lootLevels[currentLootLevelIndex]?.videoUrl}
         entryLimit={lootConfig.entryLimit}
         currentEntries={lootGateEntries.length}
         timeRemaining={lootTimeRemaining}
