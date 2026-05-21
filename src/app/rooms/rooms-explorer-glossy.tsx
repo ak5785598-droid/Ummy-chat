@@ -227,9 +227,10 @@ export function RoomsExplorerGlossy() {
       const isDecommissioned = room.name && room.name.toUpperCase().includes('SYNCHRONIZING');
       
        // Strictly allow ONLY the original help room by ID
-       const isOriginalHelp = room.id === 'ummy-help-center';
+       const ORIGINAL_HELP_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+       const isOriginalHelp = room.id === ORIGINAL_HELP_ID;
        const looksLikeHelp = (
-         room.id === 'ummy-help-center' || 
+         room.id === ORIGINAL_HELP_ID || 
          (room.name && room.name.toLowerCase().includes('help')) ||
          (room.title && room.title.toLowerCase().includes('help'))
        );
