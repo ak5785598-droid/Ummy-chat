@@ -3243,6 +3243,7 @@ function AdminPageContent() {
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Image</Label>
                               <div className="flex gap-2">
                                 <input 
+                                  id={`loot-image-${level.id}`}
                                   type="file" 
                                   accept="image/*" 
                                   ref={el => lootImageInputRefs.current[level.id] = el}
@@ -3252,20 +3253,21 @@ function AdminPageContent() {
                                     if (file) handleUploadLootLevelImage(level.id, file);
                                   }}
                                 />
-                                <Button 
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => lootImageInputRefs.current[level.id]?.click()}
-                                  disabled={uploadingLootImage === level.id}
-                                  className="h-10 rounded-xl flex-1"
+                                <label 
+                                  htmlFor={`loot-image-${level.id}`}
+                                  className={cn(
+                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 py-2",
+                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+                                    "text-sm font-medium transition-colors cursor-pointer",
+                                    uploadingLootImage === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
+                                  )}
                                 >
                                   {uploadingLootImage === level.id ? (
                                     <Loader className="h-4 w-4 animate-spin" />
                                   ) : (
                                     "Upload Image"
                                   )}
-                                </Button>
+                                </label>
                                 {level.image && (
                                   <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
                                 )}
@@ -3275,6 +3277,7 @@ function AdminPageContent() {
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>
                               <div className="flex gap-2">
                                 <input 
+                                  id={`loot-video-${level.id}`}
                                   type="file" 
                                   accept="video/*" 
                                   ref={el => lootVideoInputRefs.current[level.id] = el}
@@ -3284,20 +3287,21 @@ function AdminPageContent() {
                                     if (file) handleUploadLevelVideo(level.id, file);
                                   }}
                                 />
-                                <Button 
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => lootVideoInputRefs.current[level.id]?.click()}
-                                  disabled={uploadingLevelVideo === level.id}
-                                  className="h-10 rounded-xl flex-1"
+                                <label 
+                                  htmlFor={`loot-video-${level.id}`}
+                                  className={cn(
+                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 py-2",
+                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+                                    "text-sm font-medium transition-colors cursor-pointer",
+                                    uploadingLevelVideo === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
+                                  )}
                                 >
                                   {uploadingLevelVideo === level.id ? (
                                     <Loader className="h-4 w-4 animate-spin" />
                                   ) : (
                                     "Upload Video"
                                   )}
-                                </Button>
+                                </label>
                                 {level.videoUrl && (
                                   <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
                                 )}
