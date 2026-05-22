@@ -221,7 +221,6 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
                     src={selectedMatch.iframes[0]?.url || ''}
                     className="w-full h-full border-0"
                     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-                    allowFullScreen
                   />
                 </div>
               </div>
