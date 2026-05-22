@@ -102,7 +102,7 @@ export function MoviePlayer({
           setAdBlocked(prev => prev + 1);
         }
       }
-    }, 2000);
+    }, 4000);
 
     return () => clearInterval(checkInterval);
   }, [open]);

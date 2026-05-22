@@ -22,7 +22,6 @@ export function AudioContextUnlocker() {
         utterance.volume = 0;
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
-        console.log("AI Voice: Audio Context Unlocked via interaction");
       }
 
       // 2. Play a silent sound if needed (Optional but robust)

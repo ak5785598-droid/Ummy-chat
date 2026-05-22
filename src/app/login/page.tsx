@@ -170,7 +170,6 @@ export default function LoginPage() {
       try {
         const result = await getRedirectResult(auth);
         if (result?.user) {
-          console.log("✅ User logged in via Redirect:", result.user.uid);
           setIsSigningIn(true);
           await syncUserIdentity(result.user.uid, result.user.email, result.user.displayName);
           
@@ -205,7 +204,6 @@ export default function LoginPage() {
   useEffect(() => {
     // 1. Handle definitive Permission Denied (High chance of ban)
     if (profileError && (profileError.message.includes('permission') || profileError.message.includes('insufficient'))) {
-      console.log(`[Presence-Ban] Permission denied on profile read. Triggering silent ban check...`);
       setBanInfo({ isBanned: true, bannedUntil: null }); // Showing generic ban if we can't read the duration
       return;
     }
@@ -214,19 +212,15 @@ export default function LoginPage() {
     if (isAuthLoading || isProfileLoading) return;
 
     if (user && userProfile) {
-      console.log(`[Login] Checking Ban Status for: ${user.uid}`);
       if (userProfile.banStatus?.isBanned) {
         const until = userProfile.banStatus.bannedUntil?.toDate?.() || null;
         if (!until || until > new Date()) {
-          console.log(`[Login] User IS BANNED. Showing modal.`);
           setBanInfo({ isBanned: true, bannedUntil: userProfile.banStatus.bannedUntil });
           return;
         } else {
-          console.log(`[Login] Ban EXPIRED. Allowing entry.`);
         }
       }
 
-      console.log(`[Login] Authorized. Navigating to discovery.`);
       router.replace('/rooms');
     }
   }, [user, isAuthLoading, userProfile, isProfileLoading, profileError, router]);
@@ -236,7 +230,6 @@ export default function LoginPage() {
     if (!Capacitor.isNativePlatform()) return;
 
     const phoneCodeSentListener = FirebaseAuthentication.addListener('phoneCodeSent', (event) => {
-      console.log("[Native-Auth] Phone Code Sent. ID:", event.verificationId);
       setNativeVerificationId(event.verificationId);
       setPhoneLoginStep('code');
       setIsSigningIn(false);
@@ -244,7 +237,6 @@ export default function LoginPage() {
     });
 
     const phoneVerificationCompletedListener = FirebaseAuthentication.addListener('phoneVerificationCompleted', async (event: any) => {
-      console.log("[Native-Auth] Phone Verification Completed Instantly.");
       if (event.result?.user) {
         setIsSigningIn(true);
         await syncUserIdentity(event.result.user.uid, event.result.user.phoneNumber || null, null);
@@ -381,7 +373,6 @@ const accountNumber = await generateNumericID(firestore, uid);
             following: 0
           }
         });
-        console.log(`✅ Profile created with STRICT Numeric Internal ID: ${accountNumber}`);
       }
     } catch (err) {
       console.error("[Identity Sync] Error:", err);
@@ -394,13 +385,11 @@ const accountNumber = await generateNumericID(firestore, uid);
     try {
       if (Capacitor.isNativePlatform()) {
         try {
-          console.log("[Auth] Attempting Native Google Sign-In via FirebaseAuthentication...");
           // Attempt Native Google Login (Priority for Mobile)
           const result = await (FirebaseAuthentication as any).signInWithGoogle({
             webClientId: '373109833688-655nmcl2juhrn5kop38geb4khuu3dsl5.apps.googleusercontent.com'
           });
           
-          console.log("[Auth] Native Login Result:", result);
 
           if (result.credential?.idToken) {
             const credential = GoogleAuthProvider.credential(result.credential.idToken);
@@ -438,7 +427,6 @@ const accountNumber = await generateNumericID(firestore, uid);
             description: nativeError.message || 'Check SHA-1 fingerprints in Firebase Console.',
           });
           // Fall back to web-based login below
-          console.log("[Auth] Falling back to Web-based Redirect...");
         }
       }
 

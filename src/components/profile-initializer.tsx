@@ -50,7 +50,6 @@ export function ProfileInitializer() {
      if (banStatus?.isBanned) {
       const bannedUntil = banStatus.bannedUntil?.toDate?.() || null;
       if (!bannedUntil || bannedUntil > now) {
-       console.log("[Identity Sync] Restricted frequency detected.");
        hasInitialized.current = profileId;
        return;
       }
@@ -141,7 +140,6 @@ export function ProfileInitializer() {
             transaction.set(userRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
             transaction.set(profileRef, { accountNumber: newId, updatedAt: serverTimestamp() }, { merge: true });
           });
-          console.log(`✅ Strictly 6-Digit Number ID Synced: ${user.uid}`);
         }
       } catch (e: any) {
         const isAssignedIdsError = e?.message?.includes('assigned_ids');
@@ -179,7 +177,6 @@ export function ProfileInitializer() {
               transaction.set(counterRef, { lastRoomId: newCounterValue }, { merge: true });
               transaction.set(roomRef, { roomNumber: nextRoomId.toString(), updatedAt: serverTimestamp() }, { merge: true });
             });
-            console.log(`✅ Sequential Room ID Synced: ${user.uid}`);
           }
         }
       } catch (e: any) {

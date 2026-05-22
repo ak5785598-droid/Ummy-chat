@@ -438,9 +438,7 @@ export function GiftAnimationOverlay({
       setUseCanvasProcessing(hasSolidBlackBg);
       
       if (hasSolidBlackBg) {
-        console.log('[Gift Video] Canvas processing activated - black background removed');
       } else {
-        console.log('[Gift Video] Standard playback - no black background detected');
       }
     }
   };
@@ -458,7 +456,6 @@ export function GiftAnimationOverlay({
             // Use cached video - copy state to our ref
             video.src = cachedVideo.src;
             video.currentTime = 0;
-            console.log('[Gift Video] Using cached video for instant playback');
           } else {
             // Load from network
             video.defaultMuted = false;
@@ -473,7 +470,6 @@ export function GiftAnimationOverlay({
           const playPromise = video.play();
           if (playPromise !== undefined) {
             await playPromise;
-            console.log('[Gift Video] Playing successfully');
           }
         } catch (err) {
           console.warn('[Gift Video] Playback failed, trying muted fallback:', err);
@@ -481,7 +477,6 @@ export function GiftAnimationOverlay({
             if (videoRef.current) {
               videoRef.current.muted = true;
               await videoRef.current.play();
-              console.log('[Gift Video] Playing muted');
             }
           } catch (e) {
             console.error('[Gift Video] Complete playback failure', e);

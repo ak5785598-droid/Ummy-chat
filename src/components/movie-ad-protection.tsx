@@ -71,7 +71,7 @@ export function MovieAdProtection({ isOpen, videoUrl, iframeRef, onAdBlocked, al
           onAdBlocked();
         }
       }
-    }, 2000);
+    }, 4000);
 
     return () => clearInterval(checkInterval);
   }, [isOpen, onAdBlocked, iframeRef]);

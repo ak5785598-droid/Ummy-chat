@@ -14,7 +14,6 @@ export function InstallButton() {
 
  useEffect(() => {
   const handler = (e: any) => {
-   console.log('[PWA Sync] Install prompt detected.');
    e.preventDefault();
    setDeferredPrompt(e);
    setShow(true);
@@ -30,7 +29,6 @@ export function InstallButton() {
 
   deferredPrompt.prompt();
   const { outcome } = await deferredPrompt.userChoice;
-  console.log(`[PWA Sync] User choice: ${outcome}`);
   
   setDeferredPrompt(null);
   setShow(false);

@@ -56,7 +56,6 @@ export function CreateRoomDialog({ iconOnly = false, trigger }: CreateRoomDialog
    const roomSnap = await getDoc(roomRef);
    
    if (roomSnap.exists()) {
-    console.log('[Identity Sync] Room detected. Redirecting to active frequency.');
     router.push(`/rooms/${user.uid}`);
     return;
    }

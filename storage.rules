@@ -9,8 +9,8 @@ service firebase.storage {
     }
     
     // ============================================
-    // ROOM MUSIC & FILES - ANY AUTHENTICATED USER
-    // This allows all users to upload/play music
+    // ROOM MUSIC & FILES - AUTHENTICATED USERS
+    // NOTE: Enforced via Firestore rules (chatRooms/{roomId}/music)
     // ============================================
     match /rooms/{roomId}/{allPaths=**} {
       allow read: if request.auth != null;
@@ -33,32 +33,28 @@ service firebase.storage {
     match /store/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
 
     match /gifts/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
 
     match /banners/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
     
     match /roomBanners/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
 
@@ -66,8 +62,7 @@ service firebase.storage {
     match /loot/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
 
@@ -75,8 +70,7 @@ service firebase.storage {
     match /emojis/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == 'ADD_FRIEND_UID_HERE'
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
       );
     }
 

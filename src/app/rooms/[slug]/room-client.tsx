@@ -557,7 +557,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         const allVideos = [...giftVideos, ...frameVideos];
         const allImages = [...giftImages, ...frameImages];
 
-        console.log(`[Media Preloader] Preloading ${allVideos.length} videos, ${allImages.length} images`);
         
         // Preload in batches (non-blocking)
         if (allVideos.length > 0 || allImages.length > 0) {
@@ -607,10 +606,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     const attemptSilentPlay = async () => {
       try {
         await silentAudio.play();
-        console.log('[AutoUnlock] Silent audio played - audio context unlocked');
         setUserInteracted(true);
       } catch (e) {
-        console.log('[AutoUnlock] Silent play blocked, will retry on interaction');
       }
     };
 
@@ -646,7 +643,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         aiSilentAudioRef.current.play().catch(() => {});
       }
 
-      console.log('[AutoUnlock] All systems go via user interaction');
       setUserInteracted(true);
     };
 
@@ -964,7 +960,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     if (hoursSinceReset >= 24 && !hasResetRocketRef.current) {
       hasResetRocketRef.current = true;
-      console.log('[Rocket] 24 hours passed! Resetting to Level 1...');
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.progress': 0,
         'rocket.countdownUntil': null,
@@ -974,7 +969,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const currentTarget = rocketConfig?.target || rocket.target || 10000;
     if (rocket.progress >= currentTarget && !rocket.countdownUntil) {
-      console.log('[Rocket] Goal reached! Starting 60s countdown...');
       const launchTime = new Date(Date.now() + 60000);
       updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
         'rocket.countdownUntil': Timestamp.fromDate(launchTime)
@@ -985,7 +979,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (rocket.countdownUntil) {
       const launchTime = rocket.countdownUntil.toDate().getTime();
       if (Date.now() >= launchTime) {
-        console.log('[Rocket] Launching! Firing Lucky Rain...');
         // ... trigger lucky rain ...
         
         // Reset Rocket State
@@ -1068,7 +1061,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const handleEnded = () => {
       if (isRepeatEnabled) {
-        console.log('[Music] Repeat active, looping track...');
         audio.currentTime = 0;
         audio.play().catch(e => console.warn('[Music] Loop failed:', e));
         return;
@@ -1085,10 +1077,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       const isLeader = currentUser?.uid === electedLeaderUid;
 
       if (isLeader && roomMusicLibrary.length > 0) {
-        console.log('[Music] Track ended, auto-playing next track as leader...');
         handleNextMusic();
       } else if (!isLeader && roomMusicLibrary.length > 0) {
-        console.log('[Music] Track ended, waiting for leader to sync next song.');
       } else {
         setIsMusicPlaying(false);
       }
@@ -1575,7 +1565,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     if (!firestore || !room.id || !currentUser?.uid || !currentUserParticipant?.activeEmoji) return;
 
     const clearTimer = setTimeout(() => {
-      console.log('[Emoji] Auto-clearing active emoji after 3s...');
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
       updateDocumentNonBlocking(pRef, { activeEmoji: null });
     }, 3000);
@@ -1737,7 +1726,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     const checkAndReset = () => {
       const today = getTodayString();
       if (room.stats?.lastWealthResetDate !== today) {
-        console.log('[Room Engine] Resetting daily wealth cup for new day:', today);
         updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
           'stats.dailyGifts': 0,
           'stats.lastWealthResetDate': today
@@ -2393,7 +2381,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     // GUARD: Anti-Duplication Shield (10s local cooldown per name)
     if (welcomedUsersRef.current.has(newUserName)) {
-      console.log(`[AI-Guard] Suppressing duplicate welcome for: ${newUserName}`);
       return;
     }
 
@@ -3919,7 +3906,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }}
         onReject={() => {
           // Just close the dialog - user declined
-          console.log('User rejected mic invitation');
         }}
       />
 

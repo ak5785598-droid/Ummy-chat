@@ -125,7 +125,6 @@ import { App } from '@capacitor/app';
       if (!hasStayAwarded.current) {
         stayTimeRef.current += 30;
         if (stayTimeRef.current >= 900) { // 15 minutes
-          console.log('[Missions] Stay time reached! Awarding progress...');
           const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
           updateDocumentNonBlocking(questRef, { current: increment(30) });
           hasStayAwarded.current = true;
@@ -201,7 +200,6 @@ import { App } from '@capacitor/app';
         // Sync the participantCount if needed
         const currentStoredCount = roomData.participantCount || 0;
         if (purgeCount > 0 || currentStoredCount !== activeCount) {
-          console.log(`[Presence] Owner Syncing room ${roomId}: Purged ${purgeCount}, New Count: ${activeCount}`);
           purgeBatch.update(roomDocRef, { 
             participantCount: activeCount, 
             updatedAt: serverTimestamp() 
@@ -234,10 +232,8 @@ import { App } from '@capacitor/app';
       
       App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive && presenceRef.current) {
-          console.log('[Presence] App backgrounded, removing from room');
           set(presenceRef.current, null);
         } else if (isActive && presenceRef.current) {
-          console.log('[Presence] App foregrounded, re-adding to room');
           set(presenceRef.current, {
             uid: user.uid,
             name: userMetadata.username || 'Guest',
@@ -288,7 +284,6 @@ import { App } from '@capacitor/app';
          // Check again if user hasn't re-joined or minimized
          const currentSessionRoomIdAfterTimeout = latestRoomRef.current.activeRoomId || latestRoomRef.current.minimizedRoomId;
          if (!currentSessionRoomIdAfterTimeout) {
-            console.log(`[Presence] Cleanup executing for ${roomId}`);
             const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
             const rRef = doc(firestore, 'chatRooms', roomId);
             const uRef = doc(firestore, 'users', user.uid);
