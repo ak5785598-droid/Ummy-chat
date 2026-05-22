@@ -159,6 +159,7 @@ import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
 import { NetMirrorDialog } from '@/components/netmirror-dialog';
 import { NetMirrorWatchTogether } from '@/components/netmirror-watch-together';
 import { NetMirrorRoomIndicator } from '@/components/netmirror-room-indicator';
+import { NetMirrorPlayer } from '@/components/netmirror-player';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -405,7 +406,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
-  const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; startedBy: string; isActive: boolean } | null>(null);
+  const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; movieUrl?: string; startedBy: string; isActive: boolean } | null>(null);
+  const [isNetMirrorPlayerOpen, setIsNetMirrorPlayerOpen] = useState(false);
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
@@ -2668,20 +2670,28 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   };
 
   // NETMIRROR WATCH TOGETHER HANDLERS
-  const handleOpenNetMirrorWatch = useCallback(() => {
-    setIsNetMirrorWatchOpen(true);
+  const handleOpenNetMirrorWatch = useCallback((movieUrl?: string, movieTitle?: string) => {
     setIsNetMirrorOpen(false);
-  }, []);
+    setIsNetMirrorPlayerOpen(true);
+    if (movieUrl || movieTitle) {
+      setNetMirrorSession({
+        movieTitle: movieTitle || 'NetMirror',
+        movieUrl: movieUrl,
+        startedBy: currentUser?.name || currentUser?.uid || 'Host',
+        isActive: true,
+      });
+    }
+  }, [currentUser]);
 
   const handleCloseNetMirrorWatch = useCallback(() => {
     setIsNetMirrorWatchOpen(false);
   }, []);
 
   const handleJoinNetMirror = useCallback(() => {
-    window.open('https://netmirror.world', '_blank');
+    setIsNetMirrorPlayerOpen(true);
     toast({ 
-      title: 'NetMirror Opened', 
-      description: 'Find the same movie the host is watching.',
+      title: 'NetMirror', 
+      description: 'Opening in-room player...',
     });
   }, [toast]);
 
@@ -3828,7 +3838,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
-        onOpenNetMirror={() => { /* DISABLED: NetMirror temporarily disabled */ }}
+        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -4107,8 +4117,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }))}
       />
 
-      {/* DISABLED: NetMirror temporarily disabled */}
-      {/* <NetMirrorDialog
+      <NetMirrorDialog
         open={isNetMirrorOpen}
         onOpenChange={setIsNetMirrorOpen}
         roomId={room.id}
@@ -4118,6 +4127,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setIsNetMirrorOpen(false);
         }}
         onWatchInRoom={handleOpenNetMirrorWatch}
+      />
+
+      <NetMirrorPlayer
+        open={isNetMirrorPlayerOpen}
+        onOpenChange={setIsNetMirrorPlayerOpen}
+        movieUrl={netMirrorSession?.movieUrl || ''}
+        movieTitle={netMirrorSession?.movieTitle || 'NetMirror'}
+        startedBy={netMirrorSession?.startedBy || 'Host'}
+        currentUserId={currentUser?.uid || ''}
       />
 
       <NetMirrorWatchTogether
@@ -4136,7 +4154,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         currentUserId={currentUser?.uid || ''}
         onJoin={handleJoinNetMirror}
         onDismiss={handleDismissNetMirrorIndicator}
-      /> */}
+      />
 
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
