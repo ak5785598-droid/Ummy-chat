@@ -13,82 +13,26 @@ interface NetMirrorPlayerProps {
   currentUserId: string;
 }
 
-// Default to the actual movie browsing site
 const BROWSE_URL = 'https://net22.cc/home?utm_source=room_player';
 
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
-  const popupRef = useRef<Window | null>(null);
-  const [popupOpened, setPopupOpened] = useState(false);
+  const [tabOpened, setTabOpened] = useState(false);
   const [adBlocked, setAdBlocked] = useState(0);
   const adBlockedRef = useRef(0);
 
   const isHost = startedBy === currentUserId;
 
-  // Ad protection
   useEffect(() => {
-    if (!open) return;
-
-    const originalOpen = window.open;
-    window.open = (...args: Parameters<typeof window.open>) => {
-      adBlockedRef.current++;
-      setAdBlocked(adBlockedRef.current);
-      return originalOpen(...args);
-    };
-
-    return () => {
-      window.open = originalOpen;
-    };
+    if (!open) {
+      setTabOpened(false);
+    }
   }, [open]);
 
-  const openPlayer = useCallback(() => {
+  const openInNewTab = useCallback(() => {
     const url = movieUrl || BROWSE_URL;
-    const isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      window.open(url, '_blank');
-      setPopupOpened(true);
-      return;
-    }
-
-    if (popupRef.current && !popupRef.current.closed) {
-      popupRef.current.focus();
-      return;
-    }
-
-    const w = Math.min(1200, window.innerWidth - 40);
-    const h = Math.min(800, window.innerHeight - 40);
-    const left = (window.innerWidth - w) / 2;
-    const top = (window.innerHeight - h) / 2;
-
-    popupRef.current = window.open(
-      url,
-      'netmirror-player',
-      `width=${w},height=${h},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=yes`
-    );
-
-    if (popupRef.current) {
-      setPopupOpened(true);
-      const checkInterval = setInterval(() => {
-        if (popupRef.current?.closed) {
-          setPopupOpened(false);
-          clearInterval(checkInterval);
-          popupRef.current = null;
-        }
-      }, 1000);
-    }
+    window.open(url, '_blank');
+    setTabOpened(true);
   }, [movieUrl]);
-
-  const closePopup = useCallback(() => {
-    if (popupRef.current && !popupRef.current.closed) {
-      popupRef.current.close();
-    }
-    popupRef.current = null;
-    setPopupOpened(false);
-  }, []);
-
-  useEffect(() => {
-    if (!open) closePopup();
-  }, [open, closePopup]);
 
   if (!open) return null;
 
@@ -140,40 +84,42 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
 
               {/* Main Content */}
               <div className="relative aspect-video bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl overflow-hidden border border-slate-700/50 flex flex-col items-center justify-center">
-                {popupOpened ? (
-                  <div className="flex flex-col items-center gap-2 p-4 text-center">
-                    <div className="h-14 w-14 rounded-2xl bg-green-500/20 flex items-center justify-center">
-                      <Monitor className="h-7 w-7 text-green-400" />
-                    </div>
-                    <p className="text-white font-bold">Now Watching</p>
-                    <p className="text-xs text-slate-400">NetMirror is open in a popup window</p>
-                    <button onClick={closePopup} className="mt-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-xs font-bold transition-all active:scale-95">
-                      Close Popup
-                    </button>
+                <div className="flex flex-col items-center gap-3 p-4 text-center">
+                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/20">
+                    <Monitor className="h-8 w-8 text-white" />
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 p-4 text-center">
-                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-600/20">
-                      <Monitor className="h-8 w-8 text-white" />
+                  <p className="text-white font-bold text-lg">{movieTitle || 'NetMirror'}</p>
+                  <p className="text-xs text-slate-400">50+ OTT platforms - Movies & Series</p>
+
+                  {tabOpened ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex items-center gap-2 text-sm text-green-400 font-bold">
+                        <span>✓</span>
+                        <span>Opened in new tab</span>
+                      </div>
+                      <p className="text-[10px] text-slate-500">Switch to the new tab to browse movies</p>
+                      <button onClick={openInNewTab} className="mt-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-xs font-bold transition-all active:scale-95">
+                        Open Again
+                      </button>
                     </div>
-                    <p className="text-white font-bold text-lg">{movieTitle || 'NetMirror'}</p>
-                    <p className="text-xs text-slate-400">Browse movies from 50+ OTT platforms</p>
-                    <button onClick={openPlayer} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl text-white text-sm font-bold transition-all active:scale-95 shadow-lg shadow-red-600/30">
+                  ) : (
+                    <button onClick={openInNewTab} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-xl text-white text-sm font-bold transition-all active:scale-95 shadow-lg shadow-red-600/30">
                       <ExternalLink className="h-5 w-5" />
                       {isHost ? 'Open & Browse Movies' : 'Join & Watch'}
                     </button>
-                    {adBlocked > 0 && (
-                      <div className="flex items-center gap-1.5 text-xs text-amber-400">
-                        <ShieldAlert className="h-3 w-3" />
-                        <span>{adBlocked} ad{adBlocked > 1 ? 's' : ''} blocked</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+
+                  {adBlocked > 0 && (
+                    <div className="flex items-center gap-1.5 text-xs text-amber-400">
+                      <ShieldAlert className="h-3 w-3" />
+                      <span>{adBlocked} ad{adBlocked > 1 ? 's' : ''} blocked</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="text-[10px] text-slate-500 text-center pt-1">
-                Opens in a popup window for the best experience
+                Opens in a new tab — switch back to room when done
               </div>
             </div>
           </motion.div>
