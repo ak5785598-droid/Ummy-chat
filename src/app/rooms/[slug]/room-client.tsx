@@ -3823,7 +3823,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
-        onOpenSports={() => { setIsSportsOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenSports={() => { setIsRoomPlayOpen(false); setTimeout(() => setIsSportsOpen(true), 300); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
