@@ -50,8 +50,7 @@ import {
   Sparkles,
   UserPlus,
   Trophy as TrophyIcon,
-  Speaker,
-  RefreshCw
+  Speaker
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROOM_TASKS } from '@/constants/room-tasks';
@@ -157,10 +156,10 @@ import { MovieAdProtection } from '@/components/movie-ad-protection';
 import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
-// import { NetMirrorDialog } from '@/components/netmirror-dialog';
-// import { NetMirrorWatchTogether } from '@/components/netmirror-watch-together';
-// import { NetMirrorRoomIndicator } from '@/components/netmirror-room-indicator';
-// import { NetMirrorPlayer } from '@/components/netmirror-player';
+import { NetMirrorDialog } from '@/components/netmirror-dialog';
+import { NetMirrorWatchTogether } from '@/components/netmirror-watch-together';
+import { NetMirrorRoomIndicator } from '@/components/netmirror-room-indicator';
+import { NetMirrorPlayer } from '@/components/netmirror-player';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
@@ -321,31 +320,6 @@ interface RoomClientProps {
   onExit?: () => void;
 }
 
-const MOVIE_SOURCES = [
-  {
-    name: 'v1',
-    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
-        : `https://vidlink.pro/movie/${id}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`,
-    domain: 'vidlink.pro' },
-  {
-    name: 'v2',
-    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://embed.su/embed/tv/${id}/${s}/${e}`
-        : `https://embed.su/embed/movie/${id}`,
-    domain: 'embed.su' },
-  {
-    name: 'v3',
-    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://vidsrc.rip/embed/tv/${id}/${s}/${e}`
-        : `https://vidsrc.rip/embed/movie/${id}`,
-    domain: 'vidsrc.rip' },
-];
-const ALLOWED_DOMAINS = MOVIE_SOURCES.map(s => s.domain);
-
 export function RoomClient({ room, onExit }: RoomClientProps) {
   const [messageText, setMessageText] = useState('');
   const [showSoundboard, setShowSoundboard] = useState(false);
@@ -429,15 +403,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const movieOriginalUrlRef = useRef<string>('');
   const moviePopupBlockedRef = useRef(false);
   const [movieAdBlocked, setMovieAdBlocked] = useState(0);
-  const [movieSourceIndex, setMovieSourceIndex] = useState(0);
-  const handleCycleMovieSource = useCallback(() => {
-    setMovieSourceIndex(prev => (prev + 1) % MOVIE_SOURCES.length);
-  }, []);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
-  // const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
-  // const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
-  // const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; movieUrl?: string; startedBy: string; isActive: boolean } | null>(null);
-  // const [isNetMirrorPlayerOpen, setIsNetMirrorPlayerOpen] = useState(false);
+  const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
+  const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
+  const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; movieUrl?: string; startedBy: string; isActive: boolean } | null>(null);
+  const [isNetMirrorPlayerOpen, setIsNetMirrorPlayerOpen] = useState(false);
   const [screenShareTarget, setScreenShareTarget] = useState<{ type: 'all' | 'specific', uid?: string, name?: string } | null>(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showMicInviteDialog, setShowMicInviteDialog] = useState(false);
@@ -1495,24 +1465,24 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => unsubscribe();
   }, [firestore, room.id]);
 
-  // // NETMIRROR SESSION: Listen for active watch together session
-  // useEffect(() => {
-  //   if (!firestore || !room.id) return;
-  //   // const netMirrorRef = doc(firestore, 'chatRooms', room.id, 'netmirror', 'state');
-  //   // const unsubNetMirror = onSnapshot(netMirrorRef, (snap) => {
-  //   //   if (snap.exists()) {
-  //   //     const data = snap.data();
-  //   //     if (data.isActive) {
-  //   //       setNetMirrorSession({ movieTitle: data.movieTitle, movieUrl: data.movieUrl, startedBy: data.startedBy, isActive: true });
-  //   //     } else {
-  //   //       setNetMirrorSession(null);
-  //   //     }
-  //   //   } else {
-  //   //     setNetMirrorSession(null);
-  //   //   }
-  //   // });
-  //   return () => {};
-  // }, [firestore, room.id]);
+  // NETMIRROR SESSION: Listen for active watch together session
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const netMirrorRef = doc(firestore, 'chatRooms', room.id, 'netmirror', 'state');
+    const unsubNetMirror = onSnapshot(netMirrorRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.isActive) {
+          setNetMirrorSession({ movieTitle: data.movieTitle, movieUrl: data.movieUrl, startedBy: data.startedBy, isActive: true });
+        } else {
+          setNetMirrorSession(null);
+        }
+      } else {
+        setNetMirrorSession(null);
+      }
+    });
+    return () => unsubNetMirror();
+  }, [firestore, room.id]);
 
   // YOUTUBE SYNC: Listen for active YouTube state in the room
   useEffect(() => {
@@ -2695,35 +2665,35 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     toast({ title: 'Movie Mirror Stopped', description: 'Movie playback ended for the room.' });
   };
 
-  // // NETMIRROR WATCH TOGETHER HANDLERS
-  // const handleOpenNetMirrorWatch = useCallback((movieUrl?: string, movieTitle?: string) => {
-  //   setIsNetMirrorOpen(false);
-  //   setIsNetMirrorPlayerOpen(true);
-  //   if (movieUrl || movieTitle) {
-  //     setNetMirrorSession({
-  //       movieTitle: movieTitle || 'NetMirror',
-  //       movieUrl: movieUrl,
-  //       startedBy: currentUser?.name || currentUser?.uid || 'Host',
-  //       isActive: true,
-  //     });
-  //   }
-  // }, [currentUser]);
+  // NETMIRROR WATCH TOGETHER HANDLERS
+  const handleOpenNetMirrorWatch = useCallback((movieUrl?: string, movieTitle?: string) => {
+    setIsNetMirrorOpen(false);
+    setIsNetMirrorPlayerOpen(true);
+    if (movieUrl || movieTitle) {
+      setNetMirrorSession({
+        movieTitle: movieTitle || 'NetMirror',
+        movieUrl: movieUrl,
+        startedBy: currentUser?.name || currentUser?.uid || 'Host',
+        isActive: true,
+      });
+    }
+  }, [currentUser]);
 
-  // const handleCloseNetMirrorWatch = useCallback(() => {
-  //   setIsNetMirrorWatchOpen(false);
-  // }, []);
+  const handleCloseNetMirrorWatch = useCallback(() => {
+    setIsNetMirrorWatchOpen(false);
+  }, []);
 
-  // const handleJoinNetMirror = useCallback(() => {
-  //   setIsNetMirrorPlayerOpen(true);
-  //   toast({
-  //     title: 'NetMirror',
-  //     description: 'Opening in-room player...',
-  //   });
-  // }, [toast]);
+  const handleJoinNetMirror = useCallback(() => {
+    setIsNetMirrorPlayerOpen(true);
+    toast({
+      title: 'NetMirror',
+      description: 'Opening in-room player...',
+    });
+  }, [toast]);
 
-  // const handleDismissNetMirrorIndicator = useCallback(() => {
-  //   setNetMirrorSession(null);
-  // }, []);
+  const handleDismissNetMirrorIndicator = useCallback(() => {
+    setNetMirrorSession(null);
+  }, []);
 
   // AUTO-DISABLE MOVIES WHEN YOUTUBE STARTS
   useEffect(() => {
@@ -3864,6 +3834,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -4020,15 +3991,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <>
         <MovieAdProtection
           isOpen={isMoviePlayerOpen}
-          videoUrl={MOVIE_SOURCES[movieSourceIndex].build(
-            selectedMovie.tmdbId,
-            selectedMovie.mediaType || 'movie',
-            selectedMovie.season,
-            selectedMovie.episode
-          )}
+          videoUrl={
+            selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+              ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
+              : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+          }
           iframeRef={movieIframeRef}
           onAdBlocked={() => setMovieAdBlocked(prev => prev + 1)}
-          allowedDomains={ALLOWED_DOMAINS}
         />
         <motion.div
           drag
@@ -4065,13 +4034,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 </button>
               )}
               <button
-                onClick={handleCycleMovieSource}
-                className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90"
-                title="Switch source"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </button>
-              <button
                 onClick={() => setIsMoviePlayerOpen(false)}
                 className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
               >
@@ -4089,13 +4051,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             )}
             <iframe
               ref={movieIframeRef}
-              key={`inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}-src${movieSourceIndex}`}
-              src={MOVIE_SOURCES[movieSourceIndex].build(
-                selectedMovie.tmdbId,
-                selectedMovie.mediaType || 'movie',
-                selectedMovie.season,
-                selectedMovie.episode
-              )}
+              key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}`}
+              src={
+                selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+                  ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
+                  : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+              }
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               allowFullScreen
@@ -4152,8 +4113,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }))}
       />
 
-      {/* NETMIRROR DISABLED */}
-      {/* <NetMirrorDialog
+      <NetMirrorDialog
         open={isNetMirrorOpen}
         onOpenChange={setIsNetMirrorOpen}
         roomId={room.id}
@@ -4190,7 +4150,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         currentUserId={currentUser?.uid || ''}
         onJoin={handleJoinNetMirror}
         onDismiss={handleDismissNetMirrorIndicator}
-      /> */}
+      />
 
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }

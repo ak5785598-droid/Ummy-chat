@@ -2,25 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Film, Tv, ShieldAlert, RefreshCw } from 'lucide-react';
-
-const SOURCES = [
-  { build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
-        : `https://vidlink.pro/movie/${id}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`,
-    domain: 'vidlink.pro' },
-  { build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://embed.su/embed/tv/${id}/${s}/${e}`
-        : `https://embed.su/embed/movie/${id}`,
-    domain: 'embed.su' },
-  { build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
-      type === 'tv' && s && e
-        ? `https://vidsrc.rip/embed/tv/${id}/${s}/${e}`
-        : `https://vidsrc.rip/embed/movie/${id}`,
-    domain: 'vidsrc.rip' },
-];
+import { X, Film, Tv, ShieldAlert } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -48,18 +30,14 @@ export function MoviePlayer({
 }: MoviePlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [sourceIndex, setSourceIndex] = useState(0);
 
-  const source = SOURCES[sourceIndex];
-  const videoUrl = source.build(tmdbId, mediaType, season, episode);
+  const videoUrl = mediaType === 'tv' && season && episode
+    ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+    : `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
 
   const [adBlocked, setAdBlocked] = useState(0);
   const originalUrlRef = useRef(videoUrl);
   const popupBlockedRef = useRef(false);
-
-  const cycleSource = useCallback(() => {
-    setSourceIndex(prev => (prev + 1) % SOURCES.length);
-  }, []);
 
   useEffect(() => {
     if (open) {
@@ -67,9 +45,9 @@ export function MoviePlayer({
       originalUrlRef.current = videoUrl;
       popupBlockedRef.current = false;
     }
-  }, [open, tmdbId, season, episode, sourceIndex]);
+  }, [open, tmdbId, season, episode]);
 
-  // Block popups & redirects from embed sources
+  // Block popups & redirects from vidlink.pro
   useEffect(() => {
     if (!open) return;
 
@@ -110,13 +88,10 @@ export function MoviePlayer({
       const iframe = iframeRef.current;
       if (!iframe) return;
 
-      const allowedDomains = SOURCES.map(s => s.domain);
-      const isAllowedDomain = (url: string) => allowedDomains.some(d => url.includes(d));
-
       try {
         const currentSrc = iframe.src;
         const original = originalUrlRef.current;
-        if (original && currentSrc !== original && !isAllowedDomain(currentSrc)) {
+        if (original && currentSrc !== original && !currentSrc.includes('vidlink.pro')) {
           iframe.src = original;
           setAdBlocked(prev => prev + 1);
         }
@@ -176,7 +151,7 @@ export function MoviePlayer({
 
             <div className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
               {/* Title */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center justify-center pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${mediaType === 'tv' ? 'bg-gradient-to-br from-blue-500 to-cyan-600' : 'bg-gradient-to-br from-purple-500 to-violet-700'}`}>
                     {mediaType === 'tv' ? <Tv className="h-4 w-4 text-white" /> : <Film className="h-4 w-4 text-white" />}
@@ -186,13 +161,6 @@ export function MoviePlayer({
                     <p className="text-[10px] text-white/40">{subtitle}</p>
                   </div>
                 </div>
-                <button
-                  onClick={cycleSource}
-                  className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white/60 hover:text-white transition-all active:scale-90"
-                  title="Switch source"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </button>
               </div>
 
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
@@ -214,7 +182,7 @@ export function MoviePlayer({
                 )}
                 <iframe
                   ref={iframeRef}
-                  key={`player-${mediaType}-${tmdbId}-${season}-${episode}-src${sourceIndex}`}
+                  key={`vidlink-${mediaType}-${tmdbId}-${season}-${episode}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
