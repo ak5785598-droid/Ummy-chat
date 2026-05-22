@@ -50,7 +50,8 @@ import {
   Sparkles,
   UserPlus,
   Trophy as TrophyIcon,
-  Speaker
+  Speaker,
+  Languages
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROOM_TASKS } from '@/constants/room-tasks';
@@ -320,6 +321,21 @@ interface RoomClientProps {
   onExit?: () => void;
 }
 
+const MOVIE_LANGUAGES = [
+  { code: '', label: 'Default' },
+  { code: 'hi', label: 'Hindi' },
+  { code: 'en', label: 'English' },
+  { code: 'ta', label: 'Tamil' },
+  { code: 'te', label: 'Telugu' },
+  { code: 'bn', label: 'Bengali' },
+  { code: 'mr', label: 'Marathi' },
+  { code: 'gu', label: 'Gujarati' },
+  { code: 'kn', label: 'Kannada' },
+  { code: 'ml', label: 'Malayalam' },
+  { code: 'pa', label: 'Punjabi' },
+  { code: 'ur', label: 'Urdu' },
+];
+
 export function RoomClient({ room, onExit }: RoomClientProps) {
   const [messageText, setMessageText] = useState('');
   const [showSoundboard, setShowSoundboard] = useState(false);
@@ -403,6 +419,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const movieOriginalUrlRef = useRef<string>('');
   const moviePopupBlockedRef = useRef(false);
   const [movieAdBlocked, setMovieAdBlocked] = useState(0);
+  const [moviePlayerLang, setMoviePlayerLang] = useState('');
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
@@ -3996,9 +4013,12 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <MovieAdProtection
           isOpen={isMoviePlayerOpen}
           videoUrl={
-            selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
-              ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
-              : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+            (() => {
+              const langParam = moviePlayerLang ? `&audio=${moviePlayerLang}` : '';
+              return selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+                ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true${langParam}`
+                : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true${langParam}`;
+            })()
           }
           iframeRef={movieIframeRef}
           onAdBlocked={() => setMovieAdBlocked(prev => prev + 1)}
@@ -4046,6 +4066,23 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             </div>
           </div>
 
+          {/* Language Selector */}
+          <div className="flex flex-wrap gap-1 px-3 py-1.5 bg-slate-900/80 border-b border-purple-500/20 justify-center">
+            {MOVIE_LANGUAGES.map(lang => (
+              <button
+                key={lang.code || 'default'}
+                onClick={() => setMoviePlayerLang(lang.code)}
+                className={`px-2 py-0.5 rounded-full text-[9px] font-medium transition-all ${
+                  moviePlayerLang === lang.code
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+
           <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
             {movieAdBlocked > 0 && (
               <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-amber-400 px-2.5 py-1 rounded-full">
@@ -4055,11 +4092,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             )}
             <iframe
               ref={movieIframeRef}
-              key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}`}
+              key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}-${moviePlayerLang}`}
               src={
-                selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
-                  ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
-                  : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+                (() => {
+                  const langParam = moviePlayerLang ? `&audio=${moviePlayerLang}` : '';
+                  return selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+                    ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true${langParam}`
+                    : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true${langParam}`;
+                })()
               }
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"

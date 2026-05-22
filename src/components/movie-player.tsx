@@ -2,7 +2,22 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Film, Tv, ShieldAlert } from 'lucide-react';
+import { X, Film, Tv, ShieldAlert, Languages } from 'lucide-react';
+
+const LANGUAGES = [
+  { code: '', label: 'Default' },
+  { code: 'hi', label: 'Hindi' },
+  { code: 'en', label: 'English' },
+  { code: 'ta', label: 'Tamil' },
+  { code: 'te', label: 'Telugu' },
+  { code: 'bn', label: 'Bengali' },
+  { code: 'mr', label: 'Marathi' },
+  { code: 'gu', label: 'Gujarati' },
+  { code: 'kn', label: 'Kannada' },
+  { code: 'ml', label: 'Malayalam' },
+  { code: 'pa', label: 'Punjabi' },
+  { code: 'ur', label: 'Urdu' },
+];
 
 interface MoviePlayerProps {
   open: boolean;
@@ -30,10 +45,12 @@ export function MoviePlayer({
 }: MoviePlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [selectedLang, setSelectedLang] = useState('');
 
+  const langParam = selectedLang ? `&audio=${selectedLang}` : '';
   const videoUrl = mediaType === 'tv' && season && episode
-    ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
-    : `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
+    ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true${langParam}`
+    : `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true${langParam}`;
 
   const [adBlocked, setAdBlocked] = useState(0);
   const originalUrlRef = useRef(videoUrl);
@@ -45,7 +62,7 @@ export function MoviePlayer({
       originalUrlRef.current = videoUrl;
       popupBlockedRef.current = false;
     }
-  }, [open, tmdbId, season, episode]);
+  }, [open, tmdbId, season, episode, selectedLang]);
 
   // Block popups & redirects from vidlink.pro
   useEffect(() => {
@@ -163,6 +180,23 @@ export function MoviePlayer({
                 </div>
               </div>
 
+              {/* Language Selector */}
+              <div className="flex flex-wrap gap-1.5 justify-center">
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang.code || 'default'}
+                    onClick={() => setSelectedLang(lang.code)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                      selectedLang === lang.code
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                    }`}
+                  >
+                    {lang.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
                 {isLoading && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -182,7 +216,7 @@ export function MoviePlayer({
                 )}
                 <iframe
                   ref={iframeRef}
-                  key={`vidlink-${mediaType}-${tmdbId}-${season}-${episode}`}
+                  key={`vidlink-${mediaType}-${tmdbId}-${season}-${episode}-${selectedLang}`}
                   src={videoUrl}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
