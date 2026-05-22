@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, AlertTriangle } from 'lucide-react';
 
-const NETMIRROR_HOME = 'https://netmirror.gg/4/en-in';
+const NETMIRROR_HOME = 'https://netmirror.gg/5/en-in';
 const ALLOWED_DOMAIN = 'netmirror.gg';
 
 interface NetMirrorPlayerProps {
@@ -53,7 +53,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
   }, [open]);
 
   const openExternal = useCallback(() => {
-    window.open('https://netmirror.gg/4/en-in', '_blank');
+    window.open('https://netmirror.gg/5/en-in', '_blank');
   }, []);
 
   if (!open) return null;
