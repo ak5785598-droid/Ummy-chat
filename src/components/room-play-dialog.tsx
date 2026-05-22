@@ -445,6 +445,7 @@ export function RoomPlayDialog({
       icon: <span className="text-white font-black text-lg drop-shadow-md">N</span>, 
       color: 'from-red-600 to-red-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border border-red-600/50', 
       onClick: () => { onOpenNetMirror?.(); onOpenChange(false); },
+      disabled: true,
     },
   ];
 
