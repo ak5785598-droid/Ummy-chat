@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Monitor, ShieldAlert } from 'lucide-react';
+import { X, ExternalLink, ShieldAlert } from 'lucide-react';
 
 interface NetMirrorPlayerProps {
   open: boolean;
@@ -13,20 +13,14 @@ interface NetMirrorPlayerProps {
   currentUserId: string;
 }
 
-const PROXY_URL = '/api/netmirror-proxy?url=';
-
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [adBlocked, setAdBlocked] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const originalUrlRef = useRef(PROXY_URL + encodeURIComponent(movieUrl || ''));
+  const [adBlocked, setAdBlocked] = useState(0);
 
   useEffect(() => {
-    if (open) {
-      setIsLoading(true);
-      originalUrlRef.current = PROXY_URL + encodeURIComponent(movieUrl || '');
-    }
-  }, [open, movieUrl]);
+    if (open) setIsLoading(true);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,38 +43,9 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
     };
   }, [open]);
 
-  useEffect(() => {
-    if (!open || !iframeRef.current) return;
-
-    const checkInterval = setInterval(() => {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-
-      try {
-        const currentSrc = iframe.src;
-        const original = originalUrlRef.current;
-        if (original && currentSrc !== original && !currentSrc.includes('api/netmirror-proxy')) {
-          iframe.src = original;
-          setAdBlocked(prev => prev + 1);
-        }
-      } catch {
-        if (iframeRef.current && originalUrlRef.current) {
-          iframeRef.current.src = originalUrlRef.current;
-          setAdBlocked(prev => prev + 1);
-        }
-      }
-    }, 2000);
-
-    return () => clearInterval(checkInterval);
-  }, [open]);
-
-  const handleIframeLoad = () => {
-    setIsLoading(false);
-  };
-
-  const openDirect = useCallback(() => {
-    window.open(movieUrl || 'https://netmirror.gg/4/en-in', '_blank');
-  }, [movieUrl]);
+  const openExternal = useCallback(() => {
+    window.open('https://net22.cc/home?utm_source=room_player', '_blank');
+  }, []);
 
   if (!open) return null;
 
@@ -119,7 +84,6 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
             </button>
 
             <div className="p-4 space-y-3 max-h-[85vh] overflow-y-auto">
-              {/* Header */}
               <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0">
@@ -132,13 +96,12 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                     </p>
                   </div>
                 </div>
-                <button onClick={openDirect} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-lg shadow-red-600/20">
+                <button onClick={openExternal} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-lg shadow-red-600/20">
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Open
+                  Browse & Sign In
                 </button>
               </div>
 
-              {/* Iframe */}
               <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
                 {isLoading && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -153,16 +116,16 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                 )}
                 <iframe
                   ref={iframeRef}
-                  src={PROXY_URL + encodeURIComponent(movieUrl || '')}
+                  src="https://netmirror.gg/4/en-in"
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
-                  onLoad={handleIframeLoad}
+                  onLoad={() => setIsLoading(false)}
                 />
               </div>
 
               <p className="text-[10px] text-slate-500 text-center">
-                Use <strong>Open</strong> button to sign in and watch in a new tab
+                Click <strong>Browse & Sign In</strong> for full access — sign-in required for computer users
               </p>
             </div>
           </motion.div>
