@@ -14,11 +14,11 @@ interface NetMirrorPlayerProps {
 }
 
 const NETMIRROR_WEB_URL = 'https://netmirror.world';
-const PROXY_BASE = '/api/proxy';
+const PROXY_BASE = '/api/proxy-netmirror?url=';
 
 function toProxyUrl(url: string): string {
-  if (!url) return PROXY_BASE;
-  return url.replace(/https?:\/\/netmirror\.world\/?/i, PROXY_BASE + '/');
+  if (!url) return PROXY_BASE + encodeURIComponent(NETMIRROR_WEB_URL);
+  return PROXY_BASE + encodeURIComponent(url);
 }
 
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
@@ -66,7 +66,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
       try {
         const currentSrc = iframe.src;
         const original = originalUrlRef.current;
-        if (original && currentSrc !== original && !currentSrc.includes('/api/proxy')) {
+        if (original && currentSrc !== original && !currentSrc.includes('proxy-netmirror')) {
           iframe.src = original;
           setAdBlocked(prev => prev + 1);
         }
