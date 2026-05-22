@@ -3,9 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 const TARGET_DOMAIN = 'https://netmirror.world';
 
 export async function GET(request: NextRequest) {
-  const path = request.nextUrl.pathname.replace('/api/proxy/', '');
+  // Extract path after /api/proxy/
+  const fullPath = request.nextUrl.pathname;
+  const proxyPrefix = '/api/proxy';
+  let path = fullPath.startsWith(proxyPrefix + '/')
+    ? fullPath.substring(proxyPrefix.length + 1)
+    : fullPath === proxyPrefix || fullPath === proxyPrefix + '/'
+    ? ''
+    : fullPath.substring(proxyPrefix.length);
+  
   const search = request.nextUrl.search;
-  const targetUrl = `${TARGET_DOMAIN}/${path}${search}`;
+  const targetUrl = `${TARGET_DOMAIN}/${path}${search}`.replace(/([^:]\/)\/+/g, '$1');
 
   try {
     const response = await fetch(targetUrl, {
