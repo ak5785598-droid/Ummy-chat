@@ -16,7 +16,7 @@ interface NetMirrorWatchTogetherProps {
   onCloseForAll?: () => void;
 }
 
-const NETMIRROR_WEB_URL = 'https://netmirror.world';
+const NETMIRROR_WEB_URL = 'https://netmirror.gg/4/en-in';
 
 export function NetMirrorWatchTogether({ 
   open, 
