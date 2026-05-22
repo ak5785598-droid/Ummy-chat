@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink } from 'lucide-react';
+import { X, ExternalLink, AlertTriangle } from 'lucide-react';
 
 const NETMIRROR_HOME = 'https://netmirror.gg/4/en-in';
-const NET22_DOMAIN = 'net22.cc';
+const ALLOWED_DOMAIN = 'netmirror.gg';
 
 interface NetMirrorPlayerProps {
   open: boolean;
@@ -18,14 +18,14 @@ interface NetMirrorPlayerProps {
 
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const originalUrlRef = useRef(NETMIRROR_HOME);
   const [isLoading, setIsLoading] = useState(true);
-  const [redirectCount, setRedirectCount] = useState(0);
+  const [blockedNavCount, setBlockedNavCount] = useState(0);
 
   useEffect(() => {
     if (open) setIsLoading(true);
   }, [open]);
 
-  // Monitor iframe for internal navigation to net22.cc (Cloudflare/XFO blocked in iframe)
   useEffect(() => {
     if (!open) return;
 
@@ -35,26 +35,25 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
 
       try {
         const currentSrc = iframe.src;
-        if (currentSrc.includes(NET22_DOMAIN)) {
-          window.open(currentSrc, '_blank');
-          iframe.src = NETMIRROR_HOME;
-          setRedirectCount(prev => prev + 1);
+        if (!currentSrc.includes(ALLOWED_DOMAIN)) {
+          iframe.src = originalUrlRef.current;
+          setBlockedNavCount(prev => prev + 1);
           setIsLoading(true);
         }
       } catch {
         if (iframeRef.current) {
-          iframeRef.current.src = NETMIRROR_HOME;
-          setRedirectCount(prev => prev + 1);
+          iframeRef.current.src = originalUrlRef.current;
+          setBlockedNavCount(prev => prev + 1);
           setIsLoading(true);
         }
       }
-    }, 1500);
+    }, 1000);
 
     return () => clearInterval(checkInterval);
   }, [open]);
 
   const openExternal = useCallback(() => {
-    window.open('https://net22.cc/home?utm_source=room_player', '_blank');
+    window.open('https://netmirror.gg/4/en-in', '_blank');
   }, []);
 
   if (!open) return null;
@@ -108,7 +107,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                 </div>
                 <button onClick={openExternal} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-lg text-white text-xs font-bold transition-all active:scale-95 shrink-0 shadow-lg shadow-red-600/20">
                   <ExternalLink className="h-3.5 w-3.5" />
-                  Browse & Sign In
+                  Open in Browser
                 </button>
               </div>
 
@@ -118,10 +117,10 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                     <div className="h-8 w-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
                   </div>
                 )}
-                {redirectCount > 0 && (
-                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-cyan-400 px-2.5 py-1 rounded-full">
-                    <ExternalLink className="h-3 w-3" />
-                    <span>Opened in new tab ({redirectCount})</span>
+                {blockedNavCount > 0 && (
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-yellow-900/80 backdrop-blur-sm text-xs text-yellow-300 px-2.5 py-1 rounded-full">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Use &quot;Open in Browser&quot; to sign in ({blockedNavCount})</span>
                   </div>
                 )}
                 <iframe
@@ -136,7 +135,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
               </div>
 
               <p className="text-[10px] text-slate-500 text-center">
-                Click <strong>Browse & Sign In</strong> for full access — sign-in required for computer users
+                Browse movies with language selector in the player. Sign in required — use <strong>Open in Browser</strong>
               </p>
             </div>
           </motion.div>
