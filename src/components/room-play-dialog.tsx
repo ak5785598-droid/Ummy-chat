@@ -445,6 +445,7 @@ export function RoomPlayDialog({
       icon: <span className="text-white font-black text-lg drop-shadow-md">N</span>, 
       color: 'from-red-600 to-red-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(220,38,38,0.5)] border border-red-600/50', 
       onClick: () => { onOpenNetMirror?.(); onOpenChange(false); },
+      disabled: true,
     },
   ];
 
@@ -505,7 +506,7 @@ export function RoomPlayDialog({
 
                 {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
-                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'movies' || item.id === 'screenmirror').map(item => (
+                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'movies' || item.id === 'screenmirror').filter(item => !item.disabled).map(item => (
                     <button 
                       key={item.id} 
                       onClick={item.onClick}
