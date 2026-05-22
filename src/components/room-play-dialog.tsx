@@ -87,6 +87,7 @@ export function RoomPlayDialog({
   onOpenMovies,
   onOpenScreenMirror,
   onOpenNetMirror,
+  onOpenSports,
   defaultView = 'grid'
 }: RoomPlayDialogProps) {
  const { roomPlaylist, setRoomPlaylist, isMusicEnabled, setIsMusicEnabled } = useRoomContext();
