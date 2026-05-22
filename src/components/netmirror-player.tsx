@@ -14,17 +14,23 @@ interface NetMirrorPlayerProps {
 }
 
 const NETMIRROR_WEB_URL = 'https://netmirror.world';
+const PROXY_BASE = '/api/proxy';
+
+function toProxyUrl(url: string): string {
+  if (!url) return PROXY_BASE;
+  return url.replace(/https?:\/\/netmirror\.world\/?/i, PROXY_BASE + '/');
+}
 
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [adBlocked, setAdBlocked] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const originalUrlRef = useRef(movieUrl || NETMIRROR_WEB_URL);
+  const originalUrlRef = useRef(toProxyUrl(movieUrl));
 
   useEffect(() => {
     if (open) {
       setIsLoading(true);
-      originalUrlRef.current = movieUrl || NETMIRROR_WEB_URL;
+      originalUrlRef.current = toProxyUrl(movieUrl);
     }
   }, [open, movieUrl]);
 
@@ -60,12 +66,11 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
       try {
         const currentSrc = iframe.src;
         const original = originalUrlRef.current;
-        if (original && currentSrc !== original && !currentSrc.includes('netmirror')) {
+        if (original && currentSrc !== original && !currentSrc.includes('/api/proxy')) {
           iframe.src = original;
           setAdBlocked(prev => prev + 1);
         }
       } catch {
-        // Cross-origin error means external redirect - restore
         if (iframeRef.current && originalUrlRef.current) {
           iframeRef.current.src = originalUrlRef.current;
           setAdBlocked(prev => prev + 1);
@@ -81,8 +86,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
   };
 
   const openInBrowser = useCallback(() => {
-    const url = movieUrl || NETMIRROR_WEB_URL;
-    window.open(url, '_blank');
+    window.open(movieUrl || NETMIRROR_WEB_URL, '_blank');
   }, [movieUrl]);
 
   if (!open) return null;
@@ -164,17 +168,13 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
 
                 <iframe
                   ref={iframeRef}
-                  src={movieUrl || NETMIRROR_WEB_URL}
+                  src={toProxyUrl(movieUrl)}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
                   onLoad={handleIframeLoad}
                 />
               </div>
-
-              <p className="text-[10px] text-slate-500 text-center">
-                NetMirror may not embed in all browsers. Use <strong>Open</strong> button to watch in a new tab.
-              </p>
             </div>
           </motion.div>
         </motion.div>
