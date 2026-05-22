@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, ShieldAlert } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
+
+const NETMIRROR_HOME = 'https://netmirror.gg/4/en-in';
+const NET22_DOMAIN = 'net22.cc';
 
 interface NetMirrorPlayerProps {
   open: boolean;
@@ -16,31 +19,38 @@ interface NetMirrorPlayerProps {
 export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, startedBy, currentUserId }: NetMirrorPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [adBlocked, setAdBlocked] = useState(0);
+  const [redirectCount, setRedirectCount] = useState(0);
 
   useEffect(() => {
     if (open) setIsLoading(true);
   }, [open]);
 
+  // Monitor iframe for internal navigation to net22.cc (Cloudflare/XFO blocked in iframe)
   useEffect(() => {
     if (!open) return;
 
-    const originalOpen = window.open;
-    window.open = (...args: Parameters<typeof window.open>) => {
-      setAdBlocked(prev => prev + 1);
-      return originalOpen(...args);
-    };
+    const checkInterval = setInterval(() => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
+      try {
+        const currentSrc = iframe.src;
+        if (currentSrc.includes(NET22_DOMAIN)) {
+          window.open(currentSrc, '_blank');
+          iframe.src = NETMIRROR_HOME;
+          setRedirectCount(prev => prev + 1);
+          setIsLoading(true);
+        }
+      } catch {
+        if (iframeRef.current) {
+          iframeRef.current.src = NETMIRROR_HOME;
+          setRedirectCount(prev => prev + 1);
+          setIsLoading(true);
+        }
+      }
+    }, 1500);
 
-    return () => {
-      window.open = originalOpen;
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => clearInterval(checkInterval);
   }, [open]);
 
   const openExternal = useCallback(() => {
@@ -108,15 +118,16 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                     <div className="h-8 w-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
                   </div>
                 )}
-                {adBlocked > 0 && (
-                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-amber-400 px-2.5 py-1 rounded-full">
-                    <ShieldAlert className="h-3 w-3" />
-                    <span>{adBlocked} ad{adBlocked > 1 ? 's' : ''} blocked</span>
+                {redirectCount > 0 && (
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-cyan-400 px-2.5 py-1 rounded-full">
+                    <ExternalLink className="h-3 w-3" />
+                    <span>Opened in new tab ({redirectCount})</span>
                   </div>
                 )}
                 <iframe
                   ref={iframeRef}
-                  src="https://netmirror.gg/4/en-in"
+                  key={`netmirror-${open}`}
+                  src={NETMIRROR_HOME}
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
