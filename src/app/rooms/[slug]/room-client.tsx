@@ -38,6 +38,7 @@ import {
   ImageIcon,
   Loader,
   ShieldCheck,
+  ShieldAlert,
   Minus,
   MoreVertical,
   Music,
@@ -151,6 +152,7 @@ import { RoomTasksDialog } from '@/components/room-tasks-dialog';
 import { YouTubeDialog } from '@/components/youtube-dialog';
 import { EntertainmentHubDialog } from '@/components/entertainment-hub-dialog';
 import { MoviePlayer } from '@/components/movie-player';
+import { MovieAdProtection } from '@/components/movie-ad-protection';
 import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
@@ -396,6 +398,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [roomMovie, setRoomMovie] = useState<{ tmdbId: number; title: string; posterPath: string | null; startedBy: string } | null>(null);
   const [isMovieBannerDismissed, setIsMovieBannerDismissed] = useState(false);
   const movieDragControls = useDragControls();
+  const movieIframeRef = useRef<HTMLIFrameElement>(null);
+  const movieOriginalUrlRef = useRef<string>('');
+  const moviePopupBlockedRef = useRef(false);
+  const [movieAdBlocked, setMovieAdBlocked] = useState(0);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
@@ -3976,6 +3982,17 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
       {/* IN-ROOM MOVIE PLAYER (Integrated) — overlays room, floats above all elements with absolute highest stacking context */}
       {isMoviePlayerOpen && selectedMovie && (
+        <>
+        <MovieAdProtection
+          isOpen={isMoviePlayerOpen}
+          videoUrl={
+            selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
+              ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
+              : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
+          }
+          iframeRef={movieIframeRef}
+          onAdBlocked={() => setMovieAdBlocked(prev => prev + 1)}
+        />
         <motion.div
           drag
           dragListener={false}
@@ -4020,7 +4037,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
 
           <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
+            {movieAdBlocked > 0 && (
+              <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-amber-400 px-2.5 py-1 rounded-full">
+                <ShieldAlert className="h-3 w-3" />
+                <span>{movieAdBlocked} ad{movieAdBlocked > 1 ? 's' : ''} blocked</span>
+              </div>
+            )}
             <iframe
+              ref={movieIframeRef}
               key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}`}
               src={
                 selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
@@ -4030,10 +4054,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
             />
           </div>
         </motion.div>
+        </>
       )}
 
       <EntertainmentHubDialog

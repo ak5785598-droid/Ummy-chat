@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Film, Tv } from 'lucide-react';
+import { X, Film, Tv, ShieldAlert } from 'lucide-react';
 
 interface MoviePlayerProps {
   open: boolean;
@@ -35,11 +35,77 @@ export function MoviePlayer({
     ? `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
     : `https://vidlink.pro/movie/${tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`;
 
+  const [adBlocked, setAdBlocked] = useState(0);
+  const originalUrlRef = useRef(videoUrl);
+  const popupBlockedRef = useRef(false);
+
   useEffect(() => {
     if (open) {
       setIsLoading(true);
+      originalUrlRef.current = videoUrl;
+      popupBlockedRef.current = false;
     }
   }, [open, tmdbId, season, episode]);
+
+  // Block popups & redirects from vidlink.pro
+  useEffect(() => {
+    if (!open) return;
+
+    const originalOpen = window.open;
+    (window as any).__originalOpen = originalOpen;
+
+    // Block popups
+    window.open = function (...args: Parameters<typeof window.open>) {
+      popupBlockedRef.current = true;
+      setAdBlocked(prev => prev + 1);
+      return null;
+    };
+
+    // Block redirects (beforeunload)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (originalUrlRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+        // Restore iframe
+        if (iframeRef.current) {
+          iframeRef.current.src = originalUrlRef.current;
+        }
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.open = originalOpen;
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [open]);
+
+  // Monitor iframe for ad redirects
+  useEffect(() => {
+    if (!open || !iframeRef.current) return;
+
+    const checkInterval = setInterval(() => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+
+      try {
+        const currentSrc = iframe.src;
+        const original = originalUrlRef.current;
+        if (original && currentSrc !== original && !currentSrc.includes('vidlink.pro')) {
+          iframe.src = original;
+          setAdBlocked(prev => prev + 1);
+        }
+      } catch {
+        // Cross-origin error means it's an external ad - restore
+        if (iframeRef.current && originalUrlRef.current) {
+          iframeRef.current.src = originalUrlRef.current;
+          setAdBlocked(prev => prev + 1);
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(checkInterval);
+  }, [open]);
 
   const handleIframeLoad = () => {
     setIsLoading(false);
@@ -108,6 +174,12 @@ export function MoviePlayer({
                     </div>
                   </div>
                 )}
+                {adBlocked > 0 && (
+                  <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-amber-400 px-2.5 py-1 rounded-full">
+                    <ShieldAlert className="h-3 w-3" />
+                    <span>{adBlocked} ad{adBlocked > 1 ? 's' : ''} blocked</span>
+                  </div>
+                )}
                 <iframe
                   ref={iframeRef}
                   key={`vidlink-${mediaType}-${tmdbId}-${season}-${episode}`}
@@ -115,7 +187,6 @@ export function MoviePlayer({
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"
                   onLoad={handleIframeLoad}
                 />
               </div>
