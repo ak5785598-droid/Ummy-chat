@@ -50,7 +50,8 @@ import {
   Sparkles,
   UserPlus,
   Trophy as TrophyIcon,
-  Speaker
+  Speaker,
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ROOM_TASKS } from '@/constants/room-tasks';
@@ -320,6 +321,31 @@ interface RoomClientProps {
   onExit?: () => void;
 }
 
+const MOVIE_SOURCES = [
+  {
+    name: 'v1',
+    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
+      type === 'tv' && s && e
+        ? `https://vidlink.pro/tv/${id}/${s}/${e}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
+        : `https://vidlink.pro/movie/${id}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`,
+    domain: 'vidlink.pro' },
+  {
+    name: 'v2',
+    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
+      type === 'tv' && s && e
+        ? `https://embed.su/embed/tv/${id}/${s}/${e}`
+        : `https://embed.su/embed/movie/${id}`,
+    domain: 'embed.su' },
+  {
+    name: 'v3',
+    build: (id: number, type: 'movie' | 'tv', s?: number, e?: number) =>
+      type === 'tv' && s && e
+        ? `https://vidsrc.rip/embed/tv/${id}/${s}/${e}`
+        : `https://vidsrc.rip/embed/movie/${id}`,
+    domain: 'vidsrc.rip' },
+];
+const ALLOWED_DOMAINS = MOVIE_SOURCES.map(s => s.domain);
+
 export function RoomClient({ room, onExit }: RoomClientProps) {
   const [messageText, setMessageText] = useState('');
   const [showSoundboard, setShowSoundboard] = useState(false);
@@ -403,6 +429,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const movieOriginalUrlRef = useRef<string>('');
   const moviePopupBlockedRef = useRef(false);
   const [movieAdBlocked, setMovieAdBlocked] = useState(0);
+  const [movieSourceIndex, setMovieSourceIndex] = useState(0);
+  const handleCycleMovieSource = useCallback(() => {
+    setMovieSourceIndex(prev => (prev + 1) % MOVIE_SOURCES.length);
+  }, []);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
   // const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   // const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
@@ -3990,13 +4020,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         <>
         <MovieAdProtection
           isOpen={isMoviePlayerOpen}
-          videoUrl={
-            selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
-              ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
-              : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
-          }
+          videoUrl={MOVIE_SOURCES[movieSourceIndex].build(
+            selectedMovie.tmdbId,
+            selectedMovie.mediaType || 'movie',
+            selectedMovie.season,
+            selectedMovie.episode
+          )}
           iframeRef={movieIframeRef}
           onAdBlocked={() => setMovieAdBlocked(prev => prev + 1)}
+          allowedDomains={ALLOWED_DOMAINS}
         />
         <motion.div
           drag
@@ -4033,6 +4065,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 </button>
               )}
               <button
+                onClick={handleCycleMovieSource}
+                className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90"
+                title="Switch source"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </button>
+              <button
                 onClick={() => setIsMoviePlayerOpen(false)}
                 className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-all active:scale-90 border border-white/10"
               >
@@ -4050,12 +4089,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             )}
             <iframe
               ref={movieIframeRef}
-              key={`vidlink-inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}`}
-              src={
-                selectedMovie.mediaType === 'tv' && selectedMovie.season && selectedMovie.episode
-                  ? `https://vidlink.pro/tv/${selectedMovie.tmdbId}/${selectedMovie.season}/${selectedMovie.episode}?primaryColor=0066ff&secondaryColor=001133&iconColor=0066ff&title=true&poster=true&autoplay=true`
-                  : `https://vidlink.pro/movie/${selectedMovie.tmdbId}?primaryColor=B20710&secondaryColor=170000&iconColor=B20710&title=true&poster=true&autoplay=true`
-              }
+              key={`inroom-${selectedMovie.mediaType}-${selectedMovie.tmdbId}-${selectedMovie.season}-${selectedMovie.episode}-src${movieSourceIndex}`}
+              src={MOVIE_SOURCES[movieSourceIndex].build(
+                selectedMovie.tmdbId,
+                selectedMovie.mediaType || 'movie',
+                selectedMovie.season,
+                selectedMovie.episode
+              )}
               className="w-full h-full border-0"
               allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
               allowFullScreen

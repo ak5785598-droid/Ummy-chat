@@ -7,11 +7,14 @@ interface MovieAdProtectionProps {
   videoUrl: string;
   iframeRef: React.RefObject<HTMLIFrameElement | null>;
   onAdBlocked: () => void;
+  allowedDomains?: string[];
 }
 
-export function MovieAdProtection({ isOpen, videoUrl, iframeRef, onAdBlocked }: MovieAdProtectionProps) {
+export function MovieAdProtection({ isOpen, videoUrl, iframeRef, onAdBlocked, allowedDomains = ['vidlink.pro'] }: MovieAdProtectionProps) {
   const originalUrlRef = useRef(videoUrl);
   const popupBlockedRef = useRef(false);
+  const allowedDomainsRef = useRef(allowedDomains);
+  allowedDomainsRef.current = allowedDomains;
 
   useEffect(() => {
     if (isOpen) {
@@ -57,7 +60,8 @@ export function MovieAdProtection({ isOpen, videoUrl, iframeRef, onAdBlocked }: 
       try {
         const currentSrc = iframe.src;
         const original = originalUrlRef.current;
-        if (original && currentSrc !== original && !currentSrc.includes('vidlink.pro')) {
+        const isAllowed = allowedDomainsRef.current.some(d => currentSrc.includes(d));
+        if (original && currentSrc !== original && !isAllowed) {
           iframe.src = original;
           onAdBlocked();
         }
