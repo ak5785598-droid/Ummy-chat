@@ -63,6 +63,7 @@ interface RoomPlayDialogProps {
   onOpenMovies?: () => void;
   onOpenScreenMirror?: () => void;
   onOpenNetMirror?: () => void;
+  onOpenSports?: () => void;
   defaultView?: 'grid' | 'music';
 }
 
@@ -440,6 +441,13 @@ export function RoomPlayDialog({
       onClick: () => { onOpenScreenMirror?.(); onOpenChange(false); } 
     },
     { 
+      id: 'sports', 
+      label: 'Sports Hub', 
+      icon: <span className="text-white font-black text-lg drop-shadow-md">🏆</span>, 
+      color: 'from-green-500 to-emerald-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.6),0_4px_10px_rgba(16,185,129,0.5)] border border-emerald-500/50', 
+      onClick: () => { onOpenSports?.(); onOpenChange(false); } 
+    },
+    { 
       id: 'netmirror', 
       label: 'NetMirror', 
       icon: <span className="text-white font-black text-lg drop-shadow-md">N</span>, 
@@ -506,7 +514,7 @@ export function RoomPlayDialog({
 
                 {/* Feature/Game Grid - (Glossy 3D SVGA Style) */}
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-2 pb-4">
-                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'movies' || item.id === 'screenmirror').filter(item => !item.disabled).map(item => (
+                  {gameGrid.filter(item => canManage || item.id === 'game-selector' || item.id === 'movies' || item.id === 'screenmirror' || item.id === 'sports').filter(item => !item.disabled).map(item => (
                     <button 
                       key={item.id} 
                       onClick={item.onClick}

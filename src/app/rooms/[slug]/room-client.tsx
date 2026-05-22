@@ -156,6 +156,7 @@ import { MovieAdProtection } from '@/components/movie-ad-protection';
 import { MovieSyncBanner } from '@/components/movie-sync-banner';
 import type { TMDBMovie } from '@/lib/tmdb';
 import { ScreenMirrorDialog } from '@/components/screen-mirror-dialog';
+import { SportsHub } from '@/components/sports-hub';
 // import { NetMirrorDialog } from '@/components/netmirror-dialog';
 // import { NetMirrorWatchTogether } from '@/components/netmirror-watch-together';
 // import { NetMirrorRoomIndicator } from '@/components/netmirror-room-indicator';
@@ -404,6 +405,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const moviePopupBlockedRef = useRef(false);
   const [movieAdBlocked, setMovieAdBlocked] = useState(0);
   const [isScreenMirrorOpen, setIsScreenMirrorOpen] = useState(false);
+  const [isSportsOpen, setIsSportsOpen] = useState(false);
   // const [isNetMirrorOpen, setIsNetMirrorOpen] = useState(false);
   // const [isNetMirrorWatchOpen, setIsNetMirrorWatchOpen] = useState(false);
   // const [netMirrorSession, setNetMirrorSession] = useState<{ movieTitle: string; movieUrl?: string; startedBy: string; isActive: boolean } | null>(null);
@@ -3821,6 +3823,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenYouTube={() => { setIsYouTubeOpen(true); setIsYouTubeHidden(false); setIsRoomPlayOpen(false); }}
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
+        onOpenSports={() => { setIsSportsOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -4096,6 +4099,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           avatarUrl: p.avatarUrl,
           isHost: p.uid === room.ownerId,
         }))}
+      />
+
+      <SportsHub
+        open={isSportsOpen}
+        onOpenChange={setIsSportsOpen}
       />
 
       {/* NETMIRROR DISABLED */}
