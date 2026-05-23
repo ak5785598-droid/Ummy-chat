@@ -318,18 +318,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     });
 
    const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
-   selectedUids.forEach(uid => {
-     const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
-     const recUserRef = doc(firestore, 'users', uid);
-     batch.update(recProfileRef, { 
-       'wallet.diamonds': increment(diamondPerRecipient),
-       'stats.dailyGiftsReceived': increment(diamondPerRecipient)
-     });
-     batch.update(recUserRef, { 
-       'wallet.diamonds': increment(diamondPerRecipient),
-       'stats.dailyGiftsReceived': increment(diamondPerRecipient) 
-     });
-   });
+    selectedUids.forEach(uid => {
+      const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
+      batch.update(recProfileRef, { 
+        'wallet.diamonds': increment(diamondPerRecipient),
+        'stats.dailyGiftsReceived': increment(diamondPerRecipient)
+      });
+    });
 
    const roomRef = doc(firestore, 'chatRooms', roomId);
    batch.update(roomRef, {
