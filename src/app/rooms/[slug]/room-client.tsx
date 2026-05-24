@@ -188,12 +188,15 @@ function hashUidToNumber(uid: string): number {
 }
 
 // --- HAZA STYLE COMPONENTS ---
-const RoomTrophyBadge = ({ coins }: { coins: number }) => {
+const RoomTrophyBadge = ({ coins, supporters = [], onOpenSupport }: { coins: number; supporters?: any[]; onOpenSupport?: () => void }) => {
   const target = 2500000; // Level 1 Goal: 2.5M
   const progress = Math.min((coins / target) * 100, 100);
   
   return (
-    <div className="group relative flex flex-col items-start gap-1 mt-1 cursor-pointer active:scale-95 transition-all">
+    <div 
+      onClick={onOpenSupport}
+      className="group relative flex flex-col items-start gap-1 mt-1 cursor-pointer active:scale-95 transition-all"
+    >
       <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-yellow-500/30 rounded-full pl-1 pr-3 py-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:border-yellow-500/60 transition-colors">
         <div className="relative h-5 w-5 rounded-full bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 flex items-center justify-center shadow-lg">
           <Trophy className="h-3 w-3 text-black fill-current" />
@@ -210,6 +213,40 @@ const RoomTrophyBadge = ({ coins }: { coins: number }) => {
             />
           </div>
         </div>
+
+        {/* Overlapping Top 3 Supporter Avatars */}
+        <div className="flex -space-x-1.5 ml-1 mr-0.5">
+          {supporters.slice(0, 3).map((sup: any, idx: number) => (
+            <div 
+              key={sup.uid || idx} 
+              className={cn(
+                "h-4 w-4 rounded-full border flex items-center justify-center overflow-hidden shadow-sm shrink-0",
+                idx === 0 ? "border-yellow-400 z-30" : idx === 1 ? "border-slate-300 z-20" : "border-amber-600 z-10"
+              )}
+            >
+              {sup.avatarUrl ? (
+                <img src={sup.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-slate-800 text-[5px] font-black flex items-center justify-center text-white">
+                  {(sup.username || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+          ))}
+          {supporters.length === 0 && (
+            <div className="flex -space-x-1">
+              {[1, 2, 3].map(i => (
+                <div 
+                  key={i} 
+                  className="h-4 w-4 rounded-full border border-white/10 bg-black/50 flex items-center justify-center text-[5px] font-black text-white/20"
+                >
+                  {i}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <ChevronDown className="h-3 w-3 text-yellow-500/40 group-hover:text-yellow-500 transition-colors" />
       </div>
     </div>
@@ -718,6 +755,24 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       return null;
     }
   }, [firestore, room?.id]);
+
+  // --- DERIVE TOP 3 SUPPORTERS ---
+  const supportersQuery = useMemoFirebase(() => {
+    if (!firestore || !room?.id) return null;
+    try {
+      return query(
+        collection(firestore, 'chatRooms', room.id, 'topSupporters'),
+        orderBy('dailyAmount', 'desc'),
+        limit(3)
+      );
+    } catch (e) {
+      console.error('[Room] Failed to create supporters query:', e);
+      return null;
+    }
+  }, [firestore, room?.id]);
+
+  const { data: supportersData } = useCollection(supportersQuery);
+  const supporters = supportersData || [];
 
   const { data: participantsData } = useCollection<RoomParticipant>(participantsQuery);
 
@@ -3097,7 +3152,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        <RoomTrophyBadge coins={room.stats?.dailyGifts || 0} />
+        <RoomTrophyBadge coins={room.stats?.dailyGifts || 0} supporters={supporters} onOpenSupport={() => setIsRoomSupportOpen(true)} />
 
         {/* Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY */}
         {(isHydrated && isOwner) && (

@@ -78,36 +78,46 @@ export function LootBoxDisplay({
           "w-[60px] h-[60px] rounded-2xl border cursor-pointer active:scale-95 transition-all shadow-lg",
           "bg-gradient-to-br from-purple-900/90 to-indigo-900/90 backdrop-blur-xl",
           "border-purple-500/30 shadow-purple-500/20",
-          "flex flex-col items-center justify-center p-1.5 relative"
+          "flex flex-col items-center justify-between p-1.5 relative overflow-hidden isolate"
         )}
       >
-        {/* Level Icon */}
-        <div className="w-full h-full flex items-center justify-center overflow-hidden rounded-xl">
-          {currentLevel?.image ? (
-            <img src={currentLevel.image} alt={currentLevel.name} className="w-full h-full object-contain" />
-          ) : (
-            <span className="text-xl leading-none">{levelIcons[currentLevel?.id] || ""}</span>
-          )}
-        </div>
-
-        {/* Level Name */}
-        <span className="text-[7px] font-bold text-white uppercase tracking-tighter leading-none">
-          {currentLevel?.name || "Home"}
-        </span>
-
-        {/* Progress Bar - Rounded Rectangle */}
-        <div className="w-full mt-1.5 space-y-0.5">
-          <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+        {/* Full Card Background Image */}
+        {currentLevel?.image ? (
+          <>
+            <img 
+              src={currentLevel.image} 
+              alt="" 
+              className="absolute inset-0 w-full h-full object-cover z-0" 
             />
+            <div className="absolute inset-0 bg-black/45 z-[1] pointer-events-none" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center opacity-20 z-0">
+            <span className="text-3xl leading-none">{levelIcons[currentLevel?.id] || ""}</span>
           </div>
-          <span className="text-[6px] font-bold text-purple-300 text-center block leading-none">
-            {Math.round(progressPercent)}%
+        )}
+
+        {/* Content Wrapper */}
+        <div className="relative z-10 flex flex-col items-center justify-between w-full h-full">
+          {/* Level Name */}
+          <span className="text-[7px] font-bold text-white uppercase tracking-tighter leading-none mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            {currentLevel?.name || "Home"}
           </span>
+
+          {/* Progress Bar - Rounded Rectangle */}
+          <div className="w-full mt-auto space-y-0.5">
+            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+            <span className="text-[5px] font-bold text-purple-200 text-center block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              {Math.round(progressPercent)}%
+            </span>
+          </div>
         </div>
 
         {/* Open Gate Icon Overlay */}

@@ -7,7 +7,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Loader, Check } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -325,6 +325,46 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         'stats.dailyGiftsReceived': increment(diamondPerRecipient)
       });
     });
+
+    // Record contribution in topSupporters subcollection with lazy reset logic
+    const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
+    let dailyAmountVal: any = increment(totalCost);
+    let weeklyAmountVal: any = increment(totalCost);
+
+    try {
+      const supporterSnap = await getDoc(supporterRef);
+      if (supporterSnap.exists()) {
+        const supData = supporterSnap.data();
+        const lastUpdate = supData.updatedAt?.toDate() || new Date(0);
+        const now = new Date();
+        const isSameDay = lastUpdate.toDateString() === now.toDateString();
+
+        // Weekly check: same year and same ISO week number
+        const getWeekNumber = (d: Date) => {
+          const date = new Date(d.getTime());
+          date.setHours(0, 0, 0, 0);
+          date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+          const week1 = new Date(date.getFullYear(), 0, 4);
+          return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        };
+        const isSameWeek = lastUpdate.getFullYear() === now.getFullYear() && getWeekNumber(lastUpdate) === getWeekNumber(now);
+
+        dailyAmountVal = isSameDay ? increment(totalCost) : totalCost;
+        weeklyAmountVal = isSameWeek ? increment(totalCost) : totalCost;
+      }
+    } catch (e) {
+      console.warn("Supporter lazy reset check failed:", e);
+    }
+
+    batch.set(supporterRef, {
+      uid: user.uid,
+      username: userProfile.username || 'Tribe Member',
+      avatarUrl: userProfile.avatarUrl || null,
+      amount: increment(totalCost),
+      dailyAmount: dailyAmountVal,
+      weeklyAmount: weeklyAmountVal,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
 
    const roomRef = doc(firestore, 'chatRooms', roomId);
    batch.update(roomRef, {
