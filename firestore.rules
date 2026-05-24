@@ -13,11 +13,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-        function isAdmin() {
+    function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
         request.auth.uid == '1338' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         'isAdmin' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
       );
     }
 
@@ -25,6 +27,8 @@ service cloud.firestore {
       return isAdmin() || 
              !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
              !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
+             !(get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus is map) ||
+             !('isBanned' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus) ||
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
              (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time);
