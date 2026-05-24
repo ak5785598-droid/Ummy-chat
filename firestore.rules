@@ -109,7 +109,7 @@ service cloud.firestore {
         // Check if user is moderator
         (resource.data.moderatorIds is list && request.auth.uid in resource.data.moderatorIds) ||
         // Allow anyone to update stats/rocket/participantCount (for gifting and joining)
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'rocket', 'participantCount', 'updatedAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'rocket', 'participantCount', 'levelPoints', 'updatedAt']) ||
         // Admin override
         isAdmin()
       );
@@ -131,6 +131,25 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isSignedIn() && isNotBanned();
         allow delete: if isAdmin() || (resource.data.senderId == request.auth.uid);
+      }
+
+      // YouTube sync state — host only
+      match /youtube/{youtubeDoc} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && isNotBanned() &&
+          get(/databases/$(database)/documents/chatRooms/$(roomId)).data.ownerId == request.auth.uid;
+      }
+
+      // Live captions — user writes own captions
+      match /captions/{uid} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && isNotBanned() && uid == request.auth.uid;
+      }
+
+      // Screen share — any authenticated user
+      match /features/{featureId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
       }
 
       match /{allSub=**} {
