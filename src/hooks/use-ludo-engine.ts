@@ -213,7 +213,9 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   const rollDice = useCallback(async () => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.diceRolled) return;
 
-    const roll = Math.floor(Math.random() * 6) + 1;
+    const rollBytes = new Uint8Array(1);
+    crypto.getRandomValues(rollBytes);
+    const roll = (rollBytes[0] % 6) + 1;
     await updateDocumentNonBlocking(gameDocRef, {
       dice: roll,
       diceRolled: true,

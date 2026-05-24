@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
- useUser, 
- useFirestore, 
- updateDocumentNonBlocking, 
- useDoc, 
- useMemoFirebase, 
- addDocumentNonBlocking,
- useCollection 
+  useUser, 
+  useFirestore, 
+  updateDocumentNonBlocking, 
+  useDoc, 
+  useMemoFirebase, 
+  addDocumentNonBlocking,
+  useCollection 
 } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
@@ -16,11 +16,13 @@ import {
   increment, 
   serverTimestamp, 
   getDoc, 
+  setDoc,
   collection,
   query, 
   where, 
   orderBy, 
-  limit 
+  limit,
+  runTransaction 
 } from 'firebase/firestore';
 import { 
  Volume2, 
@@ -227,7 +229,7 @@ const getGameDay = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
-export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}) {
+export default function ForestPartyGame({ onBack, isOverlay, roomId }: { onBack?: () => void; isOverlay?: boolean; roomId?: string } = {}) {
  const [isLoading, setIsLoading] = useState(true);
  
  const { user: currentUser } = useUser();
@@ -280,9 +282,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const precomputedFinalIdx = useRef<number>(0);
  const lastProcessedRoundId = useRef<number | null>(null);
  
- // Refs for main loop
- const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
- const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Refs for main loop
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const winnerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRoundUpdateRef = useRef(0);
  
  // Betting lock - extended time to avoid race
  const isBettingLockRef = useRef(false);
@@ -293,8 +296,13 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
  const tickAudio = useRef<HTMLAudioElement | null>(null);
  const winAudio = useRef<HTMLAudioElement | null>(null);
 
- const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
- const { data: gameData } = useDoc(gameDocRef);
+const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'forest-party'), [firestore]);
+const { data: gameData } = useDoc(gameDocRef);
+
+const roundDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', `forest-party-round_${roomId || 'global'}`), [firestore, roomId || 'global']);
+const { data: roundData } = useDoc(roundDocRef);
+const roundDataRef = useRef(roundData);
+useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
 
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
@@ -400,21 +408,35 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
    }
  }, [localCoins]);
 
- useEffect(() => {
-    isMountedRef.current = true;
-    const timer = setTimeout(() => {
-        if (isMountedRef.current) setIsLoading(false);
-    }, 2000); 
-    return () => { 
-        clearTimeout(timer);
-        isMountedRef.current = false; 
-        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-        if (winnerTimeoutRef.current) clearTimeout(winnerTimeoutRef.current);
-    };
- }, []);
+  useEffect(() => {
+     isMountedRef.current = true;
+     const timer = setTimeout(() => {
+         if (isMountedRef.current) setIsLoading(false);
+     }, 2000); 
+     return () => { 
+         clearTimeout(timer);
+         isMountedRef.current = false; 
+         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+         if (winnerTimeoutRef.current) clearTimeout(winnerTimeoutRef.current);
+     };
+  }, []);
 
- // Initialize audio and local storage
- useEffect(() => {
+  // Init or sync round doc
+  useEffect(() => {
+    if (!firestore || !roundDocRef) return;
+    getDoc(roundDocRef).then(snap => {
+      if (!snap.exists() && isMountedRef.current) {
+        setDoc(roundDocRef, {
+          roundStartTime: Date.now(),
+          roundId: Math.floor(Date.now() / 65000),
+          createdAt: serverTimestamp()
+        }).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [firestore, roundDocRef]);
+
+  // Initialize audio and local storage
+  useEffect(() => {
    if (typeof window !== 'undefined') {
      const saved = localStorage.getItem('forestPartyRecords');
      if (saved) {
@@ -439,12 +461,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
      const ROUND_DUR = 65000;
      const currentRoundId = Math.floor(Date.now() / ROUND_DUR);
      
-     const seededRandom = (seed: number) => {
-         const x = Math.sin(seed) * 10000;
-         return x - Math.floor(x);
-     };
+      const seededRandom = (seed: number): number => {
+          let x = (seed >>> 0) || 1;
+          x ^= x << 13;
+          x ^= x >> 17;
+          x ^= x << 5;
+          return (x >>> 0) / 4294967296;
+      };
 
-     const lastRoundId = currentRoundId - 1;
+      const lastRoundId = currentRoundId - 1;
      let globalGroupType: 'none' | 'left' | 'right' = 'none';
      const chance = seededRandom(lastRoundId + 1);
      if (chance < 0.025) globalGroupType = 'left'; 
@@ -567,11 +592,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   } catch (error) {}
  }, [isMuted]);
 
+ const seededRandom = (seed: number): number => {
+     let x = (seed >>> 0) || 1;
+     x ^= x << 13;
+     x ^= x >> 17;
+     x ^= x << 5;
+     return (x >>> 0) / 4294967296;
+ };
+
  const computeOutcomeForRound = useCallback((roundId: number) => {
-    const seededRandom = (seed: number) => {
-        const x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
-    };
     let groupType: 'none' | 'left' | 'right' = 'none';
     const chance = seededRandom(roundId + 1000);
     if (chance < 0.025) groupType = 'left';
@@ -651,8 +680,15 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   setActiveWinnerIdx(1); 
 
   if (winAmount > 0 && currentUser && firestore && !isNaN(winAmount)) {
-   const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-   updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(winAmount) });
+   const userRef = doc(firestore, 'users', currentUser.uid);
+   const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+   runTransaction(firestore as any, async (tx: any) => {
+     tx.update(profileRef, { 'wallet.coins': increment(winAmount) });
+     tx.update(userRef, {
+       'stats.totalWins': increment(winAmount),
+       updatedAt: serverTimestamp()
+     });
+   }).catch(() => {});
    
    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
     gameId: 'forest-party', 
@@ -662,12 +698,6 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
     avatarUrl: userProfile?.avatarUrl || null,
     amount: winAmount,
     timestamp: serverTimestamp()
-   });
-
-   const userRef = doc(firestore, 'users', currentUser.uid);
-   updateDocumentNonBlocking(userRef, {
-     'stats.totalWins': increment(winAmount),
-     updatedAt: serverTimestamp()
    });
   }
   
@@ -701,14 +731,22 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
       if (!isMountedRef.current) return;
       
       const now = Date.now();
-      const currentRoundIdCalc = Math.floor(now / ROUND_DUR);
-      const elapsed = now % ROUND_DUR;
+      const roundStartTime = roundDataRef.current?.roundStartTime;
+      const elapsed = roundStartTime ? ((now - roundStartTime) % ROUND_DUR + ROUND_DUR) % ROUND_DUR : now % ROUND_DUR;
+      const currentRoundIdCalc = roundStartTime ? Math.floor((now - roundStartTime) / ROUND_DUR) : Math.floor(now / ROUND_DUR);
       
       if (lastProcessedRoundId.current !== currentRoundIdCalc) {
-          const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRoundRef.current(currentRoundIdCalc);
-          precomputedGroupType.current = groupType;
-          precomputedWinnerId.current = winningAnimalId;
-          precomputedFinalIdx.current = finalIdx;
+          const docOutcome = roundDataRef.current?.outcome as { groupType: 'none' | 'left' | 'right'; winningAnimalId: string; finalIdx: number } | undefined;
+          if (docOutcome) {
+              precomputedGroupType.current = docOutcome.groupType;
+              precomputedWinnerId.current = docOutcome.winningAnimalId;
+              precomputedFinalIdx.current = docOutcome.finalIdx;
+          } else {
+              const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRoundRef.current(currentRoundIdCalc);
+              precomputedGroupType.current = groupType;
+              precomputedWinnerId.current = winningAnimalId;
+              precomputedFinalIdx.current = finalIdx;
+          }
           lastProcessedRoundId.current = currentRoundIdCalc;
       }
       
@@ -737,6 +775,23 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
               if (spinAudio.current) {
                   spinAudio.current.pause();
                   spinAudio.current.currentTime = 0;
+              }
+              
+              // Update round doc for cross-client sync + unpredictable outcome
+              if (roundDocRef && firestore && lastRoundUpdateRef.current !== currentRoundIdCalc) {
+                  const seedArr = new Uint32Array(1);
+                  crypto.getRandomValues(seedArr);
+                  lastRoundUpdateRef.current = currentRoundIdCalc;
+                  setDoc(roundDocRef, {
+                      roundStartTime: Date.now(),
+                      roundId: currentRoundIdCalc,
+                      seed: seedArr[0],
+                      outcome: {
+                          groupType: precomputedGroupType.current,
+                          winningAnimalId: precomputedWinnerId.current,
+                          finalIdx: precomputedFinalIdx.current,
+                      },
+                  }, { merge: true }).catch(() => {});
               }
           }
           const newTimeLeft = Math.ceil((BET_DUR - elapsed) / 1500);
@@ -826,8 +881,10 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void } = {}
   });
   
   if (firestore) {
-    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    runTransaction(firestore as any, async (tx: any) => {
+      tx.update(profileRef, { 'wallet.coins': increment(-selectedChip) });
+    }).catch(() => {});
 
     const currentRoundIdCalc = Math.floor(Date.now() / 65000);
     addDocumentNonBlocking(collection(firestore, 'globalBets'), {

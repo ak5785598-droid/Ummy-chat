@@ -28,8 +28,8 @@ export function RoomGameOverlay({ activeGame, roomId, onClose }: RoomGameOverlay
     <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 shrink-0" />
     
     <div className="flex-1 overflow-hidden bg-transparent relative">
-      {activeGame === 'fruit-party' && <FruitPartyGame onClose={onClose} isOverlay={true} />}
-      {activeGame === 'forest-party' && <ForestPartyGame onBack={onClose} isOverlay={true} />}
+      {activeGame === 'fruit-party' && <FruitPartyGame onClose={onClose} isOverlay={true} roomId={roomId} />}
+      {activeGame === 'forest-party' && <ForestPartyGame onBack={onClose} isOverlay={true} roomId={roomId} />}
       {activeGame === 'ludo' && <LudoGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
       {activeGame === 'carrom' && <CarromGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
       {activeGame === 'chess' && <ChessGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}

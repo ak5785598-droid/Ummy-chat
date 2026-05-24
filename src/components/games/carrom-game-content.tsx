@@ -46,8 +46,8 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
   } = useCarromEngine(roomId, currentUser?.uid || null);
 
   const [isSplashing, setIsSplashing] = useState(true);
-  const [power, setPower] = useState(0);
-  const [angle, setAngle] = useState(0);
+  const [power, setPower] = useState(50);
+  const [angle, setAngle] = useState(90);
   const [isStriking, setIsStriking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -263,8 +263,8 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                       piece.type === 'white' ? 'bg-[#E0C097]' : piece.type === 'black' ? 'bg-[#212121]' : 'bg-[#D32F2F]'
                     )}
                     style={{ 
-                      left: `${piece.x}%`, 
-                      top: `${piece.y}%`,
+                      left: `${piece.position.x}%`, 
+                      top: `${piece.position.y}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
                   >
@@ -289,21 +289,41 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
            </div>
         </div>
 
-        <div className="space-y-2">
-           <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic">
-              <span>Strike Intensity</span>
-              <span>{Math.round(power)}%</span>
+        <div className="space-y-3">
+           {/* Angle Control */}
+           <div>
+             <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic mb-1">
+               <span>Aim Angle</span>
+               <span>{angle}°</span>
+             </div>
+             <input
+               type="range"
+               min="0"
+               max="180"
+               value={angle}
+               onChange={(e) => setAngle(Number(e.target.value))}
+               className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:shadow-lg"
+             />
            </div>
-           <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
-                style={{ width: `${power}%` }}
-              />
+           {/* Power Control */}
+           <div>
+             <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic mb-1">
+               <span>Strike Intensity</span>
+               <span>{Math.round(power)}%</span>
+             </div>
+             <input
+               type="range"
+               min="10"
+               max="100"
+               value={power}
+               onChange={(e) => setPower(Number(e.target.value))}
+               className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-indigo-400 [&::-webkit-slider-thumb]:shadow-lg"
+             />
            </div>
         </div>
 
         <button 
-          onClick={strike}
+          onClick={() => strike(angle, power)}
           className="h-16 w-full bg-gradient-to-b from-blue-500 to-blue-700 rounded-2xl border-b-8 border-blue-900 flex items-center justify-center active:scale-95 active:translate-y-1 active:border-b-4 transition-all"
         >
           <span className="text-xl font-black text-white italic uppercase tracking-tighter">STRIKE</span>

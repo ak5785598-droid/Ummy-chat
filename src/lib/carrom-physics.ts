@@ -78,6 +78,7 @@ export function updatePhysics(pieces: any[], deltaTime: number = 16) {
 
       if (distance < r1 + r2) {
         // Resolve Overlap
+        if (distance === 0) continue;
         const overlap = r1 + r2 - distance;
         const nx = dx / distance;
         const ny = dy / distance;

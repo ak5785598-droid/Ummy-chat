@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, collection, setDoc, getDocs, serverTimestamp } from 'firebase/firestore';
+import { doc, increment, collection, setDoc, getDocs, getDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { X, Clock, Volume2, VolumeX, HelpCircle, Move } from 'lucide-react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 
@@ -682,11 +682,14 @@ export const WinnerPopup = ({ winnerData, winnersList, activeWinnerIdx, setActiv
 };
 
 // --- MAIN COMPONENT ---
-export default function CarnivalFoodParty({ onClose }: { onClose?: () => void }) {
+export default function CarnivalFoodParty({ onClose, isOverlay, roomId }: { onClose?: () => void; isOverlay?: boolean; roomId?: string }) {
   const { user: currentUser } = useUser();
   const { userProfile } = useUserProfile(currentUser?.uid);
   const firestore = useFirestore();
   const dragControls = useDragControls();
+
+  const roundDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', `fruit-party-round_${roomId || 'global'}`), [firestore, roomId || 'global']);
+  const { data: roundData } = useDoc(roundDocRef);
 
   const [currentRoundId, setCurrentRoundId] = useState(() => generateUnique6DigitId());
   const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
@@ -724,16 +727,44 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     }
   }, [userProfile, isCoinsLoaded]);
 
+  // Init round doc on mount
+  useEffect(() => {
+    if (!firestore || !roundDocRef) return;
+    getDoc(roundDocRef).then(snap => {
+      if (!snap.exists()) {
+        setDoc(roundDocRef, {
+          status: 'betting',
+          roundStartTime: Date.now(),
+          roundId: generateUnique6DigitId(),
+          createdAt: serverTimestamp()
+        }).catch(() => {});
+      }
+    }).catch(() => {});
+  }, [firestore, roundDocRef]);
+
+  // Betting timer — driven by round doc's roundStartTime
   useEffect(() => {
     if (gameState !== 'betting') return;
+    if (!roundData?.roundStartTime) {
+      // Fallback: local timer
+      const interval = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) { startSpin(); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+    // Synced timer
+    const BET_DUR = 30000;
     const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) { startSpin(); return 0; }
-        return prev - 1;
-      });
+      const elapsed = Date.now() - roundData.roundStartTime;
+      const remaining = Math.max(0, BET_DUR - elapsed);
+      setTimeLeft(Math.ceil(remaining / 1000));
+      if (remaining <= 0) { startSpin(); }
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameState]);
+  }, [gameState, roundData?.roundStartTime]);
 
   // --- GLOBAL BET SYNC LOGIC ---
   const handlePlaceBet = async (id: string) => {
@@ -743,9 +774,17 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     // Deduct locally
     setLocalCoins(prev => prev - selectedChip);
     
-    // Deduct globally
-    const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-    updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(-selectedChip) });
+    // Deduct globally (atomic transaction)
+    const userRef = doc(firestore, 'users', currentUser.uid);
+    const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+    try {
+      await runTransaction(firestore as any, async (tx: any) => {
+        tx.update(userRef, { 'wallet.coins': increment(-selectedChip) });
+        tx.update(profileRef, { 'wallet.coins': increment(-selectedChip) });
+      });
+    } catch (e) {
+      console.log('Bet deduction tx failed', e);
+    }
     
     const newBetAmount = (myBets[id] || 0) + selectedChip;
     setMyBets(prev => ({ ...prev, [id]: newBetAmount }));
@@ -769,27 +808,63 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     }
   };
 
-  const startSpin = () => {
+  const startSpin = async () => {
     setGameState('spinning');
-    setSpinTimeLeft(10);
     playSound(SOUNDS.SPIN_START, 0.8);
+    setSpinTimeLeft(10);
+
+    // Determine winner: first writer via Firestore, else local
+    let winningItemId: string;
+    if (firestore && roundDocRef) {
+      try {
+        winningItemId = await runTransaction(firestore as any, async (tx: any) => {
+          const snap = await tx.get(roundDocRef);
+          if (snap.exists() && snap.data().winningItemId) {
+            return snap.data().winningItemId as string;
+          }
+          const bytes = new Uint8Array(1);
+          crypto.getRandomValues(bytes);
+          const id = ITEMS[bytes[0] % ITEMS.length].id;
+          tx.set(roundDocRef, {
+            status: 'spinning',
+            winningItemId: id,
+          }, { merge: true });
+          return id;
+        });
+      } catch {
+        winningItemId = ITEMS[Math.floor(Math.random() * ITEMS.length)].id;
+      }
+    } else {
+      const bytes = new Uint8Array(1);
+      crypto.getRandomValues(bytes);
+      winningItemId = ITEMS[bytes[0] % ITEMS.length].id;
+    }
+
+    const winningIdx = ITEMS.findIndex(item => item.id === winningItemId);
+    const totalCycles = 2;
+    const totalSteps = totalCycles * ITEMS.length + winningIdx;
+    let step = 0;
+
     movingIndexRef.current = 0;
     setHighlightIdxs([0]);
+
     moveIntervalRef.current = setInterval(() => {
-      const nextIndex = (movingIndexRef.current + 1) % ITEMS.length;
-      movingIndexRef.current = nextIndex;
-      setHighlightIdxs([nextIndex]);
+      const displayIdx = step % ITEMS.length;
+      movingIndexRef.current = displayIdx;
+      setHighlightIdxs([displayIdx]);
       playSound(SOUNDS.TICK, 0.3);
+      step++;
+
+      if (step >= totalSteps) {
+        if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        finalizeResult(ITEMS[winningIdx]);
+      }
     }, 500);
 
     countdownIntervalRef.current = setInterval(() => {
       setSpinTimeLeft(prev => {
-        if (prev <= 1) {
-          if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
-          finalizeResult(ITEMS[movingIndexRef.current]);
-          return 0;
-        }
+        if (prev <= 1) return 0;
         return prev - 1;
       });
     }, 1000);
@@ -802,11 +877,28 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
     if (totalWinAmount > 0 && currentUser) {
       playSound(SOUNDS.WIN, 0.6);
       setLocalCoins(prev => prev + totalWinAmount);
-      const userProfileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      updateDocumentNonBlocking(userProfileRef, { 'wallet.coins': increment(totalWinAmount) });
+      try {
+        const userRef = doc(firestore, 'users', currentUser.uid);
+        const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+        await runTransaction(firestore as any, async (tx: any) => {
+          tx.update(userRef, { 'wallet.coins': increment(totalWinAmount) });
+          tx.update(profileRef, { 'wallet.coins': increment(totalWinAmount) });
+        });
+      } catch (e) {
+        console.log('Win credit tx failed', e);
+      }
     }
     
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
+
+    // Update round doc status to result
+    if (firestore && roundDocRef) {
+      setDoc(roundDocRef, {
+        status: 'result',
+        winningItemId: winningItem.id,
+        updatedAt: serverTimestamp()
+      }, { merge: true }).catch(() => {});
+    }
 
     // --- FETCH GLOBAL TOP WINNERS FROM FIREBASE ---
     try {
@@ -869,9 +961,20 @@ export default function CarnivalFoodParty({ onClose }: { onClose?: () => void })
       setGameState('betting');
       setTimeLeft(30);
       setMyBets({});
-      setCurrentRoundId(generateUnique6DigitId()); // NEXT ROUND KI STRICT 6-DIGIT UNIQUE ID GENERATE HOGI
+      const nextId = generateUnique6DigitId();
+      setCurrentRoundId(nextId);
       setTimeout(() => setWinnerData(null), 1000); 
       setHighlightIdxs([]);
+
+      // Start next round in Firestore doc
+      if (firestore && roundDocRef) {
+        setDoc(roundDocRef, {
+          status: 'betting',
+          winningItemId: null,
+          roundStartTime: Date.now(),
+          roundId: nextId,
+        }, { merge: true }).catch(() => {});
+      }
     }, 6000);
   };
 

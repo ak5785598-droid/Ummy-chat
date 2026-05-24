@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase, addDocumentNonBlocking, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, runTransaction, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { GameResultOverlay } from '@/components/game-result-overlay';
 import Image from 'next/image';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
@@ -53,9 +53,10 @@ const BET_OPTIONS = [
 interface RouletteGameContentProps {
   isOverlay?: boolean;
   onClose?: () => void;
+  roomId?: string;
 }
 
-export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGameContentProps) {
+export function RouletteGameContent({ isOverlay = false, onClose, roomId }: RouletteGameContentProps) {
   const router = useRouter();
   const dragControls = useDragControls();
   const { user: currentUser } = useUser();
@@ -63,18 +64,35 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [gameState, setGameState] = useState<'betting' | 'spinning' | 'result'>('betting');
-  const [timeLeft, setTimeLeft] = useState(15);
+  // Shared round doc for real-time sync across room members
+  const roundDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'games', `roulette_${roomId || 'global'}`);
+  }, [firestore, roomId]);
+  const { data: roundData } = useDoc(roundDocRef);
+
+  // Derive synced state from roundData, fall back to local
+  const gameState = (roundData?.status as 'betting' | 'spinning' | 'result') || 'betting';
+  const syncedWinningNumber = roundData?.winningNumber ?? null;
+  const syncedRotation = roundData?.rotation ?? 0;
+  const syncedHistory: number[] = roundData?.history ?? [16, 2, 34, 17, 0, 25, 11];
+  const [localRoundStart] = useState(Date.now());
+  const effectiveRoundStart = roundData?.roundStartTime ?? localRoundStart;
+  const timeLeft = Math.max(0, 15 - Math.floor((Date.now() - effectiveRoundStart) / 1000));
+
   const [selectedChip, setSelectedChip] = useState(100);
   const [myBets, setMyBets] = useState<Record<string, number>>({});
   const [lastBets, setLastBets] = useState<Record<string, number>>({});
-  const [rotation, setRotation] = useState(0);
-  const [history, setHistory] = useState<number[]>([16, 2, 34, 17, 0, 25, 11]);
   const [isMuted, setIsMuted] = useState(false);
   const [isLaunching, setIsLaunching] = useState(true);
   const [winners, setWinners] = useState<any[]>([]);
-  const [winningNumber, setWinningNumber] = useState<number | null>(null);
+  const [localWinningNumber, setLocalWinningNumber] = useState<number | null>(null);
   const [totalWinAmount, setTotalWinAmount] = useState(0);
+  const spinInitiatedRef = useRef(false);
+  const myBetsRef = useRef(myBets);
+  myBetsRef.current = myBets;
+  const [, forceRender] = useState(0);
+  useEffect(() => { const iv = setInterval(() => forceRender(n => n + 1), 1000); return () => clearInterval(iv); }, []);
 
   const gameDocRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'games', 'roulette'), [firestore]);
   const { data: gameData } = useDoc(gameDocRef);
@@ -123,109 +141,149 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    return () => clearTimeout(timer);
   }, []);
 
+  // Sync local state from roundData + calculate win amount
   useEffect(() => {
-   if (isLaunching) return;
-   const interval = setInterval(() => {
-    if (gameState === 'betting') {
-     if (timeLeft > 0) setTimeLeft(prev => prev - 1);
-     else startSpin();
-    }
-   }, 1000);
-   return () => clearInterval(interval);
-  }, [gameState, timeLeft, isLaunching]);
+    if (!roundData) return;
+    if (roundData.winningNumber != null) {
+      setLocalWinningNumber(roundData.winningNumber);
+      // Calculate win amount locally from shared winning number
+      const bets = myBetsRef.current;
+      const num = roundData.winningNumber;
+      const isRed = RED_NUMBERS.includes(num);
+      const isBlack = num !== 0 && !isRed;
+      const isSingle = num % 2 !== 0;
+      const isDouble = num !== 0 && num % 2 === 0;
+      let wa = 0;
+      if (num === 0) wa += (bets['0'] || 0) * 36;
+      if (num >= 1 && num <= 12) wa += (bets['1-12'] || 0) * 3;
+      if (num >= 13 && num <= 24) wa += (bets['13-24'] || 0) * 3;
+      if (num >= 25 && num <= 36) wa += (bets['25-36'] || 0) * 3;
+      if (isRed) wa += (bets['red'] || 0) * 2;
+      if (isBlack) wa += (bets['black'] || 0) * 2;
+      if (isSingle) wa += (bets['single'] || 0) * 2;
+      if (isDouble) wa += (bets['double'] || 0) * 2;
+      setTotalWinAmount(wa);
 
-  const startSpin = async () => {
-   setGameState('spinning');
-   
-   let targetNum = NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
-   if (firestore) {
-    try {
-     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'roulette'));
-     if (oracleSnap.exists() && oracleSnap.data().isActive) {
-      const forced = oracleSnap.data().forcedResult;
-      if (NUMBERS.includes(forced)) {
-       targetNum = forced;
-       updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'roulette'), { isActive: false });
+      // Show winners from global feed
+      setWinners((liveWins || []).map((w: any) => ({
+        name: w.username,
+        win: w.amount,
+        avatar: w.avatarUrl,
+        isMe: w.userId === currentUser?.uid
+      })));
+
+      // Credit winnings
+      if (wa > 0 && currentUser && firestore && userProfile) {
+        const userRef = doc(firestore, 'users', currentUser.uid);
+        const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+        runTransaction(firestore as any, async (tx: any) => {
+          const updateData = {
+            'wallet.coins': increment(wa),
+            'stats.dailyGameWins': increment(wa),
+            'stats.weeklyGameWins': increment(wa),
+            'stats.monthlyGameWins': increment(wa),
+            updatedAt: serverTimestamp()
+          };
+          tx.update(userRef, updateData);
+          tx.update(profileRef, updateData);
+        }).catch(() => {});
+        addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
+          gameId: 'roulette',
+          userId: currentUser.uid,
+          username: userProfile?.username || 'Guest',
+          avatarUrl: userProfile?.avatarUrl || null,
+          amount: wa,
+          timestamp: serverTimestamp()
+        });
+        const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
+        updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
       }
-     }
-    } catch (e) {}
-   }
+    }
+    if (roundData.history) {
+      setLastBets(myBetsRef.current);
+      setMyBets({});
+    }
+  }, [roundData]);
 
-   const targetIdx = NUMBERS.indexOf(targetNum);
-   const sliceDeg = 360 / 37;
-   const extraSpins = 5 + Math.floor(Math.random() * 5);
-   const targetRotation = rotation + (extraSpins * 360) + (targetIdx * sliceDeg);
-   
-   setRotation(targetRotation);
+  // Timer & round init: derive from roundStartTime, write to Firestore when expired
+  useEffect(() => {
+    if (isLaunching || !roundDocRef || !firestore) return;
+    if (gameState !== 'betting') { spinInitiatedRef.current = false; return; }
+    if (timeLeft > 0) return;
 
-   setTimeout(() => {
-    showResult(targetNum);
-   }, 5000);
-  };
+    // Time's up — one client writes the spin via transaction
+    if (spinInitiatedRef.current) return;
+    spinInitiatedRef.current = true;
 
-  const showResult = (num: number) => {
-   setWinningNumber(num);
-   setHistory(prev => [num, ...prev].slice(0, 15));
-   
-   let winAmount = 0;
-   const isRed = RED_NUMBERS.includes(num);
-   const isBlack = num !== 0 && !isRed;
-   const isSingle = num % 2 !== 0; 
-   const isDouble = num !== 0 && num % 2 === 0; 
+    const spinNumRef = { current: 0 };
+    (async () => {
+      let targetNum: number;
+      try {
+        const bytes = new Uint32Array(1);
+        crypto.getRandomValues(bytes);
+        targetNum = NUMBERS[bytes[0] % NUMBERS.length];
+        const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'roulette'));
+        if (oracleSnap.exists() && oracleSnap.data().isActive && NUMBERS.includes(oracleSnap.data().forcedResult)) {
+          targetNum = oracleSnap.data().forcedResult;
+        }
+      } catch (_e) {
+        targetNum = NUMBERS[0];
+      }
+      spinNumRef.current = targetNum;
 
-   if (num === 0) winAmount += (myBets['0'] || 0) * 36;
-   if (num >= 1 && num <= 12) winAmount += (myBets['1-12'] || 0) * 3;
-   if (num >= 13 && num <= 24) winAmount += (myBets['13-24'] || 0) * 3;
-   if (num >= 25 && num <= 36) winAmount += (myBets['25-36'] || 0) * 3;
-   if (isRed) winAmount += (myBets['red'] || 0) * 2;
-   if (isBlack) winAmount += (myBets['black'] || 0) * 2;
-   if (isSingle) winAmount += (myBets['single'] || 0) * 2;
-   if (isDouble) winAmount += (myBets['double'] || 0) * 2;
+      const targetIdx = NUMBERS.indexOf(targetNum);
+      const sliceDeg = 360 / 37;
+      const extraBytes = new Uint8Array(1);
+      crypto.getRandomValues(extraBytes);
+      const extraSpins = 5 + (extraBytes[0] % 5);
+      const newRotation = syncedRotation + (extraSpins * 360) + (targetIdx * sliceDeg);
 
-   setTotalWinAmount(winAmount);
+      runTransaction(firestore as any, async (tx: any) => {
+        const snap = await tx.get(roundDocRef);
+        if (snap.exists() && snap.data().status !== 'betting') return;
+        tx.set(roundDocRef, {
+          status: 'spinning',
+          winningNumber: targetNum,
+          rotation: newRotation,
+          history: syncedHistory,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }).catch(() => { spinInitiatedRef.current = false; });
+    })();
 
-   setWinners(liveWins?.map(w => ({
-     name: w.username,
-     win: w.amount,
-     avatar: w.avatarUrl,
-     isMe: w.userId === currentUser?.uid
-   })) || []);
+    // After 5s spin animation, set result
+    setTimeout(() => {
+      const n = spinNumRef.current;
+      runTransaction(firestore as any, async (tx: any) => {
+        const snap = await tx.get(roundDocRef);
+        if (!snap.exists() || snap.data().status !== 'spinning') return;
+        tx.set(roundDocRef, {
+          status: 'result',
+          winningNumber: n,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }).catch(() => {});
+    }, 5000);
 
-   setGameState('result');
+    // After 5s result display, reset to betting
+    setTimeout(() => {
+      const n = spinNumRef.current;
+      runTransaction(firestore as any, async (tx: any) => {
+        const snap = await tx.get(roundDocRef);
+        if (!snap.exists() || snap.data().status !== 'result') return;
+        tx.set(roundDocRef, {
+          status: 'betting',
+          winningNumber: null,
+          history: [n, ...syncedHistory].slice(0, 15),
+          roundStartTime: Date.now(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }).catch(() => {});
+      spinInitiatedRef.current = false;
+    }, 10000);
+  }, [gameState, timeLeft, isLaunching, roundDocRef, firestore, syncedRotation, syncedHistory]);
 
-   if (winAmount > 0 && currentUser && firestore && userProfile) {
-    const updateData = { 
-     'wallet.coins': increment(winAmount), 
-     'stats.dailyGameWins': increment(winAmount),
-     'stats.weeklyGameWins': increment(winAmount),
-     'stats.monthlyGameWins': increment(winAmount),
-     updatedAt: serverTimestamp() 
-    };
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-
-    addDocumentNonBlocking(collection(firestore, 'globalGameWins'), {
-     gameId: 'roulette',
-     userId: currentUser.uid,
-     username: userProfile?.username || 'Guest',
-     avatarUrl: userProfile?.avatarUrl || null,
-     amount: winAmount,
-     timestamp: serverTimestamp()
-    });
-
-    const questRef = doc(firestore, 'users', currentUser.uid, 'quests', 'win_game');
-    updateDocumentNonBlocking(questRef, { current: increment(1), updatedAt: serverTimestamp() });
-   }
-
-   setTimeout(() => {
-    setLastBets(myBets);
-    setMyBets({});
-    setWinners([]);
-    setWinningNumber(null);
-    setGameState('betting');
-    setTimeLeft(15);
-   }, 5000);
-  };
+  // Removed: startSpin and showResult moved to Firestore-driven effect above
 
   const handlePlaceBet = (id: string) => {
    if (gameState !== 'betting' || !currentUser || !userProfile) return;
@@ -235,9 +293,13 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
    }
    
    playBetSound();
-   const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+   const userRef = doc(firestore, 'users', currentUser.uid);
+   const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+   runTransaction(firestore as any, async (tx: any) => {
+     const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
+     tx.update(userRef, updateData);
+     tx.update(profileRef, updateData);
+   }).catch(() => {});
    setMyBets(prev => ({ ...prev, [id]: (prev[id] || 0) + selectedChip }));
   };
 
@@ -247,12 +309,13 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
   };
 
 
-  const winningNumberBadge = winningNumber !== null ? (
+  const displayWinningNumber = syncedWinningNumber ?? localWinningNumber;
+  const winningNumberBadge = displayWinningNumber !== null ? (
    <div className={cn(
     "h-16 w-16 rounded-full flex items-center justify-center text-3xl font-bold border-2 border-white shadow-xl",
-    RED_NUMBERS.includes(winningNumber) ? "bg-red-600" : winningNumber === 0 ? "bg-emerald-600" : "bg-slate-900"
+    RED_NUMBERS.includes(displayWinningNumber) ? "bg-red-600" : displayWinningNumber === 0 ? "bg-emerald-600" : "bg-slate-900"
    )}>
-    {winningNumber}
+    {displayWinningNumber}
    </div>
   ) : null;
 
@@ -279,13 +342,13 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#311b92] z-10" />
     </div>
 
-    {gameState === 'result' && winningNumber !== null && (
+    {gameState === 'result' && (syncedWinningNumber ?? localWinningNumber) !== null && (
      <GameResultOverlay 
-      gameId="roulette"
-      winningSymbol={winningNumberBadge} 
-      winAmount={totalWinAmount} 
-      winners={winners} 
-     />
+       gameId="roulette"
+       winningSymbol={winningNumberBadge} 
+       winAmount={totalWinAmount} 
+       winners={winners} 
+      />
     )}
 
     {/* MATCHED NEW HEADER DESIGN */}
@@ -322,7 +385,7 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
     <div className="relative flex-1 flex flex-col items-center justify-center p-4 min-h-[300px]">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-yellow-500/10 rounded-full blur-[100px] pointer-events-none" />
       
-      <div className="relative w-64 h-64 z-10 transition-transform duration-[5000ms] ease-out" style={{ transform: `rotate(-${rotation}deg)` }}>
+      <div className="relative w-64 h-64 z-10 transition-transform duration-[5000ms] ease-out" style={{ transform: `rotate(-${syncedRotation}deg)` }}>
        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
          <circle cx="50" cy="50" r="48" fill="#3d2b1f" stroke="#b88a44" strokeWidth="4" />
          {NUMBERS.map((num, i) => {
@@ -368,12 +431,12 @@ export function RouletteGameContent({ isOverlay = false, onClose }: RouletteGame
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-30">
        <div className="bg-black/60 backdrop-blur-md rounded-xl p-2 border border-white/10 flex flex-col items-center">
          <span className="text-[8px] font-bold text-white/40 uppercase">NEW</span>
-         <div className={cn(
-          "h-10 w-10 rounded-lg flex items-center justify-center text-xl font-bold shadow-lg",
-          RED_NUMBERS.includes(history[0]) ? "bg-red-600" : history[0] === 0 ? "bg-emerald-600" : "bg-slate-900"
-         )}>
-          {history[0]}
-         </div>
+          <div className={cn(
+           "h-10 w-10 rounded-lg flex items-center justify-center text-xl font-bold shadow-lg",
+            RED_NUMBERS.includes(syncedHistory[0]) ? "bg-red-600" : syncedHistory[0] === 0 ? "bg-emerald-600" : "bg-slate-900"
+           )}>
+            {syncedHistory[0]}
+          </div>
          <ChevronDown className="h-3 w-3 text-white/40 mt-1" />
        </div>
        <div className="relative">

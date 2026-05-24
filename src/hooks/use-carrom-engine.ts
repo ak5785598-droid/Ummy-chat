@@ -66,16 +66,15 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       return;
     }
 
-    // 1. Minimum Balance Check (FREE OVERRIDE)
-    const entryFee = 0;
-    const userCoins = 999999;
-
-    console.log("Carrom: Attempting to join lobby (FREE)", { status: gameState?.status, userCoins, entryFee });
-
-    if (userCoins < entryFee) {
-      console.log("Carrom: Insufficient coins", { userCoins, entryFee });
-      alert("Insufficient coins to join this professional match!");
-      return;
+    // Read entry fee from game doc
+    const entryFee = gameState?.entryFee || 0;
+    if (entryFee > 0) {
+      const wallet = (userProfile as any)?.wallet;
+      const userCoins = wallet?.coins ?? 0;
+      if (userCoins < entryFee) {
+        alert("Insufficient coins to join this professional match!");
+        return;
+      }
     }
 
     if (gameState?.status !== 'lobby') return;
@@ -95,7 +94,11 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
         const userRef = doc(firestore!, 'users', userId);
         const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
 
-        // Coin deduction skipped for Free Mode
+        // Coin deduction
+        if (entryFee > 0) {
+          transaction.update(userRef, { coins: increment(-entryFee) });
+          transaction.update(profileRef, { 'wallet.coins': increment(-entryFee) });
+        }
 
         const newPlayer: CarromPlayer = {
           uid: userId,
@@ -123,18 +126,18 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     // Initialize Board with Coins
     const initialPieces: CarromPiece[] = [
       { id: 'queen', type: 'queen', position: { x: 50, y: 50 }, velocity: { x: 0, y: 0 }, isPocketed: false },
-      // Ring 1 (6 coins)
+      // Ring 1 (6 coins: 3 white, 3 black)
       ...[...Array(6)].map((_, i) => ({
         id: `r1-${i}`,
-        type: i % 2 === 0 ? 'white' : 'black' as any,
+        type: (i % 2 === 0 ? 'white' : 'black') as 'white' | 'black',
         position: { x: 50 + Math.cos(i * 60 * Math.PI / 180) * 8, y: 50 + Math.sin(i * 60 * Math.PI / 180) * 8 },
         velocity: { x: 0, y: 0 },
         isPocketed: false
       })),
-      // Ring 2 (12 coins)
+      // Ring 2 (12 coins: 6 white, 6 black = 9 white, 9 black total + queen)
       ...[...Array(12)].map((_, i) => ({
         id: `r2-${i}`,
-        type: i % 3 === 0 ? 'white' : 'black' as any,
+        type: (i % 2 === 0 ? 'white' : 'black') as 'white' | 'black',
         position: { x: 50 + Math.cos(i * 30 * Math.PI / 180) * 16, y: 50 + Math.sin(i * 30 * Math.PI / 180) * 16 },
         velocity: { x: 0, y: 0 },
         isPocketed: false
@@ -201,6 +204,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
 
   const strike = useCallback(async (angle: number, power: number) => {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
+    if (!firestore) return;
 
     // Apply impulse to striker
     const pieces = [...gameState.pieces];
@@ -208,7 +212,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     if (!striker) return;
 
     // Convert angle/power to velocity
-    const rad = (angle - 90) * Math.PI / 180; // 0 is top
+    const rad = (angle - 90) * Math.PI / 180;
     striker.velocity = {
       x: Math.cos(rad) * power,
       y: Math.sin(rad) * power
@@ -216,25 +220,21 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
 
     // Simulate physics until stop
     let currentPieces = pieces;
-    let iterations = 0;
-    const MAX_ITER = 300;
-    
-    while (iterations < MAX_ITER) {
+    for (let i = 0; i < 300; i++) {
       const { pieces: nextPieces, hasMovement } = updatePhysics(currentPieces);
       currentPieces = nextPieces;
       if (!hasMovement) break;
-      iterations++;
     }
 
     // Calculate newly pocketed pieces and score
     let scoreGained = 0;
     let pocketedThisTurn = false;
     
-    currentPieces.forEach((p, idx) => {
+    currentPieces.forEach((p) => {
       const oldPiece = pieces.find(oldP => oldP.id === p.id);
       if (p.isPocketed && oldPiece && !oldPiece.isPocketed) {
         if (p.id === 'striker') {
-          scoreGained -= 10; // Foul
+          scoreGained -= 10;
         } else {
           pocketedThisTurn = true;
           if (p.type === 'white') scoreGained += 20;
@@ -260,24 +260,32 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       score: Math.max(0, updatedPlayers[currentPlayerIndex].score + scoreGained)
     };
 
-    // Check if game ended (all pieces except striker pocketed)
+    // Check if game ended
     const piecesRemaining = finalPieces.some(p => p.id !== 'striker' && !p.isPocketed);
-    
-    if (!piecesRemaining) {
-      const winner = updatedPlayers.reduce((prev, current) => (prev.score > current.score) ? prev : current);
-      await endMatch(winner.uid);
-      return;
-    }
-
     const nextTurn = pocketedThisTurn ? userId : gameState.players[(currentPlayerIndex + 1) % gameState.players.length].uid;
 
-    await updateDocumentNonBlocking(gameDocRef, {
-      pieces: finalPieces,
-      players: updatedPlayers,
-      turn: nextTurn,
-      updatedAt: serverTimestamp()
-    });
-  }, [gameDocRef, gameState, userId, endMatch]);
+    // Atomic write via transaction
+    try {
+      await runTransaction(firestore as any, async (tx: any) => {
+        const snap = await tx.get(gameDocRef);
+        if (!snap.exists()) return;
+        const state = snap.data();
+        if (state.turn !== userId || state.status !== 'playing') return;
+        tx.update(gameDocRef, {
+          pieces: finalPieces,
+          players: updatedPlayers,
+          turn: nextTurn,
+          updatedAt: serverTimestamp()
+        });
+      });
+      if (!piecesRemaining) {
+        const winner = updatedPlayers.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+        await endMatch(winner.uid);
+      }
+    } catch (e) {
+      console.log('Strike tx failed', e);
+    }
+  }, [gameDocRef, gameState, userId, endMatch, firestore]);
 
   return {
     gameState: gameState as CarromGameState | undefined,

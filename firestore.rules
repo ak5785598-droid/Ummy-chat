@@ -154,8 +154,73 @@ service cloud.firestore {
     // GAMES
     // ============================================
     match /games/{gameId} {
-      allow read: if true;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update: if isSignedIn() && isNotBanned() && (
+        (resource.data.players is list && resource.data.players.hasAny([request.auth.uid])) ||
+        isAdmin()
+      )
+      // dice: 1-6 integer (prevents Ludo dice hack)
+      && (!('dice' in request.resource.data) ||
+          (request.resource.data.dice is number &&
+           request.resource.data.dice >= 1 &&
+           request.resource.data.dice <= 6))
+      // turn: must belong to a player in the game
+      && (!('turn' in request.resource.data) ||
+          (resource.data.players is list &&
+           resource.data.players.hasAny([request.resource.data.turn])))
+      // status: valid game states only
+      && (!('status' in request.resource.data) ||
+           request.resource.data.status in ['loading', 'mode_select', 'lobby',
+                                             'playing', 'ended', 'betting',
+                                             'spinning', 'result', 'started',
+                                             'waiting', 'finished'])
+      // winningNumber: must be a valid roulette number (0-36)
+      && (!('winningNumber' in request.resource.data) ||
+          (request.resource.data.winningNumber is number &&
+           request.resource.data.winningNumber >= 0 &&
+           request.resource.data.winningNumber <= 36) ||
+          request.resource.data.winningNumber == null)
+      // diceRolled: must be boolean
+      && (!('diceRolled' in request.resource.data) ||
+           request.resource.data.diceRolled is bool);
+      allow delete: if isAdmin();
+    }
+
+    // ============================================
+    // GAME ORACLE (admin forced results - admin only)
+    // ============================================
+    match /gameOracle/{gameId} {
+      allow read: if isAdmin();
       allow write: if isAdmin();
+    }
+
+    // ============================================
+    // GLOBAL BETS (game bet records)
+    // ============================================
+    match /globalBets/{betId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // GLOBAL GAME WINS (win records - own only)
+    // ============================================
+    match /globalGameWins/{winId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // GAME CARNIVAL (fruit party game state)
+    // ============================================
+    match /game_carnival/{document=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isNotBanned();
     }
 
     // ============================================

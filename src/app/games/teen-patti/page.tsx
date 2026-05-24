@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { AppLayout } from '@/components/layout/app-layout';
 import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import {
   Volume2,
@@ -356,4 +357,12 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     <style jsx global>{`.no-scrollbar::-webkit-scrollbar { display: none; }.rotate-y-180 { transform: rotateY(180deg); }.preserve-3d { transform-style: preserve-3d; }.backface-hidden { backface-visibility: hidden; }`}</style>
    </motion.div>
   );
-   }
+}
+
+export default function TeenPattiPage() {
+  return (
+    <AppLayout fullScreen>
+      <TeenPattiGameContent />
+    </AppLayout>
+  );
+}

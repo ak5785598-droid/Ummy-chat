@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, getDoc, collection, query, where, orderBy, limit, runTransaction } from 'firebase/firestore';
 import {
   Volume2,
   VolumeX,
@@ -40,6 +40,44 @@ const DECK = [
   'A♦', '2♦', '3♦', '4♦', '5♦', '6♦', '7♦', '8♦', '9♦', '10♦', 'J♦', 'Q♦', 'K♦',
   'A♣', '2♣', '3♣', '4♣', '5♣', '6♣', '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', 'K♣'
 ];
+
+// Card value mapping for comparison
+const CARD_VALUES: Record<string, number> = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+
+const HAND_RANKS = { HIGH_CARD: 0, PAIR: 1, SEQUENCE: 2, COLOUR: 3, PURE_SEQUENCE: 4, SET: 5 };
+
+const evaluateHand = (cards: string[]) => {
+  if (!cards || cards.length !== 3) return { label: '', rank: -1, values: [], suit: '' };
+  const parsed = cards.map(c => ({ value: CARD_VALUES[c.slice(0, -1)] || 0, suit: c.slice(-1) }));
+  parsed.sort((a, b) => b.value - a.value);
+  const values = parsed.map(p => p.value);
+  const isSameSuit = new Set(parsed.map(p => p.suit)).size === 1;
+  const isConsecutive = (values[0] - values[1] === 1 && values[1] - values[2] === 1) ||
+    (values[0] === 14 && values[1] === 3 && values[2] === 2);
+  let sortedVals = [...values];
+  if (values[0] === 14 && values[1] === 3 && values[2] === 2) sortedVals = [3, 2, 14];
+  if (values[0] === values[1] && values[1] === values[2]) return { label: 'Set', rank: HAND_RANKS.SET, values, suit: '' };
+  if (isSameSuit && isConsecutive) return { label: 'Pure Sequence', rank: HAND_RANKS.PURE_SEQUENCE, values: sortedVals, suit: parsed[0].suit };
+  if (isSameSuit) return { label: 'Colour', rank: HAND_RANKS.COLOUR, values, suit: parsed[0].suit };
+  if (isConsecutive) return { label: 'Sequence', rank: HAND_RANKS.SEQUENCE, values: sortedVals, suit: '' };
+  const counts = new Map<number, number>(); values.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+  if ([...counts.values()].some(c => c === 2)) return { label: 'Pair', rank: HAND_RANKS.PAIR, values, suit: '' };
+  return { label: 'High', rank: HAND_RANKS.HIGH_CARD, values, suit: '' };
+};
+
+const compareHands = (a: any, b: any) => {
+  if (a.rank !== b.rank) return a.rank > b.rank ? 1 : -1;
+  for (let i = 0; i < 3; i++) { if (a.values[i] !== b.values[i]) return a.values[i] > b.values[i] ? 1 : -1; }
+  if (a.suit && b.suit) { const so: Record<string, number> = { '♠': 4, '♥': 3, '♣': 2, '♦': 1 }; return (so[a.suit] || 0) > (so[b.suit] || 0) ? 1 : -1; }
+  return 0;
+};
+
+const shuffleDeck = () => {
+  const deck = [...DECK];
+  const rand = new Uint32Array(52); crypto.getRandomValues(rand);
+  for (let i = 51; i > 0; i--) { const j = rand[i] % (i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+  return deck;
+};
 
 // --- NUMBER FORMATTER HELPERS ---
 const formatCoins = (num: number) => {
@@ -344,31 +382,10 @@ const FACTIONS = [
  { id: 'FISH', label: 'Fish', Banner: FishBanner },
 ];
 
-const evaluateHand = (cards: string[]) => {
-  if (!cards || cards.length !== 3) return '';
-  const values = cards.map(c => c.slice(0, -1)); 
-  const counts: Record<string, number> = {};
-  values.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
-  const maxCount = Math.max(...Object.values(counts));
-  if (maxCount === 3) return 'Sequence'; 
-  if (maxCount === 2) return 'Pair';
-  return 'High';
-};
-
-// --- NAYA MERGED WINNER OVERLAY COMPONENT ---
-type Player = { rank: 1 | 2 | 3; name: string; prize: number; bet: number; };
-const fallbackPlayers: Player[] = [
-  { rank: 2, name: "Betnarmati Saru", prize: 140, bet: 50 },
-  { rank: 1, name: "pihu", prize: 295, bet: 100 },
-  { rank: 3, name: "Saksham Thakur", prize: 59, bet: 20 },
-];
-
 function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount: number, totalBet: number, winnerId: string | null }) {
   const [yourPrize, setYourPrize] = useState(0);
   const [yourBet, setYourBet] = useState(0);
-  const [awake, setAwake] = useState(false);
-  const [active, setActive] = useState<number | null>(null);
-  const [prizes, setPrizes] = useState<Record<number, number>>({1:0,2:0,3:0});
+  const [prizes, setPrizes] = useState<Record<string, number>>({});
   const confettiRef = useRef<HTMLDivElement>(null);
 
   const winnerFaction = FACTIONS.find(f => f.id === winnerId);
@@ -401,28 +418,18 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
     if (navigator.vibrate) navigator.vibrate(30);
   };
 
-  const handlePlayer = (p: Player) => {
-    setActive(p.rank);
-    animate(yourPrize, finalWinAmount, 650, setYourPrize);
-    animate(yourBet, totalBet, 650, setYourBet);
-    if (p.rank === 1) burst();
-  };
-
   useEffect(() => {
-    fallbackPlayers.forEach((p, i) => {
+    animate(0, finalWinAmount, 1100, setYourPrize);
+    animate(0, totalBet, 1100, setYourBet);
+    FACTIONS.forEach((f, i) => {
       setTimeout(() => {
-        animate(0, p.prize, 1100 + i * 150, (v) =>
-          setPrizes(prev => ({ ...prev, [p.rank]: v }))
-        );
-      }, 300);
+        const prize = f.id === winnerId ? finalWinAmount : 0;
+        setPrizes(prev => ({ ...prev, [f.id]: prize }));
+      }, 300 + i * 150);
     });
-    const winner = fallbackPlayers.find(p => p.rank === 1)!;
-    const t = setTimeout(() => {
-        handlePlayer(winner);
-        if(finalWinAmount > 0) burst();
-    }, 1400);
+    const t = setTimeout(() => { if (finalWinAmount > 0) burst(); }, 1400);
     return () => clearTimeout(t);
-  }, [finalWinAmount, totalBet]);
+  }, [finalWinAmount, totalBet, winnerId]);
 
   return (
     <>
@@ -519,7 +526,7 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
                 </div>
               </div>
             ) : (
-              <div className={`emoji-box ${awake ? 'awake' : ''}`} onClick={()=>{ setAwake(a=>!a); if(navigator.vibrate) navigator.vibrate(10); }}>
+              <div className="emoji-box" onClick={() => { if(navigator.vibrate) navigator.vibrate(10); }}>
                 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                   <defs>
                     <radialGradient id="faceGrad" cx="0.3" cy="0.25" r="0.8">
@@ -560,24 +567,28 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
           </div>
 
           <div className="winners">
-            {fallbackPlayers.sort((a,b)=> a.rank===1?-1: b.rank===1?1: a.rank-b.rank).map(p=>(
-              <div key={p.rank} className={`player rank-${p.rank} ${active===p.rank?'active':''}`} onClick={()=>handlePlayer(p)}>
-                <div className="ring-container">
-                  {p.rank===1 && <><div className="sparkle s1"></div><div className="sparkle s2"></div><div className="sparkle s3"></div></>}
-                  <svg viewBox="0 0 140 160">
-                    <circle cx="70" cy="90" r={p.rank===1?50: p.rank===2?48:46} fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45"/>
-                    <circle cx="70" cy="90" r={p.rank===1?50: p.rank===2?48:46} fill="none" stroke={p.rank===1?"#ffc73a":p.rank===2?"#b6bcc6":"#c76d46"} strokeWidth="12"/>
-                    <g transform="translate(104,124)"><circle r="16" fill={p.rank===1?"#ffc73a":p.rank===2?"#b6bcc6":"#c76d46"} /><text x="0" y="5" textAnchor="middle" fontSize="15" fontWeight="800" fill="white">{p.rank}</text></g>
-                  </svg>
+            {FACTIONS.map((f, idx) => {
+              const isWinner = f.id === winnerId;
+              const rank = idx + 1;
+              return (
+                <div key={f.id} className={`player ${rank === 1 ? 'rank-1' : rank === 3 ? 'rank-3' : ''}`}>
+                  <div className="ring-container">
+                    {rank === 1 && isWinner && <><div className="sparkle s1"></div><div className="sparkle s2"></div><div className="sparkle s3"></div></>}
+                    <svg viewBox="0 0 140 160">
+                      <circle cx="70" cy="90" r={rank === 1 ? 50 : rank === 2 ? 48 : 46} fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45"/>
+                      <circle cx="70" cy="90" r={rank === 1 ? 50 : rank === 2 ? 48 : 46} fill="none" stroke={isWinner ? "#ffc73a" : rank === 2 ? "#b6bcc6" : "#c76d46"} strokeWidth="12"/>
+                      <g transform="translate(104,124)"><circle r="16" fill={isWinner ? "#ffc73a" : rank === 2 ? "#b6bcc6" : "#c76d46"} /><text x="0" y="5" textAnchor="middle" fontSize="15" fontWeight="800" fill="white">{rank}</text></g>
+                    </svg>
+                  </div>
+                  <div className="player-name">{f.label}</div>
+                  <div className="player-prize">
+                    <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
+                    <span>{formatCoins(prizes[f.id] || 0)}</span>
+                  </div>
+                  <div className="player-bet">{isWinner ? 'WINNER' : ''}</div>
                 </div>
-                <div className="player-name">{p.name}</div>
-                <div className="player-prize">
-                  <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
-                  <span>{formatCoins(prizes[p.rank] || 0)}</span>
-                </div>
-                <div className="player-bet">Bet: {formatCoins(p.bet)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -614,15 +625,8 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
   
   const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
 
-  // NAYA: Detailed history array to show rounds with 6-digit numbers
-  const [currentRoundNumber, setCurrentRoundNumber] = useState(456201); 
-  const [detailedHistory, setDetailedHistory] = useState<{round: number, winner: string}[]>([
-    { round: 456196, winner: 'WOLF' },
-    { round: 456197, winner: 'LION' },
-    { round: 456198, winner: 'FISH' },
-    { round: 456199, winner: 'WOLF' },
-    { round: 456200, winner: 'LION' },
-  ]);
+  const [currentRoundNumber, setCurrentRoundNumber] = useState(Math.floor(Date.now() / 1000) % 1000000); 
+  const [detailedHistory, setDetailedHistory] = useState<{round: number, winner: string}[]>([]);
 
   const [floatingChips, setFloatingChips] = useState<{
     id: string;
@@ -672,19 +676,9 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    return () => clearInterval(interval);
   }, [gameState, timeLeft, isLaunching]);
 
-  useEffect(() => {
-    if (gameState !== 'betting' || isLaunching) return;
-    const interval = setInterval(() => {
-      if (Math.random() > 0.5) { 
-        const randomFaction = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
-        const randomChip = CHIPS[Math.floor(Math.random() * 3)]; 
-        spawnChip(randomFaction, randomChip, true);
-      }
-    }, 600);
-    return () => clearInterval(interval);
-  }, [gameState, isLaunching]);
 
-  const spawnChip = (factionId: string, chipDef: typeof CHIPS[0], isFake: boolean) => {
+
+  const spawnChip = (factionId: string, chipDef: typeof CHIPS[0]) => {
     const newChip = {
       id: Math.floor(100000 + Math.random() * 900000).toString(),
       factionId,
@@ -700,24 +694,37 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
       return next;
     });
 
-    if (isFake) {
-      setTotalPots(prev => ({...prev, [factionId]: (prev[factionId] || 0) + chipDef.value}));
-    }
   };
 
   const startReveal = async () => {
    setGameState('reveal');
    setRevealedCardsCount(0); 
 
+   // Deal 3 unique cards per faction from shuffled deck
+   const deck = shuffleDeck();
    const newCards: Record<string, string[]> = {};
-   FACTIONS.forEach(f => { 
-       newCards[f.id] = [
-           DECK[Math.floor(Math.random() * DECK.length)], 
-           DECK[Math.floor(Math.random() * DECK.length)], 
-           DECK[Math.floor(Math.random() * DECK.length)]
-       ]; 
+   FACTIONS.forEach((f, idx) => {
+       newCards[f.id] = [deck[idx * 3], deck[idx * 3 + 1], deck[idx * 3 + 2]];
    });
    setCardReveal(newCards);
+
+   // Determine winner by comparing hands
+   const results = FACTIONS.map(f => ({ id: f.id, hand: evaluateHand(newCards[f.id]) }));
+   let best = results[0];
+   for (let i = 1; i < results.length; i++) {
+     if (compareHands(results[i].hand, best.hand) > 0) best = results[i];
+   }
+   let winId = best.id;
+
+   // Oracle override (admin forced result)
+   if (firestore) {
+    try {
+     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'teen-patti'));
+     if (oracleSnap.exists() && oracleSnap.data().isActive) {
+      winId = oracleSnap.data().forcedResult;
+     }
+    } catch (e) {}
+   }
 
    let currentFlip = 0;
    const flipInterval = setInterval(() => {
@@ -725,17 +732,6 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
        setRevealedCardsCount(currentFlip);
        if(currentFlip >= 9) clearInterval(flipInterval);
    }, 1000);
-
-   let winId = FACTIONS[Math.floor(Math.random() * FACTIONS.length)].id;
-   if (firestore) {
-    try {
-     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'teen-patti'));
-     if (oracleSnap.exists() && oracleSnap.data().isActive) {
-      winId = oracleSnap.data().forcedResult;
-      updateDocumentNonBlocking(doc(firestore, 'gameOracle', 'teen-patti'), { isActive: false });
-     }
-    } catch (e) {}
-   }
 
    setTimeout(() => { finalizeRound(winId); }, 10000);
   };
@@ -754,9 +750,13 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
    const winAmount = (myBets[winId] || 0) * 1.95;
 
    if (winAmount > 0 && currentUser && firestore && userProfile) {
-    const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-    updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
+    runTransaction(firestore as any, async (tx: any) => {
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      const updateData = { 'wallet.coins': increment(Math.floor(winAmount)), 'stats.dailyGameWins': increment(Math.floor(winAmount)), updatedAt: serverTimestamp() };
+      tx.update(userRef, updateData);
+      tx.update(profileRef, updateData);
+    }).catch(() => {});
     addDocumentNonBlocking(collection(firestore, 'globalGameWins'), { gameId: 'teen-patti', userId: currentUser.uid, username: userProfile?.username || 'Guest', avatarUrl: userProfile?.avatarUrl || null, amount: Math.floor(winAmount), timestamp: serverTimestamp() });
    }
    setTimeout(() => { 
@@ -771,17 +771,21 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
     }, 5000);
   };
 
-  const handlePlaceBet = (id: string) => {
-   if (gameState!== 'betting' ||!currentUser ||!userProfile) return;
-   if ((userProfile.wallet?.coins || 0) < selectedChip) { toast({ variant: 'destructive', title: 'Insufficient Coins' }); return; }
-   const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid), updateData);
-   updateDocumentNonBlocking(doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid), updateData);
-   setMyBets(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
+   const handlePlaceBet = (id: string) => {
+    if (gameState!== 'betting' ||!currentUser ||!userProfile) return;
+    if ((userProfile.wallet?.coins || 0) < selectedChip) { toast({ variant: 'destructive', title: 'Insufficient Coins' }); return; }
+    runTransaction(firestore as any, async (tx: any) => {
+      const userRef = doc(firestore, 'users', currentUser.uid);
+      const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
+      const updateData = { 'wallet.coins': increment(-selectedChip), updatedAt: serverTimestamp() };
+      tx.update(userRef, updateData);
+      tx.update(profileRef, updateData);
+    }).catch(() => {});
+    setMyBets(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
    setTotalPots(prev => ({...prev, [id]: (prev[id] || 0) + selectedChip }));
    
    const chipDef = CHIPS.find(c => c.value === selectedChip) || CHIPS[0];
-   spawnChip(id, chipDef, false);
+   spawnChip(id, chipDef);
   };
 
   const finalWinAmount = winnerId ? Math.floor((myBets[winnerId] || 0) * 1.95) : 0;
@@ -955,7 +959,7 @@ export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGa
                  <div className="bg-black/85 backdrop-blur-md border-t-2 border-b-2 border-[#ffd700] py-[3px] w-full shadow-[0_0_10px_rgba(255,215,0,0.8)] relative flex items-center justify-center">
                    <div className="absolute inset-0 bg-gradient-to-tr from-white/20 via-transparent to-black/30" />
                    <span className="text-[#ffd700] text-[10px] font-extrabold uppercase tracking-widest relative z-10" style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}>
-                     {evaluateHand(cardReveal[f.id])}
+                      {evaluateHand(cardReveal[f.id]).label}
                    </span>
                  </div>
                </motion.div>
