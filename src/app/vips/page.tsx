@@ -275,20 +275,40 @@ export default function VipsClubPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full bg-[#050711] text-white font-outfit relative flex flex-col pb-28 overflow-x-hidden animate-in fade-in duration-500">
+      <div className="min-h-full animate-bg-gradient text-white font-outfit relative flex flex-col pb-28 overflow-x-hidden animate-in fade-in duration-500">
         
-        {/* Dynamic Glowing Ambient Overlays */}
+        {/* Deep Space Starfield & Sparkle Layers */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          {/* Sparkly Star 1 */}
+          <div className="absolute top-[12%] left-[15%] h-1 w-1 bg-white rounded-full animate-sparkle" style={{ animationDelay: '0.2s' }} />
+          <div className="absolute top-[28%] left-[80%] h-1.5 w-1.5 bg-cyan-300 rounded-full animate-sparkle" style={{ animationDelay: '1.5s' }} />
+          <div className="absolute top-[45%] left-[8%] h-0.5 w-0.5 bg-white rounded-full opacity-60" />
+          <div className="absolute top-[62%] left-[88%] h-1 w-1 bg-purple-300 rounded-full animate-sparkle" style={{ animationDelay: '0.8s' }} />
+          <div className="absolute top-[75%] left-[22%] h-1.5 w-1.5 bg-amber-300 rounded-full animate-sparkle" style={{ animationDelay: '2.3s' }} />
+          <div className="absolute top-[90%] left-[70%] h-1 w-1 bg-white rounded-full opacity-40" />
+
+          {/* Drifting Nebulae Dust Clouds */}
+          <div className="absolute top-[15%] left-[10%] w-[350px] h-[350px] bg-indigo-500/10 blur-[130px] rounded-full animate-float-slow" />
+          <div className="absolute bottom-[20%] right-[5%] w-[400px] h-[400px] bg-purple-600/5 blur-[150px] rounded-full animate-float-slow" style={{ animationDuration: '14s' }} />
+          
+          {/* Glowing orbital ring backdrop */}
+          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full border border-white/[0.02] scale-[1.3] pointer-events-none opacity-40 z-0">
+            <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.04] animate-spin" style={{ animationDuration: '40s' }} />
+          </div>
+        </div>
+
+        {/* Dynamic Glowing Ambient Spotlights */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[50vh] pointer-events-none z-0">
-          <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/15 blur-[120px] rounded-full animate-pulse" />
           <div className={cn("absolute top-[-5vh] right-1/4 w-72 h-72 blur-[100px] rounded-full transition-colors duration-700", 
-            activeTheme === 'owl' ? 'bg-cyan-500/10' :
-            activeTheme === 'wolf' ? 'bg-fuchsia-500/10' :
-            activeTheme === 'lion' ? 'bg-orange-500/10' : 'bg-yellow-400/15'
+            activeTheme === 'owl' ? 'bg-cyan-500/15 shadow-[0_0_80px_rgba(6,182,212,0.15)]' :
+            activeTheme === 'wolf' ? 'bg-fuchsia-500/15 shadow-[0_0_80px_rgba(168,85,247,0.15)]' :
+            activeTheme === 'lion' ? 'bg-orange-500/15 shadow-[0_0_80px_rgba(249,115,22,0.15)]' : 'bg-yellow-400/20 shadow-[0_0_100px_rgba(234,179,8,0.2)]'
           )} />
         </div>
 
         {/* Premium Header Bar */}
-        <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-[#050711]/80 backdrop-blur-md border-b border-white/[0.03] z-[90] shrink-0">
+        <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-transparent backdrop-blur-md border-b border-white/[0.02] z-[90] shrink-0">
           <button 
             onClick={() => router.back()} 
             className="p-2.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.08] active:scale-95 transition-all shadow-sm"
@@ -867,6 +887,30 @@ export default function VipsClubPage() {
         }
         .animate-float {
           animation: float 4s ease-in-out infinite;
+        }
+        @keyframes floatSlow {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(-20px) translateX(15px); }
+        }
+        .animate-float-slow {
+          animation: floatSlow 10s ease-in-out infinite;
+        }
+        @keyframes sparkle {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.3); }
+        }
+        .animate-sparkle {
+          animation: sparkle 3s ease-in-out infinite;
+        }
+        @keyframes gradientBackground {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-bg-gradient {
+          background: linear-gradient(-45deg, #050714, #0d0a21, #060e1d, #03040a);
+          background-size: 400% 400%;
+          animation: gradientBackground 18s ease infinite;
         }
       `}</style>
     </AppLayout>
