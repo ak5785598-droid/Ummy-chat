@@ -135,6 +135,7 @@ import Image from "next/image";
 import { AVATAR_FRAMES } from "@/constants/avatar-frames";
 
 import { useSearchParams, useRouter } from "next/navigation";
+import { VipManagementTab } from "@/components/admin/vip-management-tab";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
 
@@ -3186,10 +3187,19 @@ function AdminPageContent() {
                 >
                   <Smile className="h-4 w-4" /> Emoji Management
                 </TabsTrigger>
+                <TabsTrigger
+                  value="vip-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-yellow-500 data-[state=active]:text-white shadow-lg"
+                >
+                  <Crown className="h-4 w-4 text-yellow-500 fill-current animate-pulse" /> VIP Management
+                </TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
           <div className="flex-1 w-full min-w-0">
+            <TabsContent value="vip-management" className="m-0 space-y-6">
+              <VipManagementTab />
+            </TabsContent>
             <TabsContent value="loot-management" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">
                 <CardHeader className="px-0">

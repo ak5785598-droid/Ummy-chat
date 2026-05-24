@@ -38,7 +38,7 @@ import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { doc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 // --- DATA STRUCTURES ---
 
@@ -110,6 +110,31 @@ export default function VipsClubPage() {
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [vipConfig, setVipConfig] = useState<any>({
+    bgType: 'dynamic',
+    bgUrl: '',
+    levels: {}
+  });
+
+  // Sync global VIP configs from Firestore in real-time
+  useEffect(() => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'settings', 'svipConfig');
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setVipConfig({
+          bgType: data.bgType || 'dynamic',
+          bgUrl: data.bgUrl || '',
+          levels: data.levels || {}
+        });
+      }
+    }, (err) => {
+      console.warn("VIP settings sync warning: ", err);
+    });
+
+    return () => unsubscribe();
+  }, [firestore]);
 
   // Stealth toggle states local replica for quick feedback
   const [stealthSettings, setStealthSettings] = useState({
@@ -179,6 +204,17 @@ export default function VipsClubPage() {
 
   // Render fully-customized 18 Level Badge Graphic
   const renderUniqueBadge = (lvl: number, animated = true) => {
+    const customBadgeUrl = vipConfig?.levels?.[lvl]?.badgeUrl;
+
+    if (customBadgeUrl) {
+      return (
+        <div className="relative rounded-full px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase select-none transition-all duration-300 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-yellow-500/40 text-yellow-400 shadow-[0_0_12px_rgba(234,179,8,0.2)]">
+          <img src={customBadgeUrl} className="h-4.5 w-4.5 object-contain" alt={`SVIP ${lvl}`} />
+          <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">SVIP {lvl}</span>
+        </div>
+      );
+    }
+
     let baseStyle = "";
     let glowStyle = "";
     let wings = null;
@@ -324,6 +360,28 @@ export default function VipsClubPage() {
           </div>
         </div>
 
+        {/* Global Background Image Override */}
+        {vipConfig.bgType === 'image' && vipConfig.bgUrl && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center pointer-events-none z-0" 
+            style={{ backgroundImage: `url(${vipConfig.bgUrl})`, opacity: 0.25 }}
+          />
+        )}
+
+        {/* Global Background Video Override */}
+        {vipConfig.bgType === 'video' && vipConfig.bgUrl && (
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-20">
+            <video 
+              src={vipConfig.bgUrl} 
+              className="w-full h-full object-cover" 
+              muted 
+              autoPlay 
+              loop 
+              playsInline 
+            />
+          </div>
+        )}
+
         {/* Dynamic Glowing Ambient Spotlights (Extremely Vivid glows mapped to Selected Tier) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[50vh] pointer-events-none z-0">
           <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/25 blur-[120px] rounded-full animate-pulse" />
@@ -453,11 +511,27 @@ export default function VipsClubPage() {
             {/* Emblem Image/Symbol Presentation */}
             <div className="relative h-60 w-60 z-10 flex items-center justify-center group">
               
-              {/* Emblem-specific custom SVGs */}
-              {activeTheme === 'owl' && (
-                <div className="relative animate-float duration-3000">
-                  {/* Glowing Wings backdrop */}
-                  <div className="absolute inset-0 h-44 w-44 rounded-full border border-cyan-400/20 bg-cyan-900/10 blur-[10px] animate-pulse" />
+              {/* Custom Level Animation Video (If Configured) */}
+              {vipConfig?.levels?.[selectedLevel]?.videoUrl ? (
+                <div className="relative h-44 w-44 rounded-full border border-yellow-500/20 bg-yellow-950/10 blur-[1px] overflow-hidden shadow-[0_0_30px_rgba(234,179,8,0.35)] animate-float flex items-center justify-center">
+                  <video 
+                    src={vipConfig.levels[selectedLevel].videoUrl} 
+                    className="h-full w-full object-cover" 
+                    muted 
+                    autoPlay 
+                    loop 
+                    playsInline 
+                  />
+                  {/* Backdrop glowing border */}
+                  <div className="absolute inset-0 border border-white/10 rounded-full pointer-events-none" />
+                </div>
+              ) : (
+                <>
+                  {/* Emblem-specific custom SVGs */}
+                  {activeTheme === 'owl' && (
+                    <div className="relative animate-float duration-3000">
+                      {/* Glowing Wings backdrop */}
+                      <div className="absolute inset-0 h-44 w-44 rounded-full border border-cyan-400/20 bg-cyan-900/10 blur-[10px] animate-pulse" />
                   {/* Owl Core representation */}
                   <svg viewBox="0 0 100 100" className="h-44 w-44 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]">
                     <circle cx="50" cy="50" r="42" fill="none" stroke="#22d3ee" strokeWidth="1" strokeDasharray="3 3" />
@@ -549,7 +623,9 @@ export default function VipsClubPage() {
                   </svg>
                 </div>
               )}
-            </div>
+            </>
+          )}
+        </div>
 
             {/* 3D Circular Ornate Podium Base */}
             <div className="w-80 h-16 relative mt-[-20px] z-10 flex flex-col items-center">
