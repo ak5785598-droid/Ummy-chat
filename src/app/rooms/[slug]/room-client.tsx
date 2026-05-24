@@ -196,59 +196,52 @@ const RoomTrophyBadge = ({ coins, supporters = [], onOpenSupport }: { coins: num
   return (
     <div 
       onClick={onOpenSupport}
-      className="group relative flex flex-col items-start gap-1 mt-1 cursor-pointer active:scale-95 transition-all"
+      className="group relative flex items-center mt-1 cursor-pointer active:scale-95 transition-all"
     >
-      <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-yellow-500/30 rounded-full pl-1 pr-3 py-1 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:border-yellow-500/60 transition-colors">
-        <div className="relative h-5 w-5 rounded-full bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 flex items-center justify-center shadow-lg">
-          <Trophy className="h-3 w-3 text-black fill-current" />
-          <div className="absolute inset-0 rounded-full bg-white/20 animate-shine" />
+      <div className="flex items-center gap-1 bg-black/50 backdrop-blur-lg border border-yellow-500/20 rounded-full pl-0.5 pr-2 py-0.5 shadow-[0_2px_10px_rgba(234,179,8,0.05)] hover:border-yellow-500/50 hover:bg-black/60 transition-all">
+        {/* Trophy icon */}
+        <div className="relative h-4.5 w-4.5 rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 flex items-center justify-center shadow-md">
+          <Trophy className="h-2.5 w-2.5 text-black fill-current" />
+          <div className="absolute inset-0 rounded-full bg-white/10" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] font-black text-yellow-500 leading-none tracking-tighter">
+        
+        {/* Coins and progress bar */}
+        <div className="flex flex-col justify-center ml-0.5">
+          <span className="text-[9px] font-black text-yellow-400 leading-none tracking-tight">
             {coins >= 1000000 ? `${(coins / 1000000).toFixed(2)}M` : coins.toLocaleString()}
           </span>
-          <div className="h-1 w-12 bg-white/10 rounded-full mt-0.5 overflow-hidden">
+          <div className="h-0.5 w-10 bg-white/10 rounded-full mt-0.5 overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full transition-all duration-1000"
+              className="h-full bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 rounded-full transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
-        {/* Overlapping Top 3 Supporter Avatars */}
-        <div className="flex -space-x-1.5 ml-1 mr-0.5">
-          {supporters.slice(0, 3).map((sup: any, idx: number) => (
-            <div 
-              key={sup.uid || idx} 
-              className={cn(
-                "h-4 w-4 rounded-full border flex items-center justify-center overflow-hidden shadow-sm shrink-0",
-                idx === 0 ? "border-yellow-400 z-30" : idx === 1 ? "border-slate-300 z-20" : "border-amber-600 z-10"
-              )}
-            >
-              {sup.avatarUrl ? (
-                <img src={sup.avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="h-full w-full bg-slate-800 text-[5px] font-black flex items-center justify-center text-white">
-                  {(sup.username || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-          ))}
-          {supporters.length === 0 && (
-            <div className="flex -space-x-1">
-              {[1, 2, 3].map(i => (
-                <div 
-                  key={i} 
-                  className="h-4 w-4 rounded-full border border-white/10 bg-black/50 flex items-center justify-center text-[5px] font-black text-white/20"
-                >
-                  {i}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Overlapping Top 3 Supporter Avatars (Only show if they exist) */}
+        {supporters.length > 0 && (
+          <div className="flex -space-x-1 ml-1.5 mr-0.5">
+            {supporters.slice(0, 3).map((sup: any, idx: number) => (
+              <div 
+                key={sup.uid || idx} 
+                className={cn(
+                  "h-3.5 w-3.5 rounded-full border flex items-center justify-center overflow-hidden shadow-sm shrink-0",
+                  idx === 0 ? "border-yellow-400 z-30" : idx === 1 ? "border-slate-300 z-20" : "border-amber-600 z-10"
+                )}
+              >
+                {sup.avatarUrl ? (
+                  <img src={sup.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full bg-slate-800 text-[4px] font-black flex items-center justify-center text-white">
+                    {(sup.username || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
-        <ChevronDown className="h-3 w-3 text-yellow-500/40 group-hover:text-yellow-500 transition-colors" />
+        <ChevronDown className="h-2.5 w-2.5 text-yellow-500/30 group-hover:text-yellow-500/80 transition-colors ml-0.5" />
       </div>
     </div>
   );
