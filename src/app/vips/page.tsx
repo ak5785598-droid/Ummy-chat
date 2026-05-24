@@ -275,35 +275,62 @@ export default function VipsClubPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-full animate-bg-gradient text-white font-outfit relative flex flex-col pb-28 overflow-x-hidden animate-in fade-in duration-500">
+      <div className="min-h-screen animate-bg-gradient text-white font-outfit relative flex flex-col pb-28 overflow-x-hidden animate-in fade-in duration-500">
         
         {/* Deep Space Starfield & Sparkle Layers */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          {/* Animated glowing SVG space dust/nebula glow background */}
+          <div className="absolute inset-0 opacity-80 z-0">
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20%" cy="25%" r="130" fill="url(#violetGlow)" className="animate-pulse" style={{ animationDuration: '8s' }} />
+              <circle cx="85%" cy="50%" r="160" fill="url(#cyanGlow)" className="animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
+              <circle cx="45%" cy="80%" r="120" fill="url(#pinkGlow)" className="animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
+              <defs>
+                <radialGradient id="violetGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
+                  <stop offset="60%" stopColor="#8b5cf6" stopOpacity="0.1" />
+                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
+                  <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                </radialGradient>
+                <radialGradient id="pinkGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#ec4899" stopOpacity="0.25" />
+                  <stop offset="65%" stopColor="#ec4899" stopOpacity="0.07" />
+                  <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+            </svg>
+          </div>
+
           {/* Sparkly Star 1 */}
           <div className="absolute top-[12%] left-[15%] h-1 w-1 bg-white rounded-full animate-sparkle" style={{ animationDelay: '0.2s' }} />
           <div className="absolute top-[28%] left-[80%] h-1.5 w-1.5 bg-cyan-300 rounded-full animate-sparkle" style={{ animationDelay: '1.5s' }} />
-          <div className="absolute top-[45%] left-[8%] h-0.5 w-0.5 bg-white rounded-full opacity-60" />
+          <div className="absolute top-[45%] left-[8%] h-1 w-1 bg-white rounded-full opacity-70 animate-sparkle" style={{ animationDelay: '0.5s' }} />
           <div className="absolute top-[62%] left-[88%] h-1 w-1 bg-purple-300 rounded-full animate-sparkle" style={{ animationDelay: '0.8s' }} />
           <div className="absolute top-[75%] left-[22%] h-1.5 w-1.5 bg-amber-300 rounded-full animate-sparkle" style={{ animationDelay: '2.3s' }} />
-          <div className="absolute top-[90%] left-[70%] h-1 w-1 bg-white rounded-full opacity-40" />
+          <div className="absolute top-[90%] left-[70%] h-1 w-1 bg-white rounded-full opacity-60 animate-sparkle" style={{ animationDelay: '1.2s' }} />
 
-          {/* Drifting Nebulae Dust Clouds */}
-          <div className="absolute top-[15%] left-[10%] w-[350px] h-[350px] bg-indigo-500/10 blur-[130px] rounded-full animate-float-slow" />
-          <div className="absolute bottom-[20%] right-[5%] w-[400px] h-[400px] bg-purple-600/5 blur-[150px] rounded-full animate-float-slow" style={{ animationDuration: '14s' }} />
+          {/* Drifting Nebulae Dust Clouds (Vivid Opacity) */}
+          <div className="absolute top-[15%] left-[5%] w-[450px] h-[450px] bg-indigo-500/20 blur-[130px] rounded-full animate-float-slow" />
+          <div className="absolute bottom-[20%] right-[-5%] w-[500px] h-[500px] bg-fuchsia-600/15 blur-[150px] rounded-full animate-float-slow" style={{ animationDuration: '14s' }} />
+          <div className="absolute bottom-[5%] left-[15%] w-[380px] h-[380px] bg-cyan-500/15 blur-[110px] rounded-full animate-float-slow" style={{ animationDuration: '18s' }} />
           
           {/* Glowing orbital ring backdrop */}
-          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full border border-white/[0.02] scale-[1.3] pointer-events-none opacity-40 z-0">
-            <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.04] animate-spin" style={{ animationDuration: '40s' }} />
+          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full border border-white/[0.04] scale-[1.3] pointer-events-none opacity-50 z-0">
+            <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.08] animate-spin" style={{ animationDuration: '40s' }} />
           </div>
         </div>
 
-        {/* Dynamic Glowing Ambient Spotlights */}
+        {/* Dynamic Glowing Ambient Spotlights (Extremely Vivid glows mapped to Selected Tier) */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[50vh] pointer-events-none z-0">
-          <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/15 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/25 blur-[120px] rounded-full animate-pulse" />
           <div className={cn("absolute top-[-5vh] right-1/4 w-72 h-72 blur-[100px] rounded-full transition-colors duration-700", 
-            activeTheme === 'owl' ? 'bg-cyan-500/15 shadow-[0_0_80px_rgba(6,182,212,0.15)]' :
-            activeTheme === 'wolf' ? 'bg-fuchsia-500/15 shadow-[0_0_80px_rgba(168,85,247,0.15)]' :
-            activeTheme === 'lion' ? 'bg-orange-500/15 shadow-[0_0_80px_rgba(249,115,22,0.15)]' : 'bg-yellow-400/20 shadow-[0_0_100px_rgba(234,179,8,0.2)]'
+            activeTheme === 'owl' ? 'bg-cyan-500/35 shadow-[0_0_120px_rgba(6,182,212,0.35)]' :
+            activeTheme === 'wolf' ? 'bg-fuchsia-500/35 shadow-[0_0_120px_rgba(168,85,247,0.35)]' :
+            activeTheme === 'lion' ? 'bg-orange-500/35 shadow-[0_0_120px_rgba(249,115,22,0.35)]' : 'bg-yellow-400/40 shadow-[0_0_140px_rgba(234,179,8,0.4)]'
           )} />
         </div>
 
@@ -908,9 +935,9 @@ export default function VipsClubPage() {
           100% { background-position: 0% 50%; }
         }
         .animate-bg-gradient {
-          background: linear-gradient(-45deg, #050714, #0d0a21, #060e1d, #03040a);
+          background: linear-gradient(-45deg, #070922, #1d0f3a, #0b1d3d, #140723);
           background-size: 400% 400%;
-          animation: gradientBackground 18s ease infinite;
+          animation: gradientBackground 14s ease infinite;
         }
       `}</style>
     </AppLayout>
