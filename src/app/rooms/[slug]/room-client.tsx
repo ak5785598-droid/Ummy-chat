@@ -63,6 +63,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { VipBadge } from '@/components/vip-badge';
 import { RoomBanners } from "@/components/room-banners";
 import { RoomSupportDialog } from "@/components/room-support-dialog";
+import { RoomTopSupportersDialog } from "@/components/room-top-supporters-dialog";
 import { RoomLuckySpinDialog } from "@/components/room-lucky-spin-dialog";
 import { RoomGoldenChestDialog } from "@/components/room-golden-chest-dialog";
 import { MountOverlay, MountEntry } from '@/components/mount-overlay';
@@ -390,6 +391,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isFollowersOpen, setIsFollowersOpen] = useState(false);
   const [isAudienceInviteOpen, setIsAudienceInviteOpen] = useState(false);
   const [isRoomSupportOpen, setIsRoomSupportOpen] = useState(false);
+  const [isRoomSupportersOpen, setIsRoomSupportersOpen] = useState(false);
   const [isSpinOpen, setIsSpinOpen] = useState(false);
   const [isChestOpen, setIsChestOpen] = useState(false);
   // DISABLED: Rocket state
@@ -2954,7 +2956,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     isRoomInfoOpen || isUserListOpen || isShareOpen || isSeatMenuOpen || 
     isRoomPlayOpen || isRoomGamesOpen || isMessagesOpen || isFollowersOpen || 
     isAudienceInviteOpen || showExitDialog || showMicInviteDialog || showSoundboard ||
-    isRoomSupportOpen || isSpinOpen || isChestOpen;
+    isRoomSupportOpen || isRoomSupportersOpen || isSpinOpen || isChestOpen;
 
   return (
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
@@ -2990,6 +2992,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         roomStats={room.stats}
         visitorCount={onlineCount}
         levelPoints={room.levelPoints || 0}
+      />
+      <RoomTopSupportersDialog
+        open={isRoomSupportersOpen}
+        onOpenChange={setIsRoomSupportersOpen}
+        roomId={room.id}
       />
       <RoomLuckySpinDialog
         open={isSpinOpen}
@@ -3152,7 +3159,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         </div>
 
-        <RoomTrophyBadge coins={room.stats?.dailyGifts || 0} supporters={supporters} onOpenSupport={() => setIsRoomSupportOpen(true)} />
+        <RoomTrophyBadge coins={room.stats?.dailyGifts || 0} supporters={supporters} onOpenSupport={() => setIsRoomSupportersOpen(true)} />
 
         {/* Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY */}
         {(isHydrated && isOwner) && (
