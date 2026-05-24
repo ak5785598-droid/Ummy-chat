@@ -267,8 +267,7 @@ import { App } from '@capacitor/app';
        appStateListener.current.remove();
        appStateListener.current = null;
      }
-     
-     if (presenceRef.current) {
+      if (presenceRef.current) {
        set(presenceRef.current, null);
        presenceRef.current = null;
      }
@@ -278,12 +277,12 @@ import { App } from '@capacitor/app';
      // If the component re-mounts, the timeout is implicitly cleared or ignored.
      const currentSessionRoomId = latestRoomRef.current.activeRoomId || latestRoomRef.current.minimizedRoomId;
      
-     if (!currentSessionRoomId && firestore && user?.uid && roomId) {
-       // Only delete if we are SURE the user has left the room entirely
+     if (hasJoinedRef.current && currentSessionRoomId !== roomId && firestore && user?.uid && roomId) {
+       // Only delete if we are SURE the user has left this specific room
        setTimeout(() => {
-         // Check again if user hasn't re-joined or minimized
+         // Check again if user hasn't re-joined or minimized to this specific room
          const currentSessionRoomIdAfterTimeout = latestRoomRef.current.activeRoomId || latestRoomRef.current.minimizedRoomId;
-         if (!currentSessionRoomIdAfterTimeout) {
+         if (currentSessionRoomIdAfterTimeout !== roomId) {
             const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
             const rRef = doc(firestore, 'chatRooms', roomId);
             const uRef = doc(firestore, 'users', user.uid);

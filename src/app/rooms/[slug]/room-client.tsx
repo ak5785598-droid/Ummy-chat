@@ -2520,22 +2520,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const handleExit = () => {
     if (onExit) onExit();
-    if (firestore && currentUser) {
-      const roomDocRef = doc(firestore, 'chatRooms', room.id);
-      updateDocumentNonBlocking(roomDocRef, {
-        participantCount: increment(-1),
-        updatedAt: serverTimestamp()
-      });
 
-      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-      deleteDocumentNonBlocking(pRef);
-
-      const uRef = doc(firestore, 'users', currentUser.uid);
-      const profRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
-    }
-
+    // Set active and minimized room to null - RoomPresenceManager will handle the database cleanup safely and uniquely
     setActiveRoom(null);
     setMinimizedRoom(null);
     router.push('/rooms');
@@ -2546,9 +2532,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       AudioRoute.resetAudio().catch(() => {});
     }
 
-    setActiveRoom(null);
-    setMinimizedRoom(null);
-    router.push('/rooms'); // Exit should also go to Home (/rooms)
   };
 
   // YOUTUBE HIDE/CLOSE HANDLERS

@@ -36,7 +36,7 @@ export const ChatRoomCard = React.memo(({ room, variant = 'modern' }: ChatRoomCa
 
   const roomTitle = room.name || room.title || 'Frequency';
   const ownerName = owner?.username || 'Tribe Member';
-  const liveCount = Number(room.participantCount || 0);
+  const liveCount = Math.max(0, Number(room.participantCount || 0));
 
   return (
    <Link href={`/rooms/${room.id}`} className="group block w-full animate-in fade-in duration-500 hover-scale active-press">

@@ -201,13 +201,10 @@ export default function SettingsPage() {
    // (Agora client.leave + RoomPresenceManager participant deletion)
    await new Promise(resolve => setTimeout(resolve, 2000));
 
-   // STEP 3: Now do Firestore cleanup
+   // STEP 3: Now do Firestore cleanup for user status
    const userRef = doc(firestore, 'users', user.uid);
    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    
-   const userSnap = await getDoc(userRef);
-   const currentRoomId = userSnap.data()?.currentRoomId;
-
    const batch = writeBatch(firestore);
    
    batch.update(userRef, { 
@@ -220,16 +217,6 @@ export default function SettingsPage() {
     currentRoomId: null, 
     updatedAt: serverTimestamp() 
    });
-
-   if (currentRoomId) {
-    const roomRef = doc(firestore, 'chatRooms', currentRoomId);
-    const participantRef = doc(firestore, 'chatRooms', currentRoomId, 'participants', user.uid);
-    batch.delete(participantRef);
-    batch.update(roomRef, { 
-     participantCount: increment(-1),
-     updatedAt: serverTimestamp()
-    });
-   }
 
    await batch.commit();
    await signOut(auth);

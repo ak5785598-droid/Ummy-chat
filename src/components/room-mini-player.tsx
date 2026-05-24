@@ -40,21 +40,6 @@ export function RoomMiniPlayer() {
   };
 
   const handleExit = () => {
-    if (firestore && user && roomId) {
-      const roomDocRef = doc(firestore, 'chatRooms', roomId);
-      updateDocumentNonBlocking(roomDocRef, { 
-        participantCount: increment(-1),
-        updatedAt: serverTimestamp() 
-      });
-
-      const pRef = doc(firestore, 'chatRooms', roomId, 'participants', user.uid);
-      deleteDocumentNonBlocking(pRef);
-      
-      const uRef = doc(firestore, 'users', user.uid);
-      const profRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      updateDocumentNonBlocking(uRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
-      updateDocumentNonBlocking(profRef, { currentRoomId: null, isOnline: false, updatedAt: serverTimestamp() });
-    }
     setMinimizedRoom(null);
   };
 
