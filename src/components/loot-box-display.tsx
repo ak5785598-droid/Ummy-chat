@@ -44,15 +44,19 @@ export function LootBoxDisplay({
   onOpenGate,
   currentLevelIndex,
   className,
+  isGateCompleted,
 }: LootBoxDisplayProps) {
   const [showLevelPath, setShowLevelPath] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const activeLevel = levels[activeIndex];
   const currentLevel = levels[currentLevelIndex];
   const nextLevel = levels[currentLevelIndex + 1];
-  
+
   // Calculate progress within current level
   const lastLevelThreshold = levels[levels.length - 1]?.threshold || 500000;
   const effectiveProgress = currentProgress % lastLevelThreshold;
-  
+
   const progressPercent = nextLevel
     ? Math.min(
         Math.max(
@@ -64,77 +68,138 @@ export function LootBoxDisplay({
       )
     : effectiveProgress >= currentLevel.threshold ? 100 : 0;
 
+  // 1-second auto-scrolling carousel logic
+  useEffect(() => {
+    // If the active level's gate is completed but still locked, pause scrolling
+    const needsGateOpen = canOpenGate && !isGateCompleted;
+    if (needsGateOpen) {
+      setActiveIndex(currentLevelIndex);
+      return;
+    }
+
+    if (showLevelPath) return; // Pause scrolling on level path view
+
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % levels.length);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [levels.length, canOpenGate, isGateCompleted, currentLevelIndex, showLevelPath]);
+
   if (isGateOpen) return null;
 
+  // Calculate progress to display for the active carousel level
+  let displayPercent = 0;
+  if (activeIndex < currentLevelIndex) {
+    displayPercent = 100;
+  } else if (activeIndex === currentLevelIndex) {
+    displayPercent = Math.round(progressPercent);
+  } else {
+    displayPercent = 0;
+  }
+
+  const isCurrentActiveLevel = activeIndex === currentLevelIndex;
+  const isLootGateLocked = isCurrentActiveLevel && canOpenGate && !isGateCompleted;
+
   return (
-    <div className={cn("relative", className)}>
-      {/* Main 60x60 Card */}
+    <div className={cn("relative select-none", className)}>
+      {/* 60x60 Auto-Scrolling Card Carousel */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.8 }}
-        onClick={() => setShowLevelPath(!showLevelPath)}
+        onClick={() => {
+          if (isLootGateLocked) {
+            onOpenGate();
+          } else {
+            setShowLevelPath(!showLevelPath);
+          }
+        }}
         className={cn(
           "w-[60px] h-[60px] rounded-2xl border cursor-pointer active:scale-95 transition-all shadow-lg",
           "bg-gradient-to-br from-purple-900/90 to-indigo-900/90 backdrop-blur-xl",
           "border-purple-500/30 shadow-purple-500/20",
-          "flex flex-col items-center justify-between p-1.5 relative overflow-hidden isolate"
+          "flex flex-col items-center justify-between p-1.5 relative overflow-hidden isolate",
+          isLootGateLocked && "border-yellow-400 shadow-yellow-500/35 border-2 animate-pulse"
         )}
       >
-        {/* Full Card Background Image */}
-        {currentLevel?.image ? (
-          <>
-            <img 
-              src={currentLevel.image} 
-              alt="" 
-              className="absolute inset-0 w-full h-full object-cover z-0" 
-            />
-            <div className="absolute inset-0 bg-black/45 z-[1] pointer-events-none" />
-          </>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center opacity-20 z-0">
-            <span className="text-3xl leading-none">{levelIcons[currentLevel?.id] || ""}</span>
-          </div>
-        )}
-
-        {/* Content Wrapper */}
-        <div className="relative z-10 flex flex-col items-center justify-between w-full h-full">
-          {/* Level Name */}
-          <span className="text-[7px] font-bold text-white uppercase tracking-tighter leading-none mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-            {currentLevel?.name || "Home"}
-          </span>
-
-          {/* Progress Bar - Rounded Rectangle */}
-          <div className="w-full mt-auto space-y-0.5">
-            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPercent}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              />
-            </div>
-            <span className="text-[5px] font-bold text-purple-200 text-center block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-              {Math.round(progressPercent)}%
-            </span>
-          </div>
-        </div>
-
-        {/* Open Gate Icon Overlay */}
-        {canOpenGate && (
+        {/* Carousel Slide Animation */}
+        <AnimatePresence mode="wait">
           <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="absolute -top-1 -right-1"
+            key={activeIndex}
+            initial={{ opacity: 0, scale: 0.9, x: 20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.9, x: -20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full flex flex-col items-center justify-between p-1.5 z-0"
+          >
+            {/* Background Image / Icon */}
+            {activeLevel?.image ? (
+              <>
+                <img 
+                  src={activeLevel.image} 
+                  alt="" 
+                  className="absolute inset-0 w-full h-full object-cover z-0" 
+                />
+                <div className="absolute inset-0 bg-black/55 z-[1]" />
+              </>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center opacity-20 z-0">
+                <span className="text-3xl leading-none">{levelIcons[activeLevel?.id] || ""}</span>
+              </div>
+            )}
+
+            {/* Level Tag & Completion Indicators */}
+            <div className="relative z-10 flex items-center justify-between w-full">
+              <span className="text-[7px] font-black text-white uppercase tracking-tighter leading-none mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                {activeLevel?.name || "Home"}
+              </span>
+
+              {/* Status Icons */}
+              {activeIndex < currentLevelIndex ? (
+                <span className="text-[6px] text-green-400 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">✅</span>
+              ) : activeIndex > currentLevelIndex ? (
+                <Lock className="h-1.5 w-1.5 text-slate-500/90" />
+              ) : null}
+            </div>
+
+            {/* Progress indicator */}
+            <div className="relative z-10 w-full mt-auto space-y-0.5">
+              <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-400 to-indigo-400 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${displayPercent}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+              <span className="text-[5px] font-black text-purple-200 text-center block leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                {displayPercent}%
+              </span>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* GORGEOUS GLOWING CENTRAL GATE LOCK OVERLAY */}
+        {isLootGateLocked && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: [1, 1.12, 1] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 backdrop-blur-xs"
           >
             <div
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenGate();
               }}
-              className="w-5 h-5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-orange-500/40 cursor-pointer"
+              className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all",
+                "bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 text-black font-black",
+                "shadow-lg shadow-orange-500/50 hover:shadow-orange-500/80 active:scale-90 border-2 border-white/50"
+              )}
             >
-              <Unlock className="h-3 w-3 text-black" />
+              <Unlock className="h-4.5 w-4.5 animate-bounce" />
             </div>
           </motion.div>
         )}
@@ -149,7 +214,7 @@ export function LootBoxDisplay({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs"
               onClick={() => setShowLevelPath(false)}
             />
             
@@ -171,7 +236,7 @@ export function LootBoxDisplay({
                     Level {currentLevelIndex + 1} of {levels.length}
                   </p>
                 </div>
-                {canOpenGate && (
+                {canOpenGate && !isGateCompleted && (
                   <Button
                     onClick={onOpenGate}
                     size="sm"

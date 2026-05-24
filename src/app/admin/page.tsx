@@ -742,14 +742,14 @@ function AdminPageContent() {
 
   // LOOT MANAGEMENT STATE
   const [lootLevels, setLootLevels] = useState<any[]>([
-    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", videoUrl: "", voice: "Ghar khulne wala hai!" },
-    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", videoUrl: "", voice: "Bank taiyaar hai!" },
-    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", videoUrl: "", voice: "Car aa gayi!" },
-    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", videoUrl: "", voice: "Hotel khul gaya!" },
-    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", videoUrl: "", voice: "Bus aa rahi hai!" },
-    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", videoUrl: "", voice: "Train ready hai!" },
-    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", videoUrl: "", voice: "Jahaaz taiyaar hai!" },
-    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", videoUrl: "", voice: "Hawai jahaaz udne wala hai!" },
+    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", videoUrl: "", voice: "घर खुलने वाला है! लूटने के लिए तैयार हो जाओ!" },
+    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", videoUrl: "", voice: "बैंक तैयार है! बड़ी लूट के लिए तैयार हो जाओ!" },
+    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", videoUrl: "", voice: "कार आ गई है! लूट शुरू करो!" },
+    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", videoUrl: "", voice: "होटल खुल गया है! जल्दी लूटो!" },
+    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", videoUrl: "", voice: "बस आ रही है! लूटने के लिए तैयार रहो!" },
+    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", videoUrl: "", voice: "ट्रेन तैयार है! लूट का माल बटोर लो!" },
+    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", videoUrl: "", voice: "जहाज तैयार है! बड़ी लूट के लिए तैयार रहो!" },
+    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", videoUrl: "", voice: "हवाई जहाज उड़ने वाला है! अंतिम लूट का मज़ा लो!" },
   ]);
   const [selectedLevel, setSelectedLevel] = useState<string>("home");
   const [lootRewards, setLootRewards] = useState<any[]>([
@@ -3284,27 +3284,26 @@ function AdminPageContent() {
                                 <input 
                                   type="file" 
                                   accept="image/*" 
-                                  id={`loot-img-${level.id}`}
-                                  style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                                  ref={el => { lootImageInputRefs.current[level.id] = el; }}
+                                  className="hidden"
                                   onChange={e => {
                                     const file = e.target.files?.[0];
                                     if (file) handleUploadLootLevelImage(level.id, file);
                                   }}
                                 />
-                                <label 
-                                  htmlFor={`loot-img-${level.id}`}
-                                  className={cn(
-                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 text-sm font-medium transition-colors cursor-pointer select-none",
-                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-                                    uploadingLootImage === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
-                                  )}
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => lootImageInputRefs.current[level.id]?.click()}
+                                  disabled={uploadingLootImage === level.id}
+                                  className="h-10 rounded-xl flex-1 text-xs font-bold"
                                 >
                                   {uploadingLootImage === level.id ? (
                                     <Loader className="h-4 w-4 animate-spin" />
                                   ) : (
                                     "Upload Image"
                                   )}
-                                </label>
+                                </Button>
                                 {level.image && (
                                   <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
                                 )}
@@ -3316,27 +3315,26 @@ function AdminPageContent() {
                                 <input 
                                   type="file" 
                                   accept="video/*" 
-                                  id={`loot-vid-${level.id}`}
-                                  style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                                  ref={el => { lootVideoInputRefs.current[level.id] = el; }}
+                                  className="hidden"
                                   onChange={e => {
                                     const file = e.target.files?.[0];
                                     if (file) handleUploadLevelVideo(level.id, file);
                                   }}
                                 />
-                                <label 
-                                  htmlFor={`loot-vid-${level.id}`}
-                                  className={cn(
-                                    "h-10 rounded-xl flex-1 inline-flex items-center justify-center px-4 text-sm font-medium transition-colors cursor-pointer select-none",
-                                    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-                                    uploadingLevelVideo === level.id && "opacity-50 cursor-not-allowed pointer-events-none"
-                                  )}
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => lootVideoInputRefs.current[level.id]?.click()}
+                                  disabled={uploadingLevelVideo === level.id}
+                                  className="h-10 rounded-xl flex-1 text-xs font-bold"
                                 >
                                   {uploadingLevelVideo === level.id ? (
                                     <Loader className="h-4 w-4 animate-spin" />
                                   ) : (
                                     "Upload Video"
                                   )}
-                                </label>
+                                </Button>
                                 {level.videoUrl && (
                                   <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
                                 )}
@@ -7098,7 +7096,11 @@ function AdminPageContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Emoji Image (Static)</Label>
-                        <label className="aspect-square border-2 border-dashed border-emerald-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-emerald-100/30 cursor-pointer transition-all overflow-hidden relative block">
+                        <div 
+                          onClick={() => emojiImageInputRef.current?.click()}
+                          role="button"
+                          className="aspect-square border-2 border-dashed border-emerald-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-emerald-100/30 cursor-pointer transition-all overflow-hidden relative block"
+                        >
                           {emojiImagePreview ? (
                             <img src={emojiImagePreview} alt="Preview" className="h-full w-full object-contain p-4" />
                           ) : (
@@ -7109,8 +7111,8 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            id="emoji-image-input"
-                            style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                            ref={emojiImageInputRef}
+                            className="hidden"
                             accept="image/*" 
                             onChange={e => {
                               const f = e.target.files?.[0];
@@ -7120,12 +7122,16 @@ function AdminPageContent() {
                               }
                             }}
                           />
-                        </label>
+                        </div>
                       </div>
 
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Emoji Animation (Optional)</Label>
-                        <label className="aspect-square border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative block">
+                        <div 
+                          onClick={() => emojiAnimationInputRef.current?.click()}
+                          role="button"
+                          className="aspect-square border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative block"
+                        >
                           {emojiAnimationPreview ? (
                             <video src={emojiAnimationPreview} autoPlay muted loop className="h-full w-full object-contain" />
                           ) : (
@@ -7136,8 +7142,8 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            id="emoji-animation-input"
-                            style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
+                            ref={emojiAnimationInputRef}
+                            className="hidden"
                             accept="video/*,.gif" 
                             onChange={e => {
                               const f = e.target.files?.[0];
@@ -7147,7 +7153,7 @@ function AdminPageContent() {
                               }
                             }}
                           />
-                        </label>
+                        </div>
                       </div>
                     </div>
 

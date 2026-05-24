@@ -99,19 +99,50 @@ export function LootGate({
                   <AnimatePresence>
                     {gatePhase === "opening" && (
                       <motion.div
-                        className="flex gap-4"
+                        className="flex gap-1 relative items-center justify-center w-64 h-48"
                         initial={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
+                        {/* Golden chest vault doors */}
                         <motion.div
-                          animate={{ x: -150, opacity: 0 }}
-                          transition={{ duration: 1, ease: "easeInOut" }}
-                          className="w-24 h-32 bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-lg border-2 border-yellow-400"
+                          animate={{ x: [-6, 6, -6, 6, -3, 3, 0], y: [0, -3, 3, -3, 0] }}
+                          transition={{ duration: 0.8, ease: "easeInOut" }}
+                          className="flex w-full h-full relative"
+                        >
+                          <motion.div
+                            animate={{ x: -220, opacity: 0, rotateY: -95 }}
+                            transition={{ duration: 1.1, delay: 0.8, ease: "easeOut" }}
+                            className="w-1/2 h-full bg-gradient-to-r from-amber-700 via-yellow-800 to-amber-900 rounded-l-3xl border-y-4 border-l-4 border-yellow-400 flex items-center justify-end pr-3 relative shadow-[inset_-5px_0_15px_rgba(0,0,0,0.5)]"
+                          >
+                            {/* Gold Latch Left */}
+                            <div className="w-7 h-14 bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 border border-yellow-300 rounded-l-xl shadow-lg flex items-center justify-center">
+                              <div className="w-2.5 h-2.5 bg-black rounded-full border border-yellow-300" />
+                            </div>
+                          </motion.div>
+                          <motion.div
+                            animate={{ x: 220, opacity: 0, rotateY: 95 }}
+                            transition={{ duration: 1.1, delay: 0.8, ease: "easeOut" }}
+                            className="w-1/2 h-full bg-gradient-to-l from-amber-700 via-yellow-800 to-amber-900 rounded-r-3xl border-y-4 border-r-4 border-yellow-400 flex items-center justify-start pl-3 relative shadow-[inset_5px_0_15px_rgba(0,0,0,0.5)]"
+                          >
+                            {/* Gold Latch Right */}
+                            <div className="w-7 h-14 bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 border border-yellow-300 rounded-r-xl shadow-lg flex items-center justify-center">
+                              <div className="w-2.5 h-2.5 bg-black rounded-full border border-yellow-300" />
+                            </div>
+                          </motion.div>
+                        </motion.div>
+
+                        {/* Blinding golden light flash when doors unlock/split */}
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: [0, 2.5, 4], opacity: [0, 1, 1, 0] }}
+                          transition={{ duration: 1.3, delay: 0.7, ease: "easeOut" }}
+                          className="absolute inset-0 m-auto w-16 h-16 bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-500 rounded-full blur-xl z-20 pointer-events-none shadow-[0_0_100px_rgba(234,179,8,1)]"
                         />
                         <motion.div
-                          animate={{ x: 150, opacity: 0 }}
-                          transition={{ duration: 1, ease: "easeInOut" }}
-                          className="w-24 h-32 bg-gradient-to-b from-yellow-600 to-yellow-800 rounded-lg border-2 border-yellow-400"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: [0, 1.8, 3], opacity: [0, 0.9, 0] }}
+                          transition={{ duration: 1.1, delay: 0.8, ease: "easeOut" }}
+                          className="absolute inset-0 m-auto w-24 h-24 bg-white rounded-full blur-md z-30 pointer-events-none"
                         />
                       </motion.div>
                     )}

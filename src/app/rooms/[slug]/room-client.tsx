@@ -392,14 +392,14 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // LOOT SYSTEM DEFAULTS
   const DEFAULT_LOOT_LEVELS = [
-    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", voice: "Ghar khulne wala hai!" },
-    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", voice: "Bank taiyaar hai!" },
-    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", voice: "Car aa gayi!" },
-    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", voice: "Hotel khul gaya!" },
-    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", voice: "Bus aa rahi hai!" },
-    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", voice: "Train ready hai!" },
-    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", voice: "Jahaaz taiyaar hai!" },
-    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", voice: "Hawai jahaaz udne wala hai!" },
+    { id: "home", name: "Home", threshold: 1000, image: "", animation: "", voice: "घर खुलने वाला है! लूटने के लिए तैयार हो जाओ!" },
+    { id: "bank", name: "Bank", threshold: 5000, image: "", animation: "", voice: "बैंक तैयार है! बड़ी लूट के लिए तैयार हो जाओ!" },
+    { id: "car", name: "Car", threshold: 15000, image: "", animation: "", voice: "कार आ गई है! लूट शुरू करो!" },
+    { id: "hotel", name: "Hotel", threshold: 30000, image: "", animation: "", voice: "होटल खुल गया है! जल्दी लूटो!" },
+    { id: "bus", name: "Bus", threshold: 50000, image: "", animation: "", voice: "बस आ रही है! लूटने के लिए तैयार रहो!" },
+    { id: "train", name: "Train", threshold: 100000, image: "", animation: "", voice: "ट्रेन तैयार है! लूट का माल बटोर लो!" },
+    { id: "ship", name: "Ship", threshold: 250000, image: "", animation: "", voice: "जहाज तैयार है! बड़ी लूट के लिए तैयार रहो!" },
+    { id: "aeroplane", name: "Aeroplane", threshold: 500000, image: "", animation: "", voice: "हवाई जहाज उड़ने वाला है! अंतिम लूट का मज़ा लो!" },
   ];
 
   const DEFAULT_LOOT_REWARDS = [
@@ -423,6 +423,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [collectedLootItems, setCollectedLootItems] = useState<any[]>([]);
   const [lootTimeRemaining, setLootTimeRemaining] = useState(60);
   const [currentLootLevelIndex, setCurrentLootLevelIndex] = useState(0);
+  const [completedGateLevels, setCompletedGateLevels] = useState<Record<number, boolean>>({});
+  const lootInitializedRef = useRef(false);
   const [isRoomTasksOpen, setIsRoomTasksOpen] = useState(false);
   const [isYouTubeOpen, setIsYouTubeOpen] = useState(false);
   const [isYouTubeHidden, setIsYouTubeHidden] = useState(false);
@@ -1175,7 +1177,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setCollectedLootItems([]);
           // Announce end in Hindi
           if ((window as any).__announceLoot) {
-            (window as any).__announceLoot("Loot samapt! Agli baar phir aana!");
+            (window as any).__announceLoot("लूट समाप्त! अगली बार फिर आना!");
           }
           return 0;
         }
@@ -1186,7 +1188,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => clearInterval(timer);
   }, [isLootingActive, lootTimeRemaining]);
 
-  // LOOT LEVEL PROGRESSION
+  // LOOT LEVEL PROGRESSION WITH LOCKING
   useEffect(() => {
     if (lootLevels.length === 0) return;
 
@@ -1196,12 +1198,42 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     // Calculate effective progress with looping
     const effectiveProgress = totalGifts % lastLevelThreshold;
     
+    // 1. Initial mount check: Pre-complete past levels below the current one
+    if (!lootInitializedRef.current && totalGifts > 0) {
+      let highestCompletedIdx = -1;
+      for (let i = 0; i < lootLevels.length; i++) {
+        if (effectiveProgress >= lootLevels[i].threshold) {
+          highestCompletedIdx = i;
+        }
+      }
+      if (highestCompletedIdx >= 0) {
+        const initialCompleted: Record<number, boolean> = {};
+        for (let i = 0; i < highestCompletedIdx; i++) {
+          initialCompleted[i] = true;
+        }
+        setCompletedGateLevels(initialCompleted);
+      }
+      lootInitializedRef.current = true;
+    }
+
+    // 2. Progression lock logic
     let newIndex = 0;
-    for (let i = lootLevels.length - 1; i >= 0; i--) {
+    for (let i = 0; i < lootLevels.length; i++) {
       if (effectiveProgress >= lootLevels[i].threshold) {
+        if (completedGateLevels[i]) {
+          newIndex = i + 1;
+        } else {
+          newIndex = i;
+          break;
+        }
+      } else {
         newIndex = i;
         break;
       }
+    }
+
+    if (newIndex >= lootLevels.length) {
+      newIndex = lootLevels.length - 1;
     }
 
     if (newIndex !== currentLootLevelIndex) {
@@ -1214,7 +1246,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         }
       }
     }
-  }, [room.stats?.dailyGifts, lootLevels, currentLootLevelIndex]);
+  }, [room.stats?.dailyGifts, lootLevels, currentLootLevelIndex, completedGateLevels]);
 
   const { userProfile } = useUserProfile(currentUser?.uid);
 
@@ -4234,6 +4266,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
             canOpenGate={(room.stats?.dailyGifts || 0) >= (lootLevels[currentLootLevelIndex]?.threshold || 0)}
             onOpenGate={() => setIsLootGateOpen(true)}
             currentLevelIndex={currentLootLevelIndex}
+            isGateCompleted={!!completedGateLevels[currentLootLevelIndex]}
           />
         </div>
       )}
@@ -4269,7 +4302,15 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setCollectedLootItems(prev => [...prev, item]);
           // Announce in Hindi
           if ((window as any).__announceLoot) {
-            (window as any).__announceLoot(`${item.reward.name} mila!`);
+            const rewardNameMap: Record<string, string> = {
+              "Coins": "कॉइन",
+              "Frame": "फ़्रेम",
+              "Badge": "बैज",
+              "Special Item": "विशेष आइटम",
+              "Room Theme": "थीम",
+            };
+            const nameInHindi = rewardNameMap[item.reward.name] || item.reward.name;
+            (window as any).__announceLoot(`${nameInHindi} मिला!`);
           }
         }}
         onClose={() => {
@@ -4277,6 +4318,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           setHasEnteredLoot(false);
           setLootGateEntries([]);
           setCollectedLootItems([]);
+          // Lock current level as gate opened, unlocking the next level's progression
+          setCompletedGateLevels(prev => ({ ...prev, [currentLootLevelIndex]: true }));
         }}
         collectedItems={collectedLootItems}
       />
