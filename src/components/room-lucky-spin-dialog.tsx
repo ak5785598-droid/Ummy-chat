@@ -83,12 +83,12 @@ export function RoomLuckySpinDialog({ open, onOpenChange }: LuckySpinDialogProps
       return;
     }
 
-    // 2. Determine Result (Random for now)
-    const resultIndex = Math.floor(Math.random() * REWARDS.length);
+    // 2. Determine Result
+    const resultIndex = crypto.getRandomValues(new Uint32Array(1))[0] % REWARDS.length;
     const win = REWARDS[resultIndex];
 
     // 3. Animate
-    const rounds = 5 + Math.floor(Math.random() * 5);
+    const rounds = 5 + (crypto.getRandomValues(new Uint32Array(1))[0] % 5);
     const segmentAngle = 360 / REWARDS.length;
     // We calculate the new target relative to the current rotation to ensure it always spins forward
     const newTargetAngle = currentRotation.current + (rounds * 360) + (resultIndex * segmentAngle);

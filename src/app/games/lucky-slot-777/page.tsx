@@ -105,7 +105,7 @@ export default function LuckySlot777Page() {
   let iterations = 0;
   const interval = setInterval(() => {
    setReels(Array(5).fill(null).map(() => 
-    Array(3).fill(null).map(() => Math.floor(Math.random() * SYMBOLS.length))
+    Array(3).fill(null).map(() => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % SYMBOLS.length; })
    ));
    iterations++;
    if (iterations >= 20) {
@@ -117,7 +117,7 @@ export default function LuckySlot777Page() {
 
  const finalizeSpin = () => {
   const finalReels = Array(5).fill(null).map(() => 
-   Array(3).fill(null).map(() => Math.floor(Math.random() * SYMBOLS.length))
+   Array(3).fill(null).map(() => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % SYMBOLS.length; })
   );
   setReels(finalReels);
 

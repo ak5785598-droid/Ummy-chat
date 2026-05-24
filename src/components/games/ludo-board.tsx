@@ -178,7 +178,7 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
   };
 
   return (
-    <div className="relative w-full max-w-[480px] aspect-square p-2 bg-[#8b4513] rounded-3xl border-[8px] border-[#5d2e0c] shadow-[0_4 link:40px_80px_-15px_rgba(0,0,0,0.7)] scale-[0.98]">
+    <div className="relative w-full max-w-[480px] aspect-square p-2 bg-[#8b4513] rounded-3xl border-[8px] border-[#5d2e0c] shadow-[0_30px_70px_rgba(0,0,0,0.75)] scale-[0.98] ludo-3d-board">
       {/* Premium Wood Grain Overlay */}
       <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/wood-pattern.png")' }} />
       {/* Internal Gloss Bevel */}
@@ -292,11 +292,11 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
                   {/* Gloss Top Layer */}
                   <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent rounded-t-full pointer-events-none" />
                   
-                  {/* USER LOGO (Mouse-Cat / Ummy Logo) */}
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full overflow-hidden">
+                  {/* Premium Brand Emblem Overlay */}
+                  <div className="absolute inset-[20%] flex items-center justify-center rounded-full bg-white/10 backdrop-blur-[1px] border border-white/25 overflow-hidden shadow-inner">
                     <img 
                       src="/images/ummy-logo.png" 
-                      className="w-full h-full object-cover scale-[1.75] drop-shadow-md"
+                      className="w-full h-full object-contain scale-[1.35] opacity-90 brightness-110 drop-shadow-md"
                       alt="Piece Icon"
                     />
                   </div>
@@ -310,6 +310,14 @@ export function LudoBoard({ pieces, onPieceClick, users, currentPlayerTurn }: Lu
       </div>
 
       <style jsx global>{`
+        .ludo-3d-board {
+          transform: rotateX(8deg);
+          transform-style: preserve-3d;
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .ludo-3d-board:hover {
+          transform: rotateX(11deg) rotateY(1deg) rotateZ(0.5deg);
+        }
         @keyframes reaction-float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-3px); }

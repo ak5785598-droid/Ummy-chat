@@ -49,7 +49,7 @@ export function RoomGoldenChestDialog({ open, onOpenChange }: GoldenChestDialogP
     
     // 2. Wait for shake animation
     setTimeout(async () => {
-      const selectedReward = LOOT_POOL[Math.floor(Math.random() * LOOT_POOL.length)];
+      const selectedReward = LOOT_POOL[crypto.getRandomValues(new Uint32Array(1))[0] % LOOT_POOL.length];
       setReward(selectedReward);
       setChestState('open');
 

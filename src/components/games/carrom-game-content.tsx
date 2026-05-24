@@ -245,7 +245,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
       {/* The Board */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="relative w-full max-w-[400px] aspect-square rounded-[2rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] border-[14px] border-[#3D2616] p-4 bg-[#F5D4B2]">
+        <div className="relative w-full max-w-[400px] aspect-square rounded-[2rem] overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] border-[14px] border-[#3D2616] p-4 bg-[#F5D4B2] carrom-3d-board">
            <img 
              src="/images/games/carrom/board_texture.png" 
              className="absolute inset-0 w-full h-full object-cover opacity-90"
@@ -253,22 +253,75 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
            />
 
            <div className="relative w-full h-full z-10 pointer-events-none">
+              {/* Aim Line SVG Overlay */}
+              {gameState.turn === currentUser?.uid && gameState.status === 'playing' && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
+                  <defs>
+                    <linearGradient id="aimGlow" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
+                      <stop offset="100%" stopColor="#0369a1" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  {(() => {
+                    const strikerX = gameState.strikerPos ?? 50;
+                    const strikerY = 85;
+                    const rad = (angle - 90) * Math.PI / 180;
+                    const lineLength = power * 0.4;
+                    const endX = strikerX + Math.cos(rad) * lineLength;
+                    const endY = strikerY + Math.sin(rad) * lineLength;
+                    return (
+                      <line 
+                        x1={`${strikerX}%`} 
+                        y1={`${strikerY}%`} 
+                        x2={`${endX}%`} 
+                        y2={`${endY}%`} 
+                        stroke="url(#aimGlow)" 
+                        strokeWidth="3.2" 
+                        strokeDasharray="5,5" 
+                        className="animate-pulse"
+                      />
+                    );
+                  })()}
+                </svg>
+              )}
+
               {gameState.pieces.map(piece => {
                 if (piece.isPocketed) return null;
+                const isStriker = piece.id === 'striker';
+                const xPos = isStriker ? (gameState.strikerPos ?? piece.position.x) : piece.position.x;
+                const yPos = piece.position.y;
+                
                 return (
                   <div 
                     key={piece.id}
                     className={cn(
-                      "absolute h-6 w-6 rounded-full border border-black/20 shadow-lg flex items-center justify-center",
-                      piece.type === 'white' ? 'bg-[#E0C097]' : piece.type === 'black' ? 'bg-[#212121]' : 'bg-[#D32F2F]'
+                      "absolute rounded-full border border-black/30 shadow-[0_6px_12px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all duration-300 relative overflow-hidden group",
+                      isStriker ? "h-8 w-8 bg-gradient-to-br from-yellow-300 via-amber-500 to-amber-700 border-2 border-white ring-2 ring-yellow-400/30 z-30" :
+                      piece.type === 'queen' ? "h-6 w-6 bg-gradient-to-br from-rose-500 via-red-600 to-red-800 border-2 border-yellow-400 ring-1 ring-red-400/20 z-20" :
+                      piece.type === 'white' ? "h-6 w-6 bg-gradient-to-br from-slate-100 via-stone-200 to-stone-300" :
+                      "h-6 w-6 bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950"
                     )}
                     style={{ 
-                      left: `${piece.position.x}%`, 
-                      top: `${piece.position.y}%`,
+                      left: `${xPos}%`, 
+                      top: `${yPos}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
                   >
-                    <div className="h-4 w-4 rounded-full border border-black/10 opacity-50" />
+                    {/* Inner 3D Rim Ring */}
+                    <div className="absolute inset-[15%] rounded-full border border-black/10 opacity-60" />
+                    
+                    {/* Golden Center Pin for Striker and Queen */}
+                    {(isStriker || piece.type === 'queen') && (
+                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-400 shadow-md border border-amber-600 animate-pulse" />
+                    )}
+                    
+                    {/* Wooden coin lines for black & white pieces */}
+                    {!isStriker && piece.type !== 'queen' && (
+                      <div className="h-1.5 w-1.5 rounded-full bg-transparent border-2 border-black/10" />
+                    )}
+
+                    {/* Gloss Layer */}
+                    <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent rounded-t-full pointer-events-none" />
                   </div>
                 );
               })}
@@ -290,6 +343,24 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
         </div>
 
         <div className="space-y-3">
+           {/* Striker Position Slider (Only for Active Player on their Turn) */}
+           {gameState.turn === currentUser?.uid && gameState.status === 'playing' && (
+             <div className="animate-in slide-in-from-bottom-2 duration-300">
+               <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic mb-1">
+                 <span className="text-emerald-400">Position Striker</span>
+                 <span className="text-emerald-400">{Math.round(gameState.strikerPos ?? 50)}%</span>
+               </div>
+               <input
+                 type="range"
+                 min="22"
+                 max="78"
+                 value={gameState.strikerPos ?? 50}
+                 onChange={(e) => updateStriker(Number(e.target.value))}
+                 className="w-full h-2 bg-white/5 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:shadow-lg"
+               />
+             </div>
+           )}
+
            {/* Angle Control */}
            <div>
              <div className="flex justify-between text-[8px] font-black uppercase text-white/40 italic mb-1">
@@ -329,6 +400,17 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
           <span className="text-xl font-black text-white italic uppercase tracking-tighter">STRIKE</span>
         </button>
       </div>
+
+      <style jsx global>{`
+        .carrom-3d-board {
+          transform: rotateX(8deg);
+          transform-style: preserve-3d;
+          transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .carrom-3d-board:hover {
+          transform: rotateX(11deg) rotateY(1deg);
+        }
+      `}</style>
     </motion.div>
   );
 }

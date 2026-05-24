@@ -60,7 +60,7 @@ export default function FruitSlotsPage() {
  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
  const [history, setHistory] = useState<string[]>(['pear', 'pear', 'mango', 'cherry', 'mango', 'apple', 'pear', 'pear', 'pear', 'pear', 'orange', 'grapes']);
  const [isMuted, setIsMuted] = useState(false);
- const [todayProfits, setTodayProfits] = useState(3525500000);
+  const [todayProfits, setTodayProfits] = useState(0);
  const [isLaunching, setIsLaunching] = useState(true);
  const [winners, setWinners] = useState<any[]>([]);
 
@@ -84,7 +84,7 @@ export default function FruitSlotsPage() {
 
  const startSpin = () => {
   setGameState('spinning');
-  const targetIdx = Math.floor(Math.random() * chaseSequence.length);
+   const targetIdx = crypto.getRandomValues(new Uint32Array(1))[0] % chaseSequence.length;
   
   let currentStep = 0;
   const totalSteps = 24 + targetIdx;

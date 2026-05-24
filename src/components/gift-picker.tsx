@@ -286,13 +286,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    let winAmount = 0;
    let selectedMult = 1;
 
-   if (selectedGift.isLucky) {
-      const rand = Math.random();
-      if (rand < 0.7) selectedMult = 1;
-      else if (rand < 0.85) selectedMult = 2;
-      else if (rand < 0.93) selectedMult = 5;
-      else if (rand < 0.97) selectedMult = 10;
-      else selectedMult = MULTIPLIERS[Math.floor(Math.random() * MULTIPLIERS.length)];
+    if (selectedGift.isLucky) {
+       const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
+       if (rand < 0.7) selectedMult = 1;
+       else if (rand < 0.85) selectedMult = 2;
+       else if (rand < 0.93) selectedMult = 5;
+       else if (rand < 0.97) selectedMult = 10;
+       else selectedMult = MULTIPLIERS[crypto.getRandomValues(new Uint32Array(1))[0] % MULTIPLIERS.length];
       
       if (selectedMult > 1) {
          winAmount = (selectedGift.price * qty) * selectedMult;

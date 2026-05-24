@@ -247,6 +247,7 @@ export type LudoGameState = {
   diceRolled: boolean;
   status: 'lobby' | 'playing' | 'ended';
   winner?: string;
+  turnStartTime?: any;
   updatedAt: any;
 };
 

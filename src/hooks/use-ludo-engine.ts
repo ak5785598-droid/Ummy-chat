@@ -73,32 +73,35 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     console.log("Ludo: Attempting to join existing lobby", { status: gameState.status, playerCount: gameState.players.length });
     
     if (gameState.status !== 'lobby') return;
-    const inLobby = gameState.players.some(p => p.uid === userId);
+    const inLobby = gameState.players.some((p: any) => p.uid === userId);
     if (inLobby) {
       console.log("Ludo: User already in lobby");
       return;
     }
     if (gameState.players.length >= 4) return;
 
-    // FREE ENTRY OVERRIDE
-    const entryFee = 0; 
-    const userCoins = 999999; // Mock balance for free entry
-    
-    if (userCoins < entryFee) {
-      console.log("Ludo: Insufficient coins", { userCoins, entryFee });
-      alert("Insufficient coins to join this match!");
-      return;
-    }
-
     const assignedColor = ['red', 'green', 'yellow', 'blue'][gameState.players.length] as any;
     
     try {
-      console.log("Ludo: Starting join transaction (FREE)...");
+      console.log("Ludo: Starting join transaction...");
       await runTransaction(firestore!, async (transaction) => {
          const userRef = doc(firestore!, 'users', userId);
          const profileRef = doc(firestore!, 'users', userId, 'profile', userId);
 
-         // Coin deduction skipped for Free Mode
+         const gameSnap = await transaction.get(gameDocRef!);
+         if (!gameSnap.exists()) throw new Error("Game no longer exists");
+
+         const entryFee = gameSnap.data().entryFee || 0;
+
+         if (entryFee > 0) {
+           const userSnap = await transaction.get(userRef);
+           const userCoins = userSnap.data()?.wallet?.coins || 0;
+           if (userCoins < entryFee) {
+             throw new Error("Insufficient coins");
+           }
+           transaction.update(userRef, { 'wallet.coins': increment(-entryFee) });
+           transaction.update(profileRef, { 'wallet.coins': increment(-entryFee) });
+         }
 
          transaction.update(gameDocRef, {
            players: arrayUnion({
@@ -195,7 +198,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
   const leaveGame = useCallback(async (targetUserId: string) => {
     if (!gameDocRef || !gameState) return;
     try {
-      const updatedPlayers = gameState.players.filter(p => p.uid !== targetUserId);
+      const updatedPlayers = gameState.players.filter((p: any) => p.uid !== targetUserId);
       
       if (updatedPlayers.length === 0) {
         await resetGame();
@@ -376,6 +379,7 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
     startMatch,
     resetGame,
     leaveGame,
+    rollDice,
     movePiece,
     endMatch,
     skipTurn

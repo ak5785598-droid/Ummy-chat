@@ -90,11 +90,11 @@ export default function PyramidBattlePage() {
   osc.stop(ctx.currentTime + 0.1);
  }, [isMuted, initAudioContext]);
 
- useEffect(() => {
-  const timer = setTimeout(() => setIsLaunching(false), 2000);
-  setHistory(Array.from({ length: 24 }).map(() => Math.random() > 0.5 ? 'RED' : 'BLUE'));
-  return () => clearTimeout(timer);
- }, []);
+  useEffect(() => {
+   const timer = setTimeout(() => setIsLaunching(false), 2000);
+   setHistory(Array.from({ length: 24 }).map(() => crypto.getRandomValues(new Uint8Array(1))[0] > 127 ? 'RED' : 'BLUE'));
+   return () => clearTimeout(timer);
+  }, []);
 
  useEffect(() => {
   if (isLaunching) return;
@@ -110,7 +110,7 @@ export default function PyramidBattlePage() {
  const transitionToCalculation = () => {
   setGameState('calculating');
   setTimeout(() => {
-   const winId = Math.random() > 0.5 ? 'RED' : 'BLUE';
+    const winId = crypto.getRandomValues(new Uint8Array(1))[0] > 127 ? 'RED' : 'BLUE';
    showResult(winId);
   }, 3000);
  };

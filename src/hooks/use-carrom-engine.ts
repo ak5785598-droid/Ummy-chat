@@ -206,9 +206,17 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
     if (!firestore) return;
 
-    // Apply impulse to striker
-    const pieces = [...gameState.pieces];
-    const striker = pieces.find(p => p.id === 'striker');
+    // Apply impulse to striker (set starting X to the synchronized strikerPos)
+    const pieces = gameState.pieces.map((p: any) => {
+      if (p.id === 'striker') {
+        return {
+          ...p,
+          position: { x: gameState.strikerPos ?? 50, y: p.position.y }
+        };
+      }
+      return p;
+    });
+    const striker = pieces.find((p: any) => p.id === 'striker');
     if (!striker) return;
 
     // Convert angle/power to velocity
@@ -230,8 +238,8 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     let scoreGained = 0;
     let pocketedThisTurn = false;
     
-    currentPieces.forEach((p) => {
-      const oldPiece = pieces.find(oldP => oldP.id === p.id);
+    currentPieces.forEach((p: any) => {
+      const oldPiece = pieces.find((oldP: any) => oldP.id === p.id);
       if (p.isPocketed && oldPiece && !oldPiece.isPocketed) {
         if (p.id === 'striker') {
           scoreGained -= 10;
@@ -245,7 +253,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     });
 
     // Reset striker for next turn
-    const finalPieces = currentPieces.map(p => {
+    const finalPieces = currentPieces.map((p: any) => {
       if (p.id === 'striker') {
         return { ...p, position: { x: 50, y: 85 }, velocity: { x: 0, y: 0 }, isPocketed: false };
       }
@@ -261,7 +269,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     };
 
     // Check if game ended
-    const piecesRemaining = finalPieces.some(p => p.id !== 'striker' && !p.isPocketed);
+    const piecesRemaining = finalPieces.some((p: any) => p.id !== 'striker' && !p.isPocketed);
     const nextTurn = pocketedThisTurn ? userId : gameState.players[(currentPlayerIndex + 1) % gameState.players.length].uid;
 
     // Atomic write via transaction
@@ -275,6 +283,7 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
           pieces: finalPieces,
           players: updatedPlayers,
           turn: nextTurn,
+          strikerPos: 50,
           updatedAt: serverTimestamp()
         });
       });
