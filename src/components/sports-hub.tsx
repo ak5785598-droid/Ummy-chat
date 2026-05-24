@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader, ShieldAlert, Football, Trophy, ChevronLeft } from 'lucide-react';
+import { X, Loader, ShieldAlert, Trophy, ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface IframeMatch {
@@ -61,6 +61,7 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [activeServerIdx, setActiveServerIdx] = useState<number>(0);
   const [adBlocked, setAdBlocked] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -89,6 +90,7 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
     if (open) {
       setSelectedCategory(null);
       setSelectedMatch(null);
+      setActiveServerIdx(0);
       setAdBlocked(0);
       fetchData();
     }
@@ -131,7 +133,7 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
       window.open = originalOpen;
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [selectedMatch]);
+  }, [selectedMatch, activeServerIdx]);
 
   // Monitor iframe for redirects
   useEffect(() => {
@@ -158,11 +160,12 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
     }, 4000);
 
     return () => clearInterval(checkInterval);
-  }, [selectedMatch]);
+  }, [selectedMatch, activeServerIdx]);
 
   const handlePlayMatch = (match: Match) => {
     const streamUrl = match.iframes[0]?.url;
     if (streamUrl) {
+      setActiveServerIdx(0);
       originalUrlRef.current = streamUrl;
       popupBlockedRef.current = false;
       setSelectedMatch(match);
@@ -171,6 +174,7 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
 
   const handleClosePlayer = () => {
     setSelectedMatch(null);
+    setActiveServerIdx(0);
     setAdBlocked(0);
   };
 
@@ -208,6 +212,33 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
                     <p className="text-[10px] text-white/40 truncate">{selectedMatch.league}</p>
                   </div>
                 </div>
+
+                {/* Server Selection Segment Selector (Only visible if > 1 iframes available) */}
+                {selectedMatch.iframes.length > 1 && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border-b border-white/10 overflow-x-auto no-scrollbar shrink-0">
+                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest shrink-0">Servers:</span>
+                    <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                      {selectedMatch.iframes.map((iframe, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setActiveServerIdx(idx);
+                            originalUrlRef.current = iframe.url;
+                          }}
+                          className={cn(
+                            "px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all border shrink-0",
+                            activeServerIdx === idx 
+                              ? "bg-green-500 border-green-500 text-black shadow-lg" 
+                              : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 active:scale-95"
+                          )}
+                        >
+                          {iframe.server || `Server ${idx + 1}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex-1 relative bg-black">
                   {adBlocked > 0 && (
                     <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm text-xs text-amber-400 px-2.5 py-1 rounded-full">
@@ -217,8 +248,8 @@ export function SportsHub({ open, onOpenChange }: SportsHubProps) {
                   )}
                   <iframe
                     ref={iframeRef}
-                    key={selectedMatch.slug}
-                    src={selectedMatch.iframes[0]?.url || ''}
+                    key={`${selectedMatch.slug}-${activeServerIdx}`}
+                    src={selectedMatch.iframes[activeServerIdx]?.url || ''}
                     className="w-full h-full border-0"
                     allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   />
