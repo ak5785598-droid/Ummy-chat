@@ -1552,13 +1552,13 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const updateHeartbeat = () => {
       const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-      updateDocumentNonBlocking(pRef, {
+      setDocumentNonBlocking(pRef, {
         lastSeen: serverTimestamp(),
         name: userProfile?.username || currentUser.displayName || 'Member',
         avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
         accountNumber: userProfile?.accountNumber || '',
         gender: userProfile?.gender || 'male',
-      });
+      }, { merge: true });
     };
 
     // Update immediately on mount
@@ -2732,7 +2732,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const handleSilence = (uid: string, current: boolean) => {
     if (!firestore || !room.id) return;
     if (!canManageRoom && !isAppCreator) return;
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current });
+    setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { isSilenced: !current, isMuted: !current }, { merge: true });
 
     // If muting this user, also stop their music
     if (!current && uid === currentUser?.uid && musicAudioRef.current) {
@@ -2814,7 +2814,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       return;
     }
 
-    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true });
+    setDocumentNonBlocking(doc(firestore, 'chatRooms', room.id, 'participants', uid), { seatIndex: 0, isMuted: true }, { merge: true });
     setIsSeatMenuOpen(false);
     setIsUserProfileCardOpen(false);
     if (!isSelf) {

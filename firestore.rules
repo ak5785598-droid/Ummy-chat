@@ -119,7 +119,12 @@ service cloud.firestore {
       // ============================================
       match /participants/{participantId} {
         allow read: if true;
-        allow write: if isOwner(participantId);
+        // Owner writes own participant doc; admin/moderator can manage others
+        allow write: if isOwner(participantId) || isAdmin() ||
+          (isSignedIn() && isNotBanned() && (
+            get(/databases/$(database)/documents/chatRooms/$(roomId)).data.ownerId == request.auth.uid ||
+            request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.moderatorIds
+          ));
       }
 
       match /topSupporters/{supporterId} {
@@ -150,6 +155,16 @@ service cloud.firestore {
       match /features/{featureId} {
         allow read: if true;
         allow write: if isSignedIn() && isNotBanned();
+      }
+
+      // Bans — owner, admin, or moderator can manage
+      match /bans/{bannedId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && isNotBanned() && (
+          get(/databases/$(database)/documents/chatRooms/$(roomId)).data.ownerId == request.auth.uid ||
+          isAdmin() ||
+          request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.moderatorIds
+        );
       }
 
       match /{allSub=**} {
