@@ -120,7 +120,7 @@ export function LootingRoom({
       className="fixed inset-0 z-[90] bg-gradient-to-br from-indigo-950/95 via-purple-950/95 to-slate-950/95 backdrop-blur-sm"
     >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-gradient-to-b from-black/60 to-transparent">
+      <div className="absolute top-0 left-0 right-0 z-50 p-4 bg-gradient-to-b from-black/60 to-transparent">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="bg-black/40 backdrop-blur-sm rounded-2xl px-4 py-2 flex items-center gap-2">
@@ -137,15 +137,15 @@ export function LootingRoom({
             onClick={onClose}
             size="icon"
             variant="ghost"
-            className="bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full"
+            className="bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white rounded-full transition-colors"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      {/* Loot Items */}
-      <div className="absolute inset-0 overflow-hidden">
+      {/* Loot Items Layer */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <AnimatePresence>
           {lootItems.map((item) => {
             const colors = rarityColors[item.reward.rarity];
@@ -164,7 +164,7 @@ export function LootingRoom({
                   left: `${item.x}%`,
                   top: `${item.y}%`,
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer pointer-events-auto"
                 onClick={() => handleCollect(item)}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}

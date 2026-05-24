@@ -81,7 +81,7 @@ export function LootBoxDisplay({
 
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % levels.length);
-    }, 1000);
+    }, 4000);
 
     return () => clearInterval(timer);
   }, [levels.length, canOpenGate, isGateCompleted, currentLevelIndex, showLevelPath]);

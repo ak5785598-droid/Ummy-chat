@@ -761,7 +761,7 @@ function AdminPageContent() {
   ]);
   const [lootConfig, setLootConfig] = useState({
     entryLimit: 20,
-    duration: 60,
+    duration: 30,
     gatePriority: "top_sender",
   });
   const [isSavingLoot, setIsSavingLoot] = useState(false);

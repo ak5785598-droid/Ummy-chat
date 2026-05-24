@@ -411,7 +411,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     { id: "theme-epic", name: "Room Theme", type: "theme", rarity: "epic", value: 1, icon: "" },
   ];
 
-  const DEFAULT_LOOT_CONFIG = { entryLimit: 20, duration: 60, gatePriority: "top_sender" };
+  const DEFAULT_LOOT_CONFIG = { entryLimit: 20, duration: 30, gatePriority: "top_sender" };
 
   // LOOT SYSTEM STATE (with defaults)
   const [lootLevels, setLootLevels] = useState<any[]>(DEFAULT_LOOT_LEVELS);
