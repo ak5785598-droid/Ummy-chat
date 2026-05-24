@@ -3281,29 +3281,30 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Image</Label>
                               <div className="flex gap-2">
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  ref={el => { lootImageInputRefs.current[level.id] = el; }}
-                                  className="hidden"
-                                  onChange={e => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleUploadLootLevelImage(level.id, file);
-                                  }}
-                                />
-                                <Button 
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => lootImageInputRefs.current[level.id]?.click()}
-                                  disabled={uploadingLootImage === level.id}
-                                  className="h-10 rounded-xl flex-1 text-xs font-bold"
-                                >
-                                  {uploadingLootImage === level.id ? (
-                                    <Loader className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Upload Image"
-                                  )}
-                                </Button>
+                                <div className="relative flex-1 h-10">
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                    onChange={e => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleUploadLootLevelImage(level.id, file);
+                                    }}
+                                    disabled={uploadingLootImage === level.id}
+                                  />
+                                  <Button 
+                                    type="button"
+                                    variant="outline"
+                                    disabled={uploadingLootImage === level.id}
+                                    className="h-10 rounded-xl w-full text-xs font-bold pointer-events-none flex items-center justify-center"
+                                  >
+                                    {uploadingLootImage === level.id ? (
+                                      <Loader className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      "Upload Image"
+                                    )}
+                                  </Button>
+                                </div>
                                 {level.image && (
                                   <img src={level.image} className="h-10 w-10 rounded-lg object-cover" alt={level.name} />
                                 )}
@@ -3312,29 +3313,30 @@ function AdminPageContent() {
                             <div className="space-y-2">
                               <Label className="text-[10px] font-bold uppercase text-indigo-400">Level Video</Label>
                               <div className="flex gap-2">
-                                <input 
-                                  type="file" 
-                                  accept="video/*" 
-                                  ref={el => { lootVideoInputRefs.current[level.id] = el; }}
-                                  className="hidden"
-                                  onChange={e => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleUploadLevelVideo(level.id, file);
-                                  }}
-                                />
-                                <Button 
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => lootVideoInputRefs.current[level.id]?.click()}
-                                  disabled={uploadingLevelVideo === level.id}
-                                  className="h-10 rounded-xl flex-1 text-xs font-bold"
-                                >
-                                  {uploadingLevelVideo === level.id ? (
-                                    <Loader className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    "Upload Video"
-                                  )}
-                                </Button>
+                                <div className="relative flex-1 h-10">
+                                  <input 
+                                    type="file" 
+                                    accept="video/*" 
+                                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                    onChange={e => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleUploadLevelVideo(level.id, file);
+                                    }}
+                                    disabled={uploadingLevelVideo === level.id}
+                                  />
+                                  <Button 
+                                    type="button"
+                                    variant="outline"
+                                    disabled={uploadingLevelVideo === level.id}
+                                    className="h-10 rounded-xl w-full text-xs font-bold pointer-events-none flex items-center justify-center"
+                                  >
+                                    {uploadingLevelVideo === level.id ? (
+                                      <Loader className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      "Upload Video"
+                                    )}
+                                  </Button>
+                                </div>
                                 {level.videoUrl && (
                                   <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover" muted loop autoPlay />
                                 )}
@@ -3506,7 +3508,6 @@ function AdminPageContent() {
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-orange-500">1. Display Icon (Image)</Label>
                         <div 
-                          onClick={() => giftFileInputRef.current?.click()}
                           className="aspect-video border-2 border-dashed border-orange-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-orange-100/30 cursor-pointer transition-all overflow-hidden relative group"
                         >
                           {thumbnailPreview ? (
@@ -3519,8 +3520,7 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            ref={giftFileInputRef} 
-                            className="hidden" 
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" 
                             accept="image/*" 
                             onChange={e => {
                               const f = e.target.files?.[0];
@@ -3537,7 +3537,6 @@ function AdminPageContent() {
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-500">2. Animation Video (MP4)</Label>
                         <div 
-                          onClick={() => videoFileInputRef.current?.click()}
                           className="aspect-video border-2 border-dashed border-indigo-200 rounded-3xl flex flex-col items-center justify-center gap-3 bg-white hover:bg-indigo-50/50 cursor-pointer transition-all overflow-hidden relative"
                         >
                           {videoPreview ? (
@@ -3550,8 +3549,7 @@ function AdminPageContent() {
                           )}
                           <input 
                             type="file" 
-                            ref={videoFileInputRef} 
-                            className="hidden" 
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" 
                             accept="video/*" 
                             onChange={e => {
                               const f = e.target.files?.[0];
@@ -3745,37 +3743,39 @@ function AdminPageContent() {
                          </div>
 
                          <div className="flex-1 space-y-4">
-                            <p className="text-xs font-medium text-slate-500 leading-relaxed uppercase">
-                               Upload your UPI QR code image (PhonePe/GPay/Paytm Business QR). This will be displayed to users in Manual Recharge mode.
-                            </p>
-                            <Button 
-                              onClick={() => paymentQrFileInputRef.current?.click()}
-                              disabled={isUploadingPaymentQr}
-                              className="h-14 rounded-2xl bg-black text-white font-black uppercase px-8 shadow-xl shadow-black/10 flex gap-2"
-                            >
-                               {isUploadingPaymentQr ? <Loader className="animate-spin h-4 w-4" /> : <Upload className="h-4 w-4" />}
-                               Upload New QR Image
-                            </Button>
-                            <input 
-                              type="file" 
-                              ref={paymentQrFileInputRef} 
-                              className="hidden" 
-                              accept="image/*" 
-                              onChange={(e) => {
-                                 const file = e.target.files?.[0];
-                                 if (!file || !storage || !configRef) return;
-                                 setIsUploadingPaymentQr(true);
-                                 const path = `appConfig/payment_qr_${Date.now()}`;
-                                 const sRef = ref(storage, path);
-                                 uploadBytes(sRef, file)
-                                    .then(snap => getDownloadURL(snap.ref))
-                                    .then(url => updateDoc(configRef, { paymentQrUrl: url, updatedAt: serverTimestamp() }))
-                                    .then(() => toast({ title: "QR Updated Successfully" }))
-                                    .catch(err => toast({ variant: 'destructive', title: "Upload Failed", description: err.message }))
-                                    .finally(() => setIsUploadingPaymentQr(false));
-                              }}
-                            />
-                         </div>
+                             <p className="text-xs font-medium text-slate-500 leading-relaxed uppercase">
+                                Upload your UPI QR code image (PhonePe/GPay/Paytm Business QR). This will be displayed to users in Manual Recharge mode.
+                             </p>
+                             <div className="relative inline-block h-14">
+                               <input 
+                                 type="file" 
+                                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10" 
+                                 accept="image/*" 
+                                 onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file || !storage || !configRef) return;
+                                    setIsUploadingPaymentQr(true);
+                                    const path = `appConfig/payment_qr_${Date.now()}`;
+                                    const sRef = ref(storage, path);
+                                    uploadBytes(sRef, file)
+                                       .then(snap => getDownloadURL(snap.ref))
+                                       .then(url => updateDoc(configRef, { paymentQrUrl: url, updatedAt: serverTimestamp() }))
+                                       .then(() => toast({ title: "QR Updated Successfully" }))
+                                       .catch(err => toast({ variant: 'destructive', title: "Upload Failed", description: err.message }))
+                                       .finally(() => setIsUploadingPaymentQr(false));
+                                 }}
+                                 disabled={isUploadingPaymentQr}
+                               />
+                               <Button 
+                                 type="button"
+                                 disabled={isUploadingPaymentQr}
+                                 className="h-14 rounded-2xl bg-black text-white font-black uppercase px-8 shadow-xl shadow-black/10 flex gap-2 pointer-events-none items-center justify-center"
+                               >
+                                  {isUploadingPaymentQr ? <Loader className="animate-spin h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                                  Upload New QR Image
+                               </Button>
+                             </div>
+                          </div>
                       </div>
                    </div>
                  </CardContent>

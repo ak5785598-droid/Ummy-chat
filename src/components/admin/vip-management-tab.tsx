@@ -223,29 +223,30 @@ export function VipManagementTab() {
                   {config.bgType === 'image' ? 'Upload Background Image' : 'Upload Background Video'}
                 </Label>
                 <div className="flex gap-3">
-                   <input 
-                    type="file" 
-                    ref={globalBgInputRef}
-                    accept={config.bgType === 'image' ? 'image/*' : 'video/*'}
-                    onChange={handleGlobalBgUpload}
-                    className="hidden"
-                  />
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => globalBgInputRef.current?.click()}
-                    disabled={uploadingGlobalBg}
-                    className="h-12 rounded-2xl border border-dashed border-slate-300 hover:border-primary bg-white flex-1 inline-flex items-center justify-center text-sm font-semibold text-slate-600 transition-colors shadow-sm"
-                  >
-                    {uploadingGlobalBg ? (
-                      <Loader className="h-5 w-5 animate-spin text-slate-400" />
-                    ) : (
-                      <>
-                        <Upload className="h-4.5 w-4.5 mr-2 text-slate-400" />
-                        {config.bgUrl ? 'Update Media' : 'Upload File'}
-                      </>
-                    )}
-                  </Button>
+                  <div className="relative flex-1 h-12">
+                    <input 
+                      type="file" 
+                      accept={config.bgType === 'image' ? 'image/*' : 'video/*'}
+                      onChange={handleGlobalBgUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      disabled={uploadingGlobalBg}
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      disabled={uploadingGlobalBg}
+                      className="h-12 w-full rounded-2xl border border-dashed border-slate-300 hover:border-primary bg-white inline-flex items-center justify-center text-sm font-semibold text-slate-600 transition-colors shadow-sm pointer-events-none"
+                    >
+                      {uploadingGlobalBg ? (
+                        <Loader className="h-5 w-5 animate-spin text-slate-400" />
+                      ) : (
+                        <>
+                          <Upload className="h-4.5 w-4.5 mr-2 text-slate-400" />
+                          {config.bgUrl ? 'Update Media' : 'Upload File'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   {config.bgUrl && (
                     <div className="h-12 w-12 rounded-2xl border border-slate-100 overflow-hidden shrink-0 shadow-inner">
                       {config.bgType === 'image' ? (
@@ -298,32 +299,33 @@ export function VipManagementTab() {
                     <div className="space-y-1">
                       <Label htmlFor={`badge-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Badge Icon (.png/.jpg)</Label>
                       <div className="flex gap-2">
-                        <input 
-                          type="file" 
-                          ref={el => { badgeInputRefs.current[level] = el; }}
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleLevelAssetUpload(level, 'badge', file);
-                          }}
-                          className="hidden"
-                        />
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          onClick={() => badgeInputRefs.current[level]?.click()}
-                          disabled={isBadgeUploading}
-                          className="h-10 rounded-xl border border-slate-200 hover:border-yellow-400 bg-white flex-1 inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm"
-                        >
-                          {isBadgeUploading ? (
-                            <Loader className="h-4 w-4 animate-spin text-slate-400" />
-                          ) : (
-                            <>
-                              <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
-                              {lvlConfig.badgeUrl ? 'Replace' : 'Upload'}
-                            </>
-                          )}
-                        </Button>
+                        <div className="relative flex-1 h-10">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleLevelAssetUpload(level, 'badge', file);
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            disabled={isBadgeUploading}
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            disabled={isBadgeUploading}
+                            className="h-10 w-full rounded-xl border border-slate-200 hover:border-yellow-400 bg-white inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm pointer-events-none"
+                          >
+                            {isBadgeUploading ? (
+                              <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                            ) : (
+                              <>
+                                <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                {lvlConfig.badgeUrl ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         {lvlConfig.badgeUrl && (
                           <div className="h-10 w-10 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 p-1 shrink-0 flex items-center justify-center shadow-inner relative group">
                             <img src={lvlConfig.badgeUrl} className="h-full w-full object-contain" alt={`Badge ${level}`} />
@@ -349,32 +351,33 @@ export function VipManagementTab() {
                     <div className="space-y-1">
                       <Label htmlFor={`video-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Podium Animation Video (.mp4)</Label>
                       <div className="flex gap-2">
-                        <input 
-                          type="file" 
-                          ref={el => { videoInputRefs.current[level] = el; }}
-                          accept="video/mp4,video/x-m4v,video/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleLevelAssetUpload(level, 'video', file);
-                          }}
-                          className="hidden"
-                        />
-                        <Button 
-                          type="button"
-                          variant="outline"
-                          onClick={() => videoInputRefs.current[level]?.click()}
-                          disabled={isVideoUploading}
-                          className="h-10 rounded-xl border border-slate-200 hover:border-yellow-400 bg-white flex-1 inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm"
-                        >
-                          {isVideoUploading ? (
-                            <Loader className="h-4 w-4 animate-spin text-slate-400" />
-                          ) : (
-                            <>
-                              <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
-                              {lvlConfig.videoUrl ? 'Replace' : 'Upload'}
-                            </>
-                          )}
-                        </Button>
+                        <div className="relative flex-1 h-10">
+                          <input 
+                            type="file" 
+                            accept="video/mp4,video/x-m4v,video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleLevelAssetUpload(level, 'video', file);
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            disabled={isVideoUploading}
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            disabled={isVideoUploading}
+                            className="h-10 w-full rounded-xl border border-slate-200 hover:border-yellow-400 bg-white inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm pointer-events-none"
+                          >
+                            {isVideoUploading ? (
+                              <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                            ) : (
+                              <>
+                                <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                {lvlConfig.videoUrl ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         {lvlConfig.videoUrl && (
                           <div className="h-10 w-10 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 shrink-0 shadow-inner relative group">
                             <video src={lvlConfig.videoUrl} className="h-full w-full object-cover" muted autoPlay loop />
