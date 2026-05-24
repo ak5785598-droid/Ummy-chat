@@ -121,12 +121,12 @@ service cloud.firestore {
       // ============================================
       match /participants/{participantId} {
         allow read: if true;
-        allow write: if isOwner(participantId) || isAdmin();
+        allow write: if isOwner(participantId);
       }
 
       match /topSupporters/{supporterId} {
         allow read: if true;
-        allow write: if isSignedIn() && (request.auth.uid == supporterId || isAdmin());
+        allow write: if isOwner(supporterId);
       }
       
       match /messages/{messageId} {
