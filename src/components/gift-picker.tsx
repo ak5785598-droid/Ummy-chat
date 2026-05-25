@@ -272,6 +272,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   }
  }, [open, initialRecipient?.uid, seatedParticipants]);
 
+ // Mobile back button dabane pe custom link band ho jayega
+ useEffect(() => {
+   const handlePopState = () => {
+     if (showCustomLink) {
+       setShowCustomLink(false);
+     }
+   };
+   
+   window.addEventListener('popstate', handlePopState);
+   return () => window.removeEventListener('popstate', handlePopState);
+ }, [showCustomLink]);
+
  const handleCustomGift = async () => {
    if (!user || !firestore || !userProfile) return;
    if ((userProfile.wallet?.coins || 0) < 50000) return;
@@ -496,7 +508,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         <TabsTrigger 
           key={id} 
           value={id} 
-          className="text-white text-sm font-bold px-3 py-1.5 rounded-xl transition-all data-[state=active]:text-cyan-400 data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent"
+          className="text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent border-b-2 border-transparent hover:text-white/80"
         >
           {id}
         </TabsTrigger>
@@ -539,9 +551,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
             <button 
               onClick={handleCustomGift}
               disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000}
-              className="flex flex-col items-center justify-center w-14 h-14 rounded-lg border-2 border-blue-500 bg-transparent hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <Plus className="h-6 w-6 text-blue-500" />
+              <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Plus className="h-6 w-6 text-blue-400" />
+              </div>
+              <span className="text-[11px] font-bold text-blue-400 text-center leading-tight">
+                Pay 50,000 coins
+              </span>
+              <span className="text-[10px] text-blue-300/70 text-center">
+                and customize your Gift
+              </span>
             </button>
           </div>
         </TabsContent>
@@ -599,4 +619,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-   }
+      }
