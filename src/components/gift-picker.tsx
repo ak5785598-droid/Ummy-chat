@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, Plus } from 'lucide-react';
+import { Loader, Check, X, Plus } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
@@ -166,7 +166,6 @@ const GiftImage = ({ gift }: { gift: any }) => {
       src={processedUrl || gift.imageUrl} 
       alt={gift.name} 
       className="h-14 w-14 rounded-lg object-contain" 
-      // ↑ h-14 w-14 (bada), rounded-lg (rounded corners)
     />
   );
 };
@@ -190,8 +189,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
- const [showCustomizeCard, setShowCustomizeCard] = useState(false);
- const [isPayingCustomize, setIsPayingCustomize] = useState(false);
+ const [showCustomLink, setShowCustomLink] = useState(false);
+ const [isProcessingCustom, setIsProcessingCustom] = useState(false);
  
  // Track karne ke liye ki initial selection ho chuka hai ya nahi
  const hasInitialized = useRef(false);
@@ -253,7 +252,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     // Sheet band hone par reset
     hasInitialized.current = false;
     lastRecipientUid.current = null;
-    setShowCustomizeCard(false);
+    setShowCustomLink(false);
     return;
   }
 
@@ -273,55 +272,41 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   }
  }, [open, initialRecipient?.uid, seatedParticipants]);
 
- const handleCustomizeClick = () => {
-   setShowCustomizeCard(true);
- };
-
- const handlePayAndOpenLink = async () => {
+ const handleCustomGift = async () => {
    if (!user || !firestore || !userProfile) return;
+   if ((userProfile.wallet?.coins || 0) < 50000) return;
+   if (isProcessingCustom) return;
    
-   const COINS_REQUIRED = 50000;
-   
-   if ((userProfile.wallet?.coins || 0) < COINS_REQUIRED) {
-     // Not enough coins
-     return;
-   }
-   
-   if (isPayingCustomize) return;
-   setIsPayingCustomize(true);
+   setIsProcessingCustom(true);
    
    try {
      const batch = writeBatch(firestore);
-     const today = getTodayString();
-     
      const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
      const senderUserRef = doc(firestore, 'users', user.uid);
-     const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
      
-     batch.update(senderProfileRef, { 
-       'wallet.coins': increment(-COINS_REQUIRED),
-       'wallet.totalSpent': increment(COINS_REQUIRED),
-       'wallet.dailySpent': isSenderNewDay ? COINS_REQUIRED : increment(COINS_REQUIRED),
-       'wallet.lastDailyResetDate': today,
-       updatedAt: serverTimestamp() 
+     batch.update(senderProfileRef, {
+       'wallet.coins': increment(-50000),
+       updatedAt: serverTimestamp()
      });
-     batch.update(senderUserRef, { 
-       'wallet.coins': increment(-COINS_REQUIRED),
-       'wallet.dailySpent': isSenderNewDay ? COINS_REQUIRED : increment(COINS_REQUIRED),
-       'wallet.lastDailyResetDate': today
+     batch.update(senderUserRef, {
+       'wallet.coins': increment(-50000)
      });
      
      await batch.commit();
      
-     // Open link in new tab
-     window.open('https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh', '_blank');
+     // Open the link in a new window/tab
+     const customWindow = window.open(
+       'https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh',
+       '_blank'
+     );
      
-     // Close the sheet
-     onOpenChange(false);
+     // Show the custom link overlay
+     setShowCustomLink(true);
+     
    } catch (e) {
      console.error(e);
    } finally {
-     setIsPayingCustomize(false);
+     setIsProcessingCustom(false);
    }
  };
 
@@ -506,23 +491,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </div>
 
      <Tabs defaultValue="Hot" className="w-full mt-2">
-      <TabsList className="mx-4 bg-transparent p-0 rounded-none flex justify-between border-0 gap-0">
+      <TabsList className="mx-4 bg-transparent p-1 flex justify-between gap-1">
        {['Hot', 'Lucky', 'Luxury', 'Event', 'Customized'].map(id => (
         <TabsTrigger 
           key={id} 
           value={id} 
-          onClick={() => {
-            if (id === 'Customized') {
-              setShowCustomizeCard(true);
-            } else {
-              setShowCustomizeCard(false);
-            }
-          }}
-          className="text-sm font-bold px-4 py-2 rounded-none transition-all 
-            data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-cyan-400
-            text-white/50 border-b-2 border-transparent
-            hover:text-white/80 bg-transparent
-            relative"
+          className="text-white text-sm font-bold px-3 py-1.5 rounded-xl transition-all data-[state=active]:text-cyan-400 data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent"
         >
           {id}
         </TabsTrigger>
@@ -530,74 +504,52 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       </TabsList>
       
        <div className="h-[200px] overflow-y-auto no-scrollbar px-4 pt-3 pb-16 grid grid-cols-4 gap-x-2 gap-y-4 content-start">
-        {/* Show Customize Card when Customized tab is active */}
-        {showCustomizeCard && (
-          <div className="col-span-4 flex flex-col items-center justify-center py-6">
-            <div className="w-full max-w-xs border-2 border-blue-500 rounded-2xl p-6 flex flex-col items-center gap-4 bg-blue-500/5">
-              <div className="h-16 w-16 rounded-full border-2 border-blue-500 flex items-center justify-center bg-blue-500/10">
-                <Plus className="h-8 w-8 text-blue-500" />
-              </div>
-              <p className="text-white font-bold text-center text-sm">Pay 50,000 Coins and Customize your Gift</p>
-              <button 
-                onClick={handlePayAndOpenLink}
-                disabled={isPayingCustomize || (userProfile?.wallet?.coins || 0) < 50000}
-                className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 font-bold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isPayingCustomize ? (
-                  <Loader className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <GoldenDollar />
-                    <span>Pay 50,000</span>
-                  </>
-                )}
-              </button>
-              {(userProfile?.wallet?.coins || 0) < 50000 && (
-                <p className="text-red-400 text-xs font-medium">Not enough coins</p>
-              )}
-            </div>
+        {isGiftsLoading ? (
+          <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
+            <Loader className="animate-spin text-cyan-400 h-6 w-6" />
+            <span className="text-[11px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span>
           </div>
-        )}
-        
-        {/* Gifts Grid - hidden when Customized tab is showing */}
-        {!showCustomizeCard && (
-          <>
-            {isGiftsLoading ? (
-              <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
-                <Loader className="animate-spin text-cyan-400 h-6 w-6" />
-                <span className="text-[11px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span>
-              </div>
+        ) : (
+          Object.entries(GIFTS).map(([cat, items]) => (
+            <TabsContent key={cat} value={cat} className="contents">
+            {items.length === 0 ? (
+               <div className="col-span-4 py-10 text-center opacity-30 text- font-bold uppercase tracking-widest">No Gifts in {cat}</div>
             ) : (
-              Object.entries(GIFTS).map(([cat, items]) => (
-                <TabsContent key={cat} value={cat} className="contents">
-                {items.length === 0 ? (
-                   <div className="col-span-4 py-10 text-center opacity-30 text- font-bold uppercase tracking-widest">No Gifts in {cat}</div>
-                ) : (
-                  items.map(gift => (
-                    <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-                    {/* YAHAN CONTAINER SIZE BADA KIYA: h-14 w-14 */}
-                    <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
-                      <GiftImage gift={gift} />
-                    </div>
-                    <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <GoldenDollar /> 
-                      <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
-                    </div>
-                    {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
-                    </button>
-                  ))
-                )}
-                </TabsContent>
+              items.map(gift => (
+                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
+                <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
+                  <GiftImage gift={gift} />
+                </div>
+                <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <GoldenDollar /> 
+                  <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
+                </div>
+                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+                </button>
               ))
             )}
-          </>
+            </TabsContent>
+          ))
         )}
+        
+        {/* Customized Tab Content */}
+        <TabsContent value="Customized" className="contents">
+          <div className="col-span-4 flex justify-start">
+            <button 
+              onClick={handleCustomGift}
+              disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000}
+              className="flex flex-col items-center justify-center w-14 h-14 rounded-lg border-2 border-blue-500 bg-transparent hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Plus className="h-6 w-6 text-blue-500" />
+            </button>
+          </div>
+        </TabsContent>
        </div>
      </Tabs>
 
      <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-2">
-      <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-2xl border border-white/5 min-w-0 flex-1">
+      <div className="flex items-center gap-2 bg-transparent px-3 py-2 min-w-0 flex-1">
        <div className="shrink-0"><GoldenDollar /></div>
        <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
          {(userProfile?.wallet?.coins || 0).toLocaleString()}
@@ -616,6 +568,35 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </div>
     </SheetContent>
    </Sheet>
+
+   {/* Custom Gift Link Overlay */}
+   <AnimatePresence>
+     {showCustomLink && (
+       <motion.div 
+         initial={{ opacity: 0 }}
+         animate={{ opacity: 1 }}
+         exit={{ opacity: 0 }}
+         className="fixed inset-0 z-[2000] bg-black/95 flex flex-col"
+       >
+         <div className="flex items-center justify-between p-4 border-b border-white/10">
+           <span className="text-white font-bold text-lg">Customize Your Gift</span>
+           <button 
+             onClick={() => setShowCustomLink(false)}
+             className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+           >
+             <X className="h-5 w-5 text-white" />
+           </button>
+         </div>
+         <div className="flex-1">
+           <iframe 
+             src="https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh"
+             className="w-full h-full border-0"
+             title="Custom Gift Form"
+           />
+         </div>
+       </motion.div>
+     )}
+   </AnimatePresence>
   </>
  );
-           }
+   }
