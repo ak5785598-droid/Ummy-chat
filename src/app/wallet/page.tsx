@@ -9,7 +9,7 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2, ShieldAlert, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2, ShieldAlert, Download, ExternalLink } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -30,11 +30,10 @@ const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
 const COIN_PACKAGES = [
  { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
  { id: 'p2', amount: '500,000', price: '100 INR', bonus: null },
- { id: 'p3', amount: '2,500,000', price: '500 INR', bonus: '+250000' },
+ { id: 'p3', amount: '2,500,000', price: '500 INR', bonus: '+250000' }, 
  { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
  { id: 'p5', amount: '12,500,000', price: '2500 INR', bonus: '+2500000' },
  { id: 'p6', amount: '50,000,000', price: '10000 INR', bonus: '+13500000' },
- { id: 'p7', amount: '10,000', price: '1 INR', bonus: '+200' }, 
 ];
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +45,7 @@ function WalletContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'Coins' | 'Diamonds'>('Coins');
+  const [activeTab, setActiveTab] = useState<'Recharge' | 'Diamond' | 'Seller'>('Recharge');
   const [showRecords, setShowRecords] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState('p1');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -294,21 +293,17 @@ function WalletContent() {
     const upiId = config?.upiId || "7209741932@ptyes";
     const upiName = config?.upiName || "Ummy Chat";
     
-    // Fix: Using float string for amount (e.g. 10.00) as some UPI apps strictly require it
     const formattedAmount = Number(priceINR).toFixed(2);
     const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
     
-    // Capacitor/Cordova friendly trigger to open external UPI apps
     try {
       window.open(upiUri, '_system');
     } catch (e) {
-      // Fallback for standard browsers
       const link = document.createElement('a');
       link.href = upiUri;
       link.click();
     }
     
-    // After a delay, open the manual verification dialog
     setTimeout(() => {
       setIsOfflineDialogOpen(true);
     }, 1500);
@@ -389,25 +384,28 @@ function WalletContent() {
      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
      <div className="min-h-full bg-white font-sans flex flex-col animate-in fade-in duration-700">
       
+      {/* HEADER UPDATE: White Theme, Left Title, Right Side Actions (Record + Back Icon) */}
       <header className="px-6 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 border-b border-gray-50 pt-safe">
-        <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
-         <ChevronLeft className="h-6 w-6 text-gray-800" />
-        </button>
         <div>
-          <h1 className="text-xl font-bold uppercase tracking-tight">Wallet</h1>
+          <h1 className="text-xl font-bold uppercase tracking-tight text-gray-900">Wallet</h1>
           {config?.paymentMode !== 'razorpay' && (
             <p className="text-[8px] font-bold text-green-500 uppercase tracking-widest mt-0.5 flex items-center gap-1 animate-pulse">
               <Shield className="h-2 w-2" /> Secure Offline Mode
             </p>
           )}
         </div>
-        <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2 active:scale-95 transition-transform">
-         {showRecords ? 'Close' : 'Record'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2 active:scale-95 transition-transform">
+           {showRecords ? 'Close' : 'Record'}
+          </button>
+          <button onClick={() => router.back()} className="p-2 hover:bg-gray-50 rounded-full transition-all">
+           <ChevronLeft className="h-6 w-6 text-gray-800" />
+          </button>
+        </div>
       </header>
 
       {showRecords ? (
-       <div className="flex-1 p-6 space-y-4 animate-in slide-in-from-right duration-300 overflow-y-auto no-scrollbar">
+       <div className="flex-1 p-6 space-y-4 animate-in slide-in-from-right duration-300 overflow-y-auto no-scrollbar bg-white">
          <h2 className="text-sm font-bold uppercase text-gray-400 mb-6">Unified Ledger</h2>
          {isHistoryLoading || isRechargeHistoryLoading ? (
           <div className="flex justify-center pt-20">
@@ -465,88 +463,95 @@ function WalletContent() {
          )}
        </div>
       ) : (
-       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex justify-around border-b border-gray-50 bg-white shrink-0">
-          <button 
-           onClick={() => setActiveTab('Coins')}
-           className={cn(
-            "py-4 px-8 text-lg font-bold uppercase tracking-tight relative transition-all",
-            activeTab === 'Coins' ? "text-gray-900" : "text-gray-300"
-           )}
-          >
-           Coins
-           {activeTab === 'Coins' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1 bg-yellow-400 rounded-full" />}
-          </button>
-          <button 
-           onClick={() => setActiveTab('Diamonds')}
-           className={cn(
-            "py-4 px-8 text-lg font-bold uppercase tracking-tight relative transition-all",
-            activeTab === 'Diamonds' ? "text-gray-900" : "text-gray-300"
-           )}
-          >
-           Diamonds
-           {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1 bg-yellow-400 rounded-full" />}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-32">
-          
-          {activeTab === 'Coins' ? (
-           <>
-            <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-8 text-white shadow-[0_20px_40px_rgba(255,152,0,0.3)] overflow-hidden mb-4 group active:scale-[0.98] transition-all border-2 border-white/20">
-             <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-             <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+       <div className="flex-1 flex flex-col overflow-hidden bg-white">
+        
+        {/* NEW PURPLE TOP CARD */}
+        <div className="px-4 mt-2">
+          <div className="bg-[#651FFF] rounded-[2rem] p-8 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden">
+             {/* Simple aesthetic elements to make it look premium but minimal */}
+             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-xl pointer-events-none" />
+             <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-8 -mb-8 blur-xl pointer-events-none" />
              
-             <div className="relative z-30 flex flex-col h-full justify-between">
-               <div className="flex justify-between items-start">
-                <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
-                <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border border-white/10">
-                  History <ChevronRight className="h-3 w-3" />
-                </button>
-               </div>
-               <h2 className="text-5xl font-bold tracking-tight drop-shadow-lg">
-                {(userProfile?.wallet?.coins || 0).toLocaleString()}
+             <div className="relative z-10">
+               <p className="text-sm font-bold uppercase tracking-widest text-purple-200 mb-2">My Coins</p>
+               <h2 className="text-5xl font-black tracking-tight flex items-center gap-3">
+                 {(userProfile?.wallet?.coins || 0).toLocaleString()}
                </h2>
              </div>
-             <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 rotate-12 pointer-events-none group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
-               <GoldCoinIcon className="w-full h-full" />
-             </div>
+          </div>
+        </div>
+
+        {/* TABS UPDATE: Recharge, Diamond, Seller */}
+        <div className="flex justify-around border-b border-gray-100 bg-white shrink-0 mt-6 px-2">
+          {['Recharge', 'Diamond', 'Seller'].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)}
+              className={cn(
+              "py-4 px-4 text-sm font-bold uppercase tracking-tight relative transition-all",
+              activeTab === tab ? "text-[#651FFF]" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              {tab}
+              {activeTab === tab && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#651FFF] rounded-full" />}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-32 bg-white">
+          
+          {activeTab === 'Recharge' && (
+           <div className="animate-in fade-in duration-500">
+            
+            {/* NEW UPI & GPAY LOGO CARDS */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="border-2 border-gray-100 rounded-2xl py-4 px-2 flex flex-col items-center justify-center gap-3 bg-white shadow-sm hover:border-[#651FFF]/30 transition-all cursor-pointer">
+                <div className="h-8 flex items-center justify-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs uppercase text-gray-600 tracking-wider">UPI</span>
+              </div>
+              <div className="border-2 border-gray-100 rounded-2xl py-4 px-2 flex flex-col items-center justify-center gap-3 bg-white shadow-sm hover:border-[#651FFF]/30 transition-all cursor-pointer">
+                <div className="h-8 flex items-center justify-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="Google Pay" className="h-full object-contain" />
+                </div>
+                <span className="font-bold text-xs uppercase text-gray-600 tracking-wider">Google Pay</span>
+              </div>
             </div>
 
+            {/* COIN PACKAGES: No Icon, Pure Text based layout */}
             <div className="grid grid-cols-3 gap-3 mb-10">
              {COIN_PACKAGES.map((pkg) => (
               <button 
                key={pkg.id}
                onClick={() => setSelectedPackageId(pkg.id)}
                className={cn(
-                "relative flex flex-col items-center justify-between rounded-2xl border-2 transition-all p-3 h-44 group",
+                "relative flex flex-col items-center justify-center rounded-2xl border-2 transition-all p-2 h-32 group",
                 selectedPackageId === pkg.id 
-                 ? "bg-[#fffde7] border-yellow-400 shadow-lg scale-[1.02]" 
+                 ? "bg-purple-50 border-[#651FFF] shadow-md scale-[1.02]" 
                  : "bg-white border-gray-100 hover:border-gray-200"
                )}
               >
-                <div className="w-14 h-14 mb-2 drop-shadow-sm group-hover:scale-110 transition-transform">
-                 <GoldCoinIcon className="w-full h-full" />
-                </div>
-                
-                <div className="text-center flex-1 flex flex-col justify-center">
-                 <p className="font-bold text-[13px] tracking-tight leading-none text-gray-900">{pkg.amount}</p>
+                <div className="text-center flex flex-col justify-center w-full px-1">
+                 <p className="font-bold text-[14px] sm:text-[15px] tracking-tight leading-none text-gray-900 mb-1">{pkg.amount}</p>
                  {pkg.bonus && (
-                  <p className="text-[10px] font-bold text-[#ff9800] mt-1">{pkg.bonus}</p>
+                  <p className="text-[10px] font-bold text-[#651FFF] mb-2">{pkg.bonus}</p>
                  )}
                 </div>
 
                 <div className={cn(
-                 "w-full py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all",
-                 selectedPackageId === pkg.id ? "bg-yellow-400 text-black" : "bg-gray-100 text-gray-400"
+                 "w-full py-2 rounded-lg text-[10px] font-black uppercase transition-all mt-auto tracking-widest",
+                 selectedPackageId === pkg.id ? "bg-[#651FFF] text-white shadow-sm" : "bg-gray-100 text-gray-500"
                 )}>
                  {pkg.price}
                 </div>
               </button>
              ))}
             </div>
-           </>
-          ) : (
+           </div>
+          )}
+
+          {activeTab === 'Diamond' && (
            <div className="space-y-6 animate-in fade-in duration-500">
             <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-8 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group active:scale-[0.98] transition-all border-2 border-white/20">
              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
@@ -555,9 +560,6 @@ function WalletContent() {
              <div className="relative z-30 flex flex-col h-full justify-between">
                <div className="flex justify-between items-start">
                 <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
-                <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border border-white/10">
-                  History <ChevronRight className="h-3 w-3" />
-                </button>
                </div>
                <h2 className="text-5xl font-bold tracking-tight drop-shadow-md">
                 {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
@@ -586,24 +588,34 @@ function WalletContent() {
            </div>
           )}
 
-          <div className="space-y-4 px-2 pb-10 mt-6">
+          {activeTab === 'Seller' && (
+            <div className="py-20 text-center animate-in fade-in duration-500">
+               <p className="text-gray-400 font-bold uppercase text-sm tracking-widest">Coming Soon</p>
+            </div>
+          )}
+
+          <div className="space-y-4 px-2 pb-10 mt-6 text-center">
            <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
             If your recharge can not be completed, please click here for help
            </p>
-           <button onClick={() => router.push('/help-center')} className="text-yellow-500 font-bold text-sm uppercase flex items-center gap-1">
+           <button onClick={() => router.push('/help-center')} className="text-[#651FFF] font-bold text-sm uppercase inline-flex items-center gap-1 hover:underline">
              Help Center <ChevronRight className="h-4 w-4" />
            </button>
           </div>
         </div>
 
-        {!showRecords && (
-         <footer className="p-6 pb-safe bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
+        {!showRecords && activeTab === 'Recharge' && (
+         <footer className="p-6 pb-safe bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
            <Button 
             onClick={handleRechargeNow}
             disabled={isProcessing !== false}
-            className="w-full h-16 rounded-full bg-[#ffcc00] hover:bg-[#ffb300] text-black font-bold uppercase text-xl shadow-xl shadow-yellow-500/20 active:scale-[0.98] transition-all"
+            className="w-full h-16 rounded-2xl bg-[#651FFF] hover:bg-[#6200EA] text-white font-black uppercase text-xl shadow-xl shadow-purple-500/30 active:scale-[0.98] transition-all tracking-wider"
            >
-            {isProcessing !== false ? <Loader className="animate-spin mr-2" /> : activeTab === 'Coins' ? 'Recharge Now' : 'Withdrawal'}
+            {isProcessing !== false ? (
+              <Loader className="animate-spin mr-2" />
+            ) : (
+              `Pay (₹${COIN_PACKAGES.find(p => p.id === selectedPackageId)?.price.replace(' INR', '') || '0'})`
+            )}
            </Button>
          </footer>
         )}
@@ -615,7 +627,7 @@ function WalletContent() {
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
         
-        {/* TOP NOTICE (Adjusted for Safe Area) */}
+        {/* TOP NOTICE */}
         <div className="bg-amber-400 py-4 px-4 flex items-center justify-center gap-2 shrink-0 pt-safe shadow-md">
            <ShieldAlert className="h-4 w-4 text-black" />
            <p className="text-[10px] font-black uppercase text-black tracking-tight leading-none pt-0.5">Online Recharge Unavailable • Use Manual Scanner Below</p>
@@ -630,7 +642,6 @@ function WalletContent() {
 
         {/* CENTERED QR HERO SECTION */}
         <div className="relative flex flex-col items-center justify-center px-10 py-6 bg-white shrink-0">
-          {/* Scanner Brackets (Visual Guide) */}
           <div className="absolute inset-x-8 inset-y-0 pointer-events-none">
              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-slate-900 rounded-tl-2xl opacity-80" />
              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-slate-900 rounded-tr-2xl opacity-80" />
@@ -663,7 +674,7 @@ function WalletContent() {
            <Button onClick={handleDownloadQR} variant="link" className="text-[10px] font-black text-slate-400 uppercase tracking-widest h-auto py-0">Click QR to download image</Button>
         </div>
 
-        {/* DIRECT PAY BUTTON (Fallback for intent errors) */}
+        {/* DIRECT PAY BUTTON */}
         {config?.paymentMode === 'upi_intent' && (
            <div className="px-6 pb-2">
              <Button 
@@ -676,7 +687,7 @@ function WalletContent() {
            </div>
         )}
 
-        {/* COMPACT INSTRUCTIONS (Side-by-Side Notice Area) */}
+        {/* COMPACT INSTRUCTIONS */}
         <div className="p-4 bg-slate-50 border-y border-slate-100 shrink-0">
            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -710,7 +721,7 @@ function WalletContent() {
                 </div>
                 <div className="text-right">
                    <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Gain</p>
-                   <p className="text-lg font-black text-yellow-600">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} + Bonus</p>
+                   <p className="text-lg font-black text-[#651FFF]">{COIN_PACKAGES.find(p => p.id === selectedPackageId)?.amount} + Bonus</p>
                 </div>
               </div>
 
@@ -719,7 +730,7 @@ function WalletContent() {
                   value={utrNumber || ''}
                   onChange={(e) => setUtrNumber(e.target.value)}
                   placeholder="ENTER 12-DIGIT UTR ID"
-                  className="h-16 bg-slate-50 border-2 border-slate-100 focus:border-slate-900 focus:bg-white rounded-2xl font-black text-center text-xl tracking-[0.2em] transition-all shadow-inner"
+                  className="h-16 bg-slate-50 border-2 border-slate-100 focus:border-[#651FFF] focus:bg-white rounded-2xl font-black text-center text-xl tracking-[0.2em] transition-all shadow-inner"
                 />
               </div>
 
@@ -751,4 +762,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-}
+            }
