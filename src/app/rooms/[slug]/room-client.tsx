@@ -166,6 +166,7 @@ import { SportsHub } from '@/components/sports-hub';
 import { ThemeSync } from '@/components/theme-sync';
 import { ThemeColorMeta } from '@/components/theme-color-meta';
 import { SUPPORTED_LANGUAGES } from '@/constants/languages';
+import { useLanguage } from '@/components/language-provider';
 
 
 
@@ -1250,6 +1251,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [room.stats?.dailyGifts, lootLevels, currentLootLevelIndex, completedGateLevels]);
 
   const { userProfile } = useUserProfile(currentUser?.uid);
+  const { language } = useLanguage();
 
 
   const currentUserParticipant = onlineParticipants.find(p => p.uid === currentUser?.uid);
@@ -1658,13 +1660,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   }, [currentUserParticipant?.activeEmoji, firestore, room.id, currentUser?.uid]);
 
   // --- REAL-TIME VOICE CAPTIONS ENGINE (FIXED v2) ---
-  // Use a ref to avoid stale closure in onend/onerror callbacks
-  const isCaptionsEnabledRef = useRef(false);
-  useEffect(() => { isCaptionsEnabledRef.current = isCaptionsEnabled; }, [isCaptionsEnabled]);
+  const isMuted = currentUserParticipant?.isMuted || false;
+  const shouldRunSpeechRec = isCaptionsEnabled && isInSeat && !isMuted;
+  
+  const shouldRunSpeechRecRef = useRef(false);
+  useEffect(() => { 
+    shouldRunSpeechRecRef.current = shouldRunSpeechRec; 
+  }, [shouldRunSpeechRec]);
 
   useEffect(() => {
-    isCaptionsEnabledRef.current = isCaptionsEnabled;
-    if (!isCaptionsEnabled || !isHydrated) return;
+    if (!shouldRunSpeechRec || !isHydrated) return;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1676,8 +1681,16 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    const selectedLang = SUPPORTED_LANGUAGES.find(l => l.name === targetLanguage);
-    recognition.lang = selectedLang?.locale || 'hi-IN';
+    
+    // Map user app language to SpeechRecognition locale (recognizes what they speak!)
+    const languageToLocaleMap: Record<string, string> = {
+      'hi': 'hi-IN',
+      'en': 'en-US',
+      'bn': 'bn-IN',
+      'ar': 'ar-SA',
+      'ur': 'ur-PK'
+    };
+    recognition.lang = languageToLocaleMap[language] || 'hi-IN';
 
     recognition.onresult = (event: any) => {
       if (!firestore || !room.id || !currentUser?.uid) return;
@@ -1725,9 +1738,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       }
     };
 
-    // KEY FIX: Use ref instead of state variable to avoid stale closure
+    // Use ref instead of state variable to avoid stale closure
     recognition.onend = () => {
-      if (isCaptionsEnabledRef.current) {
+      if (shouldRunSpeechRecRef.current) {
         try { recognition.start(); } catch(e) {}
       }
     };
@@ -1736,11 +1749,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     try { recognition.start(); } catch(e) { console.warn('[Captions] Start failed:', e); }
 
     return () => {
-      isCaptionsEnabledRef.current = false;
+      shouldRunSpeechRecRef.current = false;
       try { recognition.stop(); } catch(e) {}
       recognitionRef.current = null;
     };
-  }, [isCaptionsEnabled, isHydrated, firestore, room.id, currentUser?.uid, userProfile?.username, targetLanguage]);
+  }, [shouldRunSpeechRec, isHydrated, firestore, room.id, currentUser?.uid, userProfile?.username, language]);
 
   // SYNC: Listen for all captions in the room (FIXED — no blocking AI calls)
   useEffect(() => {
