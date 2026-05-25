@@ -3940,7 +3940,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenChange={setIsGiftPickerOpen}
         roomId={room.id}
         recipient={giftRecipient}
-        participants={onlineParticipants}
+        participants={participants}
         onSuccess={() => triggerTask('gift_once')}
       />
 

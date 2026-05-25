@@ -242,9 +242,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    return groups;
  }, [dbGifts]);
 
- const seatedParticipants = useMemo(() => {
-  return participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
- }, [participants]);
+  const seatedParticipants = useMemo(() => {
+    // 1. Get all seated participants
+    const list = participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
+    
+    // 2. If there is an initialRecipient who is not on a seat, append them so they show up for selection!
+    if (initialRecipient && !list.some((p: any) => p.uid === initialRecipient.uid)) {
+      const fullRecipient = participants.find((p: any) => p.uid === initialRecipient.uid) || initialRecipient;
+      list.push(fullRecipient);
+    }
+    return list;
+  }, [participants, initialRecipient]);
 
  // FIXED: Sirf tabhi auto-select karega jab initialRecipient change ho ya pehli baar open ho
  useEffect(() => {
