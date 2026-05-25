@@ -11,6 +11,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebChromeClient;
 import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -32,10 +33,14 @@ public class MainActivity extends BridgeActivity {
             // Enable support for multiple windows so onCreateWindow gets called
             webView.getSettings().setSupportMultipleWindows(true);
             
-            webView.setWebChromeClient(new WebChromeClient() {
+            // KEY FIX: Subclass Capacitor's own BridgeWebChromeClient instead of a raw WebChromeClient!
+            // This prevents wiping out Capacitor's built-in hooks for file inputs, geolocation, console log sync,
+            // and most importantly: dynamic native Android RECORD_AUDIO (microphone) permission handling!
+            webView.setWebChromeClient(new BridgeWebChromeClient(bridge) {
                 @Override
                 public void onPermissionRequest(PermissionRequest request) {
-                    request.grant(request.getResources());
+                    // Let Capacitor handle standard permission requests natively
+                    super.onPermissionRequest(request);
                 }
 
                 @Override
