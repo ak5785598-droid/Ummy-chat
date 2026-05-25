@@ -243,10 +243,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  }, [dbGifts]);
 
   const seatedParticipants = useMemo(() => {
-    // 1. Get all seated participants
-    const list = participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
+    // 1. Get all seated participants and sort by seatIndex
+    const seated = participants.filter((p: any) => p.seatIndex > 0).sort((a: any, b: any) => a.seatIndex - b.seatIndex);
     
-    // 2. If there is an initialRecipient who is not on a seat, append them so they show up for selection!
+    // 2. Get all audience participants (seatIndex is 0 or undefined)
+    const audience = participants.filter((p: any) => !p.seatIndex || p.seatIndex === 0);
+    
+    // 3. Combine them: Seated speakers first, then audience members!
+    const list = [...seated, ...audience];
+    
+    // 4. Safety check: If there is an initialRecipient who is somehow not in the list, append them
     if (initialRecipient && !list.some((p: any) => p.uid === initialRecipient.uid)) {
       const fullRecipient = participants.find((p: any) => p.uid === initialRecipient.uid) || initialRecipient;
       list.push(fullRecipient);
