@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import { Button } from '@/components/ui/button';
 import { GoldCoinIcon, UmmyLogoIcon } from '@/components/icons';
@@ -34,7 +34,6 @@ const COIN_PACKAGES = [
  { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
  { id: 'p5', amount: '12,500,000', price: '2500 INR', bonus: '+2500000' },
  { id: 'p6', amount: '50,000,000', price: '10000 INR', bonus: '+13500000' },
- 
 ];
 
 export const dynamic = 'force-dynamic';
@@ -706,7 +705,7 @@ function WalletContent() {
             {/* SCAN QR UPLOAD BUTTON - AUTO SCAN + DIRECT PAY */}
             <div className="mt-4 space-y-2">
               <label 
-                className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-dashed border-purple-200 cursor-pointer hover:from-purple-100 hover:to-blue-100 active:scale-[0.98] transition-all group"
+                className="flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-dashed border-purple-200 cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-all group"
               >
                 <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-all">
                   {scanStatus === 'scanning' ? (
@@ -751,7 +750,7 @@ function WalletContent() {
 
           {activeTab === 'Diamond' && (
            <div className="space-y-4 animate-in fade-in duration-500">
-            <div className="relative h-32 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-6 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group active:scale-[0.98] transition-all border-2 border-white/20">
+            <div className="relative h-32 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-6 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group">
              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
              <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
 
@@ -894,4 +893,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-         }
+}
