@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check } from 'lucide-react';
+import { Loader, Check, Plus } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
@@ -190,6 +190,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
+ const [showCustomizeCard, setShowCustomizeCard] = useState(false);
+ const [isPayingCustomize, setIsPayingCustomize] = useState(false);
  
  // Track karne ke liye ki initial selection ho chuka hai ya nahi
  const hasInitialized = useRef(false);
@@ -251,6 +253,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     // Sheet band hone par reset
     hasInitialized.current = false;
     lastRecipientUid.current = null;
+    setShowCustomizeCard(false);
     return;
   }
 
@@ -269,6 +272,58 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     hasInitialized.current = true;
   }
  }, [open, initialRecipient?.uid, seatedParticipants]);
+
+ const handleCustomizeClick = () => {
+   setShowCustomizeCard(true);
+ };
+
+ const handlePayAndOpenLink = async () => {
+   if (!user || !firestore || !userProfile) return;
+   
+   const COINS_REQUIRED = 50000;
+   
+   if ((userProfile.wallet?.coins || 0) < COINS_REQUIRED) {
+     // Not enough coins
+     return;
+   }
+   
+   if (isPayingCustomize) return;
+   setIsPayingCustomize(true);
+   
+   try {
+     const batch = writeBatch(firestore);
+     const today = getTodayString();
+     
+     const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+     const senderUserRef = doc(firestore, 'users', user.uid);
+     const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
+     
+     batch.update(senderProfileRef, { 
+       'wallet.coins': increment(-COINS_REQUIRED),
+       'wallet.totalSpent': increment(COINS_REQUIRED),
+       'wallet.dailySpent': isSenderNewDay ? COINS_REQUIRED : increment(COINS_REQUIRED),
+       'wallet.lastDailyResetDate': today,
+       updatedAt: serverTimestamp() 
+     });
+     batch.update(senderUserRef, { 
+       'wallet.coins': increment(-COINS_REQUIRED),
+       'wallet.dailySpent': isSenderNewDay ? COINS_REQUIRED : increment(COINS_REQUIRED),
+       'wallet.lastDailyResetDate': today
+     });
+     
+     await batch.commit();
+     
+     // Open link in new tab
+     window.open('https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh', '_blank');
+     
+     // Close the sheet
+     onOpenChange(false);
+   } catch (e) {
+     console.error(e);
+   } finally {
+     setIsPayingCustomize(false);
+   }
+ };
 
  const handleSend = async () => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
@@ -451,42 +506,92 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </div>
 
      <Tabs defaultValue="Hot" className="w-full mt-2">
-      <TabsList className="mx-4 bg-white/5 p-1 rounded-2xl flex justify-between border border-white/5">
-       {['Hot', 'Lucky', 'Luxury', 'Event'].map(id => (
-        <TabsTrigger key={id} value={id} className="text- font-black px-4 py-1.5 rounded-xl transition-all data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-cyan-500">{id}</TabsTrigger>
+      <TabsList className="mx-4 bg-transparent p-0 rounded-none flex justify-between border-0 gap-0">
+       {['Hot', 'Lucky', 'Luxury', 'Event', 'Customized'].map(id => (
+        <TabsTrigger 
+          key={id} 
+          value={id} 
+          onClick={() => {
+            if (id === 'Customized') {
+              setShowCustomizeCard(true);
+            } else {
+              setShowCustomizeCard(false);
+            }
+          }}
+          className="text-sm font-bold px-4 py-2 rounded-none transition-all 
+            data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-cyan-400
+            text-white/50 border-b-2 border-transparent
+            hover:text-white/80 bg-transparent
+            relative"
+        >
+          {id}
+        </TabsTrigger>
        ))}
       </TabsList>
       
        <div className="h-[200px] overflow-y-auto no-scrollbar px-4 pt-3 pb-16 grid grid-cols-4 gap-x-2 gap-y-4 content-start">
-        {/* 4 COLUMNS - BADHE IMAGES KE LIYE GAP THODA KAM KIYA */}
-        {isGiftsLoading ? (
-          <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
-            <Loader className="animate-spin text-cyan-400 h-6 w-6" />
-            <span className="text-[11px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span>
+        {/* Show Customize Card when Customized tab is active */}
+        {showCustomizeCard && (
+          <div className="col-span-4 flex flex-col items-center justify-center py-6">
+            <div className="w-full max-w-xs border-2 border-blue-500 rounded-2xl p-6 flex flex-col items-center gap-4 bg-blue-500/5">
+              <div className="h-16 w-16 rounded-full border-2 border-blue-500 flex items-center justify-center bg-blue-500/10">
+                <Plus className="h-8 w-8 text-blue-500" />
+              </div>
+              <p className="text-white font-bold text-center text-sm">Pay 50,000 Coins and Customize your Gift</p>
+              <button 
+                onClick={handlePayAndOpenLink}
+                disabled={isPayingCustomize || (userProfile?.wallet?.coins || 0) < 50000}
+                className="w-full py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 font-bold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isPayingCustomize ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <GoldenDollar />
+                    <span>Pay 50,000</span>
+                  </>
+                )}
+              </button>
+              {(userProfile?.wallet?.coins || 0) < 50000 && (
+                <p className="text-red-400 text-xs font-medium">Not enough coins</p>
+              )}
+            </div>
           </div>
-        ) : (
-          Object.entries(GIFTS).map(([cat, items]) => (
-            <TabsContent key={cat} value={cat} className="contents">
-            {items.length === 0 ? (
-               <div className="col-span-4 py-10 text-center opacity-30 text- font-bold uppercase tracking-widest">No Gifts in {cat}</div>
+        )}
+        
+        {/* Gifts Grid - hidden when Customized tab is showing */}
+        {!showCustomizeCard && (
+          <>
+            {isGiftsLoading ? (
+              <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
+                <Loader className="animate-spin text-cyan-400 h-6 w-6" />
+                <span className="text-[11px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span>
+              </div>
             ) : (
-              items.map(gift => (
-                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-                {/* YAHAN CONTAINER SIZE BADA KIYA: h-14 w-14 */}
-                <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
-                  <GiftImage gift={gift} />
-                </div>
-                <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <GoldenDollar /> 
-                  <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
-                </div>
-                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
-                </button>
+              Object.entries(GIFTS).map(([cat, items]) => (
+                <TabsContent key={cat} value={cat} className="contents">
+                {items.length === 0 ? (
+                   <div className="col-span-4 py-10 text-center opacity-30 text- font-bold uppercase tracking-widest">No Gifts in {cat}</div>
+                ) : (
+                  items.map(gift => (
+                    <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
+                    {/* YAHAN CONTAINER SIZE BADA KIYA: h-14 w-14 */}
+                    <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
+                      <GiftImage gift={gift} />
+                    </div>
+                    <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <GoldenDollar /> 
+                      <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
+                    </div>
+                    {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+                    </button>
+                  ))
+                )}
+                </TabsContent>
               ))
             )}
-            </TabsContent>
-          ))
+          </>
         )}
        </div>
      </Tabs>
@@ -513,4 +618,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Sheet>
   </>
  );
-   }
+           }
