@@ -1,4 +1,4 @@
-'use client';
+'use Client', 
 
 import Image from 'next/image';
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -373,6 +373,17 @@ function WalletContent() {
   const activePackage = COIN_PACKAGES.find(p => p.id === selectedPackageId);
   const displayPriceINR = activePackage ? parseInt(activePackage.price.split(' ')[0]) : 0;
 
+  // Coins value ke hisaab se dynamic font size calculate karo
+  const coinsValue = userProfile?.wallet?.coins || 0;
+  const getCoinsFontSize = (value: number) => {
+    const length = value.toLocaleString().length;
+    if (length <= 6) return 'text-[40px]';      // 6 digits tak bada font
+    if (length <= 8) return 'text-[34px]';      // 7-8 digits
+    if (length <= 10) return 'text-[28px]';     // 9-10 digits
+    if (length <= 12) return 'text-[24px]';     // 11-12 digits
+    return 'text-[20px]';                        // 12+ digits, chhota font
+  };
+
   if (isUserLoading || isProfileLoading) {
    return (
      <div className="flex h-[80vh] items-center justify-center bg-white">
@@ -388,7 +399,7 @@ function WalletContent() {
      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
      <div className="min-h-full bg-white font-sans flex flex-col animate-in fade-in duration-700">
       
-      {/* HEADER EXACTLY AS IMAGE */}
+      {/* HEADER */}
       <header className="px-4 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 pt-safe">
         <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-95 transition-all">
          <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
@@ -460,23 +471,25 @@ function WalletContent() {
       ) : (
        <div className="flex-1 flex flex-col overflow-hidden bg-white">
         
-        {/* YELLOW BALANCE CARD EXACTLY AS IMAGE */}
-        <div className="px-4 mt-2">
-            <div className="w-full rounded-[1.25rem] bg-[#ffc107] px-6 py-8 relative shadow-sm">
-                <div className="absolute top-4 right-4 bg-white/40 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer">
-                    <span className="text-[13px] font-medium text-black">Coins details</span>
-                    <ChevronRight className="h-4 w-4 text-black" />
-                </div>
-                <div className="mt-2">
-                    <h2 className="text-[40px] font-bold text-black tracking-tight leading-none mb-2">
-                        {(userProfile?.wallet?.coins || 0).toLocaleString()}
-                    </h2>
-                    <p className="text-gray-800 font-medium text-sm">Remaining coins</p>
-                </div>
-            </div>
-        </div>
+        {/* YELLOW BALANCE CARD - Sirf Recharge tab mein dikhega */}
+        {activeTab === 'Coins' && (
+          <div className="px-4 mt-2">
+              <div className="w-full rounded-[1.25rem] bg-[#ffc107] px-6 py-8 relative shadow-sm">
+                  <div className="absolute top-4 right-4 bg-white/40 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer">
+                      <span className="text-[13px] font-medium text-black">Coins details</span>
+                      <ChevronRight className="h-4 w-4 text-black" />
+                  </div>
+                  <div className="mt-2">
+                      <h2 className={`${getCoinsFontSize(coinsValue)} font-bold text-black tracking-tight leading-none mb-2 transition-all duration-300`}>
+                          {coinsValue.toLocaleString()}
+                      </h2>
+                      <p className="text-gray-800 font-medium text-sm">Remaining coins</p>
+                  </div>
+              </div>
+          </div>
+        )}
 
-        {/* TABS (Recharge / Exchange / Agent) EXACTLY AS IMAGE */}
+        {/* TABS (Recharge / Exchange / Agent) */}
         <div className="flex px-4 gap-6 mt-6 border-b border-gray-100/50">
             <button 
                 onClick={() => setActiveTab('Coins')}
@@ -507,7 +520,7 @@ function WalletContent() {
           
           {activeTab === 'Coins' ? (
            <>
-            {/* PAYMENT METHODS GRID EXACTLY AS IMAGE */}
+            {/* PAYMENT METHODS GRID */}
             <div className="grid grid-cols-2 gap-3 mb-6">
                 {/* PhonePe */}
                 <button 
@@ -577,7 +590,7 @@ function WalletContent() {
                 </button>
             </div>
 
-            {/* COIN PACKAGES EXACTLY AS IMAGE */}
+            {/* COIN PACKAGES */}
             <div className="grid grid-cols-3 gap-3 mb-8">
              {COIN_PACKAGES.map((pkg) => {
               const priceNum = parseInt(pkg.price.split(' ')[0]);
@@ -598,7 +611,7 @@ function WalletContent() {
              )})}
             </div>
 
-            {/* PAY BUTTON & FOOTER EXACTLY AS IMAGE */}
+            {/* PAY BUTTON & FOOTER */}
             <div className="px-1 mt-auto">
                 <Button 
                     onClick={handleRechargeNow}
@@ -616,8 +629,9 @@ function WalletContent() {
             </div>
            </>
           ) : (
-           <div className="space-y-6 animate-in fade-in duration-500">
-            {/* EXISTING DIAMONDS VIEW LOGIC - AS REQUESTED */}
+           // EXCHANGE TAB - Full page diamond wala view, coins card nahi dikhega
+           <div className="space-y-6 animate-in fade-in duration-500 pt-2">
+            {/* DIAMOND CARD */}
             <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-8 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group transition-all border-2 border-white/20">
              <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
              <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
@@ -635,6 +649,7 @@ function WalletContent() {
              </div>
             </div>
 
+            {/* EXCHANGE BUTTON - Full width on exchange page */}
             <div className="p-1">
              <button 
               className="w-full bg-[#fffef0] border border-orange-100 rounded-3xl p-6 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
@@ -661,7 +676,7 @@ function WalletContent() {
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
         
-        {/* TOP NOTICE (Adjusted for Safe Area) */}
+        {/* TOP NOTICE */}
         <div className="bg-amber-400 py-4 px-4 flex items-center justify-center gap-2 shrink-0 pt-safe shadow-md">
            <ShieldAlert className="h-4 w-4 text-black" />
            <p className="text-[10px] font-black uppercase text-black tracking-tight leading-none pt-0.5">Online Recharge Unavailable • Use Manual Scanner Below</p>
@@ -708,7 +723,7 @@ function WalletContent() {
            <Button onClick={handleDownloadQR} variant="link" className="text-[10px] font-black text-slate-400 uppercase tracking-widest h-auto py-0">Click QR to download image</Button>
         </div>
 
-        {/* DIRECT PAY BUTTON (Fallback for intent errors) */}
+        {/* DIRECT PAY BUTTON */}
         {config?.paymentMode === 'upi_intent' && (
            <div className="px-6 pb-2">
              <Button 
@@ -721,7 +736,7 @@ function WalletContent() {
            </div>
         )}
 
-        {/* COMPACT INSTRUCTIONS (Side-by-Side Notice Area) */}
+        {/* COMPACT INSTRUCTIONS */}
         <div className="p-4 bg-slate-50 border-y border-slate-100 shrink-0">
            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -796,4 +811,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-  }
+                                                  }
