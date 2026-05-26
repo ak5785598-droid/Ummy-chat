@@ -9,15 +9,14 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2, ShieldAlert, Download, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Shield, CheckCircle2, ShieldAlert, Download, ExternalLink, MessageCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction, verifyCashfreeOrderAction } from '@/actions/payments';
 import Script from 'next/script';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 
 declare global {
  interface Window {
@@ -47,6 +46,27 @@ const DIAMOND_EXCHANGE_PACKAGES = [
 
 const CONVERSION_RATE = 0.33; // 100 Diamonds = 33 Coins, so 1 Diamond = 0.33 Coins
 
+// Dollar Coin SVG Icon Component
+const DollarCoinIcon = ({ className = "h-6 w-6" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#FFD700' }} />
+        <stop offset="50%" style={{ stopColor: '#FFA500' }} />
+        <stop offset="100%" style={{ stopColor: '#FF8C00' }} />
+      </linearGradient>
+      <linearGradient id="coinShine" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#FFF8DC', stopOpacity: 0.8 }} />
+        <stop offset="100%" style={{ stopColor: '#FFD700', stopOpacity: 0 }} />
+      </linearGradient>
+    </defs>
+    <circle cx="12" cy="12" r="11" fill="url(#coinGradient)" stroke="#DAA520" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="8.5" fill="none" stroke="#DAA520" strokeWidth="0.5" strokeDasharray="2 2" />
+    <circle cx="12" cy="12" r="11" fill="url(#coinShine)" />
+    <text x="12" y="16" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#B8860B" fontFamily="serif">$</text>
+  </svg>
+);
+
 export const dynamic = 'force-dynamic';
 
 function WalletContent() {
@@ -56,7 +76,7 @@ function WalletContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'Coins' | 'Diamonds'>('Coins');
+  const [activeTab, setActiveTab] = useState<'Coins' | 'Diamonds' | 'Agent'>('Coins');
   const [showRecords, setShowRecords] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState('p1');
   const [selectedVisualGateway, setSelectedVisualGateway] = useState('phonepe');
@@ -80,6 +100,18 @@ function WalletContent() {
    return doc(firestore, 'appConfig', 'global');
   }, [firestore]);
   const { data: config } = useDoc(configRef);
+
+  // Agents query - sirf seller tag wale users
+  const agentsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'users'),
+      where('tag', 'in', ['seller', 'Seller', 'merchant', 'Merchant']),
+      limit(50)
+    );
+  }, [firestore]);
+
+  const { data: agents, isLoading: isAgentsLoading } = useCollection(agentsQuery);
 
  useEffect(() => {
   if (!isUserLoading && !user) {
@@ -341,9 +373,17 @@ function WalletContent() {
    }
   };
 
-  // Diamond Exchange Handler - Fixed packages ke liye
-  const handleDiamondExchange = async (diamonds: number, coins: number) => {
+  const handleDiamondExchange = async () => {
     if (!user || !firestore || !userProfile) return;
+    
+    const selectedPkg = DIAMOND_EXCHANGE_PACKAGES.find(p => p.id === selectedDiamondId);
+    if (!selectedPkg) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please select a package first.' });
+      return;
+    }
+
+    const diamonds = selectedPkg.diamonds;
+    const coins = selectedPkg.coins;
     
     const currentDiamonds = userProfile?.wallet?.diamonds || 0;
     if (currentDiamonds < diamonds) {
@@ -356,7 +396,6 @@ function WalletContent() {
       const userRef = doc(firestore, 'users', user.uid);
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       
-      // Diamond cut karo, coins add karo
       await updateDocumentNonBlocking(userRef, { 
         'wallet.diamonds': increment(-diamonds),
         'wallet.coins': increment(coins), 
@@ -368,7 +407,6 @@ function WalletContent() {
         updatedAt: serverTimestamp() 
       });
       
-      // History mein add karo
       const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
       await addDoc(historyRef, {
         type: 'exchange',
@@ -389,7 +427,6 @@ function WalletContent() {
     }
   };
 
-  // Custom exchange handler
   const handleCustomExchange = async () => {
     if (!user || !firestore || !userProfile) return;
     
@@ -491,13 +528,18 @@ function WalletContent() {
     toast({ title: "Image Download Started", description: "You can now scan this from your gallery." });
   };
 
+  const handleChatWithAgent = (agentId: string) => {
+    router.push(`/chat/${agentId}`);
+  };
+
   const activePackage = COIN_PACKAGES.find(p => p.id === selectedPackageId);
   const displayPriceINR = activePackage ? parseInt(activePackage.price.split(' ')[0]) : 0;
 
-  // Custom exchange calculated coins
   const customCoins = customDiamondValue ? Math.floor(parseInt(customDiamondValue || '0') * CONVERSION_RATE) : 0;
 
-  // Coin value size auto adjust karne ka function
+  const selectedDiamondPkg = DIAMOND_EXCHANGE_PACKAGES.find(p => p.id === selectedDiamondId);
+  const isFixedPackageSelected = selectedDiamondId !== 'custom';
+
   const getCoinFontSize = (coins: number) => {
     const length = coins.toLocaleString().length;
     if (length <= 4) return 'text-[40px]';
@@ -507,7 +549,6 @@ function WalletContent() {
     return 'text-[20px]';
   };
 
-  // Diamond value size auto adjust karne ka function
   const getDiamondFontSize = (diamonds: number) => {
     const length = Math.floor(diamonds).toLocaleString().length;
     if (length <= 4) return 'text-[40px]';
@@ -538,7 +579,7 @@ function WalletContent() {
          <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
         </button>
         <h1 className="text-xl font-bold text-black tracking-tight">
-          {activeTab === 'Diamonds' ? 'Diamond Exchange' : 'Top-up coins'}
+          {activeTab === 'Diamonds' ? 'Diamond Exchange' : activeTab === 'Agent' ? 'Agents' : 'Top-up coins'}
         </h1>
         <button onClick={() => setShowRecords(!showRecords)} className="text-black text-[15px] font-medium px-2 active:scale-95 transition-transform">
          {showRecords ? 'Close' : 'Records'}
@@ -574,7 +615,7 @@ function WalletContent() {
                record.diamondAmount && (
                  <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
                    <span>💎</span>
-                   <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
+                   <span>-{record.diamondAmount.toLocaleString()}</span>
                  </div>
                )
              ) : (
@@ -584,7 +625,7 @@ function WalletContent() {
             <div className="text-right">
              <div className="flex items-center gap-1.5 justify-end">
               <span className="font-bold text-green-600">+{record.coinAmount?.toLocaleString() || (record.coins + (record.bonus || 0)).toLocaleString()}</span>
-              <GoldCoinIcon className="h-4 w-4" />
+              <DollarCoinIcon className="h-4 w-4" />
              </div>
              {record.historyType === 'exchange' ? (
                <p className="text-[8px] font-bold text-green-600 uppercase tracking-wider mt-1">Completed</p>
@@ -606,14 +647,10 @@ function WalletContent() {
       ) : (
        <div className="flex-1 flex flex-col overflow-hidden bg-white">
         
-        {/* YELLOW BALANCE CARD - Sirf Coins tab mein dikhega */}
-        {activeTab === 'Coins' && (
+        {/* YELLOW BALANCE CARD - Coins aur Agent tab mein dikhega */}
+        {(activeTab === 'Coins' || activeTab === 'Agent') && (
           <div className="px-4 mt-2">
               <div className="w-full rounded-[1.25rem] bg-[#ffc107] px-6 py-8 relative shadow-sm">
-                  <div className="absolute top-4 right-4 bg-white/40 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer">
-                      <span className="text-[13px] font-medium text-black">Coins details</span>
-                      <ChevronRight className="h-4 w-4 text-black" />
-                  </div>
                   <div className="mt-2">
                       <h2 className={`font-bold text-black tracking-tight leading-none mb-2 transition-all duration-300 ${getCoinFontSize(userProfile?.wallet?.coins || 0)}`}>
                           {(userProfile?.wallet?.coins || 0).toLocaleString()}
@@ -628,10 +665,6 @@ function WalletContent() {
         {activeTab === 'Diamonds' && (
           <div className="px-4 mt-2">
               <div className="w-full rounded-[1.25rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] px-6 py-8 relative shadow-sm">
-                  <div className="absolute top-4 right-4 bg-white/40 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer">
-                      <span className="text-[13px] font-medium text-white">Diamond details</span>
-                      <ChevronRight className="h-4 w-4 text-white" />
-                  </div>
                   <div className="mt-2">
                       <h2 className={`font-bold text-white tracking-tight leading-none mb-2 transition-all duration-300 ${getDiamondFontSize(userProfile?.wallet?.diamonds || 0)}`}>
                           {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
@@ -642,7 +675,7 @@ function WalletContent() {
           </div>
         )}
 
-        {/* TABS - Dono tabs mein dikhega ab */}
+        {/* TABS */}
         <div className="flex px-4 gap-6 mt-6 border-b border-gray-100/50">
             <button 
                 onClick={() => setActiveTab('Coins')}
@@ -664,8 +697,15 @@ function WalletContent() {
                 Exchange
                 {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
             </button>
-            <button className="pb-3 text-[17px] font-medium text-gray-400">
+            <button 
+                onClick={() => setActiveTab('Agent')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Agent' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
                 Agent
+                {activeTab === 'Agent' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
             </button>
         </div>
 
@@ -675,7 +715,6 @@ function WalletContent() {
            <>
             {/* PAYMENT METHODS GRID */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-                {/* PhonePe */}
                 <button 
                     onClick={() => setSelectedVisualGateway('phonepe')}
                     className={cn(
@@ -691,7 +730,6 @@ function WalletContent() {
                     <span className="font-bold text-black text-[15px]">PhonePe</span>
                 </button>
 
-                {/* Google Pay */}
                 <button 
                     onClick={() => setSelectedVisualGateway('gpay')}
                     className={cn(
@@ -712,7 +750,6 @@ function WalletContent() {
                     <span className="font-bold text-black text-[15px] ml-1">Pay</span>
                 </button>
 
-                {/* Paytm */}
                 <button 
                     onClick={() => setSelectedVisualGateway('paytm')}
                     className={cn(
@@ -726,7 +763,6 @@ function WalletContent() {
                     <span className="font-bold text-black text-[15px] ml-1">Paytm</span>
                 </button>
 
-                {/* Official Recharge */}
                 <button 
                     onClick={() => setSelectedVisualGateway('official')}
                     className={cn(
@@ -781,70 +817,73 @@ function WalletContent() {
                 </div>
             </div>
            </>
-          ) : (
-           // EXCHANGE TAB - Diamond exchange packages
+          ) : activeTab === 'Diamonds' ? (
+           // EXCHANGE TAB
            <div className="space-y-6 animate-in fade-in duration-500">
             
-            {/* DIAMOND EXCHANGE PACKAGES GRID - 3 columns, 2 rows */}
             <div className="grid grid-cols-3 gap-3">
               {DIAMOND_EXCHANGE_PACKAGES.map((pkg) => (
                 <button 
                   key={pkg.id}
-                  onClick={() => {
-                    setSelectedDiamondId(pkg.id);
-                    handleDiamondExchange(pkg.diamonds, pkg.coins);
-                  }}
-                  disabled={isExchanging}
+                  onClick={() => setSelectedDiamondId(pkg.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 px-2 transition-all",
+                    "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-3 px-1.5 transition-all",
                     selectedDiamondId === pkg.id 
                       ? "bg-[#e3f2fd] border-[#0284c7]" 
-                      : "bg-[#f8f9fa] border-transparent",
-                    isExchanging && "opacity-50 pointer-events-none"
+                      : "bg-[#f8f9fa] border-transparent"
                   )}
                 >
-                  {/* First row - Diamond emoji and value */}
-                  <div className="flex items-center gap-1 mb-1">
-                    <span className="text-lg">💎</span>
-                    <p className="font-bold text-[15px] text-black leading-tight">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="text-sm">💎</span>
+                    <p className="font-bold text-[11px] text-black leading-tight">
                       {pkg.diamonds.toLocaleString()}
                     </p>
                   </div>
-                  {/* Second row - GoldCoin SVG icon and value */}
                   <div className="flex items-center gap-1">
-                    <GoldCoinIcon className="h-4 w-4" />
-                    <p className="font-bold text-[13px] text-gray-600 leading-tight">
+                    <DollarCoinIcon className="h-3.5 w-3.5" />
+                    <p className="font-bold text-[10px] text-gray-600 leading-tight">
                       {pkg.coins.toLocaleString()}
                     </p>
                   </div>
                 </button>
               ))}
 
-              {/* Custom Amount Card - No icons, only text */}
               <button 
                 onClick={() => {
                   setSelectedDiamondId('custom');
+                  setCustomDiamondValue('');
                   setShowCustomExchange(true);
                 }}
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 transition-all",
+                  "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-3 transition-all",
                   selectedDiamondId === 'custom' 
                     ? "bg-[#e3f2fd] border-[#0284c7]" 
                     : "bg-[#f8f9fa] border-transparent"
                 )}
               >
-                <p className="font-bold text-[15px] text-black leading-tight">Custom</p>
-                <p className="font-bold text-[13px] text-gray-600 leading-tight mt-1">Amount</p>
+                <p className="font-bold text-[11px] text-black leading-tight">Custom</p>
+                <p className="font-bold text-[10px] text-gray-600 leading-tight mt-0.5">Amount</p>
               </button>
             </div>
 
-            {/* EXCHANGE BUTTON & FOOTER */}
             <div className="px-1 mt-auto">
                 <Button 
-                    disabled={true}
-                    className="w-full h-[52px] rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium text-[17px] transition-all opacity-50"
+                    onClick={handleDiamondExchange}
+                    disabled={!isFixedPackageSelected || isExchanging}
+                    className={cn(
+                      "w-full h-[52px] rounded-2xl text-white font-medium text-[17px] transition-all",
+                      isFixedPackageSelected && !isExchanging
+                        ? "bg-[#8b5cf6] hover:bg-[#7c3aed]"
+                        : "bg-[#8b5cf6] opacity-50"
+                    )}
                 >
-                    Exchange
+                    {isExchanging ? (
+                      <Loader className="animate-spin" />
+                    ) : selectedDiamondPkg ? (
+                      `Exchange ${selectedDiamondPkg.diamonds.toLocaleString()} 💎 → ${selectedDiamondPkg.coins.toLocaleString()} Coins`
+                    ) : (
+                      'Select a Package'
+                    )}
                 </Button>
 
                 <div className="text-center mt-6">
@@ -853,6 +892,64 @@ function WalletContent() {
                     </p>
                 </div>
             </div>
+           </div>
+          ) : (
+           // AGENT TAB
+           <div className="space-y-3 animate-in fade-in duration-500">
+            
+            {isAgentsLoading ? (
+              <div className="flex justify-center pt-20">
+                <Loader className="animate-spin text-primary h-8 w-8" />
+              </div>
+            ) : !agents || agents.length === 0 ? (
+              <div className="py-40 text-center">
+                <p className="text-gray-400 font-medium">No agents available right now</p>
+              </div>
+            ) : (
+              agents.map((agent: any) => (
+                <div 
+                  key={agent.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
+                >
+                  {/* Left - DP + Name + Tag */}
+                  <div className="flex items-center gap-3">
+                    {/* Profile DP */}
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg overflow-hidden shrink-0">
+                      {agent.photoURL ? (
+                        <Image 
+                          src={agent.photoURL} 
+                          alt={agent.displayName || 'Agent'} 
+                          width={48} 
+                          height={48} 
+                          className="h-full w-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        (agent.displayName || 'A').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    
+                    {/* Name + Tag */}
+                    <div>
+                      <p className="font-bold text-black text-[15px] leading-tight">
+                        {agent.displayName || 'Unknown Agent'}
+                      </p>
+                      <p className="text-[11px] font-medium text-gray-500 capitalize">
+                        {agent.tag || 'Seller'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right - Chat Icon */}
+                  <button 
+                    onClick={() => handleChatWithAgent(agent.id)}
+                    className="h-10 w-10 rounded-full bg-[#8b5cf6] flex items-center justify-center active:scale-90 transition-all shadow-md"
+                  >
+                    <MessageCircle className="h-5 w-5 text-white" fill="white" />
+                  </button>
+                </div>
+              ))
+            )}
            </div>
           )}
         </div>
@@ -863,7 +960,6 @@ function WalletContent() {
     {/* CUSTOM EXCHANGE BOTTOM SHEET */}
     {showCustomExchange && (
       <div className="fixed inset-0 z-[100] flex items-end justify-center">
-        {/* Backdrop */}
         <div 
           className="absolute inset-0 bg-black/50" 
           onClick={() => {
@@ -872,11 +968,8 @@ function WalletContent() {
           }}
         />
         
-        {/* Bottom Sheet - White, 50vh */}
         <div className="relative w-full bg-white rounded-t-[2rem] animate-in slide-in-from-bottom duration-300" style={{ height: '50vh' }}>
-          {/* HEADER */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            {/* Left - Back Icon */}
             <button 
               onClick={() => {
                 setShowCustomExchange(false);
@@ -887,10 +980,8 @@ function WalletContent() {
               <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
             </button>
             
-            {/* Middle - Heading */}
             <h2 className="text-lg font-bold text-black">Exchange</h2>
             
-            {/* Right - Exchange text green */}
             <button 
               onClick={handleCustomExchange}
               disabled={isExchanging || !customDiamondValue || parseInt(customDiamondValue || '0') <= 0}
@@ -900,10 +991,8 @@ function WalletContent() {
             </button>
           </div>
 
-          {/* EXCHANGE CARD */}
           <div className="px-5 mt-4">
             <div className="bg-gray-50 rounded-2xl p-5 flex items-center justify-between">
-              {/* Left - Diamond emoji + Input */}
               <div className="flex items-center gap-3 flex-1">
                 <span className="text-2xl">💎</span>
                 <input 
@@ -916,16 +1005,14 @@ function WalletContent() {
                 />
               </div>
 
-              {/* Right - GoldCoin SVG + Calculated coins */}
               <div className="flex items-center gap-2">
-                <GoldCoinIcon className="h-6 w-6" />
+                <DollarCoinIcon className="h-6 w-6" />
                 <span className="text-xl font-bold text-black">
                   {customCoins.toLocaleString()}
                 </span>
               </div>
             </div>
 
-            {/* Conversion rate info */}
             <p className="text-center text-xs text-gray-400 mt-3 font-medium">
               Conversion Rate: 100 💎 = 33 Coins
             </p>
@@ -934,7 +1021,7 @@ function WalletContent() {
       </div>
     )}
 
-    {/* OFFLINE DIALOG - unchanged */}
+    {/* OFFLINE DIALOG */}
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
@@ -1068,4 +1155,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-       }
+}
