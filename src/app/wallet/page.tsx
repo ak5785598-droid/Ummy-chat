@@ -36,7 +36,7 @@ const COIN_PACKAGES = [
  { id: 'p6', amount: '50,000,000', price: '10000', bonus: '+13500000' },
 ];
 
-// Diamond exchange packages define kiye
+// Diamond exchange packages with conversion rate 100 Diamond = 33 Coins
 const DIAMOND_EXCHANGE_PACKAGES = [
   { id: 'd1', diamonds: 100, coins: 33 },
   { id: 'd2', diamonds: 1000000, coins: 330000 },
@@ -44,6 +44,8 @@ const DIAMOND_EXCHANGE_PACKAGES = [
   { id: 'd4', diamonds: 50000000, coins: 16500000 },
   { id: 'd5', diamonds: 90000000, coins: 29700000 },
 ];
+
+const CONVERSION_RATE = 0.33; // 100 Diamonds = 33 Coins, so 1 Diamond = 0.33 Coins
 
 export const dynamic = 'force-dynamic';
 
@@ -66,8 +68,12 @@ function WalletContent() {
   const searchParams = useSearchParams();
   const orderIdParam = searchParams.get('order_id');
   const [isVerifyingOrder, setIsVerifyingOrder] = useState(false);
-  // Selected diamond package track karne ke liye
   const [selectedDiamondId, setSelectedDiamondId] = useState('d1');
+  
+  // Custom exchange bottom sheet states
+  const [showCustomExchange, setShowCustomExchange] = useState(false);
+  const [customDiamondValue, setCustomDiamondValue] = useState('');
+  const [isExchanging, setIsExchanging] = useState(false);
 
   const configRef = useMemoFirebase(() => {
    if (!firestore) return null;
@@ -335,6 +341,110 @@ function WalletContent() {
    }
   };
 
+  // Diamond Exchange Handler - Fixed packages ke liye
+  const handleDiamondExchange = async (diamonds: number, coins: number) => {
+    if (!user || !firestore || !userProfile) return;
+    
+    const currentDiamonds = userProfile?.wallet?.diamonds || 0;
+    if (currentDiamonds < diamonds) {
+      toast({ variant: 'destructive', title: 'Insufficient Diamonds', description: `You need ${diamonds.toLocaleString()} diamonds but have only ${currentDiamonds.toLocaleString()}.` });
+      return;
+    }
+
+    setIsExchanging(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      // Diamond cut karo, coins add karo
+      await updateDocumentNonBlocking(userRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      await updateDocumentNonBlocking(profileRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      
+      // History mein add karo
+      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+      await addDoc(historyRef, {
+        type: 'exchange',
+        diamondAmount: diamonds,
+        coinAmount: coins,
+        timestamp: serverTimestamp()
+      });
+      
+      toast({ 
+        title: 'Exchange Successful', 
+        description: `Converted ${diamonds.toLocaleString()} 💎 to ${coins.toLocaleString()} Coins!` 
+      });
+    } catch (error) {
+      console.error('Exchange error', error);
+      toast({ variant: 'destructive', title: 'Exchange Failed', description: 'Something went wrong.' });
+    } finally {
+      setIsExchanging(false);
+    }
+  };
+
+  // Custom exchange handler
+  const handleCustomExchange = async () => {
+    if (!user || !firestore || !userProfile) return;
+    
+    const diamonds = parseInt(customDiamondValue);
+    if (isNaN(diamonds) || diamonds <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid diamond amount.' });
+      return;
+    }
+
+    const currentDiamonds = userProfile?.wallet?.diamonds || 0;
+    if (currentDiamonds < diamonds) {
+      toast({ variant: 'destructive', title: 'Insufficient Diamonds', description: `You need ${diamonds.toLocaleString()} diamonds but have only ${currentDiamonds.toLocaleString()}.` });
+      return;
+    }
+
+    const coins = Math.floor(diamonds * CONVERSION_RATE);
+    
+    setIsExchanging(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      await updateDocumentNonBlocking(userRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      await updateDocumentNonBlocking(profileRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      
+      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+      await addDoc(historyRef, {
+        type: 'exchange',
+        diamondAmount: diamonds,
+        coinAmount: coins,
+        timestamp: serverTimestamp()
+      });
+      
+      toast({ 
+        title: 'Exchange Successful', 
+        description: `Converted ${diamonds.toLocaleString()} 💎 to ${coins.toLocaleString()} Coins!` 
+      });
+      setShowCustomExchange(false);
+      setCustomDiamondValue('');
+    } catch (error) {
+      console.error('Exchange error', error);
+      toast({ variant: 'destructive', title: 'Exchange Failed', description: 'Something went wrong.' });
+    } finally {
+      setIsExchanging(false);
+    }
+  };
+
   const handleSubmitManualRecharge = async () => {
    if (!user || !firestore || !utrNumber.trim()) {
     toast({ variant: 'destructive', title: 'Missing Information', description: 'Please enter the Transaction ID / UTR Number.' });
@@ -383,6 +493,9 @@ function WalletContent() {
 
   const activePackage = COIN_PACKAGES.find(p => p.id === selectedPackageId);
   const displayPriceINR = activePackage ? parseInt(activePackage.price.split(' ')[0]) : 0;
+
+  // Custom exchange calculated coins
+  const customCoins = customDiamondValue ? Math.floor(parseInt(customDiamondValue || '0') * CONVERSION_RATE) : 0;
 
   // Coin value size auto adjust karne ka function
   const getCoinFontSize = (coins: number) => {
@@ -460,7 +573,7 @@ function WalletContent() {
              {record.historyType === 'exchange' ? (
                record.diamondAmount && (
                  <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
-                   <Gem className="h-3 w-3" />
+                   <span>💎</span>
                    <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
                  </div>
                )
@@ -669,7 +782,7 @@ function WalletContent() {
             </div>
            </>
           ) : (
-           // EXCHANGE TAB - Diamond exchange packages dikhane hain
+           // EXCHANGE TAB - Diamond exchange packages
            <div className="space-y-6 animate-in fade-in duration-500">
             
             {/* DIAMOND EXCHANGE PACKAGES GRID - 3 columns, 2 rows */}
@@ -677,22 +790,27 @@ function WalletContent() {
               {DIAMOND_EXCHANGE_PACKAGES.map((pkg) => (
                 <button 
                   key={pkg.id}
-                  onClick={() => setSelectedDiamondId(pkg.id)}
+                  onClick={() => {
+                    setSelectedDiamondId(pkg.id);
+                    handleDiamondExchange(pkg.diamonds, pkg.coins);
+                  }}
+                  disabled={isExchanging}
                   className={cn(
                     "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 px-2 transition-all",
                     selectedDiamondId === pkg.id 
                       ? "bg-[#e3f2fd] border-[#0284c7]" 
-                      : "bg-[#f8f9fa] border-transparent"
+                      : "bg-[#f8f9fa] border-transparent",
+                    isExchanging && "opacity-50 pointer-events-none"
                   )}
                 >
-                  {/* First row - Diamond icon and value */}
+                  {/* First row - Diamond emoji and value */}
                   <div className="flex items-center gap-1 mb-1">
-                    <Gem className="h-4 w-4 text-[#0284c7]" />
+                    <span className="text-lg">💎</span>
                     <p className="font-bold text-[15px] text-black leading-tight">
                       {pkg.diamonds.toLocaleString()}
                     </p>
                   </div>
-                  {/* Second row - Coins icon and value */}
+                  {/* Second row - GoldCoin SVG icon and value */}
                   <div className="flex items-center gap-1">
                     <GoldCoinIcon className="h-4 w-4" />
                     <p className="font-bold text-[13px] text-gray-600 leading-tight">
@@ -702,9 +820,12 @@ function WalletContent() {
                 </button>
               ))}
 
-              {/* Custom Amount Card - 6th card */}
+              {/* Custom Amount Card - No icons, only text */}
               <button 
-                onClick={() => setSelectedDiamondId('custom')}
+                onClick={() => {
+                  setSelectedDiamondId('custom');
+                  setShowCustomExchange(true);
+                }}
                 className={cn(
                   "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 transition-all",
                   selectedDiamondId === 'custom' 
@@ -712,21 +833,16 @@ function WalletContent() {
                     : "bg-[#f8f9fa] border-transparent"
                 )}
               >
-                <div className="flex items-center gap-1 mb-1">
-                  <Gem className="h-4 w-4 text-[#0284c7]" />
-                  <p className="font-bold text-[15px] text-black leading-tight">Custom</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <GoldCoinIcon className="h-4 w-4" />
-                  <p className="font-bold text-[13px] text-gray-600 leading-tight">Amount</p>
-                </div>
+                <p className="font-bold text-[15px] text-black leading-tight">Custom</p>
+                <p className="font-bold text-[13px] text-gray-600 leading-tight mt-1">Amount</p>
               </button>
             </div>
 
-            {/* EXCHANGE BUTTON & FOOTER - Pay ki jagah Exchange likha hai */}
+            {/* EXCHANGE BUTTON & FOOTER */}
             <div className="px-1 mt-auto">
                 <Button 
-                    className="w-full h-[52px] rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium text-[17px] transition-all"
+                    disabled={true}
+                    className="w-full h-[52px] rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium text-[17px] transition-all opacity-50"
                 >
                     Exchange
                 </Button>
@@ -743,6 +859,80 @@ function WalletContent() {
        </div>
       )}
      </div>
+
+    {/* CUSTOM EXCHANGE BOTTOM SHEET */}
+    {showCustomExchange && (
+      <div className="fixed inset-0 z-[100] flex items-end justify-center">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-black/50" 
+          onClick={() => {
+            setShowCustomExchange(false);
+            setCustomDiamondValue('');
+          }}
+        />
+        
+        {/* Bottom Sheet - White, 50vh */}
+        <div className="relative w-full bg-white rounded-t-[2rem] animate-in slide-in-from-bottom duration-300" style={{ height: '50vh' }}>
+          {/* HEADER */}
+          <div className="flex items-center justify-between px-5 pt-5 pb-3">
+            {/* Left - Back Icon */}
+            <button 
+              onClick={() => {
+                setShowCustomExchange(false);
+                setCustomDiamondValue('');
+              }}
+              className="p-2 -ml-2 active:scale-95"
+            >
+              <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
+            </button>
+            
+            {/* Middle - Heading */}
+            <h2 className="text-lg font-bold text-black">Exchange</h2>
+            
+            {/* Right - Exchange text green */}
+            <button 
+              onClick={handleCustomExchange}
+              disabled={isExchanging || !customDiamondValue || parseInt(customDiamondValue || '0') <= 0}
+              className="text-[15px] font-bold text-green-500 disabled:opacity-40 px-2"
+            >
+              {isExchanging ? <Loader className="animate-spin h-5 w-5" /> : 'Exchange'}
+            </button>
+          </div>
+
+          {/* EXCHANGE CARD */}
+          <div className="px-5 mt-4">
+            <div className="bg-gray-50 rounded-2xl p-5 flex items-center justify-between">
+              {/* Left - Diamond emoji + Input */}
+              <div className="flex items-center gap-3 flex-1">
+                <span className="text-2xl">💎</span>
+                <input 
+                  type="number"
+                  value={customDiamondValue}
+                  onChange={(e) => setCustomDiamondValue(e.target.value)}
+                  placeholder="Enter diamonds"
+                  className="bg-transparent text-xl font-bold text-black outline-none w-full placeholder:text-gray-300"
+                  autoFocus
+                />
+              </div>
+
+              {/* Right - GoldCoin SVG + Calculated coins */}
+              <div className="flex items-center gap-2">
+                <GoldCoinIcon className="h-6 w-6" />
+                <span className="text-xl font-bold text-black">
+                  {customCoins.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Conversion rate info */}
+            <p className="text-center text-xs text-gray-400 mt-3 font-medium">
+              Conversion Rate: 100 💎 = 33 Coins
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* OFFLINE DIALOG - unchanged */}
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
@@ -878,4 +1068,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-          }
+       }
