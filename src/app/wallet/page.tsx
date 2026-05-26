@@ -9,15 +9,14 @@ import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMem
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, query, orderBy, limit, addDoc, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, ChevronRight, Loader, Info, Gem, ArrowRightLeft, Shield, CheckCircle2, ShieldAlert, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Shield, CheckCircle2, ShieldAlert, Download, ExternalLink, MessageCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { createOrderAction, verifyPaymentAction, createCashfreeOrderAction, verifyCashfreeOrderAction } from '@/actions/payments';
 import Script from 'next/script';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 
 declare global {
  interface Window {
@@ -28,14 +27,45 @@ declare global {
 const CASHFREE_MODE = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox";
 
 const COIN_PACKAGES = [
- { id: 'p1', amount: '50,000', price: '10 INR', bonus: null },
- { id: 'p2', amount: '500,000', price: '100 INR', bonus: null },
- { id: 'p3', amount: '2,500,000', price: '500 INR', bonus: '+250000' }, 
- { id: 'p4', amount: '5,000,000', price: '1000 INR', bonus: '+750000' },
- { id: 'p5', amount: '12,500,000', price: '2500 INR', bonus: '+2500000' },
- { id: 'p6', amount: '50,000,000', price: '10000 INR', bonus: '+13500000' },
-
+ { id: 'p1', amount: '50,000', price: '10', bonus: null },
+ { id: 'p2', amount: '500,000', price: '100', bonus: null },
+ { id: 'p3', amount: '2,500,000', price: '500', bonus: '+250000' }, 
+ { id: 'p4', amount: '5,000,000', price: '1000', bonus: '+750000' },
+ { id: 'p5', amount: '12,500,000', price: '2500', bonus: '+2500000' },
+ { id: 'p6', amount: '50,000,000', price: '10000', bonus: '+13500000' },
 ];
+
+// Diamond exchange packages with conversion rate 100 Diamond = 33 Coins
+const DIAMOND_EXCHANGE_PACKAGES = [
+  { id: 'd1', diamonds: 100, coins: 33 },
+  { id: 'd2', diamonds: 1000000, coins: 330000 },
+  { id: 'd3', diamonds: 5000000, coins: 1650000 },
+  { id: 'd4', diamonds: 50000000, coins: 16500000 },
+  { id: 'd5', diamonds: 90000000, coins: 29700000 },
+];
+
+const CONVERSION_RATE = 0.33; // 100 Diamonds = 33 Coins, so 1 Diamond = 0.33 Coins
+
+// Dollar Coin SVG Icon Component
+const DollarCoinIcon = ({ className = "h-6 w-6" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#FFD700' }} />
+        <stop offset="50%" style={{ stopColor: '#FFA500' }} />
+        <stop offset="100%" style={{ stopColor: '#FF8C00' }} />
+      </linearGradient>
+      <linearGradient id="coinShine" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#FFF8DC', stopOpacity: 0.8 }} />
+        <stop offset="100%" style={{ stopColor: '#FFD700', stopOpacity: 0 }} />
+      </linearGradient>
+    </defs>
+    <circle cx="12" cy="12" r="11" fill="url(#coinGradient)" stroke="#DAA520" strokeWidth="1.5" />
+    <circle cx="12" cy="12" r="8.5" fill="none" stroke="#DAA520" strokeWidth="0.5" strokeDasharray="2 2" />
+    <circle cx="12" cy="12" r="11" fill="url(#coinShine)" />
+    <text x="12" y="16" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#B8860B" fontFamily="serif">$</text>
+  </svg>
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -46,9 +76,10 @@ function WalletContent() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'Coins' | 'Diamonds'>('Coins');
+  const [activeTab, setActiveTab] = useState<'Coins' | 'Diamonds' | 'Agent'>('Coins');
   const [showRecords, setShowRecords] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState('p1');
+  const [selectedVisualGateway, setSelectedVisualGateway] = useState('phonepe');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isOfflineDialogOpen, setIsOfflineDialogOpen] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
@@ -57,12 +88,30 @@ function WalletContent() {
   const searchParams = useSearchParams();
   const orderIdParam = searchParams.get('order_id');
   const [isVerifyingOrder, setIsVerifyingOrder] = useState(false);
+  const [selectedDiamondId, setSelectedDiamondId] = useState('d1');
+  
+  // Custom exchange bottom sheet states
+  const [showCustomExchange, setShowCustomExchange] = useState(false);
+  const [customDiamondValue, setCustomDiamondValue] = useState('');
+  const [isExchanging, setIsExchanging] = useState(false);
 
   const configRef = useMemoFirebase(() => {
    if (!firestore) return null;
    return doc(firestore, 'appConfig', 'global');
   }, [firestore]);
   const { data: config } = useDoc(configRef);
+
+  // Agents query - sirf seller tag wale users
+  const agentsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'users'),
+      where('tag', 'in', ['seller', 'Seller', 'merchant', 'Merchant']),
+      limit(50)
+    );
+  }, [firestore]);
+
+  const { data: agents, isLoading: isAgentsLoading } = useCollection(agentsQuery);
 
  useEffect(() => {
   if (!isUserLoading && !user) {
@@ -294,21 +343,17 @@ function WalletContent() {
     const upiId = config?.upiId || "7209741932@ptyes";
     const upiName = config?.upiName || "Ummy Chat";
     
-    // Fix: Using float string for amount (e.g. 10.00) as some UPI apps strictly require it
     const formattedAmount = Number(priceINR).toFixed(2);
     const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
     
-    // Capacitor/Cordova friendly trigger to open external UPI apps
     try {
       window.open(upiUri, '_system');
     } catch (e) {
-      // Fallback for standard browsers
       const link = document.createElement('a');
       link.href = upiUri;
       link.click();
     }
     
-    // After a delay, open the manual verification dialog
     setTimeout(() => {
       setIsOfflineDialogOpen(true);
     }, 1500);
@@ -324,6 +369,115 @@ function WalletContent() {
     } else {
       // Default: UPI Intent (Direct app open with UPI ID)
       handleUPIIntentRecharge();
+    }
+  };
+
+  const handleDiamondExchange = async () => {
+    if (!user || !firestore || !userProfile) return;
+    
+    const selectedPkg = DIAMOND_EXCHANGE_PACKAGES.find(p => p.id === selectedDiamondId);
+    if (!selectedPkg) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please select a package first.' });
+      return;
+    }
+
+    const diamonds = selectedPkg.diamonds;
+    const coins = selectedPkg.coins;
+    
+    const currentDiamonds = userProfile?.wallet?.diamonds || 0;
+    if (currentDiamonds < diamonds) {
+      toast({ variant: 'destructive', title: 'Insufficient Diamonds', description: `You need ${diamonds.toLocaleString()} diamonds but have only ${currentDiamonds.toLocaleString()}.` });
+      return;
+    }
+
+    setIsExchanging(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      await updateDocumentNonBlocking(userRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      await updateDocumentNonBlocking(profileRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      
+      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+      await addDoc(historyRef, {
+        type: 'exchange',
+        diamondAmount: diamonds,
+        coinAmount: coins,
+        timestamp: serverTimestamp()
+      });
+      
+      toast({ 
+        title: 'Exchange Successful', 
+        description: `Converted ${diamonds.toLocaleString()} 💎 to ${coins.toLocaleString()} Coins!` 
+      });
+    } catch (error) {
+      console.error('Exchange error', error);
+      toast({ variant: 'destructive', title: 'Exchange Failed', description: 'Something went wrong.' });
+    } finally {
+      setIsExchanging(false);
+    }
+  };
+
+  const handleCustomExchange = async () => {
+    if (!user || !firestore || !userProfile) return;
+    
+    const diamonds = parseInt(customDiamondValue);
+    if (isNaN(diamonds) || diamonds <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid diamond amount.' });
+      return;
+    }
+
+    const currentDiamonds = userProfile?.wallet?.diamonds || 0;
+    if (currentDiamonds < diamonds) {
+      toast({ variant: 'destructive', title: 'Insufficient Diamonds', description: `You need ${diamonds.toLocaleString()} diamonds but have only ${currentDiamonds.toLocaleString()}.` });
+      return;
+    }
+
+    const coins = Math.floor(diamonds * CONVERSION_RATE);
+    
+    setIsExchanging(true);
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      await updateDocumentNonBlocking(userRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      await updateDocumentNonBlocking(profileRef, { 
+        'wallet.diamonds': increment(-diamonds),
+        'wallet.coins': increment(coins), 
+        updatedAt: serverTimestamp() 
+      });
+      
+      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+      await addDoc(historyRef, {
+        type: 'exchange',
+        diamondAmount: diamonds,
+        coinAmount: coins,
+        timestamp: serverTimestamp()
+      });
+      
+      toast({ 
+        title: 'Exchange Successful', 
+        description: `Converted ${diamonds.toLocaleString()} 💎 to ${coins.toLocaleString()} Coins!` 
+      });
+      setShowCustomExchange(false);
+      setCustomDiamondValue('');
+    } catch (error) {
+      console.error('Exchange error', error);
+      toast({ variant: 'destructive', title: 'Exchange Failed', description: 'Something went wrong.' });
+    } finally {
+      setIsExchanging(false);
     }
   };
 
@@ -373,6 +527,36 @@ function WalletContent() {
     toast({ title: "Image Download Started", description: "You can now scan this from your gallery." });
   };
 
+  const handleChatWithAgent = (agentId: string) => {
+    router.push(`/chat/${agentId}`);
+  };
+
+  const activePackage = COIN_PACKAGES.find(p => p.id === selectedPackageId);
+  const displayPriceINR = activePackage ? parseInt(activePackage.price.split(' ')[0]) : 0;
+
+  const customCoins = customDiamondValue ? Math.floor(parseInt(customDiamondValue || '0') * CONVERSION_RATE) : 0;
+
+  const selectedDiamondPkg = DIAMOND_EXCHANGE_PACKAGES.find(p => p.id === selectedDiamondId);
+  const isFixedPackageSelected = selectedDiamondId !== 'custom';
+
+  const getCoinFontSize = (coins: number) => {
+    const length = coins.toLocaleString().length;
+    if (length <= 4) return 'text-[40px]';
+    if (length <= 6) return 'text-[34px]';
+    if (length <= 8) return 'text-[28px]';
+    if (length <= 10) return 'text-[24px]';
+    return 'text-[20px]';
+  };
+
+  const getDiamondFontSize = (diamonds: number) => {
+    const length = Math.floor(diamonds).toLocaleString().length;
+    if (length <= 4) return 'text-[40px]';
+    if (length <= 6) return 'text-[34px]';
+    if (length <= 8) return 'text-[28px]';
+    if (length <= 10) return 'text-[24px]';
+    return 'text-[20px]';
+  };
+
   if (isUserLoading || isProfileLoading) {
    return (
      <div className="flex h-[80vh] items-center justify-center bg-white">
@@ -388,20 +572,16 @@ function WalletContent() {
      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
      <div className="min-h-full bg-white font-sans flex flex-col animate-in fade-in duration-700">
       
-      <header className="px-6 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 border-b border-gray-50 pt-safe">
-        <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
-         <ChevronLeft className="h-6 w-6 text-gray-800" />
+      {/* HEADER */}
+      <header className="px-4 pt-10 pb-4 flex items-center justify-between bg-white sticky top-0 z-50 pt-safe">
+        <button onClick={() => router.back()} className="p-2 -ml-2 active:scale-95 transition-all">
+         <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
         </button>
-        <div>
-          <h1 className="text-xl font-bold uppercase tracking-tight">Wallet</h1>
-          {config?.paymentMode !== 'razorpay' && (
-            <p className="text-[8px] font-bold text-green-500 uppercase tracking-widest mt-0.5 flex items-center gap-1 animate-pulse">
-              <Shield className="h-2 w-2" /> Secure Offline Mode
-            </p>
-          )}
-        </div>
-        <button onClick={() => setShowRecords(!showRecords)} className="text-gray-400 font-bold uppercase text-sm tracking-tight px-2 active:scale-95 transition-transform">
-         {showRecords ? 'Close' : 'Record'}
+        <h1 className="text-xl font-bold text-black tracking-tight">
+          {activeTab === 'Diamonds' ? 'Diamond Exchange' : activeTab === 'Agent' ? 'Agents' : 'Top-up coins'}
+        </h1>
+        <button onClick={() => setShowRecords(!showRecords)} className="text-black text-[15px] font-medium px-2 active:scale-95 transition-transform">
+         {showRecords ? 'Close' : 'Records'}
         </button>
       </header>
 
@@ -412,7 +592,7 @@ function WalletContent() {
           <div className="flex justify-center pt-20">
            <Loader className="animate-spin text-primary h-8 w-8" />
           </div>
-         ) : !exchangeHistory || exchangeHistory.length === 0 ? (
+         ) : !unifiedHistory || unifiedHistory.length === 0 ? (
           <div className="py-40 text-center opacity-20 uppercase font-bold text-xs">No Records Found</div>
          ) : (
           unifiedHistory.map((record: any) => (
@@ -433,8 +613,8 @@ function WalletContent() {
              {record.historyType === 'exchange' ? (
                record.diamondAmount && (
                  <div className="flex items-center gap-1 text-[10px] text-blue-400 font-bold uppercase">
-                   <Gem className="h-3 w-3" />
-                   <span>-{record.diamondAmount.toLocaleString()} Diamonds</span>
+                   <span>💎</span>
+                   <span>-{record.diamondAmount.toLocaleString()}</span>
                  </div>
                )
              ) : (
@@ -444,7 +624,7 @@ function WalletContent() {
             <div className="text-right">
              <div className="flex items-center gap-1.5 justify-end">
               <span className="font-bold text-green-600">+{record.coinAmount?.toLocaleString() || (record.coins + (record.bonus || 0)).toLocaleString()}</span>
-              <GoldCoinIcon className="h-4 w-4" />
+              <DollarCoinIcon className="h-4 w-4" />
              </div>
              {record.historyType === 'exchange' ? (
                <p className="text-[8px] font-bold text-green-600 uppercase tracking-wider mt-1">Completed</p>
@@ -464,157 +644,387 @@ function WalletContent() {
          )}
        </div>
       ) : (
-       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex justify-around border-b border-gray-50 bg-white shrink-0">
-          <button 
-           onClick={() => setActiveTab('Coins')}
-           className={cn(
-            "py-4 px-8 text-lg font-bold uppercase tracking-tight relative transition-all",
-            activeTab === 'Coins' ? "text-gray-900" : "text-gray-300"
-           )}
-          >
-           Coins
-           {activeTab === 'Coins' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1 bg-yellow-400 rounded-full" />}
-          </button>
-          <button 
-           onClick={() => setActiveTab('Diamonds')}
-           className={cn(
-            "py-4 px-8 text-lg font-bold uppercase tracking-tight relative transition-all",
-            activeTab === 'Diamonds' ? "text-gray-900" : "text-gray-300"
-           )}
-          >
-           Diamonds
-           {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-1 bg-yellow-400 rounded-full" />}
-          </button>
+       <div className="flex-1 flex flex-col overflow-hidden bg-white">
+        
+        {/* YELLOW BALANCE CARD - Coins aur Agent tab mein dikhega */}
+        {(activeTab === 'Coins' || activeTab === 'Agent') && (
+          <div className="px-4 mt-2">
+              <div className="w-full rounded-[1.25rem] bg-[#ffc107] px-6 py-8 relative shadow-sm">
+                  <div className="mt-2">
+                      <h2 className={`font-bold text-black tracking-tight leading-none mb-2 transition-all duration-300 ${getCoinFontSize(userProfile?.wallet?.coins || 0)}`}>
+                          {(userProfile?.wallet?.coins || 0).toLocaleString()}
+                      </h2>
+                      <p className="text-gray-800 font-medium text-sm">Remaining coins</p>
+                  </div>
+              </div>
+          </div>
+        )}
+
+        {/* BLUE DIAMOND BALANCE CARD - Sirf Diamonds tab mein dikhega */}
+        {activeTab === 'Diamonds' && (
+          <div className="px-4 mt-2">
+              <div className="w-full rounded-[1.25rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] px-6 py-8 relative shadow-sm">
+                  <div className="mt-2">
+                      <h2 className={`font-bold text-white tracking-tight leading-none mb-2 transition-all duration-300 ${getDiamondFontSize(userProfile?.wallet?.diamonds || 0)}`}>
+                          {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </h2>
+                      <p className="text-white/80 font-medium text-sm">Remaining diamonds</p>
+                  </div>
+              </div>
+          </div>
+        )}
+
+        {/* TABS */}
+        <div className="flex px-4 gap-6 mt-6 border-b border-gray-100/50">
+            <button 
+                onClick={() => setActiveTab('Coins')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Coins' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
+                Recharge
+                {activeTab === 'Coins' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+            </button>
+            <button 
+                onClick={() => setActiveTab('Diamonds')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Diamonds' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
+                Exchange
+                {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+            </button>
+            <button 
+                onClick={() => setActiveTab('Agent')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Agent' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
+                Agent
+                {activeTab === 'Agent' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+            </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-32">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-10">
           
           {activeTab === 'Coins' ? (
            <>
-            <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#ffd700] via-[#ff9800] to-[#f57c00] p-8 text-white shadow-[0_20px_40px_rgba(255,152,0,0.3)] overflow-hidden mb-4 group active:scale-[0.98] transition-all border-2 border-white/20">
-             <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2s' }} />
-             <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3s', animationDelay: '1s' }} />
-             
-             <div className="relative z-30 flex flex-col h-full justify-between">
-               <div className="flex justify-between items-start">
-                <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Coins</p>
-                <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border border-white/10">
-                  History <ChevronRight className="h-3 w-3" />
+            {/* PAYMENT METHODS GRID */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+                <button 
+                    onClick={() => setSelectedVisualGateway('phonepe')}
+                    className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                        selectedVisualGateway === 'phonepe' 
+                        ? "bg-[#fffde7] border-[#ffc107]" 
+                        : "bg-[#f8f9fa] border-transparent"
+                    )}
+                >
+                    <div className="bg-white h-7 w-7 rounded-full flex items-center justify-center p-1.5 shadow-sm">
+                        <span className="text-[#6739B7] font-bold text-lg leading-none">पे</span>
+                    </div>
+                    <span className="font-bold text-black text-[15px]">PhonePe</span>
                 </button>
-               </div>
-               <h2 className="text-5xl font-bold tracking-tight drop-shadow-lg">
-                {(userProfile?.wallet?.coins || 0).toLocaleString()}
-               </h2>
-             </div>
-             <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 rotate-12 pointer-events-none group-hover:rotate-45 group-hover:scale-125 transition-all duration-1000">
-               <GoldCoinIcon className="w-full h-full" />
-             </div>
+
+                <button 
+                    onClick={() => setSelectedVisualGateway('gpay')}
+                    className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                        selectedVisualGateway === 'gpay' 
+                        ? "bg-[#fffde7] border-[#ffc107]" 
+                        : "bg-[#f8f9fa] border-transparent"
+                    )}
+                >
+                    <div className="flex items-center">
+                       <span className="text-[#4285F4] font-bold text-lg">G</span>
+                       <span className="text-[#EA4335] font-bold text-lg">o</span>
+                       <span className="text-[#FBBC05] font-bold text-lg">o</span>
+                       <span className="text-[#34A853] font-bold text-lg">g</span>
+                       <span className="text-[#4285F4] font-bold text-lg">l</span>
+                       <span className="text-[#EA4335] font-bold text-lg">e</span>
+                    </div>
+                    <span className="font-bold text-black text-[15px] ml-1">Pay</span>
+                </button>
+
+                <button 
+                    onClick={() => setSelectedVisualGateway('paytm')}
+                    className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                        selectedVisualGateway === 'paytm' 
+                        ? "bg-[#fffde7] border-[#ffc107]" 
+                        : "bg-[#f8f9fa] border-transparent"
+                    )}
+                >
+                    <span className="text-[#002E6E] font-bold text-[17px] tracking-tight">pay<span className="text-[#00BAF2]">tm</span></span>
+                    <span className="font-bold text-black text-[15px] ml-1">Paytm</span>
+                </button>
+
+                <button 
+                    onClick={() => setSelectedVisualGateway('official')}
+                    className={cn(
+                        "flex items-center gap-2 px-3 py-3 rounded-2xl border transition-all",
+                        selectedVisualGateway === 'official' 
+                        ? "bg-[#fffde7] border-[#ffc107]" 
+                        : "bg-[#f8f9fa] border-transparent"
+                    )}
+                >
+                    <div className="border-[1.5px] border-black rounded-[4px] px-1 py-[2px] h-5 flex items-center justify-center">
+                        <div className="h-0.5 w-3 bg-black"></div>
+                    </div>
+                    <span className="font-bold text-black text-[14px] leading-tight text-left">Official<br/>Recharge</span>
+                </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-10">
-             {COIN_PACKAGES.map((pkg) => (
+            {/* COIN PACKAGES */}
+            <div className="grid grid-cols-3 gap-3 mb-8">
+             {COIN_PACKAGES.map((pkg) => {
+              const priceNum = parseInt(pkg.price.split(' ')[0]);
+              return (
               <button 
                key={pkg.id}
                onClick={() => setSelectedPackageId(pkg.id)}
                className={cn(
-                "relative flex flex-col items-center justify-between rounded-2xl border-2 transition-all p-3 h-44 group",
+                "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 transition-all",
                 selectedPackageId === pkg.id 
-                 ? "bg-[#fffde7] border-yellow-400 shadow-lg scale-[1.02]" 
-                 : "bg-white border-gray-100 hover:border-gray-200"
+                 ? "bg-[#fffde7] border-[#ffc107]" 
+                 : "bg-[#f8f9fa] border-transparent"
                )}
               >
-                <div className="w-14 h-14 mb-2 drop-shadow-sm group-hover:scale-110 transition-transform">
-                 <GoldCoinIcon className="w-full h-full" />
-                </div>
-                
-                <div className="text-center flex-1 flex flex-col justify-center">
-                 <p className="font-bold text-[13px] tracking-tight leading-none text-gray-900">{pkg.amount}</p>
-                 {pkg.bonus && (
-                  <p className="text-[10px] font-bold text-[#ff9800] mt-1">{pkg.bonus}</p>
-                 )}
-                </div>
-
-                <div className={cn(
-                 "w-full py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all",
-                 selectedPackageId === pkg.id ? "bg-yellow-400 text-black" : "bg-gray-100 text-gray-400"
-                )}>
-                 {pkg.price}
-                </div>
+                <p className="font-bold text-[17px] text-black leading-tight">{pkg.amount}</p>
+                <p className="font-bold text-[15px] text-gray-800 mt-1">₹{priceNum}</p>
               </button>
-             ))}
+             )})}
+            </div>
+
+            {/* PAY BUTTON & FOOTER */}
+            <div className="px-1 mt-auto">
+                <Button 
+                    onClick={handleRechargeNow}
+                    disabled={isProcessing !== false}
+                    className="w-full h-[52px] rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium text-[17px] transition-all"
+                >
+                    {isProcessing !== false ? <Loader className="animate-spin" /> : `Pay ₹${displayPriceINR}`}
+                </Button>
+
+                <div className="text-center mt-6">
+                    <p className="text-[#7c3aed] text-[15px] font-medium tracking-wide">
+                        <span className="opacity-50">»</span> Top up customer service <span className="opacity-50">«</span>
+                    </p>
+                </div>
             </div>
            </>
-          ) : (
+          ) : activeTab === 'Diamonds' ? (
+           // EXCHANGE TAB
            <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-8 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group active:scale-[0.98] transition-all border-2 border-white/20">
-             <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
-             <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
-
-             <div className="relative z-30 flex flex-col h-full justify-between">
-               <div className="flex justify-between items-start">
-                <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
-                <button onClick={() => setShowRecords(true)} className="bg-white/20 backdrop-blur-md pl-3 pr-1 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border border-white/10">
-                  History <ChevronRight className="h-3 w-3" />
+            
+            <div className="grid grid-cols-3 gap-3">
+              {DIAMOND_EXCHANGE_PACKAGES.map((pkg) => (
+                <button 
+                  key={pkg.id}
+                  onClick={() => setSelectedDiamondId(pkg.id)}
+                  className={cn(
+                    "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-3 px-1.5 transition-all",
+                    selectedDiamondId === pkg.id 
+                      ? "bg-[#e3f2fd] border-[#0284c7]" 
+                      : "bg-[#f8f9fa] border-transparent"
+                  )}
+                >
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <span className="text-sm">💎</span>
+                    <p className="font-bold text-[11px] text-black leading-tight">
+                      {pkg.diamonds.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <DollarCoinIcon className="h-3.5 w-3.5" />
+                    <p className="font-bold text-[10px] text-gray-600 leading-tight">
+                      {pkg.coins.toLocaleString()}
+                    </p>
+                  </div>
                 </button>
-               </div>
-               <h2 className="text-5xl font-bold tracking-tight drop-shadow-md">
-                {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-               </h2>
-             </div>
-             <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
-               <Gem className="w-full h-full text-white fill-current" />
-             </div>
+              ))}
+
+              <button 
+                onClick={() => {
+                  setSelectedDiamondId('custom');
+                  setCustomDiamondValue('');
+                  setShowCustomExchange(true);
+                }}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-3 transition-all",
+                  selectedDiamondId === 'custom' 
+                    ? "bg-[#e3f2fd] border-[#0284c7]" 
+                    : "bg-[#f8f9fa] border-transparent"
+                )}
+              >
+                <p className="font-bold text-[11px] text-black leading-tight">Custom</p>
+                <p className="font-bold text-[10px] text-gray-600 leading-tight mt-0.5">Amount</p>
+              </button>
             </div>
 
-            <div className="p-1">
-             <button 
-              className="w-full bg-[#fffef0] border border-orange-100 rounded-3xl p-6 flex items-center justify-between shadow-sm group active:scale-[0.98] transition-all"
-              onClick={() => router.push('/wallet/exchange')}
-             >
-               <div className="flex items-center gap-4">
-                <div className="relative h-14 w-14">
-                  <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full" />
-                  <GoldCoinIcon className="h-full w-full relative z-10 drop-shadow-md" />
+            <div className="px-1 mt-auto">
+                <Button 
+                    onClick={handleDiamondExchange}
+                    disabled={!isFixedPackageSelected || isExchanging}
+                    className={cn(
+                      "w-full h-[52px] rounded-2xl text-white font-medium text-[17px] transition-all",
+                      isFixedPackageSelected && !isExchanging
+                        ? "bg-[#8b5cf6] hover:bg-[#7c3aed]"
+                        : "bg-[#8b5cf6] opacity-50"
+                    )}
+                >
+                    {isExchanging ? (
+                      <Loader className="animate-spin" />
+                    ) : selectedDiamondPkg ? (
+                      `Exchange ${selectedDiamondPkg.diamonds.toLocaleString()} 💎 → ${selectedDiamondPkg.coins.toLocaleString()} Coins`
+                    ) : (
+                      'Select a Package'
+                    )}
+                </Button>
+
+                <div className="text-center mt-6">
+                    <p className="text-[#7c3aed] text-[15px] font-medium tracking-wide">
+                        <span className="opacity-50">»</span> Top up customer service <span className="opacity-50">«</span>
+                    </p>
                 </div>
-                <span className="font-bold text-sm uppercase text-orange-900 tracking-tight">Exchange diamonds to coins</span>
-               </div>
-               <ChevronRight className="h-5 w-5 text-orange-200 group-hover:translate-x-1 transition-transform" />
-             </button>
             </div>
            </div>
+          ) : (
+           // AGENT TAB
+           <div className="space-y-3 animate-in fade-in duration-500">
+            
+            {isAgentsLoading ? (
+              <div className="flex justify-center pt-20">
+                <Loader className="animate-spin text-primary h-8 w-8" />
+              </div>
+            ) : !agents || agents.length === 0 ? (
+              <div className="py-40 text-center">
+                <p className="text-gray-400 font-medium">No agents available right now</p>
+              </div>
+            ) : (
+              agents.map((agent: any) => (
+                <div 
+                  key={agent.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
+                >
+                  {/* Left - DP + Name + Tag */}
+                  <div className="flex items-center gap-3">
+                    {/* Profile DP */}
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white font-bold text-lg overflow-hidden shrink-0">
+                      {agent.photoURL ? (
+                        <Image 
+                          src={agent.photoURL} 
+                          alt={agent.displayName || 'Agent'} 
+                          width={48} 
+                          height={48} 
+                          className="h-full w-full object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        (agent.displayName || 'A').charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    
+                    {/* Name + Tag */}
+                    <div>
+                      <p className="font-bold text-black text-[15px] leading-tight">
+                        {agent.displayName || 'Unknown Agent'}
+                      </p>
+                      <p className="text-[11px] font-medium text-gray-500 capitalize">
+                        {agent.tag || 'Seller'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right - Chat Icon */}
+                  <button 
+                    onClick={() => handleChatWithAgent(agent.id)}
+                    className="h-10 w-10 rounded-full bg-[#8b5cf6] flex items-center justify-center active:scale-90 transition-all shadow-md"
+                  >
+                    <MessageCircle className="h-5 w-5 text-white" fill="white" />
+                  </button>
+                </div>
+              ))
+            )}
+           </div>
           )}
-
-          <div className="space-y-4 px-2 pb-10 mt-6">
-           <p className="text-[11px] text-gray-400 font-bold leading-relaxed">
-            If your recharge can not be completed, please click here for help
-           </p>
-           <button onClick={() => router.push('/help-center')} className="text-yellow-500 font-bold text-sm uppercase flex items-center gap-1">
-             Help Center <ChevronRight className="h-4 w-4" />
-           </button>
-          </div>
         </div>
-
-        {!showRecords && (
-         <footer className="p-6 pb-safe bg-white border-t border-gray-50 fixed bottom-0 left-0 right-0 z-50 md:relative">
-           <Button 
-            onClick={handleRechargeNow}
-            disabled={isProcessing !== false}
-            className="w-full h-16 rounded-full bg-[#ffcc00] hover:bg-[#ffb300] text-black font-bold uppercase text-xl shadow-xl shadow-yellow-500/20 active:scale-[0.98] transition-all"
-           >
-            {isProcessing !== false ? <Loader className="animate-spin mr-2" /> : activeTab === 'Coins' ? 'Recharge Now' : 'Withdrawal'}
-           </Button>
-         </footer>
-        )}
        </div>
       )}
      </div>
 
+    {/* CUSTOM EXCHANGE BOTTOM SHEET */}
+    {showCustomExchange && (
+      <div className="fixed inset-0 z-[100] flex items-end justify-center">
+        <div 
+          className="absolute inset-0 bg-black/50" 
+          onClick={() => {
+            setShowCustomExchange(false);
+            setCustomDiamondValue('');
+          }}
+        />
+        
+        <div className="relative w-full bg-white rounded-t-[2rem] animate-in slide-in-from-bottom duration-300" style={{ height: '50vh' }}>
+          <div className="flex items-center justify-between px-5 pt-5 pb-3">
+            <button 
+              onClick={() => {
+                setShowCustomExchange(false);
+                setCustomDiamondValue('');
+              }}
+              className="p-2 -ml-2 active:scale-95"
+            >
+              <ChevronLeft className="h-6 w-6 text-black" strokeWidth={2.5} />
+            </button>
+            
+            <h2 className="text-lg font-bold text-black">Exchange</h2>
+            
+            <button 
+              onClick={handleCustomExchange}
+              disabled={isExchanging || !customDiamondValue || parseInt(customDiamondValue || '0') <= 0}
+              className="text-[15px] font-bold text-green-500 disabled:opacity-40 px-2"
+            >
+              {isExchanging ? <Loader className="animate-spin h-5 w-5" /> : 'Exchange'}
+            </button>
+          </div>
+
+          <div className="px-5 mt-4">
+            <div className="bg-gray-50 rounded-2xl p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <span className="text-2xl">💎</span>
+                <input 
+                  type="number"
+                  value={customDiamondValue}
+                  onChange={(e) => setCustomDiamondValue(e.target.value)}
+                  placeholder="Enter diamonds"
+                  className="bg-transparent text-xl font-bold text-black outline-none w-full placeholder:text-gray-300"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <DollarCoinIcon className="h-6 w-6" />
+                <span className="text-xl font-bold text-black">
+                  {customCoins.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-center text-xs text-gray-400 mt-3 font-medium">
+              Conversion Rate: 100 💎 = 33 Coins
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* OFFLINE DIALOG */}
     <Dialog open={isOfflineDialogOpen} onOpenChange={setIsOfflineDialogOpen}>
      <DialogContent className="sm:max-w-full md:max-w-xl bg-white border-none rounded-[2.5rem] p-0 shadow-2xl font-sans overflow-hidden">
       <div className="flex flex-col max-h-[95vh] overflow-y-auto no-scrollbar">
         
-        {/* TOP NOTICE (Adjusted for Safe Area) */}
         <div className="bg-amber-400 py-4 px-4 flex items-center justify-center gap-2 shrink-0 pt-safe shadow-md">
            <ShieldAlert className="h-4 w-4 text-black" />
            <p className="text-[10px] font-black uppercase text-black tracking-tight leading-none pt-0.5">Online Recharge Unavailable • Use Manual Scanner Below</p>
@@ -627,9 +1037,7 @@ function WalletContent() {
            </div>
         </div>
 
-        {/* CENTERED QR HERO SECTION */}
         <div className="relative flex flex-col items-center justify-center px-10 py-6 bg-white shrink-0">
-          {/* Scanner Brackets (Visual Guide) */}
           <div className="absolute inset-x-8 inset-y-0 pointer-events-none">
              <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-slate-900 rounded-tl-2xl opacity-80" />
              <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-slate-900 rounded-tr-2xl opacity-80" />
@@ -648,7 +1056,6 @@ function WalletContent() {
           </div>
         </div>
 
-        {/* UPI BAR & ACTION */}
         <div className="flex flex-col items-center gap-3 px-6 py-4 shrink-0">
            <div className="bg-blue-50 px-4 py-2.5 rounded-2xl border border-blue-100 flex items-center gap-3 w-full justify-between active:scale-95 transition-all">
               <div className="flex items-center gap-2 overflow-hidden">
@@ -675,7 +1082,6 @@ function WalletContent() {
            </div>
         )}
 
-        {/* COMPACT INSTRUCTIONS (Side-by-Side Notice Area) */}
         <div className="p-4 bg-slate-50 border-y border-slate-100 shrink-0">
            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -689,7 +1095,6 @@ function WalletContent() {
            </div>
         </div>
 
-        {/* INPUT SECTION */}
         <div className="px-6 pb-10 pt-6 bg-white">
           {showSubmissionSuccess ? (
             <div className="text-center py-6 space-y-4 animate-in zoom-in-95 duration-300">
@@ -751,4 +1156,3 @@ export default function WalletPage() {
     </AppLayout>
   );
 }
- 
