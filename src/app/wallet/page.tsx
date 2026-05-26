@@ -346,13 +346,8 @@ function WalletContent() {
     const formattedAmount = Number(priceINR).toFixed(2);
     const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
     
-    try {
-      window.open(upiUri, '_system');
-    } catch (e) {
-      const link = document.createElement('a');
-      link.href = upiUri;
-      link.click();
-    }
+    // Direct navigation triggers UPI app handler on mobile
+    window.location.href = upiUri;
     
     setTimeout(() => {
       setIsOfflineDialogOpen(true);
