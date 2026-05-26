@@ -341,7 +341,7 @@ function WalletContent() {
 
     const priceINR = parseInt(pkg.price.split(' ')[0]);
     const upiId = config?.upiId || "7209741932@ptyes";
-    const upiName = config?.upiName || "Ummy Chat";
+    const upiName = config?.upiName || "Ummy";
     
     const formattedAmount = Number(priceINR).toFixed(2);
     const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${formattedAmount}&cu=INR&tn=${encodeURIComponent(`Recharge ${pkg.amount} Coins`)}`;
