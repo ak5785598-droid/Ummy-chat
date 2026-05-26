@@ -12,6 +12,7 @@ import android.webkit.WebViewClient;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
+import com.getcapacitor.BridgeWebViewClient;
 import io.capawesome.capacitorjs.plugins.firebase.authentication.FirebaseAuthenticationPlugin;
 
 public class MainActivity extends BridgeActivity {
@@ -67,6 +68,44 @@ public class MainActivity extends BridgeActivity {
                     transport.setWebView(tempWebView);
                     resultMsg.sendToTarget();
                     return true;
+                }
+            });
+
+            // KEY FIX: Subclass Capacitor's own BridgeWebViewClient on the main WebView!
+            // This intercepts deep link protocols (like upi://pay, phonepe://, gpay://, paytmmp://, whatsapp://)
+            // inside the main frame and launches the corresponding Android apps instead of letting WebView
+            // attempt to load them and crashing with net::ERR_UNKNOWN_URL_SCHEME!
+            webView.setWebViewClient(new BridgeWebViewClient(bridge) {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    String url = request.getUrl().toString();
+                    if (url.startsWith("http://") || url.startsWith("https://")) {
+                        return super.shouldOverrideUrlLoading(view, request);
+                    }
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        view.getContext().startActivity(intent);
+                        return true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return true;
+                    }
+                }
+
+                @SuppressWarnings("deprecation")
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    if (url.startsWith("http://") || url.startsWith("https://")) {
+                        return super.shouldOverrideUrlLoading(view, url);
+                    }
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        view.getContext().startActivity(intent);
+                        return true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return true;
+                    }
                 }
             });
         }
