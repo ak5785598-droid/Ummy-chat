@@ -317,15 +317,14 @@ function WalletContent() {
   const handleRechargeNow = async () => {
    if (!user || !firestore) return;
    
-   if (config?.paymentMode === 'razorpay') {
-     handleRazorpayRecharge();
-   } else if (config?.paymentMode === 'cashfree') {
-     handleCashfreeRecharge();
-   } else if (config?.paymentMode === 'upi_intent') {
-     handleUPIIntentRecharge();
-   } else {
-     setIsOfflineDialogOpen(true);
-   }
+    if (config?.paymentMode === 'razorpay') {
+      handleRazorpayRecharge();
+    } else if (config?.paymentMode === 'cashfree') {
+      handleCashfreeRecharge();
+    } else {
+      // Default: UPI Intent (Direct app open with UPI ID)
+      handleUPIIntentRecharge();
+    }
   };
 
   const handleSubmitManualRecharge = async () => {
@@ -664,7 +663,7 @@ function WalletContent() {
         </div>
 
         {/* DIRECT PAY BUTTON (Fallback for intent errors) */}
-        {config?.paymentMode === 'upi_intent' && (
+        {(!config?.paymentMode || config?.paymentMode === 'upi_intent') && (
            <div className="px-6 pb-2">
              <Button 
                onClick={handleUPIIntentRecharge}
