@@ -36,6 +36,15 @@ const COIN_PACKAGES = [
  { id: 'p6', amount: '50,000,000', price: '10000', bonus: '+13500000' },
 ];
 
+// Diamond exchange packages define kiye
+const DIAMOND_EXCHANGE_PACKAGES = [
+  { id: 'd1', diamonds: 100, coins: 33 },
+  { id: 'd2', diamonds: 1000000, coins: 330000 },
+  { id: 'd3', diamonds: 5000000, coins: 1650000 },
+  { id: 'd4', diamonds: 50000000, coins: 16500000 },
+  { id: 'd5', diamonds: 90000000, coins: 29700000 },
+];
+
 export const dynamic = 'force-dynamic';
 
 function WalletContent() {
@@ -57,6 +66,8 @@ function WalletContent() {
   const searchParams = useSearchParams();
   const orderIdParam = searchParams.get('order_id');
   const [isVerifyingOrder, setIsVerifyingOrder] = useState(false);
+  // Selected diamond package track karne ke liye
+  const [selectedDiamondId, setSelectedDiamondId] = useState('d1');
 
   const configRef = useMemoFirebase(() => {
    if (!firestore) return null;
@@ -383,6 +394,16 @@ function WalletContent() {
     return 'text-[20px]';
   };
 
+  // Diamond value size auto adjust karne ka function
+  const getDiamondFontSize = (diamonds: number) => {
+    const length = Math.floor(diamonds).toLocaleString().length;
+    if (length <= 4) return 'text-[40px]';
+    if (length <= 6) return 'text-[34px]';
+    if (length <= 8) return 'text-[28px]';
+    if (length <= 10) return 'text-[24px]';
+    return 'text-[20px]';
+  };
+
   if (isUserLoading || isProfileLoading) {
    return (
      <div className="flex h-[80vh] items-center justify-center bg-white">
@@ -418,7 +439,7 @@ function WalletContent() {
           <div className="flex justify-center pt-20">
            <Loader className="animate-spin text-primary h-8 w-8" />
           </div>
-         ) : !exchangeHistory || exchangeHistory.length === 0 ? (
+         ) : !unifiedHistory || unifiedHistory.length === 0 ? (
           <div className="py-40 text-center opacity-20 uppercase font-bold text-xs">No Records Found</div>
          ) : (
           unifiedHistory.map((record: any) => (
@@ -490,34 +511,50 @@ function WalletContent() {
           </div>
         )}
 
-        {/* TABS - Sirf Coins tab mein dikhega */}
-        {activeTab === 'Coins' && (
-          <div className="flex px-4 gap-6 mt-6 border-b border-gray-100/50">
-              <button 
-                  onClick={() => setActiveTab('Coins')}
-                  className={cn(
-                      "pb-3 text-[17px] relative transition-all",
-                      activeTab === 'Coins' ? "font-bold text-black" : "font-medium text-gray-400"
-                  )}
-              >
-                  Recharge
-                  {activeTab === 'Coins' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
-              </button>
-              <button 
-                  onClick={() => setActiveTab('Diamonds')}
-                  className={cn(
-                      "pb-3 text-[17px] relative transition-all",
-                      activeTab === 'Diamonds' ? "font-bold text-black" : "font-medium text-gray-400"
-                  )}
-              >
-                  Exchange
-                  {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
-              </button>
-              <button className="pb-3 text-[17px] font-medium text-gray-400">
-                  Agent
-              </button>
+        {/* BLUE DIAMOND BALANCE CARD - Sirf Diamonds tab mein dikhega */}
+        {activeTab === 'Diamonds' && (
+          <div className="px-4 mt-2">
+              <div className="w-full rounded-[1.25rem] bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] px-6 py-8 relative shadow-sm">
+                  <div className="absolute top-4 right-4 bg-white/40 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer">
+                      <span className="text-[13px] font-medium text-white">Diamond details</span>
+                      <ChevronRight className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="mt-2">
+                      <h2 className={`font-bold text-white tracking-tight leading-none mb-2 transition-all duration-300 ${getDiamondFontSize(userProfile?.wallet?.diamonds || 0)}`}>
+                          {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                      </h2>
+                      <p className="text-white/80 font-medium text-sm">Remaining diamonds</p>
+                  </div>
+              </div>
           </div>
         )}
+
+        {/* TABS - Dono tabs mein dikhega ab */}
+        <div className="flex px-4 gap-6 mt-6 border-b border-gray-100/50">
+            <button 
+                onClick={() => setActiveTab('Coins')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Coins' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
+                Recharge
+                {activeTab === 'Coins' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+            </button>
+            <button 
+                onClick={() => setActiveTab('Diamonds')}
+                className={cn(
+                    "pb-3 text-[17px] relative transition-all",
+                    activeTab === 'Diamonds' ? "font-bold text-black" : "font-medium text-gray-400"
+                )}
+            >
+                Exchange
+                {activeTab === 'Diamonds' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />}
+            </button>
+            <button className="pb-3 text-[17px] font-medium text-gray-400">
+                Agent
+            </button>
+        </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-4 pb-10">
           
@@ -632,41 +669,73 @@ function WalletContent() {
             </div>
            </>
           ) : (
-           // EXCHANGE TAB - Full Diamond page, no coins card, no tabs
+           // EXCHANGE TAB - Diamond exchange packages dikhane hain
            <div className="space-y-6 animate-in fade-in duration-500">
-            {/* DIAMOND BALANCE CARD */}
-            <div className="relative h-40 w-full rounded-3xl bg-gradient-to-br from-[#00e5ff] via-[#0284c7] to-[#01579b] p-8 text-white shadow-[0_20px_40px_rgba(2,132,199,0.3)] overflow-hidden group transition-all border-2 border-white/20">
-             <div className="absolute inset-0 bg-white/30 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '2.5s' }} />
-             <div className="absolute inset-0 bg-white/10 -skew-x-[30deg] -translate-x-[200%] animate-shine pointer-events-none z-20" style={{ animationDuration: '3.5s', animationDelay: '0.5s' }} />
+            
+            {/* DIAMOND EXCHANGE PACKAGES GRID - 3 columns, 2 rows */}
+            <div className="grid grid-cols-3 gap-3">
+              {DIAMOND_EXCHANGE_PACKAGES.map((pkg) => (
+                <button 
+                  key={pkg.id}
+                  onClick={() => setSelectedDiamondId(pkg.id)}
+                  className={cn(
+                    "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 px-2 transition-all",
+                    selectedDiamondId === pkg.id 
+                      ? "bg-[#e3f2fd] border-[#0284c7]" 
+                      : "bg-[#f8f9fa] border-transparent"
+                  )}
+                >
+                  {/* First row - Diamond icon and value */}
+                  <div className="flex items-center gap-1 mb-1">
+                    <Gem className="h-4 w-4 text-[#0284c7]" />
+                    <p className="font-bold text-[15px] text-black leading-tight">
+                      {pkg.diamonds.toLocaleString()}
+                    </p>
+                  </div>
+                  {/* Second row - Coins icon and value */}
+                  <div className="flex items-center gap-1">
+                    <GoldCoinIcon className="h-4 w-4" />
+                    <p className="font-bold text-[13px] text-gray-600 leading-tight">
+                      {pkg.coins.toLocaleString()}
+                    </p>
+                  </div>
+                </button>
+              ))}
 
-             <div className="relative z-30 flex flex-col h-full justify-between">
-               <div className="flex justify-between items-start">
-                <p className="text-sm font-bold uppercase tracking-tight opacity-90">My Diamonds</p>
-               </div>
-               <h2 className="text-5xl font-bold tracking-tight drop-shadow-md">
-                {(userProfile?.wallet?.diamonds || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-               </h2>
-             </div>
-             <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-20 -rotate-12 group-hover:rotate-[-45deg] group-hover:scale-125 transition-all duration-1000">
-               <Gem className="w-full h-full text-white fill-current" />
-             </div>
+              {/* Custom Amount Card - 6th card */}
+              <button 
+                onClick={() => setSelectedDiamondId('custom')}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-2xl border-[1.5px] py-4 transition-all",
+                  selectedDiamondId === 'custom' 
+                    ? "bg-[#e3f2fd] border-[#0284c7]" 
+                    : "bg-[#f8f9fa] border-transparent"
+                )}
+              >
+                <div className="flex items-center gap-1 mb-1">
+                  <Gem className="h-4 w-4 text-[#0284c7]" />
+                  <p className="font-bold text-[15px] text-black leading-tight">Custom</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <GoldCoinIcon className="h-4 w-4" />
+                  <p className="font-bold text-[13px] text-gray-600 leading-tight">Amount</p>
+                </div>
+              </button>
             </div>
 
-            {/* EXCHANGE BUTTON */}
-            <div className="p-1">
-             <button 
-              className="w-full bg-[#fffef0] border border-orange-100 rounded-3xl p-6 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
-              onClick={() => router.push('/wallet/exchange')}
-             >
-               <div className="flex items-center gap-4">
-                <div className="relative h-14 w-14">
-                  <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full" />
-                  <GoldCoinIcon className="h-full w-full relative z-10 drop-shadow-md" />
+            {/* EXCHANGE BUTTON & FOOTER - Pay ki jagah Exchange likha hai */}
+            <div className="px-1 mt-auto">
+                <Button 
+                    className="w-full h-[52px] rounded-2xl bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium text-[17px] transition-all"
+                >
+                    Exchange
+                </Button>
+
+                <div className="text-center mt-6">
+                    <p className="text-[#7c3aed] text-[15px] font-medium tracking-wide">
+                        <span className="opacity-50">»</span> Top up customer service <span className="opacity-50">«</span>
+                    </p>
                 </div>
-                <span className="font-bold text-sm uppercase text-orange-900 tracking-tight">Exchange diamonds to coins</span>
-               </div>
-               <ChevronRight className="h-5 w-5 text-orange-200 transition-transform" />
-             </button>
             </div>
            </div>
           )}
@@ -809,4 +878,4 @@ export default function WalletPage() {
       </Suspense>
     </AppLayout>
   );
-              }
+          }
