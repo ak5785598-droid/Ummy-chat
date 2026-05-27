@@ -66,7 +66,7 @@ export function LeaderboardThemeAdmin() {
   const [isLoading, setIsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [imagePreview, setImagePreview] = useState('');
+  const [backgroundPreview, setBackgroundPreview] = useState('');
   const [framePreview, setFramePreview] = useState<{ rank: string; show: boolean }>({ rank: '', show: false });
 
   // Fetch all themes
@@ -95,8 +95,11 @@ export function LeaderboardThemeAdmin() {
       ...prev,
       [field]: value
     }));
-    if (field === 'backgroundUrl' && formData.backgroundType === 'image') {
-      setImagePreview(value);
+    // Update background preview whenever URL or type changes
+    if (field === 'backgroundUrl' || field === 'backgroundType') {
+      if (value || formData.backgroundUrl) {
+        setBackgroundPreview(value || formData.backgroundUrl);
+      }
     }
   };
 
@@ -142,7 +145,7 @@ export function LeaderboardThemeAdmin() {
       setFormData(defaultThemeConfig);
       setEditingId(null);
       setShowForm(false);
-      setImagePreview('');
+      setBackgroundPreview('');
 
       // Refresh themes list
       const q = query(collection(firestore, 'leaderboardThemes'));
@@ -234,14 +237,14 @@ export function LeaderboardThemeAdmin() {
     });
     setEditingId(theme.id!);
     setShowForm(true);
-    setImagePreview(theme.backgroundUrl);
+    setBackgroundPreview(theme.backgroundUrl);
   };
 
   const handleCancel = () => {
     setFormData(defaultThemeConfig);
     setEditingId(null);
     setShowForm(false);
-    setImagePreview('');
+    setBackgroundPreview('');
     setFramePreview({ rank: '', show: false });
   };
 
@@ -312,26 +315,26 @@ export function LeaderboardThemeAdmin() {
               </div>
 
               {/* Background Preview */}
-              {imagePreview && formData.backgroundType === 'image' && (
+              {backgroundPreview && (
                 <div>
                   <label className="block text-sm font-bold text-[#D4AF37] mb-2">Background Preview</label>
-                  <img
-                    src={imagePreview}
-                    alt="Background preview"
-                    className="w-full h-48 object-cover rounded border border-white/20"
-                  />
-                </div>
-              )}
-              {imagePreview && formData.backgroundType === 'video' && (
-                <div>
-                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Background Preview</label>
-                  <video
-                    src={imagePreview}
-                    autoPlay
-                    loop
-                    muted
-                    className="w-full h-48 object-cover rounded border border-white/20"
-                  />
+                  {formData.backgroundType === 'image' ? (
+                    <img
+                      src={backgroundPreview}
+                      alt="Background preview"
+                      className="w-full h-48 object-cover rounded border border-white/20"
+                      onError={() => setBackgroundPreview('')}
+                    />
+                  ) : (
+                    <video
+                      src={backgroundPreview}
+                      autoPlay
+                      loop
+                      muted
+                      className="w-full h-48 object-cover rounded border border-white/20"
+                      onError={() => setBackgroundPreview('')}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -438,6 +441,7 @@ export function LeaderboardThemeAdmin() {
                                   src={frameUrl}
                                   alt={`${rank} frame preview`}
                                   className="w-full h-32 object-cover rounded"
+                                  onError={() => console.error(`Failed to load frame: ${frameUrl}`)}
                                 />
                               ) : (
                                 <video
@@ -446,6 +450,7 @@ export function LeaderboardThemeAdmin() {
                                   loop
                                   muted
                                   className="w-full h-32 object-cover rounded"
+                                  onError={() => console.error(`Failed to load frame: ${frameUrl}`)}
                                 />
                               )}
                             </div>
