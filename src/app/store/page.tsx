@@ -595,7 +595,10 @@ export default function StorePage() {
     return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({
       ...t,
       type: 'Theme',
-      description: t.description || `High-fidelity ${t.name} background.`
+      description: t.description || `High-fidelity ${t.name} background.`,
+      // Themes ke liye bhi videoUrl/imageUrl support
+      videoUrl: t.videoUrl || t.mediaUrl || null,
+      imageUrl: t.imageUrl || t.thumbnailUrl || null,
     }));
   }, [dbThemes]);
 
@@ -613,7 +616,9 @@ export default function StorePage() {
       ...item,
       type: item.category || item.type,
       description: item.description || `Premium ${item.name} asset.`,
-      isDynamic: true
+      isDynamic: true,
+      videoUrl: item.videoUrl || null,
+      imageUrl: item.imageUrl || null,
     }));
   }, [dbStoreItems]);
 
@@ -622,9 +627,12 @@ export default function StorePage() {
     return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
   }, [boutiqueItems]);
 
-  const bubbleItems = useMemo(() => [
-    ...STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble'),
-  ], []);
+  // Bubble items - static + dynamic (Firestore se bhi aa sakte hain)
+  const bubbleItems = useMemo(() => {
+    const staticBubbles = STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble');
+    const dynamicBubbles = boutiqueItems.filter(item => item.type === 'Bubble' || item.category === 'Bubble');
+    return [...staticBubbles, ...dynamicBubbles];
+  }, [boutiqueItems]);
 
   const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
 
@@ -690,7 +698,7 @@ export default function StorePage() {
 
   // Filter boutique items to exclude Frame type (already in frameItems)
   const nonFrameBoutiqueItems = useMemo(() => {
-    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame');
+    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame' && item.type !== 'Bubble' && item.category !== 'Bubble');
   }, [boutiqueItems]);
 
   const allItems = useMemo(() => {
@@ -791,43 +799,63 @@ export default function StorePage() {
     }
   };
 
-  // Helper to render store card icon
+  // Helper to render store card icon (Frame, Theme, Bubble - sab ke liye media support)
   const renderStoreCardIcon = (item: any) => {
+    // FRAME - videoUrl/imageUrl support
     if (item.type === 'Frame') {
-      if (item.isDynamic && item.videoUrl) {
+      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
             <SmartBlackRemover 
-              src={item.videoUrl} 
-              type="video" 
+              src={mediaUrl} 
+              type={mediaType} 
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
           </div>
         );
       }
-      if (item.isDynamic && item.imageUrl) {
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
-              src={item.imageUrl} 
-              type="image" 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      // Fallback icon for frame
       return <FramePlaceholderIcon className="h-12 w-12" />;
     }
     
-    if (item.type === 'Bubble') {
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
+    // THEME - ab videoUrl/imageUrl support (same as Frame)
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    if (item.type === 'Theme') {
-      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
+    // BUBBLE - ab videoUrl/imageUrl support (same as Frame)
+    if (item.type === 'Bubble') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
     }
     
     if (item.type === 'Wave') {
@@ -852,27 +880,18 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // Helper to render preview card icon
+  // Helper to render preview card icon (Frame, Theme, Bubble - sab ke liye media support)
   const renderPreviewIcon = (item: any) => {
+    // FRAME - videoUrl/imageUrl support
     if (item.type === 'Frame') {
-      if (item.isDynamic && item.videoUrl) {
+      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
             <SmartBlackRemover 
-              src={item.videoUrl} 
-              type="video" 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      if (item.isDynamic && item.imageUrl) {
-        return (
-          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
-              src={item.imageUrl} 
-              type="image" 
+              src={mediaUrl} 
+              type={mediaType} 
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
@@ -886,12 +905,42 @@ export default function StorePage() {
       );
     }
     
-    if (item.type === 'Bubble') {
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
+    // THEME - ab videoUrl/imageUrl support (same as Frame)
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
     }
     
-    if (item.type === 'Theme') {
-      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
+    // BUBBLE - ab videoUrl/imageUrl support (same as Frame)
+    if (item.type === 'Bubble') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+            <SmartBlackRemover 
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
     }
     
     if (item.type === 'Wave') {
@@ -946,7 +995,7 @@ export default function StorePage() {
           <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(168,85,247,0.4)]">Store</h1>
         </header>
 
-        <Tabs defaultValue="Frame" className="w-full">
+        <Tabs defaultValue="All" className="w-full">
           <div className="w-full overflow-x-auto no-scrollbar mb-6">
             <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
               {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
@@ -1097,4 +1146,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-                     }
+        }
