@@ -46,6 +46,7 @@ export function VipManagementTab() {
   const [uploadingGlobalBg, setUploadingGlobalBg] = useState(false);
   const [uploadingBadge, setUploadingBadge] = useState<Record<number, boolean>>({});
   const [uploadingVideo, setUploadingVideo] = useState<Record<number, boolean>>({});
+  const [uploadingBg, setUploadingBg] = useState<Record<number, boolean>>({});
 
   // Load settings from Firestore once on mount to prevent real-time overwrite while editing
   useEffect(() => {
@@ -107,13 +108,15 @@ export function VipManagementTab() {
   };
 
   // Handle Level assets upload (local cache only)
-  const handleLevelAssetUpload = async (level: number, type: 'badge' | 'video', file: File) => {
+  const handleLevelAssetUpload = async (level: number, type: 'badge' | 'video' | 'bg', file: File) => {
     if (!storage || !firestore) return;
 
     if (type === 'badge') {
       setUploadingBadge(prev => ({ ...prev, [level]: true }));
-    } else {
+    } else if (type === 'video') {
       setUploadingVideo(prev => ({ ...prev, [level]: true }));
+    } else {
+      setUploadingBg(prev => ({ ...prev, [level]: true }));
     }
 
     try {
@@ -132,7 +135,7 @@ export function VipManagementTab() {
       });
 
       toast({
-        title: `${type === 'badge' ? 'Badge icon' : 'Animation video'} uploaded (Unsaved)`,
+        title: `${type === 'badge' ? 'Badge icon' : type === 'video' ? 'Animation video' : 'Level background'} uploaded (Unsaved)`,
         description: `Successfully loaded for SVIP ${level}! Click "Save VIP Settings" to make it live.`
       });
     } catch (err: any) {
@@ -144,8 +147,10 @@ export function VipManagementTab() {
     } finally {
       if (type === 'badge') {
         setUploadingBadge(prev => ({ ...prev, [level]: false }));
-      } else {
+      } else if (type === 'video') {
         setUploadingVideo(prev => ({ ...prev, [level]: false }));
+      } else {
+        setUploadingBg(prev => ({ ...prev, [level]: false }));
       }
     }
   };
@@ -287,6 +292,7 @@ export function VipManagementTab() {
               const lvlConfig = config.levels[level] || {};
               const isBadgeUploading = !!uploadingBadge[level];
               const isVideoUploading = !!uploadingVideo[level];
+              const isBgUploading = !!uploadingBg[level];
 
               return (
                 <div 
@@ -305,7 +311,7 @@ export function VipManagementTab() {
                   </div>
 
                   {/* Upload Columns */}
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     
                     {/* Badge Image Upload */}
                     <div className="space-y-1">
@@ -410,6 +416,66 @@ export function VipManagementTab() {
                                   return { ...prev, levels };
                                 });
                                 toast({ title: 'Video cleared locally (Unsaved)' });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Custom Background Upload */}
+                    <div className="space-y-1">
+                      <Label htmlFor={`bg-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Custom Background (.png/.jpg/.mp4)</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1 h-10">
+                          <input 
+                            type="file" 
+                            accept="image/*,video/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleLevelAssetUpload(level, 'bg', file);
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            disabled={isBgUploading}
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            disabled={isBgUploading}
+                            className="h-10 w-full rounded-xl border border-slate-200 hover:border-yellow-400 bg-white inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm pointer-events-none"
+                          >
+                            {isBgUploading ? (
+                              <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                            ) : (
+                              <>
+                                <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                {lvlConfig.bgUrl ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        {lvlConfig.bgUrl && (
+                          <div className="h-10 w-10 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 shrink-0 shadow-inner relative group flex items-center justify-center">
+                            {lvlConfig.bgUrl.includes('.mp4') || lvlConfig.bgUrl.includes('video') ? (
+                              <video src={lvlConfig.bgUrl} className="h-full w-full object-cover" muted autoPlay loop />
+                            ) : (
+                              <img src={lvlConfig.bgUrl} className="h-full w-full object-cover" alt={`Bg ${level}`} />
+                            )}
+                            {/* Clear indicator */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                              onClick={() => {
+                                setConfig((prev: any) => {
+                                  const levels = { ...prev.levels };
+                                  if (levels[level]) {
+                                    const updatedLevel = { ...levels[level] };
+                                    delete updatedLevel.bgUrl;
+                                    levels[level] = updatedLevel;
+                                  }
+                                  return { ...prev, levels };
+                                });
+                                toast({ title: 'Background cleared locally (Unsaved)' });
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-white" />

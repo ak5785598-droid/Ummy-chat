@@ -165,6 +165,10 @@ export default function VipsClubPage() {
   const activeLevelData = SVIP_LEVELS_DATA.find(l => l.level === selectedLevel) || SVIP_LEVELS_DATA[0];
   const activeTheme = activeLevelData.theme;
 
+  // Custom level background override
+  const levelBgUrl = vipConfig?.levels?.[selectedLevel]?.bgUrl;
+  const showCustomBg = !!levelBgUrl;
+
   // Count privileges unlocked for the currently selected level
   const unlockedCount = SVIP_PRIVILEGES_DATA.filter(p => p.level <= selectedLevel).length;
 
@@ -307,61 +311,70 @@ export default function VipsClubPage() {
       gradient: 'from-yellow-400 via-amber-500 to-purple-600',
       btn: 'bg-gradient-to-r from-yellow-400 to-amber-500 text-black hover:opacity-90 shadow-yellow-900/40'
     }
-  }[activeTheme];
+  }[activeTheme as 'owl' | 'wolf' | 'lion' | 'dragon'] || {
+    text: 'text-cyan-400',
+    border: 'border-cyan-500/20',
+    bg: 'from-cyan-900/10 to-transparent',
+    glow: 'shadow-[0_0_50px_rgba(6,182,212,0.15)]',
+    gradient: 'from-cyan-400 via-sky-500 to-blue-500',
+    btn: 'bg-cyan-500 hover:bg-cyan-600 shadow-cyan-900/30'
+  };
 
   return (
     <AppLayout>
       <div className="min-h-screen animate-bg-gradient text-white font-outfit relative flex flex-col pb-28 overflow-x-hidden animate-in fade-in duration-500">
         
-        {/* Deep Space Starfield & Sparkle Layers */}
-        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Animated glowing SVG space dust/nebula glow background */}
-          <div className="absolute inset-0 opacity-80 z-0">
-            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20%" cy="25%" r="130" fill="url(#violetGlow)" className="animate-pulse" style={{ animationDuration: '8s' }} />
-              <circle cx="85%" cy="50%" r="160" fill="url(#cyanGlow)" className="animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
-              <circle cx="45%" cy="80%" r="120" fill="url(#pinkGlow)" className="animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
-              <defs>
-                <radialGradient id="violetGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
-                  <stop offset="60%" stopColor="#8b5cf6" stopOpacity="0.1" />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
-                </radialGradient>
-                <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
-                  <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.08" />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-                </radialGradient>
-                <radialGradient id="pinkGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ec4899" stopOpacity="0.25" />
-                  <stop offset="65%" stopColor="#ec4899" stopOpacity="0.07" />
-                  <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-            </svg>
-          </div>
+        {/* Deep Space Starfield & Sparkle Layers - Hidden when Level Custom Background is active */}
+        {!showCustomBg && (
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            {/* Animated glowing SVG space dust/nebula glow background */}
+            <div className="absolute inset-0 opacity-80 z-0">
+              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20%" cy="25%" r="130" fill="url(#violetGlow)" className="animate-pulse" style={{ animationDuration: '8s' }} />
+                <circle cx="85%" cy="50%" r="160" fill="url(#cyanGlow)" className="animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
+                <circle cx="45%" cy="80%" r="120" fill="url(#pinkGlow)" className="animate-pulse" style={{ animationDuration: '10s', animationDelay: '1s' }} />
+                <defs>
+                  <radialGradient id="violetGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
+                    <stop offset="60%" stopColor="#8b5cf6" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+                  </radialGradient>
+                  <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
+                    <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.08" />
+                    <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                  </radialGradient>
+                  <radialGradient id="pinkGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#ec4899" stopOpacity="0.25" />
+                    <stop offset="65%" stopColor="#ec4899" stopOpacity="0.07" />
+                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+              </svg>
+            </div>
 
-          {/* Sparkly Star 1 */}
-          <div className="absolute top-[12%] left-[15%] h-1 w-1 bg-white rounded-full animate-sparkle" style={{ animationDelay: '0.2s' }} />
-          <div className="absolute top-[28%] left-[80%] h-1.5 w-1.5 bg-cyan-300 rounded-full animate-sparkle" style={{ animationDelay: '1.5s' }} />
-          <div className="absolute top-[45%] left-[8%] h-1 w-1 bg-white rounded-full opacity-70 animate-sparkle" style={{ animationDelay: '0.5s' }} />
-          <div className="absolute top-[62%] left-[88%] h-1 w-1 bg-purple-300 rounded-full animate-sparkle" style={{ animationDelay: '0.8s' }} />
-          <div className="absolute top-[75%] left-[22%] h-1.5 w-1.5 bg-amber-300 rounded-full animate-sparkle" style={{ animationDelay: '2.3s' }} />
-          <div className="absolute top-[90%] left-[70%] h-1 w-1 bg-white rounded-full opacity-60 animate-sparkle" style={{ animationDelay: '1.2s' }} />
+            {/* Sparkly Star 1 */}
+            <div className="absolute top-[12%] left-[15%] h-1 w-1 bg-white rounded-full animate-sparkle" style={{ animationDelay: '0.2s' }} />
+            <div className="absolute top-[28%] left-[80%] h-1.5 w-1.5 bg-cyan-300 rounded-full animate-sparkle" style={{ animationDelay: '1.5s' }} />
+            <div className="absolute top-[45%] left-[8%] h-1 w-1 bg-white rounded-full opacity-70 animate-sparkle" style={{ animationDelay: '0.5s' }} />
+            <div className="absolute top-[62%] left-[88%] h-1 w-1 bg-purple-300 rounded-full animate-sparkle" style={{ animationDelay: '0.8s' }} />
+            <div className="absolute top-[75%] left-[22%] h-1.5 w-1.5 bg-amber-300 rounded-full animate-sparkle" style={{ animationDelay: '2.3s' }} />
+            <div className="absolute top-[90%] left-[70%] h-1 w-1 bg-white rounded-full opacity-60 animate-sparkle" style={{ animationDelay: '1.2s' }} />
 
-          {/* Drifting Nebulae Dust Clouds (Vivid Opacity) */}
-          <div className="absolute top-[15%] left-[5%] w-[450px] h-[450px] bg-indigo-500/20 blur-[130px] rounded-full animate-float-slow" />
-          <div className="absolute bottom-[20%] right-[-5%] w-[500px] h-[500px] bg-fuchsia-600/15 blur-[150px] rounded-full animate-float-slow" style={{ animationDuration: '14s' }} />
-          <div className="absolute bottom-[5%] left-[15%] w-[380px] h-[380px] bg-cyan-500/15 blur-[110px] rounded-full animate-float-slow" style={{ animationDuration: '18s' }} />
-          
-          {/* Glowing orbital ring backdrop */}
-          <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full border border-white/[0.04] scale-[1.3] pointer-events-none opacity-50 z-0">
-            <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.08] animate-spin" style={{ animationDuration: '40s' }} />
+            {/* Drifting Nebulae Dust Clouds (Vivid Opacity) */}
+            <div className="absolute top-[15%] left-[5%] w-[450px] h-[450px] bg-indigo-500/20 blur-[130px] rounded-full animate-float-slow" />
+            <div className="absolute bottom-[20%] right-[-5%] w-[500px] h-[500px] bg-fuchsia-600/15 blur-[150px] rounded-full animate-float-slow" style={{ animationDuration: '14s' }} />
+            <div className="absolute bottom-[5%] left-[15%] w-[380px] h-[380px] bg-cyan-500/15 blur-[110px] rounded-full animate-float-slow" style={{ animationDuration: '18s' }} />
+            
+            {/* Glowing orbital ring backdrop */}
+            <div className="absolute top-[22%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full border border-white/[0.04] scale-[1.3] pointer-events-none opacity-50 z-0">
+              <div className="absolute inset-0 rounded-full border border-dashed border-white/[0.08] animate-spin" style={{ animationDuration: '40s' }} />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Global Background Image Override */}
-        {vipConfig.bgType === 'image' && vipConfig.bgUrl && (
+        {!showCustomBg && vipConfig.bgType === 'image' && vipConfig.bgUrl && (
           <div 
             className="absolute inset-0 bg-cover bg-center pointer-events-none z-0" 
             style={{ backgroundImage: `url(${vipConfig.bgUrl})`, opacity: 0.25 }}
@@ -369,7 +382,7 @@ export default function VipsClubPage() {
         )}
 
         {/* Global Background Video Override */}
-        {vipConfig.bgType === 'video' && vipConfig.bgUrl && (
+        {!showCustomBg && vipConfig.bgType === 'video' && vipConfig.bgUrl && (
           <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-20">
             <video 
               src={vipConfig.bgUrl} 
@@ -382,15 +395,38 @@ export default function VipsClubPage() {
           </div>
         )}
 
-        {/* Dynamic Glowing Ambient Spotlights (Extremely Vivid glows mapped to Selected Tier) */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[50vh] pointer-events-none z-0">
-          <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/25 blur-[120px] rounded-full animate-pulse" />
-          <div className={cn("absolute top-[-5vh] right-1/4 w-72 h-72 blur-[100px] rounded-full transition-colors duration-700", 
-            activeTheme === 'owl' ? 'bg-cyan-500/35 shadow-[0_0_120px_rgba(6,182,212,0.35)]' :
-            activeTheme === 'wolf' ? 'bg-fuchsia-500/35 shadow-[0_0_120px_rgba(168,85,247,0.35)]' :
-            activeTheme === 'lion' ? 'bg-orange-500/35 shadow-[0_0_120px_rgba(249,115,22,0.35)]' : 'bg-yellow-400/40 shadow-[0_0_140px_rgba(234,179,8,0.4)]'
-          )} />
-        </div>
+        {/* Level Specific Custom Background Override - Renders full-screen and perfectly clean */}
+        {showCustomBg && levelBgUrl && (
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            {levelBgUrl.includes('.mp4') || levelBgUrl.includes('video') ? (
+              <video 
+                src={levelBgUrl} 
+                className="w-full h-full object-cover animate-in fade-in duration-700" 
+                muted 
+                autoPlay 
+                loop 
+                playsInline 
+              />
+            ) : (
+              <div 
+                className="w-full h-full bg-cover bg-center animate-in fade-in duration-700" 
+                style={{ backgroundImage: `url(${levelBgUrl})` }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Dynamic Glowing Ambient Spotlights - Hidden when Level Custom Background is active */}
+        {!showCustomBg && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[50vh] pointer-events-none z-0">
+            <div className="absolute top-[-10vh] left-1/4 w-80 h-80 bg-purple-600/25 blur-[120px] rounded-full animate-pulse" />
+            <div className={cn("absolute top-[-5vh] right-1/4 w-72 h-72 blur-[100px] rounded-full transition-colors duration-700", 
+              activeTheme === 'owl' ? 'bg-cyan-500/35 shadow-[0_0_120px_rgba(6,182,212,0.35)]' :
+              activeTheme === 'wolf' ? 'bg-fuchsia-500/35 shadow-[0_0_120px_rgba(168,85,247,0.35)]' :
+              activeTheme === 'lion' ? 'bg-orange-500/35 shadow-[0_0_120px_rgba(249,115,22,0.35)]' : 'bg-yellow-400/40 shadow-[0_0_140px_rgba(234,179,8,0.4)]'
+            )} />
+          </div>
+        )}
 
         {/* Premium Header Bar */}
         <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-transparent backdrop-blur-md border-b border-white/[0.02] z-[90] shrink-0">
