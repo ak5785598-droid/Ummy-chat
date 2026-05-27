@@ -1,7 +1,7 @@
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, limit, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
-import { Loader, Trash2, Edit2, Check } from 'lucide-react';
+import { Loader, Trash2, Edit2, Check, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface FrameConfig {
@@ -52,6 +52,13 @@ const defaultThemeConfig: LeaderboardThemeFormData = {
   }
 };
 
+const rankConfigs = [
+  { key: 'rank1' as const, label: '🥇 Rank 1 (Gold)', emoji: '👑', color: 'from-yellow-400 to-yellow-600' },
+  { key: 'rank2' as const, label: '🥈 Rank 2 (Silver)', emoji: '⭐', color: 'from-slate-300 to-slate-500' },
+  { key: 'rank3' as const, label: '🥉 Rank 3 (Bronze)', emoji: '🔥', color: 'from-orange-400 to-orange-600' },
+  { key: 'top' as const, label: '⭐ Top 4+ Players', emoji: '✨', color: 'from-purple-400 to-purple-600' }
+];
+
 export function LeaderboardThemeAdmin() {
   const firestore = useFirestore();
   const [formData, setFormData] = useState<LeaderboardThemeFormData>(defaultThemeConfig);
@@ -60,6 +67,7 @@ export function LeaderboardThemeAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
+  const [framePreview, setFramePreview] = useState<{ rank: string; show: boolean }>({ rank: '', show: false });
 
   // Fetch all themes
   useEffect(() => {
@@ -134,6 +142,7 @@ export function LeaderboardThemeAdmin() {
       setFormData(defaultThemeConfig);
       setEditingId(null);
       setShowForm(false);
+      setImagePreview('');
 
       // Refresh themes list
       const q = query(collection(firestore, 'leaderboardThemes'));
@@ -233,12 +242,22 @@ export function LeaderboardThemeAdmin() {
     setEditingId(null);
     setShowForm(false);
     setImagePreview('');
+    setFramePreview({ rank: '', show: false });
+  };
+
+  const getFrameUrl = (rank: 'rank1' | 'rank2' | 'rank3' | 'top') => {
+    const frame = formData.frameConfigs[rank];
+    if (frame.type === 'image') return frame.imageUrl;
+    return frame.videoUrl;
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-black mb-8 text-[#D4AF37]">Leaderboard Theme Manager</h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-black mb-2 text-[#D4AF37]">Leaderboard Theme Manager</h1>
+          <p className="text-white/60">Create and manage custom themes for your leaderboard rankings with frame overlays</p>
+        </div>
 
         {/* Create/Edit Form */}
         {showForm && (
@@ -256,18 +275,7 @@ export function LeaderboardThemeAdmin() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="e.g., Golden Royal"
-                    className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Background URL *</label>
-                  <input
-                    type="text"
-                    value={formData.backgroundUrl}
-                    onChange={(e) => handleInputChange('backgroundUrl', e.target.value)}
-                    placeholder="https://cdn.example.com/background.jpg"
+                    placeholder="e.g., Golden Royal Theme"
                     className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
@@ -283,15 +291,45 @@ export function LeaderboardThemeAdmin() {
                     <option value="video">Video (MP4, WebM)</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">
+                    Background URL *
+                    <span className="text-xs text-white/60 font-normal ml-1">
+                      ({formData.backgroundType === 'video' ? 'Video' : 'Image'})
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.backgroundUrl}
+                    onChange={(e) => handleInputChange('backgroundUrl', e.target.value)}
+                    placeholder={formData.backgroundType === 'video' 
+                      ? 'https://cdn.example.com/background.mp4' 
+                      : 'https://cdn.example.com/background.jpg'}
+                    className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
               </div>
 
               {/* Background Preview */}
               {imagePreview && formData.backgroundType === 'image' && (
                 <div>
-                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Preview</label>
+                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Background Preview</label>
                   <img
                     src={imagePreview}
                     alt="Background preview"
+                    className="w-full h-48 object-cover rounded border border-white/20"
+                  />
+                </div>
+              )}
+              {imagePreview && formData.backgroundType === 'video' && (
+                <div>
+                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Background Preview</label>
+                  <video
+                    src={imagePreview}
+                    autoPlay
+                    loop
+                    muted
                     className="w-full h-48 object-cover rounded border border-white/20"
                   />
                 </div>
@@ -300,73 +338,132 @@ export function LeaderboardThemeAdmin() {
 
             {/* Frame Configurations */}
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-[#D4AF37] mb-4">Rank Frame Overlays</h3>
+              <h3 className="text-xl font-bold text-[#D4AF37] mb-4">🎨 Rank Frame Overlays</h3>
+              <p className="text-xs text-white/50 mb-4">Upload frames/borders for each ranking tier. Leave empty to use default.</p>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {(['rank1', 'rank2', 'rank3', 'top'] as const).map((rank) => (
-                  <div key={rank} className="bg-slate-800 border border-white/10 rounded p-4">
-                    <h4 className="font-bold text-[#D4AF37] mb-3 capitalize">
-                      {rank === 'rank1' ? '🥇 Rank 1 (Gold)' : rank === 'rank2' ? '🥈 Rank 2 (Silver)' : rank === 'rank3' ? '🥉 Rank 3 (Bronze)' : '⭐ Top 4+ Players'}
-                    </h4>
-
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.frameConfigs[rank].isEnabled}
-                          onChange={(e) => handleFrameChange(rank, 'isEnabled', e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-white">Enable Frame</span>
-                      </label>
-
-                      <div>
-                        <label className="block text-xs font-bold text-white/60 mb-1">Frame Type</label>
-                        <select
-                          value={formData.frameConfigs[rank].type}
-                          onChange={(e) => handleFrameChange(rank, 'type', e.target.value)}
-                          disabled={!formData.frameConfigs[rank].isEnabled}
-                          className="w-full bg-slate-700 border border-white/20 rounded px-2 py-1 text-sm text-white disabled:opacity-50"
-                        >
-                          <option value="image">Image</option>
-                          <option value="video">Video</option>
-                        </select>
+                {rankConfigs.map((rankConfig) => {
+                  const rank = rankConfig.key;
+                  const frameUrl = getFrameUrl(rank);
+                  
+                  return (
+                    <div key={rank} className={cn(
+                      'bg-slate-800 border rounded-lg p-4 transition-all',
+                      formData.frameConfigs[rank].isEnabled 
+                        ? 'border-[#D4AF37]/60 bg-[#D4AF37]/5' 
+                        : 'border-white/10'
+                    )}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-bold text-white flex items-center gap-2">
+                            <span className="text-lg">{rankConfig.emoji}</span>
+                            {rankConfig.label}
+                          </h4>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.frameConfigs[rank].isEnabled}
+                            onChange={(e) => handleFrameChange(rank, 'isEnabled', e.target.checked)}
+                            className="w-4 h-4 rounded"
+                          />
+                          <span className="text-xs text-white/60">{formData.frameConfigs[rank].isEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </label>
                       </div>
 
-                      {formData.frameConfigs[rank].type === 'image' && (
-                        <div>
-                          <label className="block text-xs font-bold text-white/60 mb-1">Image URL</label>
-                          <input
-                            type="text"
-                            value={formData.frameConfigs[rank].imageUrl}
-                            onChange={(e) => handleFrameChange(rank, 'imageUrl', e.target.value)}
-                            disabled={!formData.frameConfigs[rank].isEnabled}
-                            placeholder="https://cdn.example.com/frame.png"
-                            className="w-full bg-slate-700 border border-white/20 rounded px-2 py-1 text-sm text-white disabled:opacity-50"
-                          />
+                      {formData.frameConfigs[rank].isEnabled && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-bold text-[#D4AF37] mb-2">Frame Type</label>
+                            <select
+                              value={formData.frameConfigs[rank].type}
+                              onChange={(e) => handleFrameChange(rank, 'type', e.target.value as 'image' | 'video')}
+                              className="w-full bg-slate-700 border border-white/20 rounded px-2 py-2 text-sm text-white focus:border-[#D4AF37]"
+                            >
+                              <option value="image">📷 Image (PNG with transparency)</option>
+                              <option value="video">🎥 Video (MP4, WebM)</option>
+                            </select>
+                          </div>
+
+                          {formData.frameConfigs[rank].type === 'image' && (
+                            <div>
+                              <label className="block text-xs font-bold text-[#D4AF37] mb-2">Image URL</label>
+                              <input
+                                type="text"
+                                value={formData.frameConfigs[rank].imageUrl}
+                                onChange={(e) => handleFrameChange(rank, 'imageUrl', e.target.value)}
+                                placeholder="https://cdn.example.com/frame.png"
+                                className="w-full bg-slate-700 border border-white/20 rounded px-2 py-2 text-sm text-white focus:border-[#D4AF37]"
+                              />
+                            </div>
+                          )}
+
+                          {formData.frameConfigs[rank].type === 'video' && (
+                            <div>
+                              <label className="block text-xs font-bold text-[#D4AF37] mb-2">Video URL</label>
+                              <input
+                                type="text"
+                                value={formData.frameConfigs[rank].videoUrl}
+                                onChange={(e) => handleFrameChange(rank, 'videoUrl', e.target.value)}
+                                placeholder="https://cdn.example.com/frame.mp4"
+                                className="w-full bg-slate-700 border border-white/20 rounded px-2 py-2 text-sm text-white focus:border-[#D4AF37]"
+                              />
+                            </div>
+                          )}
+
+                          {/* Frame Preview */}
+                          {frameUrl && (
+                            <button
+                              onClick={() => setFramePreview({ rank, show: !framePreview.show })}
+                              className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition rounded px-2 py-2 text-xs font-bold text-white"
+                            >
+                              {framePreview.rank === rank && framePreview.show ? (
+                                <>
+                                  <EyeOff className="h-3 w-3" />
+                                  Hide Preview
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="h-3 w-3" />
+                                  Show Preview
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {framePreview.rank === rank && framePreview.show && frameUrl && (
+                            <div className="bg-slate-700 rounded p-3 border border-white/10">
+                              {formData.frameConfigs[rank].type === 'image' ? (
+                                <img
+                                  src={frameUrl}
+                                  alt={`${rank} frame preview`}
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                              ) : (
+                                <video
+                                  src={frameUrl}
+                                  autoPlay
+                                  loop
+                                  muted
+                                  className="w-full h-32 object-cover rounded"
+                                />
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
 
-                      {formData.frameConfigs[rank].type === 'video' && (
-                        <div>
-                          <label className="block text-xs font-bold text-white/60 mb-1">Video URL</label>
-                          <input
-                            type="text"
-                            value={formData.frameConfigs[rank].videoUrl}
-                            onChange={(e) => handleFrameChange(rank, 'videoUrl', e.target.value)}
-                            disabled={!formData.frameConfigs[rank].isEnabled}
-                            placeholder="https://cdn.example.com/frame.mp4"
-                            className="w-full bg-slate-700 border border-white/20 rounded px-2 py-1 text-sm text-white disabled:opacity-50"
-                          />
-                        </div>
+                      {!formData.frameConfigs[rank].isEnabled && (
+                        <p className="text-xs text-white/40 italic">Frame overlay is disabled for this rank</p>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end pt-6 border-t border-white/10">
               <button
                 onClick={handleCancel}
                 className="px-6 py-2 bg-slate-800 border border-white/20 rounded font-bold hover:border-white/40 transition"
@@ -376,9 +473,9 @@ export function LeaderboardThemeAdmin() {
               <button
                 onClick={handleCreateTheme}
                 disabled={isLoading}
-                className="px-6 py-2 bg-[#D4AF37] text-black font-black rounded hover:bg-[#E5C158] transition disabled:opacity-50"
+                className="px-6 py-2 bg-[#D4AF37] text-black font-black rounded hover:bg-[#E5C158] transition disabled:opacity-50 flex items-center gap-2"
               >
-                {isLoading ? <Loader className="animate-spin inline mr-2 h-4 w-4" /> : null}
+                {isLoading ? <Loader className="animate-spin h-4 w-4" /> : null}
                 {editingId ? 'Update' : 'Create'} Theme
               </button>
             </div>
@@ -400,7 +497,7 @@ export function LeaderboardThemeAdmin() {
           <h2 className="text-2xl font-black mb-6 text-[#D4AF37]">All Themes ({themes.length})</h2>
 
           {themes.length === 0 ? (
-            <div className="text-center py-12 text-white/40">
+            <div className="text-center py-12 bg-slate-800 border border-white/10 rounded-lg text-white/40">
               <p>No themes created yet. Create your first theme!</p>
             </div>
           ) : (
@@ -409,56 +506,91 @@ export function LeaderboardThemeAdmin() {
                 <div
                   key={theme.id}
                   className={cn(
-                    'border rounded-lg p-4 transition',
+                    'border rounded-lg overflow-hidden transition',
                     theme.isActive
-                      ? 'bg-[#D4AF37]/10 border-[#D4AF37]'
+                      ? 'bg-gradient-to-br from-[#D4AF37]/20 to-[#D4AF37]/5 border-[#D4AF37]'
                       : 'bg-slate-800 border-white/20 hover:border-[#D4AF37]/50'
                   )}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-bold text-white">{theme.name}</h3>
-                      {theme.isActive && (
-                        <span className="text-xs font-bold text-[#D4AF37] bg-[#D4AF37]/20 px-2 py-1 rounded inline-block mt-1">
-                          🔴 ACTIVE
-                        </span>
+                  {/* Theme Preview */}
+                  <div className="relative h-40 bg-slate-900 overflow-hidden">
+                    {theme.backgroundType === 'image' ? (
+                      <img
+                        src={theme.backgroundUrl}
+                        alt={theme.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={theme.backgroundUrl}
+                        autoPlay
+                        loop
+                        muted
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {theme.isActive && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-center justify-center">
+                        <span className="text-sm font-black text-[#D4AF37] bg-black/50 px-3 py-1 rounded">🔴 ACTIVE</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="font-bold text-white mb-2">{theme.name}</h3>
+
+                    {/* Frame Summary */}
+                    <div className="mb-4 text-xs text-white/60 space-y-1">
+                      <p>Background: <span className="text-[#D4AF37]">{theme.backgroundType}</span></p>
+                      <div>
+                        Frames enabled:
+                        <div className="flex gap-1 mt-1">
+                          {rankConfigs.map(config => (
+                            <div
+                              key={config.key}
+                              className={cn(
+                                'px-2 py-1 rounded text-[10px] font-bold',
+                                theme.frameConfigs[config.key].isEnabled
+                                  ? 'bg-[#D4AF37]/30 text-[#D4AF37]'
+                                  : 'bg-white/5 text-white/40'
+                              )}
+                            >
+                              {config.emoji}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {theme.updatedAt && (
+                        <p>Updated: {new Date(theme.updatedAt).toLocaleDateString()}</p>
                       )}
                     </div>
-                    {theme.isActive && <Check className="h-5 w-5 text-[#D4AF37]" />}
-                  </div>
 
-                  <div className="text-xs text-white/60 mb-4">
-                    <p>Background: {theme.backgroundType}</p>
-                    {theme.updatedAt && (
-                      <p>Updated: {new Date(theme.updatedAt).toLocaleDateString()}</p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 justify-between">
-                    {!theme.isActive && (
+                    <div className="flex gap-2 pt-4 border-t border-white/10">
+                      {!theme.isActive && (
+                        <button
+                          onClick={() => handleActivateTheme(theme.id!)}
+                          disabled={isLoading}
+                          className="flex-1 px-3 py-2 bg-[#D4AF37] text-black font-bold rounded text-xs hover:bg-[#E5C158] transition disabled:opacity-50"
+                        >
+                          Activate
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleActivateTheme(theme.id!)}
+                        onClick={() => handleEditTheme(theme)}
                         disabled={isLoading}
-                        className="flex-1 px-3 py-2 bg-[#D4AF37] text-black font-bold rounded text-sm hover:bg-[#E5C158] transition disabled:opacity-50"
+                        className="flex-1 px-3 py-2 bg-slate-700 text-white font-bold rounded text-xs hover:bg-slate-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        Activate
+                        <Edit2 className="h-3 w-3" />
+                        Edit
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleEditTheme(theme)}
-                      disabled={isLoading}
-                      className="flex-1 px-3 py-2 bg-slate-700 text-white font-bold rounded text-sm hover:bg-slate-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTheme(theme.id!)}
-                      disabled={isLoading}
-                      className="px-3 py-2 bg-red-900 text-white font-bold rounded text-sm hover:bg-red-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      <button
+                        onClick={() => handleDeleteTheme(theme.id!)}
+                        disabled={isLoading}
+                        className="px-3 py-2 bg-red-900/30 text-red-400 font-bold rounded text-xs hover:bg-red-900/60 transition disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
