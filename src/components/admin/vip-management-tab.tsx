@@ -14,7 +14,8 @@ import {
   Video, 
   Image as ImageIcon,
   Palette,
-  Sparkles
+  Sparkles,
+  Save
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,29 +47,37 @@ export function VipManagementTab() {
   const [uploadingBadge, setUploadingBadge] = useState<Record<number, boolean>>({});
   const [uploadingVideo, setUploadingVideo] = useState<Record<number, boolean>>({});
 
-  // Sync settings from Firestore in real time
+  // Load settings from Firestore once on mount to prevent real-time overwrite while editing
   useEffect(() => {
     if (!firestore) return;
-    const docRef = doc(firestore, 'settings', 'svipConfig');
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setConfig({
-          bgType: data.bgType || 'dynamic',
-          bgUrl: data.bgUrl || '',
-          levels: data.levels || {}
-        });
+    
+    let isMounted = true;
+    const fetchConfig = async () => {
+      try {
+        const docRef = doc(firestore, 'settings', 'svipConfig');
+        const snap = await getDoc(docRef);
+        if (snap.exists() && isMounted) {
+          const data = snap.data();
+          setConfig({
+            bgType: data.bgType || 'dynamic',
+            bgUrl: data.bgUrl || '',
+            levels: data.levels || {}
+          });
+        }
+      } catch (err) {
+        console.error("Error loading SVIP Config:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      setIsLoading(false);
-    }, (err) => {
-      console.error(err);
-      setIsLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    fetchConfig();
+    return () => {
+      isMounted = false;
+    };
   }, [firestore]);
 
-  // Handle uploading global background image/video
+  // Handle uploading global background image/video (local cache only)
   const handleGlobalBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage || !firestore) return;
@@ -80,15 +89,11 @@ export function VipManagementTab() {
       const result = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(result.ref);
 
-      const newConfig = { ...config, bgUrl: downloadURL };
-      setConfig(newConfig);
-
-      const docRef = doc(firestore, 'settings', 'svipConfig');
-      await setDocumentNonBlocking(docRef, newConfig, { merge: true });
+      setConfig((prev: any) => ({ ...prev, bgUrl: downloadURL }));
 
       toast({
-        title: 'Background Uploaded',
-        description: 'New VIP page background is now configured.'
+        title: 'Background Media Uploaded (Unsaved)',
+        description: 'Click "Save VIP Settings" at the bottom to publish this change live!'
       });
     } catch (err: any) {
       toast({
@@ -101,7 +106,7 @@ export function VipManagementTab() {
     }
   };
 
-  // Handle Level assets upload
+  // Handle Level assets upload (local cache only)
   const handleLevelAssetUpload = async (level: number, type: 'badge' | 'video', file: File) => {
     if (!storage || !firestore) return;
 
@@ -117,21 +122,18 @@ export function VipManagementTab() {
       const result = await uploadBytes(fileRef, file);
       const downloadURL = await getDownloadURL(result.ref);
 
-      const levels = { ...config.levels };
-      levels[level] = {
-        ...levels[level],
-        [`${type}Url`]: downloadURL
-      };
-
-      const newConfig = { ...config, levels };
-      setConfig(newConfig);
-
-      const docRef = doc(firestore, 'settings', 'svipConfig');
-      await setDocumentNonBlocking(docRef, newConfig, { merge: true });
+      setConfig((prev: any) => {
+        const levels = { ...prev.levels };
+        levels[level] = {
+          ...levels[level],
+          [`${type}Url`]: downloadURL
+        };
+        return { ...prev, levels };
+      });
 
       toast({
-        title: `${type === 'badge' ? 'Badge image' : 'Animation video'} uploaded`,
-        description: `Successfully configured for SVIP ${level}!`
+        title: `${type === 'badge' ? 'Badge icon' : 'Animation video'} uploaded (Unsaved)`,
+        description: `Successfully loaded for SVIP ${level}! Click "Save VIP Settings" to make it live.`
       });
     } catch (err: any) {
       toast({
@@ -148,18 +150,25 @@ export function VipManagementTab() {
     }
   };
 
-  // Handle saving background type
-  const handleBgTypeChange = async (value: string) => {
-    if (!firestore) return;
-    const newConfig = { ...config, bgType: value };
-    setConfig(newConfig);
+  // Handle saving background type (local cache only)
+  const handleBgTypeChange = (value: string) => {
+    setConfig((prev: any) => ({ ...prev, bgType: value }));
+    toast({
+      title: 'Theme Switched (Unsaved)',
+      description: `Background theme switched to ${value}. Click "Save VIP Settings" to save changes!`
+    });
+  };
 
+  // Save changes to Firestore
+  const handleSaveVipConfig = async () => {
+    if (!firestore) return;
+    setIsSaving(true);
     try {
       const docRef = doc(firestore, 'settings', 'svipConfig');
-      await setDocumentNonBlocking(docRef, newConfig, { merge: true });
+      await setDocumentNonBlocking(docRef, config, { merge: true });
       toast({
-        title: 'Branding Saved',
-        description: `Background theme changed to ${value}!`
+        title: 'VIP Settings Saved',
+        description: 'All VIP page custom themes, badges, and animations are now live!'
       });
     } catch (err: any) {
       toast({
@@ -167,6 +176,8 @@ export function VipManagementTab() {
         title: 'Save Failed',
         description: err.message
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -331,13 +342,17 @@ export function VipManagementTab() {
                             <img src={lvlConfig.badgeUrl} className="h-full w-full object-contain" alt={`Badge ${level}`} />
                             {/* Clear indicator */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
-                              onClick={async () => {
-                                const levels = { ...config.levels };
-                                delete levels[level].badgeUrl;
-                                const newConfig = { ...config, levels };
-                                setConfig(newConfig);
-                                await setDocumentNonBlocking(doc(firestore!, 'settings', 'svipConfig'), newConfig, { merge: true });
-                                toast({ title: 'Badge cleared' });
+                              onClick={() => {
+                                setConfig((prev: any) => {
+                                  const levels = { ...prev.levels };
+                                  if (levels[level]) {
+                                    const updatedLevel = { ...levels[level] };
+                                    delete updatedLevel.badgeUrl;
+                                    levels[level] = updatedLevel;
+                                  }
+                                  return { ...prev, levels };
+                                });
+                                toast({ title: 'Badge cleared locally (Unsaved)' });
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-white" />
@@ -383,13 +398,17 @@ export function VipManagementTab() {
                             <video src={lvlConfig.videoUrl} className="h-full w-full object-cover" muted autoPlay loop />
                             {/* Clear indicator */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
-                              onClick={async () => {
-                                const levels = { ...config.levels };
-                                delete levels[level].videoUrl;
-                                const newConfig = { ...config, levels };
-                                setConfig(newConfig);
-                                await setDocumentNonBlocking(doc(firestore!, 'settings', 'svipConfig'), newConfig, { merge: true });
-                                toast({ title: 'Video cleared' });
+                              onClick={() => {
+                                setConfig((prev: any) => {
+                                  const levels = { ...prev.levels };
+                                  if (levels[level]) {
+                                    const updatedLevel = { ...levels[level] };
+                                    delete updatedLevel.videoUrl;
+                                    levels[level] = updatedLevel;
+                                  }
+                                  return { ...prev, levels };
+                                });
+                                toast({ title: 'Video cleared locally (Unsaved)' });
                               }}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-white" />
@@ -404,6 +423,27 @@ export function VipManagementTab() {
               );
             })}
           </div>
+        </div>
+
+        {/* SAVE BUTTON */}
+        <div className="pt-8 border-t border-slate-100 flex justify-end">
+          <Button
+            onClick={handleSaveVipConfig}
+            disabled={isSaving}
+            className="h-16 px-8 rounded-2xl bg-yellow-600 hover:bg-yellow-700 text-white font-black uppercase text-base shadow-xl shadow-yellow-600/10 active:scale-95 transition-all flex items-center gap-3"
+          >
+            {isSaving ? (
+              <>
+                <Loader className="animate-spin h-5 w-5" />
+                <span>Saving VIP Settings...</span>
+              </>
+            ) : (
+              <>
+                <Save className="h-5 w-5" />
+                <span>Save VIP Settings</span>
+              </>
+            )}
+          </Button>
         </div>
 
       </CardContent>
