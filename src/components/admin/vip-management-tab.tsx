@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useFirestore, useStorage, setDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { useFirestore, useStorage } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Crown, 
@@ -165,16 +165,17 @@ export function VipManagementTab() {
     setIsSaving(true);
     try {
       const docRef = doc(firestore, 'settings', 'svipConfig');
-      await setDocumentNonBlocking(docRef, config, { merge: true });
+      await setDoc(docRef, config, { merge: true });
       toast({
         title: 'VIP Settings Saved',
         description: 'All VIP page custom themes, badges, and animations are now live!'
       });
     } catch (err: any) {
+      console.error("VIP Save error: ", err);
       toast({
         variant: 'destructive',
         title: 'Save Failed',
-        description: err.message
+        description: err.message || 'Firestore write permission denied!'
       });
     } finally {
       setIsSaving(false);
