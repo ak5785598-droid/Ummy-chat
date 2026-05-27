@@ -68,6 +68,8 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // --- SMART BLACK BACKGROUND REMOVER FOR VIDEO FRAMES ---
+// [Poora SmartBlackRemover code same rahega - no changes]
+
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -79,6 +81,7 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
+  // [Poora existing code yahan copy karo - bilkul same]
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -153,7 +156,7 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
-    const ALPHA_FADE_SPEED = 1.0; // Changed from 0.90 to 1.0 - Complete removal, no fade blur
+    const ALPHA_FADE_SPEED = 1.0;
     const scale = 4;
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
@@ -208,7 +211,7 @@ const SmartBlackRemover = ({
               if (x < width && y < height) {
                 const i = (y * width + x) * 4;
                 if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i + 3] = 0; // Directly set to 0 - complete removal, no fade
+                  data[i + 3] = 0;
                 }
               }
             }
@@ -296,7 +299,6 @@ const SmartBlackRemover = ({
             style={{ 
               display: isReady ? 'block' : 'none', 
               background: 'transparent',
-              // No mix-blend-mode, no opacity tricks - pure transparent
             }}
           />
         )}
@@ -330,6 +332,8 @@ const SmartBlackRemover = ({
 };
 
 // --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
+// [Poora same code - no changes]
+
 const CompactVideoAvatarFrame = ({ 
   frameMediaUrl, 
   children,
@@ -348,7 +352,6 @@ const CompactVideoAvatarFrame = ({
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
-      {/* Video/Image Frame Layer - Avatar ke upar overlap */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         <SmartBlackRemover 
           src={frameMediaUrl} 
@@ -356,8 +359,7 @@ const CompactVideoAvatarFrame = ({
           className="w-full h-full"
         />
       </div>
-      {/* Avatar Layer - Frame ke andar centered */}
-       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginLeft: '-4px' }}>
+      <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginLeft: '-4px' }}>
         {children}
       </div>
     </div>
@@ -365,6 +367,9 @@ const CompactVideoAvatarFrame = ({
 };
 
 // --- 3D GLOSSY TAGS ---
+// [Saare SVG components same rahenge - SVGA_OfficialTag, SVGA_SellerTag, etc.]
+// [Poora copy karo bina kisi change ke]
+
 const SVGA_OfficialTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
@@ -580,6 +585,9 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
     </div>
   );
 };
+
+// [Baaki saare SVG components bhi same rahenge - SVGA_GoldDollar, SVGA_LevelCrown, etc.]
+// [Poora copy karo exactly as is]
 
 const SVGA_GoldDollar = () => (
   <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
@@ -876,6 +884,7 @@ const SVGA_OfficialUser = ({ className }: { className?: string }) => (
 );
 
 // --- REST OF THE HELPERS & CONSTANTS ---
+// [Saare constants and helper functions same rahenge]
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -950,6 +959,8 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 // --- MEDAL MODAL COMPONENT ---
+// [Poora same code - no changes]
+
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
 
@@ -1115,7 +1126,9 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 };
 
 
-// --- MAIN PROFILE COMPONENT ---
+// ============================================================
+// ⚡ MAIN PROFILE COMPONENT - BAG ICON CHANGE YAHAN HAI ⚡
+// ============================================================
 
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
   const router = useRouter();
@@ -1204,7 +1217,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
   const displayID = isCorrectFormat? String(currentDBId) : fallbackID;
 
-  // ✅ PERMANENT ID LOCK LOGIC - Sirf pehli baar generate hogi, fir kabhi change nahi hogi
+  // ✅ PERMANENT ID LOCK LOGIC
   useEffect(() => {
     const syncUserID = async () => {
       if (!isOwnProfile ||!profile ||!firestore ||!profileId) return;
@@ -1213,17 +1226,14 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
 
-      // Agar creator hai aur ID '0000' hai - lock hai, change mat karo
       if (isCreator && currentID === '0000') {
-        return; // Locked permanently
+        return;
       }
 
-      // Agar normal user hai aur already valid 6-digit ID hai - lock hai, change mat karo
       if (!isCreator && currentID && isStrictlySixDigits) {
-        return; // Locked permanently - ID mil gayi, ab kabhi change nahi hogi
+        return;
       }
 
-      // Sirf pehli baar generate karo jab koi valid ID nahi hai
       try {
         await runTransaction(firestore, async (transaction) => {
           const uRef = doc(firestore, 'users', profileId);
@@ -1233,22 +1243,19 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             const dbID = userSnap.data().accountNumber;
             const isDbIdValid = /^\d{6}$/.test(String(dbID));
 
-            // Double check - agar database mein already valid ID hai toh wahi lock rahegi
             if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
-              return; // Already locked, kuch mat karo
+              return;
             }
           }
 
-          // Pehli baar ID generate ho rahi hai
           let finalNumber = '';
 
           if (isCreator) {
             finalNumber = '0000';
           } else {
-            // Unique 6-digit ID generate karo
             let isUnique = false;
             let attempts = 0;
-            const maxAttempts = 10; // Infinite loop se bachne ke liye
+            const maxAttempts = 10;
             
             while (!isUnique && attempts < maxAttempts) {
               const randomID = Math.floor(100000 + Math.random() * 900000).toString();
@@ -1256,11 +1263,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               const idSnap = await transaction.get(idRef);
 
               if (!idSnap.exists()) {
-                // ID reserve karo taaki koi aur na le sake
                 transaction.set(idRef, { 
                   uid: profileId, 
                   createdAt: serverTimestamp(),
-                  lockedPermanently: true // Permanent lock mark
+                  lockedPermanently: true
                 });
                 finalNumber = randomID;
                 isUnique = true;
@@ -1268,30 +1274,27 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               attempts++;
             }
 
-            // Agar 10 attempts mein bhi unique ID nahi mili (very rare)
             if (!isUnique) {
               const fallbackRandom = Math.floor(100000 + Math.random() * 900000).toString();
               finalNumber = fallbackRandom;
             }
           }
 
-          // ID set karo - yeh sirf ek baar hoga
           const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
           transaction.update(uRef, { 
             accountNumber: finalNumber,
-            accountNumberLocked: true, // Permanent lock flag
+            accountNumberLocked: true,
             accountNumberLockedAt: serverTimestamp()
           });
           transaction.update(pRef, { 
             accountNumber: finalNumber,
-            accountNumberLocked: true // Permanent lock flag
+            accountNumberLocked: true
           });
         });
         
         console.log('✅ ID permanently locked:', finalNumber);
       } catch (err: any) {
         console.warn("❌ ID Generation mein error: ", err);
-        // Agar transaction fail ho jaye toh kuch mat karo, ID already set ho sakti hai
       }
     };
 
@@ -1333,11 +1336,18 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
-  // --- ACTIVE FRAME MEDIA URL NIKALNA ---
+  // --- ACTIVE FRAME MEDIA URL ---
   const activeFrameMediaUrl = useMemo(() => {
     if (!profile?.inventory?.activeFrameMediaUrl) return null;
     return profile.inventory.activeFrameMediaUrl;
   }, [profile]);
+
+  // ⚡⚡ YAHAN HAI BAG KA NEW CLICK HANDLER - SIRF PURCHASED ITEMS ⚡⚡
+  const handleBagClick = () => {
+    // Store page pe jaate time query param bhej rahe hain
+    // 'filter=purchased' se store page samajh jayega ki sirf purchased items dikhani hain
+    router.push('/store?filter=purchased');
+  };
 
   if (isUserLoading || isProfileLoading ||!profile) return (
     <AppLayout>
@@ -1386,11 +1396,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
-            {/* Header Info - AVATAR THODA LEFT SHIFT KIYA */}
+            {/* Header Info - AVATAR THODA LEFT SHIFT */}
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* ✅ Avatar container ko thoda left shift - marginLeft: '-6px' */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
-                {/* --- AVATAR WITH VIDEO FRAME OVERLAY --- */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
@@ -1497,14 +1505,17 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   iconColor="bg-orange-50"
                   onClick={() => router.push('/families')}
                 />
+                
+                {/* ⚡⚡ YEH HAI BAG BUTTON - AB handleBagClick USE KAR RAHA HAI ⚡⚡ */}
                 <ProfileMenuItem
                   customIcon={SVGA_BagShirt}
                   label="Bag"
                   extra="INVENTORY"
                   extraColor="text-purple-500"
                   iconColor="bg-purple-50"
-                  onClick={() => router.push('/store')}
+                  onClick={handleBagClick}  // 👈 Yahan change kiya hai
                 />
+                
                 <ProfileMenuItem
                   customIcon={SVGA_CpHeart}
                   label="Cp/friends"
@@ -1569,4 +1580,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-    }
+      }
