@@ -39,6 +39,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { useCachedMedia } from '@/hooks/use-cached-media';
 
 // --- DATA STRUCTURES ---
 
@@ -168,6 +169,11 @@ export default function VipsClubPage() {
   // Custom level background override
   const levelBgUrl = vipConfig?.levels?.[selectedLevel]?.bgUrl;
   const showCustomBg = !!levelBgUrl;
+
+  // Caching integration for high-speed media rendering (0.1s load time)
+  const cachedGlobalBgUrl = useCachedMedia(vipConfig?.bgUrl);
+  const cachedLevelBgUrl = useCachedMedia(levelBgUrl);
+  const cachedLevelVideoUrl = useCachedMedia(vipConfig?.levels?.[selectedLevel]?.videoUrl);
 
   useEffect(() => {
     console.log("SVIP Debug Log:", {
@@ -386,7 +392,7 @@ export default function VipsClubPage() {
         {!showCustomBg && vipConfig.bgType === 'image' && vipConfig.bgUrl && (
           <div 
             className="absolute inset-0 bg-cover bg-center pointer-events-none z-0" 
-            style={{ backgroundImage: `url(${vipConfig.bgUrl})`, opacity: 0.25 }}
+            style={{ backgroundImage: `url(${cachedGlobalBgUrl})`, opacity: 0.25 }}
           />
         )}
 
@@ -394,7 +400,7 @@ export default function VipsClubPage() {
         {!showCustomBg && vipConfig.bgType === 'video' && vipConfig.bgUrl && (
           <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-20">
             <video 
-              src={vipConfig.bgUrl} 
+              src={cachedGlobalBgUrl} 
               className="w-full h-full object-cover" 
               muted 
               autoPlay 
@@ -409,7 +415,7 @@ export default function VipsClubPage() {
           <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
             {levelBgUrl.includes('.mp4') || levelBgUrl.includes('video') ? (
               <video 
-                src={levelBgUrl} 
+                src={cachedLevelBgUrl} 
                 className="w-full h-full object-cover animate-in fade-in duration-700" 
                 muted 
                 autoPlay 
@@ -419,7 +425,7 @@ export default function VipsClubPage() {
             ) : (
               <div 
                 className="w-full h-full bg-cover bg-center animate-in fade-in duration-700" 
-                style={{ backgroundImage: `url(${levelBgUrl})` }}
+                style={{ backgroundImage: `url(${cachedLevelBgUrl})` }}
               />
             )}
           </div>
@@ -560,7 +566,7 @@ export default function VipsClubPage() {
               {vipConfig?.levels?.[selectedLevel]?.videoUrl ? (
                 <div className="relative h-44 w-44 rounded-full border border-yellow-500/20 bg-yellow-950/10 blur-[1px] overflow-hidden shadow-[0_0_30px_rgba(234,179,8,0.35)] animate-float flex items-center justify-center">
                   <video 
-                    src={vipConfig.levels[selectedLevel].videoUrl} 
+                    src={cachedLevelVideoUrl} 
                     className="h-full w-full object-cover" 
                     muted 
                     autoPlay 

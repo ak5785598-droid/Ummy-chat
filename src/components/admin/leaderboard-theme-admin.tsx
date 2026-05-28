@@ -1,7 +1,8 @@
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useStorage } from '@/firebase';
 import { collection, query, where, limit, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
-import { Loader, Trash2, Edit2, Check, Eye, EyeOff } from 'lucide-react';
+import { Loader, Trash2, Edit2, Check, Eye, EyeOff, Upload, Image as ImageIcon, Video } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
 
 export interface FrameConfig {
@@ -61,6 +62,7 @@ const rankConfigs = [
 
 export function LeaderboardThemeAdmin() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const [formData, setFormData] = useState<LeaderboardThemeFormData>(defaultThemeConfig);
   const [themes, setThemes] = useState<LeaderboardThemeConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,56 @@ export function LeaderboardThemeAdmin() {
   const [showForm, setShowForm] = useState(false);
   const [backgroundPreview, setBackgroundPreview] = useState('');
   const [framePreview, setFramePreview] = useState<{ rank: string; show: boolean }>({ rank: '', show: false });
+  const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingFrames, setUploadingFrames] = useState<Record<string, boolean>>({});
+
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage) return;
+
+    setUploadingBg(true);
+    try {
+      const storagePath = `rankings/theme_bg_${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, storagePath);
+      const result = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(result.ref);
+
+      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      handleInputChange('backgroundType', type);
+      handleInputChange('backgroundUrl', downloadURL);
+      alert('Background media uploaded successfully!');
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to upload background: ' + err.message);
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
+  const handleFrameUpload = async (rank: 'rank1' | 'rank2' | 'rank3' | 'top', type: 'image' | 'video', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage) return;
+
+    setUploadingFrames(prev => ({ ...prev, [rank]: true }));
+    try {
+      const storagePath = `rankings/frame_${rank}_${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, storagePath);
+      const result = await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(result.ref);
+
+      if (type === 'image') {
+        handleFrameChange(rank, 'imageUrl', downloadURL);
+      } else {
+        handleFrameChange(rank, 'videoUrl', downloadURL);
+      }
+      alert(`${rank} frame media uploaded successfully!`);
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to upload frame media: ' + err.message);
+    } finally {
+      setUploadingFrames(prev => ({ ...prev, [rank]: false }));
+    }
+  };
 
   // Fetch all themes
   useEffect(() => {
@@ -302,15 +354,39 @@ export function LeaderboardThemeAdmin() {
                       ({formData.backgroundType === 'video' ? 'Video' : 'Image'})
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.backgroundUrl}
-                    onChange={(e) => handleInputChange('backgroundUrl', e.target.value)}
-                    placeholder={formData.backgroundType === 'video' 
-                      ? 'https://cdn.example.com/background.mp4' 
-                      : 'https://cdn.example.com/background.jpg'}
-                    className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
-                  />
+                  <div className="flex flex-col gap-3">
+                    <input
+                      type="text"
+                      value={formData.backgroundUrl}
+                      onChange={(e) => handleInputChange('backgroundUrl', e.target.value)}
+                      placeholder={formData.backgroundType === 'video' 
+                        ? 'https://cdn.example.com/background.mp4' 
+                        : 'https://cdn.example.com/background.jpg'}
+                      className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                    />
+                    <div className="relative border-2 border-dashed border-white/20 hover:border-[#D4AF37] rounded-lg p-4 flex flex-col items-center justify-center bg-slate-800/50 cursor-pointer transition-colors group h-24">
+                      <input 
+                        type="file" 
+                        accept={formData.backgroundType === 'video' ? 'video/*' : 'image/*'}
+                        onChange={handleBgUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                        disabled={uploadingBg}
+                      />
+                      {uploadingBg ? (
+                        <Loader className="animate-spin text-[#D4AF37] h-6 w-6" />
+                      ) : (
+                        <div className="text-center flex flex-col items-center gap-1">
+                          <Upload className="h-5 w-5 text-white/40 group-hover:text-[#D4AF37] transition-colors" />
+                          <span className="text-xs font-bold text-white/60 group-hover:text-white transition-colors">
+                            {formData.backgroundUrl ? 'Click to Change File' : 'Click to Upload Media'}
+                          </span>
+                          <span className="text-[10px] text-white/40">
+                            Supports {formData.backgroundType === 'video' ? 'MP4, WebM' : 'JPG, PNG, GIF'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -389,8 +465,8 @@ export function LeaderboardThemeAdmin() {
                           </div>
 
                           {formData.frameConfigs[rank].type === 'image' && (
-                            <div>
-                              <label className="block text-xs font-bold text-[#D4AF37] mb-2">Image URL</label>
+                            <div className="space-y-2">
+                              <label className="block text-xs font-bold text-[#D4AF37] mb-1">Image URL</label>
                               <input
                                 type="text"
                                 value={formData.frameConfigs[rank].imageUrl}
@@ -398,12 +474,29 @@ export function LeaderboardThemeAdmin() {
                                 placeholder="https://cdn.example.com/frame.png"
                                 className="w-full bg-slate-700 border border-white/20 rounded px-2 py-2 text-sm text-white focus:border-[#D4AF37]"
                               />
+                              <div className="relative border border-dashed border-white/20 hover:border-[#D4AF37] rounded p-2 flex items-center justify-center bg-slate-800/40 cursor-pointer h-12">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFrameUpload(rank, 'image', e)}
+                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                  disabled={!!uploadingFrames[rank]}
+                                />
+                                {uploadingFrames[rank] ? (
+                                  <Loader className="animate-spin text-[#D4AF37] h-4 w-4" />
+                                ) : (
+                                  <span className="text-[10px] font-bold text-white/50 flex items-center gap-1.5">
+                                    <Upload className="h-3.5 w-3.5" />
+                                    Upload Image (.png)
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
 
                           {formData.frameConfigs[rank].type === 'video' && (
-                            <div>
-                              <label className="block text-xs font-bold text-[#D4AF37] mb-2">Video URL</label>
+                            <div className="space-y-2">
+                              <label className="block text-xs font-bold text-[#D4AF37] mb-1">Video URL</label>
                               <input
                                 type="text"
                                 value={formData.frameConfigs[rank].videoUrl}
@@ -411,6 +504,23 @@ export function LeaderboardThemeAdmin() {
                                 placeholder="https://cdn.example.com/frame.mp4"
                                 className="w-full bg-slate-700 border border-white/20 rounded px-2 py-2 text-sm text-white focus:border-[#D4AF37]"
                               />
+                              <div className="relative border border-dashed border-white/20 hover:border-[#D4AF37] rounded p-2 flex items-center justify-center bg-slate-800/40 cursor-pointer h-12">
+                                <input
+                                  type="file"
+                                  accept="video/*"
+                                  onChange={(e) => handleFrameUpload(rank, 'video', e)}
+                                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                  disabled={!!uploadingFrames[rank]}
+                                />
+                                {uploadingFrames[rank] ? (
+                                  <Loader className="animate-spin text-[#D4AF37] h-4 w-4" />
+                                ) : (
+                                  <span className="text-[10px] font-bold text-white/50 flex items-center gap-1.5">
+                                    <Upload className="h-3.5 w-3.5" />
+                                    Upload Video (.mp4)
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
 

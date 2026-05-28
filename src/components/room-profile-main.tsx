@@ -389,12 +389,12 @@ export function RoomProfileMain({
 
       {profile && (
         <ReportUserDialog 
-          isOpen={showReport}
-          onClose={() => setShowReport(false)}
+          open={showReport}
+          onOpenChange={setShowReport}
           targetUser={{
             uid: profile.id,
             username: profile.username,
-            avatarUrl: profile.avatarUrl
+            accountNumber: profile.accountNumber || undefined
           }}
         />
       )}

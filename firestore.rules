@@ -388,6 +388,23 @@ service cloud.firestore {
     }
 
     // ============================================
+    // VIP & BRANDING SETTINGS
+    // ============================================
+    match /settings/{documentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
+    // CUSTOMIZED GIFT REQUESTS
+    // ============================================
+    match /customizedGiftRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
     // BOUTIQUE HUB (Store Items)
     // ============================================
     match /storeItems/{itemId} {

@@ -265,12 +265,21 @@ export function VipManagementTab() {
                     </Button>
                   </div>
                   {config.bgUrl && (
-                    <div className="h-12 w-12 rounded-2xl border border-slate-100 overflow-hidden shrink-0 shadow-inner">
+                    <div className="h-12 w-12 rounded-2xl border border-slate-100 overflow-hidden shrink-0 shadow-inner relative group flex items-center justify-center">
                       {config.bgType === 'image' ? (
                         <img src={config.bgUrl} className="h-full w-full object-cover" alt="Background" />
                       ) : (
                         <video src={config.bgUrl} className="h-full w-full object-cover" muted autoPlay loop />
                       )}
+                      {/* Clear indicator */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                        onClick={() => {
+                          setConfig((prev: any) => ({ ...prev, bgUrl: '' }));
+                          toast({ title: 'Global background cleared locally (Unsaved)' });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-white" />
+                      </div>
                     </div>
                   )}
                 </div>

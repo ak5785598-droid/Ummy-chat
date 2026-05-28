@@ -130,6 +130,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
    imageUrl: imageUrl || null,
    senderId: currentUser.uid,
    senderBubble: currentUserProfile?.inventory?.activeBubble || null,
+   senderBubbleMediaUrl: (currentUserProfile?.inventory as any)?.activeBubbleMediaUrl || null,
    timestamp: serverTimestamp()
   };
 
@@ -206,7 +207,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
               <AvatarFallback className="text-[10px]">{(isMe ? currentUser?.displayName : otherUser.username)?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className={cn("flex flex-col max-w-[200px]", isMe ? "items-end" : "items-start")}>
-              <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-xs">
+              <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} bubbleMediaUrl={msg.senderBubbleMediaUrl || null} className="text-xs">
                {msg.imageUrl && (
                 <div 
                  onClick={() => setPreviewImage(msg.imageUrl)}

@@ -762,7 +762,7 @@ export default function StorePage() {
       description: item.description || `Premium ${item.name} asset.`,
       isDynamic: true,
       videoUrl: item.videoUrl || null,
-      imageUrl: item.imageUrl || null,
+      imageUrl: item.imageUrl || item.url || null,
     }));
   }, [dbStoreItems]);
 
@@ -856,23 +856,24 @@ export default function StorePage() {
 
   // --- PURCHASED ITEMS (Mine Tab) ---
   const purchasedItems = useMemo(() => {
-    if (!userProfile?.inventory?.ownedItems) return [];
-    const ownedIds = userProfile.inventory.ownedItems;
-    const expiryMap = userProfile.inventory.expiries || {};
+    const inventory = userProfile?.inventory as any;
+    if (!inventory?.ownedItems) return [];
+    const ownedIds = inventory.ownedItems;
+    const expiryMap = inventory.expiries || {};
     
     const now = Timestamp.now();
-    const validOwnedIds = ownedIds.filter(id => {
+    const validOwnedIds = ownedIds.filter((id: string) => {
       const expiry = expiryMap[id];
       if (!expiry) return true;
       return expiry.toDate() > now.toDate();
     });
     
     return allItemsWithFlags.filter(item => validOwnedIds.includes(item.id));
-  }, [userProfile?.inventory?.ownedItems, userProfile?.inventory?.expiries, allItemsWithFlags]);
+  }, [userProfile?.inventory, allItemsWithFlags]);
 
   // Get expiry date for an item
   const getItemExpiryDate = (itemId: string) => {
-    const expiry = userProfile?.inventory?.expiries?.[itemId];
+    const expiry = (userProfile?.inventory as any)?.expiries?.[itemId];
     if (!expiry) return null;
     return expiry.toDate();
   };
@@ -882,7 +883,8 @@ export default function StorePage() {
     if (!userProfile || !firestore || !user) return;
 
     const checkExpiryAndUnequip = async () => {
-      const expiries = userProfile.inventory?.expiries || {};
+      const inventory = userProfile.inventory as any;
+      const expiries = inventory?.expiries || {};
       const now = Timestamp.now();
       let needsUpdate = false;
       const updateData: any = { updatedAt: serverTimestamp() };
@@ -890,7 +892,7 @@ export default function StorePage() {
       const activeTypes = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
       
       for (const type of activeTypes) {
-        const activeItemId = userProfile.inventory?.[`active${type}` as keyof typeof userProfile.inventory];
+        const activeItemId = inventory?.[`active${type}`];
         if (activeItemId && activeItemId !== 'None') {
           const expiry = expiries[activeItemId as string];
           if (expiry && expiry.toDate() <= now.toDate()) {
@@ -924,10 +926,11 @@ export default function StorePage() {
 
   // Check if item is owned and not expired
   const isItemOwnedAndValid = (itemId: string) => {
-    if (!userProfile?.inventory?.ownedItems) return false;
-    if (!userProfile.inventory.ownedItems.includes(itemId)) return false;
+    const inventory = userProfile?.inventory as any;
+    if (!inventory?.ownedItems) return false;
+    if (!inventory.ownedItems.includes(itemId)) return false;
     
-    const expiry = userProfile.inventory.expiries?.[itemId];
+    const expiry = inventory.expiries?.[itemId];
     if (expiry && expiry.toDate() <= new Date()) return false;
     
     return true;
@@ -977,7 +980,8 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
-    const expiry = userProfile.inventory?.expiries?.[item.id];
+    // Double check expiry
+    const expiry = (userProfile.inventory as any)?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
       return;
@@ -1000,6 +1004,14 @@ export default function StorePage() {
           updateData['inventory.activeFrameMediaUrl'] = item.videoUrl || item.imageUrl || null;
         } else if (isActive) {
           updateData['inventory.activeFrameMediaUrl'] = null;
+        }
+      }
+      
+      if (item.type === 'Bubble') {
+        if (!isActive && (item.videoUrl || item.imageUrl)) {
+          updateData['inventory.activeBubbleMediaUrl'] = item.videoUrl || item.imageUrl || null;
+        } else if (isActive) {
+          updateData['inventory.activeBubbleMediaUrl'] = null;
         }
       }
       

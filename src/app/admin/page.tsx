@@ -136,6 +136,7 @@ import { AVATAR_FRAMES } from "@/constants/avatar-frames";
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { VipManagementTab } from "@/components/admin/vip-management-tab";
+import { LeaderboardThemeAdmin } from "@/components/admin/leaderboard-theme-admin";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
 
@@ -646,7 +647,7 @@ function AdminPageContent() {
   const [storePrice, setStorePrice] = useState("0");
   const [storeDuration, setStoreDuration] = useState("7");
   const [storeCategory, setStoreCategory] = useState<
-    "Frame" | "Bubble" | "Theme" | "Wave"
+    "Frame" | "Bubble" | "Theme" | "Wave" | "Entry"
   >("Frame");
   const [isUploadingStore, setIsUploadingStore] = useState(false);
   const storeFileInputRef = useRef<HTMLInputElement>(null);
@@ -731,6 +732,7 @@ function AdminPageContent() {
   const [giftAnimationId, setGiftAnimationId] = useState("");
   const [isUploadingGift, setIsUploadingGift] = useState(false);
   const [isAddingGift, setIsAddingGift] = useState(false);
+  const [isProcessingCustomGift, setIsProcessingCustomGift] = useState<string | null>(null);
   
   const [giftThumbnail, setGiftThumbnail] = useState<File | null>(null);
   const [giftVideo, setGiftVideo] = useState<File | null>(null);
@@ -905,6 +907,21 @@ function AdminPageContent() {
     );
   }, [firestore, isAuthorized]);
   const { data: pendingRecharges } = useCollection(rechargeQuery);
+
+  const customGiftRequestsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAuthorized) return null;
+    return query(collection(firestore, "customizedGiftRequests"));
+  }, [firestore, isAuthorized]);
+  const { data: customGiftRequests } = useCollection(customGiftRequestsQuery);
+
+  const sortedCustomGiftRequests = useMemo(() => {
+    if (!customGiftRequests) return [];
+    return [...customGiftRequests].sort((a: any, b: any) => {
+      const aTime = a.createdAt?.toDate?.()?.getTime() || 0;
+      const bTime = b.createdAt?.toDate?.()?.getTime() || 0;
+      return bTime - aTime;
+    });
+  }, [customGiftRequests]);
 
   const bannerConfigRef = useMemoFirebase(() => {
     if (!firestore || !isAuthorized) return null;
@@ -2103,6 +2120,65 @@ function AdminPageContent() {
     }
   };
 
+  const handleApproveCustomGift = async (req: any) => {
+    if (!firestore) return;
+    setIsProcessingCustomGift(req.id);
+    try {
+      const docRef = doc(firestore, 'customizedGiftRequests', req.id);
+      await updateDoc(docRef, {
+        status: 'approved',
+        updatedAt: serverTimestamp()
+      });
+      toast({
+        title: "Customized Request Approved",
+        description: `Request for ${req.username} is approved. Please create the customized gift using the Gift Management tab under the 'Customized' category.`,
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Approval Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsProcessingCustomGift(null);
+    }
+  };
+
+  const handleRejectCustomGift = async (req: any) => {
+    if (!firestore) return;
+    if (!confirm(`Are you sure you want to reject this customized gift request? This will AUTOMATICALLY refund 50,000 coins to ${req.username}'s wallet!`)) return;
+    setIsProcessingCustomGift(req.id);
+    try {
+      const userRef = doc(firestore, 'users', req.uid);
+      const profileRef = doc(firestore, 'users', req.uid, 'profile', req.uid);
+      const reqRef = doc(firestore, 'customizedGiftRequests', req.id);
+      
+      const batch = writeBatch(firestore);
+      batch.update(userRef, { 'wallet.coins': increment(50000) });
+      batch.update(profileRef, { 'wallet.coins': increment(50000) });
+      batch.update(reqRef, { 
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      });
+      await batch.commit();
+
+      toast({
+        title: "Customized Request Rejected & Refunded",
+        description: `50,000 coins successfully refunded to ${req.username}'s wallet.`,
+      });
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Rejection Failed",
+        description: err.message,
+      });
+    } finally {
+      setIsProcessingCustomGift(null);
+    }
+  };
+
   const handleSaveLoot = async () => {
     if (!firestore || !lootConfigRef) return;
     setIsSavingLoot(true);
@@ -3134,6 +3210,12 @@ function AdminPageContent() {
                   <Gift className="h-4 w-4" /> Gift Management
                 </TabsTrigger>
                 <TabsTrigger
+                  value="custom-gifts"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-pink-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Sparkles className="h-4 w-4" /> Customized Gifts
+                </TabsTrigger>
+                <TabsTrigger
                   value="loot-management"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-purple-600 data-[state=active]:text-white shadow-lg"
                 >
@@ -3489,6 +3571,7 @@ function AdminPageContent() {
                             <SelectItem value="Luxury">Luxury</SelectItem>
                             <SelectItem value="Event">Event</SelectItem>
                             <SelectItem value="Lucky">Lucky</SelectItem>
+                            <SelectItem value="Customized">Customized</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -3630,6 +3713,113 @@ function AdminPageContent() {
                       ))}
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="custom-gifts" className="m-0 space-y-6">
+              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
+                <CardHeader className="px-0">
+                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-pink-600">
+                    <Sparkles className="h-6 w-6" /> Customized Gift Requests
+                  </CardTitle>
+                  <CardDescription>
+                    Review and moderate custom gift requests. Approving lets the user know to check, and rejecting will AUTOMATICALLY refund 50,000 coins directly to their wallet.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-0">
+                  {!sortedCustomGiftRequests || sortedCustomGiftRequests.length === 0 ? (
+                    <div className="py-20 text-center opacity-20 font-bold uppercase text-xs tracking-widest leading-loose">
+                      No Customized Requests Found
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-100">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-100">
+                            <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-wider">User Info</th>
+                            <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-wider">Requested Date</th>
+                            <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-wider">Coins Deducted</th>
+                            <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-wider">Status</th>
+                            <th className="p-4 text-[10px] font-black uppercase text-slate-400 tracking-wider text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedCustomGiftRequests.map((req: any) => (
+                            <tr key={req.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10 border-2 border-white shadow-sm flex-shrink-0">
+                                    <AvatarFallback className="bg-pink-100 text-pink-600 font-bold uppercase">
+                                      {req.username?.[0] || 'U'}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-bold text-slate-900 uppercase text-xs">
+                                      {req.username}
+                                    </p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                                      UID: {req.uid}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4 text-xs font-medium text-slate-500">
+                                {req.createdAt ? format(req.createdAt.toDate?.() || new Date(req.createdAt), "HH:mm - MMM d, yyyy") : "N/A"}
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-1 text-orange-500 font-black text-xs">
+                                  <GoldCoinIcon className="h-3.5 w-3.5" /> {(req.coinsPaid || 50000).toLocaleString()}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                {req.status === 'pending' && (
+                                  <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 font-bold uppercase text-[9px] px-2 py-0.5 rounded-full border border-amber-200 shadow-sm flex items-center gap-1 w-fit">
+                                    <Clock className="h-2.5 w-2.5" /> Pending Review
+                                  </Badge>
+                                )}
+                                {req.status === 'approved' && (
+                                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 font-bold uppercase text-[9px] px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm flex items-center gap-1 w-fit">
+                                    <Check className="h-2.5 w-2.5" /> Approved
+                                  </Badge>
+                                )}
+                                {req.status === 'rejected' && (
+                                  <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 font-bold uppercase text-[9px] px-2 py-0.5 rounded-full border border-rose-200 shadow-sm flex items-center gap-1 w-fit">
+                                    <X className="h-2.5 w-2.5" /> Rejected (Refunded)
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="p-4 text-right">
+                                {req.status === 'pending' ? (
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleApproveCustomGift(req)}
+                                      disabled={isProcessingCustomGift !== null}
+                                      className="h-8 px-3 text-[10px] font-bold uppercase rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                                    >
+                                      {isProcessingCustomGift === req.id ? "..." : "Approve"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleRejectCustomGift(req)}
+                                      disabled={isProcessingCustomGift !== null}
+                                      className="h-8 px-3 text-[10px] font-bold uppercase rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors"
+                                    >
+                                      {isProcessingCustomGift === req.id ? "..." : "Reject & Refund"}
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Processed</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -4346,6 +4536,7 @@ function AdminPageContent() {
                             <SelectItem value="Bubble" className="font-bold">Chat Bubble</SelectItem>
                             <SelectItem value="Theme" className="font-bold">Room Theme</SelectItem>
                             <SelectItem value="Wave" className="font-bold">Voice Wave</SelectItem>
+                            <SelectItem value="Entry" className="font-bold">Room Entry (Video)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -4384,10 +4575,10 @@ function AdminPageContent() {
                         />
                       </div>
 
-                      {/* VIDEO UPLOAD (Only for Frames) */}
+                      {/* VIDEO UPLOAD (Only for Frames & Entry) */}
                       <div className={cn(
                         "flex flex-col items-center justify-center border-2 border-dashed rounded-3xl bg-white p-6 group relative overflow-hidden aspect-video",
-                        storeCategory !== 'Frame' && "opacity-30 pointer-events-none"
+                        storeCategory !== 'Frame' && storeCategory !== 'Entry' && "opacity-30 pointer-events-none"
                       )}>
                         <button
                           onClick={() => storeVideoFileInputRef.current?.click()}
@@ -5026,6 +5217,7 @@ function AdminPageContent() {
                           <SelectItem value="Bubble" className="font-bold">Chat Bubble</SelectItem>
                           <SelectItem value="Theme" className="font-bold">Room Theme</SelectItem>
                           <SelectItem value="Wave" className="font-bold">Voice Wave</SelectItem>
+                          <SelectItem value="Entry" className="font-bold">Room Entry (Video)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -5163,90 +5355,7 @@ function AdminPageContent() {
             </TabsContent>
 
             <TabsContent value="ranking-themes" className="m-0 space-y-6">
-              <Card className="rounded-3xl border-none shadow-xl bg-white p-4 sm:p-8">
-                <CardHeader className="px-0">
-                  <CardTitle className="text-2xl uppercase flex items-center gap-2 text-yellow-600">
-                    <Trophy className="h-6 w-6" /> Ranking Themes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-0 grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {[
-                    { key: "honor", label: "Honor (Rich)", icon: Crown },
-                    { key: "charm", label: "Charm", icon: Sparkles },
-                    { key: "room", label: "Room Rankings", icon: Home },
-                    { key: "cp", label: "Couple Challenge", icon: Heart },
-                  ].map((item) => (
-                    <div
-                      key={item.key}
-                      className="p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 space-y-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <item.icon className="h-5 w-5 text-yellow-600" />
-                          <span className="font-bold uppercase text-sm">
-                            {item.label}
-                          </span>
-                        </div>
-                        {rankingConfig?.[item.key] && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-[8px] font-bold uppercase text-red-500"
-                            onClick={() =>
-                              updateDoc(rankingConfigRef!, { [item.key]: null })
-                            }
-                          >
-                            Reset
-                          </Button>
-                        )}
-                      </div>
-                      <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-200 border-2 border-white shadow-inner flex items-center justify-center">
-                        {rankingConfig?.[item.key] ? (
-                          <Image
-                            src={rankingConfig[item.key]}
-                            fill
-                            className="object-cover"
-                            alt="BG"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="text-center opacity-20">
-                            <ImageIcon className="h-8 w-8 mx-auto mb-1" />
-                            <span className="text-[8px] font-bold uppercase">
-                              Default Active
-                            </span>
-                          </div>
-                        )}
-                        {uploadingRankingKey === item.key && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <Loader className="animate-spin" />
-                          </div>
-                        )}
-                        <button
-                          onClick={() => {
-                            setUploadingRankingKey(item.key);
-                            rankingBGFileInputRef.current?.click();
-                          }}
-                          className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-lg text-yellow-600 active:scale-90 transition-transform"
-                        >
-                          <Camera className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-              <input
-                type="file"
-                ref={rankingBGFileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) =>
-                  e.target.files?.[0] &&
-                  uploadingRankingKey &&
-                  handleRankingBGUpload(uploadingRankingKey, e.target.files[0])
-                }
-              />
+              <LeaderboardThemeAdmin />
             </TabsContent>
 
             <TabsContent value="user-records" className="m-0 space-y-6">

@@ -1314,6 +1314,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         return;
       }
 
+      let finalNumber = '';
       try {
         await runTransaction(firestore, async (transaction) => {
           const uRef = doc(firestore, 'users', profileId);
@@ -1328,7 +1329,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
             }
           }
 
-          let finalNumber = '';
+          finalNumber = '';
 
           if (isCreator) {
             finalNumber = '0000';
@@ -1418,9 +1419,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   // ⚡ ACTIVE FRAME MEDIA URL - with proper memoization
   const activeFrameMediaUrl = useMemo(() => {
-    if (!profile?.inventory?.activeFrameMediaUrl) return null;
-    return profile.inventory.activeFrameMediaUrl;
-  }, [profile?.inventory?.activeFrameMediaUrl]);
+    const inv = profile?.inventory as any;
+    if (!inv?.activeFrameMediaUrl) return null;
+    return inv.activeFrameMediaUrl;
+  }, [profile?.inventory]);
 
   // ⚡ BAG CLICK HANDLER - purchased items
   const handleBagClick = () => {

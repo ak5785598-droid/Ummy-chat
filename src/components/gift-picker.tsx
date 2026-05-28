@@ -11,6 +11,8 @@ import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCachedMedia } from '@/hooks/use-cached-media';
+import { useToast } from '@/hooks/use-toast';
 
 // --- GOLDEN DOLLAR ICON COMPONENT ---
 const GoldenDollar = () => (
@@ -24,16 +26,17 @@ const GoldenDollar = () => (
 // GIFT IMAGE COMPONENT - SIZE BADA AUR ROUNDED CORNERS
 const GiftImage = ({ gift }: { gift: any }) => {
   const [processedUrl, setProcessedUrl] = useState<string | null>(null);
+  const cachedUrl = useCachedMedia(gift.imageUrl);
 
   useEffect(() => {
-    if (!gift.imageUrl) {
+    if (!cachedUrl) {
       setProcessedUrl(null);
       return;
     }
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = gift.imageUrl;
+    img.src = cachedUrl;
 
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -58,90 +61,63 @@ const GiftImage = ({ gift }: { gift: any }) => {
       let topBlackCount = 0;
       for (let x = 0; x < width; x++) {
         const index = x * 4;
-        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+        const r = data[index];
+        const gVal = data[index + 1];
+        const b = data[index + 2];
+        if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
           topBlackCount++;
         }
       }
-      const topRatio = topBlackCount / width;
+      const isTopBlack = topBlackCount / width >= BLACK_PIXEL_RATIO;
 
       // Check bottom edge
       let bottomBlackCount = 0;
       for (let x = 0; x < width; x++) {
         const index = ((height - 1) * width + x) * 4;
-        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+        const r = data[index];
+        const gVal = data[index + 1];
+        const b = data[index + 2];
+        if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
           bottomBlackCount++;
         }
       }
-      const bottomRatio = bottomBlackCount / width;
+      const isBottomBlack = bottomBlackCount / width >= BLACK_PIXEL_RATIO;
 
       // Check left edge
       let leftBlackCount = 0;
       for (let y = 0; y < height; y++) {
         const index = (y * width) * 4;
-        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+        const r = data[index];
+        const gVal = data[index + 1];
+        const b = data[index + 2];
+        if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
           leftBlackCount++;
         }
       }
-      const leftRatio = leftBlackCount / height;
+      const isLeftBlack = leftBlackCount / height >= BLACK_PIXEL_RATIO;
 
       // Check right edge
       let rightBlackCount = 0;
       for (let y = 0; y < height; y++) {
         const index = (y * width + (width - 1)) * 4;
-        if (data[index] < BLACK_THRESHOLD && data[index + 1] < BLACK_THRESHOLD && data[index + 2] < BLACK_THRESHOLD) {
+        const r = data[index];
+        const gVal = data[index + 1];
+        const b = data[index + 2];
+        if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
           rightBlackCount++;
         }
       }
-      const rightRatio = rightBlackCount / height;
+      const isRightBlack = rightBlackCount / height >= BLACK_PIXEL_RATIO;
 
-      // Check corners (8px radius)
-      const checkCorner = (cx: number, cy: number, radius: number = 8) => {
-        let blackPixels = 0;
-        let totalPixels = 0;
-        for (let dy = -radius; dy <= radius; dy++) {
-          for (let dx = -radius; dx <= radius; dx++) {
-            const px = Math.max(0, Math.min(width - 1, cx + dx));
-            const py = Math.max(0, Math.min(height - 1, cy + dy));
-            const i = (py * width + px) * 4;
-            totalPixels++;
-            if (data[i] < BLACK_THRESHOLD && data[i + 1] < BLACK_THRESHOLD && data[i + 2] < BLACK_THRESHOLD) {
-              blackPixels++;
-            }
-          }
-        }
-        return blackPixels / totalPixels;
-      };
+      const hasBlackBorders = isTopBlack || isBottomBlack || isLeftBlack || isRightBlack;
 
-      const topLeftCorner = checkCorner(0, 0);
-      const topRightCorner = checkCorner(width - 1, 0);
-      const bottomLeftCorner = checkCorner(0, height - 1);
-      const bottomRightCorner = checkCorner(width - 1, height - 1);
-
-      const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
-                           bottomRatio > BLACK_PIXEL_RATIO && 
-                           leftRatio > BLACK_PIXEL_RATIO && 
-                           rightRatio > BLACK_PIXEL_RATIO;
-
-      const allCornersBlack = topLeftCorner > 0.85 && 
-                             topRightCorner > 0.85 && 
-                             bottomLeftCorner > 0.85 && 
-                             bottomRightCorner > 0.85;
-
-      const isSolidBlackBackground = allEdgesBlack && allCornersBlack;
-
-      if (isSolidBlackBackground) {
-        // Remove black background - make it transparent
+      if (hasBlackBorders) {
         for (let i = 0; i < data.length; i += 4) {
-          if (data[i] < BLACK_THRESHOLD && data[i + 1] < BLACK_THRESHOLD && data[i + 2] < BLACK_THRESHOLD) {
-            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            if (brightness < 15) {
-              data[i + 3] = 0; // Fully transparent for pure black
-            } else {
-              data[i + 3] = Math.max(0, Math.round((brightness / BLACK_THRESHOLD) * 255));
-              data[i] = Math.round(data[i] * 0.3);
-              data[i + 1] = Math.round(data[i + 1] * 0.3);
-              data[i + 2] = Math.round(data[i + 2] * 0.3);
-            }
+          const r = data[i];
+          const gVal = data[i + 1];
+          const b = data[i + 2];
+          if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
+            data[i + 3] = 0; // set alpha to 0
           }
         }
         ctx.putImageData(imageData, 0, 0);
@@ -154,7 +130,7 @@ const GiftImage = ({ gift }: { gift: any }) => {
     img.onerror = () => {
       setProcessedUrl(null);
     };
-  }, [gift.imageUrl]);
+  }, [cachedUrl]);
 
   // If no imageUrl, try icon name
   if (!gift.imageUrl) {
@@ -163,7 +139,7 @@ const GiftImage = ({ gift }: { gift: any }) => {
 
   return (
     <img 
-      src={processedUrl || gift.imageUrl} 
+      src={processedUrl || cachedUrl} 
       alt={gift.name} 
       className="h-14 w-14 rounded-lg object-contain" 
     />
@@ -183,6 +159,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const { user } = useUser();
  const { userProfile } = useUserProfile(user?.uid);
  const firestore = useFirestore();
+ const { toast } = useToast();
 
  const [selectedGift, setSelectedGift] = useState<any>(null);
  const [quantity, setQuantity] = useState('1');
@@ -210,7 +187,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'Hot': [],
      'Lucky': [],
      'Luxury': [],
-     'Event': []
+     'Event': [],
+     'Customized': []
    };
 
    if (dbGifts && dbGifts.length > 0) {
@@ -299,42 +277,66 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  }, [showCustomLink]);
 
  const handleCustomGift = async () => {
-   if (!user || !firestore || !userProfile) return;
-   if ((userProfile.wallet?.coins || 0) < 50000) return;
-   if (isProcessingCustom) return;
-   
-   setIsProcessingCustom(true);
-   
-   try {
-     const batch = writeBatch(firestore);
-     const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-     const senderUserRef = doc(firestore, 'users', user.uid);
-     
-     batch.update(senderProfileRef, {
-       'wallet.coins': increment(-50000),
-       updatedAt: serverTimestamp()
-     });
-     batch.update(senderUserRef, {
-       'wallet.coins': increment(-50000)
-     });
-     
-     await batch.commit();
-     
-     // Open the link in a new window/tab
-     const customWindow = window.open(
-       'https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh',
-       '_blank'
-     );
-     
-     // Show the custom link overlay
-     setShowCustomLink(true);
-     
-   } catch (e) {
-     console.error(e);
-   } finally {
-     setIsProcessingCustom(false);
-   }
- };
+    if (!user || !firestore || !userProfile) return;
+    if ((userProfile.wallet?.coins || 0) < 50000) return;
+    if (isProcessingCustom) return;
+    
+    setIsProcessingCustom(true);
+    
+    try {
+      const batch = writeBatch(firestore);
+      const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const senderUserRef = doc(firestore, 'users', user.uid);
+      
+      batch.update(senderProfileRef, {
+        'wallet.coins': increment(-50000),
+        updatedAt: serverTimestamp()
+      });
+      batch.update(senderUserRef, {
+        'wallet.coins': increment(-50000)
+      });
+      
+      // Create request document inside /customizedGiftRequests collection
+      const requestRef = doc(collection(firestore, 'customizedGiftRequests'));
+      batch.set(requestRef, {
+        id: requestRef.id,
+        uid: user.uid,
+        username: userProfile.username || 'Tribe Member',
+        accountNumber: userProfile.accountNumber || '',
+        avatarUrl: userProfile.avatarUrl || '',
+        coinsPaid: 50000,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      await batch.commit();
+      
+      // Open the link in a new window/tab
+      const customWindow = window.open(
+        'https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh',
+        '_blank'
+      );
+      
+      // Show the custom link overlay
+      setShowCustomLink(true);
+
+      toast({
+        title: 'Customized Gift Requested',
+        description: '50,000 coins deducted. Please fill out the form to upload your files!'
+      });
+      
+    } catch (e) {
+      console.error(e);
+      toast({
+        variant: 'destructive',
+        title: 'Request Failed',
+        description: 'Could not process custom gift request. Please try again!'
+      });
+    } finally {
+      setIsProcessingCustom(false);
+    }
+  };
 
  const handleSend = async () => {
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
@@ -561,21 +563,44 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         
         {/* Customized Tab Content */}
         <TabsContent value="Customized" className="contents">
-          <div className="col-span-4 flex justify-start">
+          {/* Render all approved customized gifts from the database */}
+          {GIFTS['Customized']?.map(gift => (
+            <button 
+              key={gift.id} 
+              onClick={() => setSelectedGift(gift)} 
+              className={cn(
+                "flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", 
+                selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100"
+              )}
+            >
+              <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
+                <GiftImage gift={gift} />
+              </div>
+              <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <GoldenDollar /> 
+                <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
+              </div>
+              {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+            </button>
+          ))}
+
+          {/* Submission button card */}
+          <div className="col-span-2 flex justify-start">
             <button 
               onClick={handleCustomGift}
               disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000}
-              className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-2 p-3 w-full h-[88px] rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none text-left"
             >
-              <div className="h-12 w-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <Plus className="h-6 w-6 text-blue-400" />
+              <Plus className="h-5 w-5 text-blue-400 shrink-0" />
+              <div className="text-center space-y-0.5">
+                <span className="text-[10px] font-black text-blue-400 block uppercase tracking-wider">
+                  Request Custom Gift
+                </span>
+                <span className="text-[8px] text-blue-300/80 block font-semibold">
+                  50,000 Coins / 7 Days
+                </span>
               </div>
-              <span className="text-[11px] font-bold text-blue-400 text-center leading-tight">
-                Pay 50,000 coins
-              </span>
-              <span className="text-[10px] text-blue-300/70 text-center">
-                and customize your Gift
-              </span>
             </button>
           </div>
         </TabsContent>

@@ -123,7 +123,7 @@ import { LootGate } from '@/components/loot-gate';
 import { LootingRoom } from '@/components/looting-room';
 import { VoiceWaveIndicator } from '@/components/voice-wave-indicator';
 import { useVoiceActivityContext } from '@/components/voice-activity-provider';
-import { DailyRewardDialog } from '@/components/daily-reward-dialog';
+// import { DailyRewardDialog } from '@/components/daily-reward-dialog';
 import { GiftAnimationOverlay } from '@/components/gift-animation-overlay';
 import { LuckyRainOverlay } from '@/components/lucky-rain-overlay';
 import { RoomProfileMain } from '@/components/room-profile-main';
@@ -2557,6 +2557,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       senderName: userProfile.username || 'User',
       senderAvatar: userProfile.avatarUrl || null,
       senderBubble: userProfile.inventory?.activeBubble || null,
+      senderBubbleMediaUrl: (userProfile.inventory as any)?.activeBubbleMediaUrl || null,
       chatRoomId: room.id,
       timestamp: serverTimestamp(),
       type: 'text'
@@ -3001,7 +3002,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
       <ThemeColorMeta color={currentTheme.accentColor || "#1a0b2e"} />
       <ThemeSync color={themeSyncColor} />
-      <DailyRewardDialog />
+      {/* <DailyRewardDialog /> */}
       <ExitRoomDialog
         isOpen={showExitDialog}
         onClose={() => setShowExitDialog(false)}
@@ -3329,7 +3330,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                         {msg.senderName || 'Tribe Member'}
                       </span>
 
-                      <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} className="text-[11px] leading-snug py-1">
+                      <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} bubbleMediaUrl={msg.senderBubbleMediaUrl || null} className="text-[11px] leading-snug py-1">
                         {msg.imageUrl && (
                           <div
                             onClick={(e) => {

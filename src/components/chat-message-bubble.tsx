@@ -7,6 +7,7 @@ interface ChatMessageBubbleProps {
   isMe: boolean;
   children: React.ReactNode;
   className?: string;
+  bubbleMediaUrl?: string | null;
 }
 
 /**
@@ -14,7 +15,51 @@ interface ChatMessageBubbleProps {
  * Optimized for Mobile Performance: Removed expensive backdrop-blur in favor of solid trans-colors.
  * Memoized to prevent re-renders on room timer updates.
  */
-export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className }: ChatMessageBubbleProps) => {
+export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bubbleMediaUrl }: ChatMessageBubbleProps) => {
+  if (bubbleMediaUrl) {
+    const isVideo = bubbleMediaUrl.toLowerCase().includes('.mp4') || bubbleMediaUrl.includes('video');
+    return (
+      <div className={cn(
+        "relative px-4 py-2 rounded-2xl max-w-full transition-all flex items-center min-h-[38px] min-w-[60px] overflow-hidden border border-white/20 text-white font-semibold shadow-lg bg-black/45",
+        className
+      )}>
+        {/* Full-bleed background media */}
+        <div className="absolute inset-0 z-0 select-none pointer-events-none">
+          {isVideo ? (
+            <video 
+              src={bubbleMediaUrl} 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
+              className="w-full h-full object-cover scale-105" 
+            />
+          ) : (
+            <img 
+              src={bubbleMediaUrl} 
+              alt="bubble background" 
+              className="w-full h-full object-cover scale-105" 
+            />
+          )}
+          {/* Subtle vignette/overlay to maintain text readability */}
+          <div className="absolute inset-0 bg-black/25 mix-blend-multiply" />
+        </div>
+
+        {/* Pointy Talk Bubble Tail for realism */}
+        <svg 
+          viewBox="0 0 10 10" 
+          className="absolute w-3 h-3 bottom-0 -left-1.5 translate-y-[-4px] fill-black/45"
+        >
+          <path d="M0 0 L10 10 L0 10 Z" />
+        </svg>
+
+        <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-words drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   if (!bubbleId || bubbleId === 'None') {
     return (
       <div className={cn(
