@@ -709,6 +709,13 @@ export default function StorePage() {
     return allItemsWithFlags.filter(item => validOwnedIds.includes(item.id));
   }, [userProfile?.inventory?.ownedItems, userProfile?.inventory?.expiries, allItemsWithFlags]);
 
+  // Get expiry date for an item
+  const getItemExpiryDate = (itemId: string) => {
+    const expiry = userProfile?.inventory?.expiries?.[itemId];
+    if (!expiry) return null;
+    return expiry.toDate();
+  };
+
   // Check expiry every minute and auto-unequip if expired
   useEffect(() => {
     if (!userProfile || !firestore || !user) return;
@@ -1024,7 +1031,10 @@ export default function StorePage() {
     </div>
   );
 
-  const displayItems = activeTab === 'Store' ? allItemsWithFlags : purchasedItems;
+  // Store tab ke items
+  const storeItems = allItemsWithFlags;
+  // Mine tab ke items
+  const mineItems = purchasedItems;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
@@ -1036,33 +1046,26 @@ export default function StorePage() {
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
         
-        {/* Header */}
+        {/* Header - Sab WHITE hai */}
         <header className="relative flex items-center justify-between border-b border-white/10 pb-6 min-h-[48px]">
           <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
             <ChevronLeft />
           </button>
           
-          <h1 className={cn(
-            "text-xl font-semibold",
-            activeTab === 'Store' ? "text-[#FCD535]" : "text-white"
-          )}>
+          <h1 className="text-xl font-semibold text-white">
             {activeTab === 'Store' ? 'Store' : 'Mine'}
           </h1>
           
           <button 
             onClick={() => setActiveTab(activeTab === 'Store' ? 'Mine' : 'Store')}
-            className={cn(
-              "text-sm font-medium transition-colors px-3 py-1.5 rounded-full",
-              activeTab === 'Mine' 
-                ? "bg-[#FCD535]/20 text-[#FCD535]" 
-                : "text-white hover:text-[#FCD535]"
-            )}
+            className="text-sm font-medium transition-colors px-3 py-1.5 rounded-full text-white hover:text-white/80"
           >
             {activeTab === 'Store' ? 'Mine' : 'Store'}
           </button>
         </header>
 
         {activeTab === 'Store' ? (
+          /* STORE TAB - Category Tabs + Items */
           <Tabs defaultValue="All" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
@@ -1070,7 +1073,7 @@ export default function StorePage() {
                   <TabsTrigger 
                     key={cat} 
                     value={cat} 
-                    className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
+                    className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-white relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-white data-[state=active]:after:rounded-full transition-all"
                   >
                     {cat}
                   </TabsTrigger>
@@ -1081,7 +1084,7 @@ export default function StorePage() {
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {displayItems.filter(i => category === 'All' || i.type === category).map(item => (
+                  {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
                     <Card 
                       key={item.id} 
                       onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
@@ -1115,21 +1118,64 @@ export default function StorePage() {
             ))}
           </Tabs>
         ) : (
-          /* MINE TAB - Sirf Text */
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            {purchasedItems.length === 0 ? (
-              <>
-                <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
-                <p className="text-white text-lg">Aapne abhi koi item nahi khareeda hai</p>
-                <p className="text-gray-400 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
-              </>
-            ) : (
-              <p className="text-white text-lg">Aapke paas {purchasedItems.length} item{ purchasedItems.length > 1 ? 's' : '' } hain</p>
-            )}
-          </div>
+          /* MINE TAB - Category Tabs + Purchased Items with Expiry Date */
+          <Tabs defaultValue="All" className="w-full">
+            <div className="w-full overflow-x-auto no-scrollbar mb-6">
+              <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
+                {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
+                  <TabsTrigger 
+                    key={cat} 
+                    value={cat} 
+                    className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-white relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-white data-[state=active]:after:rounded-full transition-all"
+                  >
+                    {cat}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
+              <TabsContent key={category} value={category}>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
+                    const expiryDate = getItemExpiryDate(item.id);
+                    const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
+                    
+                    return (
+                      <Card 
+                        key={item.id} 
+                        onClick={() => setPreviewItem(item)} 
+                        className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white"
+                      >
+                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                          {renderStoreCardIcon(item)}
+                        </div>
+                        <CardHeader className="text-center p-3 pb-0">
+                          <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+                        </CardHeader>
+                        <CardFooter className="flex flex-col gap-1 p-3 pt-1">
+                          <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+                            <span>Expire:</span>
+                            <span className="text-red-400">{expiryDateStr}</span>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
+                </div>
+                {mineItems.filter(i => category === 'All' || i.type === category).length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
+                    <p className="text-white text-lg">Aapne abhi koi {category !== 'All' ? category : ''} item nahi khareeda hai</p>
+                    <p className="text-gray-400 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
         )}
 
-        {/* PREVIEW CARD - Dynamic: Equip/Unequip for owned items, Buy for others */}
+        {/* PREVIEW CARD - Bilkul same logic, kuch nahi badla */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1153,11 +1199,18 @@ export default function StorePage() {
                   </div>
 
                   <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
+                  
+                  {/* Agar purchased item hai to expiry date bhi dikhao preview mein */}
+                  {isOwnedAndValid && (
+                    <p className="text-sm text-gray-400 mt-1">
+                      Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
+                    </p>
+                  )}
                 </div>
 
                 {/* BOTTOM BAR */}
                 {isOwnedAndValid ? (
-                  // EQUIP/UNEQUIP case - no price, no duration tabs
+                  // EQUIP/UNEQUIP case
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6">
                     <Button 
                       onClick={() => handleEquipToggle(previewItem)}
@@ -1174,7 +1227,7 @@ export default function StorePage() {
                     </Button>
                   </div>
                 ) : (
-                  // BUY case - duration tabs, price, buy button
+                  // BUY case
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3">
                     <div className="flex gap-4 w-full justify-center">
                       {[3, 7].map(days => (
@@ -1221,4 +1274,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-                     }
+    }
