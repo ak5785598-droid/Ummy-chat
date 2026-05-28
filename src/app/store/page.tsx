@@ -14,151 +14,128 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
-// ============================================
-// 🎯 SIMPLE VIDEO URL CACHING (NO PROCESSING)
-// ============================================
-const VIDEO_CACHE_KEY = 'store_video_blob_cache';
+// ==================== STORAGE CACHE MANAGER ====================
+// Yeh manager Web Storage (localStorage) use karta hai processed frames ko cache karne ke liye
+// Taaki baar baar canvas processing na karni pade - ek baar process karo, hamesha fast load
+const STORAGE_PREFIX = 'bg_removed_';
+const STORAGE_META_KEY = 'bg_removed_meta';
+const MAX_CACHE_SIZE_MB = 50; // Max 50MB cache
+const MAX_CACHE_ITEMS = 100; // Max 100 items
 
-// Cache store - simple key-value with timestamp
-interface CacheEntry {
-  url: string;
-  timestamp: number;
+interface CacheMeta {
+  [key: string]: {
+    timestamp: number;
+    size: number;
+    type: 'image' | 'video';
+  };
 }
 
-// Cache se URL fetch karo
-const getCachedUrl = (itemId: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  
-  try {
-    const cacheData = localStorage.getItem(VIDEO_CACHE_KEY);
-    if (!cacheData) return null;
-    
-    const cache: Record<string, CacheEntry> = JSON.parse(cacheData);
-    const entry = cache[itemId];
-    
-    if (!entry) return null;
-    
-    // 24 hours expiry check
-    const age = Date.now() - entry.timestamp;
-    if (age > 24 * 60 * 60 * 1000) {
-      // Expired - remove from cache
-      delete cache[itemId];
-      localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(cache));
+class StorageCacheManager {
+  // Check if data is already cached
+  static get(key: string): string | null {
+    try {
+      const data = localStorage.getItem(STORAGE_PREFIX + key);
+      return data;
+    } catch (e) {
       return null;
     }
-    
-    return entry.url;
-  } catch (error) {
-    console.error('❌ Cache read error:', error);
-    return null;
   }
-};
 
-// Cache me URL store karo
-const setCachedUrl = (itemId: string, url: string): void => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    let cache: Record<string, CacheEntry> = {};
-    
-    const existingData = localStorage.getItem(VIDEO_CACHE_KEY);
-    if (existingData) {
-      cache = JSON.parse(existingData);
-    }
-    
-    cache[itemId] = {
-      url: url,
-      timestamp: Date.now()
-    };
-    
-    localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(cache));
-    console.log(`✅ Cached: ${itemId}`);
-  } catch (error) {
-    console.error('❌ Cache write error:', error);
-    // Storage full - clear old entries
+  // Save processed data to cache
+  static set(key: string, dataUrl: string, type: 'image' | 'video'): void {
     try {
-      const existingData = localStorage.getItem(VIDEO_CACHE_KEY);
-      if (existingData) {
-        const cache: Record<string, CacheEntry> = JSON.parse(existingData);
-        const entries = Object.entries(cache);
-        // Sort by timestamp, remove oldest 50%
-        entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-        const keepEntries = entries.slice(Math.ceil(entries.length / 2));
-        const newCache: Record<string, CacheEntry> = {};
-        keepEntries.forEach(([key, value]) => {
-          newCache[key] = value;
-        });
-        newCache[itemId] = { url, timestamp: Date.now() };
-        localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(newCache));
+      // Get current metadata
+      const metaStr = localStorage.getItem(STORAGE_META_KEY);
+      const meta: CacheMeta = metaStr ? JSON.parse(metaStr) : {};
+
+      // Check current cache size
+      const currentSize = this.getTotalCacheSize();
+      const newItemSize = dataUrl.length * 2 / (1024 * 1024); // Approximate MB
+
+      // If cache is full, remove oldest items
+      if (currentSize + newItemSize > MAX_CACHE_SIZE_MB || Object.keys(meta).length >= MAX_CACHE_ITEMS) {
+        this.cleanOldest();
       }
+
+      // Save the data
+      localStorage.setItem(STORAGE_PREFIX + key, dataUrl);
+
+      // Update metadata
+      meta[key] = {
+        timestamp: Date.now(),
+        size: newItemSize,
+        type: type
+      };
+      localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
+
     } catch (e) {
-      console.error('❌ Cache cleanup failed');
+      // Storage full - clean and retry once
+      console.warn('Storage full, cleaning cache...');
+      this.clearAll();
+      try {
+        localStorage.setItem(STORAGE_PREFIX + key, dataUrl);
+      } catch (e2) {
+        console.error('Cannot cache even after clearing:', e2);
+      }
     }
   }
-};
 
-// Blob URL ko cache check karo, nahi toh create karo
-const useBlobCache = (itemId: string, originalUrl: string | null) => {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!originalUrl || !itemId) return;
-
-    // Step 1: Check cache first
-    const cached = getCachedUrl(itemId);
-    if (cached) {
-      console.log(`🎯 Cache HIT: ${itemId}`);
-      setBlobUrl(cached);
-      return;
+  // Remove oldest cached items
+  static cleanOldest(): void {
+    const metaStr = localStorage.getItem(STORAGE_META_KEY);
+    if (!metaStr) return;
+    const meta: CacheMeta = JSON.parse(metaStr);
+    const sorted = Object.entries(meta).sort((a, b) => a[1].timestamp - b[1].timestamp);
+    // Remove oldest 20%
+    const removeCount = Math.max(1, Math.floor(sorted.length * 0.2));
+    for (let i = 0; i < removeCount; i++) {
+      if (sorted[i]) {
+        localStorage.removeItem(STORAGE_PREFIX + sorted[i][0]);
+        delete meta[sorted[i][0]];
+      }
     }
+    localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
+  }
 
-    // Step 2: Cache miss - download and create blob
-    console.log(`📥 Cache MISS, downloading: ${itemId}`);
-    setIsLoading(true);
+  // Get total cache size in MB
+  static getTotalCacheSize(): number {
+    let total = 0;
+    const metaStr = localStorage.getItem(STORAGE_META_KEY);
+    if (metaStr) {
+      const meta: CacheMeta = JSON.parse(metaStr);
+      Object.values(meta).forEach(item => {
+        total += item.size || 0;
+      });
+    }
+    return total;
+  }
 
-    const downloadAndCache = async () => {
-      try {
-        const response = await fetch(originalUrl);
-        const blob = await response.blob();
-        const blobObjectUrl = URL.createObjectURL(blob);
-        
-        // Store in cache
-        setCachedUrl(itemId, blobObjectUrl);
-        setBlobUrl(blobObjectUrl);
-        
-        console.log(`✅ Downloaded & Cached: ${itemId}`);
-      } catch (error) {
-        console.error(`❌ Download failed for ${itemId}:`, error);
-        // Fallback to original URL
-        setBlobUrl(originalUrl);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Clear all cached data
+  static clearAll(): void {
+    const metaStr = localStorage.getItem(STORAGE_META_KEY);
+    if (metaStr) {
+      const meta: CacheMeta = JSON.parse(metaStr);
+      Object.keys(meta).forEach(key => {
+        localStorage.removeItem(STORAGE_PREFIX + key);
+      });
+    }
+    localStorage.removeItem(STORAGE_META_KEY);
+  }
 
-    downloadAndCache();
-  }, [itemId, originalUrl]);
+  // Generate cache key from URL
+  static generateKey(url: string): string {
+    // Simple hash for URL
+    let hash = 0;
+    for (let i = 0; i < url.length; i++) {
+      const char = url.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36) + '_' + btoa(url).substring(0, 20).replace(/[/+=]/g, '');
+  }
+}
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Don't revoke cached URLs
-      if (blobUrl && blobUrl.startsWith('blob:')) {
-        const cached = getCachedUrl(itemId);
-        if (!cached || cached !== blobUrl) {
-          URL.revokeObjectURL(blobUrl);
-        }
-      }
-    };
-  }, [blobUrl, itemId]);
-
-  return { blobUrl: blobUrl || originalUrl, isLoading };
-};
-
-// ============================================
-// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
-// ============================================
+// ==================== ENHANCED SMART BLACK BACKGROUND REMOVER WITH STORAGE CACHING ====================
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -177,7 +154,11 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
   const lastProcessedSrc = useRef('');
+  const cacheKeyRef = useRef('');
+  const [cachedDataUrl, setCachedDataUrl] = useState<string | null>(null);
+  const processedDataUrlRef = useRef<string | null>(null);
 
+  // Detect solid black background
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -215,6 +196,7 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
+  // Process frame - remove background and cache result
   const processFrame = (video?: HTMLVideoElement) => {
     if (processingRef.current) return;
     processingRef.current = true;
@@ -313,6 +295,21 @@ const SmartBlackRemover = ({
     }
 
     ctx.putImageData(imageData, 0, 0);
+    
+    // 🔥 STORAGE CACHING: For images, save the processed result as Data URL
+    // For videos, we don't cache because video frames change continuously
+    if (type === 'image' && cacheKeyRef.current) {
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        processedDataUrlRef.current = dataUrl;
+        // Cache to localStorage
+        StorageCacheManager.set(cacheKeyRef.current, dataUrl, 'image');
+        console.log('✅ Cached processed frame:', cacheKeyRef.current.substring(0, 30) + '...');
+      } catch (e) {
+        console.warn('Could not cache frame:', e);
+      }
+    }
+
     processingRef.current = false;
 
     if (type === 'video' && video) {
@@ -323,14 +320,30 @@ const SmartBlackRemover = ({
     }
   };
 
+  // Main effect - check cache first, then process if needed
   useEffect(() => {
     if (src !== lastProcessedSrc.current) {
       setUseCanvas(false);
       setIsReady(false);
+      setCachedDataUrl(null);
+      processedDataUrlRef.current = null;
       lastProcessedSrc.current = src;
+      cacheKeyRef.current = StorageCacheManager.generateKey(src);
+
+      // 🔥 CHECK STORAGE CACHE FIRST
+      if (type === 'image') {
+        const cached = StorageCacheManager.get(cacheKeyRef.current);
+        if (cached) {
+          console.log('⚡ Found in cache, skipping processing:', cacheKeyRef.current.substring(0, 30) + '...');
+          setCachedDataUrl(cached);
+          setUseCanvas(true);
+          setIsReady(true);
+          return; // Skip processing, cached data use karenge
+        }
+      }
     }
 
-    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current && !cachedDataUrl) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete && img.naturalWidth > 0 && !isReady) {
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
@@ -341,9 +354,16 @@ const SmartBlackRemover = ({
         }
       }
     }
-  }, [src, type, isReady]);
+  }, [src, type, isReady, cachedDataUrl]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    // Agar cached data already hai to processing skip karo
+    if (cachedDataUrl) {
+      setUseCanvas(true);
+      setIsReady(true);
+      return;
+    }
+    
     const img = e.currentTarget;
     if (img.naturalWidth > 0) {
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
@@ -377,6 +397,7 @@ const SmartBlackRemover = ({
     };
   }, []);
 
+  // VIDEO RENDER - Same as before, video pe canvas processing real-time chalti hai
   if (type === 'video') {
     return (
       <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
@@ -418,6 +439,7 @@ const SmartBlackRemover = ({
     );
   }
 
+  // IMAGE RENDER - Uses cached data URL if available
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
       <img
@@ -440,7 +462,20 @@ const SmartBlackRemover = ({
           }}
         />
       )}
-      {!isReady && !useCanvas && (
+      {/* 🔥 AGAR CACHED HAI TO CACHED IMAGE DIKHADO - Super fast, no processing needed */}
+      {cachedDataUrl && isReady && (
+        <img
+          src={cachedDataUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ 
+            display: 'block',
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+      )}
+      {!isReady && !useCanvas && !cachedDataUrl && (
         <img
           src={src}
           alt=""
@@ -452,57 +487,6 @@ const SmartBlackRemover = ({
   );
 };
 
-// ============================================
-// CACHED MEDIA COMPONENT (URL Cache + Blob Storage)
-// ============================================
-const CachedMedia = ({ 
-  itemId, 
-  src, 
-  type = 'image', 
-  className = '', 
-  style = {} 
-}: { 
-  itemId: string; 
-  src: string; 
-  type?: 'image' | 'video'; 
-  className?: string; 
-  style?: React.CSSProperties;
-}) => {
-  const { blobUrl, isLoading } = useBlobCache(itemId, src);
-  
-  // Agar image hai ya blob nahi chahiye, direct SmartBlackRemover use karo
-  if (type === 'image' || !blobUrl) {
-    return (
-      <SmartBlackRemover 
-        src={blobUrl || src} 
-        type={type} 
-        className={className} 
-        style={style} 
-      />
-    );
-  }
-  
-  // Video ke liye - blob URL use karo (cache se ya fresh download)
-  return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
-          <Loader className="animate-spin h-6 w-6 text-white/60" />
-        </div>
-      )}
-      <SmartBlackRemover 
-        src={blobUrl} 
-        type="video" 
-        className="w-full h-full"
-        style={{ background: 'transparent' }}
-      />
-    </div>
-  );
-};
-
-// ============================================
-// ALL ICONS (EXISTING - NO TOUCH)
-// ============================================
 // --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
@@ -747,9 +731,6 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
 
-// ============================================
-// MAIN STORE PAGE COMPONENT
-// ============================================
 export default function StorePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -1065,8 +1046,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1084,8 +1064,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1103,8 +1082,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1155,8 +1133,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1178,8 +1155,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1197,8 +1173,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1478,4 +1453,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+  }
