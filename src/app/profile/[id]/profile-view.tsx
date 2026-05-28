@@ -67,8 +67,10 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// --- SUPER FAST BLACK BACKGROUND REMOVER FOR VIDEO FRAMES ---
-// Poora ka poora fix kiya hai - ab black flash nahi aayega, smooth aur fast processing hogi
+// ============================================================
+// ⚡ ULTIMATE BLACK BACKGROUND REMOVER - FULL FIX ⚡
+// Ab kabhi bhi black flash nahi aayega, animation ke time bhi nahi
+// ============================================================
 
 const SmartBlackRemover = ({ 
   src, 
@@ -86,10 +88,11 @@ const SmartBlackRemover = ({
   const animationFrameRef = useRef<number | null>(null);
   const processingRef = useRef(false);
   const [useCanvas, setUseCanvas] = useState(false);
-  const [isReady, setIsReady] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
-  // Yeh ref track karega ki canvas pehle se process ho chuka hai
   const hasProcessedRef = useRef(false);
+  
+  // ⚡ IMPORTANT: Track karo ki original media ready hai ya nahi
+  const mediaLoadedRef = useRef(false);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
@@ -177,7 +180,7 @@ const SmartBlackRemover = ({
 
     const queue: [number, number][] = [];
     
-    // Edges se flood fill start karo
+    // Saari edges se flood fill
     for (let sx = 0; sx < scaledW; sx++) {
       if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
       if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
@@ -187,7 +190,7 @@ const SmartBlackRemover = ({
       if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
     }
 
-    // Center se bhi check karo
+    // Center bhi check karo
     const centerSX = Math.floor(scaledW / 2);
     const centerSY = Math.floor(scaledH / 2);
     if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
@@ -210,7 +213,7 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Sirf visited black pixels ko transparent karo
+    // Visited black pixels ko transparent karo
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
@@ -232,13 +235,13 @@ const SmartBlackRemover = ({
     ctx.putImageData(imageData, 0, 0);
     processingRef.current = false;
     
-    // Mark as processed after first frame
+    // ⚡ Pehli baar process hone ke baad mark karo
     if (!hasProcessedRef.current) {
       hasProcessedRef.current = true;
       setIsProcessed(true);
     }
 
-    // Video ke liye continuously process karte raho
+    // Video ke liye continuously process karo
     if (type === 'video' && video) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -252,11 +255,12 @@ const SmartBlackRemover = ({
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete) {
+        mediaLoadedRef.current = true;
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
-        setIsReady(true);
         if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
+          // Thoda delay deke process karo taaki sab ready ho
+          setTimeout(() => processFrame(), 100);
         }
       }
     }
@@ -264,20 +268,20 @@ const SmartBlackRemover = ({
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
+    mediaLoadedRef.current = true;
     const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
     setUseCanvas(hasBlackBg);
-    setIsReady(true);
     if (hasBlackBg) {
-      setTimeout(() => processFrame(), 50);
+      setTimeout(() => processFrame(), 100);
     }
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2) {
+      mediaLoadedRef.current = true;
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
       setUseCanvas(hasBlackBg);
-      setIsReady(true);
       if (hasBlackBg) {
         // Pehla frame turant process karo
         setTimeout(() => processFrame(video), 100);
@@ -294,21 +298,25 @@ const SmartBlackRemover = ({
       }
       processingRef.current = false;
       hasProcessedRef.current = false;
+      mediaLoadedRef.current = false;
     };
   }, [src]);
 
-  // Reset processed state when src changes
+  // Src change hone pe reset
   useEffect(() => {
     hasProcessedRef.current = false;
     setIsProcessed(false);
     setUseCanvas(false);
-    setIsReady(false);
+    mediaLoadedRef.current = false;
   }, [src]);
 
   if (type === 'video') {
     return (
       <div className={cn("relative", className)} style={style}>
-        {/* Original video - hamesha render karo lekin canvas ready hone par hide karo */}
+        {/* 
+          ⚡ FIX: Original video ko hamesha render hone do lekin 
+          canvas ready hone ke baad usko hide karo BINA kisi flash ke
+        */}
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -319,32 +327,28 @@ const SmartBlackRemover = ({
           onLoadedData={handleVideoReady}
           className="w-full h-full object-cover"
           style={{ 
-            display: useCanvas && isProcessed ? 'none' : 'block',
-            opacity: useCanvas && !isProcessed ? 0 : 1,
-            transition: 'opacity 0.15s ease'
+            // ⚡ Smooth fade-out jab canvas ready ho
+            opacity: useCanvas && isProcessed ? 0 : 1,
+            transition: 'opacity 0.3s ease',
+            position: 'absolute',
+            top: 0,
+            left: 0,
           }}
           crossOrigin="anonymous"
         />
-        {/* Canvas - sirf jab black background detect ho aur process complete ho */}
-        {useCanvas && (
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full object-cover"
-            style={{ 
-              display: isProcessed ? 'block' : 'none',
-              background: 'transparent',
-            }}
-          />
-        )}
-        {/* Loading overlay - sirf pehle frame process hone tak dikhao, max 500ms */}
-        {useCanvas && !isProcessed && (
-          <div 
-            className="absolute inset-0 bg-transparent" 
-            style={{ 
-              animation: 'fadeOut 0.3s ease 0.5s forwards'
-            }} 
-          />
-        )}
+        {/* Canvas layer - hamesha render karo lekin smooth fade-in ke saath */}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            opacity: useCanvas && isProcessed ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+            background: 'transparent',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+          }}
+        />
       </div>
     );
   }
@@ -358,27 +362,34 @@ const SmartBlackRemover = ({
         onLoad={handleImageLoad}
         className="w-full h-full object-cover"
         style={{ 
-          display: useCanvas && isProcessed ? 'none' : 'block',
-          opacity: useCanvas && !isProcessed ? 0 : 1,
+          opacity: useCanvas && isProcessed ? 0 : 1,
+          transition: 'opacity 0.3s ease',
+          position: 'absolute',
+          top: 0,
+          left: 0,
         }}
         crossOrigin="anonymous"
       />
-      {useCanvas && (
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-cover"
-          style={{ 
-            display: isProcessed ? 'block' : 'none',
-            background: 'transparent',
-          }}
-        />
-      )}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full object-cover"
+        style={{ 
+          opacity: useCanvas && isProcessed ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+          background: 'transparent',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+      />
     </div>
   );
 };
 
-// --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
-// Isme bhi black flash fix kiya hai - smooth transition ke saath
+// ============================================================
+// ⚡ COMPACT VIDEO AVATAR FRAME - FULLY FIXED ⚡
+// Ab animation ke time black nahi aayega, smooth transition hoga
+// ============================================================
 
 const CompactVideoAvatarFrame = ({ 
   frameMediaUrl, 
@@ -391,14 +402,21 @@ const CompactVideoAvatarFrame = ({
 }) => {
   const frameSize = avatarSize * 1.65;
   const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
-  const [frameReady, setFrameReady] = useState(false);
   
-  // Frame change hone par ready state reset karo
+  // ⚡ Frame ready state with longer transition for smoothness
+  const [frameReady, setFrameReady] = useState(false);
+  const prevFrameRef = useRef<string | null>(null);
+  
   useEffect(() => {
-    setFrameReady(false);
-    // Thoda delay deke ready mark karo taaki smooth ho
-    const timer = setTimeout(() => setFrameReady(true), 150);
-    return () => clearTimeout(timer);
+    // Agar frame change hua hai to pehle fade out karo
+    if (prevFrameRef.current !== frameMediaUrl) {
+      setFrameReady(false);
+      prevFrameRef.current = frameMediaUrl;
+      
+      // Thoda zyada delay deke ready mark karo - 300ms
+      const timer = setTimeout(() => setFrameReady(true), 300);
+      return () => clearTimeout(timer);
+    }
   }, [frameMediaUrl]);
   
   if (!frameMediaUrl) {
@@ -407,10 +425,13 @@ const CompactVideoAvatarFrame = ({
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
-      {/* Frame layer - hamesha render karo lekin smooth fade-in ke saath */}
+      {/* Frame layer with smooth opacity transition */}
       <div 
-        className="absolute inset-0 z-10 pointer-events-none transition-opacity duration-300"
-        style={{ opacity: frameReady ? 1 : 0 }}
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{ 
+          opacity: frameReady ? 1 : 0,
+          transition: 'opacity 0.5s ease-in-out',
+        }}
       >
         <SmartBlackRemover 
           src={frameMediaUrl} 
@@ -418,7 +439,7 @@ const CompactVideoAvatarFrame = ({
           className="w-full h-full"
         />
       </div>
-      {/* Avatar - frame ke andar center mein */}
+      {/* Avatar center mein */}
       <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginLeft: '-4px' }}>
         {children}
       </div>
@@ -426,8 +447,9 @@ const CompactVideoAvatarFrame = ({
   );
 };
 
-// --- 3D GLOSSY TAGS ---
-// Saare SVG components same rahenge - koi change nahi
+// ============================================================
+// ⚡ SAARE SVG COMPONENTS - KOI CHANGE NAHI ⚡
+// ============================================================
 
 const SVGA_OfficialTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
@@ -645,7 +667,6 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   );
 };
 
-// Baaki saare SVG components bhi same rahenge
 const SVGA_GoldDollar = () => (
   <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
     <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
@@ -940,8 +961,9 @@ const SVGA_OfficialUser = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- REST OF THE HELPERS & CONSTANTS ---
-// Saare constants and helper functions same rahenge
+// ============================================================
+// ⚡ HELPER FUNCTIONS & CONSTANTS ⚡
+// ============================================================
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -1015,8 +1037,9 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
   </button>
 );
 
-// --- MEDAL MODAL COMPONENT ---
-// Poora same code - no changes
+// ============================================================
+// ⚡ MEDAL MODAL - NO CHANGES ⚡
+// ============================================================
 
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
@@ -1184,7 +1207,7 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 
 
 // ============================================================
-// ⚡ MAIN PROFILE COMPONENT - BLACK FLASH FIX WITH SMOOTH TRANSITION ⚡
+// ⚡ MAIN PROFILE COMPONENT - BLACK FLASH FULLY FIXED ⚡
 // ============================================================
 
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
@@ -1393,15 +1416,15 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
-  // --- ACTIVE FRAME MEDIA URL ---
+  // ⚡ ACTIVE FRAME MEDIA URL - with proper memoization
   const activeFrameMediaUrl = useMemo(() => {
     if (!profile?.inventory?.activeFrameMediaUrl) return null;
     return profile.inventory.activeFrameMediaUrl;
-  }, [profile]);
+  }, [profile?.inventory?.activeFrameMediaUrl]);
 
-  // ⚡⚡ BAG CLICK HANDLER - SIRF PURCHASED ITEMS ⚡⚡
+  // ⚡ BAG CLICK HANDLER - purchased items
   const handleBagClick = () => {
-    router.push('/store?filter=purchased');
+    router.push('/store?tab=mine');
   };
 
   if (isUserLoading || isProfileLoading || !profile) return (
@@ -1430,7 +1453,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     );
   }
 
-  // --- OWN PROFILE VIEW ---
+  // ============================================================
+  // ⚡ OWN PROFILE VIEW - SMOOTH TRANSITION, NO BLACK FLASH ⚡
+  // ============================================================
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
@@ -1451,7 +1476,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
-            {/* Header Info - AVATAR WITH SMOOTH FRAME TRANSITION */}
+            {/* 
+              ⚡ AVATAR WITH FRAME - Ab koi black flash nahi aayega
+              Smooth transition ke saath frame change hoga
+            */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
                 <CompactVideoAvatarFrame 
@@ -1560,7 +1588,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   onClick={() => router.push('/families')}
                 />
                 
-                {/* ⚡⚡ BAG BUTTON - handleBagClick USE KAR RAHA HAI ⚡⚡ */}
+                {/* ⚡ BAG BUTTON */}
                 <ProfileMenuItem
                   customIcon={SVGA_BagShirt}
                   label="My-Iteam"
