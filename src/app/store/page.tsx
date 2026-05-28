@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,257 +15,145 @@ import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 // ============================================
-// 🎯 VIDEO URL CACHING UTILITY
+// 🎯 SIMPLE VIDEO URL CACHING (NO PROCESSING)
 // ============================================
-const VIDEO_CACHE_PREFIX = 'store_video_cache_';
-const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VIDEO_CACHE_KEY = 'store_video_blob_cache';
 
-// LocalStorage se cached video URL fetch karo
-const getCachedVideoUrl = (itemId: string): string | null => {
+// Cache store - simple key-value with timestamp
+interface CacheEntry {
+  url: string;
+  timestamp: number;
+}
+
+// Cache se URL fetch karo
+const getCachedUrl = (itemId: string): string | null => {
   if (typeof window === 'undefined') return null;
   
   try {
-    const cacheKey = VIDEO_CACHE_PREFIX + itemId;
-    const cached = localStorage.getItem(cacheKey);
+    const cacheData = localStorage.getItem(VIDEO_CACHE_KEY);
+    if (!cacheData) return null;
     
-    if (!cached) return null;
+    const cache: Record<string, CacheEntry> = JSON.parse(cacheData);
+    const entry = cache[itemId];
     
-    const { url, timestamp } = JSON.parse(cached);
-    const age = Date.now() - timestamp;
+    if (!entry) return null;
     
-    // Agar cache expire ho gaya toh hata do
-    if (age > CACHE_EXPIRY_MS) {
-      localStorage.removeItem(cacheKey);
+    // 24 hours expiry check
+    const age = Date.now() - entry.timestamp;
+    if (age > 24 * 60 * 60 * 1000) {
+      // Expired - remove from cache
+      delete cache[itemId];
+      localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(cache));
       return null;
     }
     
-    return url;
+    return entry.url;
   } catch (error) {
     console.error('❌ Cache read error:', error);
     return null;
   }
 };
 
-// LocalStorage me video URL cache karo
-const setCachedVideoUrl = (itemId: string, url: string): void => {
+// Cache me URL store karo
+const setCachedUrl = (itemId: string, url: string): void => {
   if (typeof window === 'undefined') return;
   
   try {
-    const cacheKey = VIDEO_CACHE_PREFIX + itemId;
-    const data = JSON.stringify({
-      url,
+    let cache: Record<string, CacheEntry> = {};
+    
+    const existingData = localStorage.getItem(VIDEO_CACHE_KEY);
+    if (existingData) {
+      cache = JSON.parse(existingData);
+    }
+    
+    cache[itemId] = {
+      url: url,
       timestamp: Date.now()
-    });
-    localStorage.setItem(cacheKey, data);
-    console.log(`✅ Cached video for: ${itemId}`);
+    };
+    
+    localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(cache));
+    console.log(`✅ Cached: ${itemId}`);
   } catch (error) {
     console.error('❌ Cache write error:', error);
-    // Agar storage full hai toh purana cache clear karo
-    clearOldCache();
-  }
-};
-
-// Old cache clear karo agar storage full ho
-const clearOldCache = (): void => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    const keys = Object.keys(localStorage);
-    const videoCacheKeys = keys.filter(k => k.startsWith(VIDEO_CACHE_PREFIX));
-    
-    // Timestamp ke hisaab se sort karo, oldest pehle
-    const sorted = videoCacheKeys.sort((a, b) => {
-      try {
-        const dataA = JSON.parse(localStorage.getItem(a) || '{}');
-        const dataB = JSON.parse(localStorage.getItem(b) || '{}');
-        return (dataA.timestamp || 0) - (dataB.timestamp || 0);
-      } catch {
-        return 0;
+    // Storage full - clear old entries
+    try {
+      const existingData = localStorage.getItem(VIDEO_CACHE_KEY);
+      if (existingData) {
+        const cache: Record<string, CacheEntry> = JSON.parse(existingData);
+        const entries = Object.entries(cache);
+        // Sort by timestamp, remove oldest 50%
+        entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+        const keepEntries = entries.slice(Math.ceil(entries.length / 2));
+        const newCache: Record<string, CacheEntry> = {};
+        keepEntries.forEach(([key, value]) => {
+          newCache[key] = value;
+        });
+        newCache[itemId] = { url, timestamp: Date.now() };
+        localStorage.setItem(VIDEO_CACHE_KEY, JSON.stringify(newCache));
       }
-    });
-    
-    // 50% old cache hatao
-    const toRemove = Math.ceil(sorted.length * 0.5);
-    sorted.slice(0, toRemove).forEach(key => {
-      localStorage.removeItem(key);
-    });
-    
-    console.log(`🧹 Cleaned ${toRemove} old cache entries`);
-  } catch (error) {
-    console.error('❌ Cache clear error:', error);
+    } catch (e) {
+      console.error('❌ Cache cleanup failed');
+    }
   }
 };
 
-// Background remove aur cache karne wala hook
-const useVideoCache = (itemId: string, originalUrl: string | null) => {
-  const [cachedBlobUrl, setCachedBlobUrl] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const processingRef = useRef(false);
+// Blob URL ko cache check karo, nahi toh create karo
+const useBlobCache = (itemId: string, originalUrl: string | null) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!originalUrl || !itemId) return;
 
-    // Pehle cache check karo
-    const cached = getCachedVideoUrl(itemId);
+    // Step 1: Check cache first
+    const cached = getCachedUrl(itemId);
     if (cached) {
-      console.log(`🎯 Cache hit for: ${itemId}`);
-      setCachedBlobUrl(cached);
+      console.log(`🎯 Cache HIT: ${itemId}`);
+      setBlobUrl(cached);
       return;
     }
 
-    // Agar already process ho raha hai toh skip karo
-    if (processingRef.current) return;
+    // Step 2: Cache miss - download and create blob
+    console.log(`📥 Cache MISS, downloading: ${itemId}`);
+    setIsLoading(true);
 
-    // Background remove karo aur cache me store karo
-    const processAndCache = async () => {
-      processingRef.current = true;
-      setIsProcessing(true);
-
+    const downloadAndCache = async () => {
       try {
-        console.log(`🔄 Processing video: ${itemId}`);
-        
-        // Video ko fetch karo
         const response = await fetch(originalUrl);
         const blob = await response.blob();
+        const blobObjectUrl = URL.createObjectURL(blob);
         
-        // Canvas me process karo (background removal)
-        const processedBlob = await removeBackgroundFromVideo(blob);
+        // Store in cache
+        setCachedUrl(itemId, blobObjectUrl);
+        setBlobUrl(blobObjectUrl);
         
-        // Blob URL banao
-        const blobUrl = URL.createObjectURL(processedBlob);
-        
-        // Cache me store karo
-        setCachedVideoUrl(itemId, blobUrl);
-        
-        // State update karo
-        setCachedBlobUrl(blobUrl);
-        
-        console.log(`✅ Processed and cached: ${itemId}`);
+        console.log(`✅ Downloaded & Cached: ${itemId}`);
       } catch (error) {
-        console.error(`❌ Processing failed for ${itemId}:`, error);
-        // Agar processing fail ho, toh original URL use karo
-        setCachedBlobUrl(originalUrl);
+        console.error(`❌ Download failed for ${itemId}:`, error);
+        // Fallback to original URL
+        setBlobUrl(originalUrl);
       } finally {
-        setIsProcessing(false);
-        processingRef.current = false;
+        setIsLoading(false);
       }
     };
 
-    processAndCache();
+    downloadAndCache();
   }, [itemId, originalUrl]);
 
-  // Cleanup blob URLs on unmount (lekin cached wale nahi)
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (cachedBlobUrl && !getCachedVideoUrl(itemId)) {
-        URL.revokeObjectURL(cachedBlobUrl);
-      }
-    };
-  }, [cachedBlobUrl, itemId]);
-
-  return {
-    videoUrl: cachedBlobUrl || originalUrl,
-    isProcessing
-  };
-};
-
-// Simple background removal for video (black background detect karo)
-const removeBackgroundFromVideo = async (videoBlob: Blob): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) {
-      resolve(videoBlob); // Canvas support nahi hai toh original return karo
-      return;
-    }
-
-    video.src = URL.createObjectURL(videoBlob);
-    video.muted = true;
-
-    video.onloadeddata = () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // Just first frame process karo for detection
-      ctx.drawImage(video, 0, 0);
-      
-      // Agar solid black background detect hua toh processed blob return karo
-      // Nahi toh original return karo
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const hasBlackBg = detectBlackBackground(imageData);
-      
-      URL.revokeObjectURL(video.src);
-      
-      if (hasBlackBg) {
-        // Processed blob ke liye canvas se stream banao
-        const stream = canvas.captureStream(30);
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'video/webm;codecs=vp9'
-        });
-        
-        const chunks: Blob[] = [];
-        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const processedBlob = new Blob(chunks, { type: 'video/webm' });
-          resolve(processedBlob);
-        };
-        
-        video.currentTime = 0;
-        video.play();
-        mediaRecorder.start();
-        
-        video.onended = () => {
-          mediaRecorder.stop();
-        };
-        
-        // Timeout agar video chalta rahe
-        setTimeout(() => {
-          if (mediaRecorder.state === 'recording') {
-            mediaRecorder.stop();
-          }
-        }, 5000);
-      } else {
-        resolve(videoBlob);
-      }
-    };
-
-    video.onerror = () => {
-      URL.revokeObjectURL(video.src);
-      resolve(videoBlob); // Error pe original return karo
-    };
-  });
-};
-
-// Black background detection
-const detectBlackBackground = (imageData: ImageData): boolean => {
-  const data = imageData.data;
-  const width = imageData.width;
-  const height = imageData.height;
-  
-  const STRICT_BLACK = 30;
-  const EDGE_CHECK = 0.08;
-  const SOLID_THRESHOLD = 0.85;
-
-  const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-    let blackCount = 0, total = 0;
-    for (let y = yStart; y < yEnd; y++) {
-      for (let x = xStart; x < xEnd; x++) {
-        const i = (y * width + x) * 4;
-        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-          blackCount++;
+      // Don't revoke cached URLs
+      if (blobUrl && blobUrl.startsWith('blob:')) {
+        const cached = getCachedUrl(itemId);
+        if (!cached || cached !== blobUrl) {
+          URL.revokeObjectURL(blobUrl);
         }
-        total++;
       }
-    }
-    return blackCount / total >= SOLID_THRESHOLD;
-  };
+    };
+  }, [blobUrl, itemId]);
 
-  return checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK)) &&
-         checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height) &&
-         checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height) &&
-         checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+  return { blobUrl: blobUrl || originalUrl, isLoading };
 };
 
 // ============================================
@@ -565,7 +453,7 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// CACHED MEDIA COMPONENT (NEW - Cache layer wrapper)
+// CACHED MEDIA COMPONENT (URL Cache + Blob Storage)
 // ============================================
 const CachedMedia = ({ 
   itemId, 
@@ -580,26 +468,35 @@ const CachedMedia = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const { videoUrl } = useVideoCache(itemId, type === 'video' ? src : null);
+  const { blobUrl, isLoading } = useBlobCache(itemId, src);
   
-  if (type === 'video' && videoUrl) {
+  // Agar image hai ya blob nahi chahiye, direct SmartBlackRemover use karo
+  if (type === 'image' || !blobUrl) {
     return (
       <SmartBlackRemover 
-        src={videoUrl} 
-        type="video" 
+        src={blobUrl || src} 
+        type={type} 
         className={className} 
         style={style} 
       />
     );
   }
   
+  // Video ke liye - blob URL use karo (cache se ya fresh download)
   return (
-    <SmartBlackRemover 
-      src={src} 
-      type={type} 
-      className={className} 
-      style={style} 
-    />
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
+          <Loader className="animate-spin h-6 w-6 text-white/60" />
+        </div>
+      )}
+      <SmartBlackRemover 
+        src={blobUrl} 
+        type="video" 
+        className="w-full h-full"
+        style={{ background: 'transparent' }}
+      />
+    </div>
   );
 };
 
@@ -1581,4 +1478,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-          }
+        }
