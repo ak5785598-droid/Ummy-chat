@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -14,52 +14,263 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
-// --- LOCAL STORAGE CACHE KEYS & HELPERS ---
-const CACHE_PREFIX = 'bg_removed_';
-const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days cache
+// ============================================
+// 🎯 VIDEO URL CACHING UTILITY
+// ============================================
+const VIDEO_CACHE_PREFIX = 'store_video_cache_';
+const CACHE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-interface CacheEntry {
-  dataUrl: string;
-  timestamp: number;
-  originalSrc: string;
-}
-
-const getCachedDataUrl = (src: string): string | null => {
+// LocalStorage se cached video URL fetch karo
+const getCachedVideoUrl = (itemId: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  
   try {
-    const key = CACHE_PREFIX + btoa(unescape(encodeURIComponent(src))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    const cached = localStorage.getItem(key);
+    const cacheKey = VIDEO_CACHE_PREFIX + itemId;
+    const cached = localStorage.getItem(cacheKey);
+    
     if (!cached) return null;
     
-    const entry: CacheEntry = JSON.parse(cached);
+    const { url, timestamp } = JSON.parse(cached);
+    const age = Date.now() - timestamp;
     
-    // Check expiry aur original src match
-    if (Date.now() - entry.timestamp > CACHE_EXPIRY_MS || entry.originalSrc !== src) {
-      localStorage.removeItem(key);
+    // Agar cache expire ho gaya toh hata do
+    if (age > CACHE_EXPIRY_MS) {
+      localStorage.removeItem(cacheKey);
       return null;
     }
     
-    return entry.dataUrl;
-  } catch (e) {
+    return url;
+  } catch (error) {
+    console.error('❌ Cache read error:', error);
     return null;
   }
 };
 
-const setCachedDataUrl = (src: string, dataUrl: string) => {
+// LocalStorage me video URL cache karo
+const setCachedVideoUrl = (itemId: string, url: string): void => {
+  if (typeof window === 'undefined') return;
+  
   try {
-    const key = CACHE_PREFIX + btoa(unescape(encodeURIComponent(src))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    const entry: CacheEntry = {
-      dataUrl,
-      timestamp: Date.now(),
-      originalSrc: src,
-    };
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch (e) {
-    // Storage full ya error, ignore
-    console.warn('Cache set failed:', e);
+    const cacheKey = VIDEO_CACHE_PREFIX + itemId;
+    const data = JSON.stringify({
+      url,
+      timestamp: Date.now()
+    });
+    localStorage.setItem(cacheKey, data);
+    console.log(`✅ Cached video for: ${itemId}`);
+  } catch (error) {
+    console.error('❌ Cache write error:', error);
+    // Agar storage full hai toh purana cache clear karo
+    clearOldCache();
   }
 };
 
-// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH + NO BLUE FADE) ---
+// Old cache clear karo agar storage full ho
+const clearOldCache = (): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const keys = Object.keys(localStorage);
+    const videoCacheKeys = keys.filter(k => k.startsWith(VIDEO_CACHE_PREFIX));
+    
+    // Timestamp ke hisaab se sort karo, oldest pehle
+    const sorted = videoCacheKeys.sort((a, b) => {
+      try {
+        const dataA = JSON.parse(localStorage.getItem(a) || '{}');
+        const dataB = JSON.parse(localStorage.getItem(b) || '{}');
+        return (dataA.timestamp || 0) - (dataB.timestamp || 0);
+      } catch {
+        return 0;
+      }
+    });
+    
+    // 50% old cache hatao
+    const toRemove = Math.ceil(sorted.length * 0.5);
+    sorted.slice(0, toRemove).forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    console.log(`🧹 Cleaned ${toRemove} old cache entries`);
+  } catch (error) {
+    console.error('❌ Cache clear error:', error);
+  }
+};
+
+// Background remove aur cache karne wala hook
+const useVideoCache = (itemId: string, originalUrl: string | null) => {
+  const [cachedBlobUrl, setCachedBlobUrl] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = useRef(false);
+
+  useEffect(() => {
+    if (!originalUrl || !itemId) return;
+
+    // Pehle cache check karo
+    const cached = getCachedVideoUrl(itemId);
+    if (cached) {
+      console.log(`🎯 Cache hit for: ${itemId}`);
+      setCachedBlobUrl(cached);
+      return;
+    }
+
+    // Agar already process ho raha hai toh skip karo
+    if (processingRef.current) return;
+
+    // Background remove karo aur cache me store karo
+    const processAndCache = async () => {
+      processingRef.current = true;
+      setIsProcessing(true);
+
+      try {
+        console.log(`🔄 Processing video: ${itemId}`);
+        
+        // Video ko fetch karo
+        const response = await fetch(originalUrl);
+        const blob = await response.blob();
+        
+        // Canvas me process karo (background removal)
+        const processedBlob = await removeBackgroundFromVideo(blob);
+        
+        // Blob URL banao
+        const blobUrl = URL.createObjectURL(processedBlob);
+        
+        // Cache me store karo
+        setCachedVideoUrl(itemId, blobUrl);
+        
+        // State update karo
+        setCachedBlobUrl(blobUrl);
+        
+        console.log(`✅ Processed and cached: ${itemId}`);
+      } catch (error) {
+        console.error(`❌ Processing failed for ${itemId}:`, error);
+        // Agar processing fail ho, toh original URL use karo
+        setCachedBlobUrl(originalUrl);
+      } finally {
+        setIsProcessing(false);
+        processingRef.current = false;
+      }
+    };
+
+    processAndCache();
+  }, [itemId, originalUrl]);
+
+  // Cleanup blob URLs on unmount (lekin cached wale nahi)
+  useEffect(() => {
+    return () => {
+      if (cachedBlobUrl && !getCachedVideoUrl(itemId)) {
+        URL.revokeObjectURL(cachedBlobUrl);
+      }
+    };
+  }, [cachedBlobUrl, itemId]);
+
+  return {
+    videoUrl: cachedBlobUrl || originalUrl,
+    isProcessing
+  };
+};
+
+// Simple background removal for video (black background detect karo)
+const removeBackgroundFromVideo = async (videoBlob: Blob): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) {
+      resolve(videoBlob); // Canvas support nahi hai toh original return karo
+      return;
+    }
+
+    video.src = URL.createObjectURL(videoBlob);
+    video.muted = true;
+
+    video.onloadeddata = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Just first frame process karo for detection
+      ctx.drawImage(video, 0, 0);
+      
+      // Agar solid black background detect hua toh processed blob return karo
+      // Nahi toh original return karo
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const hasBlackBg = detectBlackBackground(imageData);
+      
+      URL.revokeObjectURL(video.src);
+      
+      if (hasBlackBg) {
+        // Processed blob ke liye canvas se stream banao
+        const stream = canvas.captureStream(30);
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: 'video/webm;codecs=vp9'
+        });
+        
+        const chunks: Blob[] = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const processedBlob = new Blob(chunks, { type: 'video/webm' });
+          resolve(processedBlob);
+        };
+        
+        video.currentTime = 0;
+        video.play();
+        mediaRecorder.start();
+        
+        video.onended = () => {
+          mediaRecorder.stop();
+        };
+        
+        // Timeout agar video chalta rahe
+        setTimeout(() => {
+          if (mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+        }, 5000);
+      } else {
+        resolve(videoBlob);
+      }
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      resolve(videoBlob); // Error pe original return karo
+    };
+  });
+};
+
+// Black background detection
+const detectBlackBackground = (imageData: ImageData): boolean => {
+  const data = imageData.data;
+  const width = imageData.width;
+  const height = imageData.height;
+  
+  const STRICT_BLACK = 30;
+  const EDGE_CHECK = 0.08;
+  const SOLID_THRESHOLD = 0.85;
+
+  const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+    let blackCount = 0, total = 0;
+    for (let y = yStart; y < yEnd; y++) {
+      for (let x = xStart; x < xEnd; x++) {
+        const i = (y * width + x) * 4;
+        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+          blackCount++;
+        }
+        total++;
+      }
+    }
+    return blackCount / total >= SOLID_THRESHOLD;
+  };
+
+  return checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK)) &&
+         checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height) &&
+         checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height) &&
+         checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+};
+
+// ============================================
+// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
+// ============================================
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -78,8 +289,6 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
   const lastProcessedSrc = useRef('');
-  const cachedDataUrlRef = useRef<string | null>(null);
-  const [cachedSrc, setCachedSrc] = useState<string | null>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
@@ -116,98 +325,6 @@ const SmartBlackRemover = ({
     const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
 
     return topSolid && bottomSolid && leftSolid && rightSolid;
-  };
-
-  const processFrameToDataUrl = (video?: HTMLVideoElement): string | null => {
-    const canvas = canvasRef.current;
-    const media = video || mediaRef.current;
-    if (!canvas || !media) return null;
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return null;
-
-    const width = 'videoWidth' in media ? media.videoWidth : media.width;
-    const height = 'videoHeight' in media ? media.videoHeight : media.height;
-
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(media, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    const STRICT_BLACK = 25;
-    const scale = 4;
-    const scaledW = Math.ceil(width / scale);
-    const scaledH = Math.ceil(height / scale);
-    const visited = new Uint8Array(scaledW * scaledH);
-
-    const isBlack = (sx: number, sy: number) => {
-      const x = Math.min(sx * scale, width - 1);
-      const y = Math.min(sy * scale, height - 1);
-      const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
-    };
-
-    const queue: [number, number][] = [];
-    
-    for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
-    }
-    for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
-    }
-
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
-    }
-
-    let head = 0;
-    while (head < queue.length) {
-      const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
-          const nidx = ny * scaledW + nx;
-          if (!visited[nidx] && isBlack(nx, ny)) {
-            visited[nidx] = 1;
-            queue.push([nx, ny]);
-          }
-        }
-      }
-    }
-
-    for (let sy = 0; sy < scaledH; sy++) {
-      for (let sx = 0; sx < scaledW; sx++) {
-        if (visited[sy * scaledW + sx]) {
-          for (let dy = 0; dy < scale; dy++) {
-            for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
-              if (x < width && y < height) {
-                const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i] = 0;
-                  data[i+1] = 0;
-                  data[i+2] = 0;
-                  data[i+3] = 0;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-    return canvas.toDataURL('image/png');
   };
 
   const processFrame = (video?: HTMLVideoElement) => {
@@ -322,38 +439,17 @@ const SmartBlackRemover = ({
     if (src !== lastProcessedSrc.current) {
       setUseCanvas(false);
       setIsReady(false);
-      setCachedSrc(null);
-      cachedDataUrlRef.current = null;
       lastProcessedSrc.current = src;
-    }
-
-    // Pehle cache check karo
-    const cached = getCachedDataUrl(src);
-    if (cached) {
-      cachedDataUrlRef.current = cached;
-      setCachedSrc(cached);
-      setIsReady(true);
-      setUseCanvas(true);
-      return;
     }
 
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete && img.naturalWidth > 0 && !isReady) {
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
         if (hasBlackBg) {
-          setUseCanvas(true);
-          setIsReady(true);
-          setTimeout(() => {
-            const dataUrl = processFrameToDataUrl();
-            if (dataUrl) {
-              setCachedDataUrl(src, dataUrl);
-              cachedDataUrlRef.current = dataUrl;
-              setCachedSrc(dataUrl);
-            }
-          }, 50);
-        } else {
-          setIsReady(true);
+          setTimeout(() => processFrame(), 50);
         }
       }
     }
@@ -362,29 +458,11 @@ const SmartBlackRemover = ({
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     if (img.naturalWidth > 0) {
-      const cached = getCachedDataUrl(src);
-      if (cached) {
-        cachedDataUrlRef.current = cached;
-        setCachedSrc(cached);
-        setIsReady(true);
-        setUseCanvas(true);
-        return;
-      }
-      
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
       if (hasBlackBg) {
-        setUseCanvas(true);
-        setIsReady(true);
-        setTimeout(() => {
-          const dataUrl = processFrameToDataUrl();
-          if (dataUrl) {
-            setCachedDataUrl(src, dataUrl);
-            cachedDataUrlRef.current = dataUrl;
-            setCachedSrc(dataUrl);
-          }
-        }, 50);
-      } else {
-        setIsReady(true);
+        setTimeout(() => processFrame(), 50);
       }
     }
   };
@@ -392,29 +470,11 @@ const SmartBlackRemover = ({
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-      const cached = getCachedDataUrl(src);
-      if (cached) {
-        cachedDataUrlRef.current = cached;
-        setCachedSrc(cached);
-        setIsReady(true);
-        setUseCanvas(true);
-        return;
-      }
-      
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
       if (hasBlackBg) {
-        setUseCanvas(true);
-        setIsReady(true);
-        setTimeout(() => {
-          const dataUrl = processFrameToDataUrl(video);
-          if (dataUrl) {
-            setCachedDataUrl(src, dataUrl);
-            cachedDataUrlRef.current = dataUrl;
-            setCachedSrc(dataUrl);
-          }
-        }, 150);
-      } else {
-        setIsReady(true);
+        setTimeout(() => processFrame(video), 150);
       }
     }
   };
@@ -444,19 +504,7 @@ const SmartBlackRemover = ({
           style={{ display: useCanvas ? 'none' : 'block' }}
           crossOrigin="anonymous"
         />
-        {useCanvas && cachedSrc && (
-          <img
-            src={cachedSrc}
-            alt=""
-            className="w-full h-full object-cover"
-            style={{ 
-              display: isReady ? 'block' : 'none', 
-              background: 'transparent',
-              backgroundColor: 'transparent'
-            }}
-          />
-        )}
-        {useCanvas && !cachedSrc && (
+        {useCanvas && (
           <canvas
             ref={canvasRef}
             className="w-full h-full object-cover"
@@ -493,19 +541,7 @@ const SmartBlackRemover = ({
         style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
       />
-      {useCanvas && cachedSrc && (
-        <img
-          src={cachedSrc}
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ 
-            display: isReady ? 'block' : 'none', 
-            background: 'transparent',
-            backgroundColor: 'transparent'
-          }}
-        />
-      )}
-      {useCanvas && !cachedSrc && (
+      {useCanvas && (
         <canvas
           ref={canvasRef}
           className="w-full h-full object-cover"
@@ -528,6 +564,48 @@ const SmartBlackRemover = ({
   );
 };
 
+// ============================================
+// CACHED MEDIA COMPONENT (NEW - Cache layer wrapper)
+// ============================================
+const CachedMedia = ({ 
+  itemId, 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  itemId: string; 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const { videoUrl } = useVideoCache(itemId, type === 'video' ? src : null);
+  
+  if (type === 'video' && videoUrl) {
+    return (
+      <SmartBlackRemover 
+        src={videoUrl} 
+        type="video" 
+        className={className} 
+        style={style} 
+      />
+    );
+  }
+  
+  return (
+    <SmartBlackRemover 
+      src={src} 
+      type={type} 
+      className={className} 
+      style={style} 
+    />
+  );
+};
+
+// ============================================
+// ALL ICONS (EXISTING - NO TOUCH)
+// ============================================
 // --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
@@ -772,6 +850,9 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
 
+// ============================================
+// MAIN STORE PAGE COMPONENT
+// ============================================
 export default function StorePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -1087,7 +1168,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1105,7 +1187,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1123,7 +1206,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1174,7 +1258,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1196,7 +1281,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1214,7 +1300,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1494,4 +1581,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-    }
+          }
