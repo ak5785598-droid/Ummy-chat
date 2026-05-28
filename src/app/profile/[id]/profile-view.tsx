@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Loader,
   ChevronLeft,
-  Wallet,
+  Wallet, 
   Disc3,
   Heart,
   Ticket,
