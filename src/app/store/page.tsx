@@ -562,7 +562,7 @@ export default function StorePage() {
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('Store'); // 'Store' or 'Mine'
+  const [activeTab, setActiveTab] = useState<string>('Store');
 
   useEffect(() => {
     if (previewItem) {
@@ -699,11 +699,10 @@ export default function StorePage() {
     const ownedIds = userProfile.inventory.ownedItems;
     const expiryMap = userProfile.inventory.expiries || {};
     
-    // Filter only items that are not expired
     const now = Timestamp.now();
     const validOwnedIds = ownedIds.filter(id => {
       const expiry = expiryMap[id];
-      if (!expiry) return true; // No expiry means permanent (though all have expiry now)
+      if (!expiry) return true;
       return expiry.toDate() > now.toDate();
     });
     
@@ -720,7 +719,6 @@ export default function StorePage() {
       let needsUpdate = false;
       const updateData: any = { updatedAt: serverTimestamp() };
       
-      // Check each active item type for expiry
       const activeTypes = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
       
       for (const type of activeTypes) {
@@ -728,7 +726,6 @@ export default function StorePage() {
         if (activeItemId && activeItemId !== 'None') {
           const expiry = expiries[activeItemId as string];
           if (expiry && expiry.toDate() <= now.toDate()) {
-            // Expired! Unequip it
             updateData[`inventory.active${type}`] = 'None';
             needsUpdate = true;
             console.log(`Auto-unequipped expired ${type}: ${activeItemId}`);
@@ -747,7 +744,7 @@ export default function StorePage() {
     };
     
     checkExpiryAndUnequip();
-    const interval = setInterval(checkExpiryAndUnequip, 60000); // Check every minute
+    const interval = setInterval(checkExpiryAndUnequip, 60000);
     
     return () => clearInterval(interval);
   }, [userProfile, firestore, user]);
@@ -755,6 +752,17 @@ export default function StorePage() {
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
     return Math.floor((basePrice / 7) * 3);
+  };
+
+  // Check if item is owned and not expired
+  const isItemOwnedAndValid = (itemId: string) => {
+    if (!userProfile?.inventory?.ownedItems) return false;
+    if (!userProfile.inventory.ownedItems.includes(itemId)) return false;
+    
+    const expiry = userProfile.inventory.expiries?.[itemId];
+    if (expiry && expiry.toDate() <= new Date()) return false;
+    
+    return true;
   };
 
   const handlePurchase = async (item: any, duration: number) => {
@@ -801,7 +809,7 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
-    // Check if item is expired
+    // Double check expiry
     const expiry = userProfile.inventory?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
@@ -812,7 +820,7 @@ export default function StorePage() {
     try {
       const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const userRef = doc(firestore, 'users', user.uid);
-      let field = `inventory.active${item.type}`;
+      const field = `inventory.active${item.type}`;
       const isActive = userProfile.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id;
       
       const updateData: any = { 
@@ -844,7 +852,7 @@ export default function StorePage() {
     }
   };
 
-  // Helper to render store card icon (SQUARE for preview - preview mein square, card mein jo hai wahi)
+  // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
     if (item.type === 'Frame') {
       if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
@@ -921,8 +929,18 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // Helper to render preview icon (SQUARE - not circle!)
+  // Helper to render preview icon (ID items keep original size, rest square)
   const renderPreviewIcon = (item: any) => {
+    if (item.type === 'ID') {
+      return (
+        <div className="scale-125 pt-2">
+          {item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
+           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
+           <IDBadgeIcon number={item.displayId || ''} />}
+        </div>
+      );
+    }
+    
     if (item.type === 'Frame') {
       if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -985,16 +1003,6 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    if (item.type === 'ID') {
-      return (
-        <div className="scale-125 pt-2">
-          {item.isPinkDiamond ? <PinkDiamondIDBadgeIcon number={item.displayId || ''} /> :
-           item.isSilver ? <SilverBlueIDBadgeIcon number={item.displayId || ''} /> : 
-           <IDBadgeIcon number={item.displayId || ''} />}
-        </div>
-      );
-    }
-    
     if (item.type === 'Entry') {
       return (
         <div className="scale-125">
@@ -1016,7 +1024,6 @@ export default function StorePage() {
     </div>
   );
 
-  // Current items to display based on active tab
   const displayItems = activeTab === 'Store' ? allItemsWithFlags : purchasedItems;
 
   return (
@@ -1029,43 +1036,33 @@ export default function StorePage() {
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
         
-        {/* Header with Store/Mine Toggle */}
+        {/* Header */}
         <header className="relative flex items-center justify-between border-b border-white/10 pb-6 min-h-[48px]">
           <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
             <ChevronLeft />
           </button>
           
-          {/* Toggle Buttons */}
-          <div className="flex gap-2 bg-white/5 rounded-full p-1">
-            <button
-              onClick={() => setActiveTab('Store')}
-              className={cn(
-                "px-6 py-2 rounded-full font-medium transition-all",
-                activeTab === 'Store' 
-                  ? "bg-[#FCD535] text-black" 
-                  : "text-gray-400 hover:text-white"
-              )}
-            >
-              Store
-            </button>
-            <button
-              onClick={() => setActiveTab('Mine')}
-              className={cn(
-                "px-6 py-2 rounded-full font-medium transition-all",
-                activeTab === 'Mine' 
-                  ? "bg-[#FCD535] text-black" 
-                  : "text-gray-400 hover:text-white"
-              )}
-            >
-              Mine ({purchasedItems.length})
-            </button>
-          </div>
+          <h1 className={cn(
+            "text-xl font-semibold",
+            activeTab === 'Store' ? "text-[#FCD535]" : "text-white"
+          )}>
+            {activeTab === 'Store' ? 'Store' : 'Mine'}
+          </h1>
           
-          <div className="w-10" /> {/* Spacer for balance */}
+          <button 
+            onClick={() => setActiveTab(activeTab === 'Store' ? 'Mine' : 'Store')}
+            className={cn(
+              "text-sm font-medium transition-colors px-3 py-1.5 rounded-full",
+              activeTab === 'Mine' 
+                ? "bg-[#FCD535]/20 text-[#FCD535]" 
+                : "text-white hover:text-[#FCD535]"
+            )}
+          >
+            {activeTab === 'Store' ? 'Mine' : 'Store'}
+          </button>
         </header>
 
         {activeTab === 'Store' ? (
-          /* STORE TAB - Categories */
           <Tabs defaultValue="All" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
@@ -1118,213 +1115,110 @@ export default function StorePage() {
             ))}
           </Tabs>
         ) : (
-          /* MINE TAB - Only Purchased Items */
-          <div>
+          /* MINE TAB - Sirf Text */
+          <div className="flex flex-col items-center justify-center py-20 text-center">
             {purchasedItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
+              <>
                 <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
-                <p className="text-gray-400 text-lg">Aapne abhi koi item nahi khareeda hai</p>
-                <p className="text-gray-500 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
-              </div>
+                <p className="text-white text-lg">Aapne abhi koi item nahi khareeda hai</p>
+                <p className="text-gray-400 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
+              </>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {purchasedItems.map(item => {
-                  // Check if expired for styling
-                  const expiry = userProfile?.inventory?.expiries?.[item.id];
-                  const isExpired = expiry && expiry.toDate() <= new Date();
-                  
-                  return (
-                    <Card 
-                      key={item.id} 
-                      onClick={() => setPreviewItem(item)} 
-                      className={cn(
-                        "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95",
-                        isExpired && "opacity-50 border-red-500/30"
-                      )}
-                    >
-                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                        {renderStoreCardIcon(item)}
-                      </div>
-                      <CardHeader className="text-center p-3 pb-1">
-                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-                      </CardHeader>
-                      <CardFooter className="flex flex-col gap-1 p-3 pt-1">
-                        {isExpired && (
-                          <span className="text-red-400 text-[10px] font-medium">Expired</span>
-                        )}
-                        {!isExpired && expiry && (
-                          <span className="text-green-400 text-[10px] font-medium">
-                            Expires: {expiry.toDate().toLocaleDateString()}
-                          </span>
-                        )}
-                        <div className="flex items-center justify-center gap-1.5 text-sm w-full">
-                          <span className={cn(
-                            "text-xs px-2 py-0.5 rounded-full",
-                            userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id
-                              ? "bg-[#FCD535]/20 text-[#FCD535]"
-                              : "bg-gray-500/20 text-gray-400"
-                          )}>
-                            {userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id ? "Equipped" : "Owned"}
-                          </span>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
+              <p className="text-white text-lg">Aapke paas {purchasedItems.length} item{ purchasedItems.length > 1 ? 's' : '' } hain</p>
             )}
           </div>
         )}
 
-        {/* PREVIEW CARD WITH SQUARE MEDIA */}
-        {previewItem && (
-          <>
-            <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
-            
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+        {/* PREVIEW CARD - Dynamic: Equip/Unequip for owned items, Buy for others */}
+        {previewItem && (() => {
+          const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
+          const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
+          
+          return (
+            <>
+              <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
               
-              <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
+              <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+                
+                <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
+                  <X size={24} />
+                </button>
 
-              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
-                {/* SQUARE preview - rounded-lg not circle */}
-                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36 rounded-lg overflow-hidden" style={{ background: 'transparent' }}>
-                  {renderPreviewIcon(previewItem)}
+                <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
+                  <div className={cn(
+                    "mb-4 scale-[1.1] flex items-center justify-center",
+                    previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
+                  )} style={{ background: 'transparent' }}>
+                    {renderPreviewIcon(previewItem)}
+                  </div>
+
+                  <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
                 </div>
 
-                <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
-
-                {/* Expiry warning if item is expired */}
-                {(() => {
-                  const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
-                  const isExpired = expiry && expiry.toDate() <= new Date();
-                  if (isExpired) {
-                    return (
-                      <div className="mt-2 px-3 py-1 bg-red-500/20 rounded-full">
-                        <span className="text-red-400 text-sm">Item Expired - Buy Again to Use</span>
+                {/* BOTTOM BAR */}
+                {isOwnedAndValid ? (
+                  // EQUIP/UNEQUIP case - no price, no duration tabs
+                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6">
+                    <Button 
+                      onClick={() => handleEquipToggle(previewItem)}
+                      disabled={isProcessing}
+                      className={cn(
+                        "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                        isProcessing && "opacity-70 cursor-not-allowed",
+                        isCurrentlyEquipped
+                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
+                          : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                      )}
+                    >
+                      {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
+                    </Button>
+                  </div>
+                ) : (
+                  // BUY case - duration tabs, price, buy button
+                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3">
+                    <div className="flex gap-4 w-full justify-center">
+                      {[3, 7].map(days => (
+                        <button 
+                          key={days}
+                          onClick={() => setSelectedDuration(days)}
+                          className={cn(
+                            "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                            selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
+                          )}
+                        >
+                          <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                          {selectedDuration === days && (
+                            <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                              <Check size={12} strokeWidth={3} className="text-black" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DollarCoinIcon className="w-5 h-5" />
+                        <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                          {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                        </span>
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
 
-                {/* SIRF TAB DIKHAO JAB ITEM OWNED NA HO (Buy case) - BUT also show if expired */}
-                {(!userProfile?.inventory?.ownedItems?.includes(previewItem.id) || 
-                  (userProfile?.inventory?.expiries?.[previewItem.id] && 
-                   userProfile.inventory.expiries[previewItem.id].toDate() <= new Date())) && (
-                  <div className="flex gap-4 mt-4 w-full justify-center">
-                    {[3, 7].map(days => (
-                      <button 
-                        key={days}
-                        onClick={() => setSelectedDuration(days)}
-                        className={cn(
-                          "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                          selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
-                        )}
+                      <Button 
+                        onClick={() => handlePurchase(previewItem, selectedDuration)}
+                        disabled={isProcessing}
+                        className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
                       >
-                        <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
-                        {selectedDuration === days && (
-                          <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
-                            <Check size={12} strokeWidth={3} className="text-black" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
+                        {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* BOTTOM BAR */}
-              <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
-                <div className="flex flex-col justify-center">
-                  {(() => {
-                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
-                    const isExpired = expiry && expiry.toDate() <= new Date();
-                    
-                    if (isOwned && !isExpired) {
-                      return (
-                        <span className={cn(
-                          "text-sm font-medium px-3 py-1 rounded-full",
-                          userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                            ? "bg-[#FCD535]/20 text-[#FCD535]"
-                            : "bg-green-500/20 text-green-400"
-                        )}>
-                          {userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                            ? "Currently Equipped"
-                            : "Owned"}
-                        </span>
-                      );
-                    } else if (isExpired) {
-                      return (
-                        <div className="flex items-center gap-2">
-                          <DollarCoinIcon className="w-5 h-5" />
-                          <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                            {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                          </span>
-                          <span className="text-xs text-red-400 ml-2">(Re-purchase)</span>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div className="flex items-center gap-2">
-                          <DollarCoinIcon className="w-5 h-5" />
-                          <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                            {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                          </span>
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-
-                <Button 
-                  onClick={() => {
-                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
-                    const isExpired = expiry && expiry.toDate() <= new Date();
-                    
-                    if (isOwned && !isExpired) {
-                      handleEquipToggle(previewItem);
-                    } else {
-                      handlePurchase(previewItem, selectedDuration);
-                    }
-                  }}
-                  disabled={isProcessing}
-                  className={cn(
-                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
-                    isProcessing && "opacity-70 cursor-not-allowed",
-                    (userProfile?.inventory?.ownedItems?.includes(previewItem.id) && 
-                     !(userProfile?.inventory?.expiries?.[previewItem.id] && 
-                       userProfile.inventory.expiries[previewItem.id].toDate() <= new Date()))
-                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
-                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" 
-                  )}
-                >
-                  {isProcessing ? (
-                    <Loader className="animate-spin h-4 w-4" />
-                  ) : (() => {
-                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
-                    const isExpired = expiry && expiry.toDate() <= new Date();
-                    
-                    if (isOwned && !isExpired) {
-                      return (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip');
-                    } else if (isExpired) {
-                      return 'Buy Again';
-                    } else {
-                      return 'Buy';
-                    }
-                  })()}
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
-  }
+                     }
