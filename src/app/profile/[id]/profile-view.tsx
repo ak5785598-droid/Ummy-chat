@@ -67,8 +67,9 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// --- SMART BLACK BACKGROUND REMOVER FOR VIDEO FRAMES ---
-// [Poora SmartBlackRemover code same rahega - no changes]
+// ============================================================
+// ULTRA ADVANCED BLACK BACKGROUND REMOVER WITH EDGE SMOOTHING
+// ============================================================
 
 const SmartBlackRemover = ({ 
   src, 
@@ -81,14 +82,16 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  // [Poora existing code yahan copy karo - bilkul same]
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [useCanvas, setUseCanvas] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
+  const lastProcessedTimeRef = useRef<number>(0);
+  const frameSkipRef = useRef<number>(0);
 
+  // Detect karta hai ki solid black background hai ya nahi - CORNER SAMPLING
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -126,9 +129,24 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
+  // ADVANCED FRAME PROCESSING WITH ALPHA FADE EDGES - NO BLACK FLICKER
   const processFrame = (video?: HTMLVideoElement) => {
     if (processingRef.current) return;
+    
+    // Frame skip logic for performance - har 2nd frame process karo
+    if (type === 'video') {
+      frameSkipRef.current++;
+      if (frameSkipRef.current % 2 !== 0) {
+        // Skip nahi karna, but still next frame request karo
+        if (video && animationFrameRef.current) {
+          animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+        }
+        return;
+      }
+    }
+    
     processingRef.current = true;
+    const startTime = performance.now();
 
     const canvas = canvasRef.current;
     const media = video || mediaRef.current;
@@ -137,7 +155,10 @@ const SmartBlackRemover = ({
       return;
     }
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', { 
+      willReadFrequently: true,
+      alpha: true 
+    });
     if (!ctx) {
       processingRef.current = false;
       return;
@@ -146,52 +167,127 @@ const SmartBlackRemover = ({
     const width = 'videoWidth' in media ? media.videoWidth : media.width;
     const height = 'videoHeight' in media ? media.videoHeight : media.height;
 
+    if (!width || !height || width === 0 || height === 0) {
+      processingRef.current = false;
+      return;
+    }
+
+    // Canvas size update only when needed
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
     }
 
+    // Clear canvas pehle - IMPORTANT transparent background ke liye
+    ctx.clearRect(0, 0, width, height);
+    
+    // Draw karo frame ko
     ctx.drawImage(media, 0, 0, width, height);
+    
+    // Get image data
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    const STRICT_BLACK = 25;
-    const ALPHA_FADE_SPEED = 1.0;
-    const scale = 4;
+    // FLOOD FILL PARAMETERS - TUNED FOR PERFECT RESULTS
+    const BLACK_THRESHOLD = 35; // Thoda relaxed threshold for gradient edges
+    const STRICT_BLACK = 25; // Strict black for core removal
+    const scale = 3; // Resolution scale - 3 gives good balance
     const scaledW = Math.ceil(width / scale);
     const scaledH = Math.ceil(height / scale);
     const visited = new Uint8Array(scaledW * scaledH);
-
-    const isBlack = (sx: number, sy: number) => {
-      const x = Math.min(sx * scale, width - 1);
-      const y = Math.min(sy * scale, height - 1);
-      const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    
+    // Check if pixel is black at scaled coordinates
+    const isBlack = (sx: number, sy: number, strict: boolean = false) => {
+      const threshold = strict ? STRICT_BLACK : BLACK_THRESHOLD;
+      // Sample multiple pixels around the scaled point for better accuracy
+      let blackPixels = 0;
+      let totalSamples = 0;
+      
+      for (let dy = 0; dy < scale; dy++) {
+        for (let dx = 0; dx < scale; dx++) {
+          const x = Math.min(sx * scale + dx, width - 1);
+          const y = Math.min(sy * scale + dy, height - 1);
+          const i = (y * width + x) * 4;
+          
+          if (data[i] < threshold && data[i+1] < threshold && data[i+2] < threshold) {
+            blackPixels++;
+          }
+          totalSamples++;
+        }
+      }
+      
+      // At least 70% samples should be black
+      return blackPixels / totalSamples >= 0.7;
     };
 
+    // Queue for BFS flood fill
     const queue: [number, number][] = [];
     
+    // EDGE SEEDS - Check all four edges
+    // Top edge
     for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+      if (!visited[sx] && isBlack(sx, 0, true)) {
+        queue.push([sx, 0]);
+        visited[sx] = 1;
+      }
     }
+    
+    // Bottom edge
+    for (let sx = 0; sx < scaledW; sx++) {
+      const idx = (scaledH - 1) * scaledW + sx;
+      if (!visited[idx] && isBlack(sx, scaledH - 1, true)) {
+        queue.push([sx, scaledH - 1]);
+        visited[idx] = 1;
+      }
+    }
+    
+    // Left edge
     for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+      const idx = sy * scaledW;
+      if (!visited[idx] && isBlack(0, sy, true)) {
+        queue.push([0, sy]);
+        visited[idx] = 1;
+      }
+    }
+    
+    // Right edge
+    for (let sy = 0; sy < scaledH; sy++) {
+      const idx = sy * scaledW + (scaledW - 1);
+      if (!visited[idx] && isBlack(scaledW - 1, sy, true)) {
+        queue.push([scaledW - 1, sy]);
+        visited[idx] = 1;
+      }
+    }
+    
+    // CORNER SEEDS - Extra safety
+    const corners: [number, number][] = [
+      [0, 0], [scaledW - 1, 0], 
+      [0, scaledH - 1], [scaledW - 1, scaledH - 1],
+      [Math.floor(scaledW / 2), 0], [Math.floor(scaledW / 2), scaledH - 1],
+      [0, Math.floor(scaledH / 2)], [scaledW - 1, Math.floor(scaledH / 2)]
+    ];
+    
+    for (const [cx, cy] of corners) {
+      if (cx >= 0 && cx < scaledW && cy >= 0 && cy < scaledH) {
+        const idx = cy * scaledW + cx;
+        if (!visited[idx] && isBlack(cx, cy, true)) {
+          queue.push([cx, cy]);
+          visited[idx] = 1;
+        }
+      }
     }
 
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
-    }
-
+    // BFS FLOOD FILL
     let head = 0;
+    const directions: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    
     while (head < queue.length) {
       const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-      for (const [nx, ny] of neighbors) {
+      
+      for (const [dx, dy] of directions) {
+        const nx = sx + dx;
+        const ny = sy + dy;
+        
         if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
           const nidx = ny * scaledW + nx;
           if (!visited[nidx] && isBlack(nx, ny)) {
@@ -202,27 +298,119 @@ const SmartBlackRemover = ({
       }
     }
 
+    // ALPHA REMOVAL WITH EDGE FEATHERING
+    const alphaData = new Uint8Array(scaledW * scaledH);
+    
+    // First pass - mark fully transparent areas
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
-          for (let dy = 0; dy < scale; dy++) {
-            for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
-              if (x < width && y < height) {
-                const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i + 3] = 0;
-                }
+          alphaData[sy * scaledW + sx] = 0; // Fully transparent
+        } else {
+          alphaData[sy * scaledW + sx] = 255; // Fully opaque
+        }
+      }
+    }
+    
+    // EDGE FEATHERING - 2 pixel soft edge
+    const featherRadius = 2;
+    const featheredAlpha = new Uint8Array(scaledW * scaledH);
+    
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        const idx = sy * scaledW + sx;
+        
+        if (alphaData[idx] === 0) {
+          featheredAlpha[idx] = 0;
+          continue;
+        }
+        
+        // Check surrounding pixels for transparency
+        let minDist = featherRadius + 1;
+        
+        for (let fy = -featherRadius; fy <= featherRadius; fy++) {
+          for (let fx = -featherRadius; fx <= featherRadius; fx++) {
+            const nx = sx + fx;
+            const ny = sy + fy;
+            
+            if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+              if (alphaData[ny * scaledW + nx] === 0) {
+                const dist = Math.sqrt(fx * fx + fy * fy);
+                minDist = Math.min(minDist, dist);
               }
             }
           }
         }
+        
+        if (minDist <= featherRadius) {
+          // Smooth alpha transition
+          const t = minDist / featherRadius;
+          // Smoothstep function for better transition
+          const smoothT = t * t * (3 - 2 * t);
+          featheredAlpha[idx] = Math.round(255 * smoothT);
+        } else {
+          featheredAlpha[idx] = 255;
+        }
       }
     }
 
+    // Apply alpha to actual pixels with bilinear interpolation
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const sx = x / scale;
+        const sy = y / scale;
+        
+        // Bilinear interpolation for smooth alpha
+        const sx0 = Math.floor(sx);
+        const sy0 = Math.floor(sy);
+        const sx1 = Math.min(sx0 + 1, scaledW - 1);
+        const sy1 = Math.min(sy0 + 1, scaledH - 1);
+        
+        const fx = sx - sx0;
+        const fy = sy - sy0;
+        
+        const a00 = featheredAlpha[sy0 * scaledW + sx0];
+        const a10 = featheredAlpha[sy0 * scaledW + sx1];
+        const a01 = featheredAlpha[sy1 * scaledW + sx0];
+        const a11 = featheredAlpha[sy1 * scaledW + sx1];
+        
+        const alpha = 
+          a00 * (1 - fx) * (1 - fy) +
+          a10 * fx * (1 - fy) +
+          a01 * (1 - fx) * fy +
+          a11 * fx * fy;
+        
+        const i = (y * width + x) * 4;
+        
+        // ADDITIONAL CHECK: Agar pixel almost black hai aur bilkul edge pe hai
+        const isPixelBlack = data[i] < 15 && data[i+1] < 15 && data[i+2] < 15;
+        const isNearEdge = x < 3 || x >= width - 3 || y < 3 || y >= height - 3;
+        
+        if (isPixelBlack && isNearEdge) {
+          data[i + 3] = 0; // Force transparent for edge black pixels
+        } else if (alpha < 255) {
+          // Apply feathered alpha
+          data[i + 3] = Math.round(alpha);
+        }
+        // Otherwise keep original alpha
+      }
+    }
+
+    // Put processed image back
     ctx.putImageData(imageData, 0, 0);
+    
+    // Performance tracking
+    const endTime = performance.now();
+    const processTime = endTime - startTime;
+    
+    // Agar processing slow hai to frame skip badhao
+    if (processTime > 16 && type === 'video') { // More than 16ms (60fps budget)
+      frameSkipRef.current = Math.min(frameSkipRef.current + 1, 3); // Max skip 3 frames
+    }
+    
     processingRef.current = false;
 
+    // CONTINUE VIDEO LOOP
     if (type === 'video' && video) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -231,15 +419,17 @@ const SmartBlackRemover = ({
     }
   };
 
+  // IMAGE LOAD HANDLER
   useEffect(() => {
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
-      if (img.complete) {
+      if (img.complete && img.naturalWidth > 0) {
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
         setIsReady(true);
         if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
+          // Small delay to ensure DOM is ready
+          setTimeout(() => processFrame(), 100);
         }
       }
     }
@@ -247,26 +437,29 @@ const SmartBlackRemover = ({
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-    setUseCanvas(hasBlackBg);
-    setIsReady(true);
-    if (hasBlackBg) {
-      setTimeout(() => processFrame(), 50);
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 100);
+      }
     }
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
-    if (video.readyState >= 2) {
+    if (video.readyState >= 2 && video.videoWidth > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
       setUseCanvas(hasBlackBg);
       setIsReady(true);
       if (hasBlackBg) {
-        setTimeout(() => processFrame(video), 100);
+        setTimeout(() => processFrame(video), 150);
       }
     }
   };
 
+  // CLEANUP
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
@@ -277,9 +470,11 @@ const SmartBlackRemover = ({
     };
   }, []);
 
+  // VIDEO RENDER
   if (type === 'video') {
     return (
       <div className={cn("relative", className)} style={style}>
+        {/* Hidden video element for processing */}
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -287,25 +482,50 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
+          preload="auto"
           onLoadedData={handleVideoReady}
-          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
-          style={{ display: useCanvas ? 'none' : 'block' }}
+          onPlay={() => {
+            const video = mediaRef.current as HTMLVideoElement;
+            if (video && useCanvas && isReady) {
+              // Restart processing on play
+              setTimeout(() => processFrame(video), 50);
+            }
+          }}
+          className="hidden"
           crossOrigin="anonymous"
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
-        {useCanvas && (
-          <canvas
-            ref={canvasRef}
+        
+        {/* Canvas shows when processing, original video as fallback */}
+        {!useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
             className="w-full h-full object-cover"
-            style={{ 
-              display: isReady ? 'block' : 'none', 
-              background: 'transparent',
-            }}
+            crossOrigin="anonymous"
           />
         )}
+        
+        <canvas
+          ref={canvasRef}
+          className={cn(
+            "w-full h-full object-cover",
+            !useCanvas && "hidden"
+          )}
+          style={{ 
+            display: useCanvas && isReady ? 'block' : 'none', 
+            background: 'transparent',
+            imageRendering: 'auto',
+          }}
+        />
       </div>
     );
   }
 
+  // IMAGE RENDER
   return (
     <div className={cn("relative", className)} style={style}>
       <img
@@ -313,7 +533,10 @@ const SmartBlackRemover = ({
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        className={cn(
+          "w-full h-full object-cover",
+          useCanvas && "hidden"
+        )}
         style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
       />
@@ -324,6 +547,7 @@ const SmartBlackRemover = ({
           style={{ 
             display: isReady ? 'block' : 'none', 
             background: 'transparent',
+            imageRendering: 'auto',
           }}
         />
       )}
@@ -332,7 +556,7 @@ const SmartBlackRemover = ({
 };
 
 // --- COMPACT VIDEO AVATAR FRAME COMPONENT ---
-// [Poora same code - no changes]
+// Same rahega no changes
 
 const CompactVideoAvatarFrame = ({ 
   frameMediaUrl, 
@@ -367,8 +591,7 @@ const CompactVideoAvatarFrame = ({
 };
 
 // --- 3D GLOSSY TAGS ---
-// [Saare SVG components same rahenge - SVGA_OfficialTag, SVGA_SellerTag, etc.]
-// [Poora copy karo bina kisi change ke]
+// All SVG components same rahenge
 
 const SVGA_OfficialTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
@@ -586,9 +809,7 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
   );
 };
 
-// [Baaki saare SVG components bhi same rahenge - SVGA_GoldDollar, SVGA_LevelCrown, etc.]
-// [Poora copy karo exactly as is]
-
+// Rest of SVG components
 const SVGA_GoldDollar = () => (
   <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
     <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
@@ -884,7 +1105,7 @@ const SVGA_OfficialUser = ({ className }: { className?: string }) => (
 );
 
 // --- REST OF THE HELPERS & CONSTANTS ---
-// [Saare constants and helper functions same rahenge]
+// Same rahenge no changes
 
 const CREATOR_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
 
@@ -959,7 +1180,7 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 // --- MEDAL MODAL COMPONENT ---
-// [Poora same code - no changes]
+// Same rahega no changes
 
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
@@ -1580,4 +1801,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-      }
+          }
