@@ -9,154 +9,207 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { calculateLevelProgress } from '@/lib/level-utils';
 import { collection, query, orderBy } from 'firebase/firestore';
 
-// ============ CANVAS BLACK REMOVER - FAST ============
-function removeBlackBackgroundFast(imageUrl: string): Promise<string> {
+// ============ CANVAS BLACK REMOVER - SMART VERSION ============
+// Ye function sirf tabhi black remove karega jab 4 corners black ho
+function removeBlackBackgroundSmart(imageUrl: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     
-    // Cache bhi use karo - agar pehle process ho chuki hai
-    const cacheKey = `transparent_${btoa(imageUrl).slice(0, 50)}`;
+    // Cache check karo - har image ka apna unique cache
+    const cacheKey = `smart_transparent_${btoa(imageUrl).slice(0, 50)}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
+      console.log('✅ Cache se mil gaya:', cacheKey.slice(0, 30));
       resolve(cached);
       return;
     }
     
     img.onload = () => {
-      // OffscreenCanvas for fast processing
-      const canvas = typeof OffscreenCanvas !== 'undefined' 
-        ? new OffscreenCanvas(img.width, img.height)
-        : document.createElement('canvas');
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      if (canvas instanceof OffscreenCanvas) {
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (!ctx) { resolve(imageUrl); return; }
-        
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const len = data.length;
-        
-        // Fast loop - direct access
-        for (let i = 0; i < len; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          // Black pixel? Remove it
-          if (r < 50 && g < 50 && b < 50) {
-            data[i + 3] = 0;
-          }
-          // Near black? Smooth edge
-          else if (r < 90 && g < 90 && b < 90) {
-            const max = Math.max(r, g, b);
-            data[i + 3] = (max / 90) * 255;
-          }
-        }
-        
-        ctx.putImageData(imageData, 0, 0);
-        
-        canvas.convertToBlob({ type: 'image/png' }).then(blob => {
-          const url = URL.createObjectURL(blob);
-          // Cache store karo
-          try { sessionStorage.setItem(cacheKey, url); } catch(e) {}
-          resolve(url);
-        });
-      } else {
-        // Fallback to regular canvas
-        const regularCanvas = canvas as HTMLCanvasElement;
-        const ctx = regularCanvas.getContext('2d', { willReadFrequently: true });
-        if (!ctx) { resolve(imageUrl); return; }
-        
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, regularCanvas.width, regularCanvas.height);
-        const data = imageData.data;
-        const len = data.length;
-        
-        for (let i = 0; i < len; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          if (r < 50 && g < 50 && b < 50) {
-            data[i + 3] = 0;
-          } else if (r < 90 && g < 90 && b < 90) {
-            const max = Math.max(r, g, b);
-            data[i + 3] = (max / 90) * 255;
-          }
-        }
-        
-        ctx.putImageData(imageData, 0, 0);
-        const url = regularCanvas.toDataURL('image/png');
-        try { sessionStorage.setItem(cacheKey, url); } catch(e) {}
-        resolve(url);
+      if (!ctx) {
+        console.log('❌ Context nahi mila, original image return');
+        resolve(imageUrl);
+        return;
       }
+      
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      // ============ 4 CORNERS CHECK ============
+      // Top-Left corner (0,0)
+      const tl = getPixelColor(data, width, 0, 0);
+      // Top-Right corner (width-1, 0)
+      const tr = getPixelColor(data, width, width - 1, 0);
+      // Bottom-Left corner (0, height-1)
+      const bl = getPixelColor(data, width, 0, height - 1);
+      // Bottom-Right corner (width-1, height-1)
+      const br = getPixelColor(data, width, width - 1, height - 1);
+      
+      // Check karo ki 4 corners black hai ya nahi
+      const isBlack = (color: {r: number, g: number, b: number}) => {
+        return color.r < 40 && color.g < 40 && color.b < 40;
+      };
+      
+      const allCornersBlack = isBlack(tl) && isBlack(tr) && isBlack(bl) && isBlack(br);
+      
+      console.log('🔍 Corner Check:', {
+        tl: `rgb(${tl.r},${tl.g},${tl.b})`,
+        tr: `rgb(${tr.r},${tr.g},${tr.b})`,
+        bl: `rgb(${bl.r},${bl.g},${bl.b})`,
+        br: `rgb(${br.r},${br.g},${br.b})`,
+        allBlack: allCornersBlack
+      });
+      
+      // Agar 4 corners black nahi hai toh original image return karo
+      if (!allCornersBlack) {
+        console.log('⚠️ 4 corners black nahi hai, background remove nahi hoga');
+        sessionStorage.setItem(cacheKey, imageUrl);
+        resolve(imageUrl);
+        return;
+      }
+      
+      console.log('✅ 4 corners black hai, background remove kar rahe hain');
+      
+      // ============ BACKGROUND REMOVE LOGIC ============
+      const len = data.length;
+      
+      // Pehle edge pixels scan karo to find actual background color
+      let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+      
+      // Top edge scan
+      for (let x = 0; x < width; x += 5) {
+        const color = getPixelColor(data, width, x, 0);
+        if (color.r < 50 && color.g < 50 && color.b < 50) {
+          bgR += color.r;
+          bgG += color.g;
+          bgB += color.b;
+          bgCount++;
+        }
+      }
+      
+      // Bottom edge scan
+      for (let x = 0; x < width; x += 5) {
+        const color = getPixelColor(data, width, x, height - 1);
+        if (color.r < 50 && color.g < 50 && color.b < 50) {
+          bgR += color.r;
+          bgG += color.g;
+          bgB += color.b;
+          bgCount++;
+        }
+      }
+      
+      // Left edge scan
+      for (let y = 0; y < height; y += 5) {
+        const color = getPixelColor(data, width, 0, y);
+        if (color.r < 50 && color.g < 50 && color.b < 50) {
+          bgR += color.r;
+          bgG += color.g;
+          bgB += color.b;
+          bgCount++;
+        }
+      }
+      
+      // Right edge scan
+      for (let y = 0; y < height; y += 5) {
+        const color = getPixelColor(data, width, width - 1, y);
+        if (color.r < 50 && color.g < 50 && color.b < 50) {
+          bgR += color.r;
+          bgG += color.g;
+          bgB += color.b;
+          bgCount++;
+        }
+      }
+      
+      // Average background color calculate karo
+      if (bgCount > 0) {
+        bgR = Math.round(bgR / bgCount);
+        bgG = Math.round(bgG / bgCount);
+        bgB = Math.round(bgB / bgCount);
+      } else {
+        bgR = 0;
+        bgG = 0;
+        bgB = 0;
+      }
+      
+      console.log(`🎨 Background color: rgb(${bgR},${bgG},${bgB})`);
+      
+      // Threshold set karo background color ke hisaab se
+      const threshold = 60;
+      
+      // Saare pixels process karo
+      for (let i = 0; i < len; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Check karo ki pixel background ke similar hai ya nahi
+        const diffR = Math.abs(r - bgR);
+        const diffG = Math.abs(g - bgG);
+        const diffB = Math.abs(b - bgB);
+        
+        if (diffR < threshold && diffG < threshold && diffB < threshold) {
+          // Background pixel hai - transparent banao
+          data[i + 3] = 0;
+        } else if (diffR < threshold + 30 && diffG < threshold + 30 && diffB < threshold + 30) {
+          // Edge pixel - smooth alpha
+          const maxDiff = Math.max(diffR, diffG, diffB);
+          const alpha = ((maxDiff - threshold) / 30) * 255;
+          data[i + 3] = Math.min(255, Math.max(0, alpha));
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Canvas ko blob mein convert karo
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          // Cache mein store karo
+          try {
+            sessionStorage.setItem(cacheKey, url);
+            console.log('💾 Cache mein save kiya:', cacheKey.slice(0, 30));
+          } catch(e) {
+            console.log('⚠️ Cache full hai, save nahi kar paaye');
+          }
+          resolve(url);
+        } else {
+          console.log('❌ Blob create nahi hua');
+          resolve(imageUrl);
+        }
+      }, 'image/png');
     };
     
-    img.onerror = () => resolve(imageUrl);
+    img.onerror = () => {
+      console.log('❌ Image load nahi hui');
+      resolve(imageUrl);
+    };
+    
     img.src = imageUrl;
   });
 }
 
-// ============ IMAGE COMPONENT WITH FAST PROCESSING ============
-function FastTransparentImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
-  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    let mounted = true;
-    
-    async function process() {
-      setIsLoading(true);
-      const startTime = performance.now();
-      
-      const result = await removeBlackBackgroundFast(imageUrl);
-      
-      const endTime = performance.now();
-      console.log(`⚡ Processed in ${(endTime - startTime).toFixed(0)}ms`);
-      
-      if (mounted) {
-        setProcessedUrl(result);
-        setIsLoading(false);
-      }
-    }
-    
-    process();
-    
-    return () => {
-      mounted = false;
-      // Cleanup blob URL
-      if (processedUrl && processedUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(processedUrl);
-      }
-    };
-  }, [imageUrl]);
-  
-  if (isLoading || !processedUrl) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-transparent">
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-6 h-6 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
-          <span className="text-[9px] text-gray-400">processing...</span>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <img 
-      src={processedUrl} 
-      alt={alt}
-      className="w-full h-full object-contain"
-      loading="lazy"
-      style={{ background: 'transparent' }}
-    />
-  );
+// Helper function - pixel color nikalne ke liye
+function getPixelColor(data: Uint8ClampedArray, width: number, x: number, y: number) {
+  const index = (y * width + x) * 4;
+  return {
+    r: data[index],
+    g: data[index + 1],
+    b: data[index + 2],
+    a: data[index + 3]
+  };
 }
 
-// ============ BULK PROCESSOR FOR ALL IMAGES ============
+// ============ BULK PROCESSOR WITH UNIQUE IMAGE HANDLING ============
 function useBulkImageProcessor(imageUrls: string[]) {
+  // Har image ka apna processed URL store karo - Record use karo
   const [processedUrls, setProcessedUrls] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -164,35 +217,95 @@ function useBulkImageProcessor(imageUrls: string[]) {
     if (!imageUrls.length) return;
     
     let cancelled = false;
+    const processedMap: Record<string, string> = {};
     
     async function processAll() {
       setIsProcessing(true);
+      console.log(`🔄 Processing ${imageUrls.length} images...`);
       
-      // Parallel processing - ek saath saari images
-      const results = await Promise.all(
-        imageUrls.map(async (url) => {
-          if (!url) return { url, processed: null };
-          const processed = await removeBlackBackgroundFast(url);
-          return { url, processed };
-        })
-      );
+      // Har image ko alag-alag process karo
+      for (const url of imageUrls) {
+        if (!url || cancelled) continue;
+        
+        try {
+          console.log(`📸 Processing: ${url.slice(0, 50)}...`);
+          const processed = await removeBlackBackgroundSmart(url);
+          processedMap[url] = processed;
+          
+          // Har image process hone ke baad state update karo
+          if (!cancelled) {
+            setProcessedUrls({ ...processedMap });
+          }
+        } catch (err) {
+          console.log('❌ Error processing:', err);
+          processedMap[url] = url; // Error case mein original URL use karo
+        }
+      }
       
       if (!cancelled) {
-        const urlMap: Record<string, string> = {};
-        results.forEach(({ url, processed }) => {
-          if (processed) urlMap[url] = processed;
-        });
-        setProcessedUrls(urlMap);
+        console.log('✅ All images processed!');
         setIsProcessing(false);
       }
     }
     
     processAll();
     
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Cleanup - saare blob URLs revoke karo
+      Object.values(processedUrls).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
   }, [imageUrls.join(',')]); // Stable reference
-  
+    
   return { processedUrls, isProcessing };
+}
+
+// ============ IMAGE COMPONENT ============
+function SmartImage({ 
+  imageUrl, 
+  processedUrl, 
+  alt,
+  onLoad 
+}: { 
+  imageUrl: string; 
+  processedUrl: string | null; 
+  alt: string;
+  onLoad?: () => void;
+}) {
+  const [hasError, setHasError] = useState(false);
+  
+  // Agar processed URL hai toh woh use karo, nahi toh original
+  const displayUrl = processedUrl || imageUrl;
+  
+  if (!displayUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-transparent">
+        <span className="text-[9px] text-gray-300">No Image</span>
+      </div>
+    );
+  }
+  
+  return (
+    <img 
+      src={displayUrl} 
+      alt={alt}
+      className="w-full h-full object-contain p-1"
+      loading="lazy"
+      style={{ background: 'transparent' }}
+      onLoad={() => {
+        console.log(`✅ Image loaded: ${alt}`);
+        if (onLoad) onLoad();
+      }}
+      onError={() => {
+        console.log(`❌ Image error: ${alt}`);
+        setHasError(true);
+      }}
+    />
+  );
 }
 
 export default function UserLevelPage() {
@@ -212,7 +325,7 @@ export default function UserLevelPage() {
   }, [firestore]);
   const { data: levels } = useCollection(levelsQuery);
 
-  // Collect all image URLs for bulk processing
+  // Saare unique image URLs collect karo
   const allImageUrls = levels?.map((l: any) => l.imageUrl).filter(Boolean) || [];
   const { processedUrls, isProcessing } = useBulkImageProcessor(allImageUrls);
 
@@ -326,30 +439,24 @@ export default function UserLevelPage() {
             <div className="grid grid-cols-3 gap-3">
               {levels && levels.length > 0 ? (
                 levels.map((level: any, idx: number) => {
-                  const hasImage = level.imageUrl && processedUrls[level.imageUrl];
+                  // Har level ka apna unique image URL
+                  const imageUrl = level.imageUrl;
+                  // Us URL ke liye processed version
+                  const processedUrl = imageUrl ? processedUrls[imageUrl] : null;
                   
                   return (
                     <div 
                       key={level.id || idx} 
                       className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
                     >
-                      {/* Transparent image dikhao agar processed hai */}
-                      {hasImage ? (
-                        <img 
-                          src={processedUrls[level.imageUrl]} 
+                      {imageUrl ? (
+                        <SmartImage 
+                          imageUrl={imageUrl}
+                          processedUrl={processedUrl}
                           alt={level.name || `Level ${idx}`}
-                          className="w-full h-full object-contain p-1"
-                          loading="lazy"
-                          style={{ background: 'transparent' }}
-                          onLoad={() => handleImageProcessed(level.imageUrl)}
+                          onLoad={() => handleImageProcessed(imageUrl)}
                         />
-                      ) : level.imageUrl ? (
-                        // Processing mein hai toh skeleton dikhao
-                        <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-400 rounded-full animate-spin" />
-                        </div>
                       ) : (
-                        // No image
                         <div className="w-full h-full flex items-center justify-center bg-transparent">
                           <span className="text-[9px] text-gray-300">No Image</span>
                         </div>
@@ -500,4 +607,4 @@ export default function UserLevelPage() {
       </div>
     </AppLayout>
   );
-        }
+    }
