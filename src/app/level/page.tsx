@@ -9,8 +9,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { calculateLevelProgress } from '@/lib/level-utils';
 import { collection, query, orderBy } from 'firebase/firestore';
 
-// ============ SIMPLE IMAGE PROCESSOR - NO BLOB ============
-// Ye function bina blob ke sidha data URL return karega
+// ============ SOLID BLACK BACKGROUND REMOVER ============
+// Sirf solid black remove karega, kuch aur nahi
 function processImageTransparent(imageUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -43,7 +43,7 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       const width = canvas.width;
       const height = canvas.height;
       
-      // 4 corners check
+      // 4 corners check - SOLID BLACK ONLY
       const corners = [
         getPixel(data, width, 0, 0),           // top-left
         getPixel(data, width, width-1, 0),     // top-right  
@@ -53,31 +53,35 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       
       const allBlack = corners.every(c => c.r < 40 && c.g < 40 && c.b < 40);
       
+      // Agar 4 corners solid black nahi hai toh kuch mat karo
       if (!allBlack) {
-        // Cache original
         try { sessionStorage.setItem(cacheKey, imageUrl); } catch(e) {}
         resolve(imageUrl);
         return;
       }
       
-      // Background remove
+      // Sirf solid black pixels remove karo
       const len = data.length;
       for (let i = 0; i < len; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         
+        // SOLID BLACK (0-50) → fully transparent
         if (r < 50 && g < 50 && b < 50) {
-          data[i + 3] = 0; // fully transparent
-        } else if (r < 90 && g < 90 && b < 90) {
+          data[i + 3] = 0;
+        } 
+        // NEAR BLACK (50-90) → semi transparent edges
+        else if (r < 90 && g < 90 && b < 90) {
           const max = Math.max(r, g, b);
-          data[i + 3] = Math.round((max / 90) * 255); // semi transparent
+          data[i + 3] = Math.round((max / 90) * 255);
         }
+        // Baki sab colors → as is (no change)
       }
       
       ctx.putImageData(imageData, 0, 0);
       
-      // Data URL banake return karo - NO BLOB
+      // Data URL banao
       const dataUrl = canvas.toDataURL('image/png');
       
       // Cache
@@ -91,22 +95,129 @@ function processImageTransparent(imageUrl: string): Promise<string> {
   });
 }
 
+// Helper function - pixel color nikalne ke liye
 function getPixel(data: Uint8ClampedArray, width: number, x: number, y: number) {
   const i = (y * width + x) * 4;
   return { r: data[i], g: data[i+1], b: data[i+2], a: data[i+3] };
 }
 
-// ============ IMAGE COMPONENT - APNA APNA IMAGE ============
-function LevelImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
+// ============ VIDEO PROCESSOR - SIRF PEHLA FRAME ============
+function processVideoThumbnail(videoUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.crossOrigin = "anonymous";
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    
+    // Cache check
+    const cacheKey = `vid_${videoUrl}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        resolve(cached);
+        return;
+      }
+    } catch(e) {}
+    
+    video.onloadeddata = () => {
+      // Sirf pehla frame capture karo
+      video.currentTime = 0.1;
+    };
+    
+    video.onseeked = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        resolve(videoUrl);
+        return;
+      }
+      
+      // Video frame draw karo
+      ctx.drawImage(video, 0, 0);
+      
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      // 4 corners check - SOLID BLACK ONLY
+      const corners = [
+        getPixel(data, width, 0, 0),
+        getPixel(data, width, width-1, 0),
+        getPixel(data, width, 0, height-1),
+        getPixel(data, width, width-1, height-1)
+      ];
+      
+      const allBlack = corners.every(c => c.r < 40 && c.g < 40 && c.b < 40);
+      
+      if (!allBlack) {
+        try { sessionStorage.setItem(cacheKey, videoUrl); } catch(e) {}
+        resolve(videoUrl);
+        return;
+      }
+      
+      // Sirf solid black remove karo
+      const len = data.length;
+      for (let i = 0; i < len; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r < 50 && g < 50 && b < 50) {
+          data[i + 3] = 0;
+        } else if (r < 90 && g < 90 && b < 90) {
+          const max = Math.max(r, g, b);
+          data[i + 3] = Math.round((max / 90) * 255);
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      try { sessionStorage.setItem(cacheKey, dataUrl); } catch(e) {}
+      resolve(dataUrl);
+    };
+    
+    video.onerror = () => resolve(videoUrl);
+    video.src = videoUrl;
+    video.load();
+  });
+}
+
+// ============ MEDIA COMPONENT - IMAGE + VIDEO SUPPORT ============
+function LevelMedia({ mediaUrl, alt }: { mediaUrl: string; alt: string }) {
   const [displayUrl, setDisplayUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isVideo, setIsVideo] = useState(false);
   
   useEffect(() => {
     let active = true;
     
     async function load() {
       setLoading(true);
-      const result = await processImageTransparent(imageUrl);
+      
+      // Check karo image hai ya video
+      const isVideoFile = mediaUrl.match(/\.(mp4|webm|ogg|mov)($|\?)/i);
+      const isVideoType = mediaUrl.includes('video');
+      const videoExt = isVideoFile || isVideoType;
+      
+      setIsVideo(!!videoExt);
+      
+      let result: string;
+      
+      if (videoExt) {
+        // Video ka pehla frame lo
+        result = await processVideoThumbnail(mediaUrl);
+      } else {
+        // Normal image process karo
+        result = await processImageTransparent(mediaUrl);
+      }
+      
       if (active) {
         setDisplayUrl(result);
         setLoading(false);
@@ -116,12 +227,15 @@ function LevelImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
     load();
     
     return () => { active = false; };
-  }, [imageUrl]); // Har image URL ke liye alag effect
+  }, [mediaUrl]);
   
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-400 rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-400 rounded-full animate-spin" />
+          <span className="text-[8px] text-gray-400">{isVideo ? 'video...' : 'image...'}</span>
+        </div>
       </div>
     );
   }
@@ -129,7 +243,7 @@ function LevelImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   if (!displayUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <span className="text-[9px] text-gray-300">No Image</span>
+        <span className="text-[9px] text-gray-300">No Media</span>
       </div>
     );
   }
@@ -140,6 +254,7 @@ function LevelImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
       alt={alt}
       className="w-full h-full object-contain p-1"
       style={{ background: 'transparent' }}
+      loading="lazy"
     />
   );
 }
@@ -249,7 +364,6 @@ export default function UserLevelPage() {
             <div className="grid grid-cols-3 gap-3">
               {levels && levels.length > 0 ? (
                 levels.map((level: any, idx: number) => {
-                  // Har card ka apna alag key
                   const uniqueKey = level.id || `level-${idx}`;
                   
                   return (
@@ -258,14 +372,13 @@ export default function UserLevelPage() {
                       className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
                     >
                       {level.imageUrl ? (
-                        // Har card mein apna LevelImage component
-                        <LevelImage 
-                          imageUrl={level.imageUrl} 
+                        <LevelMedia 
+                          mediaUrl={level.imageUrl} 
                           alt={level.name || `Level ${idx}`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <span className="text-[9px] text-gray-300">No Image</span>
+                          <span className="text-[9px] text-gray-300">No Media</span>
                         </div>
                       )}
                       
@@ -357,4 +470,4 @@ export default function UserLevelPage() {
       </div>
     </AppLayout>
   );
-        }
+                }
