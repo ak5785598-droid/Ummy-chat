@@ -14,128 +14,124 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
-// ==================== STORAGE CACHE MANAGER ====================
-// Yeh manager Web Storage (localStorage) use karta hai processed frames ko cache karne ke liye
-// Taaki baar baar canvas processing na karni pade - ek baar process karo, hamesha fast load
-const STORAGE_PREFIX = 'bg_removed_';
-const STORAGE_META_KEY = 'bg_removed_meta';
-const MAX_CACHE_SIZE_MB = 50; // Max 50MB cache
-const MAX_CACHE_ITEMS = 100; // Max 100 items
+// ============================================
+// 🎯 SIMPLE BLOB CACHE (Download → Store → Display)
+// ============================================
+const BLOB_CACHE_KEY = 'blob_cache_v1';
 
-interface CacheMeta {
-  [key: string]: {
-    timestamp: number;
-    size: number;
-    type: 'image' | 'video';
-  };
+interface CacheEntry {
+  url: string;
+  timestamp: number;
 }
 
-class StorageCacheManager {
-  // Check if data is already cached
-  static get(key: string): string | null {
-    try {
-      const data = localStorage.getItem(STORAGE_PREFIX + key);
-      return data;
-    } catch (e) {
+// Cache se blob URL fetch karo
+const getCachedBlob = (itemId: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const data = localStorage.getItem(BLOB_CACHE_KEY);
+    if (!data) return null;
+    
+    const cache: Record<string, CacheEntry> = JSON.parse(data);
+    const entry = cache[itemId];
+    
+    if (!entry) return null;
+    
+    // 24 hours expiry check
+    if (Date.now() - entry.timestamp > 24 * 60 * 60 * 1000) {
+      delete cache[itemId];
+      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
       return null;
     }
+    
+    return entry.url;
+  } catch {
+    return null;
   }
+};
 
-  // Save processed data to cache
-  static set(key: string, dataUrl: string, type: 'image' | 'video'): void {
+// Blob URL cache me store karo
+const setCachedBlob = (itemId: string, blobUrl: string): void => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const data = localStorage.getItem(BLOB_CACHE_KEY);
+    const cache: Record<string, CacheEntry> = data ? JSON.parse(data) : {};
+    
+    // Max 20 items rakho cache me
+    const entries = Object.entries(cache);
+    if (entries.length >= 20) {
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      // Purane 10 hatao
+      entries.slice(0, 10).forEach(([key]) => {
+        delete cache[key];
+      });
+    }
+    
+    cache[itemId] = {
+      url: blobUrl,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
+  } catch (e) {
+    // Storage full - poori cache clear karo
+    localStorage.removeItem(BLOB_CACHE_KEY);
     try {
-      // Get current metadata
-      const metaStr = localStorage.getItem(STORAGE_META_KEY);
-      const meta: CacheMeta = metaStr ? JSON.parse(metaStr) : {};
-
-      // Check current cache size
-      const currentSize = this.getTotalCacheSize();
-      const newItemSize = dataUrl.length * 2 / (1024 * 1024); // Approximate MB
-
-      // If cache is full, remove oldest items
-      if (currentSize + newItemSize > MAX_CACHE_SIZE_MB || Object.keys(meta).length >= MAX_CACHE_ITEMS) {
-        this.cleanOldest();
-      }
-
-      // Save the data
-      localStorage.setItem(STORAGE_PREFIX + key, dataUrl);
-
-      // Update metadata
-      meta[key] = {
-        timestamp: Date.now(),
-        size: newItemSize,
-        type: type
-      };
-      localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
-
-    } catch (e) {
-      // Storage full - clean and retry once
-      console.warn('Storage full, cleaning cache...');
-      this.clearAll();
-      try {
-        localStorage.setItem(STORAGE_PREFIX + key, dataUrl);
-      } catch (e2) {
-        console.error('Cannot cache even after clearing:', e2);
-      }
-    }
+      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({
+        [itemId]: { url: blobUrl, timestamp: Date.now() }
+      }));
+    } catch {}
   }
+};
 
-  // Remove oldest cached items
-  static cleanOldest(): void {
-    const metaStr = localStorage.getItem(STORAGE_META_KEY);
-    if (!metaStr) return;
-    const meta: CacheMeta = JSON.parse(metaStr);
-    const sorted = Object.entries(meta).sort((a, b) => a[1].timestamp - b[1].timestamp);
-    // Remove oldest 20%
-    const removeCount = Math.max(1, Math.floor(sorted.length * 0.2));
-    for (let i = 0; i < removeCount; i++) {
-      if (sorted[i]) {
-        localStorage.removeItem(STORAGE_PREFIX + sorted[i][0]);
-        delete meta[sorted[i][0]];
-      }
+// Hook - Video download + blob cache
+const useBlobCache = (itemId: string, videoUrl: string | null) => {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (!videoUrl || !itemId || doneRef.current) return;
+    
+    // Step 1: Cache check
+    const cached = getCachedBlob(itemId);
+    if (cached) {
+      setBlobUrl(cached);
+      doneRef.current = true;
+      return;
     }
-    localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
-  }
+    
+    // Step 2: Download and cache
+    setIsLoading(true);
+    
+    fetch(videoUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        setCachedBlob(itemId, url);
+        setBlobUrl(url);
+        doneRef.current = true;
+      })
+      .catch(err => {
+        console.error('Download failed:', err);
+        setBlobUrl(videoUrl);
+      })
+      .finally(() => setIsLoading(false));
+    
+  }, [itemId, videoUrl]);
+  
+  // Blob URLs ko revoke nahi karenge - page refresh pe auto clear
+  useEffect(() => {
+    return () => {};
+  }, []);
+  
+  return { blobUrl: blobUrl || videoUrl, isLoading };
+};
 
-  // Get total cache size in MB
-  static getTotalCacheSize(): number {
-    let total = 0;
-    const metaStr = localStorage.getItem(STORAGE_META_KEY);
-    if (metaStr) {
-      const meta: CacheMeta = JSON.parse(metaStr);
-      Object.values(meta).forEach(item => {
-        total += item.size || 0;
-      });
-    }
-    return total;
-  }
-
-  // Clear all cached data
-  static clearAll(): void {
-    const metaStr = localStorage.getItem(STORAGE_META_KEY);
-    if (metaStr) {
-      const meta: CacheMeta = JSON.parse(metaStr);
-      Object.keys(meta).forEach(key => {
-        localStorage.removeItem(STORAGE_PREFIX + key);
-      });
-    }
-    localStorage.removeItem(STORAGE_META_KEY);
-  }
-
-  // Generate cache key from URL
-  static generateKey(url: string): string {
-    // Simple hash for URL
-    let hash = 0;
-    for (let i = 0; i < url.length; i++) {
-      const char = url.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash).toString(36) + '_' + btoa(url).substring(0, 20).replace(/[/+=]/g, '');
-  }
-}
-
-// ==================== ENHANCED SMART BLACK BACKGROUND REMOVER WITH STORAGE CACHING ====================
+// ============================================
+// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
+// ============================================
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -154,11 +150,7 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
   const lastProcessedSrc = useRef('');
-  const cacheKeyRef = useRef('');
-  const [cachedDataUrl, setCachedDataUrl] = useState<string | null>(null);
-  const processedDataUrlRef = useRef<string | null>(null);
 
-  // Detect solid black background
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -196,7 +188,6 @@ const SmartBlackRemover = ({
     return topSolid && bottomSolid && leftSolid && rightSolid;
   };
 
-  // Process frame - remove background and cache result
   const processFrame = (video?: HTMLVideoElement) => {
     if (processingRef.current) return;
     processingRef.current = true;
@@ -295,21 +286,6 @@ const SmartBlackRemover = ({
     }
 
     ctx.putImageData(imageData, 0, 0);
-    
-    // 🔥 STORAGE CACHING: For images, save the processed result as Data URL
-    // For videos, we don't cache because video frames change continuously
-    if (type === 'image' && cacheKeyRef.current) {
-      try {
-        const dataUrl = canvas.toDataURL('image/png');
-        processedDataUrlRef.current = dataUrl;
-        // Cache to localStorage
-        StorageCacheManager.set(cacheKeyRef.current, dataUrl, 'image');
-        console.log('✅ Cached processed frame:', cacheKeyRef.current.substring(0, 30) + '...');
-      } catch (e) {
-        console.warn('Could not cache frame:', e);
-      }
-    }
-
     processingRef.current = false;
 
     if (type === 'video' && video) {
@@ -320,30 +296,14 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Main effect - check cache first, then process if needed
   useEffect(() => {
     if (src !== lastProcessedSrc.current) {
       setUseCanvas(false);
       setIsReady(false);
-      setCachedDataUrl(null);
-      processedDataUrlRef.current = null;
       lastProcessedSrc.current = src;
-      cacheKeyRef.current = StorageCacheManager.generateKey(src);
-
-      // 🔥 CHECK STORAGE CACHE FIRST
-      if (type === 'image') {
-        const cached = StorageCacheManager.get(cacheKeyRef.current);
-        if (cached) {
-          console.log('⚡ Found in cache, skipping processing:', cacheKeyRef.current.substring(0, 30) + '...');
-          setCachedDataUrl(cached);
-          setUseCanvas(true);
-          setIsReady(true);
-          return; // Skip processing, cached data use karenge
-        }
-      }
     }
 
-    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current && !cachedDataUrl) {
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
       if (img.complete && img.naturalWidth > 0 && !isReady) {
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
@@ -354,16 +314,9 @@ const SmartBlackRemover = ({
         }
       }
     }
-  }, [src, type, isReady, cachedDataUrl]);
+  }, [src, type, isReady]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    // Agar cached data already hai to processing skip karo
-    if (cachedDataUrl) {
-      setUseCanvas(true);
-      setIsReady(true);
-      return;
-    }
-    
     const img = e.currentTarget;
     if (img.naturalWidth > 0) {
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
@@ -397,7 +350,6 @@ const SmartBlackRemover = ({
     };
   }, []);
 
-  // VIDEO RENDER - Same as before, video pe canvas processing real-time chalti hai
   if (type === 'video') {
     return (
       <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
@@ -439,7 +391,6 @@ const SmartBlackRemover = ({
     );
   }
 
-  // IMAGE RENDER - Uses cached data URL if available
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
       <img
@@ -462,20 +413,7 @@ const SmartBlackRemover = ({
           }}
         />
       )}
-      {/* 🔥 AGAR CACHED HAI TO CACHED IMAGE DIKHADO - Super fast, no processing needed */}
-      {cachedDataUrl && isReady && (
-        <img
-          src={cachedDataUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ 
-            display: 'block',
-            background: 'transparent',
-            backgroundColor: 'transparent'
-          }}
-        />
-      )}
-      {!isReady && !useCanvas && !cachedDataUrl && (
+      {!isReady && !useCanvas && (
         <img
           src={src}
           alt=""
@@ -486,6 +424,47 @@ const SmartBlackRemover = ({
     </div>
   );
 };
+
+// ============================================
+// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
+// ============================================
+const CachedMedia = ({ 
+  itemId, 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  itemId: string; 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const { blobUrl, isLoading } = useBlobCache(itemId, type === 'video' ? src : null);
+  
+  const mediaSource = type === 'video' ? (blobUrl || src) : src;
+  
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      {isLoading && type === 'video' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
+          <Loader className="animate-spin h-6 w-6 text-white/60" />
+        </div>
+      )}
+      <SmartBlackRemover 
+        src={mediaSource} 
+        type={type} 
+        className="w-full h-full"
+        style={{ background: 'transparent' }}
+      />
+    </div>
+  );
+};
+
+// ============================================
+// ALL ICONS (EXISTING - NO TOUCH)
+// ============================================
 
 // --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
@@ -700,7 +679,7 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
-// --- FRAME ICON FOR STORE CARDS (Simple icon, no SVG frames) ---
+// --- FRAME ICON FOR STORE CARDS ---
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center justify-center", className)}>
     <svg viewBox="0 0 60 60" className="w-full h-full">
@@ -731,6 +710,9 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
 
+// ============================================
+// MAIN STORE PAGE COMPONENT
+// ============================================
 export default function StorePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -995,7 +977,6 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
-    // Double check expiry
     const expiry = userProfile.inventory?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
@@ -1046,7 +1027,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1064,7 +1046,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1082,7 +1065,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1115,7 +1099,7 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // Helper to render preview icon (ID items keep original size, rest square)
+  // Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
     if (item.type === 'ID') {
       return (
@@ -1133,7 +1117,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1155,7 +1140,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1173,7 +1159,8 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <SmartBlackRemover 
+            <CachedMedia 
+              itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1210,9 +1197,7 @@ export default function StorePage() {
     </div>
   );
 
-  // Store tab ke items
   const storeItems = allItemsWithFlags;
-  // Mine tab ke items
   const mineItems = purchasedItems;
 
   return (
@@ -1225,7 +1210,6 @@ export default function StorePage() {
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
         
-        {/* Header - Sab WHITE hai */}
         <header className="relative flex items-center justify-between border-b border-white/10 pb-6 min-h-[48px]">
           <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
             <ChevronLeft />
@@ -1244,7 +1228,6 @@ export default function StorePage() {
         </header>
 
         {activeTab === 'Store' ? (
-          /* STORE TAB - Category Tabs + Items */
           <Tabs defaultValue="All" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
@@ -1297,7 +1280,6 @@ export default function StorePage() {
             ))}
           </Tabs>
         ) : (
-          /* MINE TAB - Category Tabs + Purchased Items with Expiry Date */
           <Tabs defaultValue="All" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
@@ -1354,7 +1336,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* PREVIEW CARD - Bilkul same logic, kuch nahi badla */}
+        {/* PREVIEW CARD */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1379,7 +1361,6 @@ export default function StorePage() {
 
                   <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
                   
-                  {/* Agar purchased item hai to expiry date bhi dikhao preview mein */}
                   {isOwnedAndValid && (
                     <p className="text-sm text-gray-400 mt-1">
                       Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
@@ -1387,9 +1368,7 @@ export default function StorePage() {
                   )}
                 </div>
 
-                {/* BOTTOM BAR */}
                 {isOwnedAndValid ? (
-                  // EQUIP/UNEQUIP case
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6">
                     <Button 
                       onClick={() => handleEquipToggle(previewItem)}
@@ -1406,7 +1385,6 @@ export default function StorePage() {
                     </Button>
                   </div>
                 ) : (
-                  // BUY case
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3">
                     <div className="flex gap-4 w-full justify-center">
                       {[3, 7].map(days => (
