@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket, Home } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
-// --- FAST SMART BLACK BACKGROUND REMOVER (NO HANGING, NO GLITCH) ---
+// --- FIXED SMART BLACK BACKGROUND REMOVER (SMOOTH + STABLE + NO GLITCH + NO BLUE FADE) ---
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
@@ -28,19 +28,14 @@ const SmartBlackRemover = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
-  const [processedSrc, setProcessedSrc] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hasBlackBg, setHasBlackBg] = useState(false);
-  const processingDoneRef = useRef(false);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+  const lastProcessedSrc = useRef('');
 
-  // FAST black background detection - sirf 1 baar, har frame nahi
-  const detectBlackBgFast = useCallback((media: HTMLVideoElement | HTMLImageElement): boolean => {
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
-    const width = media.videoWidth || media.width;
-    const height = media.videoHeight || media.height;
-    
-    if (width === 0 || height === 0) return false;
-    
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
@@ -50,130 +45,193 @@ const SmartBlackRemover = ({
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
-    // FAST check - sirf corners aur edges check karo
-    const checkCorner = (x: number, y: number): boolean => {
-      const i = (y * width + x) * 4;
-      return data[i] < 30 && data[i+1] < 30 && data[i+2] < 30;
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
     };
 
-    const corners = [
-      [0, 0], [width-1, 0], [0, height-1], [width-1, height-1],
-      [Math.floor(width/2), 0], [0, Math.floor(height/2)],
-      [Math.floor(width/2), height-1], [width-1, Math.floor(height/2)]
-    ];
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
 
-    let blackCount = 0;
-    for (const [x, y] of corners) {
-      if (checkCorner(x, y)) blackCount++;
-    }
-    
-    return blackCount >= 6; // 6/8 corners black = solid black bg
-  }, []);
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
 
-  // Process image - ek baar, sync
-  const processImage = useCallback((img: HTMLImageElement) => {
-    if (processingDoneRef.current) return;
-    
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    const width = img.width;
-    const height = img.height;
-    
-    canvas.width = width;
-    canvas.height = height;
-    
-    ctx.drawImage(img, 0, 0);
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(media, 0, 0, width, height);
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
     
-    // FAST removal - sirf black pixels ko transparent
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i] < 25 && data[i+1] < 25 && data[i+2] < 25) {
-        data[i+3] = 0; // alpha = 0
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
       }
     }
-    
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     ctx.putImageData(imageData, 0, 0);
-    processingDoneRef.current = true;
-    setIsProcessing(false);
-  }, []);
+    processingRef.current = false;
 
-  // Process video - OFFLINE, ek baar (har frame nahi)
-  const processVideoFrame = useCallback((video: HTMLVideoElement) => {
-    if (processingDoneRef.current) return;
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-    
-    if (width === 0 || height === 0) return;
-    
-    canvas.width = width;
-    canvas.height = height;
-    
-    // Draw current frame
-    ctx.drawImage(video, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    
-    // FAST removal
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i] < 25 && data[i+1] < 25 && data[i+2] < 25) {
-        data[i+3] = 0;
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
     }
-    
-    ctx.putImageData(imageData, 0, 0);
-    processingDoneRef.current = true;
-    setIsProcessing(false);
-  }, []);
+  };
 
-  // Handle image load
-  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.complete && img.naturalWidth > 0) {
-      const hasBlack = detectBlackBgFast(img);
-      setHasBlackBg(hasBlack);
-      if (hasBlack) {
-        setIsProcessing(true);
-        setTimeout(() => processImage(img), 50);
-      }
-    }
-  }, [detectBlackBgFast, processImage]);
-
-  // Handle video load - ek baar frame capture
-  const handleVideoLoad = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (video.readyState >= 2 && video.videoWidth > 0) {
-      const hasBlack = detectBlackBgFast(video);
-      setHasBlackBg(hasBlack);
-      if (hasBlack) {
-        setIsProcessing(true);
-        // Capture pehla frame process karne ke liye
-        video.currentTime = 0.1;
-        video.onseeked = () => {
-          processVideoFrame(video);
-        };
-      }
-    }
-  }, [detectBlackBgFast, processVideoFrame]);
-
-  // Reset on src change
   useEffect(() => {
-    processingDoneRef.current = false;
-    setProcessedSrc(null);
-    setHasBlackBg(false);
-    setIsProcessing(false);
-  }, [src]);
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+  }, [src, type, isReady]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
+    }
+  };
+
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+    };
+  }, []);
 
   if (type === 'video') {
     return (
@@ -185,18 +243,31 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
-          onLoadedData={handleVideoLoad}
-          className={hasBlackBg && processingDoneRef.current ? 'hidden' : 'w-full h-full object-cover'}
-          style={{ display: (hasBlackBg && processingDoneRef.current) ? 'none' : 'block' }}
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
         />
-        {hasBlackBg && (
+        {useCanvas && (
           <canvas
             ref={canvasRef}
             className="w-full h-full object-cover"
             style={{ 
-              display: processingDoneRef.current ? 'block' : 'none',
-              background: 'transparent'
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              backgroundColor: 'transparent'
             }}
+          />
+        )}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
           />
         )}
       </div>
@@ -210,17 +281,27 @@ const SmartBlackRemover = ({
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        className={hasBlackBg && processingDoneRef.current ? 'hidden' : 'w-full h-full object-cover'}
-        style={{ display: (hasBlackBg && processingDoneRef.current) ? 'none' : 'block' }}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
       />
-      {hasBlackBg && (
+      {useCanvas && (
         <canvas
           ref={canvasRef}
           className="w-full h-full object-cover"
           style={{ 
-            display: processingDoneRef.current ? 'block' : 'none',
-            background: 'transparent'
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+            backgroundColor: 'transparent'
           }}
+        />
+      )}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
         />
       )}
     </div>
@@ -305,7 +386,7 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- RED ID BADGE ICON ---
+// --- RED ID BADGE ICON (sss) ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -440,7 +521,7 @@ const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: str
   );
 };
 
-// --- FRAME ICON FOR STORE CARDS ---
+// --- FRAME ICON FOR STORE CARDS (Simple icon, no SVG frames) ---
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center justify-center", className)}>
     <svg viewBox="0 0 60 60" className="w-full h-full">
@@ -471,44 +552,6 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
 
-// Auto-unequip check function
-const checkAndAutoUnequip = async (userProfile: any, user: any, firestore: any, toast: any) => {
-  if (!userProfile || !user || !firestore) return;
-  
-  const now = Timestamp.now();
-  const inventory = userProfile.inventory || {};
-  const expiries = inventory.expiries || {};
-  let needsUpdate = false;
-  const updateData: any = { updatedAt: serverTimestamp() };
-  
-  // Har type ke liye check karo
-  const types = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
-  
-  for (const type of types) {
-    const activeItem = inventory[`active${type}`];
-    if (activeItem && activeItem !== 'None' && expiries[activeItem]) {
-      const expiry = expiries[activeItem];
-      if (expiry.toDate() < now.toDate()) {
-        // Expired - unequip karo
-        updateData[`inventory.active${type}`] = 'None';
-        needsUpdate = true;
-        toast?.({ 
-          title: 'Item Expired', 
-          description: `${activeItem} automatically unequipped (expired)`,
-          variant: 'default'
-        });
-      }
-    }
-  }
-  
-  if (needsUpdate) {
-    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-    const userRef = doc(firestore, 'users', user.uid);
-    await updateDocumentNonBlocking(profileRef, updateData);
-    await updateDocumentNonBlocking(userRef, updateData);
-  }
-};
-
 export default function StorePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -519,20 +562,7 @@ export default function StorePage() {
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'store' | 'mine'>('store');
-
-  // Auto-unequip check on mount and every minute
-  useEffect(() => {
-    if (userProfile && user && firestore) {
-      checkAndAutoUnequip(userProfile, user, firestore, toast);
-      
-      const interval = setInterval(() => {
-        checkAndAutoUnequip(userProfile, user, firestore, toast);
-      }, 60000); // Har minute check karo
-      
-      return () => clearInterval(interval);
-    }
-  }, [userProfile, user, firestore, toast]);
+  const [activeTab, setActiveTab] = useState<string>('Store'); // 'Store' or 'Mine'
 
   useEffect(() => {
     if (previewItem) {
@@ -663,11 +693,64 @@ export default function StorePage() {
     return allItems.map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }));
   }, [allItems, storeNotForSale]);
 
-  // MINE tab items - sirf purchased items
+  // --- PURCHASED ITEMS (Mine Tab) ---
   const purchasedItems = useMemo(() => {
-    const ownedIds = userProfile?.inventory?.ownedItems || [];
-    return allItemsWithFlags.filter(item => ownedIds.includes(item.id));
-  }, [allItemsWithFlags, userProfile?.inventory?.ownedItems]);
+    if (!userProfile?.inventory?.ownedItems) return [];
+    const ownedIds = userProfile.inventory.ownedItems;
+    const expiryMap = userProfile.inventory.expiries || {};
+    
+    // Filter only items that are not expired
+    const now = Timestamp.now();
+    const validOwnedIds = ownedIds.filter(id => {
+      const expiry = expiryMap[id];
+      if (!expiry) return true; // No expiry means permanent (though all have expiry now)
+      return expiry.toDate() > now.toDate();
+    });
+    
+    return allItemsWithFlags.filter(item => validOwnedIds.includes(item.id));
+  }, [userProfile?.inventory?.ownedItems, userProfile?.inventory?.expiries, allItemsWithFlags]);
+
+  // Check expiry every minute and auto-unequip if expired
+  useEffect(() => {
+    if (!userProfile || !firestore || !user) return;
+
+    const checkExpiryAndUnequip = async () => {
+      const expiries = userProfile.inventory?.expiries || {};
+      const now = Timestamp.now();
+      let needsUpdate = false;
+      const updateData: any = { updatedAt: serverTimestamp() };
+      
+      // Check each active item type for expiry
+      const activeTypes = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
+      
+      for (const type of activeTypes) {
+        const activeItemId = userProfile.inventory?.[`active${type}` as keyof typeof userProfile.inventory];
+        if (activeItemId && activeItemId !== 'None') {
+          const expiry = expiries[activeItemId as string];
+          if (expiry && expiry.toDate() <= now.toDate()) {
+            // Expired! Unequip it
+            updateData[`inventory.active${type}`] = 'None';
+            needsUpdate = true;
+            console.log(`Auto-unequipped expired ${type}: ${activeItemId}`);
+          }
+        }
+      }
+      
+      if (needsUpdate) {
+        try {
+          const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+          await updateDocumentNonBlocking(profileRef, updateData);
+        } catch (error) {
+          console.error('Auto-unequip error:', error);
+        }
+      }
+    };
+    
+    checkExpiryAndUnequip();
+    const interval = setInterval(checkExpiryAndUnequip, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, [userProfile, firestore, user]);
 
   const getCalculatedPrice = (basePrice: number, duration: number) => {
     if (duration === 7) return basePrice;
@@ -719,10 +802,9 @@ export default function StorePage() {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
     // Check if item is expired
-    const expiries = userProfile.inventory?.expiries || {};
-    const expiry = expiries[item.id];
-    if (expiry && expiry.toDate() < new Date()) {
-      toast({ variant: 'destructive', title: 'Item Expired', description: `${item.name} expire ho chuka hai. Dobara purchase karo.` });
+    const expiry = userProfile.inventory?.expiries?.[item.id];
+    if (expiry && expiry.toDate() <= new Date()) {
+      toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
       return;
     }
     
@@ -762,14 +844,14 @@ export default function StorePage() {
     }
   };
 
-  // Helper to render store card icon
+  // Helper to render store card icon (SQUARE for preview - preview mein square, card mein jo hai wahi)
   const renderStoreCardIcon = (item: any) => {
     if (item.type === 'Frame') {
       if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
             <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
@@ -787,7 +869,7 @@ export default function StorePage() {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
             <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
@@ -805,7 +887,7 @@ export default function StorePage() {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
             <SmartBlackRemover 
               src={mediaUrl} 
               type={mediaType} 
@@ -815,7 +897,7 @@ export default function StorePage() {
           </div>
         );
       }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello</ChatMessageBubble>;
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
     }
     
     if (item.type === 'Wave') {
@@ -839,7 +921,7 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // Helper to render preview icon - SQUARE for videos (not circle)
+  // Helper to render preview icon (SQUARE - not circle!)
   const renderPreviewIcon = (item: any) => {
     if (item.type === 'Frame') {
       if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
@@ -896,7 +978,7 @@ export default function StorePage() {
           </div>
         );
       }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello</ChatMessageBubble>;
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
     }
     
     if (item.type === 'Wave') {
@@ -935,63 +1017,63 @@ export default function StorePage() {
   );
 
   // Current items to display based on active tab
-  const currentItems = activeTab === 'store' ? allItemsWithFlags : purchasedItems;
-  const currentHeading = activeTab === 'store' ? 'Store' : 'Mine';
+  const displayItems = activeTab === 'Store' ? allItemsWithFlags : purchasedItems;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
       
-      {/* More Glossy Background Effect */}
       <div className="absolute top-0 left-0 right-0 h-[15vh] pointer-events-none z-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-600/30 via-purple-900/10 to-transparent" />
-        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/15 rounded-[100%] blur-xl" />
-        <div className="absolute bottom-[-20%] left-0 right-0 h-40 bg-gradient-to-t from-[#FCD535]/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-purple-600/25 via-purple-900/5 to-transparent" />
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[120%] h-full bg-purple-500/10 rounded-[100%]" />
       </div>
 
       <div className="relative z-10 space-y-6 px-4 md:px-8 max-w-7xl mx-auto pt-16 pb-24">
         
+        {/* Header with Store/Mine Toggle */}
         <header className="relative flex items-center justify-between border-b border-white/10 pb-6 min-h-[48px]">
-          <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-all duration-300 text-white rounded-full backdrop-blur-sm">
-            <ChevronLeft className="h-5 w-5" />
+          <button onClick={() => router.back()} className="p-2 bg-white/10 hover:bg-white/20 transition-colors text-white rounded-full">
+            <ChevronLeft />
           </button>
           
-          <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_15px_rgba(168,85,247,0.5)] bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-            {currentHeading}
-          </h1>
+          {/* Toggle Buttons */}
+          <div className="flex gap-2 bg-white/5 rounded-full p-1">
+            <button
+              onClick={() => setActiveTab('Store')}
+              className={cn(
+                "px-6 py-2 rounded-full font-medium transition-all",
+                activeTab === 'Store' 
+                  ? "bg-[#FCD535] text-black" 
+                  : "text-gray-400 hover:text-white"
+              )}
+            >
+              Store
+            </button>
+            <button
+              onClick={() => setActiveTab('Mine')}
+              className={cn(
+                "px-6 py-2 rounded-full font-medium transition-all",
+                activeTab === 'Mine' 
+                  ? "bg-[#FCD535] text-black" 
+                  : "text-gray-400 hover:text-white"
+              )}
+            >
+              Mine ({purchasedItems.length})
+            </button>
+          </div>
           
-          {/* Top Right Corner - Mine Tab Button */}
-          <button 
-            onClick={() => setActiveTab(activeTab === 'store' ? 'mine' : 'store')}
-            className={cn(
-              "p-2 transition-all duration-300 rounded-full backdrop-blur-sm flex items-center gap-2",
-              activeTab === 'mine' 
-                ? "bg-[#FCD535]/20 text-[#FCD535] border border-[#FCD535]/30" 
-                : "bg-white/10 hover:bg-white/20 text-white"
-            )}
-          >
-            {activeTab === 'store' ? (
-              <>
-                <Home className="h-5 w-5" />
-                <span className="hidden sm:inline text-sm font-medium">Mine</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="h-5 w-5" />
-                <span className="hidden sm:inline text-sm font-medium">Store</span>
-              </>
-            )}
-          </button>
+          <div className="w-10" /> {/* Spacer for balance */}
         </header>
 
-        {activeTab === 'store' ? (
+        {activeTab === 'Store' ? (
+          /* STORE TAB - Categories */
           <Tabs defaultValue="All" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
-              <TabsList className="bg-black/20 backdrop-blur-sm inline-flex min-w-full md:min-w-0 gap-2 border border-white/5 rounded-xl p-1">
+              <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
                 {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
                   <TabsTrigger 
                     key={cat} 
                     value={cat} 
-                    className="rounded-lg px-6 py-2 text-gray-300 font-medium whitespace-nowrap data-[state=active]:bg-[#FCD535]/20 data-[state=active]:text-[#FCD535] data-[state=active]:shadow-lg transition-all duration-300"
+                    className="rounded-none px-6 py-2 text-gray-400 font-medium whitespace-nowrap data-[state=active]:bg-transparent data-[state=active]:text-[#FCD535] relative data-[state=active]:after:absolute data-[state=active]:after:-bottom-[5px] data-[state=active]:after:left-1/2 data-[state=active]:after:-translate-x-1/2 data-[state=active]:after:h-[3px] data-[state=active]:after:w-6 data-[state=active]:after:bg-[#FCD535] data-[state=active]:after:rounded-full transition-all"
                   >
                     {cat}
                   </TabsTrigger>
@@ -1001,21 +1083,21 @@ export default function StorePage() {
 
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-                  {currentItems.filter(i => category === 'All' || i.type === category).map(item => (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {displayItems.filter(i => category === 'All' || i.type === category).map(item => (
                     <Card 
                       key={item.id} 
                       onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
                       className={cn(
-                        "overflow-hidden rounded-2xl bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all duration-300 text-white",
-                        item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#FCD535]/30 hover:shadow-[0_0_20px_rgba(252,213,53,0.1)] active:scale-95"
+                        "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all text-white",
+                        item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
                       )}
                     >
-                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent">
+                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                         {renderStoreCardIcon(item)}
                       </div>
                       <CardHeader className="text-center p-3 pb-1">
-                        <CardTitle className="text-sm font-medium text-gray-200 truncate">{item.name}</CardTitle>
+                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
                       </CardHeader>
                       <CardFooter className="flex flex-col gap-3 p-3 pt-1">
                         <div className="flex items-center justify-center gap-1.5 text-sm w-full">
@@ -1036,47 +1118,54 @@ export default function StorePage() {
             ))}
           </Tabs>
         ) : (
-          // MINE TAB - sirf purchased items
-          <div className="space-y-6">
+          /* MINE TAB - Only Purchased Items */
+          <div>
             {purchasedItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
-                <ShoppingBag className="h-16 w-16 text-gray-600 mb-4" />
-                <p className="text-gray-400 text-lg">No items purchased yet</p>
-                <p className="text-gray-500 text-sm">Go to Store tab to buy some cool items!</p>
+                <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
+                <p className="text-gray-400 text-lg">Aapne abhi koi item nahi khareeda hai</p>
+                <p className="text-gray-500 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {purchasedItems.map(item => {
-                  // Check if item is expired
-                  const expiries = userProfile?.inventory?.expiries || {};
-                  const expiry = expiries[item.id];
-                  const isExpired = expiry && expiry.toDate() < new Date();
+                  // Check if expired for styling
+                  const expiry = userProfile?.inventory?.expiries?.[item.id];
+                  const isExpired = expiry && expiry.toDate() <= new Date();
                   
                   return (
                     <Card 
                       key={item.id} 
                       onClick={() => setPreviewItem(item)} 
                       className={cn(
-                        "overflow-hidden rounded-2xl bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all duration-300 text-white cursor-pointer hover:scale-[1.02] hover:border-[#FCD535]/30 hover:shadow-[0_0_20px_rgba(252,213,53,0.1)]",
-                        isExpired && "opacity-50"
+                        "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95",
+                        isExpired && "opacity-50 border-red-500/30"
                       )}
                     >
-                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent">
+                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
                         {renderStoreCardIcon(item)}
-                        {isExpired && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
-                            <span className="text-red-400 text-xs font-bold bg-black/50 px-2 py-1 rounded-full">Expired</span>
-                          </div>
-                        )}
                       </div>
                       <CardHeader className="text-center p-3 pb-1">
-                        <CardTitle className="text-sm font-medium text-gray-200 truncate">{item.name}</CardTitle>
+                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
                       </CardHeader>
-                      <CardFooter className="flex flex-col gap-2 p-3 pt-1">
-                        <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400">
-                          {expiry && (
-                            <span>Expires: {expiry.toDate().toLocaleDateString()}</span>
-                          )}
+                      <CardFooter className="flex flex-col gap-1 p-3 pt-1">
+                        {isExpired && (
+                          <span className="text-red-400 text-[10px] font-medium">Expired</span>
+                        )}
+                        {!isExpired && expiry && (
+                          <span className="text-green-400 text-[10px] font-medium">
+                            Expires: {expiry.toDate().toLocaleDateString()}
+                          </span>
+                        )}
+                        <div className="flex items-center justify-center gap-1.5 text-sm w-full">
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full",
+                            userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id
+                              ? "bg-[#FCD535]/20 text-[#FCD535]"
+                              : "bg-gray-500/20 text-gray-400"
+                          )}>
+                            {userProfile?.inventory?.[`active${item.type}` as keyof typeof userProfile.inventory] === item.id ? "Equipped" : "Owned"}
+                          </span>
                         </div>
                       </CardFooter>
                     </Card>
@@ -1087,41 +1176,57 @@ export default function StorePage() {
           </div>
         )}
 
-        {/* PREVIEW CARD - Square for videos */}
+        {/* PREVIEW CARD WITH SQUARE MEDIA */}
         {previewItem && (
           <>
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-all duration-300" onClick={() => setPreviewItem(null)} />
+            <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
             
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#141414] to-[#1a1a1a] rounded-t-[28px] h-[45vh] flex flex-col shadow-[0_-10px_50px_rgba(0,0,0,0.6)] animate-in slide-in-from-bottom-full duration-300 ease-out border-t border-white/10">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
               
-              <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors z-10">
+              <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
                 <X size={24} />
               </button>
 
-              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-6 pb-4 px-4">
-                <div className="mb-4 flex items-center justify-center h-36 w-36">
+              <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
+                {/* SQUARE preview - rounded-lg not circle */}
+                <div className="mb-4 scale-[1.1] flex items-center justify-center h-36 w-36 rounded-lg overflow-hidden" style={{ background: 'transparent' }}>
                   {renderPreviewIcon(previewItem)}
                 </div>
 
-                <h2 className="text-xl font-bold text-white tracking-wide bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">{previewItem.name}</h2>
-                <p className="text-gray-400 text-sm text-center max-w-xs mt-1">{previewItem.description}</p>
+                <h2 className="text-xl font-medium text-white tracking-wide">{previewItem.name}</h2>
 
-                {/* Tab sirf tab dikhao jab item owned na ho */}
-                {!userProfile?.inventory?.ownedItems?.includes(previewItem.id) && !previewItem.notForSale && (
+                {/* Expiry warning if item is expired */}
+                {(() => {
+                  const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
+                  const isExpired = expiry && expiry.toDate() <= new Date();
+                  if (isExpired) {
+                    return (
+                      <div className="mt-2 px-3 py-1 bg-red-500/20 rounded-full">
+                        <span className="text-red-400 text-sm">Item Expired - Buy Again to Use</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* SIRF TAB DIKHAO JAB ITEM OWNED NA HO (Buy case) - BUT also show if expired */}
+                {(!userProfile?.inventory?.ownedItems?.includes(previewItem.id) || 
+                  (userProfile?.inventory?.expiries?.[previewItem.id] && 
+                   userProfile.inventory.expiries[previewItem.id].toDate() <= new Date())) && (
                   <div className="flex gap-4 mt-4 w-full justify-center">
                     {[3, 7].map(days => (
                       <button 
                         key={days}
                         onClick={() => setSelectedDuration(days)}
                         className={cn(
-                          "relative border rounded-xl w-28 py-2.5 flex items-center justify-center transition-all duration-200",
-                          selectedDuration === days ? "border-[#FCD535] bg-[#FCD535]/10 shadow-lg" : "border-white/10 bg-black/40"
+                          "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                          selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
                         )}
                       >
-                        <span className={cn("text-sm font-medium", selectedDuration === days ? "text-[#FCD535]" : "text-gray-400")}>{days} Days</span>
+                        <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
                         {selectedDuration === days && (
-                          <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-xl p-0.5">
-                            <Check size={10} strokeWidth={3} className="text-black" />
+                          <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                            <Check size={12} strokeWidth={3} className="text-black" />
                           </div>
                         )}
                       </button>
@@ -1131,18 +1236,14 @@ export default function StorePage() {
               </div>
 
               {/* BOTTOM BAR */}
-              <div className="bg-gradient-to-r from-[#1a1a1a] to-[#222222] rounded-t-[24px] p-4 pb-6 flex items-center justify-between border-t border-white/5">
+              <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex items-center justify-between">
                 <div className="flex flex-col justify-center">
-                  {userProfile?.inventory?.ownedItems?.includes(previewItem.id) ? (
-                    (() => {
-                      const expiries = userProfile.inventory?.expiries || {};
-                      const expiry = expiries[previewItem.id];
-                      const isExpired = expiry && expiry.toDate() < new Date();
-                      
-                      if (isExpired) {
-                        return <span className="text-red-400 text-sm font-medium px-3 py-1 rounded-full bg-red-500/20">Expired - Buy Again</span>;
-                      }
-                      
+                  {(() => {
+                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
+                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
+                    const isExpired = expiry && expiry.toDate() <= new Date();
+                    
+                    if (isOwned && !isExpired) {
                       return (
                         <span className={cn(
                           "text-sm font-medium px-3 py-1 rounded-full",
@@ -1155,73 +1256,69 @@ export default function StorePage() {
                             : "Owned"}
                         </span>
                       );
-                    })()
-                  ) : previewItem.notForSale ? (
-                    <span className="text-red-400 text-sm font-medium px-3 py-1 rounded-full bg-red-500/20">Not For Sale</span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <DollarCoinIcon className="w-5 h-5" />
-                      <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                        {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
+                    } else if (isExpired) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <DollarCoinIcon className="w-5 h-5" />
+                          <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                            {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                          </span>
+                          <span className="text-xs text-red-400 ml-2">(Re-purchase)</span>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <DollarCoinIcon className="w-5 h-5" />
+                          <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                            {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                          </span>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
 
                 <Button 
                   onClick={() => {
                     const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
-                    if (previewItem.notForSale) return;
+                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
+                    const isExpired = expiry && expiry.toDate() <= new Date();
                     
-                    if (isOwned) {
-                      // Check if expired
-                      const expiries = userProfile?.inventory?.expiries || {};
-                      const expiry = expiries[previewItem.id];
-                      const isExpired = expiry && expiry.toDate() < new Date();
-                      
-                      if (isExpired) {
-                        handlePurchase(previewItem, selectedDuration);
-                      } else {
-                        handleEquipToggle(previewItem);
-                      }
+                    if (isOwned && !isExpired) {
+                      handleEquipToggle(previewItem);
                     } else {
                       handlePurchase(previewItem, selectedDuration);
                     }
                   }}
-                  disabled={isProcessing || previewItem.notForSale}
+                  disabled={isProcessing}
                   className={cn(
-                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-all duration-300",
+                    "rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
                     isProcessing && "opacity-70 cursor-not-allowed",
-                    previewItem.notForSale && "opacity-50 cursor-not-allowed",
-                    userProfile?.inventory?.ownedItems?.includes(previewItem.id)
-                      ? (() => {
-                          const expiries = userProfile?.inventory?.expiries || {};
-                          const expiry = expiries[previewItem.id];
-                          const isExpired = expiry && expiry.toDate() < new Date();
-                          
-                          if (isExpired) {
-                            return "bg-[#FCD535] text-black hover:bg-[#e5c02b]";
-                          }
-                          
-                          return userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
-                            ? "bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30" 
-                            : "bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30";
-                        })()
-                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b] shadow-[0_0_20px_rgba(252,213,53,0.3)]" 
+                    (userProfile?.inventory?.ownedItems?.includes(previewItem.id) && 
+                     !(userProfile?.inventory?.expiries?.[previewItem.id] && 
+                       userProfile.inventory.expiries[previewItem.id].toDate() <= new Date()))
+                      ? userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id
+                        ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
+                        : "bg-green-500/20 text-green-400 hover:bg-green-500/30" 
+                      : "bg-[#FCD535] text-black hover:bg-[#e5c02b]" 
                   )}
                 >
                   {isProcessing ? (
                     <Loader className="animate-spin h-4 w-4" />
-                  ) : userProfile?.inventory?.ownedItems?.includes(previewItem.id) 
-                    ? (() => {
-                        const expiries = userProfile?.inventory?.expiries || {};
-                        const expiry = expiries[previewItem.id];
-                        const isExpired = expiry && expiry.toDate() < new Date();
-                        
-                        if (isExpired) return 'Buy Again';
-                        return userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip';
-                      })()
-                    : 'Buy'}
+                  ) : (() => {
+                    const isOwned = userProfile?.inventory?.ownedItems?.includes(previewItem.id);
+                    const expiry = userProfile?.inventory?.expiries?.[previewItem.id];
+                    const isExpired = expiry && expiry.toDate() <= new Date();
+                    
+                    if (isOwned && !isExpired) {
+                      return (userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id ? 'Unequip' : 'Equip');
+                    } else if (isExpired) {
+                      return 'Buy Again';
+                    } else {
+                      return 'Buy';
+                    }
+                  })()}
                 </Button>
               </div>
             </div>
