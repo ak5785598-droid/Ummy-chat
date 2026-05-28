@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, HelpCircle, User } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -9,6 +9,192 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { calculateLevelProgress } from '@/lib/level-utils';
 import { collection, query, orderBy } from 'firebase/firestore';
 
+// ============ CANVAS BLACK REMOVER - FAST ============
+function removeBlackBackgroundFast(imageUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    // Cache bhi use karo - agar pehle process ho chuki hai
+    const cacheKey = `transparent_${btoa(imageUrl).slice(0, 50)}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      resolve(cached);
+      return;
+    }
+    
+    img.onload = () => {
+      // OffscreenCanvas for fast processing
+      const canvas = typeof OffscreenCanvas !== 'undefined' 
+        ? new OffscreenCanvas(img.width, img.height)
+        : document.createElement('canvas');
+      
+      if (canvas instanceof OffscreenCanvas) {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) { resolve(imageUrl); return; }
+        
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const len = data.length;
+        
+        // Fast loop - direct access
+        for (let i = 0; i < len; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Black pixel? Remove it
+          if (r < 50 && g < 50 && b < 50) {
+            data[i + 3] = 0;
+          }
+          // Near black? Smooth edge
+          else if (r < 90 && g < 90 && b < 90) {
+            const max = Math.max(r, g, b);
+            data[i + 3] = (max / 90) * 255;
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        canvas.convertToBlob({ type: 'image/png' }).then(blob => {
+          const url = URL.createObjectURL(blob);
+          // Cache store karo
+          try { sessionStorage.setItem(cacheKey, url); } catch(e) {}
+          resolve(url);
+        });
+      } else {
+        // Fallback to regular canvas
+        const regularCanvas = canvas as HTMLCanvasElement;
+        const ctx = regularCanvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) { resolve(imageUrl); return; }
+        
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, regularCanvas.width, regularCanvas.height);
+        const data = imageData.data;
+        const len = data.length;
+        
+        for (let i = 0; i < len; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          if (r < 50 && g < 50 && b < 50) {
+            data[i + 3] = 0;
+          } else if (r < 90 && g < 90 && b < 90) {
+            const max = Math.max(r, g, b);
+            data[i + 3] = (max / 90) * 255;
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        const url = regularCanvas.toDataURL('image/png');
+        try { sessionStorage.setItem(cacheKey, url); } catch(e) {}
+        resolve(url);
+      }
+    };
+    
+    img.onerror = () => resolve(imageUrl);
+    img.src = imageUrl;
+  });
+}
+
+// ============ IMAGE COMPONENT WITH FAST PROCESSING ============
+function FastTransparentImage({ imageUrl, alt }: { imageUrl: string; alt: string }) {
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    let mounted = true;
+    
+    async function process() {
+      setIsLoading(true);
+      const startTime = performance.now();
+      
+      const result = await removeBlackBackgroundFast(imageUrl);
+      
+      const endTime = performance.now();
+      console.log(`⚡ Processed in ${(endTime - startTime).toFixed(0)}ms`);
+      
+      if (mounted) {
+        setProcessedUrl(result);
+        setIsLoading(false);
+      }
+    }
+    
+    process();
+    
+    return () => {
+      mounted = false;
+      // Cleanup blob URL
+      if (processedUrl && processedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(processedUrl);
+      }
+    };
+  }, [imageUrl]);
+  
+  if (isLoading || !processedUrl) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-transparent">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-6 h-6 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
+          <span className="text-[9px] text-gray-400">processing...</span>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <img 
+      src={processedUrl} 
+      alt={alt}
+      className="w-full h-full object-contain"
+      loading="lazy"
+      style={{ background: 'transparent' }}
+    />
+  );
+}
+
+// ============ BULK PROCESSOR FOR ALL IMAGES ============
+function useBulkImageProcessor(imageUrls: string[]) {
+  const [processedUrls, setProcessedUrls] = useState<Record<string, string>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  useEffect(() => {
+    if (!imageUrls.length) return;
+    
+    let cancelled = false;
+    
+    async function processAll() {
+      setIsProcessing(true);
+      
+      // Parallel processing - ek saath saari images
+      const results = await Promise.all(
+        imageUrls.map(async (url) => {
+          if (!url) return { url, processed: null };
+          const processed = await removeBlackBackgroundFast(url);
+          return { url, processed };
+        })
+      );
+      
+      if (!cancelled) {
+        const urlMap: Record<string, string> = {};
+        results.forEach(({ url, processed }) => {
+          if (processed) urlMap[url] = processed;
+        });
+        setProcessedUrls(urlMap);
+        setIsProcessing(false);
+      }
+    }
+    
+    processAll();
+    
+    return () => { cancelled = true; };
+  }, [imageUrls.join(',')]); // Stable reference
+  
+  return { processedUrls, isProcessing };
+}
+
 export default function UserLevelPage() {
   const router = useRouter();
   const { user } = useUser();
@@ -16,6 +202,7 @@ export default function UserLevelPage() {
   const { userProfile } = useUserProfile(user?.uid);
   
   const [showRules, setShowRules] = useState(false);
+  const [imagesReady, setImagesReady] = useState<Record<string, boolean>>({});
 
   const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
 
@@ -24,6 +211,14 @@ export default function UserLevelPage() {
     return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
   }, [firestore]);
   const { data: levels } = useCollection(levelsQuery);
+
+  // Collect all image URLs for bulk processing
+  const allImageUrls = levels?.map((l: any) => l.imageUrl).filter(Boolean) || [];
+  const { processedUrls, isProcessing } = useBulkImageProcessor(allImageUrls);
+
+  const handleImageProcessed = useCallback((url: string) => {
+    setImagesReady(prev => ({ ...prev, [url]: true }));
+  }, []);
 
   return (
     <AppLayout>
@@ -117,33 +312,58 @@ export default function UserLevelPage() {
 
           {/* Budget Section */}
           <div className="space-y-4 pt-2">
-            <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">
-              Budget
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">
+                Budget
+              </h2>
+              {isProcessing && (
+                <span className="text-[10px] text-purple-500 animate-pulse">
+                  Processing images...
+                </span>
+              )}
+            </div>
             
             <div className="grid grid-cols-3 gap-3">
               {levels && levels.length > 0 ? (
-                levels.map((level: any, idx: number) => (
-                  <div 
-                    key={level.id || idx} 
-                    className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-between overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300 group"
-                  >
-                    {level.imageUrl && (
-                      <div className="absolute inset-0 flex items-center justify-center opacity-30 group-hover:opacity-50 transition-opacity">
+                levels.map((level: any, idx: number) => {
+                  const hasImage = level.imageUrl && processedUrls[level.imageUrl];
+                  
+                  return (
+                    <div 
+                      key={level.id || idx} 
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                    >
+                      {/* Transparent image dikhao agar processed hai */}
+                      {hasImage ? (
                         <img 
-                          src={level.imageUrl} 
-                          alt={level.name} 
-                          className="w-16 h-16 object-contain brightness-100"
+                          src={processedUrls[level.imageUrl]} 
+                          alt={level.name || `Level ${idx}`}
+                          className="w-full h-full object-contain p-1"
+                          loading="lazy"
+                          style={{ background: 'transparent' }}
+                          onLoad={() => handleImageProcessed(level.imageUrl)}
                         />
-                      </div>
-                    )}
-                    
-                    <span className="text-[10px] font-bold text-gray-500 tracking-wider relative z-10">
-                      {level.range || `Lv.${idx}`}
-                    </span>
-                  </div>
-                ))
+                      ) : level.imageUrl ? (
+                        // Processing mein hai toh skeleton dikhao
+                        <div className="w-full h-full flex items-center justify-center bg-transparent">
+                          <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-400 rounded-full animate-spin" />
+                        </div>
+                      ) : (
+                        // No image
+                        <div className="w-full h-full flex items-center justify-center bg-transparent">
+                          <span className="text-[9px] text-gray-300">No Image</span>
+                        </div>
+                      )}
+                      
+                      {/* Level label */}
+                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
+                        {level.range || `Lv.${idx}`}
+                      </span>
+                    </div>
+                  );
+                })
               ) : (
+                // Fallback static data
                 [
                   'Lv.0 - Lv.10',
                   'Lv.20 - Lv.35',
@@ -280,5 +500,4 @@ export default function UserLevelPage() {
       </div>
     </AppLayout>
   );
-}
-
+        }
