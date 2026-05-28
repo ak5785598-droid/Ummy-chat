@@ -81,6 +81,11 @@ export interface UserProfile {
   familyId?: string;
   familyRole?: string;
   medals?: string[];
+  mysteriousVisitor?: boolean;
+  hideGiftRecord?: boolean;
+  rankInvisible?: boolean;
+  roomInvisible?: boolean;
+  avoidBeingKicked?: boolean;
 }
 
 /**

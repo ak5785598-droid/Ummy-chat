@@ -1,0 +1,26 @@
+{
+    "workbench.editor.alwaysShowEditorActions": true,
+    "workbench.editor.autoLockGroups": {
+        "default": true,
+        "workbench.editor.chatSession": true,
+        "workbench.editor.chatDebug": true,
+        "workbench.editorinputs.searchEditorInput": true,
+        "agentSessionsWelcomePage": true,
+        "workbench.editor.browser": true,
+        "notebookOutputEditor": true,
+        "jupyter-notebook": true,
+        "imagePreview.previewEditor": true,
+        "workbench.editors.gettingStartedInput": true,
+        "repl": true,
+        "vscode.audioPreview": true,
+        "vscode.videoPreview": true,
+        "jsProfileVisualizer.heapprofile.table": true,
+        "jsProfileVisualizer.cpuprofile.table": true,
+        "workbench.input.interactive": true,
+        "jsProfileVisualizer.heapsnapshot.table": true,
+        "mainThreadWebview-markdown.preview": true
+    },
+    "workbench.editor.closeOnFileDelete": true,
+    "workbench.editor.centeredLayoutFixedWidth": true,
+    "git.ignoreLimitWarning": true
+}

@@ -169,6 +169,15 @@ export default function VipsClubPage() {
   const levelBgUrl = vipConfig?.levels?.[selectedLevel]?.bgUrl;
   const showCustomBg = !!levelBgUrl;
 
+  useEffect(() => {
+    console.log("SVIP Debug Log:", {
+      selectedLevel,
+      levelBgUrl,
+      showCustomBg,
+      levelsConfig: vipConfig?.levels
+    });
+  }, [selectedLevel, levelBgUrl, showCustomBg, vipConfig]);
+
   // Count privileges unlocked for the currently selected level
   const unlockedCount = SVIP_PRIVILEGES_DATA.filter(p => p.level <= selectedLevel).length;
 
