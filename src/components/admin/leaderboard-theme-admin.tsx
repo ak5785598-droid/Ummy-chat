@@ -418,7 +418,7 @@ export function LeaderboardThemeAdmin() {
             {/* Frame Configurations */}
             <div className="mb-6">
               <h3 className="text-xl font-bold text-[#D4AF37] mb-4">🎨 Rank Frame Overlays</h3>
-              <p className="text-xs text-white/50 mb-4">Upload frames/borders for each ranking tier. Leave empty to use default.</p>
+              <p className="text-xs text-white/50 mb-4">Upload frames/borders for each ranking tier. Frames display as SQUARE with transparent background and mask hole.</p>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {rankConfigs.map((rankConfig) => {
@@ -487,7 +487,7 @@ export function LeaderboardThemeAdmin() {
                                 ) : (
                                   <span className="text-[10px] font-bold text-white/50 flex items-center gap-1.5">
                                     <Upload className="h-3.5 w-3.5" />
-                                    Upload Image (.png)
+                                    Upload Image (.png with transparency)
                                   </span>
                                 )}
                               </div>
@@ -524,7 +524,7 @@ export function LeaderboardThemeAdmin() {
                             </div>
                           )}
 
-                          {/* Frame Preview */}
+                          {/* Frame Preview - SQUARE WITH TRANSPARENT BG + MASK HOLE */}
                           {frameUrl && (
                             <button
                               onClick={() => setFramePreview({ rank, show: !framePreview.show })}
@@ -545,24 +545,56 @@ export function LeaderboardThemeAdmin() {
                           )}
 
                           {framePreview.rank === rank && framePreview.show && frameUrl && (
-                            <div className="bg-slate-700 rounded p-3 border border-white/10">
-                              {formData.frameConfigs[rank].type === 'image' ? (
-                                <img
-                                  src={frameUrl}
-                                  alt={`${rank} frame preview`}
-                                  className="w-full h-32 object-cover rounded"
-                                  onError={() => console.error(`Failed to load frame: ${frameUrl}`)}
-                                />
-                              ) : (
-                                <video
-                                  src={frameUrl}
-                                  autoPlay
-                                  loop
-                                  muted
-                                  className="w-full h-32 object-cover rounded"
-                                  onError={() => console.error(`Failed to load frame: ${frameUrl}`)}
-                                />
-                              )}
+                            <div className="relative">
+                              {/* SQUARE preview container with checkerboard pattern to show transparency */}
+                              <div 
+                                className="w-full aspect-square rounded border border-white/10 overflow-hidden"
+                                style={{
+                                  backgroundImage: 'linear-gradient(45deg, #1e293b 25%, transparent 25%), linear-gradient(-45deg, #1e293b 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e293b 75%), linear-gradient(-45deg, transparent 75%, #1e293b 75%)',
+                                  backgroundSize: '20px 20px',
+                                  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                                  backgroundColor: '#0f172a'
+                                }}
+                              >
+                                {formData.frameConfigs[rank].type === 'image' ? (
+                                  <img
+                                    src={frameUrl}
+                                    alt={`${rank} frame preview`}
+                                    className="w-full h-full object-contain"
+                                    style={{
+                                      mixBlendMode: 'normal',
+                                      // Black remove hoga transparent se, mask hole bhi transparent rahega
+                                    }}
+                                    onError={(e) => {
+                                      console.error(`Failed to load frame: ${frameUrl}`);
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <video
+                                    src={frameUrl}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    className="w-full h-full object-contain"
+                                    onError={() => console.error(`Failed to load frame: ${frameUrl}`)}
+                                  />
+                                )}
+                              </div>
+                              
+                              {/* Mask hole preview indicator */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-1/2 h-1/2 border-2 border-dashed border-[#D4AF37]/40 rounded-lg flex items-center justify-center">
+                                  <span className="text-[10px] text-[#D4AF37]/60 font-bold bg-slate-900/80 px-2 py-1 rounded">
+                                    Mask Hole (Transparent)
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <p className="text-[10px] text-white/40 mt-1 text-center">
+                                ✓ Square Format | ✓ Transparent BG | ✓ Mask Hole Transparent
+                              </p>
                             </div>
                           )}
                         </div>
@@ -715,4 +747,4 @@ export function LeaderboardThemeAdmin() {
       </div>
     </div>
   );
-}
+  }
