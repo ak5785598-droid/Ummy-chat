@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket } from 'lucide-react';
+import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket, Play } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
@@ -125,18 +125,20 @@ const useBlobCache = (itemId: string, imageUrl: string | null) => {
 };
 
 // ============================================
-// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
+// SMART BLACK BACKGROUND REMOVER (WITH HOLE MASK FOR FRAME)
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
   className = '', 
-  style = {} 
+  style = {},
+  isFrame = false
 }: { 
   src: string; 
   type?: 'image' | 'video'; 
   className?: string; 
   style?: React.CSSProperties;
+  isFrame?: boolean;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
@@ -214,64 +216,147 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
-    const scale = 4;
-    const scaledW = Math.ceil(width / scale);
-    const scaledH = Math.ceil(height / scale);
-    const visited = new Uint8Array(scaledW * scaledH);
-
-    const isBlack = (sx: number, sy: number) => {
-      const x = Math.min(sx * scale, width - 1);
-      const y = Math.min(sy * scale, height - 1);
-      const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
-    };
-
-    const queue: [number, number][] = [];
     
-    for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
-    }
-    for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
-    }
-
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
-    }
-
-    let head = 0;
-    while (head < queue.length) {
-      const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
-          const nidx = ny * scaledW + nx;
-          if (!visited[nidx] && isBlack(nx, ny)) {
-            visited[nidx] = 1;
-            queue.push([nx, ny]);
+    if (isFrame) {
+      // 🔥 FRAME KE LIYE: Hole mask approach - center se connected black pixels dhundho
+      const visited = new Uint8Array(width * height);
+      const queue: [number, number][] = [];
+      
+      // Center point se start karo
+      const centerX = Math.floor(width / 2);
+      const centerY = Math.floor(height / 2);
+      const centerI = (centerY * width + centerX) * 4;
+      
+      if (data[centerI] < STRICT_BLACK && data[centerI+1] < STRICT_BLACK && data[centerI+2] < STRICT_BLACK) {
+        queue.push([centerX, centerY]);
+        visited[centerY * width + centerX] = 1;
+      }
+      
+      // Also edges se black pixels dhundho jo center tak pahunch sakte hain
+      // Top edge
+      for (let x = 0; x < width; x++) {
+        const i = x * 4;
+        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+          if (!visited[x]) { queue.push([x, 0]); visited[x] = 1; }
+        }
+      }
+      // Bottom edge
+      for (let x = 0; x < width; x++) {
+        const i = ((height - 1) * width + x) * 4;
+        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+          const idx = (height - 1) * width + x;
+          if (!visited[idx]) { queue.push([x, height - 1]); visited[idx] = 1; }
+        }
+      }
+      // Left edge
+      for (let y = 0; y < height; y++) {
+        const i = (y * width) * 4;
+        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+          const idx = y * width;
+          if (!visited[idx]) { queue.push([0, y]); visited[idx] = 1; }
+        }
+      }
+      // Right edge
+      for (let y = 0; y < height; y++) {
+        const i = (y * width + (width - 1)) * 4;
+        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+          const idx = y * width + (width - 1);
+          if (!visited[idx]) { queue.push([width - 1, y]); visited[idx] = 1; }
+        }
+      }
+      
+      // BFS flood fill
+      let head = 0;
+      while (head < queue.length) {
+        const [x, y] = queue[head++];
+        const neighbors: [number, number][] = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]];
+        for (const [nx, ny] of neighbors) {
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            const nidx = ny * width + nx;
+            if (!visited[nidx]) {
+              const ni = nidx * 4;
+              if (data[ni] < STRICT_BLACK && data[ni+1] < STRICT_BLACK && data[ni+2] < STRICT_BLACK) {
+                visited[nidx] = 1;
+                queue.push([nx, ny]);
+              }
+            }
           }
         }
       }
-    }
+      
+      // Ab jo bhi visited nahi hai (non-black pixels) unhe rakho, visited (black) ko transparent karo
+      // ULTA: Frame ke liye - black pixels (hole) ko transparent karo, baki pixels ko rakho
+      for (let i = 0; i < data.length; i += 4) {
+        const pixelIdx = i / 4;
+        if (visited[pixelIdx]) {
+          // Black pixel - transparent karo
+          data[i] = 0;
+          data[i+1] = 0;
+          data[i+2] = 0;
+          data[i+3] = 0;
+        }
+      }
+    } else {
+      // Regular approach for non-frame items
+      const scale = 4;
+      const scaledW = Math.ceil(width / scale);
+      const scaledH = Math.ceil(height / scale);
+      const visited = new Uint8Array(scaledW * scaledH);
 
-    for (let sy = 0; sy < scaledH; sy++) {
+      const isBlack = (sx: number, sy: number) => {
+        const x = Math.min(sx * scale, width - 1);
+        const y = Math.min(sy * scale, height - 1);
+        const i = (y * width + x) * 4;
+        return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+      };
+
+      const queue: [number, number][] = [];
+      
       for (let sx = 0; sx < scaledW; sx++) {
-        if (visited[sy * scaledW + sx]) {
-          for (let dy = 0; dy < scale; dy++) {
-            for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
-              if (x < width && y < height) {
-                const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i] = 0;
-                  data[i+1] = 0;
-                  data[i+2] = 0;
-                  data[i+3] = 0;
+        if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+        if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+      }
+      for (let sy = 0; sy < scaledH; sy++) {
+        if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+        if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+      }
+
+      const centerSX = Math.floor(scaledW / 2);
+      const centerSY = Math.floor(scaledH / 2);
+      if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+        queue.push([centerSX, centerSY]);
+        visited[centerSY * scaledW + centerSX] = 1;
+      }
+
+      let head = 0;
+      while (head < queue.length) {
+        const [sx, sy] = queue[head++];
+        const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+        for (const [nx, ny] of neighbors) {
+          if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+            const nidx = ny * scaledW + nx;
+            if (!visited[nidx] && isBlack(nx, ny)) {
+              visited[nidx] = 1;
+              queue.push([nx, ny]);
+            }
+          }
+        }
+      }
+
+      for (let sy = 0; sy < scaledH; sy++) {
+        for (let sx = 0; sx < scaledW; sx++) {
+          if (visited[sy * scaledW + sx]) {
+            for (let dy = 0; dy < scale; dy++) {
+              for (let dx = 0; dx < scale; dx++) {
+                const x = sx * scale + dx, y = sy * scale + dy;
+                if (x < width && y < height) {
+                  const i = (y * width + x) * 4;
+                  if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                    data[i] = 0;
+                    data[i+1] = 0;
+                    data[i+2] = 0;
+                    data[i+3] = 0;
+                  }
                 }
               }
             }
@@ -421,20 +506,22 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover) - Sirf image ke liye
+// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
 // ============================================
 const CachedMedia = ({ 
   itemId, 
   src, 
   type = 'image', 
   className = '', 
-  style = {} 
+  style = {},
+  isFrame = false
 }: { 
   itemId: string; 
   src: string; 
   type?: 'image' | 'video'; 
   className?: string; 
   style?: React.CSSProperties;
+  isFrame?: boolean;
 }) => {
   // Sirf image type ke liye blob cache use karo, video ke liye direct src
   const { blobUrl, isLoading } = useBlobCache(itemId, type === 'image' ? src : null);
@@ -455,6 +542,7 @@ const CachedMedia = ({
         type={type} 
         className="w-full h-full"
         style={{ background: 'transparent' }}
+        isFrame={isFrame}
       />
     </div>
   );
@@ -1037,9 +1125,14 @@ export default function StorePage() {
     return null;
   };
 
+  // Helper to check if item has video
+  const hasVideo = (item: any): boolean => {
+    return !!(item.videoUrl);
+  };
+
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
-    // 🔥 FRAME: Display pe IMAGE dikhega, VIDEO nahi chalegi
+    // 🔥 FRAME: Display pe IMAGE dikhega (grid card me), store card me video nahi chalegi
     if (item.type === 'Frame') {
       const displayImage = getFrameDisplayImage(item);
       if (displayImage) {
@@ -1051,6 +1144,7 @@ export default function StorePage() {
               type="image"
               className="w-full h-full"
               style={{ background: 'transparent' }}
+              isFrame={true}
             />
           </div>
         );
@@ -1077,7 +1171,7 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // 🔥 BUBBLE: Square shape me dikhega - grid card me square, circle nahi
+    // 🔥 BUBBLE: Square shape me dikhega - grid card me square
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1120,18 +1214,18 @@ export default function StorePage() {
 
   // 🔥 PREVIEW CARD: Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
-    // 🔥 THEME: Image compact show hogi - chhoti size me full image
+    // 🔥 THEME PREVIEW: Direct MP4 ya image dikhao - 70vh height me compact show hoga
     if (item.type === 'Theme') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
+      const mediaUrl = item.videoUrl || item.imageUrl;
+      if (mediaUrl) {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent', maxHeight: '45vh' }}>
+          <div className="w-full h-full flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
-              className="w-auto h-auto max-w-full max-h-full"
+              className="w-full h-full"
               style={{ background: 'transparent', objectFit: 'contain' }}
             />
           </div>
@@ -1150,7 +1244,7 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai
+    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai, hole mask ke saath
     if (item.type === 'Frame') {
       const mediaUrl = item.videoUrl || item.imageUrl;
       if (mediaUrl) {
@@ -1163,6 +1257,7 @@ export default function StorePage() {
               type={mediaType}
               className="w-full h-full"
               style={{ background: 'transparent' }}
+              isFrame={true}
             />
           </div>
         );
@@ -1174,7 +1269,7 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 BUBBLE PREVIEW: Square shape me dikhega - circle nahi
+    // 🔥 BUBBLE PREVIEW: Square shape me dikhega
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1198,9 +1293,8 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    // 🔥 ENTRY: Direct videoUrl use hoga, koi SVGA fallback nahi
+    // 🔥 ENTRY: Direct videoUrl use hoga
     if (item.type === 'Entry') {
-      // Agar entry item me videoUrl hai toh video dikhao
       if (item.videoUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1214,7 +1308,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // Agar imageUrl hai toh image dikhao
       if (item.imageUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1228,7 +1321,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // Nahi toh default SVG ticket icon
       return (
         <div className="scale-125">
           <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
@@ -1297,36 +1389,48 @@ export default function StorePage() {
 
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
-                    <Card 
-                      key={item.id} 
-                      onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
-                      className={cn(
-                        "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all text-white",
-                        item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
-                      )}
-                    >
-                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                        {renderStoreCardIcon(item)}
-                      </div>
-                      <CardHeader className="text-center p-3 pb-1">
-                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-                      </CardHeader>
-                      <CardFooter className="flex flex-col gap-3 p-3 pt-1">
-                        <div className="flex items-center justify-center gap-1.5 text-sm w-full">
-                          {item.notForSale ? (
-                            <span className="text-red-400 font-black uppercase tracking-widest text-[10px]">Not for sale</span>
-                          ) : (
-                            <>
-                              <DollarCoinIcon className="h-4 w-4" />
-                              <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
-                            </>
+                {/* 🔥 SCROLLABLE GRID - Sirf tabs ke niche wala hissa scroll hoga */}
+                <div className="overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
+                      <Card 
+                        key={item.id} 
+                        onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
+                        className={cn(
+                          "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all text-white",
+                          item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
+                        )}
+                      >
+                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                          {renderStoreCardIcon(item)}
+                          
+                          {/* 🔥 PLAY BUTTON - Top Right Corner (chota sa) */}
+                          {hasVideo(item) && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/10">
+                                <Play className="h-3 w-3 text-white fill-white" />
+                              </div>
+                            </div>
                           )}
                         </div>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                        <CardHeader className="text-center p-3 pb-1">
+                          <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+                        </CardHeader>
+                        <CardFooter className="flex flex-col gap-3 p-3 pt-1">
+                          <div className="flex items-center justify-center gap-1.5 text-sm w-full">
+                            {item.notForSale ? (
+                              <span className="text-red-400 font-black uppercase tracking-widest text-[10px]">Not for sale</span>
+                            ) : (
+                              <>
+                                <DollarCoinIcon className="h-4 w-4" />
+                                <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                              </>
+                            )}
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </TabsContent>
             ))}
@@ -1349,32 +1453,44 @@ export default function StorePage() {
 
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
-                    const expiryDate = getItemExpiryDate(item.id);
-                    const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
-                    
-                    return (
-                      <Card 
-                        key={item.id} 
-                        onClick={() => setPreviewItem(item)} 
-                        className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white"
-                      >
-                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                          {renderStoreCardIcon(item)}
-                        </div>
-                        <CardHeader className="text-center p-3 pb-0">
-                          <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-                        </CardHeader>
-                        <CardFooter className="flex flex-col gap-1 p-3 pt-1">
-                          <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
-                            <span>Expire:</span>
-                            <span className="text-red-400">{expiryDateStr}</span>
+                {/* 🔥 SCROLLABLE GRID - Mine tab me bhi sirf grid scroll hoga */}
+                <div className="overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
+                      const expiryDate = getItemExpiryDate(item.id);
+                      const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
+                      
+                      return (
+                        <Card 
+                          key={item.id} 
+                          onClick={() => setPreviewItem(item)} 
+                          className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white"
+                        >
+                          <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                            {renderStoreCardIcon(item)}
+                            
+                            {/* 🔥 PLAY BUTTON - Top Right Corner (chota sa) */}
+                            {hasVideo(item) && (
+                              <div className="absolute top-2 right-2 z-10">
+                                <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/10">
+                                  <Play className="h-3 w-3 text-white fill-white" />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </CardFooter>
-                      </Card>
-                    );
-                  })}
+                          <CardHeader className="text-center p-3 pb-0">
+                            <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+                          </CardHeader>
+                          <CardFooter className="flex flex-col gap-1 p-3 pt-1">
+                            <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+                              <span>Expire:</span>
+                              <span className="text-red-400">{expiryDateStr}</span>
+                            </div>
+                          </CardFooter>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
                 {mineItems.filter(i => category === 'All' || i.type === category).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -1388,7 +1504,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* 🔥 PREVIEW CARD */}
+        {/* 🔥 PREVIEW CARD - THEME KE LIYE 70vh MEIN FULL IMAGE/VIDEO */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1409,94 +1525,160 @@ export default function StorePage() {
                   <X size={24} />
                 </button>
 
-                <div className={cn(
-                  "flex-1 overflow-hidden flex flex-col items-center",
-                  isTheme ? "pt-2 pb-1 px-2" : "pt-8 pb-4 px-4 overflow-y-auto"
-                )}>
-                  {isTheme ? (
-                    // 🔥 THEME PREVIEW: Compact size me full image show hogi
-                    <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg px-4" style={{ background: 'transparent' }}>
-                      {renderPreviewIcon(previewItem)}
-                    </div>
-                  ) : (
-                    <div className={cn(
-                      "mb-4 scale-[1.1] flex items-center justify-center",
-                      previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
-                    )} style={{ background: 'transparent' }}>
-                      {renderPreviewIcon(previewItem)}
-                    </div>
-                  )}
-
-                  <h2 className={cn(
-                    "font-medium text-white tracking-wide text-center",
-                    isTheme ? "text-sm mt-1 mb-0.5" : "text-xl"
-                  )}>
-                    {previewItem.name}
-                  </h2>
-                  
-                  {isOwnedAndValid && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
-                    </p>
-                  )}
-                </div>
-
-                {/* Bottom action bar */}
-                {isOwnedAndValid ? (
-                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
-                    <Button 
-                      onClick={() => handleEquipToggle(previewItem)}
-                      disabled={isProcessing}
-                      className={cn(
-                        "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
-                        isProcessing && "opacity-70 cursor-not-allowed",
-                        isCurrentlyEquipped
-                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
-                          : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                {isTheme ? (
+                  // 🔥 THEME PREVIEW: Poora 70vh ka space theme ke liye - full image/video show hoga
+                  <>
+                    <div className="flex-1 overflow-hidden flex flex-col items-center pt-8 pb-2 px-4">
+                      <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+                        {renderPreviewIcon(previewItem)}
+                      </div>
+                      <h2 className="font-medium text-white tracking-wide text-center text-sm mt-2 mb-0.5">
+                        {previewItem.name}
+                      </h2>
+                      {isOwnedAndValid && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
+                        </p>
                       )}
-                    >
-                      {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
-                    <div className="flex gap-4 w-full justify-center">
-                      {[3, 7].map(days => (
-                        <button 
-                          key={days}
-                          onClick={() => setSelectedDuration(days)}
+                    </div>
+                    {/* Bottom action bar */}
+                    {isOwnedAndValid ? (
+                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
+                        <Button 
+                          onClick={() => handleEquipToggle(previewItem)}
+                          disabled={isProcessing}
                           className={cn(
-                            "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                            selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
+                            "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                            isProcessing && "opacity-70 cursor-not-allowed",
+                            isCurrentlyEquipped
+                              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
+                              : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
                           )}
                         >
-                          <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
-                          {selectedDuration === days && (
-                            <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
-                              <Check size={12} strokeWidth={3} className="text-black" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <DollarCoinIcon className="w-5 h-5" />
-                        <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                          {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                        </span>
+                          {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
+                        <div className="flex gap-4 w-full justify-center">
+                          {[3, 7].map(days => (
+                            <button 
+                              key={days}
+                              onClick={() => setSelectedDuration(days)}
+                              className={cn(
+                                "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                                selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
+                              )}
+                            >
+                              <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                              {selectedDuration === days && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                                  <Check size={12} strokeWidth={3} className="text-black" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <DollarCoinIcon className="w-5 h-5" />
+                            <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                              {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <Button 
+                            onClick={() => handlePurchase(previewItem, selectedDuration)}
+                            disabled={isProcessing}
+                            className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
+                          >
+                            {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // Non-theme preview (40vh wala)
+                  <>
+                    <div className="flex-1 overflow-hidden flex flex-col items-center pt-8 pb-4 px-4 overflow-y-auto">
+                      <div className={cn(
+                        "mb-4 scale-[1.1] flex items-center justify-center",
+                        previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
+                      )} style={{ background: 'transparent' }}>
+                        {renderPreviewIcon(previewItem)}
                       </div>
 
-                      <Button 
-                        onClick={() => handlePurchase(previewItem, selectedDuration)}
-                        disabled={isProcessing}
-                        className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
-                      >
-                        {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
-                      </Button>
+                      <h2 className="font-medium text-white tracking-wide text-center text-xl">
+                        {previewItem.name}
+                      </h2>
+                      
+                      {isOwnedAndValid && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
+                        </p>
+                      )}
                     </div>
-                  </div>
+
+                    {/* Bottom action bar */}
+                    {isOwnedAndValid ? (
+                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
+                        <Button 
+                          onClick={() => handleEquipToggle(previewItem)}
+                          disabled={isProcessing}
+                          className={cn(
+                            "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                            isProcessing && "opacity-70 cursor-not-allowed",
+                            isCurrentlyEquipped
+                              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
+                              : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                          )}
+                        >
+                          {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
+                        <div className="flex gap-4 w-full justify-center">
+                          {[3, 7].map(days => (
+                            <button 
+                              key={days}
+                              onClick={() => setSelectedDuration(days)}
+                              className={cn(
+                                "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                                selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
+                              )}
+                            >
+                              <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                              {selectedDuration === days && (
+                                <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                                  <Check size={12} strokeWidth={3} className="text-black" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <DollarCoinIcon className="w-5 h-5" />
+                            <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                              {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <Button 
+                            onClick={() => handlePurchase(previewItem, selectedDuration)}
+                            disabled={isProcessing}
+                            className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
+                          >
+                            {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </>
@@ -1505,4 +1687,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+                                   }
