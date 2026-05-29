@@ -92,16 +92,30 @@ const useBlobCache = (itemId: string, imageUrl: string | null) => {
   const [hasError, setHasError] = useState(false);
   const doneRef = useRef(false);
   const retryCountRef = useRef(0);
+  const lastItemIdRef = useRef('');
+  const lastImageUrlRef = useRef('');
 
   useEffect(() => {
+    // 🔥 FIX: Agar itemId ya imageUrl change hua toh reset karo
+    if (lastItemIdRef.current !== itemId || lastImageUrlRef.current !== imageUrl) {
+      doneRef.current = false;
+      retryCountRef.current = 0;
+      setBlobUrl(null);
+      setIsLoading(false);
+      setHasError(false);
+      lastItemIdRef.current = itemId;
+      lastImageUrlRef.current = imageUrl || '';
+    }
+
     if (!imageUrl || !itemId || doneRef.current) return;
     
-    // Step 1: Cache check
+    // Step 1: Cache check - pehle cache dekho
     const cached = getCachedBlob(itemId);
     if (cached) {
       setBlobUrl(cached);
       doneRef.current = true;
       setHasError(false);
+      setIsLoading(false);
       return;
     }
     
@@ -324,7 +338,6 @@ const SmartBlackRemover = ({
       lastProcessedSrc.current = src;
     }
 
-    // Clear any existing timeout
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
     }
@@ -341,7 +354,6 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Fallback timeout - agar image load na ho toh bhi ready kar do
     loadTimeoutRef.current = setTimeout(() => {
       if (!isReady && mediaRef.current) {
         setIsReady(true);
@@ -369,7 +381,6 @@ const SmartBlackRemover = ({
   };
 
   const handleImageError = () => {
-    // Agar image load nahi ho rahi toh bhi ready state set karo
     setIsReady(true);
     setUseCanvas(false);
   };
@@ -476,7 +487,7 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover) - Sirf image ke liye
+// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
 // ============================================
 const CachedMedia = ({ 
   itemId, 
@@ -907,7 +918,7 @@ export default function StorePage() {
   const allItemsWithFlags = useMemo(() => {
     return allItems
       .map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }))
-      .filter(item => !item.notForSale); // 🔥 Not for sale wale ko filter out karo
+      .filter(item => !item.notForSale);
   }, [allItems, storeNotForSale]);
 
   // --- PURCHASED ITEMS (Mine Tab) ---
@@ -992,14 +1003,10 @@ export default function StorePage() {
     return true;
   };
 
-  // 🔥 Check if item has video (for play button)
+  // 🔥 Check if item has video (for play button) - STRICTLY sabhi types ke liye
   const hasVideo = (item: any): boolean => {
-    if (item.videoUrl) return true;
-    if (item.type === 'Theme' && item.videoUrl) return true;
-    if (item.type === 'Frame' && item.videoUrl) return true;
-    if (item.type === 'Bubble' && item.videoUrl) return true;
-    if (item.type === 'Entry' && item.videoUrl) return true;
-    return false;
+    if (!item.videoUrl) return false;
+    return true; // Agar videoUrl hai toh play button dikhao, chahe koi bhi type ho
   };
 
   const handlePurchase = async (item: any, duration: number) => {
@@ -1046,7 +1053,6 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
-    // Double check expiry
     const expiry = (userProfile.inventory as any)?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
@@ -1145,7 +1151,7 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // 🔥 BUBBLE: Square shape me dikhega - grid card me square, circle nahi
+    // 🔥 BUBBLE: Square shape me dikhega
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1188,7 +1194,6 @@ export default function StorePage() {
 
   // 🔥 PREVIEW CARD: Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
-    // 🔥 THEME: Image compact show hogi - chhoti size me full image
     if (item.type === 'Theme') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1242,7 +1247,7 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 BUBBLE PREVIEW: Square shape me dikhega - circle nahi
+    // 🔥 BUBBLE PREVIEW: Square shape
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1266,9 +1271,8 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    // 🔥 ENTRY: Direct videoUrl use hoga, koi SVGA fallback nahi
+    // 🔥 ENTRY: Direct videoUrl use hoga
     if (item.type === 'Entry') {
-      // Agar entry item me videoUrl hai toh video dikhao
       if (item.videoUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1282,7 +1286,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // Agar imageUrl hai toh image dikhao
       if (item.imageUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1296,7 +1299,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // Nahi toh default SVG ticket icon
       return (
         <div className="scale-125">
           <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
@@ -1372,7 +1374,7 @@ export default function StorePage() {
                       onClick={() => setPreviewItem(item)} 
                       className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                     >
-                      {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho */}
+                      {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho, SABHI types ke liye */}
                       {hasVideo(item) && (
                         <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                           <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1433,7 +1435,7 @@ export default function StorePage() {
                         onClick={() => setPreviewItem(item)} 
                         className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                       >
-                        {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho */}
+                        {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho, SABHI types ke liye */}
                         {hasVideo(item) && (
                           <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                             <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1494,7 +1496,6 @@ export default function StorePage() {
                   isTheme ? "pt-2 pb-1 px-2" : "pt-8 pb-4 px-4 overflow-y-auto"
                 )}>
                   {isTheme ? (
-                    // 🔥 THEME PREVIEW: Compact size me full image show hogi
                     <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg px-4" style={{ background: 'transparent' }}>
                       {renderPreviewIcon(previewItem)}
                     </div>
@@ -1585,4 +1586,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-    }
+          }
