@@ -13,9 +13,10 @@ import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { LeaderboardThemeConfig } from '@/components/admin/leaderboard-theme-admin';
 
-// --- Dynamic Theme Background (same as before - untouched) ---
+// --- Dynamic Theme Background ---
 const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | null }) => {
   if (!theme) {
+    // Default background
     return (
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-gradient-to-br from-[#2e152b] via-[#2c1b18] to-[#3b1c32]">
         <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-pink-500/15 blur-[130px] rounded-full animate-pulse" />
@@ -32,6 +33,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
 
   return (
     <>
+      {/* Background Image/Video */}
       {theme.backgroundType === 'image' ? (
         <img
           src={theme.backgroundUrl}
@@ -47,13 +49,17 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
           className="fixed inset-0 w-full h-full object-cover z-0"
         />
       )}
+
+      {/* Dark overlay for readability */}
       <div className="fixed inset-0 z-1 bg-black/40 pointer-events-none" />
+
+      {/* Bottom Vignette */}
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#1a0e14] to-transparent z-2 pointer-events-none" />
     </>
   );
 };
 
-// --- Daily Countdown Component (same as before) ---
+// --- Daily Countdown Component ---
 const DailyCountdown = () => {
   const [timeLeft, setTimeLeft] = useState('');
 
@@ -93,29 +99,128 @@ const DailyCountdown = () => {
   );
 };
 
-// --- NEW: No rank badge, only simple avatar ---
-const SimpleAvatar = ({ src, fallback, size = "md", rank }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number }) => {
+// --- Rank Badge with Frame Overlay ---
+const RankBadge = ({ rank, theme }: { rank: number; theme: LeaderboardThemeConfig | null }) => {
+  const getRankFrame = () => {
+    if (!theme) return null;
+
+    if (rank === 1 && theme.frameConfigs.rank1.isEnabled) return theme.frameConfigs.rank1;
+    if (rank === 2 && theme.frameConfigs.rank2.isEnabled) return theme.frameConfigs.rank2;
+    if (rank === 3 && theme.frameConfigs.rank3.isEnabled) return theme.frameConfigs.rank3;
+    if (rank && rank >= 4 && theme.frameConfigs.top.isEnabled) return theme.frameConfigs.top;
+
+    return null;
+  };
+
+  const frame = getRankFrame();
+
+  return (
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-10 h-10 flex items-center justify-center z-20">
+      {frame ? (
+        <div className="w-10 h-10 overflow-hidden" style={{ mixBlendMode: 'screen' }}>
+          {frame.type === 'image' ? (
+            <img 
+              src={frame.imageUrl} 
+              alt={`Rank ${rank} Frame`} 
+              className="w-full h-full object-contain"
+              style={{ filter: 'brightness(1.2) contrast(1.1)' }}
+            />
+          ) : (
+            <video 
+              src={frame.videoUrl} 
+              autoPlay 
+              loop 
+              muted 
+              className="w-full h-full object-contain"
+              style={{ mixBlendMode: 'screen' }}
+            />
+          )}
+        </div>
+      ) : (
+        <span className="text-sm font-black text-white drop-shadow-md">{rank}</span>
+      )}
+      {rank === 1 && <Crown className="absolute -top-4 h-5 w-5 text-yellow-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)] animate-bounce" />}
+    </div>
+  );
+};
+
+const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
-  
+
+  const getRankFrame = () => {
+    if (!theme) return null;
+
+    if (rank === 1 && theme.frameConfigs.rank1.isEnabled) return theme.frameConfigs.rank1;
+    if (rank === 2 && theme.frameConfigs.rank2.isEnabled) return theme.frameConfigs.rank2;
+    if (rank === 3 && theme.frameConfigs.rank3.isEnabled) return theme.frameConfigs.rank3;
+    if (rank && rank >= 4 && theme.frameConfigs.top.isEnabled) return theme.frameConfigs.top;
+
+    return null;
+  };
+
+  const frame = getRankFrame();
+
   return (
     <div className="relative">
-      <div className={cn("relative flex items-center justify-center rounded-full border-2 border-white/20 bg-slate-900", sizes[size])}>
+      {/* User Avatar - CIRCLE */}
+      <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
           <AvatarFallback className="bg-slate-900 text-white font-black rounded-full">{fallback}</AvatarFallback>
         </Avatar>
       </div>
+
+      {/* Frame Overlay - SQUARE with black removal & center mask hole */}
+      {frame && (
+        <div 
+          className="absolute pointer-events-none"
+          style={{
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'calc(100% + 16px)',
+            height: 'calc(100% + 16px)',
+            mixBlendMode: 'screen',
+            filter: 'brightness(1.3) contrast(1.1)',
+            // Mask to create hole in center for avatar
+            WebkitMaskImage: `radial-gradient(circle 48% at center, transparent 48%, black 49%)`,
+            maskImage: `radial-gradient(circle 48% at center, transparent 48%, black 49%)`,
+          }}
+        >
+          {frame.type === 'image' ? (
+            <img 
+              src={frame.imageUrl} 
+              alt="Frame" 
+              className="w-full h-full object-contain"
+              style={{ 
+                mixBlendMode: 'screen',
+                filter: 'brightness(1.2)'
+              }}
+            />
+          ) : (
+            <video 
+              src={frame.videoUrl} 
+              autoPlay 
+              loop 
+              muted 
+              className="w-full h-full object-contain"
+              style={{ 
+                mixBlendMode: 'screen'
+              }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-// --- Ranking List (modified UI) ---
 const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null }) => {
   if (isLoading)
     return (
       <div className="flex flex-col items-center py-40 gap-4 relative z-10">
-        <Loader className="animate-spin text-[#D4AF37] h-10 w-10" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]/60 animate-pulse">Syncing Daily Data...</p>
+        <Loader className="animate-spin text-white h-10 w-10" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 animate-pulse">Syncing Daily Data...</p>
       </div>
     );
 
@@ -130,8 +235,8 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   if (activePlayers.length === 0)
     return (
       <div className="text-center py-40 opacity-40 relative z-10">
-        <TrendingUp className="mx-auto mb-4 h-12 w-12 text-[#D4AF37]/50" />
-        <p className="font-bold uppercase text-sm text-[#D4AF37]/70">No Daily Legends Yet.</p>
+        <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/50" />
+        <p className="font-bold uppercase text-sm text-white/70">No Daily Legends Yet.</p>
       </div>
     );
 
@@ -148,82 +253,69 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
 
   return (
     <div className="space-y-2 animate-in fade-in duration-700 pb-32 relative z-10">
-      {/* TOP 1 - Top Row */}
-      {top1 && (
-        <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center justify-center py-4">
-          <div className="relative mb-2">
-            <SimpleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} />
-            {top1.username && (
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="text-xs font-black text-white bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                  {top1.username || top1.name || 'User'}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="mt-6 text-center">
-            <span className="text-yellow-400 font-black text-lg drop-shadow-md">{formatValue(getValue(top1))}</span>
-            <GoldCoinIcon className="h-4 w-4 inline-block ml-1" />
-          </div>
-        </Link>
-      )}
-
-      {/* TOP 2 & TOP 3 - Row */}
-      <div className="flex items-center justify-center gap-8 px-4 mt-8">
-        {top2 && (
-          <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex flex-col items-center flex-1">
+      {/* Top 1 - First Row */}
+      <div className="flex justify-center pt-10 px-2">
+        {top1 && (
+          <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center">
             <div className="relative mb-2">
-              <SimpleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} />
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="text-[10px] font-black text-white bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                  {top2.username || top2.name || 'User'}
-                </span>
-              </div>
+              <RankBadge rank={1} theme={theme} />
+              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
             </div>
-            <div className="mt-6 text-center">
-              <span className="text-slate-300 font-bold text-sm">{formatValue(getValue(top2))}</span>
-              <GoldCoinIcon className="h-3 w-3 inline-block ml-1" />
-            </div>
-          </Link>
-        )}
-
-        {top3 && (
-          <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex flex-col items-center flex-1">
-            <div className="relative mb-2">
-              <SimpleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} />
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                <span className="text-[10px] font-black text-white bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                  {top3.username || top3.name || 'User'}
-                </span>
-              </div>
-            </div>
-            <div className="mt-6 text-center">
-              <span className="text-orange-300 font-bold text-sm">{formatValue(getValue(top3))}</span>
-              <GoldCoinIcon className="h-3 w-3 inline-block ml-1" />
+            <div className="w-40 bg-white/5 backdrop-blur-md border-t-2 border-white/30 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
+              <span className="text-[10px] font-black uppercase text-white truncate w-24 text-center drop-shadow-md">{top1.username || top1.name || 'User'}</span>
+              <span className="text-white font-black text-sm drop-shadow-md">{formatValue(getValue(top1))}</span>
             </div>
           </Link>
         )}
       </div>
 
-      {/* Countdown here */}
+      {/* Top 2 & Top 3 - Second Row */}
+      <div className="flex items-end justify-center gap-4 px-2">
+        {top2 && (
+          <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex-1 flex flex-col items-center">
+            <div className="relative mb-2">
+              <RankBadge rank={2} theme={theme} />
+              <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" rank={2} theme={theme} />
+            </div>
+            <div className="w-full bg-white/5 backdrop-blur-md border-t-2 border-white/30 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
+              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top2.username || top2.name || 'User'}</span>
+              <span className="text-white/80 font-bold text-xs">{formatValue(getValue(top2))}</span>
+            </div>
+          </Link>
+        )}
+
+        {top3 && (
+          <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex-1 flex flex-col items-center">
+            <div className="relative mb-2">
+              <RankBadge rank={3} theme={theme} />
+              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" rank={3} theme={theme} />
+            </div>
+            <div className="w-full bg-white/5 backdrop-blur-md border-t-2 border-white/30 pt-4 pb-2 flex flex-col items-center rounded-t-lg">
+              <span className="text-[10px] font-black uppercase text-white truncate w-20 text-center">{top3.username || top3.name || 'User'}</span>
+              <span className="text-white/80 font-bold text-xs">{formatValue(getValue(top3))}</span>
+            </div>
+          </Link>
+        )}
+      </div>
+
       <DailyCountdown />
 
-      {/* Top 4 to 50 */}
-      <div className="px-4 space-y-3 mt-4">
+      <div className="px-4 space-y-3">
         {others.map((item, index) => (
           <Link
             key={item.id}
             href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
-            className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl relative overflow-hidden group hover:border-[#D4AF37]/70 transition-all backdrop-blur-md"
+            className="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-xl relative overflow-hidden group hover:border-white/40 transition-all backdrop-blur-md"
           >
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-300 to-yellow-600 opacity-40 group-hover:opacity-100 transition-opacity" />
-            <span className="text-lg font-black italic text-white/20 w-6">{index + 4}</span>
-            <SimpleAvatar src={item.avatarUrl || item.coverUrl} fallback={(index + 4).toString()} size="sm" rank={index + 4} />
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/20 group-hover:bg-white/50 transition-all" />
+            <span className="text-lg font-black italic text-white/30 w-6">{index + 4}</span>
+            <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={(index + 4).toString()} size="sm" rank={index + 4} theme={theme} />
             <div className="flex-1">
               <p className="text-xs font-black uppercase text-white tracking-wide">{item.username || item.name || 'User'}</p>
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Global Player</p>
             </div>
             <div className="text-right flex items-center gap-2">
-              <span className="text-[#D4AF37] font-black text-sm">{formatValue(getValue(item))}</span>
+              <span className="text-white font-black text-sm">{formatValue(getValue(item))}</span>
               <GoldCoinIcon className="h-3 w-3" />
             </div>
           </Link>
@@ -240,7 +332,7 @@ function LeaderboardContent() {
   const firestore = useFirestore();
   const { userProfile: me } = useUserProfile(user?.uid);
 
-  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms'>(initialType);
+  const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
   const [mounted, setMounted] = useState(false);
   const [activeTheme, setActiveTheme] = useState<LeaderboardThemeConfig | null>(null);
 
@@ -248,8 +340,10 @@ function LeaderboardContent() {
     setMounted(true);
   }, []);
 
+  // Fetch active theme
   useEffect(() => {
     if (!firestore) return;
+
     const fetchActiveTheme = async () => {
       try {
         const q = query(collection(firestore, 'leaderboardThemes'), where('isActive', '==', true), limit(1));
@@ -263,6 +357,7 @@ function LeaderboardContent() {
         console.error('Error fetching active theme:', error);
       }
     };
+
     fetchActiveTheme();
   }, [firestore]);
 
@@ -290,23 +385,34 @@ function LeaderboardContent() {
     [firestore, rankingType]
   );
 
+  const gamesQuery = useMemoFirebase(
+    () => {
+      if (!firestore || rankingType !== 'games') return null;
+      return query(collection(firestore, 'users'), where('stats.dailyGameWins', '>', 0), orderBy('stats.dailyGameWins', 'desc'), limit(50));
+    },
+    [firestore, rankingType]
+  );
+
   const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
   const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
   const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
+  const { data: gameUsers, isLoading: isLoadingGames } = useCollection(gamesQuery);
 
   const activeItems = useMemo(() => {
     if (rankingType === 'rich') return richUsers;
     if (rankingType === 'charm') return charmUsers;
     if (rankingType === 'rooms') return rankedRooms;
+    if (rankingType === 'games') return gameUsers;
     return null;
-  }, [rankingType, richUsers, charmUsers, rankedRooms]);
+  }, [rankingType, richUsers, charmUsers, rankedRooms, gameUsers]);
 
-  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : isLoadingRooms;
+  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'rooms' ? isLoadingRooms : isLoadingGames;
 
   const myValue = useMemo(() => {
     if (!me) return 0;
     if (rankingType === 'rich') return me.wallet?.dailySpent || 0;
     if (rankingType === 'charm') return (me as any).stats?.dailyGiftsReceived || 0;
+    if (rankingType === 'games') return (me as any).stats?.dailyGameWins || 0;
     return 0;
   }, [me, rankingType]);
 
@@ -316,8 +422,8 @@ function LeaderboardContent() {
     <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent">
       <DynamicThemeBackground theme={activeTheme} />
 
-      {/* Header - White icons and heading, no card bg */}
-      <header className="relative z-50 p-6 pt-safe flex items-center justify-between">
+      {/* Header - White Icons */}
+      <header className="relative z-50 p-6 pt-safe flex items-center justify-between backdrop-blur-md bg-black/20">
         <Link href="/rooms">
           <ChevronLeft className="h-6 w-6 text-white" />
         </Link>
@@ -325,8 +431,8 @@ function LeaderboardContent() {
         <HelpCircle className="h-5 w-5 text-white" />
       </header>
 
-      {/* Tabs - Only Honor, Charm, Room, no card bg */}
-      <div className="relative z-50 flex items-center justify-around border-b border-white/20 pb-2 mb-2">
+      {/* Tabs - Honor, Charm, Room (Game removed) */}
+      <div className="relative z-50 flex items-center justify-around border-b border-white/20 pb-2 mb-2 bg-black/30 backdrop-blur-sm">
         {[
           { id: 'rich', label: 'Honor' },
           { id: 'charm', label: 'Charm' },
@@ -335,11 +441,11 @@ function LeaderboardContent() {
           <div key={tab.id} className="flex flex-col items-center">
             <button
               onClick={() => setRankingMode(tab.id as any)}
-              className={cn('text-[10px] font-black uppercase tracking-widest transition-all py-2', rankingType === tab.id ? 'text-[#D4AF37] scale-110' : 'text-white/60')}
+              className={cn('text-[10px] font-black uppercase tracking-widest transition-all py-2', rankingType === tab.id ? 'text-white scale-110' : 'text-white/40')}
             >
               {tab.label}
             </button>
-            {rankingType === tab.id && <span className="text-[8px] font-bold text-[#D4AF37] mt-[-4px] animate-pulse shadow-[0_0_10px_#D4AF37]">●</span>}
+            {rankingType === tab.id && <span className="text-[8px] font-bold text-white mt-[-4px] animate-pulse">●</span>}
           </div>
         ))}
       </div>
@@ -348,20 +454,19 @@ function LeaderboardContent() {
         <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} />
       </main>
 
-      {/* Footer - same as before */}
-      <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#1a0e14]/90 backdrop-blur-xl border-t border-[#D4AF37]/40 p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(212,175,55,0.1)]">
+      <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#1a0e14]/90 backdrop-blur-xl border-t border-white/20 p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
         <Link href="/profile" className="max-w-4xl mx-auto flex items-center gap-4 w-full active:scale-[0.98] transition-all">
-          <span className="text-xs font-black text-[#D4AF37] italic">ME</span>
-          <SimpleAvatar src={me?.avatarUrl} fallback="U" size="sm" />
+          <span className="text-xs font-black text-white italic">ME</span>
+          <CircleAvatar src={me?.avatarUrl} fallback="U" size="sm" theme={activeTheme} />
           <div className="flex-1">
             <p className="font-black text-xs uppercase text-white truncate">{me?.username || 'Tribe Member'}</p>
             <div className="flex items-center gap-2">
               <GoldCoinIcon className="h-3 w-3" />
-              <span className="text-sm font-black text-[#D4AF37]">{myValue.toLocaleString()}</span>
+              <span className="text-sm font-black text-white">{myValue.toLocaleString()}</span>
             </div>
           </div>
-          <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/40 px-3 py-1 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-            <span className="text-[10px] font-black text-[#D4AF37]">SYNCED</span>
+          <div className="bg-white/10 border border-white/20 px-3 py-1 rounded-full">
+            <span className="text-[10px] font-black text-white">SYNCED</span>
           </div>
         </Link>
       </footer>
@@ -372,9 +477,9 @@ function LeaderboardContent() {
 export default function LeaderboardPage() {
   return (
     <AppLayout>
-      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#2e152b]"><Loader className="animate-spin text-[#D4AF37]" /></div>}>
+      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-[#2e152b]"><Loader className="animate-spin text-white" /></div>}>
         <LeaderboardContent />
       </Suspense>
     </AppLayout>
   );
-            }
+    }
