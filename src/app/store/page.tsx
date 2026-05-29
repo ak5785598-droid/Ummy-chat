@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 // ============================================
-// 🎯 SIMPLE BLOB CACHE (Download → Store → Display) - FIXED
+// 🎯 SIMPLE BLOB CACHE (Download → Store → Display)
 // ============================================
 const BLOB_CACHE_KEY = 'blob_cache_v1';
 
@@ -24,86 +24,95 @@ interface CacheEntry {
   timestamp: number;
 }
 
+// Cache se blob URL fetch karo
 const getCachedBlob = (itemId: string): string | null => {
   if (typeof window === 'undefined') return null;
+  
   try {
     const data = localStorage.getItem(BLOB_CACHE_KEY);
     if (!data) return null;
+    
     const cache: Record<string, CacheEntry> = JSON.parse(data);
     const entry = cache[itemId];
+    
     if (!entry) return null;
+    
+    // 24 hours expiry check
     if (Date.now() - entry.timestamp > 24 * 60 * 60 * 1000) {
       delete cache[itemId];
       localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
       return null;
     }
+    
     return entry.url;
   } catch {
     return null;
   }
 };
 
+// Blob URL cache me store karo
 const setCachedBlob = (itemId: string, blobUrl: string): void => {
   if (typeof window === 'undefined') return;
+  
   try {
     const data = localStorage.getItem(BLOB_CACHE_KEY);
     const cache: Record<string, CacheEntry> = data ? JSON.parse(data) : {};
+    
+    // Max 20 items rakho cache me
     const entries = Object.entries(cache);
     if (entries.length >= 20) {
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      // Purane 10 hatao
       entries.slice(0, 10).forEach(([key]) => {
         delete cache[key];
       });
     }
-    cache[itemId] = { url: blobUrl, timestamp: Date.now() };
+    
+    cache[itemId] = {
+      url: blobUrl,
+      timestamp: Date.now()
+    };
+    
     localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
-  } catch {
+  } catch (e) {
+    // Storage full - poori cache clear karo
     localStorage.removeItem(BLOB_CACHE_KEY);
     try {
-      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({ [itemId]: { url: blobUrl, timestamp: Date.now() } }));
+      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({
+        [itemId]: { url: blobUrl, timestamp: Date.now() }
+      }));
     } catch {}
   }
 };
 
-// FIXED: Hook - Image download + blob cache - no duplicate downloads
+// Hook - Image download + blob cache (sirf image ke liye, video nahi)
 const useBlobCache = (itemId: string, imageUrl: string | null) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const doneRef = useRef(false);
-  const fetchRef = useRef<Promise<void> | null>(null);
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
-    if (!imageUrl || !itemId) {
-      setIsLoading(false);
+    if (!imageUrl || !itemId || doneRef.current) return;
+    
+    // Step 1: Cache check
+    const cached = getCachedBlob(itemId);
+    if (cached) {
+      setBlobUrl(cached);
+      doneRef.current = true;
+      setHasError(false);
       return;
     }
     
-    if (doneRef.current) return;
+    // Step 2: Download and cache with retry logic
+    setIsLoading(true);
+    setHasError(false);
     
-    const loadImage = async () => {
-      const cached = getCachedBlob(itemId);
-      if (cached) {
-        setBlobUrl(cached);
-        setIsLoading(false);
-        doneRef.current = true;
-        return;
-      }
-      
-      if (fetchRef.current) {
-        await fetchRef.current;
-        const newCached = getCachedBlob(itemId);
-        if (newCached) {
-          setBlobUrl(newCached);
-          setIsLoading(false);
-          doneRef.current = true;
-        }
-        return;
-      }
-      
-      fetchRef.current = fetch(imageUrl)
+    const downloadImage = () => {
+      fetch(imageUrl, { mode: 'cors' })
         .then(res => {
-          if (!res.ok) throw new Error('Network response was not ok');
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
           return res.blob();
         })
         .then(blob => {
@@ -111,28 +120,32 @@ const useBlobCache = (itemId: string, imageUrl: string | null) => {
           setCachedBlob(itemId, url);
           setBlobUrl(url);
           doneRef.current = true;
+          setHasError(false);
         })
         .catch(err => {
           console.error('Download failed:', err);
-          setHasError(true);
-          setBlobUrl(imageUrl);
+          retryCountRef.current++;
+          if (retryCountRef.current < 3) {
+            // Retry after 1 second
+            setTimeout(downloadImage, 1000);
+          } else {
+            // Fallback to original URL after 3 retries
+            setBlobUrl(imageUrl);
+            setHasError(true);
+          }
         })
-        .finally(() => {
-          setIsLoading(false);
-          fetchRef.current = null;
-        });
-      
-      await fetchRef.current;
+        .finally(() => setIsLoading(false));
     };
     
-    loadImage();
+    downloadImage();
+    
   }, [itemId, imageUrl]);
   
-  return { blobUrl: blobUrl || imageUrl, isLoading: isLoading && !hasError && !blobUrl };
+  return { blobUrl: blobUrl || imageUrl, isLoading, hasError };
 };
 
 // ============================================
-// FIXED: SMART BLACK BACKGROUND REMOVER - More reliable
+// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
@@ -152,7 +165,7 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
   const lastProcessedSrc = useRef('');
-  const [mediaLoaded, setMediaLoaded] = useState(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
@@ -211,7 +224,7 @@ const SmartBlackRemover = ({
     const width = 'videoWidth' in media ? media.videoWidth : media.width;
     const height = 'videoHeight' in media ? media.videoHeight : media.height;
 
-    if (width === 0 || height === 0) {
+    if (!width || !height || width === 0 || height === 0) {
       processingRef.current = false;
       return;
     }
@@ -296,7 +309,7 @@ const SmartBlackRemover = ({
     ctx.putImageData(imageData, 0, 0);
     processingRef.current = false;
 
-    if (type === 'video' && video && video.readyState >= 2) {
+    if (type === 'video' && video) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -304,38 +317,74 @@ const SmartBlackRemover = ({
     }
   };
 
-  const handleMediaLoad = () => {
-    const media = mediaRef.current;
-    if (!media) return;
-    
-    const width = 'videoWidth' in media ? media.videoWidth : media.width;
-    const height = 'videoHeight' in media ? media.videoHeight : media.height;
-    
-    if (width > 0 && height > 0) {
-      const hasBlackBg = detectSolidBlackBg(media, width, height);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      setMediaLoaded(true);
-      if (hasBlackBg) {
-        setTimeout(() => {
-          if (type === 'video' && mediaRef.current) {
-            processFrame(mediaRef.current as HTMLVideoElement);
-          } else {
-            processFrame();
-          }
-        }, 100);
-      }
-    }
-  };
-
   useEffect(() => {
     if (src !== lastProcessedSrc.current) {
       setUseCanvas(false);
       setIsReady(false);
-      setMediaLoaded(false);
       lastProcessedSrc.current = src;
     }
-  }, [src]);
+
+    // Clear any existing timeout
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+
+    // Fallback timeout - agar image load na ho toh bhi ready kar do
+    loadTimeoutRef.current = setTimeout(() => {
+      if (!isReady && mediaRef.current) {
+        setIsReady(true);
+        setUseCanvas(false);
+      }
+    }, 5000);
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [src, type, isReady]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
+    }
+  };
+
+  const handleImageError = () => {
+    // Agar image load nahi ho rahi toh bhi ready state set karo
+    setIsReady(true);
+    setUseCanvas(false);
+  };
+
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -344,6 +393,9 @@ const SmartBlackRemover = ({
         animationFrameRef.current = null;
       }
       processingRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -357,7 +409,7 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
-          onLoadedData={handleMediaLoad}
+          onLoadedData={handleVideoReady}
           className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
           style={{ display: useCanvas ? 'none' : 'block' }}
           crossOrigin="anonymous"
@@ -373,6 +425,17 @@ const SmartBlackRemover = ({
             }}
           />
         )}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+        )}
       </div>
     );
   }
@@ -383,7 +446,8 @@ const SmartBlackRemover = ({
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
         alt=""
-        onLoad={handleMediaLoad}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
         className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
         style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
@@ -399,12 +463,20 @@ const SmartBlackRemover = ({
           }}
         />
       )}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      )}
     </div>
   );
 };
 
 // ============================================
-// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
+// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover) - Sirf image ke liye
 // ============================================
 const CachedMedia = ({ 
   itemId, 
@@ -419,19 +491,20 @@ const CachedMedia = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const { blobUrl, isLoading } = useBlobCache(itemId, type === 'image' ? src : null);
-  const mediaSource = type === 'video' ? src : (blobUrl || src);
+  // Sirf image type ke liye blob cache use karo, video ke liye direct src
+  const { blobUrl, isLoading, hasError } = useBlobCache(itemId, type === 'image' ? src : null);
   
-  if (isLoading && type === 'image') {
-    return (
-      <div className="relative w-full h-full flex items-center justify-center" style={{ background: 'transparent' }}>
-        <Loader className="animate-spin h-8 w-8 text-white/40" />
-      </div>
-    );
-  }
+  // Agar video hai toh direct src use karo (blob cache nahi)
+  // Agar image hai toh cached blob use karo
+  const mediaSource = type === 'video' ? src : (blobUrl || src);
   
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      {isLoading && type === 'image' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
+          <Loader className="animate-spin h-6 w-6 text-white/60" />
+        </div>
+      )}
       <SmartBlackRemover 
         src={mediaSource} 
         type={type} 
@@ -443,7 +516,7 @@ const CachedMedia = ({
 };
 
 // ============================================
-// ALL ICONS
+// ALL ICONS (EXISTING - NO TOUCH)
 // ============================================
 
 // --- CUSTOM DOLLAR COIN ICON ---
@@ -677,9 +750,7 @@ const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
-// ============================================
-// STORE ITEMS
-// ============================================
+// --- STORE ITEMS ---
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -691,143 +762,6 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-reso', name: 'Reso', type: 'Wave', price: 20000, durationDays: 7, description: 'Neon green resonance 3D glossy wave.', icon: Activity, color: 'text-green-500' },
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
-
-// ============================================
-// GRID CARD COMPONENT with Play Button
-// ============================================
-const StoreCard = ({ 
-  item, 
-  onClick, 
-  isOwned = false,
-  expiryDate = null
-}: { 
-  item: any; 
-  onClick: () => void; 
-  isOwned?: boolean;
-  expiryDate?: Date | null;
-}) => {
-  const hasPreviewMedia = item.videoUrl || item.imageUrl;
-  
-  const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onClick();
-  };
-  
-  // Helper to render card icon
-  const renderIcon = () => {
-    if (item.type === 'Frame') {
-      const displayImage = item.videoUrl || item.imageUrl;
-      if (displayImage) {
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={displayImage} 
-              type={item.videoUrl ? 'video' : 'image'}
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <FramePlaceholderIcon className="h-12 w-12" />;
-    }
-    
-    if (item.type === 'Theme') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
-    }
-    
-    if (item.type === 'Bubble') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
-    }
-    
-    if (item.type === 'Wave') {
-      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
-    }
-    
-    if (item.type === 'ID') {
-      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
-      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
-      return <IDBadgeIcon number={item.displayId || ''} />;
-    }
-    
-    if (item.type === 'Entry') {
-      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
-    }
-    
-    if (item.icon) {
-      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
-    }
-    
-    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
-  };
-  
-  return (
-    <Card 
-      onClick={onClick} 
-      className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative group"
-    >
-      {/* Play Button - Top Right Corner */}
-      {hasPreviewMedia && (
-        <button
-          onClick={handlePlayClick}
-          className="absolute top-2 right-2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full p-1.5 transition-all opacity-90 group-hover:opacity-100"
-        >
-          <Play size={14} className="text-white fill-white" />
-        </button>
-      )}
-      
-      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-        {renderIcon()}
-      </div>
-      <CardHeader className="text-center p-3 pb-1">
-        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-      </CardHeader>
-      <CardFooter className="flex flex-col gap-1 p-3 pt-1">
-        {isOwned && expiryDate ? (
-          <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
-            <span>Expire: <span className="text-red-400">{expiryDate.toLocaleDateString('en-IN')}</span></span>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center gap-1.5 text-sm w-full">
-            <DollarCoinIcon className="h-4 w-4" />
-            <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
-          </div>
-        )}
-      </CardFooter>
-    </Card>
-  );
-};
 
 // ============================================
 // MAIN STORE PAGE COMPONENT
@@ -969,9 +903,11 @@ export default function StorePage() {
   const { data: config } = useDoc(configRef);
   const storeNotForSale = (config?.storeNotForSale || {}) as Record<string, boolean>;
 
-  // 🔥 NOT FOR SALE CARDS - FILTER OUT COMPLETELY
+  // 🔥 FILTER: Not for sale wale items ko hatao, sirf sale wale dikhao
   const allItemsWithFlags = useMemo(() => {
-    return allItems.filter(item => !storeNotForSale[item.id]);
+    return allItems
+      .map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }))
+      .filter(item => !item.notForSale); // 🔥 Not for sale wale ko filter out karo
   }, [allItems, storeNotForSale]);
 
   // --- PURCHASED ITEMS (Mine Tab) ---
@@ -1018,6 +954,7 @@ export default function StorePage() {
           if (expiry && expiry.toDate() <= now.toDate()) {
             updateData[`inventory.active${type}`] = 'None';
             needsUpdate = true;
+            console.log(`Auto-unequipped expired ${type}: ${activeItemId}`);
           }
         }
       }
@@ -1055,8 +992,22 @@ export default function StorePage() {
     return true;
   };
 
+  // 🔥 Check if item has video (for play button)
+  const hasVideo = (item: any): boolean => {
+    if (item.videoUrl) return true;
+    if (item.type === 'Theme' && item.videoUrl) return true;
+    if (item.type === 'Frame' && item.videoUrl) return true;
+    if (item.type === 'Bubble' && item.videoUrl) return true;
+    if (item.type === 'Entry' && item.videoUrl) return true;
+    return false;
+  };
+
   const handlePurchase = async (item: any, duration: number) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
+    if (item?.notForSale) {
+      toast({ variant: 'destructive', title: 'Not for sale', description: 'Ye item abhi store me available nahi hai.' });
+      return;
+    }
     const finalPrice = getCalculatedPrice(item.price, duration);
 
     if ((userProfile.wallet?.coins || 0) < finalPrice) {
@@ -1095,6 +1046,7 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
+    // Double check expiry
     const expiry = (userProfile.inventory as any)?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
@@ -1145,8 +1097,98 @@ export default function StorePage() {
     }
   };
 
-  // Helper to render preview icon
+  // 🔥 Helper to get frame display image URL
+  const getFrameDisplayImage = (item: any): string | null => {
+    if (item.type !== 'Frame') return null;
+    if (item.imageUrl) return item.imageUrl;
+    if (item.videoUrl) return item.videoUrl;
+    return null;
+  };
+
+  // Helper to render store card icon
+  const renderStoreCardIcon = (item: any) => {
+    // 🔥 FRAME: Display pe IMAGE dikhega, VIDEO nahi chalegi
+    if (item.type === 'Frame') {
+      const displayImage = getFrameDisplayImage(item);
+      if (displayImage) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={displayImage} 
+              type="image"
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <FramePlaceholderIcon className="h-12 w-12" />;
+    }
+    
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
+    }
+    
+    // 🔥 BUBBLE: Square shape me dikhega - grid card me square, circle nahi
+    if (item.type === 'Bubble') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
+    }
+    
+    if (item.type === 'Wave') {
+      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
+    }
+    
+    if (item.type === 'ID') {
+      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
+      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
+      return <IDBadgeIcon number={item.displayId || ''} />;
+    }
+    
+    if (item.type === 'Entry') {
+      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
+    }
+    
+    if (item.icon) {
+      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
+    }
+    
+    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
+  };
+
+  // 🔥 PREVIEW CARD: Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
+    // 🔥 THEME: Image compact show hogi - chhoti size me full image
     if (item.type === 'Theme') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1176,6 +1218,7 @@ export default function StorePage() {
       );
     }
     
+    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai
     if (item.type === 'Frame') {
       const mediaUrl = item.videoUrl || item.imageUrl;
       if (mediaUrl) {
@@ -1199,6 +1242,7 @@ export default function StorePage() {
       );
     }
     
+    // 🔥 BUBBLE PREVIEW: Square shape me dikhega - circle nahi
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1222,7 +1266,9 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
+    // 🔥 ENTRY: Direct videoUrl use hoga, koi SVGA fallback nahi
     if (item.type === 'Entry') {
+      // Agar entry item me videoUrl hai toh video dikhao
       if (item.videoUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1236,6 +1282,7 @@ export default function StorePage() {
           </div>
         );
       }
+      // Agar imageUrl hai toh image dikhao
       if (item.imageUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
@@ -1249,6 +1296,7 @@ export default function StorePage() {
           </div>
         );
       }
+      // Nahi toh default SVG ticket icon
       return (
         <div className="scale-125">
           <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
@@ -1319,18 +1367,38 @@ export default function StorePage() {
               <TabsContent key={category} value={category}>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
-                    <StoreCard 
-                      key={item.id}
-                      item={item}
-                      onClick={() => setPreviewItem(item)}
-                    />
+                    <Card 
+                      key={item.id} 
+                      onClick={() => setPreviewItem(item)} 
+                      className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
+                    >
+                      {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho */}
+                      {hasVideo(item) && (
+                        <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
+                          <Play className="h-3.5 w-3.5 text-white fill-white" />
+                        </div>
+                      )}
+                      
+                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                        {renderStoreCardIcon(item)}
+                      </div>
+                      <CardHeader className="text-center p-3 pb-1">
+                        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+                      </CardHeader>
+                      <CardFooter className="flex flex-col gap-3 p-3 pt-1">
+                        <div className="flex items-center justify-center gap-1.5 text-sm w-full">
+                          <DollarCoinIcon className="h-4 w-4" />
+                          <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+                        </div>
+                      </CardFooter>
+                    </Card>
                   ))}
                 </div>
                 {storeItems.filter(i => category === 'All' || i.type === category).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
-                    <p className="text-white text-lg">No items available in {category}</p>
-                    <p className="text-gray-400 text-sm mt-2">Check back later for new items!</p>
+                    <p className="text-white text-lg">Is category me abhi koi item available nahi hai</p>
+                    <p className="text-gray-400 text-sm mt-2">Baad me check karein, naye items add hote rahenge!</p>
                   </div>
                 )}
               </TabsContent>
@@ -1357,14 +1425,34 @@ export default function StorePage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
                     const expiryDate = getItemExpiryDate(item.id);
+                    const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
+                    
                     return (
-                      <StoreCard 
-                        key={item.id}
-                        item={item}
-                        onClick={() => setPreviewItem(item)}
-                        isOwned={true}
-                        expiryDate={expiryDate}
-                      />
+                      <Card 
+                        key={item.id} 
+                        onClick={() => setPreviewItem(item)} 
+                        className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
+                      >
+                        {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho */}
+                        {hasVideo(item) && (
+                          <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
+                            <Play className="h-3.5 w-3.5 text-white fill-white" />
+                          </div>
+                        )}
+                        
+                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                          {renderStoreCardIcon(item)}
+                        </div>
+                        <CardHeader className="text-center p-3 pb-0">
+                          <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+                        </CardHeader>
+                        <CardFooter className="flex flex-col gap-1 p-3 pt-1">
+                          <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+                            <span>Expire:</span>
+                            <span className="text-red-400">{expiryDateStr}</span>
+                          </div>
+                        </CardFooter>
+                      </Card>
                     );
                   })}
                 </div>
@@ -1380,7 +1468,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* PREVIEW CARD */}
+        {/* 🔥 PREVIEW CARD */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1406,6 +1494,7 @@ export default function StorePage() {
                   isTheme ? "pt-2 pb-1 px-2" : "pt-8 pb-4 px-4 overflow-y-auto"
                 )}>
                   {isTheme ? (
+                    // 🔥 THEME PREVIEW: Compact size me full image show hogi
                     <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg px-4" style={{ background: 'transparent' }}>
                       {renderPreviewIcon(previewItem)}
                     </div>
@@ -1496,4 +1585,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+    }
