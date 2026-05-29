@@ -13,7 +13,7 @@ import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { LeaderboardThemeConfig } from '@/components/admin/leaderboard-theme-admin';
 
-// --- Dynamic Theme Background (same as before - untouched) ---
+// --- Dynamic Theme Background ---
 const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | null }) => {
   if (!theme) {
     return (
@@ -47,13 +47,12 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
           className="fixed inset-0 w-full h-full object-cover z-0"
         />
       )}
-      <div className="fixed inset-0 z-1 bg-black/40 pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#1a0e14] to-transparent z-2 pointer-events-none" />
     </>
   );
 };
 
-// --- Daily Countdown Component (same as before) ---
+// --- Daily Countdown Component ---
 const DailyCountdown = () => {
   const [timeLeft, setTimeLeft] = useState('');
 
@@ -93,23 +92,28 @@ const DailyCountdown = () => {
   );
 };
 
-// --- NEW: No rank badge, only simple avatar ---
+// --- Simple Avatar - AB SAB SQUARE honge (Top 1,2,3 + 4 to 50) ---
 const SimpleAvatar = ({ src, fallback, size = "md", rank }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number }) => {
   const sizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-24 w-24" };
   
   return (
     <div className="relative">
-      <div className={cn("relative flex items-center justify-center rounded-full border-2 border-white/20 bg-slate-900", sizes[size])}>
-        <Avatar className="h-full w-full">
-          <AvatarImage src={src} className="object-cover rounded-full" />
-          <AvatarFallback className="bg-slate-900 text-white font-black rounded-full">{fallback}</AvatarFallback>
+      <div 
+        className={cn(
+          "relative flex items-center justify-center border-2 border-white/20 bg-slate-900 overflow-hidden rounded-xl",
+          sizes[size]
+        )}
+      >
+        <Avatar className="h-full w-full rounded-xl">
+          <AvatarImage src={src} className="object-cover rounded-xl" />
+          <AvatarFallback className="bg-slate-900 text-white font-black rounded-xl">{fallback}</AvatarFallback>
         </Avatar>
       </div>
     </div>
   );
 };
 
-// --- Ranking List (modified UI) ---
+// --- Ranking List ---
 const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null }) => {
   if (isLoading)
     return (
@@ -148,7 +152,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
 
   return (
     <div className="space-y-2 animate-in fade-in duration-700 pb-32 relative z-10">
-      {/* TOP 1 - Top Row */}
+      {/* TOP 1 - Square avatar */}
       {top1 && (
         <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center justify-center py-4">
           <div className="relative mb-2">
@@ -168,7 +172,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </Link>
       )}
 
-      {/* TOP 2 & TOP 3 - Row */}
+      {/* TOP 2 & TOP 3 - Square avatars */}
       <div className="flex items-center justify-center gap-8 px-4 mt-8">
         {top2 && (
           <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex flex-col items-center flex-1">
@@ -208,7 +212,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
       {/* Countdown here */}
       <DailyCountdown />
 
-      {/* Top 4 to 50 */}
+      {/* Top 4 to 50 - AB YEH BHI SQUARE avatars ke saath */}
       <div className="px-4 space-y-3 mt-4">
         {others.map((item, index) => (
           <Link
@@ -221,7 +225,6 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
             <SimpleAvatar src={item.avatarUrl || item.coverUrl} fallback={(index + 4).toString()} size="sm" rank={index + 4} />
             <div className="flex-1">
               <p className="text-xs font-black uppercase text-white tracking-wide">{item.username || item.name || 'User'}</p>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Global Player</p>
             </div>
             <div className="text-right flex items-center gap-2">
               <span className="text-[#D4AF37] font-black text-sm">{formatValue(getValue(item))}</span>
@@ -317,16 +320,16 @@ function LeaderboardContent() {
     <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent">
       <DynamicThemeBackground theme={activeTheme} />
 
-      {/* Header - White icons and heading */}
+      {/* Header */}
       <header className="relative z-50 p-6 pt-safe flex items-center justify-between backdrop-blur-md bg-black/20">
         <Link href="/rooms">
           <ChevronLeft className="h-6 w-6 text-white" />
         </Link>
-        <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-white">Hall of Fame</h1>
+        <h1 className="text-xl font-black uppercase tracking-[0.2em] italic text-white">Ranking</h1>
         <HelpCircle className="h-5 w-5 text-white" />
       </header>
 
-      {/* Tabs - Only Honor, Charm, Room */}
+      {/* Tabs - Honor, Charm, Room */}
       <div className="relative z-50 flex items-center justify-around border-b border-white/20 pb-2 mb-2 bg-black/30 backdrop-blur-sm">
         {[
           { id: 'rich', label: 'Honor' },
@@ -349,7 +352,7 @@ function LeaderboardContent() {
         <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} />
       </main>
 
-      {/* Footer - same as before */}
+      {/* Footer */}
       <footer className="fixed bottom-0 left-0 right-0 z-[100] bg-[#1a0e14]/90 backdrop-blur-xl border-t border-[#D4AF37]/40 p-4 h-20 flex items-center shadow-[0_-10px_30px_rgba(212,175,55,0.1)]">
         <Link href="/profile" className="max-w-4xl mx-auto flex items-center gap-4 w-full active:scale-[0.98] transition-all">
           <span className="text-xs font-black text-[#D4AF37] italic">ME</span>
