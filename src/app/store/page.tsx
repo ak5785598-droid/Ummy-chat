@@ -85,14 +85,14 @@ const setCachedBlob = (itemId: string, blobUrl: string): void => {
   }
 };
 
-// Hook - Video download + blob cache
-const useBlobCache = (itemId: string, videoUrl: string | null) => {
+// Hook - Image download + blob cache (sirf image ke liye, video nahi)
+const useBlobCache = (itemId: string, imageUrl: string | null) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const doneRef = useRef(false);
 
   useEffect(() => {
-    if (!videoUrl || !itemId || doneRef.current) return;
+    if (!imageUrl || !itemId || doneRef.current) return;
     
     // Step 1: Cache check
     const cached = getCachedBlob(itemId);
@@ -105,7 +105,7 @@ const useBlobCache = (itemId: string, videoUrl: string | null) => {
     // Step 2: Download and cache
     setIsLoading(true);
     
-    fetch(videoUrl)
+    fetch(imageUrl)
       .then(res => res.blob())
       .then(blob => {
         const url = URL.createObjectURL(blob);
@@ -115,18 +115,13 @@ const useBlobCache = (itemId: string, videoUrl: string | null) => {
       })
       .catch(err => {
         console.error('Download failed:', err);
-        setBlobUrl(videoUrl);
+        setBlobUrl(imageUrl);
       })
       .finally(() => setIsLoading(false));
     
-  }, [itemId, videoUrl]);
+  }, [itemId, imageUrl]);
   
-  // Blob URLs ko revoke nahi karenge - page refresh pe auto clear
-  useEffect(() => {
-    return () => {};
-  }, []);
-  
-  return { blobUrl: blobUrl || videoUrl, isLoading };
+  return { blobUrl: blobUrl || imageUrl, isLoading };
 };
 
 // ============================================
@@ -426,7 +421,7 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
+// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover) - Sirf image ke liye
 // ============================================
 const CachedMedia = ({ 
   itemId, 
@@ -441,13 +436,16 @@ const CachedMedia = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const { blobUrl, isLoading } = useBlobCache(itemId, type === 'video' ? src : null);
+  // Sirf image type ke liye blob cache use karo, video ke liye direct src
+  const { blobUrl, isLoading } = useBlobCache(itemId, type === 'image' ? src : null);
   
-  const mediaSource = type === 'video' ? (blobUrl || src) : src;
+  // Agar video hai toh direct src use karo (blob cache nahi)
+  // Agar image hai toh cached blob use karo
+  const mediaSource = type === 'video' ? src : (blobUrl || src);
   
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      {isLoading && type === 'video' && (
+      {isLoading && type === 'image' && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
           <Loader className="animate-spin h-6 w-6 text-white/60" />
         </div>
@@ -1031,18 +1029,26 @@ export default function StorePage() {
     }
   };
 
+  // 🔥 Helper to get frame display image URL
+  const getFrameDisplayImage = (item: any): string | null => {
+    if (item.type !== 'Frame') return null;
+    if (item.imageUrl) return item.imageUrl;
+    if (item.videoUrl) return item.videoUrl;
+    return null;
+  };
+
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
+    // 🔥 FRAME: Display pe IMAGE dikhega, VIDEO nahi chalegi
     if (item.type === 'Frame') {
-      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
+      const displayImage = getFrameDisplayImage(item);
+      if (displayImage) {
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
             <CachedMedia 
               itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
+              src={displayImage} 
+              type="image"
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
@@ -1071,12 +1077,13 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
+    // 🔥 BUBBLE: Square shape me dikhega - grid card me square, circle nahi
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-full" style={{ background: 'transparent' }}>
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
@@ -1111,20 +1118,20 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // Helper to render preview icon - FIXED: Theme ke liye full width/height image with object-contain
+  // 🔥 PREVIEW CARD: Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
+    // 🔥 THEME: Image compact show hogi - chhoti size me full image
     if (item.type === 'Theme') {
-      // 🔥 THEME PREVIEW: Full width, lamba dikhega, object-contain se poora image show hoga
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden" style={{ background: 'transparent', minHeight: 0 }}>
+          <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent', maxHeight: '45vh' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
-              className="w-full h-full"
+              className="w-auto h-auto max-w-full max-h-full"
               style={{ background: 'transparent', objectFit: 'contain' }}
             />
           </div>
@@ -1143,16 +1150,17 @@ export default function StorePage() {
       );
     }
     
+    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai
     if (item.type === 'Frame') {
-      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
+      const mediaUrl = item.videoUrl || item.imageUrl;
+      if (mediaUrl) {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
-              type={mediaType} 
+              type={mediaType}
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
@@ -1166,6 +1174,7 @@ export default function StorePage() {
       );
     }
     
+    // 🔥 BUBBLE PREVIEW: Square shape me dikhega - circle nahi
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1189,7 +1198,37 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
+    // 🔥 ENTRY: Direct videoUrl use hoga, koi SVGA fallback nahi
     if (item.type === 'Entry') {
+      // Agar entry item me videoUrl hai toh video dikhao
+      if (item.videoUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={item.videoUrl} 
+              type="video"
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      // Agar imageUrl hai toh image dikhao
+      if (item.imageUrl) {
+        return (
+          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={item.imageUrl} 
+              type="image"
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      // Nahi toh default SVG ticket icon
       return (
         <div className="scale-125">
           <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
@@ -1349,7 +1388,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* 🔥 PREVIEW CARD - FIXED: Theme ke liye 70vh height + image full show */}
+        {/* 🔥 PREVIEW CARD */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1370,18 +1409,16 @@ export default function StorePage() {
                   <X size={24} />
                 </button>
 
-                {/* 🔥 THEME PREVIEW: Image full container me show hoga, upar niche lamba */}
                 <div className={cn(
                   "flex-1 overflow-hidden flex flex-col items-center",
                   isTheme ? "pt-2 pb-1 px-2" : "pt-8 pb-4 px-4 overflow-y-auto"
                 )}>
                   {isTheme ? (
-                    /* Theme: Full area, image apne original size me show hoga with object-contain */
-                    <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+                    // 🔥 THEME PREVIEW: Compact size me full image show hogi
+                    <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg px-4" style={{ background: 'transparent' }}>
                       {renderPreviewIcon(previewItem)}
                     </div>
                   ) : (
-                    /* Non-theme: Centered icon with fixed size */
                     <div className={cn(
                       "mb-4 scale-[1.1] flex items-center justify-center",
                       previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
@@ -1404,7 +1441,7 @@ export default function StorePage() {
                   )}
                 </div>
 
-                {/* Bottom action bar - same for all types */}
+                {/* Bottom action bar */}
                 {isOwnedAndValid ? (
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
                     <Button 
