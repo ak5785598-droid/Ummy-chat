@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 // ============================================
-// 🎯 SIMPLE BLOB CACHE (Download → Store → Display)
+// 🎯 SIMPLE BLOB CACHE (Download → Store → Display) - FIXED
 // ============================================
 const BLOB_CACHE_KEY = 'blob_cache_v1';
 
@@ -24,121 +24,126 @@ interface CacheEntry {
   timestamp: number;
 }
 
-// Cache se blob URL fetch karo
 const getCachedBlob = (itemId: string): string | null => {
   if (typeof window === 'undefined') return null;
-  
   try {
     const data = localStorage.getItem(BLOB_CACHE_KEY);
     if (!data) return null;
-    
     const cache: Record<string, CacheEntry> = JSON.parse(data);
     const entry = cache[itemId];
-    
     if (!entry) return null;
-    
-    // 24 hours expiry check
     if (Date.now() - entry.timestamp > 24 * 60 * 60 * 1000) {
       delete cache[itemId];
       localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
       return null;
     }
-    
     return entry.url;
   } catch {
     return null;
   }
 };
 
-// Blob URL cache me store karo
 const setCachedBlob = (itemId: string, blobUrl: string): void => {
   if (typeof window === 'undefined') return;
-  
   try {
     const data = localStorage.getItem(BLOB_CACHE_KEY);
     const cache: Record<string, CacheEntry> = data ? JSON.parse(data) : {};
-    
-    // Max 20 items rakho cache me
     const entries = Object.entries(cache);
     if (entries.length >= 20) {
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      // Purane 10 hatao
       entries.slice(0, 10).forEach(([key]) => {
         delete cache[key];
       });
     }
-    
-    cache[itemId] = {
-      url: blobUrl,
-      timestamp: Date.now()
-    };
-    
+    cache[itemId] = { url: blobUrl, timestamp: Date.now() };
     localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
-  } catch (e) {
-    // Storage full - poori cache clear karo
+  } catch {
     localStorage.removeItem(BLOB_CACHE_KEY);
     try {
-      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({
-        [itemId]: { url: blobUrl, timestamp: Date.now() }
-      }));
+      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({ [itemId]: { url: blobUrl, timestamp: Date.now() } }));
     } catch {}
   }
 };
 
-// Hook - Image download + blob cache (sirf image ke liye, video nahi)
+// FIXED: Hook - Image download + blob cache - no duplicate downloads
 const useBlobCache = (itemId: string, imageUrl: string | null) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const doneRef = useRef(false);
+  const fetchRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
-    if (!imageUrl || !itemId || doneRef.current) return;
-    
-    // Step 1: Cache check
-    const cached = getCachedBlob(itemId);
-    if (cached) {
-      setBlobUrl(cached);
-      doneRef.current = true;
+    if (!imageUrl || !itemId) {
+      setIsLoading(false);
       return;
     }
     
-    // Step 2: Download and cache
-    setIsLoading(true);
+    if (doneRef.current) return;
     
-    fetch(imageUrl)
-      .then(res => res.blob())
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        setCachedBlob(itemId, url);
-        setBlobUrl(url);
+    const loadImage = async () => {
+      const cached = getCachedBlob(itemId);
+      if (cached) {
+        setBlobUrl(cached);
+        setIsLoading(false);
         doneRef.current = true;
-      })
-      .catch(err => {
-        console.error('Download failed:', err);
-        setBlobUrl(imageUrl);
-      })
-      .finally(() => setIsLoading(false));
+        return;
+      }
+      
+      if (fetchRef.current) {
+        await fetchRef.current;
+        const newCached = getCachedBlob(itemId);
+        if (newCached) {
+          setBlobUrl(newCached);
+          setIsLoading(false);
+          doneRef.current = true;
+        }
+        return;
+      }
+      
+      fetchRef.current = fetch(imageUrl)
+        .then(res => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.blob();
+        })
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          setCachedBlob(itemId, url);
+          setBlobUrl(url);
+          doneRef.current = true;
+        })
+        .catch(err => {
+          console.error('Download failed:', err);
+          setHasError(true);
+          setBlobUrl(imageUrl);
+        })
+        .finally(() => {
+          setIsLoading(false);
+          fetchRef.current = null;
+        });
+      
+      await fetchRef.current;
+    };
     
+    loadImage();
   }, [itemId, imageUrl]);
   
-  return { blobUrl: blobUrl || imageUrl, isLoading };
+  return { blobUrl: blobUrl || imageUrl, isLoading: isLoading && !hasError && !blobUrl };
 };
 
 // ============================================
-// SMART BLACK BACKGROUND REMOVER (WITH HOLE MASK FOR FRAME)
+// FIXED: SMART BLACK BACKGROUND REMOVER - More reliable
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
   className = '', 
-  style = {},
-  isFrame = false
+  style = {} 
 }: { 
   src: string; 
   type?: 'image' | 'video'; 
   className?: string; 
   style?: React.CSSProperties;
-  isFrame?: boolean;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
@@ -147,6 +152,7 @@ const SmartBlackRemover = ({
   const [isReady, setIsReady] = useState(false);
   const processingRef = useRef(false);
   const lastProcessedSrc = useRef('');
+  const [mediaLoaded, setMediaLoaded] = useState(false);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     const canvas = document.createElement('canvas');
@@ -205,6 +211,11 @@ const SmartBlackRemover = ({
     const width = 'videoWidth' in media ? media.videoWidth : media.width;
     const height = 'videoHeight' in media ? media.videoHeight : media.height;
 
+    if (width === 0 || height === 0) {
+      processingRef.current = false;
+      return;
+    }
+
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width;
       canvas.height = height;
@@ -216,147 +227,64 @@ const SmartBlackRemover = ({
     const data = imageData.data;
 
     const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
     
-    if (isFrame) {
-      // 🔥 FRAME KE LIYE: Hole mask approach - center se connected black pixels dhundho
-      const visited = new Uint8Array(width * height);
-      const queue: [number, number][] = [];
-      
-      // Center point se start karo
-      const centerX = Math.floor(width / 2);
-      const centerY = Math.floor(height / 2);
-      const centerI = (centerY * width + centerX) * 4;
-      
-      if (data[centerI] < STRICT_BLACK && data[centerI+1] < STRICT_BLACK && data[centerI+2] < STRICT_BLACK) {
-        queue.push([centerX, centerY]);
-        visited[centerY * width + centerX] = 1;
-      }
-      
-      // Also edges se black pixels dhundho jo center tak pahunch sakte hain
-      // Top edge
-      for (let x = 0; x < width; x++) {
-        const i = x * 4;
-        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-          if (!visited[x]) { queue.push([x, 0]); visited[x] = 1; }
-        }
-      }
-      // Bottom edge
-      for (let x = 0; x < width; x++) {
-        const i = ((height - 1) * width + x) * 4;
-        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-          const idx = (height - 1) * width + x;
-          if (!visited[idx]) { queue.push([x, height - 1]); visited[idx] = 1; }
-        }
-      }
-      // Left edge
-      for (let y = 0; y < height; y++) {
-        const i = (y * width) * 4;
-        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-          const idx = y * width;
-          if (!visited[idx]) { queue.push([0, y]); visited[idx] = 1; }
-        }
-      }
-      // Right edge
-      for (let y = 0; y < height; y++) {
-        const i = (y * width + (width - 1)) * 4;
-        if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-          const idx = y * width + (width - 1);
-          if (!visited[idx]) { queue.push([width - 1, y]); visited[idx] = 1; }
-        }
-      }
-      
-      // BFS flood fill
-      let head = 0;
-      while (head < queue.length) {
-        const [x, y] = queue[head++];
-        const neighbors: [number, number][] = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]];
-        for (const [nx, ny] of neighbors) {
-          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-            const nidx = ny * width + nx;
-            if (!visited[nidx]) {
-              const ni = nidx * 4;
-              if (data[ni] < STRICT_BLACK && data[ni+1] < STRICT_BLACK && data[ni+2] < STRICT_BLACK) {
-                visited[nidx] = 1;
-                queue.push([nx, ny]);
-              }
-            }
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
           }
         }
       }
-      
-      // Ab jo bhi visited nahi hai (non-black pixels) unhe rakho, visited (black) ko transparent karo
-      // ULTA: Frame ke liye - black pixels (hole) ko transparent karo, baki pixels ko rakho
-      for (let i = 0; i < data.length; i += 4) {
-        const pixelIdx = i / 4;
-        if (visited[pixelIdx]) {
-          // Black pixel - transparent karo
-          data[i] = 0;
-          data[i+1] = 0;
-          data[i+2] = 0;
-          data[i+3] = 0;
-        }
-      }
-    } else {
-      // Regular approach for non-frame items
-      const scale = 4;
-      const scaledW = Math.ceil(width / scale);
-      const scaledH = Math.ceil(height / scale);
-      const visited = new Uint8Array(scaledW * scaledH);
+    }
 
-      const isBlack = (sx: number, sy: number) => {
-        const x = Math.min(sx * scale, width - 1);
-        const y = Math.min(sy * scale, height - 1);
-        const i = (y * width + x) * 4;
-        return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
-      };
-
-      const queue: [number, number][] = [];
-      
+    for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
-        if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-        if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
-      }
-      for (let sy = 0; sy < scaledH; sy++) {
-        if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-        if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
-      }
-
-      const centerSX = Math.floor(scaledW / 2);
-      const centerSY = Math.floor(scaledH / 2);
-      if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-        queue.push([centerSX, centerSY]);
-        visited[centerSY * scaledW + centerSX] = 1;
-      }
-
-      let head = 0;
-      while (head < queue.length) {
-        const [sx, sy] = queue[head++];
-        const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-        for (const [nx, ny] of neighbors) {
-          if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
-            const nidx = ny * scaledW + nx;
-            if (!visited[nidx] && isBlack(nx, ny)) {
-              visited[nidx] = 1;
-              queue.push([nx, ny]);
-            }
-          }
-        }
-      }
-
-      for (let sy = 0; sy < scaledH; sy++) {
-        for (let sx = 0; sx < scaledW; sx++) {
-          if (visited[sy * scaledW + sx]) {
-            for (let dy = 0; dy < scale; dy++) {
-              for (let dx = 0; dx < scale; dx++) {
-                const x = sx * scale + dx, y = sy * scale + dy;
-                if (x < width && y < height) {
-                  const i = (y * width + x) * 4;
-                  if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                    data[i] = 0;
-                    data[i+1] = 0;
-                    data[i+2] = 0;
-                    data[i+3] = 0;
-                  }
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
                 }
               }
             }
@@ -368,7 +296,7 @@ const SmartBlackRemover = ({
     ctx.putImageData(imageData, 0, 0);
     processingRef.current = false;
 
-    if (type === 'video' && video) {
+    if (type === 'video' && video && video.readyState >= 2) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
@@ -376,49 +304,38 @@ const SmartBlackRemover = ({
     }
   };
 
+  const handleMediaLoad = () => {
+    const media = mediaRef.current;
+    if (!media) return;
+    
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+    
+    if (width > 0 && height > 0) {
+      const hasBlackBg = detectSolidBlackBg(media, width, height);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      setMediaLoaded(true);
+      if (hasBlackBg) {
+        setTimeout(() => {
+          if (type === 'video' && mediaRef.current) {
+            processFrame(mediaRef.current as HTMLVideoElement);
+          } else {
+            processFrame();
+          }
+        }, 100);
+      }
+    }
+  };
+
   useEffect(() => {
     if (src !== lastProcessedSrc.current) {
       setUseCanvas(false);
       setIsReady(false);
+      setMediaLoaded(false);
       lastProcessedSrc.current = src;
     }
-
-    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
-      const img = mediaRef.current as HTMLImageElement;
-      if (img.complete && img.naturalWidth > 0 && !isReady) {
-        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-        setUseCanvas(hasBlackBg);
-        setIsReady(true);
-        if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
-        }
-      }
-    }
-  }, [src, type, isReady]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.naturalWidth > 0) {
-      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(), 50);
-      }
-    }
-  };
-
-  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(video), 150);
-      }
-    }
-  };
+  }, [src]);
 
   useEffect(() => {
     return () => {
@@ -440,7 +357,7 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
-          onLoadedData={handleVideoReady}
+          onLoadedData={handleMediaLoad}
           className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
           style={{ display: useCanvas ? 'none' : 'block' }}
           crossOrigin="anonymous"
@@ -456,17 +373,6 @@ const SmartBlackRemover = ({
             }}
           />
         )}
-        {!isReady && !useCanvas && (
-          <video
-            src={src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
-        )}
       </div>
     );
   }
@@ -477,7 +383,7 @@ const SmartBlackRemover = ({
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
         alt=""
-        onLoad={handleImageLoad}
+        onLoad={handleMediaLoad}
         className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
         style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
@@ -493,14 +399,6 @@ const SmartBlackRemover = ({
           }}
         />
       )}
-      {!isReady && !useCanvas && (
-        <img
-          src={src}
-          alt=""
-          className="w-full h-full object-cover"
-          crossOrigin="anonymous"
-        />
-      )}
     </div>
   );
 };
@@ -513,43 +411,39 @@ const CachedMedia = ({
   src, 
   type = 'image', 
   className = '', 
-  style = {},
-  isFrame = false
+  style = {} 
 }: { 
   itemId: string; 
   src: string; 
   type?: 'image' | 'video'; 
   className?: string; 
   style?: React.CSSProperties;
-  isFrame?: boolean;
 }) => {
-  // Sirf image type ke liye blob cache use karo, video ke liye direct src
   const { blobUrl, isLoading } = useBlobCache(itemId, type === 'image' ? src : null);
-  
-  // Agar video hai toh direct src use karo (blob cache nahi)
-  // Agar image hai toh cached blob use karo
   const mediaSource = type === 'video' ? src : (blobUrl || src);
+  
+  if (isLoading && type === 'image') {
+    return (
+      <div className="relative w-full h-full flex items-center justify-center" style={{ background: 'transparent' }}>
+        <Loader className="animate-spin h-8 w-8 text-white/40" />
+      </div>
+    );
+  }
   
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      {isLoading && type === 'image' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
-          <Loader className="animate-spin h-6 w-6 text-white/60" />
-        </div>
-      )}
       <SmartBlackRemover 
         src={mediaSource} 
         type={type} 
         className="w-full h-full"
         style={{ background: 'transparent' }}
-        isFrame={isFrame}
       />
     </div>
   );
 };
 
 // ============================================
-// ALL ICONS (EXISTING - NO TOUCH)
+// ALL ICONS
 // ============================================
 
 // --- CUSTOM DOLLAR COIN ICON ---
@@ -783,7 +677,9 @@ const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- STORE ITEMS ---
+// ============================================
+// STORE ITEMS
+// ============================================
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
@@ -795,6 +691,143 @@ const STATIC_STORE_ITEMS = [
   { id: 'w-reso', name: 'Reso', type: 'Wave', price: 20000, durationDays: 7, description: 'Neon green resonance 3D glossy wave.', icon: Activity, color: 'text-green-500' },
   { id: 'w-echo', name: 'Echo', type: 'Wave', price: 25999, durationDays: 7, description: 'Vibrant orange echo 3D glossy frequency.', icon: Activity, color: 'text-orange-500' },
 ];
+
+// ============================================
+// GRID CARD COMPONENT with Play Button
+// ============================================
+const StoreCard = ({ 
+  item, 
+  onClick, 
+  isOwned = false,
+  expiryDate = null
+}: { 
+  item: any; 
+  onClick: () => void; 
+  isOwned?: boolean;
+  expiryDate?: Date | null;
+}) => {
+  const hasPreviewMedia = item.videoUrl || item.imageUrl;
+  
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick();
+  };
+  
+  // Helper to render card icon
+  const renderIcon = () => {
+    if (item.type === 'Frame') {
+      const displayImage = item.videoUrl || item.imageUrl;
+      if (displayImage) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={displayImage} 
+              type={item.videoUrl ? 'video' : 'image'}
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <FramePlaceholderIcon className="h-12 w-12" />;
+    }
+    
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
+    }
+    
+    if (item.type === 'Bubble') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
+    }
+    
+    if (item.type === 'Wave') {
+      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
+    }
+    
+    if (item.type === 'ID') {
+      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
+      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
+      return <IDBadgeIcon number={item.displayId || ''} />;
+    }
+    
+    if (item.type === 'Entry') {
+      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
+    }
+    
+    if (item.icon) {
+      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
+    }
+    
+    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
+  };
+  
+  return (
+    <Card 
+      onClick={onClick} 
+      className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative group"
+    >
+      {/* Play Button - Top Right Corner */}
+      {hasPreviewMedia && (
+        <button
+          onClick={handlePlayClick}
+          className="absolute top-2 right-2 z-20 bg-black/60 hover:bg-black/80 backdrop-blur-sm rounded-full p-1.5 transition-all opacity-90 group-hover:opacity-100"
+        >
+          <Play size={14} className="text-white fill-white" />
+        </button>
+      )}
+      
+      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+        {renderIcon()}
+      </div>
+      <CardHeader className="text-center p-3 pb-1">
+        <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
+      </CardHeader>
+      <CardFooter className="flex flex-col gap-1 p-3 pt-1">
+        {isOwned && expiryDate ? (
+          <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
+            <span>Expire: <span className="text-red-400">{expiryDate.toLocaleDateString('en-IN')}</span></span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-1.5 text-sm w-full">
+            <DollarCoinIcon className="h-4 w-4" />
+            <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
+          </div>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
 
 // ============================================
 // MAIN STORE PAGE COMPONENT
@@ -936,8 +969,9 @@ export default function StorePage() {
   const { data: config } = useDoc(configRef);
   const storeNotForSale = (config?.storeNotForSale || {}) as Record<string, boolean>;
 
+  // 🔥 NOT FOR SALE CARDS - FILTER OUT COMPLETELY
   const allItemsWithFlags = useMemo(() => {
-    return allItems.map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }));
+    return allItems.filter(item => !storeNotForSale[item.id]);
   }, [allItems, storeNotForSale]);
 
   // --- PURCHASED ITEMS (Mine Tab) ---
@@ -984,7 +1018,6 @@ export default function StorePage() {
           if (expiry && expiry.toDate() <= now.toDate()) {
             updateData[`inventory.active${type}`] = 'None';
             needsUpdate = true;
-            console.log(`Auto-unequipped expired ${type}: ${activeItemId}`);
           }
         }
       }
@@ -1024,10 +1057,6 @@ export default function StorePage() {
 
   const handlePurchase = async (item: any, duration: number) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
-    if (item?.notForSale) {
-      toast({ variant: 'destructive', title: 'Not for sale', description: 'Ye item abhi store me available nahi hai.' });
-      return;
-    }
     const finalPrice = getCalculatedPrice(item.price, duration);
 
     if ((userProfile.wallet?.coins || 0) < finalPrice) {
@@ -1066,7 +1095,6 @@ export default function StorePage() {
   const handleEquipToggle = async (item: any) => {
     if (!userProfile || !user || !firestore || isProcessing) return;
     
-    // Double check expiry
     const expiry = (userProfile.inventory as any)?.expiries?.[item.id];
     if (expiry && expiry.toDate() <= new Date()) {
       toast({ variant: 'destructive', title: 'Item Expired', description: 'Ye item expire ho chuka hai. Dobara purchase karein.' });
@@ -1117,115 +1145,19 @@ export default function StorePage() {
     }
   };
 
-  // 🔥 Helper to get frame display image URL
-  const getFrameDisplayImage = (item: any): string | null => {
-    if (item.type !== 'Frame') return null;
-    if (item.imageUrl) return item.imageUrl;
-    if (item.videoUrl) return item.videoUrl;
-    return null;
-  };
-
-  // Helper to check if item has video
-  const hasVideo = (item: any): boolean => {
-    return !!(item.videoUrl);
-  };
-
-  // Helper to render store card icon
-  const renderStoreCardIcon = (item: any) => {
-    // 🔥 FRAME: Display pe IMAGE dikhega (grid card me), store card me video nahi chalegi
-    if (item.type === 'Frame') {
-      const displayImage = getFrameDisplayImage(item);
-      if (displayImage) {
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={displayImage} 
-              type="image"
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-              isFrame={true}
-            />
-          </div>
-        );
-      }
-      return <FramePlaceholderIcon className="h-12 w-12" />;
-    }
-    
-    if (item.type === 'Theme') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
-    }
-    
-    // 🔥 BUBBLE: Square shape me dikhega - grid card me square
-    if (item.type === 'Bubble') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
-    }
-    
-    if (item.type === 'Wave') {
-      return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
-    }
-    
-    if (item.type === 'ID') {
-      if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
-      if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
-      return <IDBadgeIcon number={item.displayId || ''} />;
-    }
-    
-    if (item.type === 'Entry') {
-      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
-    }
-    
-    if (item.icon) {
-      return <item.icon className={cn("h-12 w-12 opacity-50", item.color)} />;
-    }
-    
-    return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
-  };
-
-  // 🔥 PREVIEW CARD: Helper to render preview icon
+  // Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
-    // 🔥 THEME PREVIEW: Direct MP4 ya image dikhao - 70vh height me compact show hoga
     if (item.type === 'Theme') {
-      const mediaUrl = item.videoUrl || item.imageUrl;
-      if (mediaUrl) {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="w-full h-full flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
+          <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent', maxHeight: '45vh' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
-              className="w-full h-full"
+              className="w-auto h-auto max-w-full max-h-full"
               style={{ background: 'transparent', objectFit: 'contain' }}
             />
           </div>
@@ -1244,7 +1176,6 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai, hole mask ke saath
     if (item.type === 'Frame') {
       const mediaUrl = item.videoUrl || item.imageUrl;
       if (mediaUrl) {
@@ -1257,7 +1188,6 @@ export default function StorePage() {
               type={mediaType}
               className="w-full h-full"
               style={{ background: 'transparent' }}
-              isFrame={true}
             />
           </div>
         );
@@ -1269,7 +1199,6 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 BUBBLE PREVIEW: Square shape me dikhega
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1293,7 +1222,6 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    // 🔥 ENTRY: Direct videoUrl use hoga
     if (item.type === 'Entry') {
       if (item.videoUrl) {
         return (
@@ -1389,49 +1317,22 @@ export default function StorePage() {
 
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
-                {/* 🔥 SCROLLABLE GRID - Sirf tabs ke niche wala hissa scroll hoga */}
-                <div className="overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
-                      <Card 
-                        key={item.id} 
-                        onClick={() => { if (!item.notForSale) setPreviewItem(item); }} 
-                        className={cn(
-                          "overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all text-white",
-                          item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
-                        )}
-                      >
-                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                          {renderStoreCardIcon(item)}
-                          
-                          {/* 🔥 PLAY BUTTON - Top Right Corner (chota sa) */}
-                          {hasVideo(item) && (
-                            <div className="absolute top-2 right-2 z-10">
-                              <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/10">
-                                <Play className="h-3 w-3 text-white fill-white" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <CardHeader className="text-center p-3 pb-1">
-                          <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-                        </CardHeader>
-                        <CardFooter className="flex flex-col gap-3 p-3 pt-1">
-                          <div className="flex items-center justify-center gap-1.5 text-sm w-full">
-                            {item.notForSale ? (
-                              <span className="text-red-400 font-black uppercase tracking-widest text-[10px]">Not for sale</span>
-                            ) : (
-                              <>
-                                <DollarCoinIcon className="h-4 w-4" />
-                                <span className="text-[#FCD535] font-bold">{item.price.toLocaleString()}</span>
-                              </>
-                            )}
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
+                    <StoreCard 
+                      key={item.id}
+                      item={item}
+                      onClick={() => setPreviewItem(item)}
+                    />
+                  ))}
                 </div>
+                {storeItems.filter(i => category === 'All' || i.type === category).length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
+                    <p className="text-white text-lg">No items available in {category}</p>
+                    <p className="text-gray-400 text-sm mt-2">Check back later for new items!</p>
+                  </div>
+                )}
               </TabsContent>
             ))}
           </Tabs>
@@ -1453,44 +1354,19 @@ export default function StorePage() {
 
             {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
               <TabsContent key={category} value={category}>
-                {/* 🔥 SCROLLABLE GRID - Mine tab me bhi sirf grid scroll hoga */}
-                <div className="overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
-                      const expiryDate = getItemExpiryDate(item.id);
-                      const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
-                      
-                      return (
-                        <Card 
-                          key={item.id} 
-                          onClick={() => setPreviewItem(item)} 
-                          className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white"
-                        >
-                          <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
-                            {renderStoreCardIcon(item)}
-                            
-                            {/* 🔥 PLAY BUTTON - Top Right Corner (chota sa) */}
-                            {hasVideo(item) && (
-                              <div className="absolute top-2 right-2 z-10">
-                                <div className="bg-black/50 backdrop-blur-sm rounded-full p-1.5 shadow-lg border border-white/10">
-                                  <Play className="h-3 w-3 text-white fill-white" />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <CardHeader className="text-center p-3 pb-0">
-                            <CardTitle className="text-sm font-normal text-gray-300 truncate">{item.name}</CardTitle>
-                          </CardHeader>
-                          <CardFooter className="flex flex-col gap-1 p-3 pt-1">
-                            <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
-                              <span>Expire:</span>
-                              <span className="text-red-400">{expiryDateStr}</span>
-                            </div>
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
+                    const expiryDate = getItemExpiryDate(item.id);
+                    return (
+                      <StoreCard 
+                        key={item.id}
+                        item={item}
+                        onClick={() => setPreviewItem(item)}
+                        isOwned={true}
+                        expiryDate={expiryDate}
+                      />
+                    );
+                  })}
                 </div>
                 {mineItems.filter(i => category === 'All' || i.type === category).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -1504,7 +1380,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* 🔥 PREVIEW CARD - THEME KE LIYE 70vh MEIN FULL IMAGE/VIDEO */}
+        {/* PREVIEW CARD */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1525,160 +1401,93 @@ export default function StorePage() {
                   <X size={24} />
                 </button>
 
-                {isTheme ? (
-                  // 🔥 THEME PREVIEW: Poora 70vh ka space theme ke liye - full image/video show hoga
-                  <>
-                    <div className="flex-1 overflow-hidden flex flex-col items-center pt-8 pb-2 px-4">
-                      <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-                        {renderPreviewIcon(previewItem)}
-                      </div>
-                      <h2 className="font-medium text-white tracking-wide text-center text-sm mt-2 mb-0.5">
-                        {previewItem.name}
-                      </h2>
-                      {isOwnedAndValid && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
-                        </p>
-                      )}
+                <div className={cn(
+                  "flex-1 overflow-hidden flex flex-col items-center",
+                  isTheme ? "pt-2 pb-1 px-2" : "pt-8 pb-4 px-4 overflow-y-auto"
+                )}>
+                  {isTheme ? (
+                    <div className="w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg px-4" style={{ background: 'transparent' }}>
+                      {renderPreviewIcon(previewItem)}
                     </div>
-                    {/* Bottom action bar */}
-                    {isOwnedAndValid ? (
-                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
-                        <Button 
-                          onClick={() => handleEquipToggle(previewItem)}
-                          disabled={isProcessing}
-                          className={cn(
-                            "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
-                            isProcessing && "opacity-70 cursor-not-allowed",
-                            isCurrentlyEquipped
-                              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
-                              : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                          )}
-                        >
-                          {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
-                        <div className="flex gap-4 w-full justify-center">
-                          {[3, 7].map(days => (
-                            <button 
-                              key={days}
-                              onClick={() => setSelectedDuration(days)}
-                              className={cn(
-                                "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                                selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
-                              )}
-                            >
-                              <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
-                              {selectedDuration === days && (
-                                <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
-                                  <Check size={12} strokeWidth={3} className="text-black" />
-                                </div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <DollarCoinIcon className="w-5 h-5" />
-                            <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                              {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                            </span>
-                          </div>
+                  ) : (
+                    <div className={cn(
+                      "mb-4 scale-[1.1] flex items-center justify-center",
+                      previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
+                    )} style={{ background: 'transparent' }}>
+                      {renderPreviewIcon(previewItem)}
+                    </div>
+                  )}
 
-                          <Button 
-                            onClick={() => handlePurchase(previewItem, selectedDuration)}
-                            disabled={isProcessing}
-                            className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
-                          >
-                            {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <h2 className={cn(
+                    "font-medium text-white tracking-wide text-center",
+                    isTheme ? "text-sm mt-1 mb-0.5" : "text-xl"
+                  )}>
+                    {previewItem.name}
+                  </h2>
+                  
+                  {isOwnedAndValid && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Bottom action bar */}
+                {isOwnedAndValid ? (
+                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
+                    <Button 
+                      onClick={() => handleEquipToggle(previewItem)}
+                      disabled={isProcessing}
+                      className={cn(
+                        "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
+                        isProcessing && "opacity-70 cursor-not-allowed",
+                        isCurrentlyEquipped
+                          ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
+                          : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                      )}
+                    >
+                      {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
+                    </Button>
+                  </div>
                 ) : (
-                  // Non-theme preview (40vh wala)
-                  <>
-                    <div className="flex-1 overflow-hidden flex flex-col items-center pt-8 pb-4 px-4 overflow-y-auto">
-                      <div className={cn(
-                        "mb-4 scale-[1.1] flex items-center justify-center",
-                        previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
-                      )} style={{ background: 'transparent' }}>
-                        {renderPreviewIcon(previewItem)}
-                      </div>
-
-                      <h2 className="font-medium text-white tracking-wide text-center text-xl">
-                        {previewItem.name}
-                      </h2>
-                      
-                      {isOwnedAndValid && (
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Expires: {getItemExpiryDate(previewItem.id)?.toLocaleDateString('en-IN') || 'Never'}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Bottom action bar */}
-                    {isOwnedAndValid ? (
-                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
-                        <Button 
-                          onClick={() => handleEquipToggle(previewItem)}
-                          disabled={isProcessing}
+                  <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
+                    <div className="flex gap-4 w-full justify-center">
+                      {[3, 7].map(days => (
+                        <button 
+                          key={days}
+                          onClick={() => setSelectedDuration(days)}
                           className={cn(
-                            "w-full rounded-full py-5 text-md font-medium tracking-wide shadow-lg transition-colors",
-                            isProcessing && "opacity-70 cursor-not-allowed",
-                            isCurrentlyEquipped
-                              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" 
-                              : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                            "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
+                            selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
                           )}
                         >
-                          {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : (isCurrentlyEquipped ? 'Unequip' : 'Equip')}
-                        </Button>
+                          <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
+                          {selectedDuration === days && (
+                            <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
+                              <Check size={12} strokeWidth={3} className="text-black" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DollarCoinIcon className="w-5 h-5" />
+                        <span className="text-[#FCD535] font-bold text-xl tracking-wide">
+                          {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex flex-col gap-3 flex-shrink-0">
-                        <div className="flex gap-4 w-full justify-center">
-                          {[3, 7].map(days => (
-                            <button 
-                              key={days}
-                              onClick={() => setSelectedDuration(days)}
-                              className={cn(
-                                "relative border rounded-[10px] w-28 py-2 flex items-center justify-center transition-all",
-                                selectedDuration === days ? "border-[#FCD535] bg-[#313131]" : "border-white/5 bg-[#222]"
-                              )}
-                            >
-                              <span className={cn("text-sm", selectedDuration === days ? "text-white" : "text-gray-400")}>{days} Days</span>
-                              {selectedDuration === days && (
-                                <div className="absolute -bottom-1 -right-1 bg-[#FCD535] rounded-tl-md rounded-br-[10px] p-0.5">
-                                  <Check size={12} strokeWidth={3} className="text-black" />
-                                </div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <DollarCoinIcon className="w-5 h-5" />
-                            <span className="text-[#FCD535] font-bold text-xl tracking-wide">
-                              {getCalculatedPrice(previewItem.price, selectedDuration).toLocaleString()}
-                            </span>
-                          </div>
 
-                          <Button 
-                            onClick={() => handlePurchase(previewItem, selectedDuration)}
-                            disabled={isProcessing}
-                            className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
-                          >
-                            {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                      <Button 
+                        onClick={() => handlePurchase(previewItem, selectedDuration)}
+                        disabled={isProcessing}
+                        className="rounded-full px-12 py-5 text-md font-medium tracking-wide shadow-lg transition-colors bg-[#FCD535] text-black hover:bg-[#e5c02b] disabled:opacity-70"
+                      >
+                        {isProcessing ? <Loader className="animate-spin h-4 w-4" /> : 'Buy'}
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </>
@@ -1687,4 +1496,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-                                   }
+        }
