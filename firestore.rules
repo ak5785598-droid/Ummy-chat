@@ -411,5 +411,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // ============================================
+    // LEADERBOARD THEMES
+    // ============================================
+    match /leaderboardThemes/{themeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }
