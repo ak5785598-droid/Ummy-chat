@@ -463,6 +463,190 @@ const CachedMedia = ({
 };
 
 // ============================================
+// 🖼️ FRAME PAUSED DISPLAY COMPONENT (Grid card pe video pause, preview pe chalegi)
+// ============================================
+const FrameDisplayCard = ({
+  itemId,
+  videoUrl,
+  imageUrl,
+  className = '',
+  style = {}
+}: {
+  itemId: string;
+  videoUrl: string | null;
+  imageUrl: string | null;
+  className?: string;
+  style?: React.CSSProperties;
+}) => {
+  const { blobUrl, isLoading } = useBlobCache(itemId, videoUrl);
+  const mediaRef = useRef<HTMLVideoElement>(null);
+  const [showFirstFrame, setShowFirstFrame] = useState(false);
+  const firstFrameCapturedRef = useRef(false);
+
+  // Video load hone ke baad pehla frame capture karo as still image
+  useEffect(() => {
+    if (!videoUrl || !blobUrl) return;
+    
+    const video = document.createElement('video');
+    video.src = blobUrl;
+    video.crossOrigin = 'anonymous';
+    video.muted = true;
+    video.preload = 'metadata';
+    
+    const captureFrame = () => {
+      if (firstFrameCapturedRef.current) return;
+      
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 240;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0);
+          // Canvas ko data URL me convert karo
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setCachedBlob(`${itemId}_frame`, dataUrl);
+          setShowFirstFrame(true);
+          firstFrameCapturedRef.current = true;
+        }
+      } catch (e) {
+        console.error('Frame capture error:', e);
+      }
+      video.remove();
+    };
+    
+    video.onloadeddata = () => {
+      video.currentTime = 0.1;
+    };
+    
+    video.onseeked = captureFrame;
+    video.onerror = () => {
+      console.error('Video load error for frame capture');
+      video.remove();
+    };
+    
+    return () => {
+      video.remove();
+    };
+  }, [videoUrl, blobUrl, itemId]);
+
+  const frameImageUrl = getCachedBlob(`${itemId}_frame`);
+
+  // Agar frame image cached hai toh woh dikhao, nahi toh video pause karke dikhao
+  if (frameImageUrl) {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <img
+          src={frameImageUrl}
+          alt="Frame preview"
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      </div>
+    );
+  }
+
+  // Fallback: Direct video element but paused with first frame
+  if (videoUrl && blobUrl) {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <video
+          ref={mediaRef}
+          src={blobUrl}
+          muted
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+          onLoadedData={(e) => {
+            const vid = e.currentTarget;
+            vid.currentTime = 0.1;
+            vid.pause();
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Image fallback
+  if (imageUrl) {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <img
+          src={imageUrl}
+          alt="Frame"
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      </div>
+    );
+  }
+
+  // Default placeholder
+  return <FramePlaceholderIcon className="h-12 w-12" />;
+};
+
+// ============================================
+// 🎬 FRAME PREVIEW COMPONENT (Preview card pe video chalegi)
+// ============================================
+const FramePreviewDisplay = ({
+  itemId,
+  videoUrl,
+  imageUrl,
+  className = '',
+  style = {}
+}: {
+  itemId: string;
+  videoUrl: string | null;
+  imageUrl: string | null;
+  className?: string;
+  style?: React.CSSProperties;
+}) => {
+  const { blobUrl, isLoading } = useBlobCache(itemId, videoUrl);
+
+  if (isLoading) {
+    return (
+      <div className={cn("flex items-center justify-center", className)} style={style}>
+        <Loader className="animate-spin h-8 w-8 text-white/60" />
+      </div>
+    );
+  }
+
+  // Preview me video chalegi
+  if (blobUrl) {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <video
+          src={blobUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      </div>
+    );
+  }
+
+  // Fallback to image
+  if (imageUrl) {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <img
+          src={imageUrl}
+          alt="Frame preview"
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      </div>
+    );
+  }
+
+  return <FramePlaceholderIcon className="h-24 w-24" />;
+};
+
+// ============================================
 // ALL ICONS (EXISTING - NO TOUCH)
 // ============================================
 
@@ -604,80 +788,6 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
     </div>
   </div>
 );
-
-// --- ENTRY TICKET ICON ---
-const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: string; className?: string }) => {
-  if (variant === 'platinum') {
-    return (
-      <div className={cn("relative", className)}>
-        <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_12px_rgba(147,197,253,0.6)]">
-          <defs>
-            <linearGradient id="platGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#E2E8F0" />
-              <stop offset="25%" stopColor="#F8FAFC" />
-              <stop offset="50%" stopColor="#94A3B8" />
-              <stop offset="75%" stopColor="#F1F5F9" />
-              <stop offset="100%" stopColor="#64748B" />
-            </linearGradient>
-          </defs>
-          <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#platGrad)" stroke="#CBD5E1" strokeWidth="1.5" />
-          <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#93C5FD" strokeWidth="0.8" strokeDasharray="3 3" />
-          <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#1E3A8A" textAnchor="middle" fontWeight="bold">ENTRY</text>
-          <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#3B82F6" textAnchor="middle" letterSpacing="2">PLATINUM PASS</text>
-          <circle cx="115" cy="30" r="6" fill="#1E293B" stroke="#93C5FD" strokeWidth="1" />
-          <circle cx="115" cy="30" r="3" fill="#3B82F6" className="animate-pulse" />
-          <path d="M25,48 L30,52 L35,48 L40,52 L45,48" stroke="#3B82F6" fill="none" strokeWidth="1.5" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (variant === 'diamond') {
-    return (
-      <div className={cn("relative", className)}>
-        <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_15px_rgba(236,72,153,0.5)]">
-          <defs>
-            <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FCE7F3" />
-              <stop offset="30%" stopColor="#F9A8D4" />
-              <stop offset="60%" stopColor="#F472B6" />
-              <stop offset="100%" stopColor="#DB2777" />
-            </linearGradient>
-          </defs>
-          <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#diamondGrad)" stroke="#FBCFE8" strokeWidth="1.5" />
-          <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#FFF" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.6" />
-          <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#831843" textAnchor="middle" fontWeight="bold">ENTRY</text>
-          <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#9D174D" textAnchor="middle" letterSpacing="2">DIAMOND PASS</text>
-          <circle cx="115" cy="30" r="6" fill="#4C0519" stroke="#F472B6" strokeWidth="1" />
-          <circle cx="115" cy="30" r="3" fill="#EC4899" className="animate-pulse" />
-          <path d="M20,15 L25,10 L30,15 Z" fill="#FFF" opacity="0.7" />
-          <path d="M90,15 L95,10 L100,15 Z" fill="#FFF" opacity="0.7" />
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("relative", className)}>
-      <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_12px_rgba(252,213,53,0.5)]">
-        <defs>
-          <linearGradient id="ticketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF1AA" />
-            <stop offset="30%" stopColor="#FFD335" />
-            <stop offset="60%" stopColor="#C98B13" />
-            <stop offset="100%" stopColor="#9E6100" />
-          </linearGradient>
-        </defs>
-        <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#ticketGrad)" stroke="#FFE373" strokeWidth="1.5" />
-        <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#FFF" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.7" />
-        <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#6B4E00" textAnchor="middle" fontWeight="bold">ENTRY</text>
-        <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#6B4E00" textAnchor="middle" letterSpacing="2">GOLDEN PASS</text>
-        <circle cx="115" cy="30" r="6" fill="#3D2D00" stroke="#FFD335" strokeWidth="1" />
-        <circle cx="115" cy="30" r="3" fill="#FCD535" className="animate-pulse" />
-      </svg>
-    </div>
-  );
-};
 
 // --- FRAME ICON FOR STORE CARDS ---
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
@@ -832,6 +942,7 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
+  // Entry items - simple text display, no SVG icons
   const entryItems = useMemo(() => [
     { id: 'entry-golden', name: 'Golden Entry', type: 'Entry', price: 1000000, durationDays: 7, description: 'Premium Golden entry pass with exclusive golden trim.', variant: 'golden' },
     { id: 'entry-platinum', name: 'Platinum Entry', type: 'Entry', price: 2500000, durationDays: 7, description: 'Exclusive Platinum entry pass with diamond shine.', variant: 'platinum' },
@@ -1033,16 +1144,35 @@ export default function StorePage() {
 
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
-    if (item.type === 'Frame') {
-      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
+    // ⭐ THEME CARD - Full image cover karega poora card ka upper portion
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+          <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ background: 'transparent' }}>
             <CachedMedia 
               itemId={item.id}
               src={mediaUrl} 
               type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent', objectFit: 'cover' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
+    }
+    
+    // 🖼️ FRAME CARD - Paused first frame as image (video nahi chalegi grid pe)
+    if (item.type === 'Frame') {
+      if (item.videoUrl || item.imageUrl) {
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <FrameDisplayCard
+              itemId={item.id}
+              videoUrl={item.videoUrl}
+              imageUrl={item.imageUrl}
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
@@ -1050,25 +1180,6 @@ export default function StorePage() {
         );
       }
       return <FramePlaceholderIcon className="h-12 w-12" />;
-    }
-    
-    if (item.type === 'Theme') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
     if (item.type === 'Bubble') {
@@ -1100,8 +1211,24 @@ export default function StorePage() {
       return <IDBadgeIcon number={item.displayId || ''} />;
     }
     
+    // 🎫 ENTRY CARD - Simple text badge, no SVG icons
     if (item.type === 'Entry') {
-      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
+      const variantStyles: Record<string, string> = {
+        golden: 'bg-gradient-to-r from-yellow-600 to-yellow-400 text-black',
+        platinum: 'bg-gradient-to-r from-gray-300 to-gray-100 text-black',
+        diamond: 'bg-gradient-to-r from-pink-400 to-purple-400 text-white',
+      };
+      return (
+        <div className="flex items-center justify-center h-full w-full p-2">
+          <div className={cn(
+            "rounded-xl px-4 py-3 text-center font-bold shadow-lg",
+            variantStyles[item.variant] || variantStyles.golden
+          )}>
+            <div className="text-xs uppercase tracking-wider opacity-80">Entry Pass</div>
+            <div className="text-lg uppercase tracking-widest">{item.variant}</div>
+          </div>
+        </div>
+      );
     }
     
     if (item.icon) {
@@ -1113,6 +1240,26 @@ export default function StorePage() {
 
   // Helper to render preview icon
   const renderPreviewIcon = (item: any) => {
+    // ⭐ THEME PREVIEW - 70vh height, full image dikhao
+    if (item.type === 'Theme') {
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="w-full flex items-center justify-center overflow-hidden rounded-lg" style={{ height: '70vh', background: 'transparent' }}>
+            <CachedMedia 
+              itemId={item.id}
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent', objectFit: 'cover' }}
+            />
+          </div>
+        );
+      }
+      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
+    }
+    
     if (item.type === 'ID') {
       return (
         <div className="scale-125 pt-2">
@@ -1123,16 +1270,15 @@ export default function StorePage() {
       );
     }
     
+    // 🎬 FRAME PREVIEW - Video chalegi preview me
     if (item.type === 'Frame') {
-      if (item.isDynamic && (item.videoUrl || item.imageUrl)) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
+      if (item.videoUrl || item.imageUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
+            <FramePreviewDisplay
               itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
+              videoUrl={item.videoUrl}
+              imageUrl={item.imageUrl}
               className="w-full h-full"
               style={{ background: 'transparent' }}
             />
@@ -1144,25 +1290,6 @@ export default function StorePage() {
           <FramePlaceholderIcon className="h-24 w-24" />
         </div>
       );
-    }
-    
-    if (item.type === 'Theme') {
-      if (item.videoUrl || item.imageUrl) {
-        const mediaUrl = item.videoUrl || item.imageUrl;
-        const mediaType = item.videoUrl ? 'video' : 'image';
-        return (
-          <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
-              src={mediaUrl} 
-              type={mediaType} 
-              className="w-full h-full"
-              style={{ background: 'transparent' }}
-            />
-          </div>
-        );
-      }
-      return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
     }
     
     if (item.type === 'Bubble') {
@@ -1188,10 +1315,20 @@ export default function StorePage() {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
+    // 🎫 ENTRY PREVIEW - Simple text badge
     if (item.type === 'Entry') {
+      const variantStyles: Record<string, string> = {
+        golden: 'bg-gradient-to-r from-yellow-600 to-yellow-400 text-black',
+        platinum: 'bg-gradient-to-r from-gray-300 to-gray-100 text-black',
+        diamond: 'bg-gradient-to-r from-pink-400 to-purple-400 text-white',
+      };
       return (
-        <div className="scale-125">
-          <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
+        <div className={cn(
+          "rounded-2xl px-8 py-5 text-center font-bold shadow-2xl scale-110",
+          variantStyles[item.variant] || variantStyles.golden
+        )}>
+          <div className="text-sm uppercase tracking-wider opacity-80">Entry Pass</div>
+          <div className="text-2xl uppercase tracking-widest">{item.variant}</div>
         </div>
       );
     }
@@ -1267,7 +1404,10 @@ export default function StorePage() {
                         item.notForSale ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95"
                       )}
                     >
-                      <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                      <div className={cn(
+                        "relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent",
+                        item.type === 'Theme' ? "aspect-video overflow-hidden" : "aspect-square flex items-center justify-center p-4"
+                      )}>
                         {renderStoreCardIcon(item)}
                       </div>
                       <CardHeader className="text-center p-3 pb-1">
@@ -1320,7 +1460,10 @@ export default function StorePage() {
                         onClick={() => setPreviewItem(item)} 
                         className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white"
                       >
-                        <div className="aspect-square flex items-center justify-center p-4 relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent">
+                        <div className={cn(
+                          "relative border-b border-white/5 bg-gradient-to-b from-white/[0.02] to-transparent",
+                          item.type === 'Theme' ? "aspect-video overflow-hidden" : "aspect-square flex items-center justify-center p-4"
+                        )}>
                           {renderStoreCardIcon(item)}
                         </div>
                         <CardHeader className="text-center p-3 pb-0">
@@ -1348,25 +1491,29 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* PREVIEW CARD */}
+        {/* ⭐ PREVIEW CARD - THEME KE LIYE 70vh */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
+          const isTheme = previewItem.type === 'Theme';
           
           return (
             <>
               <div className="fixed inset-0 bg-black/70 z-40 transition-opacity" onClick={() => setPreviewItem(null)} />
               
-              <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] h-[40vh] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out">
+              <div 
+                className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414] rounded-t-[24px] flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-full duration-300 ease-out"
+                style={{ height: isTheme ? '70vh' : '40vh' }}
+              >
                 
-                <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors">
+                <button onClick={() => setPreviewItem(null)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors z-10">
                   <X size={24} />
                 </button>
 
                 <div className="flex-1 overflow-y-auto flex flex-col items-center pt-8 pb-4 px-4">
                   <div className={cn(
-                    "mb-4 scale-[1.1] flex items-center justify-center",
-                    previewItem.type === 'ID' ? "" : "h-36 w-36 rounded-lg overflow-hidden"
+                    "mb-4 flex items-center justify-center",
+                    isTheme ? "w-full" : "scale-[1.1] h-36 w-36 rounded-lg overflow-hidden"
                   )} style={{ background: 'transparent' }}>
                     {renderPreviewIcon(previewItem)}
                   </div>
@@ -1443,4 +1590,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-  }
+    }
