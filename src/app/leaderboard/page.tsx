@@ -52,7 +52,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
   );
 };
 
-// --- Canvas Frame Overlay Component - BLACK BACKGROUND REMOVE HOGA ---
+// --- Canvas Frame Overlay - HIGH DPI RENDERING FOR SHARPNESS ---
 const FrameOverlayCanvas = ({ 
   frameUrl, 
   isVideo = false,
@@ -70,14 +70,22 @@ const FrameOverlayCanvas = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
 
-    canvas.width = containerSize;
-    canvas.height = containerSize;
+    // HIGH DPI - Device pixel ratio se multiply karo
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = containerSize * dpr;
+    canvas.height = containerSize * dpr;
+    
+    // Canvas CSS size maintain karo
+    canvas.style.width = `${containerSize}px`;
+    canvas.style.height = `${containerSize}px`;
+    
+    // Context ko scale karo according to DPR
+    ctx.scale(dpr, dpr);
 
     if (isVideo) {
-      // Video frame ke liye
       const video = document.createElement('video');
       video.src = frameUrl;
       video.autoplay = true;
@@ -90,14 +98,12 @@ const FrameOverlayCanvas = ({
       const drawFrame = () => {
         if (!ctx || !canvas) return;
         
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, containerSize, containerSize);
         
         if (video.readyState >= 2) {
-          // Canvas pe video draw karo
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(video, 0, 0, containerSize, containerSize);
           
-          // Black pixels ko transparent karo
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, containerSize, containerSize);
           const data = imageData.data;
           
           for (let i = 0; i < data.length; i += 4) {
@@ -105,9 +111,8 @@ const FrameOverlayCanvas = ({
             const g = data[i + 1];
             const b = data[i + 2];
             
-            // Agar pixel dark/black hai toh usey transparent karo
             if (r < 30 && g < 30 && b < 30) {
-              data[i + 3] = 0; // Alpha 0 = fully transparent
+              data[i + 3] = 0;
             }
           }
           
@@ -131,7 +136,6 @@ const FrameOverlayCanvas = ({
         video.remove();
       };
     } else {
-      // Image frame ke liye
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = frameUrl;
@@ -139,11 +143,10 @@ const FrameOverlayCanvas = ({
       img.onload = () => {
         if (!ctx || !canvas) return;
         
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, containerSize, containerSize);
+        ctx.drawImage(img, 0, 0, containerSize, containerSize);
         
-        // Black pixels ko transparent karo
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, containerSize, containerSize);
         const data = imageData.data;
         
         for (let i = 0; i < data.length; i += 4) {
@@ -151,7 +154,6 @@ const FrameOverlayCanvas = ({
           const g = data[i + 1];
           const b = data[i + 2];
           
-          // Black ya near-black pixels transparent
           if (r < 30 && g < 30 && b < 30) {
             data[i + 3] = 0;
           }
@@ -160,9 +162,7 @@ const FrameOverlayCanvas = ({
         ctx.putImageData(imageData, 0, 0);
       };
 
-      return () => {
-        // Cleanup
-      };
+      return () => {};
     }
   }, [frameUrl, isVideo, containerSize]);
 
@@ -171,15 +171,14 @@ const FrameOverlayCanvas = ({
       ref={canvasRef}
       className="absolute inset-0 z-10 pointer-events-none"
       style={{ 
-        width: containerSize, 
-        height: containerSize,
-        mixBlendMode: 'normal' 
+        width: `${containerSize}px`, 
+        height: `${containerSize}px`,
       }}
     />
   );
 };
 
-// --- CircleAvatar with Frame - CANVAS SE BLACK REMOVE ---
+// --- CircleAvatar with Frame ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
   const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
@@ -198,7 +197,6 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      {/* Frame Canvas Overlay - Ye user avatar ke upar hoga */}
       {frame && (
         <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
           <FrameOverlayCanvas 
@@ -209,7 +207,6 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
         </div>
       )}
 
-      {/* User Avatar - Ye niche rahega */}
       <div className={cn("relative z-5 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
@@ -456,4 +453,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-    }
+            }
