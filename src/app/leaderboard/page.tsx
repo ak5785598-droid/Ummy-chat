@@ -12,9 +12,12 @@ import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { LeaderboardThemeConfig } from '@/components/admin/leaderboard-theme-admin';
+import { useCachedMedia } from '@/hooks/use-cached-media';
 
 // --- Dynamic Theme Background ---
 const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | null }) => {
+  const cachedUrl = useCachedMedia(theme?.backgroundUrl);
+
   if (!theme) {
     return (
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-gradient-to-br from-[#2e152b] via-[#2c1b18] to-[#3b1c32]">
@@ -34,13 +37,13 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
     <>
       {theme.backgroundType === 'image' ? (
         <img
-          src={theme.backgroundUrl}
+          src={cachedUrl}
           alt="Theme background"
           className="fixed inset-0 w-full h-full object-cover z-0"
         />
       ) : (
         <video
-          src={theme.backgroundUrl}
+          src={cachedUrl}
           autoPlay
           loop
           muted
@@ -188,13 +191,15 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
   };
 
   const frame = getRankFrame();
+  const cachedFrameImgUrl = useCachedMedia(frame?.imageUrl);
+  const cachedFrameVidUrl = useCachedMedia(frame?.videoUrl);
 
   return (
     <div className="relative inline-flex items-center justify-center">
       {frame && (
         <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
           <FrameOverlayCanvas 
-            frameUrl={frame.type === 'image' ? frame.imageUrl! : frame.videoUrl!}
+            frameUrl={frame.type === 'image' ? cachedFrameImgUrl! : cachedFrameVidUrl!}
             isVideo={frame.type === 'video'}
             containerSize={containerPixelSizes[size]}
           />

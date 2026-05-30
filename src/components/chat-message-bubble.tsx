@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Sparkles, Heart, Star, Moon } from 'lucide-react';
+import { useCachedMedia } from '@/hooks/use-cached-media';
 
 interface ChatMessageBubbleProps {
   bubbleId?: string | null;
@@ -16,6 +17,8 @@ interface ChatMessageBubbleProps {
  * Memoized to prevent re-renders on room timer updates.
  */
 export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bubbleMediaUrl }: ChatMessageBubbleProps) => {
+  const cachedBubbleUrl = useCachedMedia(bubbleMediaUrl);
+
   if (bubbleMediaUrl) {
     const isVideo = bubbleMediaUrl.toLowerCase().includes('.mp4') || bubbleMediaUrl.includes('video');
     return (
@@ -27,7 +30,7 @@ export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bu
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
           {isVideo ? (
             <video 
-              src={bubbleMediaUrl} 
+              src={cachedBubbleUrl} 
               autoPlay 
               loop 
               muted 
@@ -36,7 +39,7 @@ export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bu
             />
           ) : (
             <img 
-              src={bubbleMediaUrl} 
+              src={cachedBubbleUrl} 
               alt="bubble background" 
               className="w-full h-full object-cover scale-105" 
             />
