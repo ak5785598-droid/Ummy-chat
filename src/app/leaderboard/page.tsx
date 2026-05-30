@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -52,10 +52,138 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
   );
 };
 
-// --- CircleAvatar with Frame - BLACK FULLY REMOVE ---
+// --- Canvas Frame Overlay Component - BLACK BACKGROUND REMOVE HOGA ---
+const FrameOverlayCanvas = ({ 
+  frameUrl, 
+  isVideo = false,
+  containerSize = 96 
+}: { 
+  frameUrl: string; 
+  isVideo?: boolean;
+  containerSize?: number;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const animationFrameRef = useRef<number>();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = containerSize;
+    canvas.height = containerSize;
+
+    if (isVideo) {
+      // Video frame ke liye
+      const video = document.createElement('video');
+      video.src = frameUrl;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.crossOrigin = 'anonymous';
+      videoRef.current = video;
+
+      const drawFrame = () => {
+        if (!ctx || !canvas) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (video.readyState >= 2) {
+          // Canvas pe video draw karo
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Black pixels ko transparent karo
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // Agar pixel dark/black hai toh usey transparent karo
+            if (r < 30 && g < 30 && b < 30) {
+              data[i + 3] = 0; // Alpha 0 = fully transparent
+            }
+          }
+          
+          ctx.putImageData(imageData, 0, 0);
+        }
+        
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      };
+
+      video.addEventListener('play', () => {
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      });
+
+      video.play().catch(console.error);
+
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        video.pause();
+        video.remove();
+      };
+    } else {
+      // Image frame ke liye
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = frameUrl;
+
+      img.onload = () => {
+        if (!ctx || !canvas) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Black pixels ko transparent karo
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Black ya near-black pixels transparent
+          if (r < 30 && g < 30 && b < 30) {
+            data[i + 3] = 0;
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+      };
+
+      return () => {
+        // Cleanup
+      };
+    }
+  }, [frameUrl, isVideo, containerSize]);
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      className="absolute inset-0 z-10 pointer-events-none"
+      style={{ 
+        width: containerSize, 
+        height: containerSize,
+        mixBlendMode: 'normal' 
+      }}
+    />
+  );
+};
+
+// --- CircleAvatar with Frame - CANVAS SE BLACK REMOVE ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
   const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
+  const containerPixelSizes = { sm: 80, md: 96, lg: 128 };
 
   const getRankFrame = () => {
     if (!theme) return null;
@@ -70,41 +198,19 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      {/* Frame - mix-blend-mode: screen se black completely remove */}
+      {/* Frame Canvas Overlay - Ye user avatar ke upar hoga */}
       {frame && (
-        <div 
-          className={cn("absolute z-10 pointer-events-none", frameSizes[size])}
-          style={{ 
-            mixBlendMode: 'screen',
-            isolation: 'isolate'
-          }}
-        >
-          {frame.type === 'image' ? (
-            <img 
-              src={frame.imageUrl} 
-              alt="Frame" 
-              className="w-full h-full object-contain"
-              style={{ 
-                mixBlendMode: 'screen',
-              }}
-            />
-          ) : (
-            <video 
-              src={frame.videoUrl} 
-              autoPlay 
-              loop 
-              muted 
-              className="w-full h-full object-contain"
-              style={{ 
-                mixBlendMode: 'screen',
-              }}
-            />
-          )}
+        <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
+          <FrameOverlayCanvas 
+            frameUrl={frame.type === 'image' ? frame.imageUrl! : frame.videoUrl!}
+            isVideo={frame.type === 'video'}
+            containerSize={containerPixelSizes[size]}
+          />
         </div>
       )}
 
-      {/* User Avatar */}
-      <div className={cn("relative z-20 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
+      {/* User Avatar - Ye niche rahega */}
+      <div className={cn("relative z-5 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
           <AvatarFallback className="bg-slate-900 text-white font-black rounded-full">{fallback}</AvatarFallback>
@@ -350,4 +456,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-}
+    }
