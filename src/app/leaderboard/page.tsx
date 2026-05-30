@@ -52,7 +52,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
   );
 };
 
-// --- Canvas Frame Overlay Component - BLACK BACKGROUND POORA REMOVE, FRAME BILKUL CLEAR AAYEGA ---
+// --- Canvas Frame Overlay Component - BLACK BACKGROUND REMOVE, ORIGINAL SIZE MAIN DIKHAO ---
 const FrameOverlayCanvas = ({ 
   frameUrl, 
   isVideo = false,
@@ -65,6 +65,8 @@ const FrameOverlayCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [naturalDimensions, setNaturalDimensions] = useState<{width: number, height: number} | null>(null);
+  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,19 +79,9 @@ const FrameOverlayCanvas = ({
     
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const actualSize = containerSize * dpr;
-    
-    canvas.width = actualSize;
-    canvas.height = actualSize;
-    
-    canvas.style.width = containerSize + 'px';
-    canvas.style.height = containerSize + 'px';
-    
-    ctx.scale(dpr, dpr);
-
-    const removeBlackPixels = () => {
-      const imageData = ctx.getImageData(0, 0, actualSize, actualSize);
+    // Black pixels transparent karne ka function
+    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
       
       for (let i = 0; i < data.length; i += 4) {
@@ -98,7 +90,7 @@ const FrameOverlayCanvas = ({
         const b = data[i + 2];
         
         // Black aur near-black pixels ko transparent karo
-        if (r < 40 && g < 40 && b < 40) {
+        if (r < 30 && g < 30 && b < 30) {
           data[i + 3] = 0;
         }
       }
@@ -117,21 +109,22 @@ const FrameOverlayCanvas = ({
       video.crossOrigin = 'anonymous';
       video.preload = 'auto';
 
+      video.addEventListener('loadedmetadata', () => {
+        setNaturalDimensions({
+          width: video.videoWidth,
+          height: video.videoHeight
+        });
+        setIsFrameLoaded(true);
+      });
+
       video.addEventListener('loadeddata', () => {
-        const drawFrame = () => {
-          if (!ctx || !canvas || video.readyState < 2) {
-            animationFrameRef.current = requestAnimationFrame(drawFrame);
-            return;
-          }
-          
-          ctx.clearRect(0, 0, containerSize, containerSize);
-          ctx.drawImage(video, 0, 0, containerSize, containerSize);
-          removeBlackPixels();
-          
-          animationFrameRef.current = requestAnimationFrame(drawFrame);
-        };
-        
-        drawFrame();
+        if (!naturalDimensions) {
+          setNaturalDimensions({
+            width: video.videoWidth,
+            height: video.videoHeight
+          });
+          setIsFrameLoaded(true);
+        }
       });
 
       video.play().catch(console.error);
@@ -152,26 +145,116 @@ const FrameOverlayCanvas = ({
       img.src = frameUrl;
 
       img.onload = () => {
+        setNaturalDimensions({
+          width: img.naturalWidth,
+          height: img.naturalHeight
+        });
+        setIsFrameLoaded(true);
+      };
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [frameUrl, isVideo]);
+
+  // Jab natural dimensions mil jaye, canvas resize karo original aspect ratio ke hisaab se
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !naturalDimensions || !isFrameLoaded) return;
+
+    const ctx = canvas.getContext('2d', { 
+      alpha: true,
+      willReadFrequently: true
+    });
+    
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Original aspect ratio calculate karo
+    const aspectRatio = naturalDimensions.width / naturalDimensions.height;
+    
+    let canvasWidth: number, canvasHeight: number;
+    
+    // Container size ke andar fit karo, aspect ratio maintain karte hue
+    if (aspectRatio > 1) {
+      canvasWidth = containerSize;
+      canvasHeight = containerSize / aspectRatio;
+    } else {
+      canvasHeight = containerSize;
+      canvasWidth = containerSize * aspectRatio;
+    }
+    
+    // Actual canvas size with DPR
+    canvas.width = Math.round(canvasWidth * dpr);
+    canvas.height = Math.round(canvasHeight * dpr);
+    
+    // CSS size
+    canvas.style.width = Math.round(canvasWidth) + 'px';
+    canvas.style.height = Math.round(canvasHeight) + 'px';
+    
+    ctx.scale(dpr, dpr);
+
+    // Black pixels transparent karne ka function
+    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r < 30 && g < 30 && b < 30) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    };
+
+    if (isVideo && videoRef.current) {
+      const drawFrame = () => {
+        if (!ctx || !canvas || videoRef.current!.readyState < 2) {
+          animationFrameRef.current = requestAnimationFrame(drawFrame);
+          return;
+        }
+        
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(videoRef.current!, 0, 0, canvasWidth, canvasHeight);
+        removeBlackPixels(ctx, canvas.width, canvas.height);
+        
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      };
+      
+      drawFrame();
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = frameUrl;
+
+      img.onload = () => {
         if (!ctx || !canvas) return;
         
-        ctx.clearRect(0, 0, containerSize, containerSize);
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, containerSize, containerSize);
-        removeBlackPixels();
+        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        removeBlackPixels(ctx, canvas.width, canvas.height);
       };
-
-      return () => {};
     }
-  }, [frameUrl, isVideo, containerSize]);
+  }, [naturalDimensions, containerSize, frameUrl, isVideo, isFrameLoaded]);
 
   return (
     <canvas 
       ref={canvasRef}
-      className="absolute inset-0 z-10 pointer-events-none"
+      className="absolute inset-0 z-10 pointer-events-none m-auto"
       style={{ 
-        width: containerSize, 
-        height: containerSize
+        maxWidth: containerSize + 'px',
+        maxHeight: containerSize + 'px'
       }}
     />
   );
@@ -256,7 +339,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
     <div className="space-y-1 animate-in fade-in duration-700 pb-20 relative z-10">
       {/* Top 3 in One Row */}
       <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
-        {/* Top 2 - Left side, thoda bada aur right shift */}
+        {/* Top 2 - Left side */}
         <div className="flex-1 flex justify-center">
           {top2 && (
             <Link 
@@ -264,8 +347,9 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
               className="flex flex-col items-center gap-1 mt-8 translate-x-2"
             >
               <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
-              <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-3">{top2.username || top2.name || 'User'}</span>
-              <div className="flex items-center gap-1 -mt-1">
+              {/* Name aur value neeche shift - mt-4 add kiya */}
+              <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-4">{top2.username || top2.name || 'User'}</span>
+              <div className="flex items-center gap-1 -mt-0.5">
                 <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
                 <GoldCoinIcon className="h-3 w-3" />
               </div>
@@ -273,7 +357,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           )}
         </div>
 
-        {/* Top 1 - Center - Aur upar shift */}
+        {/* Top 1 - Center */}
         <div className="flex-1 flex justify-center">
           {top1 && (
             <Link 
@@ -290,7 +374,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           )}
         </div>
 
-        {/* Top 3 - Right side, thoda bada aur left shift */}
+        {/* Top 3 - Right side */}
         <div className="flex-1 flex justify-center">
           {top3 && (
             <Link 
@@ -298,8 +382,9 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
               className="flex flex-col items-center gap-1 mt-8 -translate-x-2"
             >
               <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
-              <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-3">{top3.username || top3.name || 'User'}</span>
-              <div className="flex items-center gap-1 -mt-1">
+              {/* Name aur value neeche shift - mt-4 add kiya */}
+              <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-4">{top3.username || top3.name || 'User'}</span>
+              <div className="flex items-center gap-1 -mt-0.5">
                 <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
                 <GoldCoinIcon className="h-3 w-3" />
               </div>
@@ -308,8 +393,11 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
       </div>
 
-      {/* 4 to 50 - Aur niche shift */}
-      <div className="px-4 space-y-1 mt-8">
+      {/* Spacer - Top 9 cards dikhane ke liye extra gap */}
+      <div className="h-[65vh]" />
+
+      {/* 4 to 50 - Bahut neeche shift */}
+      <div className="px-4 space-y-1">
         {others.map((item, index) => (
           <Link
             key={item.id}
@@ -460,4 +548,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-    }
+      }
