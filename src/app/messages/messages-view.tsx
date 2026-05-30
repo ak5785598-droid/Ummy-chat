@@ -20,7 +20,11 @@ import {
  Heart,
  Home,
  Pin,
- Trash2
+ Trash2,
+ MoreVertical,
+ Ban,
+ Trash,
+ AlertTriangle
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
@@ -268,6 +272,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showChatActions, setShowChatActions] = useState(false);
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -277,6 +282,16 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
 
   const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
   const isOnline = liveOtherUser?.isOnline;
+
+  // Block status check
+  const blockCheckQuery = useMemoFirebase(() => {
+    if (!firestore || !currentUser?.uid || !otherUser?.id) return null;
+    const pairId = [currentUser.uid, otherUser.id].sort().join('_');
+    return doc(firestore, 'blockedUsers', pairId);
+  }, [firestore, currentUser?.uid, otherUser?.id]);
+  
+  const { data: blockData } = useDoc(blockCheckQuery);
+  const isBlocked = blockData?.blockedBy?.includes(currentUser?.uid) || blockData?.blockedBy?.includes(otherUser?.id);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -299,6 +314,12 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const handleSend = async (e?: React.FormEvent, imageUrl?: string) => {
     if (e) e.preventDefault();
     if ((!text.trim() && !imageUrl) || !firestore || !currentUser || !chatId) return;
+    
+    // Check if blocked
+    if (isBlocked) {
+      toast({ variant: 'destructive', title: 'Cannot send message', description: 'You have blocked this user' });
+      return;
+    }
 
     const messageData = {
       text: text.trim(),
@@ -362,6 +383,102 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
+  // Block user function
+  const blockUser = async () => {
+    if (!firestore || !currentUser?.uid || !otherUser?.id) return;
+    try {
+      const pairId = [currentUser.uid, otherUser.id].sort().join('_');
+      const blockRef = doc(firestore, 'blockedUsers', pairId);
+      await setDocumentNonBlocking(blockRef, {
+        id: pairId,
+        blockedBy: arrayUnion(currentUser.uid),
+        participantIds: [currentUser.uid, otherUser.id],
+        blockedAt: serverTimestamp()
+      }, { merge: true });
+      toast({ title: 'User Blocked' });
+      setShowChatActions(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to block user' });
+    }
+  };
+
+  // Unblock user function
+  const unblockUser = async () => {
+    if (!firestore || !currentUser?.uid || !otherUser?.id) return;
+    try {
+      const pairId = [currentUser.uid, otherUser.id].sort().join('_');
+      const blockRef = doc(firestore, 'blockedUsers', pairId);
+      await updateDocumentNonBlocking(blockRef, {
+        blockedBy: arrayRemove(currentUser.uid)
+      });
+      toast({ title: 'User Unblocked' });
+      setShowChatActions(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to unblock user' });
+    }
+  };
+
+  // Delete entire chat (conversation delete)
+  const deleteEntireChat = async () => {
+    if (!firestore || !chatId) return;
+    try {
+      // Delete all messages
+      const msgsQuery = query(collection(firestore, 'privateChats', chatId, 'messages'));
+      const msgsSnap = await getDocs(msgsQuery);
+      const batch = writeBatch(firestore);
+      msgsSnap.forEach(m => batch.delete(m.ref));
+      await batch.commit();
+      
+      // Delete chat document
+      await deleteDoc(doc(firestore, 'privateChats', chatId));
+      
+      toast({ title: 'Conversation Deleted' });
+      setShowChatActions(false);
+      onOpenChange(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to delete chat' });
+    }
+  };
+
+  // Clear chat (sirf messages delete, chat rahega)
+  const clearChat = async () => {
+    if (!firestore || !chatId) return;
+    try {
+      const msgsQuery = query(collection(firestore, 'privateChats', chatId, 'messages'));
+      const msgsSnap = await getDocs(msgsQuery);
+      const batch = writeBatch(firestore);
+      msgsSnap.forEach(m => batch.delete(m.ref));
+      await batch.commit();
+      
+      toast({ title: 'Chat Cleared' });
+      setShowChatActions(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to clear chat' });
+    }
+  };
+
+  // Pin chat function
+  const pinChat = async () => {
+    if (!firestore || !chatId || !currentUser?.uid) return;
+    try {
+      const chatRef = doc(firestore, 'privateChats', chatId);
+      await updateDocumentNonBlocking(chatRef, {
+        pinnedBy: arrayUnion(currentUser.uid)
+      });
+      toast({ title: 'Chat Pinned to Top' });
+      setShowChatActions(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to pin chat' });
+    }
+  };
+
+  const isBlockedByMe = blockData?.blockedBy?.includes(currentUser?.uid);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -381,6 +498,13 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                   {isOnline ? 'online' : 'offline'}
                 </p>
               </div>
+              {/* 3 Dot Button - Top Right Corner */}
+              <button 
+                onClick={() => setShowChatActions(true)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-all active:scale-90"
+              >
+                <MoreVertical className="h-6 w-6 text-black" />
+              </button>
             </div>
             <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
           </DialogHeader>
@@ -388,6 +512,14 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
           <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
             <ScrollArea className="h-full px-4 pt-6">
               <div className="flex flex-col gap-4 pb-10">
+                {isBlocked && (
+                  <div className="text-center py-8 px-4 bg-yellow-50 rounded-2xl border border-yellow-200">
+                    <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                    <p className="text-xs font-bold uppercase text-yellow-700">
+                      {isBlockedByMe ? 'You have blocked this user' : 'You are blocked'}
+                    </p>
+                  </div>
+                )}
                 {messages?.map((msg: any) => {
                   const isMe = msg.senderId === currentUser?.uid;
                   return (
@@ -416,20 +548,33 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
           </main>
 
           <footer className="p-4 bg-white border-t border-gray-100 flex items-center gap-3 relative z-50 pb-safe">
-            <button onClick={() => imageInputRef.current?.click()} className="p-2 text-gray-500 hover:bg-gray-50 rounded-full active:scale-90 transition-all">
-              <ImageIcon className="h-6 w-6" />
-            </button>
-            <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={handleImageUpload} />
-            <form onSubmit={handleSend} className="flex-1 flex items-center gap-2">
-              <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-50 border-none rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none placeholder:text-gray-400 font-body" />
-              <button type="submit" disabled={!text.trim() && !isUploadingImage} className="p-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 active:scale-90 transition-all disabled:opacity-50">
-                {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-              </button>
-            </form>
+            {isBlockedByMe ? (
+              <div className="flex-1 text-center">
+                <p className="text-xs font-bold uppercase text-gray-400">User blocked. Unblock to send messages.</p>
+              </div>
+            ) : isBlocked ? (
+              <div className="flex-1 text-center">
+                <p className="text-xs font-bold uppercase text-gray-400">You cannot send messages</p>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => imageInputRef.current?.click()} className="p-2 text-gray-500 hover:bg-gray-50 rounded-full active:scale-90 transition-all">
+                  <ImageIcon className="h-6 w-6" />
+                </button>
+                <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={handleImageUpload} />
+                <form onSubmit={handleSend} className="flex-1 flex items-center gap-2">
+                  <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-50 border-none rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none placeholder:text-gray-400 font-body" />
+                  <button type="submit" disabled={!text.trim() && !isUploadingImage} className="p-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 active:scale-90 transition-all disabled:opacity-50">
+                    {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                  </button>
+                </form>
+              </>
+            )}
           </footer>
         </DialogContent>
       </Dialog>
 
+      {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-[95vw] p-0 overflow-hidden bg-black border-none z-[600]">
           <div className="relative aspect-square w-full">
@@ -441,6 +586,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </DialogContent>
       </Dialog>
 
+      {/* Message Delete Sheet */}
       <Sheet open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
         <SheetContent side="bottom" className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]">
           <div className="max-w-md mx-auto">
@@ -454,6 +600,80 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                   <Trash2 className="h-5 w-5" />
                 </div>
                 <span className="font-bold uppercase tracking-widest text-xs">Delete Message</span>
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Chat Actions Bottom Sheet - 40VH White */}
+      <Sheet open={showChatActions} onOpenChange={setShowChatActions}>
+        <SheetContent 
+          side="bottom" 
+          className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]"
+          style={{ height: '40vh' }}
+        >
+          <div className="max-w-md mx-auto h-full flex flex-col">
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
+            <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
+              {/* Clear Chat */}
+              <button 
+                onClick={clearChat} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-yellow-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-yellow-100 border border-yellow-100 group"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-yellow-600 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-colors">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="font-bold uppercase tracking-widest text-xs text-yellow-700">Clear Chat</span>
+                  <p className="text-[10px] text-yellow-600/60 font-medium">Delete all messages in this conversation</p>
+                </div>
+              </button>
+
+              {/* Block/Unblock */}
+              <button 
+                onClick={isBlockedByMe ? unblockUser : blockUser} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                  <Ban className="h-5 w-5" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="font-bold uppercase tracking-widest text-xs text-red-600">
+                    {isBlockedByMe ? 'Unblock User' : 'Block User'}
+                  </span>
+                  <p className="text-[10px] text-red-500/60 font-medium">
+                    {isBlockedByMe ? 'Allow messages again' : 'Stop receiving messages from this user'}
+                  </p>
+                </div>
+              </button>
+
+              {/* Delete Chat */}
+              <button 
+                onClick={deleteEntireChat} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="font-bold uppercase tracking-widest text-xs text-red-600">Delete Conversation</span>
+                  <p className="text-[10px] text-red-500/60 font-medium">Permanently remove this chat</p>
+                </div>
+              </button>
+
+              {/* Pin Top */}
+              <button 
+                onClick={pinChat} 
+                className="w-full py-5 px-6 flex items-center gap-5 bg-slate-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-slate-100 border border-slate-100 group"
+              >
+                <div className="h-10 w-10 rounded-xl bg-white text-slate-500 flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-colors">
+                  <Pin className="h-5 w-5" />
+                </div>
+                <div className="text-left flex-1">
+                  <span className="font-bold uppercase tracking-widest text-xs text-slate-700">Pin to Top</span>
+                  <p className="text-[10px] text-slate-500/60 font-medium">Keep this conversation at the top</p>
+                </div>
               </button>
             </div>
           </div>
@@ -676,4 +896,4 @@ export default function MessagesView() {
       </div>
     </AppLayout>
   );
-}
+       }
