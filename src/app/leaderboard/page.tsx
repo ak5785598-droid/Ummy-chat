@@ -37,7 +37,6 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
           src={theme.backgroundUrl}
           alt="Theme background"
           className="fixed inset-0 w-full h-full object-cover z-0"
-          style={{ mixBlendMode: 'screen' }}
         />
       ) : (
         <video
@@ -46,20 +45,17 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
           loop
           muted
           className="fixed inset-0 w-full h-full object-cover z-0"
-          style={{ mixBlendMode: 'screen' }}
         />
       )}
-      <div className="fixed inset-0 z-1 bg-black/40 pointer-events-none" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#1a0e14] to-transparent z-2 pointer-events-none" />
+      <div className="fixed inset-0 z-1 bg-black/30 pointer-events-none" />
     </>
   );
 };
 
-// --- CircleAvatar with SQUARE Frame Overlay ---
+// --- CircleAvatar with Frame - BLACK FULLY REMOVE ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
-  // Square frame sizes - thoda bada avatar se
-  const frameSizes = { sm: "h-16 w-16", md: "h-22 w-22", lg: "h-28 w-28" };
+  const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
 
   const getRankFrame = () => {
     if (!theme) return null;
@@ -73,25 +69,23 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
   const frame = getRankFrame();
 
   return (
-    <div className="relative inline-block">
-      {/* SQUARE Frame - Avatar ke upar overlap, black remove with screen blend */}
+    <div className="relative inline-flex items-center justify-center">
+      {/* Frame - mix-blend-mode: screen se black completely remove */}
       {frame && (
         <div 
-          className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none", frameSizes[size])}
+          className={cn("absolute z-10 pointer-events-none", frameSizes[size])}
           style={{ 
-            borderRadius: '0px', // Square shape
-            overflow: 'hidden',
+            mixBlendMode: 'screen',
+            isolation: 'isolate'
           }}
         >
           {frame.type === 'image' ? (
             <img 
               src={frame.imageUrl} 
               alt="Frame" 
-              className="w-full h-full"
+              className="w-full h-full object-contain"
               style={{ 
                 mixBlendMode: 'screen',
-                objectFit: 'cover',
-                borderRadius: '0px', // Square shape
               }}
             />
           ) : (
@@ -100,19 +94,17 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
               autoPlay 
               loop 
               muted 
-              className="w-full h-full"
+              className="w-full h-full object-contain"
               style={{ 
                 mixBlendMode: 'screen',
-                objectFit: 'cover',
-                borderRadius: '0px', // Square shape
               }}
             />
           )}
         </div>
       )}
 
-      {/* User Avatar - Round */}
-      <div className={cn("relative flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm z-20", sizes[size])}>
+      {/* User Avatar */}
+      <div className={cn("relative z-20 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
           <AvatarFallback className="bg-slate-900 text-white font-black rounded-full">{fallback}</AvatarFallback>
@@ -159,13 +151,13 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   };
 
   return (
-    <div className="space-y-1 animate-in fade-in duration-700 pb-32 relative z-10">
+    <div className="space-y-1 animate-in fade-in duration-700 pb-20 relative z-10">
       {/* Top 3 in One Row */}
-      <div className="flex items-end justify-center gap-4 px-4 pt-10 pb-6">
-        {/* Top 2 - Left, thoda niche */}
+      <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+        {/* Top 2 - Left */}
         <div className="flex-1 flex justify-center">
           {top2 && (
-            <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex flex-col items-center gap-1 mt-8">
+            <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex flex-col items-center gap-1 mt-12">
               <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="sm" rank={2} theme={theme} />
               <span className="text-[9px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg">{top2.username || top2.name || 'User'}</span>
               <div className="flex items-center gap-1">
@@ -176,10 +168,10 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           )}
         </div>
 
-        {/* Top 1 - Center, upar */}
+        {/* Top 1 - Center */}
         <div className="flex-1 flex justify-center">
           {top1 && (
-            <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center gap-1">
+            <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center gap-1 mt-4">
               <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
               <span className="text-[11px] font-black uppercase text-white drop-shadow-lg">{top1.username || top1.name || 'User'}</span>
               <div className="flex items-center gap-1">
@@ -190,10 +182,10 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           )}
         </div>
 
-        {/* Top 3 - Right, thoda niche */}
+        {/* Top 3 - Right */}
         <div className="flex-1 flex justify-center">
           {top3 && (
-            <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex flex-col items-center gap-1 mt-8">
+            <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex flex-col items-center gap-1 mt-12">
               <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="sm" rank={3} theme={theme} />
               <span className="text-[9px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg">{top3.username || top3.name || 'User'}</span>
               <div className="flex items-center gap-1">
@@ -205,8 +197,8 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
       </div>
 
-      {/* Others list */}
-      <div className="px-4 space-y-1 pt-4">
+      {/* 4 to 50 - Scrollable */}
+      <div className="px-4 space-y-1">
         {others.map((item, index) => (
           <Link
             key={item.id}
@@ -317,7 +309,7 @@ function LeaderboardContent() {
     <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent">
       <DynamicThemeBackground theme={activeTheme} />
 
-      {/* Header - Back Left, Tabs Center, Question Right */}
+      {/* Header */}
       <header className="relative z-50 p-4 pt-safe flex items-center justify-between">
         <Link href="/rooms" className="flex items-center justify-center w-10 h-10">
           <ChevronLeft className="h-6 w-6 text-white" />
@@ -358,4 +350,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-      }
+}
