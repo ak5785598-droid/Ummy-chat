@@ -66,6 +66,7 @@ const FrameOverlayCanvas = ({
   const animationFrameRef = useRef<number>();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [naturalDimensions, setNaturalDimensions] = useState<{width: number, height: number} | null>(null);
+  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -94,6 +95,7 @@ const FrameOverlayCanvas = ({
           width: video.videoWidth,
           height: video.videoHeight
         });
+        setIsFrameLoaded(true);
       });
 
       video.addEventListener('loadeddata', () => {
@@ -102,25 +104,22 @@ const FrameOverlayCanvas = ({
             width: video.videoWidth,
             height: video.videoHeight
           });
+          setIsFrameLoaded(true);
         }
-        
-        const drawFrame = () => {
-          if (!ctx || !canvas || video.readyState < 2) {
-            animationFrameRef.current = requestAnimationFrame(drawFrame);
-            return;
-          }
-          
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          removeBlackPixels(ctx, canvas.width, canvas.height);
-          
-          animationFrameRef.current = requestAnimationFrame(drawFrame);
-        };
-        
-        drawFrame();
       });
 
       video.play().catch(console.error);
+
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        if (videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.remove();
+          videoRef.current = null;
+        }
+      };
     } else {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -131,6 +130,7 @@ const FrameOverlayCanvas = ({
           width: img.naturalWidth,
           height: img.naturalHeight
         });
+        setIsFrameLoaded(true);
       };
     }
 
@@ -138,34 +138,12 @@ const FrameOverlayCanvas = ({
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.remove();
-        videoRef.current = null;
-      }
     };
   }, [frameUrl, isVideo]);
 
-  const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      if (r < 30 && g < 30 && b < 30) {
-        data[i + 3] = 0;
-      }
-    }
-    
-    ctx.putImageData(imageData, 0, 0);
-  };
-
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !naturalDimensions) return;
+    if (!canvas || !naturalDimensions || !isFrameLoaded) return;
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
@@ -175,9 +153,10 @@ const FrameOverlayCanvas = ({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
+    
     const aspectRatio = naturalDimensions.width / naturalDimensions.height;
     
-    let canvasWidth, canvasHeight;
+    let canvasWidth: number, canvasHeight: number;
     
     if (aspectRatio > 1) {
       canvasWidth = containerSize;
@@ -189,12 +168,45 @@ const FrameOverlayCanvas = ({
     
     canvas.width = Math.round(canvasWidth * dpr);
     canvas.height = Math.round(canvasHeight * dpr);
+    
     canvas.style.width = Math.round(canvasWidth) + 'px';
     canvas.style.height = Math.round(canvasHeight) + 'px';
     
     ctx.scale(dpr, dpr);
 
-    if (!isVideo) {
+    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r < 30 && g < 30 && b < 30) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    };
+
+    if (isVideo && videoRef.current) {
+      const drawFrame = () => {
+        if (!ctx || !canvas || videoRef.current!.readyState < 2) {
+          animationFrameRef.current = requestAnimationFrame(drawFrame);
+          return;
+        }
+        
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(videoRef.current!, 0, 0, canvasWidth, canvasHeight);
+        removeBlackPixels(ctx, canvas.width, canvas.height);
+        
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      };
+      
+      drawFrame();
+    } else {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = frameUrl;
@@ -206,10 +218,10 @@ const FrameOverlayCanvas = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-        removeBlackPixels(ctx, Math.round(canvasWidth * dpr), Math.round(canvasHeight * dpr));
+        removeBlackPixels(ctx, canvas.width, canvas.height);
       };
     }
-  }, [naturalDimensions, containerSize, frameUrl, isVideo]);
+  }, [naturalDimensions, containerSize, frameUrl, isVideo, isFrameLoaded]);
 
   return (
     <canvas 
@@ -226,8 +238,8 @@ const FrameOverlayCanvas = ({
 // --- CircleAvatar with Frame ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
-  const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-36 w-36" };
-  const containerPixelSizes = { sm: 80, md: 96, lg: 144 };
+  const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
+  const containerPixelSizes = { sm: 80, md: 96, lg: 128 };
 
   const getRankFrame = () => {
     if (!theme) return null;
@@ -290,7 +302,10 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   const top1 = activePlayers[0];
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
-  const others = activePlayers.slice(3);
+  
+  const fixedTopCards = activePlayers.slice(3, 9);
+  
+  const scrollableOthers = activePlayers.slice(9);
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -301,85 +316,125 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   return (
     <div className="space-y-1 animate-in fade-in duration-700 pb-20 relative z-10">
       {/* Top 3 in One Row */}
-      <div className="flex items-end justify-center gap-3 px-3 pt-16 pb-6">
-        {/* Top 2 - Left side - Thoda aur niche shift kiya */}
+      <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+        {/* Top 2 - Left side */}
         <div className="flex-1 flex justify-center">
           {top2 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
-              className="flex flex-col items-center gap-2 mt-12 translate-x-2"
+              className="flex flex-col items-center gap-1 translate-x-2"
             >
-              <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg">{top2.username || top2.name || 'User'}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
-                  <GoldCoinIcon className="h-3 w-3" />
-                </div>
+              {/* Avatar upar shift karne ke liye -mt-4 add kiya */}
+              <div className="-mt-4">
+                <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
+              </div>
+              {/* Name aur value niche shift karne ke liye mt-5 badhaya */}
+              <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-6">{top2.username || top2.name || 'User'}</span>
+              <div className="flex items-center gap-1 -mt-0.5">
+                <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
+                <GoldCoinIcon className="h-3 w-3" />
               </div>
             </Link>
           )}
         </div>
 
-        {/* Top 1 - Center - Aur upar shift rakha hai */}
+        {/* Top 1 - Center */}
         <div className="flex-1 flex justify-center">
           {top1 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
-              className="flex flex-col items-center gap-2 -mt-16"
+              className="flex flex-col items-center gap-1 -mt-12"
             >
-              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[13px] font-black uppercase text-black drop-shadow-md">{top1.username || top1.name || 'User'}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
-                  <GoldCoinIcon className="h-4 w-4" />
-                </div>
+              {/* Avatar upar shift karne ke liye -mt-6 add kiya */}
+              <div className="-mt-6">
+                <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
+              </div>
+              {/* Name aur value niche shift karne ke liye mt-7 badhaya */}
+              <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-7">{top1.username || top1.name || 'User'}</span>
+              <div className="flex items-center gap-1 -mt-1">
+                <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
+                <GoldCoinIcon className="h-4 w-4" />
               </div>
             </Link>
           )}
         </div>
 
-        {/* Top 3 - Right side - Thoda aur niche shift kiya */}
+        {/* Top 3 - Right side */}
         <div className="flex-1 flex justify-center">
           {top3 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
-              className="flex flex-col items-center gap-2 mt-12 -translate-x-2"
+              className="flex flex-col items-center gap-1 -translate-x-2"
             >
-              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg">{top3.username || top3.name || 'User'}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
-                  <GoldCoinIcon className="h-3 w-3" />
-                </div>
+              {/* Avatar upar shift karne ke liye -mt-4 add kiya */}
+              <div className="-mt-4">
+                <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
+              </div>
+              {/* Name aur value niche shift karne ke liye mt-5 badhaya */}
+              <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-6">{top3.username || top3.name || 'User'}</span>
+              <div className="flex items-center gap-1 -mt-0.5">
+                <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
+                <GoldCoinIcon className="h-3 w-3" />
               </div>
             </Link>
           )}
         </div>
       </div>
 
-      {/* 4 to 50 - Aur niche shift with gap - Pehle mt-12 tha ab mt-16 kar diya */}
-      <div className="px-4 space-y-1 mt-16">
-        {others.map((item, index) => (
-          <Link
-            key={item.id}
-            href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
-            className="flex items-center gap-3 py-2.5 px-2 hover:bg-white/5 rounded-lg transition-all"
-          >
-            <span className="text-base font-black italic text-white/40 w-5">{index + 4}</span>
-            <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={(index + 4).toString()} size="sm" rank={index + 4} theme={theme} />
-            <div className="flex-1">
-              <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
-              <GoldCoinIcon className="h-3 w-3" />
-            </div>
-          </Link>
-        ))}
-      </div>
+      {/* Spacer */}
+      <div className="h-8" />
+
+      {/* Fixed Cards Section — Top 4 to Top 9 */}
+      {fixedTopCards.length > 0 && (
+        <div className="px-4 space-y-1">
+          {fixedTopCards.map((item, index) => {
+            const rank = index + 4;
+            return (
+              <Link
+                key={item.id}
+                href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
+                className="flex items-center gap-3 py-2 px-2 hover:bg-white/5 rounded-lg transition-all"
+              >
+                <span className="text-base font-black italic text-white/40 w-5">{rank}</span>
+                <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={rank.toString()} size="sm" rank={rank} theme={theme} />
+                <div className="flex-1">
+                  <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
+                  <GoldCoinIcon className="h-3 w-3" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Scrollable Section — Top 10 se baaki */}
+      {scrollableOthers.length > 0 && (
+        <div className="px-4 space-y-1 mt-4">
+          {scrollableOthers.map((item, index) => {
+            const rank = index + 10;
+            return (
+              <Link
+                key={item.id}
+                href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
+                className="flex items-center gap-3 py-2 px-2 hover:bg-white/5 rounded-lg transition-all"
+              >
+                <span className="text-base font-black italic text-white/40 w-5">{rank}</span>
+                <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={rank.toString()} size="sm" rank={rank} theme={theme} />
+                <div className="flex-1">
+                  <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
+                  <GoldCoinIcon className="h-3 w-3" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -512,4 +567,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-      }
+            }
