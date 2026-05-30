@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { TrendingUp, Loader, ChevronLeft, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -63,7 +63,6 @@ const FrameOverlayCanvas = ({
   containerSize?: number;
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const animationFrameRef = useRef<number>();
 
   useEffect(() => {
@@ -113,7 +112,6 @@ const FrameOverlayCanvas = ({
       video.muted = true;
       video.playsInline = true;
       video.crossOrigin = 'anonymous';
-      videoRef.current = video;
 
       const drawFrame = () => {
         if (!ctx || !canvas) return;
@@ -343,21 +341,20 @@ function LeaderboardContent() {
   useEffect(() => {
     if (!firestore) return;
 
-    const fetchActiveTheme = async () => {
-      try {
-        const q = query(collection(firestore, 'leaderboardThemes'), where('isActive', '==', true), limit(1));
-        const snapshot = await getDocs(q);
-        if (snapshot.docs.length > 0) {
-          const themeData = snapshot.docs[0].data() as LeaderboardThemeConfig;
-          themeData.id = snapshot.docs[0].id;
-          setActiveTheme(themeData);
-        }
-      } catch (error) {
-        console.error('Error fetching active theme:', error);
+    const q = query(collection(firestore, 'leaderboardThemes'), where('isActive', '==', true), limit(1));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.docs.length > 0) {
+        const themeData = snapshot.docs[0].data() as LeaderboardThemeConfig;
+        themeData.id = snapshot.docs[0].id;
+        setActiveTheme(themeData);
+      } else {
+        setActiveTheme(null);
       }
-    };
+    }, (error) => {
+      console.error('Error listening to active theme:', error);
+    });
 
-    fetchActiveTheme();
+    return () => unsubscribe();
   }, [firestore]);
 
   const richQuery = useMemoFirebase(
