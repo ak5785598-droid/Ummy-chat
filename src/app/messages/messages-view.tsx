@@ -93,15 +93,12 @@ const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, c
  </div>
 );
 
+// ==================== ChatListItem ====================
 const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   const router = useRouter();
-  const firestore = useFirestore();
   const participantIds = chat?.participantIds || [];
   const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
   const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
-
-  const [showActions, setShowActions] = useState(false);
-  const longPressTimer = useRef<any>(null);
 
   if (isLoading) return (
    <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-black/5 last:border-0">
@@ -127,89 +124,44 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
   const isOnline = otherUser.isOnline === true;
   const inRoomId = otherUser.currentRoomId;
-
-  const handleTouchStart = () => {
-    longPressTimer.current = setTimeout(() => {
-      setShowActions(true);
-      if (window.navigator.vibrate) window.navigator.vibrate(50);
-    }, 600);
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
-  };
-
-  const deleteChat = async () => {
-    if (!confirm('Are you sure you want to delete this conversation?')) return;
-    try {
-      if (!firestore) return;
-      const chatRef = doc(firestore, 'privateChats', chat.id);
-      await deleteDoc(chatRef);
-      const msgsQuery = query(collection(firestore, 'privateChats', chat.id, 'messages'));
-      const msgsSnap = await getDocs(msgsQuery);
-      const batch = writeBatch(firestore);
-      msgsSnap.forEach(m => batch.delete(m.ref));
-      await batch.commit();
-      setShowActions(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const togglePin = async () => {
-    if (!firestore) return;
-    const chatRef = doc(firestore, 'privateChats', chat.id);
-    const isPinned = (chat.pinnedBy || []).includes(currentUid);
-    await updateDocumentNonBlocking(chatRef, {
-      pinnedBy: isPinned ? arrayRemove(currentUid) : arrayUnion(currentUid)
-    });
-    setShowActions(false);
-  };
-
   const isPinned = (chat.pinnedBy || []).includes(currentUid);
 
   return (
-    <>
-      <div 
-       onClick={() => onSelect(chat.id, otherUser)}
-       onMouseDown={handleTouchStart}
-       onMouseUp={handleTouchEnd}
-       onMouseLeave={handleTouchEnd}
-       onTouchStart={handleTouchStart}
-       onTouchEnd={handleTouchEnd}
-       className={cn(
+    <div 
+      onClick={() => onSelect(chat.id, otherUser)}
+      className={cn(
         "px-6 py-4 flex gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0 relative",
         isUnread && "bg-primary/10",
         isPinned && "bg-slate-50/80 border-l-4 border-l-primary"
-       )}
-      >
-       {isPinned && <Pin className="absolute top-2 right-2 h-3 w-3 text-primary fill-current rotate-45" />}
-       <div className="relative shrink-0">
+      )}
+    >
+      {isPinned && <Pin className="absolute top-2 right-2 h-3 w-3 text-primary fill-current rotate-45" />}
+      <div className="relative shrink-0">
         <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
-         <AvatarImage src={otherUser.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-         <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
+          <AvatarImage src={otherUser.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+          <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isUnread && (
-         <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
+          <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
         )}
-       </div>
-       <div className="flex-1 min-w-0 pt-1">
+      </div>
+      <div className="flex-1 min-w-0 pt-1">
         <div className="flex items-center justify-between mb-0.5">
-         <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
-          {otherUser.username}
-         </h3>
-         <div className="flex items-center gap-1.5">
-          {isOnline && !inRoomId && (
-            <div className="h-2 w-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-          )}
-          <span className="text-[10px] font-bold text-slate-500 uppercase">
-           {getDisplayTime(chat.updatedAt)}
-          </span>
-         </div>
+          <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
+            {otherUser.username}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            {isOnline && !inRoomId && (
+              <div className="h-2 w-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+            )}
+            <span className="text-[10px] font-bold text-slate-500 uppercase">
+              {getDisplayTime(chat.updatedAt)}
+            </span>
+          </div>
         </div>
         <div className="flex items-center justify-between gap-2 overflow-hidden">
           <p className={cn("text-[11px] font-body truncate flex-1 ", isUnread ? "font-black text-slate-900" : "text-slate-600")}>
-           {chat.lastMessage || 'Sent a vibe'}
+            {chat.lastMessage || 'Sent a vibe'}
           </p>
           
           {isOnline && inRoomId && (
@@ -230,43 +182,12 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
             </div>
           )}
         </div>
-       </div>
       </div>
-
-      <Sheet open={showActions} onOpenChange={setShowActions}>
-        <SheetContent side="bottom" className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]">
-          <div className="max-w-md mx-auto">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
-            <div className="flex flex-col gap-4">
-              <button 
-                onClick={togglePin} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-slate-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-slate-100 border border-slate-100 group"
-              >
-                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-colors", isPinned ? "bg-primary/20 text-primary" : "bg-white text-slate-400 group-hover:text-primary")}>
-                  <Pin className={cn("h-5 w-5", isPinned && "fill-current")} />
-                </div>
-                <span className="font-bold text-slate-700 uppercase tracking-widest text-xs">
-                  {isPinned ? 'Unpin from Top' : 'Pin to Top'}
-                </span>
-              </button>
-              
-              <button 
-                onClick={deleteChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
-              >
-                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-                  <Trash2 className="h-5 w-5" />
-                </div>
-                <span className="font-bold uppercase tracking-widest text-xs text-red-600">Delete Conversation</span>
-              </button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+    </div>
   );
 };
 
+// ==================== ChatRoomDialog ====================
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
   const [text, setText] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -283,7 +204,14 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
   const isOnline = liveOtherUser?.isOnline;
 
-  // Block status check
+  const chatRef = useMemoFirebase(() => {
+    if (!firestore || !chatId) return null;
+    return doc(firestore, 'privateChats', chatId);
+  }, [firestore, chatId]);
+  
+  const { data: chatData } = useDoc(chatRef);
+  const isPinned = (chatData?.pinnedBy || []).includes(currentUser?.uid);
+
   const blockCheckQuery = useMemoFirebase(() => {
     if (!firestore || !currentUser?.uid || !otherUser?.id) return null;
     const pairId = [currentUser.uid, otherUser.id].sort().join('_');
@@ -292,6 +220,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   
   const { data: blockData } = useDoc(blockCheckQuery);
   const isBlocked = blockData?.blockedBy?.includes(currentUser?.uid) || blockData?.blockedBy?.includes(otherUser?.id);
+  const isBlockedByMe = blockData?.blockedBy?.includes(currentUser?.uid);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -315,7 +244,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     if (e) e.preventDefault();
     if ((!text.trim() && !imageUrl) || !firestore || !currentUser || !chatId) return;
     
-    // Check if blocked
     if (isBlocked) {
       toast({ variant: 'destructive', title: 'Cannot send message', description: 'You have blocked this user' });
       return;
@@ -383,7 +311,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  // Block user function
   const blockUser = async () => {
     if (!firestore || !currentUser?.uid || !otherUser?.id) return;
     try {
@@ -403,7 +330,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  // Unblock user function
   const unblockUser = async () => {
     if (!firestore || !currentUser?.uid || !otherUser?.id) return;
     try {
@@ -420,20 +346,15 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  // Delete entire chat (conversation delete)
   const deleteEntireChat = async () => {
     if (!firestore || !chatId) return;
     try {
-      // Delete all messages
       const msgsQuery = query(collection(firestore, 'privateChats', chatId, 'messages'));
       const msgsSnap = await getDocs(msgsQuery);
       const batch = writeBatch(firestore);
       msgsSnap.forEach(m => batch.delete(m.ref));
       await batch.commit();
-      
-      // Delete chat document
       await deleteDoc(doc(firestore, 'privateChats', chatId));
-      
       toast({ title: 'Conversation Deleted' });
       setShowChatActions(false);
       onOpenChange(false);
@@ -443,7 +364,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  // Clear chat (sirf messages delete, chat rahega)
   const clearChat = async () => {
     if (!firestore || !chatId) return;
     try {
@@ -452,7 +372,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
       const batch = writeBatch(firestore);
       msgsSnap.forEach(m => batch.delete(m.ref));
       await batch.commit();
-      
       toast({ title: 'Chat Cleared' });
       setShowChatActions(false);
     } catch (e) {
@@ -461,7 +380,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  // Pin chat function
   const pinChat = async () => {
     if (!firestore || !chatId || !currentUser?.uid) return;
     try {
@@ -477,12 +395,26 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   };
 
-  const isBlockedByMe = blockData?.blockedBy?.includes(currentUser?.uid);
+  const unpinChat = async () => {
+    if (!firestore || !chatId || !currentUser?.uid) return;
+    try {
+      const chatRef = doc(firestore, 'privateChats', chatId);
+      await updateDocumentNonBlocking(chatRef, {
+        pinnedBy: arrayRemove(currentUser.uid)
+      });
+      toast({ title: 'Chat Unpinned' });
+      setShowChatActions(false);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Failed to unpin chat' });
+    }
+  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+          {/* Header */}
           <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
             <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
               <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
@@ -498,7 +430,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                   {isOnline ? 'online' : 'offline'}
                 </p>
               </div>
-              {/* 3 Dot Button - Top Right Corner */}
               <button 
                 onClick={() => setShowChatActions(true)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-all active:scale-90"
@@ -509,9 +440,10 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
           </DialogHeader>
 
+          {/* Messages Area - HAR MESSAGE MEIN AVATAR */}
           <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
             <ScrollArea className="h-full px-4 pt-6">
-              <div className="flex flex-col gap-4 pb-10">
+              <div className="flex flex-col gap-3 pb-10">
                 {isBlocked && (
                   <div className="text-center py-8 px-4 bg-yellow-50 rounded-2xl border border-yellow-200">
                     <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
@@ -522,23 +454,59 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 )}
                 {messages?.map((msg: any) => {
                   const isMe = msg.senderId === currentUser?.uid;
+                  
                   return (
                     <div key={msg.id} 
-                      onMouseDown={() => handleMsgTouchStart(msg)} onMouseUp={handleMsgTouchEnd} onMouseLeave={handleMsgTouchEnd}
-                      onTouchStart={() => handleMsgTouchStart(msg)} onTouchEnd={handleMsgTouchEnd}
-                      className={cn("flex flex-col max-w-[80%] transition-transform active:scale-[0.98]", isMe ? "self-end items-end" : "self-start items-start")}
+                      onMouseDown={() => handleMsgTouchStart(msg)} 
+                      onMouseUp={handleMsgTouchEnd} 
+                      onMouseLeave={handleMsgTouchEnd}
+                      onTouchStart={() => handleMsgTouchStart(msg)} 
+                      onTouchEnd={handleMsgTouchEnd}
+                      className={cn(
+                        "flex gap-3 transition-transform active:scale-[0.98]",
+                        isMe ? "flex-row-reverse" : "flex-row"
+                      )}
                     >
-                      <div className={cn("px-4 py-3 rounded-2xl text-sm font-body shadow-sm border", isMe ? "bg-primary text-white rounded-br-none border-primary/20" : "bg-white text-gray-800 rounded-bl-none border-gray-100")}>
-                        {msg.imageUrl && (
-                          <div onClick={() => setPreviewImage(msg.imageUrl)} className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner cursor-pointer active:scale-[0.98] transition-transform">
-                            <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
-                          </div>
+                      {/* Avatar - Har message mein dikhega */}
+                      <div className="shrink-0 self-end">
+                        {isMe ? (
+                          <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
+                            <AvatarImage src={currentUser?.avatarUrl ? `${currentUser.avatarUrl}${currentUser.avatarUrl.includes('?') ? '&' : '?'}v=${currentUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+                            <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-bold">{(currentUser?.username || 'Y').charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
+                            <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v={otherUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+                            <AvatarFallback className="text-[9px] bg-slate-200 text-slate-500 font-bold">{(otherUser?.username || 'U').charAt(0)}</AvatarFallback>
+                          </Avatar>
                         )}
-                        {msg.text && <p className="leading-relaxed ">{msg.text}</p>}
                       </div>
-                      <span className="text-[8px] font-bold text-gray-400 uppercase mt-1 px-1">
-                        {msg.timestamp ? format(msg.timestamp.toDate(), 'h:mm a') : '...'}
-                      </span>
+                      
+                      {/* Message Bubble */}
+                      <div className={cn(
+                        "flex flex-col max-w-[75%]",
+                        isMe ? "items-end" : "items-start"
+                      )}>
+                        <div className={cn(
+                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border",
+                          isMe 
+                            ? "bg-primary text-white rounded-br-none border-primary/20" 
+                            : "bg-white text-gray-800 rounded-bl-none border-gray-100"
+                        )}>
+                          {msg.imageUrl && (
+                            <div 
+                              onClick={() => setPreviewImage(msg.imageUrl)} 
+                              className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner cursor-pointer active:scale-[0.98] transition-transform"
+                            >
+                              <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
+                            </div>
+                          )}
+                          {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+                        </div>
+                        <span className="text-[8px] font-bold text-gray-400 uppercase mt-1 px-1">
+                          {msg.timestamp ? format(msg.timestamp.toDate(), 'h:mm a') : '...'}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -547,6 +515,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             </ScrollArea>
           </main>
 
+          {/* Footer Input */}
           <footer className="p-4 bg-white border-t border-gray-100 flex items-center gap-3 relative z-50 pb-safe">
             {isBlockedByMe ? (
               <div className="flex-1 text-center">
@@ -563,8 +532,18 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 </button>
                 <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={handleImageUpload} />
                 <form onSubmit={handleSend} className="flex-1 flex items-center gap-2">
-                  <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-50 border-none rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none placeholder:text-gray-400 font-body" />
-                  <button type="submit" disabled={!text.trim() && !isUploadingImage} className="p-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 active:scale-90 transition-all disabled:opacity-50">
+                  <input 
+                    type="text" 
+                    value={text} 
+                    onChange={(e) => setText(e.target.value)} 
+                    placeholder="Type a message..." 
+                    className="flex-1 bg-gray-50 border-none rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none placeholder:text-gray-400 font-body" 
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={!text.trim() && !isUploadingImage} 
+                    className="p-3 bg-primary text-white rounded-full shadow-lg shadow-primary/30 active:scale-90 transition-all disabled:opacity-50"
+                  >
                     {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                   </button>
                 </form>
@@ -606,22 +585,23 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </SheetContent>
       </Sheet>
 
-      {/* Chat Actions Bottom Sheet - 40VH White */}
+      {/* Chat Actions Bottom Sheet - 40VH Square No Curve */}
       <Sheet open={showChatActions} onOpenChange={setShowChatActions}>
         <SheetContent 
           side="bottom" 
-          className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]"
-          style={{ height: '40vh' }}
+          className="p-8 pb-20 bg-white border-t-2 border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] z-[1000]"
+          style={{ height: '40vh', borderRadius: 0 }}
         >
           <div className="max-w-md mx-auto h-full flex flex-col">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
+            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-8" />
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
+              
               {/* Clear Chat */}
               <button 
                 onClick={clearChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-yellow-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-yellow-100 border border-yellow-100 group"
+                className="w-full py-5 px-6 flex items-center gap-5 bg-yellow-50 hover:bg-yellow-100 active:scale-[0.98] transition-all border border-yellow-200 group"
               >
-                <div className="h-10 w-10 rounded-xl bg-white text-yellow-600 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-colors">
+                <div className="h-10 w-10 bg-white text-yellow-600 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-colors">
                   <Trash2 className="h-5 w-5" />
                 </div>
                 <div className="text-left flex-1">
@@ -630,20 +610,36 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 </div>
               </button>
 
-              {/* Block/Unblock */}
+              {/* Block / Unblock */}
               <button 
                 onClick={isBlockedByMe ? unblockUser : blockUser} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
+                className={cn(
+                  "w-full py-5 px-6 flex items-center gap-5 active:scale-[0.98] transition-all border group",
+                  isBlockedByMe 
+                    ? "bg-green-50 hover:bg-green-100 border-green-200" 
+                    : "bg-red-50 hover:bg-red-100 border-red-200"
+                )}
               >
-                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-                  <Ban className="h-5 w-5" />
+                <div className={cn(
+                  "h-10 w-10 bg-white flex items-center justify-center transition-colors",
+                  isBlockedByMe 
+                    ? "text-green-600 group-hover:bg-green-500 group-hover:text-white" 
+                    : "text-red-500 group-hover:bg-red-500 group-hover:text-white"
+                )}>
+                  {isBlockedByMe ? <CheckCircle className="h-5 w-5" /> : <Ban className="h-5 w-5" />}
                 </div>
                 <div className="text-left flex-1">
-                  <span className="font-bold uppercase tracking-widest text-xs text-red-600">
+                  <span className={cn(
+                    "font-bold uppercase tracking-widest text-xs",
+                    isBlockedByMe ? "text-green-700" : "text-red-600"
+                  )}>
                     {isBlockedByMe ? 'Unblock User' : 'Block User'}
                   </span>
-                  <p className="text-[10px] text-red-500/60 font-medium">
-                    {isBlockedByMe ? 'Allow messages again' : 'Stop receiving messages from this user'}
+                  <p className={cn(
+                    "text-[10px] font-medium",
+                    isBlockedByMe ? "text-green-600/60" : "text-red-500/60"
+                  )}>
+                    {isBlockedByMe ? 'Allow messages from this user again' : 'Stop receiving messages from this user'}
                   </p>
                 </div>
               </button>
@@ -651,9 +647,9 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
               {/* Delete Chat */}
               <button 
                 onClick={deleteEntireChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group"
+                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 hover:bg-red-100 active:scale-[0.98] transition-all border border-red-200 group"
               >
-                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <div className="h-10 w-10 bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
                   <Trash2 className="h-5 w-5" />
                 </div>
                 <div className="text-left flex-1">
@@ -662,19 +658,34 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 </div>
               </button>
 
-              {/* Pin Top */}
+              {/* Pin / Unpin */}
               <button 
-                onClick={pinChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-slate-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-slate-100 border border-slate-100 group"
+                onClick={isPinned ? unpinChat : pinChat} 
+                className={cn(
+                  "w-full py-5 px-6 flex items-center gap-5 active:scale-[0.98] transition-all border group",
+                  isPinned 
+                    ? "bg-slate-100 hover:bg-slate-200 border-slate-300" 
+                    : "bg-slate-50 hover:bg-slate-100 border-slate-200"
+                )}
               >
-                <div className="h-10 w-10 rounded-xl bg-white text-slate-500 flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-colors">
-                  <Pin className="h-5 w-5" />
+                <div className={cn(
+                  "h-10 w-10 bg-white flex items-center justify-center transition-colors",
+                  isPinned 
+                    ? "text-slate-700 group-hover:bg-slate-600 group-hover:text-white" 
+                    : "text-slate-500 group-hover:bg-slate-600 group-hover:text-white"
+                )}>
+                  <Pin className={cn("h-5 w-5", isPinned && "fill-current")} />
                 </div>
                 <div className="text-left flex-1">
-                  <span className="font-bold uppercase tracking-widest text-xs text-slate-700">Pin to Top</span>
-                  <p className="text-[10px] text-slate-500/60 font-medium">Keep this conversation at the top</p>
+                  <span className="font-bold uppercase tracking-widest text-xs text-slate-700">
+                    {isPinned ? 'Unpin from Top' : 'Pin to Top'}
+                  </span>
+                  <p className="text-[10px] text-slate-500/60 font-medium">
+                    {isPinned ? 'Remove from top of chat list' : 'Keep this conversation at the top'}
+                  </p>
                 </div>
               </button>
+
             </div>
           </div>
         </SheetContent>
@@ -683,6 +694,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   );
 }
 
+// ==================== RelationshipRequestsDialog ====================
 function RelationshipRequestsDialog({ open, onOpenChange }: any) {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -781,6 +793,7 @@ function RequestItem({ request, onAction }: any) {
   );
 }
 
+// ==================== Main MessagesView ====================
 export default function MessagesView() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -896,4 +909,4 @@ export default function MessagesView() {
       </div>
     </AppLayout>
   );
-       }
+     }
