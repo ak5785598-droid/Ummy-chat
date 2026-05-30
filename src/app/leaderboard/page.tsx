@@ -79,6 +79,25 @@ const FrameOverlayCanvas = ({
     
     if (!ctx) return;
 
+    // Black pixels transparent karne ka function
+    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Black aur near-black pixels ko transparent karo
+        if (r < 30 && g < 30 && b < 30) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    };
+
     if (isVideo) {
       const video = document.createElement('video');
       videoRef.current = video;
@@ -141,6 +160,7 @@ const FrameOverlayCanvas = ({
     };
   }, [frameUrl, isVideo]);
 
+  // Jab natural dimensions mil jaye, canvas resize karo original aspect ratio ke hisaab se
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !naturalDimensions || !isFrameLoaded) return;
@@ -154,10 +174,12 @@ const FrameOverlayCanvas = ({
 
     const dpr = window.devicePixelRatio || 1;
     
+    // Original aspect ratio calculate karo
     const aspectRatio = naturalDimensions.width / naturalDimensions.height;
     
     let canvasWidth: number, canvasHeight: number;
     
+    // Container size ke andar fit karo, aspect ratio maintain karte hue
     if (aspectRatio > 1) {
       canvasWidth = containerSize;
       canvasHeight = containerSize / aspectRatio;
@@ -166,14 +188,17 @@ const FrameOverlayCanvas = ({
       canvasWidth = containerSize * aspectRatio;
     }
     
+    // Actual canvas size with DPR
     canvas.width = Math.round(canvasWidth * dpr);
     canvas.height = Math.round(canvasHeight * dpr);
     
+    // CSS size
     canvas.style.width = Math.round(canvasWidth) + 'px';
     canvas.style.height = Math.round(canvasHeight) + 'px';
     
     ctx.scale(dpr, dpr);
 
+    // Black pixels transparent karne ka function
     const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
@@ -303,9 +328,11 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
   
-  const fixedTopCards = activePlayers.slice(3, 9);
+  // Top 4 se Top 9 — yeh fixed dikhenge bina scroll kiye
+  const fixedTopCards = activePlayers.slice(3, 9); // index 3,4,5,6,7,8 = rank 4,5,6,7,8,9
   
-  const scrollableOthers = activePlayers.slice(9);
+  // Top 10 se baaki sab — yeh scroll karne pe aayenge
+  const scrollableOthers = activePlayers.slice(9); // index 9 se aage = rank 10+
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -315,20 +342,16 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
 
   return (
     <div className="space-y-1 animate-in fade-in duration-700 pb-20 relative z-10">
-      {/* Top 3 in One Row */}
+      {/* Top 3 in One Row — bilkul wahi jaise tha */}
       <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
         {/* Top 2 - Left side */}
         <div className="flex-1 flex justify-center">
           {top2 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
-              className="flex flex-col items-center gap-1 translate-x-2"
+              className="flex flex-col items-center gap-1 mt-8 translate-x-2"
             >
-              {/* Avatar upar shift karne ke liye -mt-4 add kiya */}
-              <div className="-mt-4">
-                <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
-              </div>
-              {/* Name aur value niche shift karne ke liye mt-5 badhaya */}
+              <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
               <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-6">{top2.username || top2.name || 'User'}</span>
               <div className="flex items-center gap-1 -mt-0.5">
                 <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
@@ -345,12 +368,8 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
               className="flex flex-col items-center gap-1 -mt-12"
             >
-              {/* Avatar upar shift karne ke liye -mt-6 add kiya */}
-              <div className="-mt-6">
-                <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
-              </div>
-              {/* Name aur value niche shift karne ke liye mt-7 badhaya */}
-              <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-7">{top1.username || top1.name || 'User'}</span>
+              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
+              <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-4">{top1.username || top1.name || 'User'}</span>
               <div className="flex items-center gap-1 -mt-1">
                 <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
                 <GoldCoinIcon className="h-4 w-4" />
@@ -364,13 +383,9 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top3 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
-              className="flex flex-col items-center gap-1 -translate-x-2"
+              className="flex flex-col items-center gap-1 mt-8 -translate-x-2"
             >
-              {/* Avatar upar shift karne ke liye -mt-4 add kiya */}
-              <div className="-mt-4">
-                <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
-              </div>
-              {/* Name aur value niche shift karne ke liye mt-5 badhaya */}
+              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
               <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-6">{top3.username || top3.name || 'User'}</span>
               <div className="flex items-center gap-1 -mt-0.5">
                 <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
@@ -381,14 +396,14 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
       </div>
 
-      {/* Spacer */}
+      {/* Spacer — Top 3 aur fixed cards ke beech gap */}
       <div className="h-8" />
 
-      {/* Fixed Cards Section — Top 4 to Top 9 */}
+      {/* Fixed Cards Section — Top 4 to Top 9 (6 cards) — yeh bina scroll kiye dikhenge */}
       {fixedTopCards.length > 0 && (
         <div className="px-4 space-y-1">
           {fixedTopCards.map((item, index) => {
-            const rank = index + 4;
+            const rank = index + 4; // rank 4,5,6,7,8,9
             return (
               <Link
                 key={item.id}
@@ -410,11 +425,11 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
       )}
 
-      {/* Scrollable Section — Top 10 se baaki */}
+      {/* Scrollable Section — Top 10 se baaki sab — yeh scroll karne pe aayenge */}
       {scrollableOthers.length > 0 && (
         <div className="px-4 space-y-1 mt-4">
           {scrollableOthers.map((item, index) => {
-            const rank = index + 10;
+            const rank = index + 10; // rank 10,11,12...
             return (
               <Link
                 key={item.id}
