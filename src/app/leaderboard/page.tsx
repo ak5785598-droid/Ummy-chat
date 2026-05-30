@@ -52,7 +52,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
   );
 };
 
-// --- Canvas Frame Overlay Component - AB BLACK BACKGROUND REMOVE HOGA, FRAME BILKUL CLEAR AAYEGA ---
+// --- Canvas Frame Overlay Component - AB BLACK BACKGROUND POORA REMOVE HOGA, FRAME BILKUL CLEAR AAYEGA ---
 const FrameOverlayCanvas = ({ 
   frameUrl, 
   isVideo = false,
@@ -72,25 +72,40 @@ const FrameOverlayCanvas = ({
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
-      willReadFrequently: true // Performance ke liye, kyunki baar baar getImageData karenge
+      willReadFrequently: true
     });
     
     if (!ctx) return;
 
-    // Canvas ko High DPI display ke hisaab se sharp rakho
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = containerSize * dpr;
-    canvas.height = containerSize * dpr;
+    const actualSize = containerSize * dpr;
     
-    // CSS size wahi rakho
+    canvas.width = actualSize;
+    canvas.height = actualSize;
+    
     canvas.style.width = containerSize + 'px';
     canvas.style.height = containerSize + 'px';
     
-    // DPR ke hisaab se scale karo taaki drawing sharp ho
     ctx.scale(dpr, dpr);
 
+    const removeBlackPixels = () => {
+      const imageData = ctx.getImageData(0, 0, actualSize, actualSize);
+      const data = imageData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        if (r < 40 && g < 40 && b < 40) {
+          data[i + 3] = 0;
+        }
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    };
+
     if (isVideo) {
-      // Video frame ke liye
       const video = document.createElement('video');
       video.src = frameUrl;
       video.autoplay = true;
@@ -103,30 +118,11 @@ const FrameOverlayCanvas = ({
       const drawFrame = () => {
         if (!ctx || !canvas) return;
         
-        // Canvas clear karo
         ctx.clearRect(0, 0, containerSize, containerSize);
         
         if (video.readyState >= 2) {
-          // Video ko canvas pe draw karo
           ctx.drawImage(video, 0, 0, containerSize, containerSize);
-          
-          // Black pixels ko transparent karo
-          const imageData = ctx.getImageData(0, 0, containerSize, containerSize);
-          const data = imageData.data;
-          
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
-            // Pure black ya near-black pixels ko poora transparent karo
-            if (r < 30 && g < 30 && b < 30) {
-              data[i + 3] = 0; // Alpha 0 = fully transparent
-            }
-          }
-          
-          // Wapis canvas pe updated imageData daalo
-          ctx.putImageData(imageData, 0, 0);
+          removeBlackPixels();
         }
         
         animationFrameRef.current = requestAnimationFrame(drawFrame);
@@ -146,7 +142,6 @@ const FrameOverlayCanvas = ({
         video.remove();
       };
     } else {
-      // Image frame ke liye
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = frameUrl;
@@ -154,36 +149,14 @@ const FrameOverlayCanvas = ({
       img.onload = () => {
         if (!ctx || !canvas) return;
         
-        // Canvas clear karo
         ctx.clearRect(0, 0, containerSize, containerSize);
-        
-        // Image ko canvas pe draw karo - yahan koi resize ya blur nahi hoga
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, containerSize, containerSize);
-        
-        // Black pixels ko transparent karo
-        const imageData = ctx.getImageData(0, 0, containerSize, containerSize);
-        const data = imageData.data;
-        
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          // Black ya near-black pixels transparent
-          if (r < 30 && g < 30 && b < 30) {
-            data[i + 3] = 0;
-          }
-        }
-        
-        // Wapis canvas pe updated imageData daalo
-        ctx.putImageData(imageData, 0, 0);
+        removeBlackPixels();
       };
 
-      return () => {
-        // Cleanup
-      };
+      return () => {};
     }
   }, [frameUrl, isVideo, containerSize]);
 
@@ -199,7 +172,7 @@ const FrameOverlayCanvas = ({
   );
 };
 
-// --- CircleAvatar with Frame - AB FRAME BILKUL CLEAR AAYEGA, KOI BLUR NAHI ---
+// --- CircleAvatar with Frame ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
   const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
@@ -218,7 +191,6 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      {/* Frame Canvas Overlay - Ab bilkul clear aayega, koi blur nahi */}
       {frame && (
         <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
           <FrameOverlayCanvas 
@@ -229,7 +201,6 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
         </div>
       )}
 
-      {/* User Avatar */}
       <div className={cn("relative z-5 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
         <Avatar className="h-full w-full">
           <AvatarImage src={src} className="object-cover rounded-full" />
@@ -285,24 +256,29 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top2 && (
             <Link href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} className="flex flex-col items-center gap-1 mt-12">
               <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="sm" rank={2} theme={theme} />
-              <span className="text-[9px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg">{top2.username || top2.name || 'User'}</span>
-              <div className="flex items-center gap-1">
-                <GoldCoinIcon className="h-2.5 w-2.5" />
-                <span className="text-white/90 font-bold text-[10px] drop-shadow-lg">{formatValue(getValue(top2))}</span>
+              {/* Top 2 Name - White Color, Avatar se niche */}
+              <span className="text-[9px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-2">{top2.username || top2.name || 'User'}</span>
+              {/* Top 2 Coins - Golden Color, Name se niche */}
+              <div className="flex items-center gap-1 -mt-0.5">
+                <span className="text-amber-400 font-black text-[11px] drop-shadow-lg">{formatValue(getValue(top2))}</span>
+                <GoldCoinIcon className="h-3 w-3" />
               </div>
             </Link>
           )}
         </div>
 
-        {/* Top 1 - Center */}
+        {/* Top 1 - Center - Avatar Thoda Upar */}
         <div className="flex-1 flex justify-center">
           {top1 && (
-            <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center gap-1 mt-4">
+            <Link href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} className="flex flex-col items-center gap-1 -mt-8">
+              {/* Top 1 Avatar - Upar shift kiya -mt-8 se */}
               <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
-              <span className="text-[11px] font-black uppercase text-white drop-shadow-lg">{top1.username || top1.name || 'User'}</span>
-              <div className="flex items-center gap-1">
-                <GoldCoinIcon className="h-3 w-3" />
-                <span className="text-white font-black text-sm drop-shadow-lg">{formatValue(getValue(top1))}</span>
+              {/* Top 1 Name - Black Color, Avatar se niche */}
+              <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-3">{top1.username || top1.name || 'User'}</span>
+              {/* Top 1 Coins - Golden Color, Name se niche */}
+              <div className="flex items-center gap-1 -mt-0.5">
+                <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
+                <GoldCoinIcon className="h-4 w-4" />
               </div>
             </Link>
           )}
@@ -313,18 +289,20 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top3 && (
             <Link href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} className="flex flex-col items-center gap-1 mt-12">
               <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="sm" rank={3} theme={theme} />
-              <span className="text-[9px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg">{top3.username || top3.name || 'User'}</span>
-              <div className="flex items-center gap-1">
-                <GoldCoinIcon className="h-2.5 w-2.5" />
-                <span className="text-white/90 font-bold text-[10px] drop-shadow-lg">{formatValue(getValue(top3))}</span>
+              {/* Top 3 Name - Brown Color, Avatar se niche */}
+              <span className="text-[9px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-2">{top3.username || top3.name || 'User'}</span>
+              {/* Top 3 Coins - Golden Color, Name se niche */}
+              <div className="flex items-center gap-1 -mt-0.5">
+                <span className="text-amber-400 font-black text-[11px] drop-shadow-lg">{formatValue(getValue(top3))}</span>
+                <GoldCoinIcon className="h-3 w-3" />
               </div>
             </Link>
           )}
         </div>
       </div>
 
-      {/* 4 to 50 - Scrollable */}
-      <div className="px-4 space-y-1">
+      {/* 4 to 50 - Scrollable, Thoda Niche Shift Kiya */}
+      <div className="px-4 space-y-1 mt-4">
         {others.map((item, index) => (
           <Link
             key={item.id}
@@ -476,4 +454,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-      }
+        }
