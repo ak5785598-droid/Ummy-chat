@@ -24,7 +24,12 @@ import {
  MoreVertical,
  Ban,
  Trash,
- AlertTriangle
+ AlertTriangle,
+ User,
+ Bell,
+ Info,
+ FileText,
+ Settings
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
@@ -186,6 +191,243 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
     </div>
   );
 };
+
+// ==================== OfficialPage (Team) ====================
+function OfficialPage({ open, onOpenChange, messages }: any) {
+  const { user } = useUser();
+  const router = useRouter();
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Flag className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Ummy Team</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Official Updates</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-10">
+              {messages && messages.length > 0 ? (
+                messages.map((msg: any) => (
+                  <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-8 w-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                        <Flag className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                        {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d, h:mm a') : '...'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-body text-gray-700 leading-relaxed">{msg.content}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-20 text-center">
+                  <Flag className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No team updates yet</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* No input footer - User page style */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Ummy Team • Official Channel</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ==================== SystemPage ====================
+function SystemPage({ open, onOpenChange, messages }: any) {
+  const { user } = useUser();
+  const router = useRouter();
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Ummy System</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">System Notices</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-10">
+              {messages && messages.length > 0 ? (
+                messages.map((msg: any) => (
+                  <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-8 w-8 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                        {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d, h:mm a') : '...'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-body text-gray-700 leading-relaxed">{msg.content}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-20 text-center">
+                  <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No system notices</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* No input footer */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Ummy System • Important Notices</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ==================== RequestsPage ====================
+function RequestsPage({ open, onOpenChange }: any) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const requestsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'));
+  }, [firestore, user?.uid]);
+
+  const { data: requests, isLoading } = useCollection(requestsQuery);
+
+  const handleAction = async (request: any, action: 'accept' | 'decline') => {
+    if (!firestore || !user?.uid) return;
+    try {
+      const proposalRef = doc(firestore, 'proposals', request.id);
+      if (action === 'accept') {
+        const pairId = [user.uid, request.fromUid].sort().join('_');
+        const pairRef = doc(firestore, 'cpPairs', pairId);
+        await setDoc(pairRef, {
+          id: pairId,
+          participantIds: [user.uid, request.fromUid],
+          type: request.type,
+          cpValue: 0,
+          level: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        await updateDoc(proposalRef, { status: 'accepted' });
+        toast({ title: 'Relationship Established!' });
+      } else {
+        await updateDoc(proposalRef, { status: 'declined' });
+        toast({ title: 'Request Declined' });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Action Failed' });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Heart className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Purpose Requests</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Special bond proposals</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-10">
+              {isLoading ? (
+                <div className="py-20 text-center flex flex-col items-center gap-2">
+                  <Loader className="h-6 w-6 text-rose-500 animate-spin" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Loading requests...</span>
+                </div>
+              ) : !requests || requests.length === 0 ? (
+                <div className="py-20 text-center">
+                  <Heart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No pending requests</p>
+                </div>
+              ) : requests.map((req: any) => (
+                <RequestItem key={req.id} request={req} onAction={handleAction} />
+              ))}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* No input footer */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Relationship Requests • Pending</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RequestItem({ request, onAction }: any) {
+  const { userProfile: fromUser } = useUserProfile(request.fromUid);
+  return (
+    <div className="p-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm flex items-center gap-4">
+      <Avatar className="h-12 w-12 border-2 border-white shadow-sm shrink-0">
+        <AvatarImage src={fromUser?.avatarUrl} />
+        <AvatarFallback>{fromUser?.username?.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0 text-left">
+        <h4 className="font-black text-xs uppercase text-slate-800 truncate">{fromUser?.username || 'Somebody'}</h4>
+        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">Wants to be your {request.type}</p>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => onAction(request, 'accept')} className="h-8 w-8 bg-green-500 text-white rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center active:scale-90">
+          <CheckCircle2 className="h-4 w-4" />
+        </button>
+        <button onClick={() => onAction(request, 'decline')} className="h-8 w-8 bg-slate-200 text-slate-500 rounded-xl flex items-center justify-center active:scale-90">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ==================== ChatRoomDialog ====================
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
@@ -414,8 +656,10 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-          {/* Header */}
-          <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          {/* Header - WHITE THEME with Purple Top 10vh */}
+          <div className="absolute top-0 left-0 right-0 h-[10vh] bg-gradient-to-b from-purple-500/20 to-transparent pointer-events-none" />
+          
+          <DialogHeader className="p-0 border-b border-gray-100 bg-white/95 backdrop-blur-sm shrink-0 shadow-sm relative z-50 pt-safe">
             <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
               <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
                 <ChevronLeft className="h-6 w-6 text-gray-800" />
@@ -440,8 +684,8 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
           </DialogHeader>
 
-          {/* Messages Area - HAR MESSAGE MEIN AVATAR */}
-          <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          {/* Messages Area */}
+          <main className="flex-1 overflow-hidden relative bg-white">
             <ScrollArea className="h-full px-4 pt-6">
               <div className="flex flex-col gap-3 pb-10">
                 {isBlocked && (
@@ -467,17 +711,21 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                         isMe ? "flex-row-reverse" : "flex-row"
                       )}
                     >
-                      {/* Avatar - Har message mein dikhega */}
+                      {/* Avatar - REAL AVATAR, not 'Y' */}
                       <div className="shrink-0 self-end">
                         {isMe ? (
                           <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
                             <AvatarImage src={currentUser?.avatarUrl ? `${currentUser.avatarUrl}${currentUser.avatarUrl.includes('?') ? '&' : '?'}v=${currentUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-                            <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-bold">{(currentUser?.username || 'Y').charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-bold">
+                              {(currentUser?.username || 'U').charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                         ) : (
                           <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
-                            <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v={otherUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-                            <AvatarFallback className="text-[9px] bg-slate-200 text-slate-500 font-bold">{(otherUser?.username || 'U').charAt(0)}</AvatarFallback>
+                            <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+                            <AvatarFallback className="text-[9px] bg-slate-200 text-slate-500 font-bold">
+                              {(otherUser?.username || 'U').charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                         )}
                       </div>
@@ -585,211 +833,56 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </SheetContent>
       </Sheet>
 
-      {/* Chat Actions Bottom Sheet - 40VH Square No Curve */}
+      {/* Chat Actions Sheet */}
       <Sheet open={showChatActions} onOpenChange={setShowChatActions}>
         <SheetContent 
           side="bottom" 
-          className="p-8 pb-20 bg-white border-t-2 border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] z-[1000]"
-          style={{ height: '40vh', borderRadius: 0 }}
+          className="p-4 pb-10 bg-transparent border-none z-[1000] flex flex-col items-center justify-end"
         >
-          <div className="max-w-md mx-auto h-full flex flex-col">
-            <div className="w-12 h-1.5 bg-slate-300 rounded-full mx-auto mb-8" />
-            <div className="flex flex-col gap-4 flex-1 overflow-y-auto">
-              
-              {/* Clear Chat */}
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            {/* Top dark section */}
+            <div className="bg-[#2C2C2E] rounded-t-2xl overflow-hidden">
               <button 
-                onClick={clearChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-yellow-50 hover:bg-yellow-100 active:scale-[0.98] transition-all border border-yellow-200 group"
+                onClick={() => { /* Report logic */ setShowChatActions(false); }}
+                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
               >
-                <div className="h-10 w-10 bg-white text-yellow-600 flex items-center justify-center group-hover:bg-yellow-500 group-hover:text-white transition-colors">
-                  <Trash2 className="h-5 w-5" />
-                </div>
-                <div className="text-left flex-1">
-                  <span className="font-bold uppercase tracking-widest text-xs text-yellow-700">Clear Chat</span>
-                  <p className="text-[10px] text-yellow-600/60 font-medium">Delete all messages in this conversation</p>
-                </div>
+                Report
               </button>
-
-              {/* Block / Unblock */}
               <button 
-                onClick={isBlockedByMe ? unblockUser : blockUser} 
-                className={cn(
-                  "w-full py-5 px-6 flex items-center gap-5 active:scale-[0.98] transition-all border group",
-                  isBlockedByMe 
-                    ? "bg-green-50 hover:bg-green-100 border-green-200" 
-                    : "bg-red-50 hover:bg-red-100 border-red-200"
-                )}
+                onClick={() => { clearChat(); setShowChatActions(false); }}
+                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
               >
-                <div className={cn(
-                  "h-10 w-10 bg-white flex items-center justify-center transition-colors",
-                  isBlockedByMe 
-                    ? "text-green-600 group-hover:bg-green-500 group-hover:text-white" 
-                    : "text-red-500 group-hover:bg-red-500 group-hover:text-white"
-                )}>
-                  {isBlockedByMe ? <CheckCircle className="h-5 w-5" /> : <Ban className="h-5 w-5" />}
-                </div>
-                <div className="text-left flex-1">
-                  <span className={cn(
-                    "font-bold uppercase tracking-widest text-xs",
-                    isBlockedByMe ? "text-green-700" : "text-red-600"
-                  )}>
-                    {isBlockedByMe ? 'Unblock User' : 'Block User'}
-                  </span>
-                  <p className={cn(
-                    "text-[10px] font-medium",
-                    isBlockedByMe ? "text-green-600/60" : "text-red-500/60"
-                  )}>
-                    {isBlockedByMe ? 'Allow messages from this user again' : 'Stop receiving messages from this user'}
-                  </p>
-                </div>
+                Clear history
               </button>
-
-              {/* Delete Chat */}
               <button 
-                onClick={deleteEntireChat} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 hover:bg-red-100 active:scale-[0.98] transition-all border border-red-200 group"
+                onClick={() => { deleteEntireChat(); setShowChatActions(false); }}
+                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
               >
-                <div className="h-10 w-10 bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-                  <Trash2 className="h-5 w-5" />
-                </div>
-                <div className="text-left flex-1">
-                  <span className="font-bold uppercase tracking-widest text-xs text-red-600">Delete Conversation</span>
-                  <p className="text-[10px] text-red-500/60 font-medium">Permanently remove this chat</p>
-                </div>
+                Delete
               </button>
-
-              {/* Pin / Unpin */}
               <button 
-                onClick={isPinned ? unpinChat : pinChat} 
-                className={cn(
-                  "w-full py-5 px-6 flex items-center gap-5 active:scale-[0.98] transition-all border group",
-                  isPinned 
-                    ? "bg-slate-100 hover:bg-slate-200 border-slate-300" 
-                    : "bg-slate-50 hover:bg-slate-100 border-slate-200"
-                )}
+                onClick={() => { isBlockedByMe ? unblockUser() : blockUser(); setShowChatActions(false); }}
+                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
               >
-                <div className={cn(
-                  "h-10 w-10 bg-white flex items-center justify-center transition-colors",
-                  isPinned 
-                    ? "text-slate-700 group-hover:bg-slate-600 group-hover:text-white" 
-                    : "text-slate-500 group-hover:bg-slate-600 group-hover:text-white"
-                )}>
-                  <Pin className={cn("h-5 w-5", isPinned && "fill-current")} />
-                </div>
-                <div className="text-left flex-1">
-                  <span className="font-bold uppercase tracking-widest text-xs text-slate-700">
-                    {isPinned ? 'Unpin from Top' : 'Pin to Top'}
-                  </span>
-                  <p className="text-[10px] text-slate-500/60 font-medium">
-                    {isPinned ? 'Remove from top of chat list' : 'Keep this conversation at the top'}
-                  </p>
-                </div>
+                {isBlockedByMe ? 'Unblock' : 'Block'}
               </button>
-
+              <button 
+                onClick={() => { isPinned ? unpinChat() : pinChat(); setShowChatActions(false); }}
+                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors"
+              >
+                {isPinned ? 'Unpin' : 'Pin'}
+              </button>
             </div>
+            <button 
+              onClick={() => setShowChatActions(false)}
+              className="w-full bg-[#00A86B] hover:bg-[#00945D] active:bg-[#008050] text-white font-medium text-[17px] py-5 text-center transition-colors rounded-b-2xl mt-2"
+            >
+              Cancel
+            </button>
           </div>
         </SheetContent>
       </Sheet>
     </>
-  );
-}
-
-// ==================== RelationshipRequestsDialog ====================
-function RelationshipRequestsDialog({ open, onOpenChange }: any) {
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-
-  const requestsQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'));
-  }, [firestore, user?.uid]);
-
-  const { data: requests, isLoading } = useCollection(requestsQuery);
-
-  const handleAction = async (request: any, action: 'accept' | 'decline') => {
-    if (!firestore || !user?.uid) return;
-    try {
-      const proposalRef = doc(firestore, 'proposals', request.id);
-      if (action === 'accept') {
-        const pairId = [user.uid, request.fromUid].sort().join('_');
-        const pairRef = doc(firestore, 'cpPairs', pairId);
-        await setDoc(pairRef, {
-          id: pairId,
-          participantIds: [user.uid, request.fromUid],
-          type: request.type,
-          cpValue: 0,
-          level: 1,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-        await updateDoc(proposalRef, { status: 'accepted' });
-        toast({ title: 'Relationship Established!' });
-      } else {
-        await updateDoc(proposalRef, { status: 'declined' });
-        toast({ title: 'Request Declined' });
-      }
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Action Failed' });
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden font-sans">
-        <DialogHeader className="p-8 pb-4 border-b border-gray-100 bg-rose-50/30 flex flex-row items-center gap-4">
-          <div className="h-12 w-12 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg">
-            <Heart className="h-6 w-6" />
-          </div>
-          <div className="flex-1 text-left">
-            <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Requests</DialogTitle>
-            <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-rose-600/60 mt-1">Special bond proposals.</DialogDescription>
-          </div>
-        </DialogHeader>
-        <ScrollArea className="max-h-[60vh] p-6">
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="py-10 text-center flex flex-col items-center gap-2">
-                 <Loader className="h-6 w-6 text-rose-500 animate-spin" />
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Searching Hearts...</span>
-              </div>
-            ) : !requests || requests.length === 0 ? (
-              <div className="py-20 text-center space-y-4 opacity-20">
-                 <Heart className="h-12 w-12 mx-auto" />
-                 <p className="font-bold text-xs uppercase tracking-widest">No pending proposals</p>
-              </div>
-            ) : requests.map((req: any) => (
-              <RequestItem key={req.id} request={req} onAction={handleAction} />
-            ))}
-          </div>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function RequestItem({ request, onAction }: any) {
-  const { userProfile: fromUser } = useUserProfile(request.fromUid);
-  return (
-    <div className="p-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm flex items-center gap-4">
-      <Avatar className="h-12 w-12 border-2 border-white shadow-sm shrink-0">
-        <AvatarImage src={fromUser?.avatarUrl} />
-        <AvatarFallback>{fromUser?.username?.charAt(0)}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0 text-left">
-        <h4 className="font-black text-xs uppercase text-slate-800 truncate">{fromUser?.username || 'Somebody'}</h4>
-        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">Wants to be your {request.type}</p>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={() => onAction(request, 'accept')} className="h-8 w-8 bg-green-500 text-white rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center active:scale-90">
-          <CheckCircle2 className="h-4 w-4" />
-        </button>
-        <button onClick={() => onAction(request, 'decline')} className="h-8 w-8 bg-slate-200 text-slate-500 rounded-xl flex items-center justify-center active:scale-90">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -852,24 +945,46 @@ export default function MessagesView() {
 
   return (
     <AppLayout hideBottomNav={!!activeChatId}>
-      <div className="h-[100dvh] bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans overflow-hidden">
-        <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/40 backdrop-blur-md border-b border-black/5 z-20">
+      <div className="h-[100dvh] bg-white flex flex-col relative font-sans overflow-hidden">
+        {/* Main page - White theme with Purple Top 30vh */}
+        <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-purple-500/15 to-transparent pointer-events-none" />
+        
+        <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-20">
           <div className="flex items-center justify-between pt-2">
             <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{t.messages.title}</h1>
-            <button className="p-2.5 bg-white/60 rounded-full border border-black/5 text-slate-600"><Search className="h-5 w-5" /></button>
+            <button className="p-2.5 bg-gray-100 rounded-full border border-gray-200 text-slate-600"><Search className="h-5 w-5" /></button>
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-24">
-          <div className="bg-white/30 backdrop-blur-sm">
-            <CategoryItem icon={Flag} label={t.messages.team} subtext={teamMsgs[0]?.content || "Welcome to Ummy"} colorClass="bg-gradient-to-br from-orange-400 to-red-500" customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />} onClick={() => setShowOfficial(true)} />
-            <CategoryItem icon={Shield} label={t.messages.system} subtext={systemMsgs[0]?.content || "No new notices"} colorClass="bg-gradient-to-br from-blue-400 to-indigo-600" onClick={() => setShowSystemDialog(true)} />
-            <CategoryItem icon={Heart} label="Requests" subtext={teamMsgs.length > 0 ? "New proposals" : "No requests"} colorClass="bg-gradient-to-br from-rose-400 to-pink-500" onClick={() => setShowRequests(true)} />
+          <div className="bg-white/95 backdrop-blur-sm">
+            <CategoryItem 
+              icon={Flag} 
+              label={t.messages.team} 
+              subtext={teamMsgs[0]?.content || "Welcome to Ummy"} 
+              colorClass="bg-gradient-to-br from-orange-400 to-red-500" 
+              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />} 
+              onClick={() => setShowOfficial(true)} 
+            />
+            <CategoryItem 
+              icon={Shield} 
+              label={t.messages.system} 
+              subtext={systemMsgs[0]?.content || "No new notices"} 
+              colorClass="bg-gradient-to-br from-blue-400 to-indigo-600" 
+              onClick={() => setShowSystemDialog(true)} 
+            />
+            <CategoryItem 
+              icon={Heart} 
+              label="Requests" 
+              subtext={teamMsgs.length > 0 ? "New proposals" : "No requests"} 
+              colorClass="bg-gradient-to-br from-rose-400 to-pink-500" 
+              onClick={() => setShowRequests(true)} 
+            />
           </div>
 
           <h2 className="px-6 mt-6 mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Conversations</h2>
           
-          <div className="min-h-[300px] bg-white/20 backdrop-blur-sm">
+          <div className="min-h-[300px] bg-white/95 backdrop-blur-sm">
             {isChatsLoading ? (
               <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /></div>
             ) : chats && chats.length > 0 ? (
@@ -880,32 +995,31 @@ export default function MessagesView() {
           </div>
         </div>
 
-        <Dialog open={showOfficial} onOpenChange={setShowOfficial}>
-          <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden">
-            <DialogHeader className="p-8 pb-4 border-b border-gray-50 flex flex-row items-center gap-4 bg-orange-50/30">
-              <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg"><Flag className="h-6 w-6" /></div>
-              <div className="flex-1 text-left"><DialogTitle className="text-2xl font-bold uppercase">Official</DialogTitle></div>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] p-6">
-              {teamMsgs.map((msg: any) => <div key={msg.id} className="p-5 mb-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm font-body text-sm text-gray-600 leading-relaxed">{msg.content}</div>)}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={showSystemDialog} onOpenChange={setShowSystemDialog}>
-          <DialogContent className="sm:max-w-md bg-white text-black p-0 rounded-t-[3rem] border-none shadow-2xl overflow-hidden">
-            <DialogHeader className="p-8 pb-4 border-b border-gray-100 flex flex-row items-center gap-4 bg-blue-50/30">
-              <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><Shield className="h-6 w-6" /></div>
-              <div className="flex-1 text-left"><DialogTitle className="text-2xl font-bold uppercase">System</DialogTitle></div>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] p-6">
-              {systemMsgs.map((msg: any) => <div key={msg.id} className="p-5 mb-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm font-body text-sm text-gray-600 leading-relaxed">{msg.content}</div>)}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-
-        <RelationshipRequestsDialog open={showRequests} onOpenChange={setShowRequests} />
-        <ChatRoomDialog open={!!activeChatId} onOpenChange={(open: boolean) => !open && setActiveChatId(null)} chatId={activeChatId} otherUser={selectedRecipient} currentUser={user} />
+        {/* Ye teeno ab full page open hote hain - User page style */}
+        <OfficialPage 
+          open={showOfficial} 
+          onOpenChange={setShowOfficial} 
+          messages={teamMsgs} 
+        />
+        
+        <SystemPage 
+          open={showSystemDialog} 
+          onOpenChange={setShowSystemDialog} 
+          messages={systemMsgs} 
+        />
+        
+        <RequestsPage 
+          open={showRequests} 
+          onOpenChange={setShowRequests} 
+        />
+        
+        <ChatRoomDialog 
+          open={!!activeChatId} 
+          onOpenChange={(open: boolean) => !open && setActiveChatId(null)} 
+          chatId={activeChatId} 
+          otherUser={selectedRecipient} 
+          currentUser={user} 
+        />
       </div>
     </AppLayout>
   );
