@@ -70,7 +70,7 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
 import { UmmyLogoIcon } from '@/components/icons';
-import { GiftPicker } from './gift-picker';
+import { GiftPicker } from '@/components/gift-picker';
 
 // ==================== ChatRoomDialog ====================
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
