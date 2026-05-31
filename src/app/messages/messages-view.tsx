@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { AppLayout } from '@/components/layout/app-layout';
 import { 
  Flag, 
  Shield, 
@@ -33,6 +34,8 @@ import {
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { MessagesViewGlossy } from './messages-view-glossy';
+import { GiftPicker } from '@/components/gift-picker';
 import { 
    collection, 
    query, 
@@ -70,7 +73,363 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/use-translation';
 import { UmmyLogoIcon } from '@/components/icons';
-import { GiftPicker } from '@/components/gift-picker';
+
+const CategoryItem = ({ icon: Icon, label, subtext, date, colorClass, onClick, customIcon, isVerified }: any) => (
+ <div 
+  onClick={onClick}
+  className="px-6 py-4 flex items-center gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0"
+ >
+  <div className="relative shrink-0">
+   <div className={cn("h-12 w-12 rounded-full flex items-center justify-center shadow-md border-2 border-white overflow-hidden", colorClass)}>
+    {customIcon ? customIcon : <Icon className="h-6 w-6 text-white" fill="white" />}
+   </div>
+   {isVerified && (
+    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-md">
+      <CheckCircle className="h-3.5 w-3.5 text-green-500 fill-green-500" strokeWidth={3} />
+    </div>
+   )}
+  </div>
+  <div className="flex-1 min-w-0">
+   <div className="flex items-center justify-between mb-0.5">
+    <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight ">{label}</h3>
+    {date && <span className="text-[10px] font-bold text-slate-500 uppercase">{date}</span>}
+   </div>
+   {subtext && <p className="text-[11px] font-body text-slate-600 truncate leading-tight">{subtext}</p>}
+  </div>
+  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+ </div>
+);
+
+// ==================== ChatListItem ====================
+const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
+  const router = useRouter();
+  const participantIds = chat?.participantIds || [];
+  const otherUid = participantIds.find((id: string) => id !== currentUid) || currentUid;
+  const { userProfile: otherUser, isLoading } = useUserProfile(otherUid);
+
+  if (isLoading) return (
+   <div className="px-6 py-4 flex gap-4 animate-pulse border-b border-black/5 last:border-0">
+    <div className="h-12 w-12 bg-white/40 rounded-2xl" />
+    <div className="flex-1 space-y-3 pt-2">
+     <div className="h-3 bg-white/40 rounded w-1/3" />
+     <div className="h-2 bg-white/40 rounded w-1/2" />
+    </div>
+   </div>
+  );
+
+  if (!otherUser) return null;
+
+  const getDisplayTime = (timestamp: any) => {
+   if (!timestamp) return '...';
+   const date = timestamp.toDate();
+   if (isToday(date)) return format(date, 'h:mm a');
+   if (isYesterday(date)) return 'Yesterday';
+   if (isSameWeek(date, new Date())) return format(date, 'eeee');
+   return format(date, 'M/d/yy');
+  };
+
+  const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
+  const isOnline = otherUser.isOnline === true;
+  const inRoomId = otherUser.currentRoomId;
+  const isPinned = (chat.pinnedBy || []).includes(currentUid);
+
+  return (
+    <div 
+      onClick={() => onSelect(chat.id, otherUser)}
+      className={cn(
+        "px-6 py-4 flex gap-4 hover:bg-black/5 active:bg-black/10 transition-all cursor-pointer group border-b border-black/5 last:border-0 relative",
+        isUnread && "bg-primary/10",
+        isPinned && "bg-slate-50/80 border-l-4 border-l-primary"
+      )}
+    >
+      {isPinned && <Pin className="absolute top-2 right-2 h-3 w-3 text-primary fill-current rotate-45" />}
+      <div className="relative shrink-0">
+        <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
+          <AvatarImage src={otherUser.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+          <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
+        </Avatar>
+        {isUnread && (
+          <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0 pt-1">
+        <div className="flex items-center justify-between mb-0.5">
+          <h3 className={cn("font-bold text-sm uppercase tracking-tight ", isUnread ? "text-primary" : "text-slate-900")}>
+            {otherUser.username}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            {isOnline && !inRoomId && (
+              <div className="h-2 w-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+            )}
+            <span className="text-[10px] font-bold text-slate-500 uppercase">
+              {getDisplayTime(chat.updatedAt)}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2 overflow-hidden">
+          <p className={cn("text-[11px] font-body truncate flex-1 ", isUnread ? "font-black text-slate-900" : "text-slate-600")}>
+            {chat.lastMessage || 'Sent a vibe'}
+          </p>
+          
+          {isOnline && inRoomId && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/rooms/${inRoomId}`);
+              }}
+              className="flex items-center bg-indigo-500/90 text-white rounded-full pl-2 pr-0.5 py-0.5 shadow-md active:scale-95 transition-all animate-in zoom-in duration-500 shrink-0 border border-white/20 backdrop-blur-sm"
+            >
+              <div className="flex items-center gap-1.5">
+                <Home className="h-2.5 w-2.5 fill-current" />
+                <span className="text-[8px] font-black uppercase tracking-tighter">In Room</span>
+              </div>
+              <div className="ml-2 px-1.5 py-0.5 bg-yellow-400 rounded-full text-[8px] font-black text-slate-900 flex items-center gap-0.5 shadow-sm">
+                GO <ChevronRight className="h-2 w-2" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ==================== OfficialPage (Team) ====================
+function OfficialPage({ open, onOpenChange, messages }: any) {
+  const { user } = useUser();
+  const router = useRouter();
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Flag className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Ummy Team</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Official Updates</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-4">
+              {messages && messages.length > 0 ? (
+                messages.map((msg: any) => (
+                  <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-8 w-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                        <Flag className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                        {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d, h:mm a') : '...'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-body text-gray-700 leading-relaxed">{msg.content}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-20 text-center">
+                  <Flag className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No team updates yet</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ==================== SystemPage ====================
+function SystemPage({ open, onOpenChange, messages }: any) {
+  const { user } = useUser();
+  const router = useRouter();
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Ummy System</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">System Notices</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-4">
+              {messages && messages.length > 0 ? (
+                messages.map((msg: any) => (
+                  <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="h-8 w-8 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">
+                        {msg.timestamp ? format(msg.timestamp.toDate(), 'MMM d, h:mm a') : '...'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-body text-gray-700 leading-relaxed">{msg.content}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-20 text-center">
+                  <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No system notices</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ==================== RequestsPage ====================
+function RequestsPage({ open, onOpenChange }: any) {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const requestsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'proposals'), where('toUid', '==', user.uid), where('status', '==', 'pending'));
+  }, [firestore, user?.uid]);
+
+  const { data: requests, isLoading } = useCollection(requestsQuery);
+
+  const handleAction = async (request: any, action: 'accept' | 'decline') => {
+    if (!firestore || !user?.uid) return;
+    try {
+      const proposalRef = doc(firestore, 'proposals', request.id);
+      if (action === 'accept') {
+        const pairId = [user.uid, request.fromUid].sort().join('_');
+        const pairRef = doc(firestore, 'cpPairs', pairId);
+        await setDoc(pairRef, {
+          id: pairId,
+          participantIds: [user.uid, request.fromUid],
+          type: request.type,
+          cpValue: 0,
+          level: 1,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        await updateDoc(proposalRef, { status: 'accepted' });
+        toast({ title: 'Relationship Established!' });
+      } else {
+        await updateDoc(proposalRef, { status: 'declined' });
+        toast({ title: 'Request Declined' });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Action Failed' });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
+        {/* Header - User page style */}
+        <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
+          <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
+            <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
+              <ChevronLeft className="h-6 w-6 text-gray-800" />
+            </button>
+            <div className="h-12 w-12 bg-gradient-to-br from-rose-400 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+              <Heart className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <DialogTitle className="text-lg font-bold uppercase tracking-tight">Purpose Requests</DialogTitle>
+              <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Special bond proposals</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Content - Full page */}
+        <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
+          <ScrollArea className="h-full px-4 pt-6">
+            <div className="flex flex-col gap-4 pb-4">
+              {isLoading ? (
+                <div className="py-20 text-center flex flex-col items-center gap-2">
+                  <Loader className="h-6 w-6 text-rose-500 animate-spin" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Loading requests...</span>
+                </div>
+              ) : !requests || requests.length === 0 ? (
+                <div className="py-20 text-center">
+                  <Heart className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-400">No pending requests</p>
+                </div>
+              ) : requests.map((req: any) => (
+                <RequestItem key={req.id} request={req} onAction={handleAction} />
+              ))}
+            </div>
+          </ScrollArea>
+        </main>
+
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
+        </footer>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RequestItem({ request, onAction }: any) {
+  const { userProfile: fromUser } = useUserProfile(request.fromUid);
+  return (
+    <div className="p-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm flex items-center gap-4">
+      <Avatar className="h-12 w-12 border-2 border-white shadow-sm shrink-0">
+        <AvatarImage src={fromUser?.avatarUrl} />
+        <AvatarFallback>{fromUser?.username?.charAt(0)}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0 text-left">
+        <h4 className="font-black text-xs uppercase text-slate-800 truncate">{fromUser?.username || 'Somebody'}</h4>
+        <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">Wants to be your {request.type}</p>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => onAction(request, 'accept')} className="h-8 w-8 bg-green-500 text-white rounded-xl shadow-lg shadow-green-500/20 flex items-center justify-center active:scale-90">
+          <CheckCircle2 className="h-4 w-4" />
+        </button>
+        <button onClick={() => onAction(request, 'decline')} className="h-8 w-8 bg-slate-200 text-slate-500 rounded-xl flex items-center justify-center active:scale-90">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ==================== ChatRoomDialog ====================
 function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: any) {
@@ -80,6 +439,16 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showChatActions, setShowChatActions] = useState(false);
   const [showGiftPicker, setShowGiftPicker] = useState(false);
+
+  const recipientForGift = useMemo(() => {
+    if (!otherUser) return null;
+    return {
+      uid: otherUser.id || otherUser.uid,
+      name: otherUser.username || 'User',
+      avatarUrl: otherUser.avatarUrl,
+      seatIndex: 1
+    };
+  }, [otherUser]);
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -114,16 +483,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   }, [firestore, chatId]);
 
   const { data: messages } = useCollection(messagesQuery);
-
-  const recipientForGift = useMemo(() => {
-    if (!otherUser) return null;
-    return {
-      uid: otherUser.id || otherUser.uid,
-      name: otherUser.username || 'User',
-      avatarUrl: otherUser.avatarUrl,
-      seatIndex: 1
-    };
-  }, [otherUser]);
 
   useEffect(() => {
     if (open && chatId && currentUser?.uid && firestore && (messages?.length ?? 0) > 0) {
@@ -317,7 +676,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 <ChevronLeft className="h-6 w-6 text-gray-800" />
               </button>
               <Avatar className="h-10 w-10 border shadow-sm rounded-full">
-                <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
+                <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
                 <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 text-left">
@@ -415,8 +774,8 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             </ScrollArea>
           </main>
 
-          {/* Footer Input with Gift Button */}
-          <footer className="p-4 bg-white border-t border-gray-100 relative z-50 pb-safe">
+          {/* Footer Input */}
+          <footer className="p-4 bg-white border-t border-gray-100 flex items-center gap-3 relative z-50 pb-safe">
             {isBlockedByMe ? (
               <div className="flex-1 text-center">
                 <p className="text-xs font-bold uppercase text-gray-400">User blocked. Unblock to send messages.</p>
@@ -426,19 +785,17 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 <p className="text-xs font-bold uppercase text-gray-400">You cannot send messages</p>
               </div>
             ) : (
-              <div className="flex items-center gap-3">
+              <>
                 <button 
                   onClick={() => setShowGiftPicker(true)}
                   className="p-2 text-gray-500 hover:bg-gray-50 rounded-full active:scale-90 transition-all relative"
                 >
                   <Gift className="h-6 w-6" />
                 </button>
-                
                 <button onClick={() => imageInputRef.current?.click()} className="p-2 text-gray-500 hover:bg-gray-50 rounded-full active:scale-90 transition-all">
                   <ImageIcon className="h-6 w-6" />
                 </button>
                 <input type="file" hidden ref={imageInputRef} accept="image/*" onChange={handleImageUpload} />
-                
                 <form onSubmit={handleSend} className="flex-1 flex items-center gap-2">
                   <input 
                     type="text" 
@@ -455,22 +812,21 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                     {isUploadingImage ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                   </button>
                 </form>
-              </div>
+              </>
             )}
           </footer>
+
+          {recipientForGift && (
+            <GiftPicker
+              open={showGiftPicker}
+              onOpenChange={setShowGiftPicker}
+              roomId={chatId}
+              recipient={recipientForGift}
+              participants={[recipientForGift]}
+            />
+          )}
         </DialogContent>
       </Dialog>
-
-      {/* Gift Picker Component */}
-      {recipientForGift && (
-        <GiftPicker
-          open={showGiftPicker}
-          onOpenChange={setShowGiftPicker}
-          roomId={chatId}
-          recipient={recipientForGift}
-          participants={[recipientForGift]}
-        />
-      )}
 
       {/* Image Preview Dialog */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
@@ -557,358 +913,141 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   );
 }
 
-// ==================== UmmyTeamChatDialog ====================
-// Yeh component Ummy Team/System ke messages ke liye hai
-// Same UI as ChatRoomDialog, but no message input, no gift picker, no block/pin options
-function UmmyTeamChatDialog({ open, onOpenChange, chatId, currentUser }: any) {
-  const [text, setText] = useState('');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [showChatActions, setShowChatActions] = useState(false);
+// ==================== Main MessagesView ====================
+export default function MessagesView() {
+  const { user } = useUser();
   const firestore = useFirestore();
-  const storage = useStorage();
-  const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const msgLongPressTimer = useRef<any>(null);
+  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
+  const { data: config } = useDoc(configRef);
+  const theme = config?.appTheme || 'CLASSIC';
+  const { t } = useTranslation();
+  const [showOfficial, setShowOfficial] = useState(false);
+  const [showSystemDialog, setShowSystemDialog] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+  const searchParams = useSearchParams();
+  const userIdFromUrl = searchParams.get('userId');
+  const { userProfile: otherUserFromUrl } = useUserProfile(userIdFromUrl || undefined);
 
-  // Ummy Team ka dummy user object - real me yeh firebase se aa sakta hai
-  const ummyTeamUser = {
-    id: 'ummy_team',
-    uid: 'ummy_team',
-    username: 'Ummy Team',
-    avatarUrl: null,
-    isOnline: true,
-  };
-
-  // Messages query - different collection than private chats
-  const messagesQuery = useMemoFirebase(() => {
-    if (!firestore || !chatId) return null;
-    return query(
-      collection(firestore, 'ummyTeamChats', chatId, 'messages'), 
-      orderBy('timestamp', 'asc'), 
-      limitToLast(100)
-    );
-  }, [firestore, chatId]);
-
-  const { data: messages } = useCollection(messagesQuery);
-
-  // Mark messages as read when dialog opens
   useEffect(() => {
-    if (open && chatId && currentUser?.uid && firestore && (messages?.length ?? 0) > 0) {
-      const chatRef = doc(firestore, 'ummyTeamChats', chatId);
-      updateDocumentNonBlocking(chatRef, { 
-        lastMessageReadBy: arrayUnion(currentUser.uid) 
-      });
+    if (userIdFromUrl && otherUserFromUrl && user?.uid && firestore) {
+      const participantIds = [user.uid, userIdFromUrl].sort();
+      const chatId = participantIds.join('_');
+      setActiveChatId(chatId);
+      setSelectedRecipient(otherUserFromUrl);
+      setDocumentNonBlocking(doc(firestore, 'privateChats', chatId), {
+        id: chatId, participantIds, updatedAt: serverTimestamp()
+      }, { merge: true });
     }
-  }, [open, chatId, messages, currentUser?.uid, firestore]);
+  }, [userIdFromUrl, otherUserFromUrl, user?.uid, firestore]);
 
-  // Auto scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const chatsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'privateChats'), where('participantIds', 'array-contains', user.uid));
+  }, [firestore, user?.uid]);
 
-  // Long press handler for message actions
-  const handleMsgTouchStart = (msg: any) => {
-    msgLongPressTimer.current = setTimeout(() => {
-      setSelectedMessage(msg);
-      if (window.navigator.vibrate) window.navigator.vibrate(50);
-    }, 600);
-  };
+  const { data: rawChats, isLoading: isChatsLoading } = useCollection(chatsQuery);
 
-  const handleMsgTouchEnd = () => {
-    if (msgLongPressTimer.current) clearTimeout(msgLongPressTimer.current);
-  };
+  const chats = useMemo(() => {
+    if (!rawChats) return null;
+    return [...rawChats].sort((a, b) => {
+      const aPinned = (a.pinnedBy || []).includes(user?.uid) ? 1 : 0;
+      const bPinned = (b.pinnedBy || []).includes(user?.uid) ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+      return (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0);
+    });
+  }, [rawChats, user?.uid]);
 
-  // Delete message - sirf apna message delete kar sakte ho
-  const deleteMessage = async () => {
-    if (!selectedMessage || !firestore || !chatId) return;
-    // Only allow deleting own messages
-    if (selectedMessage.senderId !== currentUser?.uid) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Cannot delete', 
-        description: 'You can only delete your own messages' 
-      });
-      setSelectedMessage(null);
-      return;
-    }
-    try {
-      await deleteDoc(doc(firestore, 'ummyTeamChats', chatId, 'messages', selectedMessage.id));
-      setSelectedMessage(null);
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Failed to delete message' });
-    }
-  };
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('timestamp', 'desc'));
+  }, [firestore, user?.uid]);
 
-  // Clear all chat history
-  const clearChat = async () => {
-    if (!firestore || !chatId) return;
-    try {
-      const msgsQuery = query(collection(firestore, 'ummyTeamChats', chatId, 'messages'));
-      const msgsSnap = await getDocs(msgsQuery);
-      const batch = writeBatch(firestore);
-      msgsSnap.forEach(m => batch.delete(m.ref));
-      await batch.commit();
-      toast({ title: 'Chat Cleared' });
-      setShowChatActions(false);
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Failed to clear chat' });
-    }
-  };
+  const { data: allNotifications } = useCollection(notificationsQuery);
+  const teamMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'system') || [], [allNotifications]);
+  const systemMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'direct_system') || [], [allNotifications]);
 
-  // Delete entire chat conversation
-  const deleteEntireChat = async () => {
-    if (!firestore || !chatId) return;
-    try {
-      const msgsQuery = query(collection(firestore, 'ummyTeamChats', chatId, 'messages'));
-      const msgsSnap = await getDocs(msgsQuery);
-      const batch = writeBatch(firestore);
-      msgsSnap.forEach(m => batch.delete(m.ref));
-      await batch.commit();
-      await deleteDoc(doc(firestore, 'ummyTeamChats', chatId));
-      toast({ title: 'Conversation Deleted' });
-      setShowChatActions(false);
-      onOpenChange(false);
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Failed to delete chat' });
-    }
-  };
+  if (theme === 'GLOSSY') return <MessagesViewGlossy />;
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-          {/* Header - Same styling as user chat */}
-          <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
-            <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
-              <button 
-                onClick={() => onOpenChange(false)} 
-                className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all"
-              >
-                <ChevronLeft className="h-6 w-6 text-gray-800" />
-              </button>
-              
-              {/* Ummy Team Avatar with gradient background */}
-              <Avatar className="h-10 w-10 border shadow-sm rounded-full bg-gradient-to-br from-purple-500 to-indigo-600">
-                <AvatarImage src={ummyTeamUser.avatarUrl || undefined} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold">
-                  <Shield className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0 text-left">
-                <DialogTitle className="text-lg font-bold uppercase tracking-tight truncate">
-                  Ummy Team
-                </DialogTitle>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-purple-500">
-                  official • always online
-                </p>
-              </div>
-              
-              <button 
-                onClick={() => setShowChatActions(true)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-all active:scale-90"
-              >
-                <MoreVertical className="h-6 w-6 text-black" />
-              </button>
-            </div>
-            <DialogDescription className="sr-only">
-              Conversation with Ummy Team - Official announcements and updates
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Messages Area - Same as user chat */}
-          <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
-            <ScrollArea className="h-full px-4 pt-6">
-              <div className="flex flex-col gap-3 pb-10">
-                {/* Welcome message when no messages exist */}
-                {(!messages || messages.length === 0) && (
-                  <div className="text-center py-8 px-4">
-                    <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl p-6 border border-purple-200">
-                      <Shield className="h-12 w-12 text-purple-500 mx-auto mb-3" />
-                      <p className="text-sm font-bold uppercase text-purple-700 mb-1">
-                        Welcome to Ummy Team Chat
-                      </p>
-                      <p className="text-xs text-purple-500">
-                        Official announcements and updates will appear here.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {messages?.map((msg: any) => {
-                  const isMe = msg.senderId === currentUser?.uid;
-                  const isUmmyTeam = msg.senderId === 'ummy_team';
-                  
-                  return (
-                    <div 
-                      key={msg.id} 
-                      onMouseDown={() => handleMsgTouchStart(msg)} 
-                      onMouseUp={handleMsgTouchEnd} 
-                      onMouseLeave={handleMsgTouchEnd}
-                      onTouchStart={() => handleMsgTouchStart(msg)} 
-                      onTouchEnd={handleMsgTouchEnd}
-                      className={cn(
-                        "flex gap-3 transition-transform active:scale-[0.98]",
-                        isMe ? "flex-row-reverse" : "flex-row"
-                      )}
-                    >
-                      {/* Avatar */}
-                      <div className="shrink-0 self-end">
-                        {isMe ? (
-                          <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
-                            <AvatarImage 
-                              src={currentUser?.avatarUrl ? `${currentUser.avatarUrl}${currentUser.avatarUrl.includes('?') ? '&' : '?'}v=${currentUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} 
-                            />
-                            <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-bold">
-                              {(currentUser?.username || 'U').charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ) : (
-                          <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full bg-gradient-to-br from-purple-500 to-indigo-600">
-                            <AvatarImage src={ummyTeamUser.avatarUrl || undefined} />
-                            <AvatarFallback className="text-[9px] text-white font-bold">
-                              <Shield className="h-3 w-3" />
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                      
-                      {/* Message Bubble - Ummy team messages have special purple styling */}
-                      <div className={cn(
-                        "flex flex-col max-w-[75%]",
-                        isMe ? "items-end" : "items-start"
-                      )}>
-                        <div className={cn(
-                          "px-4 py-3 rounded-2xl text-sm font-body shadow-sm border",
-                          isMe 
-                            ? "bg-primary text-white rounded-br-none border-primary/20" 
-                            : isUmmyTeam
-                              ? "bg-gradient-to-br from-purple-50 to-indigo-50 text-gray-800 rounded-bl-none border-purple-200"
-                              : "bg-white text-gray-800 rounded-bl-none border-gray-100"
-                        )}>
-                          {msg.imageUrl && (
-                            <div 
-                              onClick={() => setPreviewImage(msg.imageUrl)} 
-                              className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 shadow-inner cursor-pointer active:scale-[0.98] transition-transform"
-                            >
-                              <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
-                            </div>
-                          )}
-                          {msg.text && <p className="leading-relaxed">{msg.text}</p>}
-                          
-                          {/* Ummy Team official badge on their messages */}
-                          {isUmmyTeam && (
-                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-purple-200">
-                              <Shield className="h-3 w-3 text-purple-500" />
-                              <span className="text-[8px] font-bold uppercase text-purple-500">
-                                Ummy Official
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-[8px] font-bold text-gray-400 uppercase mt-1 px-1">
-                          {msg.timestamp ? format(msg.timestamp.toDate(), 'h:mm a') : '...'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-          </main>
-
-          {/* Footer - NO MESSAGE INPUT, just shows "You can't message Ummy Team" */}
-          <footer className="p-4 bg-white border-t border-gray-100 relative z-50 pb-safe">
-            <div className="flex items-center justify-center py-3">
-              <div className="text-center">
-                <Shield className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-                <p className="text-xs font-bold uppercase text-gray-400 tracking-wider">
-                  You can&apos;t message Ummy Team
-                </p>
-                <p className="text-[10px] text-gray-300 mt-0.5">
-                  This is an official announcement channel
-                </p>
-              </div>
-            </div>
-          </footer>
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Preview Dialog - Same as user chat */}
-      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="max-w-[95vw] p-0 overflow-hidden bg-black border-none z-[600]">
-          <div className="relative aspect-square w-full">
-            {previewImage && <Image src={previewImage} fill className="object-contain" alt="Preview" unoptimized />}
-            <button onClick={() => setPreviewImage(null)} className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white">
-              <X className="h-6 w-6" />
-            </button>
+    <AppLayout hideBottomNav={!!activeChatId}>
+      <div className="h-[100dvh] bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans overflow-hidden">
+        <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/40 backdrop-blur-md border-b border-black/5 z-20">
+          <div className="flex items-center justify-between pt-2">
+            <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{t.messages.title}</h1>
+            <button className="p-2.5 bg-white/60 rounded-full border border-black/5 text-slate-600"><Search className="h-5 w-5" /></button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </header>
 
-      {/* Message Delete Sheet - Same as user chat */}
-      <Sheet open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
-        <SheetContent side="bottom" className="rounded-t-[2.5rem] p-8 pb-20 bg-white border-t-2 border-primary/10 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[1000]">
-          <div className="max-w-md mx-auto">
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8" />
-            <div className="flex flex-col gap-4">
-              <button 
-                onClick={deleteMessage} 
-                className="w-full py-5 px-6 flex items-center gap-5 bg-red-50 rounded-[1.5rem] active:scale-[0.98] transition-all hover:bg-red-100 border border-red-100 group text-red-600"
-              >
-                <div className="h-10 w-10 rounded-xl bg-white text-red-500 flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-colors">
-                  <Trash2 className="h-5 w-5" />
-                </div>
-                <span className="font-bold uppercase tracking-widest text-xs">Delete Message</span>
-              </button>
-            </div>
+        <div className="flex-1 overflow-y-auto no-scrollbar relative z-10 pb-24">
+          <div className="bg-white/30 backdrop-blur-sm">
+            <CategoryItem 
+              icon={Flag} 
+              label={t.messages.team} 
+              subtext={teamMsgs[0]?.content || "Welcome to Ummy"} 
+              colorClass="bg-gradient-to-br from-orange-400 to-red-500" 
+              customIcon={<UmmyLogoIcon className="h-10 w-10 p-1" />} 
+              onClick={() => setShowOfficial(true)} 
+            />
+            <CategoryItem 
+              icon={Shield} 
+              label={t.messages.system} 
+              subtext={systemMsgs[0]?.content || "No new notices"} 
+              colorClass="bg-gradient-to-br from-blue-400 to-indigo-600" 
+              onClick={() => setShowSystemDialog(true)} 
+            />
+            <CategoryItem 
+              icon={Heart} 
+              label="Requests" 
+              subtext={teamMsgs.length > 0 ? "New proposals" : "No requests"} 
+              colorClass="bg-gradient-to-br from-rose-400 to-pink-500" 
+              onClick={() => setShowRequests(true)} 
+            />
           </div>
-        </SheetContent>
-      </Sheet>
 
-      {/* Chat Actions Sheet - Simplified for Ummy Team (no block, no pin, no report) */}
-      <Sheet open={showChatActions} onOpenChange={setShowChatActions}>
-        <SheetContent 
-          side="bottom" 
-          className="p-4 pb-10 bg-transparent border-none z-[1000] flex flex-col items-center justify-end"
-        >
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
-            {/* Top dark section with only Clear and Delete options */}
-            <div className="bg-[#2C2C2E] rounded-t-2xl overflow-hidden">
-              <button 
-                onClick={() => { clearChat(); setShowChatActions(false); }}
-                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
-              >
-                Clear history
-              </button>
-              <button 
-                onClick={() => { deleteEntireChat(); setShowChatActions(false); }}
-                className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-            <button 
-              onClick={() => setShowChatActions(false)}
-              className="w-full bg-[#00A86B] hover:bg-[#00945D] active:bg-[#008050] text-white font-medium text-[17px] py-5 text-center transition-colors rounded-b-2xl mt-2"
-            >
-              Cancel
-            </button>
+          <h2 className="px-6 mt-6 mb-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Conversations</h2>
+          
+          <div className="min-h-[300px] bg-white/20 backdrop-blur-sm">
+            {isChatsLoading ? (
+              <div className="py-20 flex flex-col items-center gap-4"><Loader className="animate-spin text-primary h-8 w-8" /></div>
+            ) : chats && chats.length > 0 ? (
+              chats.map(chat => <ChatListItem key={chat.id} chat={chat} currentUid={user?.uid} onSelect={(id: string, other: any) => { setActiveChatId(id); setSelectedRecipient(other); }} />)
+            ) : (
+              <div className="py-20 text-center opacity-40"><MessageSquare className="h-10 w-10 mx-auto mb-2" /><p className="text-xs font-bold uppercase">It's quiet here...</p></div>
+            )}
           </div>
-        </SheetContent>
-      </Sheet>
-    </>
+        </div>
+
+        {/* Official Page Dialog */}
+        <OfficialPage 
+          open={showOfficial} 
+          onOpenChange={setShowOfficial} 
+          messages={teamMsgs} 
+        />
+        
+        {/* System Page Dialog */}
+        <SystemPage 
+          open={showSystemDialog} 
+          onOpenChange={setShowSystemDialog} 
+          messages={systemMsgs} 
+        />
+        
+        {/* Requests Page Dialog */}
+        <RequestsPage 
+          open={showRequests} 
+          onOpenChange={setShowRequests} 
+        />
+        
+        {/* Chat Room Dialog */}
+        <ChatRoomDialog 
+          open={!!activeChatId} 
+          onOpenChange={(open: boolean) => !open && setActiveChatId(null)} 
+          chatId={activeChatId} 
+          otherUser={selectedRecipient} 
+          currentUser={user} 
+        />
+      </div>
+    </AppLayout>
   );
 }
-
-export { ChatRoomDialog, UmmyTeamChatDialog };
-
-import { MessagesViewGlossy } from './messages-view-glossy';
-export default MessagesViewGlossy;
