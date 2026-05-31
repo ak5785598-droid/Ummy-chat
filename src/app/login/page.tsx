@@ -91,6 +91,46 @@ export default function LoginPage() {
   const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [countrySearchQuery, setCountrySearchQuery] = useState('');
 
+  // Auto-detect Country on mount using Timezone & Locale fallback
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      let matchedCountry = null;
+      if (tz.includes('Calcutta') || tz.includes('Kolkata') || tz.includes('Delhi') || tz.includes('Mumbai')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'IN');
+      } else if (tz.includes('Karachi') || tz.includes('Islamabad')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'PK');
+      } else if (tz.includes('Dhaka')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'BD');
+      } else if (tz.includes('Riyadh')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'SA');
+      } else if (tz.includes('Dubai')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'AE');
+      } else if (tz.includes('Istanbul')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'TR');
+      } else if (tz.includes('Cairo')) {
+        matchedCountry = COUNTRIES.find(c => c.id === 'EG');
+      }
+      
+      if (!matchedCountry) {
+        const locale = navigator.language || '';
+        if (locale.includes('IN') || locale.includes('hi')) {
+          matchedCountry = COUNTRIES.find(c => c.id === 'IN');
+        } else if (locale.includes('PK') || locale.includes('ur')) {
+          matchedCountry = COUNTRIES.find(c => c.id === 'PK');
+        } else if (locale.includes('BD') || locale.includes('bn')) {
+          matchedCountry = COUNTRIES.find(c => c.id === 'BD');
+        }
+      }
+
+      if (matchedCountry) {
+        setSelectedCountry(matchedCountry);
+      }
+    } catch (e) {
+      console.warn('Country auto-detection failed:', e);
+    }
+  }, []);
+
   // Phone Login State
   const [showPhonePopup, setShowPhonePopup] = useState(false);
   const [phoneLoginStep, setPhoneLoginStep] = useState<'number' | 'code'>('number');
@@ -579,6 +619,16 @@ const accountNumber = await generateNumericID(firestore, uid);
     }
   };
 
+  // Biometric Auto-Prompt on initial mount if available and enabled
+  useEffect(() => {
+    if (isBiometricAvailable && isBiometricEnabled && !user && !isAuthLoading) {
+      const timer = setTimeout(() => {
+        handleBiometricLogin();
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isBiometricAvailable, isBiometricEnabled, user, isAuthLoading]);
+
   if (isAuthLoading) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-[#ff8ebb] via-[#ffade0] to-[#f472b6]">
@@ -602,6 +652,67 @@ const accountNumber = await generateNumericID(firestore, uid);
   return (
     <div className="relative flex h-[100dvh] w-full items-center justify-center overflow-hidden">
       <LoginBackground fallbackImage={activeBg} />
+      
+      {/* Ambient Floating Parallax Star Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+        {Array.from({ length: 15 }).map((_, i) => {
+          const size = Math.random() * 5 + 3; // 3px to 8px
+          const left = Math.random() * 100; // 0% to 100%
+          const bottom = Math.random() * 30; // bottom 0% to 30%
+          const duration = Math.random() * 8 + 7; // 7s to 15s
+          const delay = Math.random() * 6; // 0s to 6s
+          
+          return (
+            <div
+              key={i}
+              className="floating-particle bg-white/20 rounded-full blur-[0.5px]"
+              style={{
+                width: `${size}px`,
+                height: `${size}px`,
+                left: `${left}%`,
+                bottom: `${bottom}%`,
+                animationDuration: `${duration}s`,
+                animationDelay: `${delay}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Inject Self-Contained High-Fidelity CSS styles */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes float-star {
+          0% { transform: translateY(0px) rotate(0deg); opacity: 0; }
+          15% { opacity: 0.7; }
+          85% { opacity: 0.7; }
+          100% { transform: translateY(-200px) rotate(360deg); opacity: 0; }
+        }
+        .floating-particle {
+          position: absolute;
+          pointer-events: none;
+          animation: float-star infinite linear;
+        }
+        .btn-shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+        .btn-shimmer::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -60%;
+          width: 30%;
+          height: 200%;
+          background: rgba(255, 255, 255, 0.2);
+          transform: rotate(30deg);
+          animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer {
+          0% { left: -60%; }
+          100% { left: 140%; }
+        }
+      `}} />
+
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
@@ -641,7 +752,7 @@ const accountNumber = await generateNumericID(firestore, uid);
             <button
               onClick={handleFacebookSignIn}
               disabled={isSigningIn}
-              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+              className={`w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${isSigningIn ? 'btn-shimmer' : ''}`}
             >
               <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
               Continue with Facebook
@@ -650,7 +761,7 @@ const accountNumber = await generateNumericID(firestore, uid);
             <button
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
-              className="w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
+              className={`w-full h-12 rounded-xl bg-white text-black font-bold text-base shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2 ${isSigningIn ? 'btn-shimmer' : ''}`}
             >
               {isSigningIn ? <Loader className="animate-spin h-5 w-5" /> : <FcGoogle className="h-5 w-5" />}
               Sign in with Google
@@ -728,29 +839,66 @@ const accountNumber = await generateNumericID(firestore, uid);
                     />
                   </div>
 
-                  <button
+                   <button
                     onClick={handlePhoneSignIn}
                     disabled={isSigningIn || !phoneNumber}
-                    className="w-full h-14 rounded-2xl bg-[#FFCC00] text-black font-bold text-[17px] shadow-[0_0_20px_rgba(255,204,0,0.3)] hover:bg-[#FFD633] disabled:opacity-50 disabled:shadow-none hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className={`w-full h-14 rounded-2xl bg-[#FFCC00] text-black font-bold text-[17px] shadow-[0_0_20px_rgba(255,204,0,0.3)] hover:bg-[#FFD633] disabled:opacity-50 disabled:shadow-none hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 ${isSigningIn ? 'btn-shimmer' : ''}`}
                   >
                     {isSigningIn ? <Loader className="animate-spin w-5 h-5" /> : 'Send Code'}
                   </button>
                 </>
               ) : (
                 <>
-                  <input
-                    type="text"
-                    placeholder="000000"
-                    maxLength={6}
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    disabled={isSigningIn}
-                    className="w-full h-14 bg-black/30 border border-white/10 rounded-2xl px-4 text-white text-2xl tracking-[0.4em] font-bold text-center focus:outline-none focus:border-[#FFCC00] focus:ring-1 focus:ring-[#FFCC00]/50 placeholder:text-white/20"
-                  />
+                  {/* Segmented OTP Code Input */}
+                  <div className="relative w-full py-2 flex items-center justify-center">
+                    {/* Invisible input that holds actual focus and state */}
+                    <input
+                      type="tel"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setVerificationCode(val);
+                      }}
+                      disabled={isSigningIn}
+                      autoComplete="one-time-code"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    />
+                    
+                    {/* 6 Segmented Glowing Glass Boxes */}
+                    <div className="flex gap-2.5 justify-center items-center relative z-10 w-full">
+                      {Array.from({ length: 6 }).map((_, index) => {
+                        const char = verificationCode[index] || '';
+                        const isFocused = verificationCode.length === index;
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`w-11 h-14 rounded-2xl bg-black/30 border text-white text-xl font-black flex items-center justify-center transition-all ${
+                              isFocused 
+                                ? 'border-[#FFCC00] shadow-[0_0_12px_rgba(255,204,0,0.4)] bg-black/40 scale-105' 
+                                : char 
+                                  ? 'border-white/30 bg-black/20' 
+                                  : 'border-white/10'
+                            }`}
+                          >
+                            {char ? (
+                              <span className="animate-in zoom-in-50 duration-75">{char}</span>
+                            ) : (
+                              isFocused && (
+                                <span className="w-1 h-5 bg-[#FFCC00] rounded-full animate-pulse" />
+                              )
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <button
                     onClick={handleVerifyCode}
                     disabled={isSigningIn || verificationCode.length < 6}
-                    className="w-full h-14 rounded-2xl bg-white text-[#140028] font-bold text-[17px] shadow-lg hover:bg-gray-100 disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className={`w-full h-14 rounded-2xl bg-white text-[#140028] font-bold text-[17px] shadow-lg hover:bg-gray-100 disabled:opacity-50 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 ${isSigningIn ? 'btn-shimmer' : ''}`}
                   >
                     {isSigningIn ? <Loader className="animate-spin w-5 h-5" /> : 'Verify & Login'}
                   </button>
