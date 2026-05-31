@@ -909,3 +909,6 @@ function UmmyTeamChatDialog({ open, onOpenChange, chatId, currentUser }: any) {
 }
 
 export { ChatRoomDialog, UmmyTeamChatDialog };
+
+import { MessagesViewGlossy } from './messages-view-glossy';
+export default MessagesViewGlossy;
