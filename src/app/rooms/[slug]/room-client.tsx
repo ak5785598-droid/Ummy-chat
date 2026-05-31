@@ -1561,7 +1561,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const userMsg = {
       id: `user_${Date.now()}`,
-      sender: currentUser?.username || 'Visitor',
+      sender: userProfile?.username || 'Visitor',
       text: aiEchoInput,
       timestamp: new Date()
     };
@@ -4157,7 +4157,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           <ScrollArea className="h-[220px] w-full pr-2 my-4">
             <div className="flex flex-col gap-2.5 py-1 justify-end min-h-full">
               {aiEchoChatMessages.map((msg) => {
-                const isUser = msg.sender === (currentUser?.username || 'Visitor');
+                const isUser = msg.sender === (userProfile?.username || 'Visitor');
                 return (
                   <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isUser ? "self-end items-end" : "self-start items-start")}>
                     <span className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-0.5">{msg.sender}</span>
