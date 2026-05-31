@@ -59,6 +59,7 @@ import type { Room, RoomParticipant } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
+import { GiftBattleCanvas } from '@/components/gift-battle-canvas';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VipBadge } from '@/components/vip-badge';
 import { RoomBanners } from "@/components/room-banners";
@@ -366,6 +367,19 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   const [isUserListOpen, setIsUserListOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isSeatMenuOpen, setIsSeatMenuOpen] = useState(false);
+
+  // AI Echo Session states (100% Free)
+  const [isAiEchoOpen, setIsAiEchoOpen] = useState(false);
+  const [aiEchoTarget, setAiEchoTarget] = useState<any>(null);
+  const [aiEchoChatMessages, setAiEchoChatMessages] = useState<any[]>([]);
+  const [aiEchoTyping, setAiEchoTyping] = useState(false);
+  const [aiEchoInput, setAiEchoInput] = useState('');
+
+  // AI Theme Architect states (100% Free)
+  const [isThemeArchitectOpen, setIsThemeArchitectOpen] = useState(false);
+  const [themePromptInput, setThemePromptInput] = useState('');
+  const [generatingTheme, setGeneratingTheme] = useState(false);
+  const [generatedThemeStyles, setGeneratedThemeStyles] = useState<any>(null);
   const [activeGift, setActiveGift] = useState<{
     giftId: string, 
     giftName?: string,
@@ -1489,6 +1503,133 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     });
     return () => unsubscribe();
   }, [firestore, room.id]);
+
+  // GIFT BATTLE STATE & LISTENER
+  const [giftBattleDoc, setGiftBattleDoc] = useState<any>(null);
+  useEffect(() => {
+    if (!firestore || !room.id) return;
+    const battleRef = doc(firestore, 'chatRooms', room.id, 'features', 'giftBattle');
+    const unsubscribe = onSnapshot(battleRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setGiftBattleDoc(snapshot.data());
+      } else {
+        setGiftBattleDoc(null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, room.id]);
+
+  // Clear takeover effect after 5 seconds automatically
+  useEffect(() => {
+    if (!firestore || !room.id || !giftBattleDoc?.takeoverEffect) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const battleRef = doc(firestore, 'chatRooms', room.id, 'features', 'giftBattle');
+        await updateDocumentNonBlocking(battleRef, {
+          takeoverEffect: null
+        });
+      } catch (err) {
+        console.warn("Failed to clear takeover effect:", err);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [firestore, room.id, giftBattleDoc?.takeoverEffect]);
+
+  // AI Echo Client Bridge & API Handlers (100% Free)
+  useEffect(() => {
+    (window as any).triggerAiEcho = (profile: any) => {
+      setAiEchoTarget(profile);
+      setAiEchoChatMessages([
+        {
+          id: 'welcome',
+          sender: profile.username,
+          text: `Hello! I am the AI Echo proxy for ${profile.username}. Since I am currently offline, feel free to talk to my AI Echo or leave a gift! How can I help you today? 💖`,
+          timestamp: new Date()
+        }
+      ]);
+      setIsAiEchoOpen(true);
+    };
+    return () => {
+      delete (window as any).triggerAiEcho;
+    };
+  }, []);
+
+  const handleSendAiEchoMessage = async () => {
+    if (!aiEchoInput.trim() || !aiEchoTarget) return;
+
+    const userMsg = {
+      id: `user_${Date.now()}`,
+      sender: currentUser?.username || 'Visitor',
+      text: aiEchoInput,
+      timestamp: new Date()
+    };
+
+    setAiEchoChatMessages(prev => [...prev, userMsg]);
+    const promptToSend = aiEchoInput;
+    setAiEchoInput('');
+    setAiEchoTyping(true);
+
+    try {
+      const response = await fetch('/api/ai/echo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: aiEchoTarget.username,
+          bio: aiEchoTarget.bio || undefined,
+          favoriteTopics: aiEchoTarget.favoriteTopics || undefined,
+          vipLevel: aiEchoTarget.vipLevel || undefined,
+          incomingMessage: promptToSend
+        })
+      });
+
+      const data = await response.json();
+      setAiEchoTyping(false);
+
+      if (data.text) {
+        setAiEchoChatMessages(prev => [
+          ...prev,
+          {
+            id: `ai_${Date.now()}`,
+            sender: aiEchoTarget.username,
+            text: data.text,
+            timestamp: new Date()
+          }
+        ]);
+      }
+    } catch (error) {
+      setAiEchoTyping(false);
+      console.error('Failed to get AI Echo response:', error);
+    }
+  };
+
+  const handleGenerateTheme = async () => {
+    if (!themePromptInput.trim() || generatingTheme) return;
+    setGeneratingTheme(true);
+
+    try {
+      const response = await fetch('/api/ai/theme-architect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: themePromptInput })
+      });
+
+      const data = await response.json();
+      setGeneratingTheme(false);
+
+      if (data.backgroundImage) {
+        setGeneratedThemeStyles(data);
+        toast({
+          title: `Theme Generated: ${data.themeName}!`,
+          description: 'Apply this dynamic design to your room instantly.'
+        });
+      }
+    } catch (error) {
+      setGeneratingTheme(false);
+      console.error('Failed to generate theme:', error);
+    }
+  };
 
   // Wrapper for startScreenShare that sets Firestore target
   const handleStartScreenShare = async (quality: '480p' | '720p' | '1080p', target: { type: 'all' | 'specific', uid?: string, name?: string }) => {
@@ -3088,23 +3229,53 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       {/* LIVE BACKGROUND OVERLAY */}
       <LiveBackground themeId={activeLiveTheme} />
 
+      {/* GIFT BATTLE CANVAS OVERLAY */}
+      {giftBattleDoc?.isActive && (
+        <GiftBattleCanvas
+          isActive={true}
+          leftUser={giftBattleDoc.leftUser}
+          rightUser={giftBattleDoc.rightUser}
+          scoreLeft={giftBattleDoc.scoreLeft || 0}
+          scoreRight={giftBattleDoc.scoreRight || 0}
+          winnerUid={giftBattleDoc.winnerUid}
+          takeoverEffect={giftBattleDoc.takeoverEffect}
+        />
+      )}
+
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* BASE BACKGROUND - CLEAR & VIBRANT */}
         <div className="absolute inset-0 bg-[#0A0A0A] z-[-1]" />
-        <Image
-          key={`${room?.roomThemeId || 'default'}`}
-          src={bgUrl}
-          alt="Background"
-          fill
-          unoptimized
-          className={cn(
-            "object-cover object-top animate-in fade-in duration-1000",
-            (room?.isBrightMode !== false) 
-              ? "contrast-[1.1] saturate-[1.5] brightness-[1.1] opacity-100" 
-              : "contrast-[1.05] saturate-[1.1] brightness-[0.9] opacity-95"
-          )}
-          priority
-        />
+        
+        {/* DYNAMIC AI THEME STYLES OVERLAY */}
+        {generatedThemeStyles && (
+          <style dangerouslySetInnerHTML={{ __html: `
+            .room-architect-bg {
+              background-color: ${generatedThemeStyles.backgroundColor} !important;
+              background-image: ${generatedThemeStyles.backgroundImage} !important;
+              background-size: cover !important;
+            }
+            ${generatedThemeStyles.animationCss}
+          `}} />
+        )}
+
+        {!generatedThemeStyles ? (
+          <Image
+            key={`${room?.roomThemeId || 'default'}`}
+            src={bgUrl}
+            alt="Background"
+            fill
+            unoptimized
+            className={cn(
+              "object-cover object-top animate-in fade-in duration-1000",
+              (room?.isBrightMode !== false) 
+                ? "contrast-[1.1] saturate-[1.5] brightness-[1.1] opacity-100" 
+                : "contrast-[1.05] saturate-[1.1] brightness-[0.9] opacity-95"
+            )}
+            priority
+          />
+        ) : (
+          <div className="absolute inset-0 room-architect-bg animate-in fade-in duration-1000" />
+        )}
 
         {/* PREMIUM UI CLARITY OVERLAYS (Vignettes) */}
         {/* Top Vignette (Only in Normal Mode) */}
@@ -3210,6 +3381,19 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 <div className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full border border-black shadow-lg animate-bounce" />
               )}
             </div>
+          </div>
+        )}
+
+        {/* Floating AI Theme Architect button - OWNER ONLY */}
+        {(isHydrated && isOwner) && (
+          <div className="absolute top-44 right-2.5 z-50">
+            <button 
+              onClick={() => setIsThemeArchitectOpen(true)}
+              className="h-10 w-10 rounded-full bg-slate-950/80 border border-yellow-500/30 flex items-center justify-center text-yellow-500 shadow-2xl active:scale-90 transition-transform group animate-pulse"
+              title="AI Theme Architect"
+            >
+              <Sparkles className="h-5 w-5 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
+            </button>
           </div>
         )}
       </header>
@@ -3944,6 +4128,159 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         participants={participants}
         onSuccess={() => triggerTask('gift_once')}
       />
+
+      {/* AI ECHO INTERACTIVE CHAT DIALOG (100% FREE TIER) */}
+      <Dialog open={isAiEchoOpen} onOpenChange={setIsAiEchoOpen}>
+        <DialogContent className="sm:max-w-md bg-[#090b0e] border border-purple-500/20 text-white rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+          <DialogHeader className="flex flex-row items-center gap-3 border-b border-white/5 pb-3">
+            <Avatar className="h-12 w-12 border-2 border-purple-500/30">
+              <AvatarImage src={aiEchoTarget?.avatarUrl || ''} />
+              <AvatarFallback className="bg-purple-950 text-purple-300 font-bold">AI</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col text-left">
+              <DialogTitle className="text-sm font-black text-purple-400 uppercase tracking-wide">
+                {aiEchoTarget?.username}'s AI Echo
+              </DialogTitle>
+              <DialogDescription className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                Offline AI Interaction Proxy
+              </DialogDescription>
+            </div>
+            <button 
+              onClick={() => setIsAiEchoOpen(false)}
+              className="ml-auto p-1 bg-white/5 hover:bg-white/10 rounded-full text-white/60 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </DialogHeader>
+
+          {/* Messages Area */}
+          <ScrollArea className="h-[220px] w-full pr-2 my-4">
+            <div className="flex flex-col gap-2.5 py-1 justify-end min-h-full">
+              {aiEchoChatMessages.map((msg) => {
+                const isUser = msg.sender === (currentUser?.username || 'Visitor');
+                return (
+                  <div key={msg.id} className={cn("flex flex-col max-w-[85%]", isUser ? "self-end items-end" : "self-start items-start")}>
+                    <span className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-0.5">{msg.sender}</span>
+                    <div className={cn(
+                      "px-3 py-1.5 rounded-2xl text-[12px] font-medium leading-snug break-words border",
+                      isUser 
+                        ? "bg-purple-600/30 text-purple-200 border-purple-500/35 shadow-[0_0_15px_rgba(147,51,234,0.1)]"
+                        : "bg-white/5 text-white border-white/5"
+                    )}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {aiEchoTyping && (
+                <div className="self-start flex flex-col items-start max-w-[85%]">
+                  <span className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-0.5">{aiEchoTarget?.username}'s AI Echo</span>
+                  <div className="px-3 py-2 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-1.5">
+                    <span className="h-1.5 w-1.5 bg-purple-500 rounded-full animate-bounce" />
+                    <span className="h-1.5 w-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="h-1.5 w-1.5 bg-purple-500 rounded-full animate-bounce [animation-delay:0.4s]" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Input & Send Action */}
+          <div className="flex gap-2 border-t border-white/5 pt-3">
+            <input
+              type="text"
+              value={aiEchoInput}
+              onChange={(e) => setAiEchoInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSendAiEchoMessage(); }}
+              placeholder="Ask AI Echo something..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-[12px] focus:outline-none focus:border-purple-500 text-white"
+            />
+            <button
+              onClick={handleSendAiEchoMessage}
+              disabled={!aiEchoInput.trim() || aiEchoTyping}
+              className="px-5 py-2 bg-purple-600 hover:bg-purple-700 transition rounded-full text-[10px] font-black uppercase tracking-wider disabled:opacity-40"
+            >
+              Ask Echo
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI THEME ARCHITECT DIALOG PANEL (100% FREE PROMPT STYLING) */}
+      <Dialog open={isThemeArchitectOpen} onOpenChange={setIsThemeArchitectOpen}>
+        <DialogContent className="sm:max-w-md bg-[#090b0e] border border-yellow-500/20 text-white rounded-3xl p-5 shadow-2xl backdrop-blur-xl">
+          <DialogHeader className="flex flex-row items-center gap-3 border-b border-white/5 pb-3">
+            <div className="p-2 bg-yellow-500/25 border border-yellow-500/40 rounded-xl text-yellow-500 animate-pulse">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col text-left">
+              <DialogTitle className="text-sm font-black text-yellow-500 uppercase tracking-wide">
+                AI Theme Architect
+              </DialogTitle>
+              <DialogDescription className="text-[10px] text-white/40 uppercase tracking-widest font-bold">
+                VIP Prompt-to-CSS Generation
+              </DialogDescription>
+            </div>
+            <button 
+              onClick={() => setIsThemeArchitectOpen(false)}
+              className="ml-auto p-1 bg-white/5 hover:bg-white/10 rounded-full text-white/60 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </DialogHeader>
+
+          <div className="my-4 flex flex-col gap-3">
+            <label className="text-[10px] font-black text-yellow-500/70 uppercase tracking-wider">Describe Room Ambience Prompt</label>
+            <textarea
+              value={themePromptInput}
+              onChange={(e) => setThemePromptInput(e.target.value)}
+              placeholder="e.g., A wet cyberpunk street in Neo-Tokyo with pink raindrops and pulsing neon signs..."
+              rows={3}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-[12px] focus:outline-none focus:border-yellow-500 text-white leading-relaxed resize-none"
+            />
+          </div>
+
+          {generatedThemeStyles && (
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col gap-2 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">Active Style Preview Card</span>
+                <span className="text-[11px] font-black text-white">{generatedThemeStyles.themeName}</span>
+              </div>
+              <div 
+                className="w-full h-12 rounded-xl flex items-center justify-center font-bold text-xs uppercase tracking-wider text-white shadow-md"
+                style={{ 
+                  backgroundColor: generatedThemeStyles.backgroundColor, 
+                  backgroundImage: generatedThemeStyles.backgroundImage 
+                }}
+              >
+                Style Palette Applied!
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 border-t border-white/5 pt-3 justify-end">
+            <button
+              onClick={() => {
+                setGeneratedThemeStyles(null);
+                setThemePromptInput('');
+                setIsThemeArchitectOpen(false);
+              }}
+              className="px-4 py-2 bg-slate-800 text-white/60 hover:text-white transition rounded-full text-[10px] font-black uppercase tracking-wider"
+            >
+              Reset Default
+            </button>
+            <button
+              onClick={handleGenerateTheme}
+              disabled={!themePromptInput.trim() || generatingTheme}
+              className="px-6 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-black rounded-full text-[10px] uppercase tracking-wider shadow-lg active:scale-95 disabled:opacity-40 flex items-center gap-1.5"
+            >
+              {generatingTheme ? <Loader className="h-3 w-3 animate-spin text-black" /> : null}
+              {generatingTheme ? 'GENERATING...' : 'GENERATE STYLE'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <RoomSeatMenuDialog
         open={isSeatMenuOpen}

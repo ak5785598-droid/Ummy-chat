@@ -441,6 +441,41 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'rocket.progress': increment(totalCost)
    });
 
+   // Real-Time Gift Battle Scoring integration (100% Free)
+    try {
+      const battleRef = doc(firestore, 'chatRooms', roomId, 'features', 'giftBattle');
+      const battleSnap = await getDoc(battleRef);
+      if (battleSnap.exists()) {
+        const battleData = battleSnap.data();
+        if (battleData.isActive) {
+          let scoreLeftInc = 0;
+          let scoreRightInc = 0;
+          
+          if (battleData.leftUser?.uid && selectedUids.includes(battleData.leftUser.uid)) {
+            scoreLeftInc += totalCost;
+          }
+          if (battleData.rightUser?.uid && selectedUids.includes(battleData.rightUser.uid)) {
+            scoreRightInc += totalCost;
+          }
+
+          if (scoreLeftInc > 0 || scoreRightInc > 0) {
+            const updates: Record<string, any> = {};
+            if (scoreLeftInc > 0) updates.scoreLeft = increment(scoreLeftInc);
+            if (scoreRightInc > 0) updates.scoreRight = increment(scoreRightInc);
+
+            // Trigger temporary takeover effect for 5 seconds on huge gifts (>= 500 coins)
+            if (totalCost >= 500) {
+              updates.takeoverEffect = scoreLeftInc >= scoreRightInc ? 'gold' : 'cosmic';
+            }
+
+            batch.update(battleRef, updates);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to update Gift Battle scores:", err);
+    }
+
    const firstRecipientUid = selectedUids[0];
    const recipientObj = participants.find((p: any) => p.uid === firstRecipientUid);
    const recipientSeat = recipientObj?.seatIndex || 1;

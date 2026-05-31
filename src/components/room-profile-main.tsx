@@ -328,6 +328,19 @@ export function RoomProfileMain({
                   </button>
 
                   <button 
+                    onClick={() => {
+                      onOpenChange(false);
+                      if (typeof (window as any).triggerAiEcho === 'function') {
+                        (window as any).triggerAiEcho(profile);
+                      }
+                    }}
+                    className="flex items-center gap-2 group active:scale-95 transition-transform"
+                  >
+                    <Sparkles className="h-6 w-6 text-purple-600 animate-pulse" strokeWidth={2.5} />
+                    <span className="font-bold text-[10px] uppercase text-purple-600">AI Echo</span>
+                  </button>
+
+                  <button 
                     onClick={() => onMention(profile.username)}
                     className="p-2 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90"
                   >
