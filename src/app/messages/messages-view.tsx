@@ -29,8 +29,7 @@ import {
  Bell,
  Info,
  FileText,
- Settings,
- UserCircle
+ Settings
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage, updateDocumentNonBlocking, useDoc } from '@/firebase';
@@ -145,9 +144,7 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
       <div className="relative shrink-0">
         <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-md">
           <AvatarImage src={otherUser.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-          <AvatarFallback className="bg-slate-200">
-            <UserCircle className="h-6 w-6 text-slate-400" />
-          </AvatarFallback>
+          <AvatarFallback className="bg-slate-200 text-slate-500">{(otherUser.username || 'U').charAt(0)}</AvatarFallback>
         </Avatar>
         {isUnread && (
           <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
@@ -203,9 +200,7 @@ function OfficialPage({ open, onOpenChange, messages }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-        {/* Purple gradient top 10vh */}
-        <div className="h-[10vh] bg-gradient-to-b from-purple-400/30 via-purple-300/20 to-white shrink-0 absolute top-0 left-0 right-0 z-0 pointer-events-none" />
-        
+        {/* Header - User page style */}
         <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
           <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
             <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
@@ -221,10 +216,10 @@ function OfficialPage({ open, onOpenChange, messages }: any) {
           </div>
         </DialogHeader>
 
-        {/* Content */}
+        {/* Content - Full page */}
         <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
           <ScrollArea className="h-full px-4 pt-6">
-            <div className="flex flex-col gap-4 pb-10">
+            <div className="flex flex-col gap-4 pb-4">
               {messages && messages.length > 0 ? (
                 messages.map((msg: any) => (
                   <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -249,9 +244,9 @@ function OfficialPage({ open, onOpenChange, messages }: any) {
           </ScrollArea>
         </main>
 
-        {/* Footer - You can't message */}
-        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
-          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You Can't Message Ummy Team</p>
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
         </footer>
       </DialogContent>
     </Dialog>
@@ -266,9 +261,7 @@ function SystemPage({ open, onOpenChange, messages }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-        {/* Purple gradient top 10vh */}
-        <div className="h-[10vh] bg-gradient-to-b from-purple-400/30 via-purple-300/20 to-white shrink-0 absolute top-0 left-0 right-0 z-0 pointer-events-none" />
-        
+        {/* Header - User page style */}
         <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
           <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
             <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
@@ -284,9 +277,10 @@ function SystemPage({ open, onOpenChange, messages }: any) {
           </div>
         </DialogHeader>
 
+        {/* Content - Full page */}
         <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
           <ScrollArea className="h-full px-4 pt-6">
-            <div className="flex flex-col gap-4 pb-10">
+            <div className="flex flex-col gap-4 pb-4">
               {messages && messages.length > 0 ? (
                 messages.map((msg: any) => (
                   <div key={msg.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -311,8 +305,9 @@ function SystemPage({ open, onOpenChange, messages }: any) {
           </ScrollArea>
         </main>
 
-        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
-          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You Can't Message Ummy System</p>
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
         </footer>
       </DialogContent>
     </Dialog>
@@ -364,9 +359,7 @@ function RequestsPage({ open, onOpenChange }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-        {/* Purple gradient top 10vh */}
-        <div className="h-[10vh] bg-gradient-to-b from-purple-400/30 via-purple-300/20 to-white shrink-0 absolute top-0 left-0 right-0 z-0 pointer-events-none" />
-        
+        {/* Header - User page style */}
         <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
           <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
             <button onClick={() => onOpenChange(false)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-all">
@@ -382,9 +375,10 @@ function RequestsPage({ open, onOpenChange }: any) {
           </div>
         </DialogHeader>
 
+        {/* Content - Full page */}
         <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
           <ScrollArea className="h-full px-4 pt-6">
-            <div className="flex flex-col gap-4 pb-10">
+            <div className="flex flex-col gap-4 pb-4">
               {isLoading ? (
                 <div className="py-20 text-center flex flex-col items-center gap-2">
                   <Loader className="h-6 w-6 text-rose-500 animate-spin" />
@@ -402,8 +396,9 @@ function RequestsPage({ open, onOpenChange }: any) {
           </ScrollArea>
         </main>
 
-        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16">
-          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You Can't Message Requests</p>
+        {/* Footer - No input, no bottom tab, bas message */}
+        <footer className="p-4 bg-white border-t border-gray-100 flex justify-center items-center h-16 shrink-0">
+          <p className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">You can't message here</p>
         </footer>
       </DialogContent>
     </Dialog>
@@ -416,9 +411,7 @@ function RequestItem({ request, onAction }: any) {
     <div className="p-4 bg-gray-50 rounded-3xl border-2 border-white shadow-sm flex items-center gap-4">
       <Avatar className="h-12 w-12 border-2 border-white shadow-sm shrink-0">
         <AvatarImage src={fromUser?.avatarUrl} />
-        <AvatarFallback className="bg-slate-200">
-          <UserCircle className="h-6 w-6 text-slate-400" />
-        </AvatarFallback>
+        <AvatarFallback>{fromUser?.username?.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0 text-left">
         <h4 className="font-black text-xs uppercase text-slate-800 truncate">{fromUser?.username || 'Somebody'}</h4>
@@ -443,7 +436,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showChatActions, setShowChatActions] = useState(false);
-  const [showBlockedCard, setShowBlockedCard] = useState(false);
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
@@ -471,7 +463,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const { data: blockData } = useDoc(blockCheckQuery);
   const isBlocked = blockData?.blockedBy?.includes(currentUser?.uid) || blockData?.blockedBy?.includes(otherUser?.id);
   const isBlockedByMe = blockData?.blockedBy?.includes(currentUser?.uid);
-  const isBlockedByOther = blockData?.blockedBy?.includes(otherUser?.id);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
@@ -487,15 +478,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     }
   }, [open, chatId, messages, currentUser?.uid, firestore]);
 
-  // Show blocked card when blocked
-  useEffect(() => {
-    if (isBlockedByOther && open) {
-      setShowBlockedCard(true);
-    } else {
-      setShowBlockedCard(false);
-    }
-  }, [isBlockedByOther, open]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -505,7 +487,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     if ((!text.trim() && !imageUrl) || !firestore || !currentUser || !chatId) return;
     
     if (isBlocked) {
-      toast({ variant: 'destructive', title: 'Cannot send message', description: 'You have blocked this user or are blocked' });
+      toast({ variant: 'destructive', title: 'Cannot send message', description: 'You have blocked this user' });
       return;
     }
 
@@ -674,9 +656,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-white text-black p-0 flex flex-col font-sans">
-          {/* Purple gradient top 10vh */}
-          <div className="h-[10vh] bg-gradient-to-b from-purple-400/30 via-purple-300/20 to-white shrink-0 absolute top-0 left-0 right-0 z-0 pointer-events-none" />
-          
           {/* Header */}
           <DialogHeader className="p-0 border-b border-gray-100 bg-white shrink-0 shadow-sm relative z-50 pt-safe">
             <div className="px-4 py-4 pt-2 flex flex-row items-center gap-4 w-full relative">
@@ -685,9 +664,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
               </button>
               <Avatar className="h-10 w-10 border shadow-sm rounded-full">
                 <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-                <AvatarFallback className="bg-slate-200">
-                  <UserCircle className="h-6 w-6 text-slate-400" />
-                </AvatarFallback>
+                <AvatarFallback>{otherUser?.username?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0 text-left">
                 <DialogTitle className="text-lg font-bold uppercase tracking-tight truncate">{otherUser?.username}</DialogTitle>
@@ -705,30 +682,11 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             <DialogDescription className="sr-only">Conversation with {otherUser?.username}</DialogDescription>
           </DialogHeader>
 
-          {/* Messages Area with blocked card overlay */}
+          {/* Messages Area */}
           <main className="flex-1 overflow-hidden relative bg-[#f8f9fa]">
-            {/* Blocked Card - Center screen transparent card */}
-            {showBlockedCard && isBlockedByOther && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/20 backdrop-blur-sm px-6">
-                <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-gray-200 max-w-sm w-full text-center transform scale-100 animate-in zoom-in-95 duration-300">
-                  <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Ban className="h-8 w-8 text-red-500" />
-                  </div>
-                  <h3 className="text-lg font-black uppercase tracking-tight text-gray-900 mb-2">You Are Blocked</h3>
-                  <p className="text-sm font-body text-gray-500 mb-6">This user has blocked you. You cannot send messages anymore.</p>
-                  <button 
-                    onClick={() => onOpenChange(false)}
-                    className="w-full py-3 bg-gray-900 text-white rounded-2xl font-bold uppercase text-sm tracking-wider hover:bg-gray-800 active:scale-[0.98] transition-all"
-                  >
-                    Go Back
-                  </button>
-                </div>
-              </div>
-            )}
-
             <ScrollArea className="h-full px-4 pt-6">
               <div className="flex flex-col gap-3 pb-10">
-                {isBlocked && !isBlockedByOther && (
+                {isBlocked && (
                   <div className="text-center py-8 px-4 bg-yellow-50 rounded-2xl border border-yellow-200">
                     <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
                     <p className="text-xs font-bold uppercase text-yellow-700">
@@ -751,20 +709,20 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                         isMe ? "flex-row-reverse" : "flex-row"
                       )}
                     >
-                      {/* Avatar - Sirf avatar, no letters */}
+                      {/* Avatar */}
                       <div className="shrink-0 self-end">
                         {isMe ? (
                           <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
                             <AvatarImage src={currentUser?.avatarUrl ? `${currentUser.avatarUrl}${currentUser.avatarUrl.includes('?') ? '&' : '?'}v=${currentUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-                            <AvatarFallback className="bg-slate-200">
-                              <UserCircle className="h-4 w-4 text-slate-400" />
+                            <AvatarFallback className="text-[9px] bg-primary/20 text-primary font-bold">
+                              {(currentUser?.username || 'U').charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                         ) : (
                           <Avatar className="h-7 w-7 border border-white shadow-sm rounded-full">
                             <AvatarImage src={otherUser?.avatarUrl ? `${otherUser.avatarUrl}${otherUser.avatarUrl.includes('?') ? '&' : '?'}v=${otherUser?.updatedAt?.toMillis?.() || Date.now()}` : undefined} />
-                            <AvatarFallback className="bg-slate-200">
-                              <UserCircle className="h-4 w-4 text-slate-400" />
+                            <AvatarFallback className="text-[9px] bg-slate-200 text-slate-500 font-bold">
+                              {(otherUser?.username || 'U').charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                         )}
@@ -883,7 +841,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
             {/* Top dark section */}
             <div className="bg-[#2C2C2E] rounded-t-2xl overflow-hidden">
               <button 
-                onClick={() => { setShowChatActions(false); }}
+                onClick={() => { /* Report logic */ setShowChatActions(false); }}
                 className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors border-b border-white/10"
               >
                 Report
@@ -910,7 +868,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
                 onClick={() => { isPinned ? unpinChat() : pinChat(); setShowChatActions(false); }}
                 className="w-full py-5 text-center text-white font-medium text-[17px] hover:bg-white/5 active:bg-white/10 transition-colors"
               >
-                {isPinned ? 'Unpin Chat' : 'Pin Chat'}
+                {isPinned ? 'Unpin' : 'Pin'}
               </button>
             </div>
             <button 
@@ -923,94 +881,6 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
         </SheetContent>
       </Sheet>
     </>
-  );
-}
-
-// ==================== Bottom Navigation Bar Component ====================
-function BottomNavBar({ messageBadge = 0 }: { messageBadge?: number }) {
-  const router = useRouter();
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
-  
-  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
-  
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-      <div className="bg-gradient-to-r from-pink-400/95 via-pink-300/95 to-pink-400/95 backdrop-blur-xl border-t border-white/30 shadow-[0_-8px_32px_rgba(236,72,153,0.3)]">
-        <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto">
-          {/* Home Tab */}
-          <button 
-            onClick={() => router.push('/')} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-2xl transition-all active:scale-90 min-w-[64px]",
-              isActive('/home') || isActive('/') ? "bg-white/30" : "hover:bg-white/10"
-            )}
-          >
-            <Home className={cn("h-5 w-5 transition-all", isActive('/home') || isActive('/') ? "text-white fill-white" : "text-white/70")} />
-            <span className="text-[9px] font-black uppercase tracking-wider text-white">Home</span>
-          </button>
-
-          {/* Rooms Tab */}
-          <button 
-            onClick={() => router.push('/rooms')} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-2xl transition-all active:scale-90 min-w-[64px]",
-              isActive('/rooms') ? "bg-white/30" : "hover:bg-white/10"
-            )}
-          >
-            <Users className={cn("h-5 w-5 transition-all", isActive('/rooms') ? "text-white fill-white" : "text-white/70")} />
-            <span className="text-[9px] font-black uppercase tracking-wider text-white">Rooms</span>
-          </button>
-
-          {/* Messages Tab - WITH BADGE */}
-          <button 
-            onClick={() => router.push('/messages')} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-2xl transition-all active:scale-90 min-w-[64px] relative",
-              isActive('/messages') ? "bg-white/30" : "hover:bg-white/10"
-            )}
-          >
-            <div className="relative">
-              <MessageSquare className={cn("h-5 w-5 transition-all", isActive('/messages') ? "text-white fill-white" : "text-white/70")} />
-              
-              {/* 🔴 Unread Message Badge */}
-              {messageBadge > 0 && (
-                <span className={cn(
-                  "absolute -top-2.5 -right-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-lg shadow-red-500/50 animate-in zoom-in duration-300 border-2 border-white",
-                  messageBadge > 99 ? "min-w-[22px] h-[18px] px-1.5" : messageBadge > 9 ? "min-w-[18px] h-[18px] px-1" : "h-[18px] w-[18px]"
-                )}>
-                  {messageBadge > 99 ? '99+' : messageBadge}
-                </span>
-              )}
-            </div>
-            <span className="text-[9px] font-black uppercase tracking-wider text-white">Messages</span>
-          </button>
-
-          {/* Notifications Tab */}
-          <button 
-            onClick={() => router.push('/notifications')} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-2xl transition-all active:scale-90 min-w-[64px]",
-              isActive('/notifications') ? "bg-white/30" : "hover:bg-white/10"
-            )}
-          >
-            <Bell className={cn("h-5 w-5 transition-all", isActive('/notifications') ? "text-white fill-white" : "text-white/70")} />
-            <span className="text-[9px] font-black uppercase tracking-wider text-white">Alerts</span>
-          </button>
-
-          {/* Profile Tab */}
-          <button 
-            onClick={() => router.push('/profile')} 
-            className={cn(
-              "flex flex-col items-center justify-center gap-1 px-3 py-1 rounded-2xl transition-all active:scale-90 min-w-[64px]",
-              isActive('/profile') ? "bg-white/30" : "hover:bg-white/10"
-            )}
-          >
-            <User className={cn("h-5 w-5 transition-all", isActive('/profile') ? "text-white fill-white" : "text-white/70")} />
-            <span className="text-[9px] font-black uppercase tracking-wider text-white">Profile</span>
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -1069,54 +939,12 @@ export default function MessagesView() {
   const teamMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'system') || [], [allNotifications]);
   const systemMsgs = useMemo(() => allNotifications?.filter((n: any) => n.type === 'direct_system') || [], [allNotifications]);
 
-  // ==================== Unread Counts Calculation ====================
-  
-  // Unread chat count
-  const unreadChatCount = useMemo(() => {
-    if (!chats || !user?.uid) return 0;
-    return chats.filter((chat: any) => {
-      return chat.lastSenderId !== user.uid && 
-             !(chat.lastMessageReadBy || []).includes(user.uid);
-    }).length;
-  }, [chats, user?.uid]);
-
-  // Unread team messages count
-  const unreadTeamCount = useMemo(() => {
-    if (!teamMsgs || !user?.uid) return 0;
-    return teamMsgs.filter((msg: any) => {
-      return !(msg.readBy || []).includes(user.uid);
-    }).length;
-  }, [teamMsgs, user?.uid]);
-
-  // Unread system messages count
-  const unreadSystemCount = useMemo(() => {
-    if (!systemMsgs || !user?.uid) return 0;
-    return systemMsgs.filter((msg: any) => {
-      return !(msg.readBy || []).includes(user.uid);
-    }).length;
-  }, [systemMsgs, user?.uid]);
-
-  // Pending requests count
-  const pendingRequestsCount = useMemo(() => {
-    // requests data is fetched in RequestsPage, but we can approximate
-    // For now, we'll count from allNotifications if any proposal type exists
-    return allNotifications?.filter((n: any) => n.type === 'proposal' && n.status === 'pending')?.length || 0;
-  }, [allNotifications]);
-
-  // Total unread badge count
-  const totalUnreadBadge = unreadChatCount + unreadTeamCount + unreadSystemCount + pendingRequestsCount;
-
   if (theme === 'GLOSSY') return <MessagesViewGlossy />;
 
   return (
     <AppLayout hideBottomNav={!!activeChatId}>
-      {/* Soft pink background */}
-      <div className="h-[100dvh] bg-gradient-to-b from-pink-200/50 via-pink-100/40 to-white flex flex-col relative font-sans overflow-hidden">
-        
-        {/* Top 10vh purple gradient mixing with white */}
-        <div className="h-[10vh] bg-gradient-to-b from-purple-400/30 via-purple-300/20 to-transparent shrink-0 absolute top-0 left-0 right-0 z-0 pointer-events-none" />
-        
-        <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/50 backdrop-blur-md border-b border-black/5 z-20">
+      <div className="h-[100dvh] bg-gradient-to-b from-[#FF91B5] via-[#ffade0] to-[#f472b6] flex flex-col relative font-sans overflow-hidden">
+        <header className="relative shrink-0 pt-safe pb-2 px-6 bg-white/40 backdrop-blur-md border-b border-black/5 z-20">
           <div className="flex items-center justify-between pt-2">
             <h1 className="text-2xl font-black uppercase tracking-tighter text-slate-900">{t.messages.title}</h1>
             <button className="p-2.5 bg-white/60 rounded-full border border-black/5 text-slate-600"><Search className="h-5 w-5" /></button>
@@ -1143,7 +971,7 @@ export default function MessagesView() {
             <CategoryItem 
               icon={Heart} 
               label="Requests" 
-              subtext={pendingRequestsCount > 0 ? `${pendingRequestsCount} pending request${pendingRequestsCount > 1 ? 's' : ''}` : "No requests"} 
+              subtext={teamMsgs.length > 0 ? "New proposals" : "No requests"} 
               colorClass="bg-gradient-to-br from-rose-400 to-pink-500" 
               onClick={() => setShowRequests(true)} 
             />
@@ -1162,27 +990,27 @@ export default function MessagesView() {
           </div>
         </div>
 
-        {/* Pink Bottom Navigation Bar with Badge */}
-        <BottomNavBar messageBadge={totalUnreadBadge} />
-
-        {/* Pages */}
+        {/* Official Page Dialog */}
         <OfficialPage 
           open={showOfficial} 
           onOpenChange={setShowOfficial} 
           messages={teamMsgs} 
         />
         
+        {/* System Page Dialog */}
         <SystemPage 
           open={showSystemDialog} 
           onOpenChange={setShowSystemDialog} 
           messages={systemMsgs} 
         />
         
+        {/* Requests Page Dialog */}
         <RequestsPage 
           open={showRequests} 
           onOpenChange={setShowRequests} 
         />
         
+        {/* Chat Room Dialog */}
         <ChatRoomDialog 
           open={!!activeChatId} 
           onOpenChange={(open: boolean) => !open && setActiveChatId(null)} 
@@ -1193,4 +1021,4 @@ export default function MessagesView() {
       </div>
     </AppLayout>
   );
-                              }
+}
