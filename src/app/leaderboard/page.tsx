@@ -366,7 +366,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top1 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
-              className="flex flex-col items-center gap-1 -mt-2"
+              className="flex flex-col items-center gap-1 mt-20"
             >
               <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
               <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-4">{top1.username || top1.name || 'User'}</span>
