@@ -349,7 +349,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top2 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
-              className="flex flex-col items-center gap-1 mt-6 translate-x-2"
+              className="flex flex-col items-center gap-1 mt-16 translate-x-2"
             >
               <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
               <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-6">{top2.username || top2.name || 'User'}</span>
@@ -366,7 +366,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top1 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
-              className="flex flex-col items-center gap-1 -mt-16"
+              className="flex flex-col items-center gap-1 -mt-8"
             >
               <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
               <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-4">{top1.username || top1.name || 'User'}</span>
@@ -383,7 +383,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           {top3 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
-              className="flex flex-col items-center gap-1 mt-6 -translate-x-2"
+              className="flex flex-col items-center gap-1 mt-16 -translate-x-2"
             >
               <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
               <span className="text-[10px] font-black uppercase text-amber-800 truncate w-16 text-center drop-shadow-lg mt-6">{top3.username || top3.name || 'User'}</span>
@@ -397,7 +397,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
       </div>
 
       {/* Spacer — Top 3 aur fixed cards ke beech gap */}
-      <div className="h-16" />
+      <div className="h-20" />
 
       {/* Fixed Cards Section — Top 4 to Top 9 (6 cards) — yeh bina scroll kiye dikhenge */}
       {fixedTopCards.length > 0 && (
