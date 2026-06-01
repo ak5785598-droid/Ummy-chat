@@ -18,11 +18,11 @@ export interface LeaderboardThemeConfig {
   backgroundUrl: string;
   backgroundType: 'image' | 'video';
   isActive: boolean;
+  category: 'honor' | 'charm' | 'room';
   frameConfigs: {
     rank1: FrameConfig;
     rank2: FrameConfig;
     rank3: FrameConfig;
-    top: FrameConfig;
   };
   createdAt?: number;
   updatedAt?: number;
@@ -45,19 +45,24 @@ const defaultThemeConfig: LeaderboardThemeFormData = {
   backgroundUrl: '',
   backgroundType: 'image',
   isActive: false,
+  category: 'honor',
   frameConfigs: {
     rank1: { ...defaultFrameConfig },
     rank2: { ...defaultFrameConfig },
-    rank3: { ...defaultFrameConfig },
-    top: { ...defaultFrameConfig }
+    rank3: { ...defaultFrameConfig }
   }
 };
 
 const rankConfigs = [
   { key: 'rank1' as const, label: '🥇 Rank 1 (Gold)', emoji: '👑', color: 'from-yellow-400 to-yellow-600' },
   { key: 'rank2' as const, label: '🥈 Rank 2 (Silver)', emoji: '⭐', color: 'from-slate-300 to-slate-500' },
-  { key: 'rank3' as const, label: '🥉 Rank 3 (Bronze)', emoji: '🔥', color: 'from-orange-400 to-orange-600' },
-  { key: 'top' as const, label: '⭐ Top 4+ Players', emoji: '✨', color: 'from-purple-400 to-purple-600' }
+  { key: 'rank3' as const, label: '🥉 Rank 3 (Bronze)', emoji: '🔥', color: 'from-orange-400 to-orange-600' }
+];
+
+const categoryTabs = [
+  { key: 'honor' as const, label: '🏆 Honor', emoji: '🏆', color: 'from-yellow-400 to-yellow-600' },
+  { key: 'charm' as const, label: '💎 Charm', emoji: '💎', color: 'from-pink-400 to-pink-600' },
+  { key: 'room' as const, label: '🏠 Room', emoji: '🏠', color: 'from-blue-400 to-blue-600' }
 ];
 
 export function LeaderboardThemeAdmin() {
@@ -72,6 +77,7 @@ export function LeaderboardThemeAdmin() {
   const [framePreview, setFramePreview] = useState<{ rank: string; show: boolean }>({ rank: '', show: false });
   const [uploadingBg, setUploadingBg] = useState(false);
   const [uploadingFrames, setUploadingFrames] = useState<Record<string, boolean>>({});
+  const [activeCategory, setActiveCategory] = useState<'honor' | 'charm' | 'room'>('honor');
 
   const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,7 +102,7 @@ export function LeaderboardThemeAdmin() {
     }
   };
 
-  const handleFrameUpload = async (rank: 'rank1' | 'rank2' | 'rank3' | 'top', type: 'image' | 'video', e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFrameUpload = async (rank: 'rank1' | 'rank2' | 'rank3', type: 'image' | 'video', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !storage) return;
 
@@ -155,7 +161,7 @@ export function LeaderboardThemeAdmin() {
     }
   };
 
-  const handleFrameChange = (rank: 'rank1' | 'rank2' | 'rank3' | 'top', field: string, value: any) => {
+  const handleFrameChange = (rank: 'rank1' | 'rank2' | 'rank3', field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       frameConfigs: {
@@ -220,8 +226,12 @@ export function LeaderboardThemeAdmin() {
 
     setIsLoading(true);
     try {
-      // Deactivate all themes
-      const q = query(collection(firestore, 'leaderboardThemes'), where('isActive', '==', true));
+      // Deactivate all themes in same category
+      const q = query(
+        collection(firestore, 'leaderboardThemes'), 
+        where('isActive', '==', true),
+        where('category', '==', activeCategory)
+      );
       const snapshot = await getDocs(q);
       for (const docSnapshot of snapshot.docs) {
         await updateDoc(doc(firestore, 'leaderboardThemes', docSnapshot.id), {
@@ -285,6 +295,7 @@ export function LeaderboardThemeAdmin() {
       backgroundUrl: theme.backgroundUrl,
       backgroundType: theme.backgroundType,
       isActive: theme.isActive,
+      category: theme.category,
       frameConfigs: theme.frameConfigs
     });
     setEditingId(theme.id!);
@@ -300,11 +311,14 @@ export function LeaderboardThemeAdmin() {
     setFramePreview({ rank: '', show: false });
   };
 
-  const getFrameUrl = (rank: 'rank1' | 'rank2' | 'rank3' | 'top') => {
+  const getFrameUrl = (rank: 'rank1' | 'rank2' | 'rank3') => {
     const frame = formData.frameConfigs[rank];
     if (frame.type === 'image') return frame.imageUrl;
     return frame.videoUrl;
   };
+
+  // Filter themes by active category
+  const filteredThemes = themes.filter(theme => theme.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
@@ -312,6 +326,24 @@ export function LeaderboardThemeAdmin() {
         <div className="mb-8">
           <h1 className="text-4xl font-black mb-2 text-[#D4AF37]">Leaderboard Theme Manager</h1>
           <p className="text-white/60">Create and manage custom themes for your leaderboard rankings with frame overlays</p>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex gap-2 mb-8">
+          {categoryTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveCategory(tab.key)}
+              className={cn(
+                'px-6 py-3 rounded-lg font-bold transition-all duration-300',
+                activeCategory === tab.key
+                  ? 'bg-[#D4AF37] text-black shadow-lg shadow-[#D4AF37]/20'
+                  : 'bg-slate-800 text-white/60 hover:bg-slate-700 hover:text-white'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Create/Edit Form */}
@@ -324,6 +356,19 @@ export function LeaderboardThemeAdmin() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Basic Info */}
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-[#D4AF37] mb-2">Category *</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => handleInputChange('category', e.target.value)}
+                    className="w-full bg-slate-800 border border-white/20 rounded px-3 py-2 text-white focus:outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="honor">🏆 Honor</option>
+                    <option value="charm">💎 Charm</option>
+                    <option value="room">🏠 Room</option>
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-bold text-[#D4AF37] mb-2">Theme Name *</label>
                   <input
@@ -420,7 +465,7 @@ export function LeaderboardThemeAdmin() {
               <h3 className="text-xl font-bold text-[#D4AF37] mb-4">🎨 Rank Frame Overlays</h3>
               <p className="text-xs text-white/50 mb-4">Upload frames/borders for each ranking tier. Leave empty to use default.</p>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {rankConfigs.map((rankConfig) => {
                   const rank = rankConfig.key;
                   const frameUrl = getFrameUrl(rank);
@@ -609,15 +654,17 @@ export function LeaderboardThemeAdmin() {
 
         {/* All Themes List */}
         <div>
-          <h2 className="text-2xl font-black mb-6 text-[#D4AF37]">All Themes ({themes.length})</h2>
+          <h2 className="text-2xl font-black mb-6 text-[#D4AF37]">
+            {categoryTabs.find(tab => tab.key === activeCategory)?.label} Themes ({filteredThemes.length})
+          </h2>
 
-          {themes.length === 0 ? (
+          {filteredThemes.length === 0 ? (
             <div className="text-center py-12 bg-slate-800 border border-white/10 rounded-lg text-white/40">
-              <p>No themes created yet. Create your first theme!</p>
+              <p>No themes created yet for this category. Create your first theme!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {themes.map((theme) => (
+              {filteredThemes.map((theme) => (
                 <div
                   key={theme.id}
                   className={cn(
@@ -665,7 +712,7 @@ export function LeaderboardThemeAdmin() {
                               key={config.key}
                               className={cn(
                                 'px-2 py-1 rounded text-[10px] font-bold',
-                                theme.frameConfigs[config.key].isEnabled
+                                theme.frameConfigs[config.key]?.isEnabled
                                   ? 'bg-[#D4AF37]/30 text-[#D4AF37]'
                                   : 'bg-white/5 text-white/40'
                               )}
@@ -715,4 +762,4 @@ export function LeaderboardThemeAdmin() {
       </div>
     </div>
   );
-}
+        }
