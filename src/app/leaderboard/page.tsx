@@ -78,7 +78,6 @@ const FrameOverlayCanvas = ({
     
     if (!ctx) return;
 
-    // Black pixels transparent karne ka function
     const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
       const imageData = ctx.getImageData(0, 0, width, height);
@@ -89,7 +88,6 @@ const FrameOverlayCanvas = ({
         const g = data[i + 1];
         const b = data[i + 2];
         
-        // Black aur near-black pixels ko transparent karo
         if (r < 30 && g < 30 && b < 30) {
           data[i + 3] = 0;
         }
@@ -146,7 +144,6 @@ const FrameOverlayCanvas = ({
     };
   }, [frameUrl, isVideo]);
 
-  // Canvas ko SQUARE (1:1) banane ka logic - yahi change kiya hai
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isFrameLoaded) return;
@@ -160,21 +157,17 @@ const FrameOverlayCanvas = ({
 
     const dpr = window.devicePixelRatio || 1;
     
-    // SQUARE ASPECT RATIO - 1:1 fixed
     const canvasWidth = containerSize;
     const canvasHeight = containerSize;
     
-    // Actual canvas size with DPR
     canvas.width = Math.round(canvasWidth * dpr);
     canvas.height = Math.round(canvasHeight * dpr);
     
-    // CSS size - SQUARE
     canvas.style.width = Math.round(canvasWidth) + 'px';
     canvas.style.height = Math.round(canvasHeight) + 'px';
     
     ctx.scale(dpr, dpr);
 
-    // Black pixels transparent karne ka function
     const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
       const imageData = ctx.getImageData(0, 0, width, height);
@@ -201,16 +194,13 @@ const FrameOverlayCanvas = ({
         }
         
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        // Video ko SQUARE canvas mein draw karo - center crop with object-fit cover style
         const videoRatio = videoRef.current!.videoWidth / videoRef.current!.videoHeight;
         let sx = 0, sy = 0, sWidth = videoRef.current!.videoWidth, sHeight = videoRef.current!.videoHeight;
         
         if (videoRatio > 1) {
-          // Video wider than square - center crop horizontally
           sWidth = sHeight;
           sx = (videoRef.current!.videoWidth - sWidth) / 2;
         } else if (videoRatio < 1) {
-          // Video taller than square - center crop vertically
           sHeight = sWidth;
           sy = (videoRef.current!.videoHeight - sHeight) / 2;
         }
@@ -234,16 +224,13 @@ const FrameOverlayCanvas = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
-        // Image ko SQUARE canvas mein draw karo - center crop with object-fit cover style
         const imgRatio = img.naturalWidth / img.naturalHeight;
         let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
         
         if (imgRatio > 1) {
-          // Image wider than square - center crop horizontally
           sWidth = sHeight;
           sx = (img.naturalWidth - sWidth) / 2;
         } else if (imgRatio < 1) {
-          // Image taller than square - center crop vertically
           sHeight = sWidth;
           sy = (img.naturalHeight - sHeight) / 2;
         }
@@ -334,11 +321,8 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
   
-  // Top 4 se Top 9 — yeh fixed dikhenge bina scroll kiye
-  const fixedTopCards = activePlayers.slice(3, 9); // index 3,4,5,6,7,8 = rank 4,5,6,7,8,9
-  
-  // Top 10 se baaki sab — yeh scroll karne pe aayenge
-  const scrollableOthers = activePlayers.slice(9); // index 9 se aage = rank 10+
+  // Rank 4 se baaki sab scrollable
+  const scrollablePlayers = activePlayers.slice(3); // index 3 se aage = rank 4+
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -347,10 +331,10 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   };
 
   return (
-    <div className="space-y-1 animate-in fade-in duration-700 relative z-10 flex flex-col h-full">
-      {/* Fixed Section — Top 3 aur Fixed Cards combined */}
+    <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+      {/* Fixed Section — Top 3 + 20vh space */}
       <div className="flex-shrink-0">
-        {/* Top 3 in One Row — bilkul wahi jaise tha */}
+        {/* Top 3 in One Row */}
         <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
           {/* Top 2 - Left side */}
           <div className="flex-1 flex justify-center">
@@ -404,41 +388,15 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
           </div>
         </div>
 
-        {/* Fixed Cards Section — Top 4 to Top 9 (6 cards) — yeh fixed rahega */}
-        {fixedTopCards.length > 0 && (
-          <div className="px-4 space-y-1">
-            {fixedTopCards.map((item, index) => {
-              const rank = index + 4; // rank 4,5,6,7,8,9
-              return (
-                <Link
-                  key={item.id}
-                  href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
-                  className="flex items-center gap-3 py-2 px-2 hover:bg-white/5 rounded-lg transition-all"
-                >
-                  <span className="text-base font-black italic text-white/40 w-5">{rank}</span>
-                  <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={rank.toString()} size="sm" rank={rank} theme={theme} />
-                  <div className="flex-1">
-                    <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
-                    <GoldCoinIcon className="h-3 w-3" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {/* 20vh Space — Fixed gap between Top 3 and scrollable list */}
+        <div className="h-[20vh]" />
       </div>
 
-      {/* 20vh Space — yeh gap rahega fixed section aur scrollable list ke beech */}
-      <div className="h-[20vh] flex-shrink-0" />
-
-      {/* Scrollable Section — Top 10 se baaki sab — sirf yahi scroll hoga */}
-      {scrollableOthers.length > 0 && (
-        <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1">
-          {scrollableOthers.map((item, index) => {
-            const rank = index + 10; // rank 10,11,12...
+      {/* Scrollable Section — Rank 4 se baaki sab */}
+      {scrollablePlayers.length > 0 && (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1 pb-20">
+          {scrollablePlayers.map((item, index) => {
+            const rank = index + 4; // rank 4,5,6,7,8,9,10,11...
             return (
               <Link
                 key={item.id}
@@ -547,7 +505,7 @@ function LeaderboardContent() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent h-screen">
+    <div className="min-h-screen h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent">
       <DynamicThemeBackground theme={activeTheme} />
 
       {/* Header */}
@@ -591,4 +549,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-      }
+        }
