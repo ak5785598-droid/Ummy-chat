@@ -52,7 +52,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
   );
 };
 
-// --- Canvas Frame Overlay Component - BLACK BACKGROUND REMOVE, ORIGINAL SIZE MAIN DIKHAO ---
+// --- Canvas Frame Overlay Component - SQUARE ASPECT RATIO (1:1) ---
 const FrameOverlayCanvas = ({ 
   frameUrl, 
   isVideo = false,
@@ -65,7 +65,6 @@ const FrameOverlayCanvas = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [naturalDimensions, setNaturalDimensions] = useState<{width: number, height: number} | null>(null);
   const [isFrameLoaded, setIsFrameLoaded] = useState(false);
 
   useEffect(() => {
@@ -111,21 +110,11 @@ const FrameOverlayCanvas = ({
       video.preload = 'auto';
 
       video.addEventListener('loadedmetadata', () => {
-        setNaturalDimensions({
-          width: video.videoWidth,
-          height: video.videoHeight
-        });
         setIsFrameLoaded(true);
       });
 
       video.addEventListener('loadeddata', () => {
-        if (!naturalDimensions) {
-          setNaturalDimensions({
-            width: video.videoWidth,
-            height: video.videoHeight
-          });
-          setIsFrameLoaded(true);
-        }
+        setIsFrameLoaded(true);
       });
 
       video.play().catch(console.error);
@@ -146,10 +135,6 @@ const FrameOverlayCanvas = ({
       img.src = frameUrl;
 
       img.onload = () => {
-        setNaturalDimensions({
-          width: img.naturalWidth,
-          height: img.naturalHeight
-        });
         setIsFrameLoaded(true);
       };
     }
@@ -161,10 +146,10 @@ const FrameOverlayCanvas = ({
     };
   }, [frameUrl, isVideo]);
 
-  // Jab natural dimensions mil jaye, canvas resize karo original aspect ratio ke hisaab se
+  // Canvas ko SQUARE (1:1) banane ka logic - yahi change kiya hai
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !naturalDimensions || !isFrameLoaded || naturalDimensions.width <= 0 || naturalDimensions.height <= 0 || isNaN(naturalDimensions.width) || isNaN(naturalDimensions.height)) return;
+    if (!canvas || !isFrameLoaded) return;
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
@@ -175,25 +160,15 @@ const FrameOverlayCanvas = ({
 
     const dpr = window.devicePixelRatio || 1;
     
-    // Original aspect ratio calculate karo
-    const aspectRatio = naturalDimensions.width / naturalDimensions.height;
-    
-    let canvasWidth: number, canvasHeight: number;
-    
-    // Container size ke andar fit karo, aspect ratio maintain karte hue
-    if (aspectRatio > 1) {
-      canvasWidth = containerSize;
-      canvasHeight = containerSize / aspectRatio;
-    } else {
-      canvasHeight = containerSize;
-      canvasWidth = containerSize * aspectRatio;
-    }
+    // SQUARE ASPECT RATIO - 1:1 fixed
+    const canvasWidth = containerSize;
+    const canvasHeight = containerSize;
     
     // Actual canvas size with DPR
     canvas.width = Math.round(canvasWidth * dpr);
     canvas.height = Math.round(canvasHeight * dpr);
     
-    // CSS size
+    // CSS size - SQUARE
     canvas.style.width = Math.round(canvasWidth) + 'px';
     canvas.style.height = Math.round(canvasHeight) + 'px';
     
@@ -226,7 +201,21 @@ const FrameOverlayCanvas = ({
         }
         
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.drawImage(videoRef.current!, 0, 0, canvasWidth, canvasHeight);
+        // Video ko SQUARE canvas mein draw karo - center crop with object-fit cover style
+        const videoRatio = videoRef.current!.videoWidth / videoRef.current!.videoHeight;
+        let sx = 0, sy = 0, sWidth = videoRef.current!.videoWidth, sHeight = videoRef.current!.videoHeight;
+        
+        if (videoRatio > 1) {
+          // Video wider than square - center crop horizontally
+          sWidth = sHeight;
+          sx = (videoRef.current!.videoWidth - sWidth) / 2;
+        } else if (videoRatio < 1) {
+          // Video taller than square - center crop vertically
+          sHeight = sWidth;
+          sy = (videoRef.current!.videoHeight - sHeight) / 2;
+        }
+        
+        ctx.drawImage(videoRef.current!, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
         removeBlackPixels(ctx, canvas.width, canvas.height);
         
         animationFrameRef.current = requestAnimationFrame(drawFrame);
@@ -244,11 +233,26 @@ const FrameOverlayCanvas = ({
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        
+        // Image ko SQUARE canvas mein draw karo - center crop with object-fit cover style
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
+        
+        if (imgRatio > 1) {
+          // Image wider than square - center crop horizontally
+          sWidth = sHeight;
+          sx = (img.naturalWidth - sWidth) / 2;
+        } else if (imgRatio < 1) {
+          // Image taller than square - center crop vertically
+          sHeight = sWidth;
+          sy = (img.naturalHeight - sHeight) / 2;
+        }
+        
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
         removeBlackPixels(ctx, canvas.width, canvas.height);
       };
     }
-  }, [naturalDimensions, containerSize, frameUrl, isVideo, isFrameLoaded]);
+  }, [containerSize, frameUrl, isVideo, isFrameLoaded]);
 
   return (
     <canvas 
@@ -364,13 +368,13 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
 
         {/* Top 1 - Center */}
-        <div className="flex-1 flex justify-center relative -top-16">
+        <div className="flex-1 flex justify-center relative -top-14">
           {top1 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
               className="flex flex-col items-center gap-1 -mt-12"
             >
-              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="x1" rank={1} theme={theme} />
+              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
               <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-4">{top1.username || top1.name || 'User'}</span>
               <div className="flex items-center gap-1 -mt-1">
                 <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
