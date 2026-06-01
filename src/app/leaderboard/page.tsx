@@ -389,7 +389,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
 
         {/* 20vh Space — Fixed gap between Top 3 and scrollable list */}
-        <div className="h-[20vh]" />
+        <div className="h-[10vh]" />
       </div>
 
       {/* Scrollable Section — Rank 4 se baaki sab */}
