@@ -269,7 +269,7 @@ const FrameOverlayCanvas = ({
 // --- CircleAvatar with Frame ---
 const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
-  const frameSizes = { sm: "h-20 w-20", md: "h-24 w-24", lg: "h-32 w-32" };
+  const frameSizes = { sm: "h-[120px] w-[120px]", md: "h-[144px] w-[144px]", lg: "h-[192px] w-[192px]" };
   const containerPixelSizes = { sm: 120, md: 144, lg: 192 };
 
   const getRankFrame = () => {
