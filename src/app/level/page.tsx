@@ -32,7 +32,7 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
       
-      if (!ctx) {
+      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) {
         resolve(imageUrl);
         return;
       }
@@ -131,7 +131,7 @@ function processVideoThumbnail(videoUrl: string): Promise<string> {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       
-      if (!ctx) {
+      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) {
         resolve(videoUrl);
         return;
       }

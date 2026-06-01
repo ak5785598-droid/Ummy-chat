@@ -43,7 +43,7 @@ const GiftImage = ({ gift }: { gift: any }) => {
       canvas.width = img.width;
       canvas.height = img.height;
       const ctx = canvas.getContext('2d');
-      if (!ctx) {
+      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) {
         setProcessedUrl(null);
         return;
       }

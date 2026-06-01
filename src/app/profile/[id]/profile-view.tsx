@@ -95,6 +95,7 @@ const SmartBlackRemover = ({
   const mediaLoadedRef = useRef(false);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -151,7 +152,7 @@ const SmartBlackRemover = ({
     const width = 'videoWidth' in media ? media.videoWidth : media.width;
     const height = 'videoHeight' in media ? media.videoHeight : media.height;
 
-    if (!width || !height) {
+    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
       processingRef.current = false;
       return;
     }

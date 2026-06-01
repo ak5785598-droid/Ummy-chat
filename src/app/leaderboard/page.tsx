@@ -81,6 +81,7 @@ const FrameOverlayCanvas = ({
 
     // Black pixels transparent karne ka function
     const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
       
@@ -163,7 +164,7 @@ const FrameOverlayCanvas = ({
   // Jab natural dimensions mil jaye, canvas resize karo original aspect ratio ke hisaab se
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !naturalDimensions || !isFrameLoaded) return;
+    if (!canvas || !naturalDimensions || !isFrameLoaded || naturalDimensions.width <= 0 || naturalDimensions.height <= 0 || isNaN(naturalDimensions.width) || isNaN(naturalDimensions.height)) return;
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
@@ -200,6 +201,7 @@ const FrameOverlayCanvas = ({
 
     // Black pixels transparent karne ka function
     const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
       

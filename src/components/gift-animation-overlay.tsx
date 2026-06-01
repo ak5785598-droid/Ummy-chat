@@ -74,6 +74,11 @@ export function GiftAnimationOverlay({
         return;
       }
 
+      if (video.videoWidth <= 0 || video.videoHeight <= 0 || isNaN(video.videoWidth) || isNaN(video.videoHeight)) {
+        resolve(false);
+        return;
+      }
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
@@ -247,7 +252,7 @@ export function GiftAnimationOverlay({
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (!video || !canvas || video.paused || video.ended) {
+    if (!video || !canvas || video.paused || video.ended || video.videoWidth <= 0 || video.videoHeight <= 0 || isNaN(video.videoWidth) || isNaN(video.videoHeight)) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
