@@ -347,93 +347,96 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
   };
 
   return (
-    <div className="space-y-1 animate-in fade-in duration-700 pb-20 relative z-10">
-      {/* Top 3 in One Row — bilkul wahi jaise tha */}
-      <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
-        {/* Top 2 - Left side */}
-        <div className="flex-1 flex justify-center">
-          {top2 && (
-            <Link 
-              href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
-              className="flex flex-col items-center gap-1 mt-16 translate-x-3"
-            >
-              <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
-              <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-12">{top2.username || top2.name || 'User'}</span>
-              <div className="flex items-center gap-1 -mt-0.5">
-                <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
-                <GoldCoinIcon className="h-3 w-3" />
-              </div>
-            </Link>
-          )}
-        </div>
-
-        {/* Top 1 - Center */}
-        <div className="flex-1 flex justify-center relative -top-16">
-          {top1 && (
-            <Link 
-              href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
-              className="flex flex-col items-center gap-1 -mt-12"
-            >
-              <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
-              <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-12">{top1.username || top1.name || 'User'}</span>
-              <div className="flex items-center gap-1 -mt-1">
-                <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
-                <GoldCoinIcon className="h-4 w-4" />
-              </div>
-            </Link>
-          )}
-        </div>
-
-        {/* Top 3 - Right side */}
-        <div className="flex-1 flex justify-center">
-          {top3 && (
-            <Link 
-              href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
-              className="flex flex-col items-center gap-1 mt-16 -translate-x-4"
-            >
-              <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
-              <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-12">{top3.username || top3.name || 'User'}</span>
-              <div className="flex items-center gap-1 -mt-0.5">
-                <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
-                <GoldCoinIcon className="h-3 w-3" />
-              </div>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Spacer — Top 3 aur fixed cards ke beech gap */}
-      <div className="h-20" />
-
-      {/* Fixed Cards Section — Top 4 to Top 9 (6 cards) — yeh bina scroll kiye dikhenge */}
-      {fixedTopCards.length > 0 && (
-        <div className="px-4 space-y-1">
-          {fixedTopCards.map((item, index) => {
-            const rank = index + 4; // rank 4,5,6,7,8,9
-            return (
-              <Link
-                key={item.id}
-                href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
-                className="flex items-center gap-3 py-2 px-2 hover:bg-white/5 rounded-lg transition-all"
+    <div className="space-y-1 animate-in fade-in duration-700 relative z-10 flex flex-col h-full">
+      {/* Fixed Section — Top 3 aur Fixed Cards combined */}
+      <div className="flex-shrink-0">
+        {/* Top 3 in One Row — bilkul wahi jaise tha */}
+        <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+          {/* Top 2 - Left side */}
+          <div className="flex-1 flex justify-center">
+            {top2 && (
+              <Link 
+                href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
+                className="flex flex-col items-center gap-1 mt-16 translate-x-3"
               >
-                <span className="text-base font-black italic text-white/40 w-5">{rank}</span>
-                <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={rank.toString()} size="sm" rank={rank} theme={theme} />
-                <div className="flex-1">
-                  <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
+                <CircleAvatar src={top2.avatarUrl || top2.coverUrl} fallback="2" size="md" rank={2} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-12">{top2.username || top2.name || 'User'}</span>
+                <div className="flex items-center gap-1 -mt-0.5">
+                  <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top2))}</span>
                   <GoldCoinIcon className="h-3 w-3" />
                 </div>
               </Link>
-            );
-          })}
-        </div>
-      )}
+            )}
+          </div>
 
-      {/* Scrollable Section — Top 10 se baaki sab — yeh scroll karne pe aayenge */}
+          {/* Top 1 - Center */}
+          <div className="flex-1 flex justify-center relative -top-16">
+            {top1 && (
+              <Link 
+                href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
+                className="flex flex-col items-center gap-1 -mt-12"
+              >
+                <CircleAvatar src={top1.avatarUrl || top1.coverUrl} fallback="1" size="lg" rank={1} theme={theme} />
+                <span className="text-[13px] font-black uppercase text-black drop-shadow-md mt-12">{top1.username || top1.name || 'User'}</span>
+                <div className="flex items-center gap-1 -mt-1">
+                  <span className="text-amber-400 font-black text-base drop-shadow-md">{formatValue(getValue(top1))}</span>
+                  <GoldCoinIcon className="h-4 w-4" />
+                </div>
+              </Link>
+            )}
+          </div>
+
+          {/* Top 3 - Right side */}
+          <div className="flex-1 flex justify-center">
+            {top3 && (
+              <Link 
+                href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
+                className="flex flex-col items-center gap-1 mt-16 -translate-x-4"
+              >
+                <CircleAvatar src={top3.avatarUrl || top3.coverUrl} fallback="3" size="md" rank={3} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white truncate w-16 text-center drop-shadow-lg mt-12">{top3.username || top3.name || 'User'}</span>
+                <div className="flex items-center gap-1 -mt-0.5">
+                  <span className="text-amber-400 font-black text-xs drop-shadow-lg">{formatValue(getValue(top3))}</span>
+                  <GoldCoinIcon className="h-3 w-3" />
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Fixed Cards Section — Top 4 to Top 9 (6 cards) — yeh fixed rahega */}
+        {fixedTopCards.length > 0 && (
+          <div className="px-4 space-y-1">
+            {fixedTopCards.map((item, index) => {
+              const rank = index + 4; // rank 4,5,6,7,8,9
+              return (
+                <Link
+                  key={item.id}
+                  href={type === 'rooms' ? `/rooms/${item.id}` : `/profile/${item.id}`}
+                  className="flex items-center gap-3 py-2 px-2 hover:bg-white/5 rounded-lg transition-all"
+                >
+                  <span className="text-base font-black italic text-white/40 w-5">{rank}</span>
+                  <CircleAvatar src={item.avatarUrl || item.coverUrl} fallback={rank.toString()} size="sm" rank={rank} theme={theme} />
+                  <div className="flex-1">
+                    <p className="text-xs font-black uppercase text-white drop-shadow-md">{item.username || item.name || 'User'}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-white font-black text-xs drop-shadow-md">{formatValue(getValue(item))}</span>
+                    <GoldCoinIcon className="h-3 w-3" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 20vh Space — yeh gap rahega fixed section aur scrollable list ke beech */}
+      <div className="h-[20vh] flex-shrink-0" />
+
+      {/* Scrollable Section — Top 10 se baaki sab — sirf yahi scroll hoga */}
       {scrollableOthers.length > 0 && (
-        <div className="px-4 space-y-1 mt-4">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1">
           {scrollableOthers.map((item, index) => {
             const rank = index + 10; // rank 10,11,12...
             return (
@@ -544,11 +547,11 @@ function LeaderboardContent() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent">
+    <div className="min-h-screen text-white relative font-sans flex flex-col overflow-hidden bg-transparent h-screen">
       <DynamicThemeBackground theme={activeTheme} />
 
       {/* Header */}
-      <header className="relative z-50 p-4 pt-safe flex items-center justify-between">
+      <header className="relative z-50 p-4 pt-safe flex items-center justify-between flex-shrink-0">
         <Link href="/rooms" className="flex items-center justify-center w-10 h-10">
           <ChevronLeft className="h-6 w-6 text-white" />
         </Link>
@@ -573,7 +576,7 @@ function LeaderboardContent() {
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 overflow-y-auto no-scrollbar">
+      <main className="relative z-10 flex-1 overflow-hidden">
         <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} />
       </main>
     </div>
@@ -588,4 +591,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-            }
+      }
