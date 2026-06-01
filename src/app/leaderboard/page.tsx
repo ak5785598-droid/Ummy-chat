@@ -364,7 +364,7 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
         </div>
 
         {/* Top 1 - Center */}
-        <div className="flex-1 flex justify-center">
+        <div className="flex-1 flex justify-center relative -top-10">
           {top1 && (
             <Link 
               href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
