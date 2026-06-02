@@ -33,6 +33,7 @@ export function VipManagementTab() {
   const globalBgInputRef = useRef<HTMLInputElement>(null);
   const badgeInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const videoInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const imageUrlInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +48,7 @@ export function VipManagementTab() {
   const [uploadingBadge, setUploadingBadge] = useState<Record<number, boolean>>({});
   const [uploadingVideo, setUploadingVideo] = useState<Record<number, boolean>>({});
   const [uploadingBg, setUploadingBg] = useState<Record<number, boolean>>({});
+  const [uploadingImage, setUploadingImage] = useState<Record<number, boolean>>({});
 
   // Load settings from Firestore once on mount to prevent real-time overwrite while editing
   useEffect(() => {
@@ -100,7 +102,7 @@ export function VipManagementTab() {
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: err.message
+        description: err.message || 'Failed to upload background'
       });
     } finally {
       setUploadingGlobalBg(false);
@@ -108,15 +110,17 @@ export function VipManagementTab() {
   };
 
   // Handle Level assets upload (local cache only)
-  const handleLevelAssetUpload = async (level: number, type: 'badge' | 'video' | 'bg', file: File) => {
+  const handleLevelAssetUpload = async (level: number, type: 'badge' | 'video' | 'bg' | 'imageUrl', file: File) => {
     if (!storage || !firestore) return;
 
     if (type === 'badge') {
       setUploadingBadge(prev => ({ ...prev, [level]: true }));
     } else if (type === 'video') {
       setUploadingVideo(prev => ({ ...prev, [level]: true }));
-    } else {
+    } else if (type === 'bg') {
       setUploadingBg(prev => ({ ...prev, [level]: true }));
+    } else if (type === 'imageUrl') {
+      setUploadingImage(prev => ({ ...prev, [level]: true }));
     }
 
     try {
@@ -135,22 +139,24 @@ export function VipManagementTab() {
       });
 
       toast({
-        title: `${type === 'badge' ? 'Badge icon' : type === 'video' ? 'Animation video' : 'Level background'} uploaded (Unsaved)`,
+        title: `${type === 'badge' ? 'Badge icon' : type === 'video' ? 'Animation video' : type === 'imageUrl' ? 'Level image URL' : 'Level background'} uploaded (Unsaved)`,
         description: `Successfully loaded for SVIP ${level}! Click "Save VIP Settings" to make it live.`
       });
     } catch (err: any) {
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: err.message
+        description: err.message || 'Failed to upload file'
       });
     } finally {
       if (type === 'badge') {
         setUploadingBadge(prev => ({ ...prev, [level]: false }));
       } else if (type === 'video') {
         setUploadingVideo(prev => ({ ...prev, [level]: false }));
-      } else {
+      } else if (type === 'bg') {
         setUploadingBg(prev => ({ ...prev, [level]: false }));
+      } else if (type === 'imageUrl') {
+        setUploadingImage(prev => ({ ...prev, [level]: false }));
       }
     }
   };
@@ -203,7 +209,7 @@ export function VipManagementTab() {
           VIP Management
         </CardTitle>
         <CardDescription>
-          Configure the 18-level SVIP Club experience. Upload custom badge graphics, 3D animated video loops, and override page background themes.
+          Configure the 18-level SVIP Club experience. Upload custom badge graphics, 3D animated video loops, level images, and override page background themes.
         </CardDescription>
       </CardHeader>
 
@@ -258,7 +264,7 @@ export function VipManagementTab() {
                         <Loader className="h-5 w-5 animate-spin text-slate-400" />
                       ) : (
                         <>
-                          <Upload className="h-4.5 w-4.5 mr-2 text-slate-400" />
+                          <Upload className="h-4 w-4 mr-2 text-slate-400" />
                           {config.bgUrl ? 'Update Media' : 'Upload File'}
                         </>
                       )}
@@ -302,6 +308,7 @@ export function VipManagementTab() {
               const isBadgeUploading = !!uploadingBadge[level];
               const isVideoUploading = !!uploadingVideo[level];
               const isBgUploading = !!uploadingBg[level];
+              const isImageUploading = !!uploadingImage[level];
 
               return (
                 <div 
@@ -320,11 +327,11 @@ export function VipManagementTab() {
                   </div>
 
                   {/* Upload Columns */}
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     
                     {/* Badge Image Upload */}
                     <div className="space-y-1">
-                      <Label htmlFor={`badge-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Badge Icon (.png/.jpg)</Label>
+                      <Label htmlFor={`badge-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Badge Icon</Label>
                       <div className="flex gap-2">
                         <div className="relative flex-1 h-10">
                           <input 
@@ -380,7 +387,7 @@ export function VipManagementTab() {
 
                     {/* Animation Video Upload */}
                     <div className="space-y-1">
-                      <Label htmlFor={`video-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Podium Animation Video (.mp4)</Label>
+                      <Label htmlFor={`video-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Animation Video</Label>
                       <div className="flex gap-2">
                         <div className="relative flex-1 h-10">
                           <input 
@@ -434,9 +441,65 @@ export function VipManagementTab() {
                       </div>
                     </div>
 
+                    {/* Level Image URL Upload */}
+                    <div className="space-y-1">
+                      <Label htmlFor={`image-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Level Image</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1 h-10">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleLevelAssetUpload(level, 'imageUrl', file);
+                            }}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                            disabled={isImageUploading}
+                          />
+                          <Button 
+                            type="button"
+                            variant="outline"
+                            disabled={isImageUploading}
+                            className="h-10 w-full rounded-xl border border-slate-200 hover:border-yellow-400 bg-white inline-flex items-center justify-center text-xs font-bold text-slate-600 transition-colors shadow-sm pointer-events-none"
+                          >
+                            {isImageUploading ? (
+                              <Loader className="h-4 w-4 animate-spin text-slate-400" />
+                            ) : (
+                              <>
+                                <Upload className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                {lvlConfig.imageUrlUrl ? 'Replace' : 'Upload'}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        {lvlConfig.imageUrlUrl && (
+                          <div className="h-10 w-10 rounded-xl border border-slate-200 overflow-hidden bg-slate-900 p-1 shrink-0 flex items-center justify-center shadow-inner relative group">
+                            <img src={lvlConfig.imageUrlUrl} className="h-full w-full object-cover" alt={`Image ${level}`} />
+                            {/* Clear indicator */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                              onClick={() => {
+                                setConfig((prev: any) => {
+                                  const levels = { ...prev.levels };
+                                  if (levels[level]) {
+                                    const updatedLevel = { ...levels[level] };
+                                    delete updatedLevel.imageUrlUrl;
+                                    levels[level] = updatedLevel;
+                                  }
+                                  return { ...prev, levels };
+                                });
+                                toast({ title: 'Level image cleared locally (Unsaved)' });
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Custom Background Upload */}
                     <div className="space-y-1">
-                      <Label htmlFor={`bg-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Custom Background (.png/.jpg/.mp4)</Label>
+                      <Label htmlFor={`bg-file-${level}`} className="text-[8px] font-black uppercase text-slate-400 ml-1">Background</Label>
                       <div className="flex gap-2">
                         <div className="relative flex-1 h-10">
                           <input 
