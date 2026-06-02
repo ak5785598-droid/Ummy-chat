@@ -464,10 +464,10 @@ function RoomsExplorerClassic() {
                               src={slide.imageUrl} 
                               alt="" 
                               fill 
-                              // 🔥 FAST LOAD: priority for first image, eager for all, high fetch priority
-                              priority={idx === 0}
+                              // 🔥 FAST LOAD: preload all slides in carousel (priority=true) for instant swipe
+                              priority={true}
                               loading="eager"
-                              fetchPriority={idx === 0 ? "high" : "auto"}
+                              fetchPriority="high"
                               className="object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" 
                               sizes="(max-width: 768px) 100vw, 50vw"
                               unoptimized 
@@ -529,8 +529,8 @@ function RoomsExplorerClassic() {
                 {!showSummary ? (
                    Array.from({ length: 6 }).map((_, i) => <RoomSkeleton key={i} />)
                 ) : displayRooms.length > 0 ? (
-                  displayRooms.map((room: any) => (
-                    <ChatRoomCard key={room.id} room={room} variant="modern" />
+                  displayRooms.map((room: any, index: number) => (
+                    <ChatRoomCard key={room.id} room={room} variant="modern" priority={index < 4} />
                   ))
                 ) : (
                   <div className="col-span-2 py-12 text-center space-y-3 opacity-40">
@@ -630,13 +630,14 @@ function RoomsExplorerClassic() {
                          </div>
                        ) : followedRoomsData && followedRoomsData.length > 0 ? (
                          <div className="grid grid-cols-2 gap-3">
-                           {followedRoomsData.map((roomRef: any) => (
+                           {followedRoomsData.map((roomRef: any, idx: number) => (
                              <div key={roomRef.id} onClick={() => router.push(`/rooms/${roomRef.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
                                <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
                                   <Image 
                                    src={roomRef.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
                                    alt={roomRef.title}
                                    fill
+                                   priority={idx < 4}
                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                    unoptimized
                                   />
@@ -666,13 +667,14 @@ function RoomsExplorerClassic() {
                          </div>
                        ) : filteredRecentRooms.length > 0 ? (
                          <div className="grid grid-cols-2 gap-3">
-                           {filteredRecentRooms.map((visit: any) => (
+                           {filteredRecentRooms.map((visit: any, idx: number) => (
                              <div key={visit.id} onClick={() => router.push(`/rooms/${visit.id}`)} className="group active:scale-95 transition-all duration-200 cursor-pointer">
                                <div className="relative aspect-square rounded-[2rem] overflow-hidden shadow-md border border-slate-100/80 mb-2">
                                   <Image 
                                    src={visit.coverUrl || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=400&h=400&auto=format&fit=crop'} 
                                    alt={visit.title}
                                    fill
+                                   priority={idx < 4}
                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                    unoptimized
                                   />

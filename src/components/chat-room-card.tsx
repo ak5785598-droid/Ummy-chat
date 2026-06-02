@@ -11,12 +11,13 @@ import { useFirebase } from '@/firebase/provider';
 interface ChatRoomCardProps {
  room: any;
  variant?: 'default' | 'modern';
+ priority?: boolean;
 }
 
 /**
  * Loading/null state is handled AFTER hooks, not before.
  */
-export const ChatRoomCard = React.memo(({ room, variant = 'modern' }: ChatRoomCardProps) => {
+export const ChatRoomCard = React.memo(({ room, variant = 'modern', priority = false }: ChatRoomCardProps) => {
   // ALL hooks called first, unconditionally - this is the React #310 fix
   const { isHydrated } = useFirebase();
   const { userProfile: owner } = useStaticUserProfile(room?.ownerId);
@@ -49,6 +50,7 @@ export const ChatRoomCard = React.memo(({ room, variant = 'modern' }: ChatRoomCa
        alt={roomTitle}
        fill
        unoptimized
+       priority={priority}
        className="object-cover transition-transform duration-1000 group-hover:scale-110"
       />
      ) : (
