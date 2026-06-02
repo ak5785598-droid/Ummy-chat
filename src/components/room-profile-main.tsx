@@ -28,8 +28,7 @@ import {
   Users,
   Zap,
   ShieldAlert,
-  ExternalLink,
-  Video
+  ExternalLink
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -204,32 +203,6 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
     {gender === 'Female' ? '♀' : '♂'}
   </div>
 );
-
-// ==================== VIDEO URL SUPPORT COMPONENT ====================
-
-const VideoUrlFrame = ({ videoUrl }: { videoUrl: string | null | undefined }) => {
-  if (!videoUrl) return null;
-  
-  return (
-    <div className="w-full px-6 mt-2 mb-2">
-      <div className="relative rounded-xl overflow-hidden bg-black/5 border border-gray-200 group">
-        <video 
-          src={videoUrl} 
-          controls 
-          className="w-full h-auto max-h-48 object-cover rounded-xl"
-          playsInline
-          preload="metadata"
-        >
-          Your browser does not support the video tag.
-        </video>
-        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1">
-          <Video className="h-3 w-3 text-white" />
-          <span className="text-[9px] font-bold text-white uppercase">Video</span>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ==================== INTERFACES ====================
 
@@ -414,9 +387,6 @@ export function RoomOwnerProfile({
                 </div>
               )}
             </div>
-
-            {/* Video URL Frame Support */}
-            <VideoUrlFrame videoUrl={profile.videoUrl} />
 
             {/* ID + Fans + Gift Box - Compact Single Row */}
             <div className="flex items-center justify-center gap-2 mt-2 px-4">
@@ -665,9 +635,6 @@ export function RoomProfileMain({
               </div>
             </div>
 
-            {/* Video URL Frame Support */}
-            <VideoUrlFrame videoUrl={profile.videoUrl} />
-
             {/* Medals */}
             {profile.medals && profile.medals.length > 0 && (
               <div className="flex flex-wrap justify-center gap-2 mb-2 px-6">
@@ -820,4 +787,4 @@ export function RoomProfileMain({
       )}
     </Sheet>
   );
-          }
+                }
