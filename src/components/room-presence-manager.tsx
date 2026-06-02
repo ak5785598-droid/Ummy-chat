@@ -206,7 +206,7 @@ import { App } from '@capacitor/app';
           });
           purgeBatch.commit().catch(() => {});
         }
-      }, 60000); // Every 60 seconds
+      }, 180000); // Every 180 seconds (3 minutes) to optimize Firestore read/write billing
     }
 
     };
