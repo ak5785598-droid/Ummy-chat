@@ -29,7 +29,7 @@ import {
 import { GoldCoinIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc, onSnapshot } from 'firebase/firestore';
 
 // Registries
 import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
@@ -342,6 +342,20 @@ export function FullProfileDialog({
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const firestore = useFirestore();
+  
+  // ✅ LIVE ID SYNC - Same as Me Profile
+  const [liveID, setLiveID] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!firestore || !profile?.id) return;
+    const userRef = doc(firestore, 'users', profile.id);
+    const unsubscribe = onSnapshot(userRef, (snap) => {
+      if (snap.exists()) {
+        setLiveID(snap.data().accountNumber || null);
+      }
+    });
+    return () => unsubscribe();
+  }, [firestore, profile?.id]);
 
   const images = profile?.spaceImages || [];
 
@@ -366,12 +380,10 @@ export function FullProfileDialog({
   const ownedVehicles = ownedItems.filter((id: string) => VEHICLE_REGISTRY[id]);
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
-  // Using ?? 0 ensures that if there's no budget it defaults to 0, activating the colorless state.
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // ID ab seedha profile.accountNumber se aayegi, koi naya generate nahi hoga
-  // Agar accountNumber nahi hai toh default "000000" dikhayega
-  const displayId = profile.accountNumber || '000000';
+  // ✅ SAME ID LOGIC AS ME PROFILE - liveID → accountNumber → 000000
+  const displayId = liveID || profile.accountNumber || '000000';
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
@@ -403,7 +415,7 @@ export function FullProfileDialog({
               </div>
             )}
 
-            {/* Top Buttons - Back & (3-dot OR Pencil) */}
+            {/* Top Buttons */}
             <div className="absolute top-12 left-0 right-0 px-6 flex items-center justify-between z-[100]">
               <button onClick={() => onOpenChange(false)} className="text-white">
                 <ChevronLeft className="h-6 w-6" />
@@ -422,7 +434,7 @@ export function FullProfileDialog({
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
           </div>
 
-          {/* Content Section - Main Card - GLOSSY WHITE */}
+          {/* Content Section */}
           <div className="relative z-20 bg-white/98 backdrop-blur-2xl rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-white/80 min-h-[70vh]">
 
             <div className="flex flex-col items-center">
@@ -437,7 +449,7 @@ export function FullProfileDialog({
 
               <div className="text-center space-y-1.5 w-full">
                 
-                {/* 1) Name + Gender tag + Country Flag */}
+                {/* Name + Gender + Flag */}
                 <div className="flex items-center justify-center gap-2 flex-wrap -mt-1">
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-none truncate max-w-[200px]">{profile.username}</h2>
                   <GenderAgeTag gender={profile.gender} birthday={profile.birthday} />
@@ -446,7 +458,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* 2) ID */}
+                {/* ✅ ID - Ab liveID se aayega, same as Me Profile */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
@@ -457,7 +469,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* 3) Tags (Budget, Official, Seller) */}
+                {/* Tags */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
                   <BudgetLevelBadge level={budgetLevel} />
                   {hasOfficialTag && <SVGA_OfficialTag />}
@@ -493,7 +505,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Top Contribution Section */}
+            {/* Top Contribution */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Top Contribution</h3>
               <div className="flex items-end justify-center gap-4 mt-5">
@@ -535,7 +547,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Signature Bio */}
+            {/* Bio */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
@@ -556,7 +568,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* TAB Navigation */}
+            {/* Tabs */}
             <div className="flex items-center justify-between mt-6 border-b border-slate-100 pb-0">
               {['medal', 'vehicle', 'frame', 'gift'].map((tab) => (
                 <button
@@ -575,7 +587,7 @@ export function FullProfileDialog({
               ))}
             </div>
 
-            {/* TAB CONTENT Area */}
+            {/* Tab Content */}
             <div className="min-h-[50vh] mt-4 w-full">
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
@@ -704,7 +716,7 @@ export function FullProfileDialog({
           </footer>
         )}
 
-        {/* Edit Profile Dialog */}
+        {/* Edit Dialog */}
         <EditProfileDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
@@ -713,4 +725,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-      }
+  }
