@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -29,7 +29,7 @@ import {
 import { GoldCoinIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, onSnapshot } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 
 // Registries
 import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
@@ -37,7 +37,7 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // ==========================================
-// 1. BUDGET LEVEL BADGE (UPDATED - RED/ORANGE/YELLOW SVG)
+// 1. BUDGET LEVEL BADGE
 // ==========================================
 const BudgetLevelBadge = ({ level }: { level: number }) => {
   return (
@@ -120,9 +120,7 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
             <path d="M66 60 L66 74 L46.015 87.506 Z" fill="url(#starDark)"/>
           </g>
 
-          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="1.2" filter="url(#textShadow)" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.8)' }}>
-            {level}
-          </text>
+          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
         </g>
       </svg>
     </div>
@@ -134,7 +132,7 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 py-0.5">
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
@@ -144,7 +142,7 @@ export const SVGA_OfficialTag = () => (
 );
 
 export const SVGA_SellerTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.6)] px-1.5 py-0.5">
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
@@ -172,7 +170,7 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
   const idNum = label ? label.replace('ID: ', '').trim() : '000000';
 
   return (
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2 py-0.5">
+    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
       <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
         <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
@@ -209,9 +207,7 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
           <path d="M30 8 L50 20 L50 40 L30 52 L10 40 L10 20 Z" fill="url(#purpleGem)" />
           <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" />
 
-          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>
-            S
-          </text>
+          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>ID</text>
 
           <path d="M18 45 C 24 58, 36 58, 42 45 C 36 52, 24 52, 18 45 Z" fill="url(#goldFrame)" />
           <path d="M22 43 L38 43 L34 54 L26 54 Z" fill="url(#goldFrame)" />
@@ -282,6 +278,7 @@ interface FullProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profile: any;
+  displayID?: string; // ⚡ NAYA PROP: Parent se ID aayegi
   stats: any;
   followData?: any;
   onFollow?: () => void;
@@ -330,10 +327,21 @@ const ProfileSection = ({ children, isEmpty, emptyLabel }: { children: React.Rea
   </div>
 );
 
+// ⚡ FIXED: Stable ID generator using useRef - ek baar generate, hamesha same
+const generateUnique6DigitId = () => {
+  const nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  for (let i = nums.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [nums[i], nums[j]] = [nums[j], nums[i]];
+  }
+  return nums.slice(0, 6).join('');
+};
+
 export function FullProfileDialog({
   open,
   onOpenChange,
   profile,
+  displayID, // ⚡ NAYA PROP: Parent se ID receive karo
   stats,
   followData,
   onFollow,
@@ -347,21 +355,12 @@ export function FullProfileDialog({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const firestore = useFirestore();
   
-  // ✅ LIVE ID SYNC - Synced from Firestore when dialog opens
-  const [liveID, setLiveID] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!firestore || !profile?.id || !open) return;
-    
-    const userRef = doc(firestore, 'users', profile.id);
-    const unsubscribe = onSnapshot(userRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setLiveID(data.accountNumber || null);
-      }
-    });
-    return () => unsubscribe();
-  }, [firestore, profile?.id, open]);
+  // ⚡ FIXED: useRef se ID stable rakho
+  const lockedFallbackIdRef = useRef<string>('');
+  
+  if (!lockedFallbackIdRef.current) {
+    lockedFallbackIdRef.current = generateUnique6DigitId();
+  }
 
   const images = profile?.spaceImages || [];
 
@@ -388,9 +387,8 @@ export function FullProfileDialog({
 
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // ✅ FIXED LOGIC: Use liveID first, then profile.accountNumber
-  // Priority: liveID (from Firestore) > profile.accountNumber (from props) > '000000'
-  const displayId = liveID || profile?.accountNumber || '000000';
+  // ⚡ FIXED: Priority order - 1) Parent se aaya displayID, 2) profile.accountNumber, 3) stable fallback
+  const displayId = displayID || profile.accountNumber || lockedFallbackIdRef.current;
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
@@ -465,7 +463,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ✅ ID - Now showing actual profile ID from Firestore */}
+                {/* ⚡ ID - AB STABLE, PARENT SE AAYA HUA DISPLAY ID USE KAREGA */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
@@ -554,7 +552,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Bio */}
+            {/* Signature Bio */}
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
@@ -575,7 +573,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Tabs */}
+            {/* TAB Navigation */}
             <div className="flex items-center justify-between mt-6 border-b border-slate-100 pb-0">
               {['medal', 'vehicle', 'frame', 'gift'].map((tab) => (
                 <button
@@ -594,7 +592,7 @@ export function FullProfileDialog({
               ))}
             </div>
 
-            {/* Tab Content */}
+            {/* TAB CONTENT */}
             <div className="min-h-[50vh] mt-4 w-full">
               {activeTab === 'medal' && (
                 <ProfileSection isEmpty={medals.length === 0} emptyLabel="No Medal Earned">
@@ -723,7 +721,7 @@ export function FullProfileDialog({
           </footer>
         )}
 
-        {/* Edit Dialog */}
+        {/* Edit Profile Dialog */}
         <EditProfileDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
@@ -732,4 +730,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-}
+            }
