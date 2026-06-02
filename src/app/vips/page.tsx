@@ -265,8 +265,8 @@ export default function VipsClubPage() {
           </div>
         )}
 
-        {/* Header - Hamesha rahega (Back, Title, Help, Settings) */}
-        <header className="px-6 pt-10 pb-6 flex items-center justify-between sticky top-0 bg-transparent backdrop-blur-sm z-[90] shrink-0">
+        {/* Header - Hamesha rahega */}
+        <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-transparent backdrop-blur-sm z-[90] shrink-0">
           <button 
             onClick={() => router.back()} 
             className="p-2.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.08] active:scale-95 transition-all"
@@ -294,7 +294,34 @@ export default function VipsClubPage() {
           </div>
         </header>
 
-        {/* Main Content - Jab custom background ho toh pura HIDE ho jayega */}
+        {/* 🔥🔥 TEXT TABS - HAMESHA DIKHENGE (Background ho ya na ho) 🔥🔥 */}
+        <div className="px-4 pt-2 pb-4 z-10 relative">
+          <div className="flex flex-wrap items-center justify-center gap-2 gap-y-3">
+            {SVIP_LEVELS_DATA.map((lvl) => {
+              const isSelected = selectedLevel === lvl.level;
+              const isUserLevel = userSvipLevel >= lvl.level;
+              
+              return (
+                <button 
+                  key={lvl.level}
+                  onClick={() => setSelectedLevel(lvl.level)}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-xs font-black uppercase transition-all active:scale-95",
+                    isSelected 
+                      ? "bg-amber-500 text-black shadow-lg" 
+                      : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10",
+                    isUserLevel && !isSelected && "text-emerald-400"
+                  )}
+                >
+                  {lvl.name}
+                  {isUserLevel && <CheckCircle className="inline h-3 w-3 ml-1 text-emerald-400" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content - Jab custom background ho toh pura HIDE ho jayega, nahi toh dikhega */}
         {!shouldHideContent ? (
           <main className="flex-1 px-4 pt-2 space-y-8 z-10 relative pb-32">
             
@@ -334,34 +361,6 @@ export default function VipsClubPage() {
                     style={{ width: `${Math.min(100, ((userProfile?.wallet?.totalSpent || 0) / 1500000) * 100)}%` }}
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Text Tabs - Sirf text buttons */}
-            <div className="space-y-3">
-              <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em] ml-2">Select SVIP Level</h4>
-              <div className="flex flex-wrap items-center gap-2 gap-y-3">
-                {SVIP_LEVELS_DATA.map((lvl) => {
-                  const isSelected = selectedLevel === lvl.level;
-                  const isUserLevel = userSvipLevel >= lvl.level;
-                  
-                  return (
-                    <button 
-                      key={lvl.level}
-                      onClick={() => setSelectedLevel(lvl.level)}
-                      className={cn(
-                        "px-4 py-2 rounded-full text-xs font-black uppercase transition-all active:scale-95",
-                        isSelected 
-                          ? "bg-amber-500 text-black shadow-lg" 
-                          : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10",
-                        isUserLevel && !isSelected && "text-emerald-400"
-                      )}
-                    >
-                      {lvl.name}
-                      {isUserLevel && <CheckCircle className="inline h-3 w-3 ml-1 text-emerald-400" />}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
@@ -425,11 +424,11 @@ export default function VipsClubPage() {
             </div>
           </main>
         ) : (
-          /* Jab custom background ho - kuch content nahi dikhega, sirf empty space */
+          /* Jab custom background ho - saara content hide, sirf tabs dikhenge */
           <div className="flex-1" />
         )}
 
-        {/* Recharge Button - Hamesha rahega, background pe overlap karega */}
+        {/* Recharge Button - Hamesha rahega */}
         <footer className="fixed bottom-0 left-0 right-0 p-5 z-[80] shrink-0">
           <div className="max-w-lg mx-auto">
             <Button 
@@ -448,7 +447,7 @@ export default function VipsClubPage() {
           </div>
         </footer>
 
-        {/* Settings Drawer - Same rahega */}
+        {/* Settings Drawer - Same */}
         {isSettingsOpen && (
           <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="absolute inset-x-0 bottom-0 max-h-[85vh] bg-[#070914] border-t border-white/[0.05] rounded-t-[3rem] p-6 pb-12 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300 overflow-y-auto">
