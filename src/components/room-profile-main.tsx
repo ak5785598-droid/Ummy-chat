@@ -593,7 +593,7 @@ export function RoomProfileMain({
               }}
             >
               <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
-                <Avatar className="h-22 w-22 border-[5px] border-white shadow-2xl rounded-full">
+                <Avatar className="h-20 w-20 border-[5px] border-white shadow-2xl rounded-full">
                   <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
                   <AvatarFallback className="text-3xl bg-slate-100 text-slate-400 rounded-full">
                     {(profile.username || 'U').charAt(0)}
