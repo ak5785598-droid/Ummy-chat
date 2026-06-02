@@ -126,7 +126,9 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
           </g>
 
           {/* TEXT - Adjusted X dynamically since patti is smaller */}
-          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
+          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="0.5" filter="url(#textShadow)">
+            ELITE
+          </text>
         </g>
       </svg>
     </div>
@@ -138,7 +140,7 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 py-1">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
@@ -148,7 +150,7 @@ export const SVGA_OfficialTag = () => (
 );
 
 export const SVGA_SellerTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 py-1">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
@@ -176,7 +178,7 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
   const idNum = label ? label.replace('ID: ', '').trim() : '000000';
 
   return (
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
+    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2 py-1">
       <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
         <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
@@ -213,7 +215,9 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
           <path d="M30 8 L50 20 L50 40 L30 52 L10 40 L10 20 Z" fill="url(#purpleGem)" />
           <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" />
 
-          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>ID</text>
+          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>
+            S
+          </text>
 
           <path d="M18 45 C 24 58, 36 58, 42 45 C 36 52, 24 52, 18 45 Z" fill="url(#goldFrame)" />
           <path d="M22 43 L38 43 L34 54 L26 54 Z" fill="url(#goldFrame)" />
@@ -332,15 +336,6 @@ const ProfileSection = ({ children, isEmpty, emptyLabel }: { children: React.Rea
   </div>
 );
 
-const generateUnique6DigitId = () => {
-  const nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  for (let i = nums.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [nums[i], nums[j]] = [nums[j], nums[i]];
-  }
-  return nums.slice(0, 6).join('');
-};
-
 export function FullProfileDialog({
   open,
   onOpenChange,
@@ -357,10 +352,6 @@ export function FullProfileDialog({
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const firestore = useFirestore();
-  
-  // STRICT ID LOCK: State ke through generate function ko sirf ek baar call kiya,
-  // Taki agar profile.accountNumber na ho toh yeh lock ho jaye aur automatically change na ho.
-  const [lockedFallbackId] = useState(() => generateUnique6DigitId());
 
   const images = profile?.spaceImages || [];
 
@@ -388,8 +379,8 @@ export function FullProfileDialog({
   // Using ?? 0 ensures that if there's no budget it defaults to 0, activating the colorless state.
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // LOGIC APPLY: Pehle backend ki ID check karega, agar nahi hui toh locked fallback id use karega.
-  const displayId = profile.accountNumber || lockedFallbackId;
+  // Show only profile.accountNumber - no fallback ID generation
+  const displayId = profile.accountNumber || '';
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
@@ -465,15 +456,17 @@ export function FullProfileDialog({
                 </div>
 
                 {/* 2) ID */}
-                <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
-                  {hasOfficialTag ? (
-                    <SVGA_GlossyID label={`ID: ${displayId}`} />
-                  ) : profile.isBudget ? (
-                    <SVGA_GlossyID label={`ID: ${displayId}`} />
-                  ) : (
-                    <StandardIDTag idNum={displayId} />
-                  )}
-                </div>
+                {displayId && (
+                  <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
+                    {hasOfficialTag ? (
+                      <SVGA_GlossyID label={`ID: ${displayId}`} />
+                    ) : profile.isBudget ? (
+                      <SVGA_GlossyID label={`ID: ${displayId}`} />
+                    ) : (
+                      <StandardIDTag idNum={displayId} />
+                    )}
+                  </div>
+                )}
 
                 {/* 3) Tags (Budget, Official, Seller) */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
