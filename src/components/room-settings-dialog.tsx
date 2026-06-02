@@ -64,6 +64,7 @@ interface RoomSettingsDialogProps {
  onToggleAIListening?: () => void;
  isCaptionsEnabled?: boolean;
  onToggleCaptions?: () => void;
+ onOpenThemeArchitect?: () => void;
 }
 
 const SettingItem = ({ label, value, extra, onClick, showChevron = true, children, className }: any) => (
@@ -93,7 +94,7 @@ const SettingItem = ({ label, value, extra, onClick, showChevron = true, childre
  * Room Settings Portal - Sovereign Control Dimension.
  * Re-engineered to filter themes based on room identity.
  */
-export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, isAIVoiceEnabled, onToggleAIVoice, isAIListening, onToggleAIListening, isCaptionsEnabled, onToggleCaptions }: RoomSettingsDialogProps) {
+export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange, isAIVoiceEnabled, onToggleAIVoice, isAIListening, onToggleAIListening, isCaptionsEnabled, onToggleCaptions, onOpenThemeArchitect }: RoomSettingsDialogProps) {
  const router = useRouter();
  const [internalOpen, setInternalOpen] = useState(false);
 
@@ -351,6 +352,15 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
 
         <SettingItem label="Room Password" value={room.password ? 'Active' : 'Off'} onClick={() => isOwner && setIsEditingPassword(true)} />
         <SettingItem label="Room Theme" value={currentTheme.name} onClick={() => setIsEditingTheme(true)} />
+        
+        {isOwner && (
+          <SettingItem label="AI Theme Architect" onClick={() => {
+            setOpen(false);
+            if (onOpenThemeArchitect) onOpenThemeArchitect();
+          }}>
+            <span className="text-[10px] font-bold text-yellow-500 animate-pulse uppercase tracking-widest">AI GENERATE ✨</span>
+          </SettingItem>
+        )}
         
         {/* ROOM TAG SELECTION */}
         <SettingItem label="Room Tag" value={room.category || 'Chat'} onClick={() => setIsEditingCategory(true)} />

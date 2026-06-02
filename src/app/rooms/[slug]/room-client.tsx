@@ -3140,7 +3140,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     isRoomSupportOpen || isRoomSupportersOpen || isSpinOpen || isChestOpen;
 
   return (
-    <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-x border-white/5 overscroll-none">
+    <div className="relative flex flex-col h-[100dvh] w-full max-w-[500px] mx-auto bg-transparent overflow-hidden text-white font-headline shadow-[0_0_100px_rgba(0,0,0,0.8)] border-none overscroll-none">
       <ThemeColorMeta color={currentTheme.accentColor || "#1a0b2e"} />
       <ThemeSync color={themeSyncColor} />
       {/* <DailyRewardDialog /> */}
@@ -3384,18 +3384,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
           </div>
         )}
 
-        {/* Floating AI Theme Architect button - OWNER ONLY */}
-        {(isHydrated && isOwner) && (
-          <div className="absolute top-44 right-2.5 z-50">
-            <button 
-              onClick={() => setIsThemeArchitectOpen(true)}
-              className="h-10 w-10 rounded-full bg-slate-950/80 border border-yellow-500/30 flex items-center justify-center text-yellow-500 shadow-2xl active:scale-90 transition-transform group animate-pulse"
-              title="AI Theme Architect"
-            >
-              <Sparkles className="h-5 w-5 drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
-            </button>
-          </div>
-        )}
+
       </header>
 
       <main className="relative z-10 flex-1 flex flex-col pt-1 overflow-visible min-h-0 w-full -mt-2">
@@ -4372,6 +4361,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onToggleAIListening={toggleAIListening}
         isCaptionsEnabled={isCaptionsEnabled}
         onToggleCaptions={() => setIsCaptionsEnabled(!isCaptionsEnabled)}
+        onOpenThemeArchitect={() => setIsThemeArchitectOpen(true)}
       />
 
       <ExitRoomDialog
