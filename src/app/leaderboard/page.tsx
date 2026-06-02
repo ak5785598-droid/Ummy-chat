@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, where, getDocs, onSnapshot } from 'firebase/firestore';
-import { TrendingUp, Loader, ChevronLeft, HelpCircle } from 'lucide-react';
+import { TrendingUp, Loader, ChevronLeft, HelpCircle, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
@@ -253,8 +253,21 @@ const FrameOverlayCanvas = ({
   );
 };
 
+// --- Placeholder Avatar for Empty State ---
+const PlaceholderAvatar = ({ size = "md", rank }: { size?: "sm" | "md" | "lg"; rank?: number }) => {
+  const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
+  
+  return (
+    <div className={cn("relative z-5 flex items-center justify-center p-0.5 rounded-full border-2 border-white/20 bg-slate-900/50 backdrop-blur-sm", sizes[size])}>
+      <div className="h-full w-full rounded-full bg-slate-800/80 flex items-center justify-center">
+        <User className="h-1/2 w-1/2 text-white/40" />
+      </div>
+    </div>
+  );
+};
+
 // --- CircleAvatar with Frame ---
-const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null }) => {
+const CircleAvatar = ({ src, fallback, size = "md", rank, theme, isEmpty = false }: { src?: string; fallback: string; size?: "sm" | "md" | "lg"; rank?: number; theme?: LeaderboardThemeConfig | null; isEmpty?: boolean }) => {
   const sizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-20 w-20" };
   const frameSizes = { sm: "h-[120px] w-[120px]", md: "h-[144px] w-[144px]", lg: "h-[192px] w-[192px]" };
   const containerPixelSizes = { sm: 120, md: 144, lg: 192 };
@@ -269,6 +282,24 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
   };
 
   const frame = getRankFrame();
+
+  // Agar empty hai toh placeholder dikhao
+  if (isEmpty) {
+    return (
+      <div className="relative inline-flex items-center justify-center">
+        {frame && (
+          <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
+            <FrameOverlayCanvas 
+              frameUrl={frame.type === 'image' ? frame.imageUrl! : frame.videoUrl!}
+              isVideo={frame.type === 'video'}
+              containerSize={containerPixelSizes[size]}
+            />
+          </div>
+        )}
+        <PlaceholderAvatar size={size} rank={rank} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative inline-flex items-center justify-center">
@@ -292,7 +323,123 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme }: { src?: strin
   );
 };
 
+// --- Info Modal Component ---
+const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Overlay */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Card */}
+      <div className="relative z-10 bg-white rounded-2xl w-[90%] max-w-sm p-6 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+        {/* Close Button */}
+        <button 
+          onClick={onClose}
+          className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <X className="h-4 w-4 text-gray-500" />
+        </button>
+
+        {/* Title */}
+        <h3 className="text-lg font-black text-gray-900 mb-4 text-center">
+          Ranking Info
+        </h3>
+
+        {/* Content */}
+        <div className="space-y-4 text-sm text-gray-700">
+          {/* Honor */}
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
+            <p className="font-black text-amber-600 mb-1"> Honor Ranking</p>
+            <p className="text-xs leading-relaxed text-gray-600">
+              Honor Ranking is determined by the number of <span className="font-bold text-amber-500">Coins you Spend</span> in Gifts.
+            </p>
+            <p className="text-xs leading-relaxed text-gray-600 mt-1">
+              Daily Rewards: Sending Coins value × <span className="font-bold">1.4%</span> You will receive, Frame
+            </p>
+          </div>
+
+          {/* Charm */}
+          <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
+            <p className="font-black text-pink-600 mb-1">Charm Ranking</p>
+            <p className="text-xs leading-relaxed text-gray-600">
+              Charm Ranking is determined by the number of <span className="font-bold text-pink-500">Coins you Received</span> in Gifts.
+            </p>
+            <p className="text-xs leading-relaxed text-gray-600 mt-1">
+              Daily Rewards: Receiving Coins value × <span className="font-bold">1.4%</span> You will receive, Frame
+            </p>
+          </div>
+
+          {/* Room */}
+          <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+            <p className="font-black text-purple-600 mb-1"> Room Ranking</p>
+            <p className="text-xs leading-relaxed text-gray-600">
+              Room Ranking is determined by the number of <span className="font-bold text-purple-500">Coins you Spend</span> in Room.
+            </p>
+            <p className="text-xs leading-relaxed text-gray-600 mt-1">
+              Daily Rewards: Sending Coins value × <span className="font-bold">1.3%</span> You will receive, Frame
+            </p>
+          </div>
+        </div>
+
+        {/* OK Button */}
+        <button
+          onClick={onClose}
+          className="mt-6 w-full py-3 bg-gray-900 text-white font-black rounded-xl hover:bg-gray-800 transition-colors active:scale-[0.98]"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Helper: Check if current time is midnight reset window (12:00:00 - 12:00:05) ---
+const isMidnightResetWindow = (): boolean => {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  
+  // Midnight reset window: 00:00:00 se 00:00:10 tak
+  return hours === 0 && minutes === 0 && seconds < 10;
+};
+
+// --- Helper: Get today's date string for cache busting ---
+const getTodayDateString = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+};
+
 const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null }) => {
+  // Midnight reset ke time sab kuch clear dikhega
+  const [isResetWindow, setIsResetWindow] = useState(false);
+  const [todayDate, setTodayDate] = useState(getTodayDateString());
+
+  useEffect(() => {
+    // Har second check karo ki midnight window hai ya nahi
+    const interval = setInterval(() => {
+      const resetNow = isMidnightResetWindow();
+      setIsResetWindow(resetNow);
+      
+      // Naya din start hua toh date update karo
+      const newDate = getTodayDateString();
+      if (newDate !== todayDate) {
+        setTodayDate(newDate);
+      }
+    }, 1000);
+
+    // Initial check
+    setIsResetWindow(isMidnightResetWindow());
+    setTodayDate(getTodayDateString());
+
+    return () => clearInterval(interval);
+  }, [todayDate]);
+
   if (isLoading)
     return (
       <div className="flex flex-col items-center py-40 gap-4 relative z-10">
@@ -307,22 +454,136 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
     return item.stats?.[`daily${fieldSuffix}`] || 0;
   };
 
+  // Agar midnight reset window hai, toh sab kuch empty dikhao
+  if (isResetWindow) {
+    // Top 3 empty + No Data in list
+    return (
+      <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+        {/* Fixed Section — Empty Top 3 */}
+        <div className="flex-shrink-0">
+          {/* Top 3 in One Row - Empty State with ? avatar */}
+          <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+            {/* Top 2 - Left side (Empty) */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Top 1 - Center (Empty) */}
+            <div className="flex-1 flex justify-center relative -top-16">
+              <div className="flex flex-col items-center gap-1 -mt-12">
+                <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
+                <span className="text-[13px] font-black uppercase text-white/50 mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-1 opacity-50">
+                  <span className="text-amber-400/50 font-black text-base">0</span>
+                  <GoldCoinIcon className="h-4 w-4 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Top 3 - Right side (Empty) */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 10vh Space */}
+          <div className="h-[10vh]" />
+        </div>
+
+        {/* Scrollable Section — No Data message */}
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
+          <div className="text-center py-20 opacity-60">
+            <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
+            <p className="font-bold uppercase text-sm text-white/50">Resetting for new day...</p>
+            <p className="text-xs text-white/30 mt-2">Leaderboard will refresh shortly</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal flow - filter active players
   const activePlayers = (items || []).filter((item) => getValue(item) > 0);
 
+  // Agar active players hi nahi hai (0 players with value > 0)
   if (activePlayers.length === 0)
     return (
-      <div className="text-center py-40 opacity-40 relative z-10">
-        <TrendingUp className="mx-auto mb-4 h-12 w-12 text-white/50" />
-        <p className="font-bold uppercase text-sm text-white/70">No Daily Legends Yet.</p>
+      <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+        {/* Fixed Section — Empty Top 3 with ? */}
+        <div className="flex-shrink-0">
+          <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+            {/* Top 2 - Left (Empty) */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Top 1 - Center (Empty) */}
+            <div className="flex-1 flex justify-center relative -top-16">
+              <div className="flex flex-col items-center gap-1 -mt-12">
+                <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
+                <span className="text-[13px] font-black uppercase text-white/50 mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-1 opacity-50">
+                  <span className="text-amber-400/50 font-black text-base">0</span>
+                  <GoldCoinIcon className="h-4 w-4 opacity-50" />
+                </div>
+              </div>
+            </div>
+
+            {/* Top 3 - Right (Empty) */}
+            <div className="flex-1 flex justify-center">
+              <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-[10vh]" />
+        </div>
+
+        {/* No Data for list */}
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
+          <div className="text-center py-20 opacity-60">
+            <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
+            <p className="font-bold uppercase text-sm text-white/50">No Data</p>
+            <p className="text-xs text-white/30 mt-2">Be the first to rank today!</p>
+          </div>
+        </div>
       </div>
     );
 
+  // Normal case - players exist
   const top1 = activePlayers[0];
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
   
   // Rank 4 se baaki sab scrollable
-  const scrollablePlayers = activePlayers.slice(3); // index 3 se aage = rank 4+
+  const scrollablePlayers = activePlayers.slice(3);
 
   const formatValue = (val: number) => {
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
@@ -332,13 +593,13 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
 
   return (
     <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
-      {/* Fixed Section — Top 3 + 20vh space */}
+      {/* Fixed Section — Top 3 + 10vh space */}
       <div className="flex-shrink-0">
         {/* Top 3 in One Row */}
         <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
           {/* Top 2 - Left side */}
           <div className="flex-1 flex justify-center">
-            {top2 && (
+            {top2 ? (
               <Link 
                 href={type === 'rooms' ? `/rooms/${top2.id}` : `/profile/${top2.id}`} 
                 className="flex flex-col items-center gap-1 mt-16 translate-x-3"
@@ -350,12 +611,21 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
                   <GoldCoinIcon className="h-3 w-3" />
                 </div>
               </Link>
+            ) : (
+              <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
             )}
           </div>
 
           {/* Top 1 - Center */}
           <div className="flex-1 flex justify-center relative -top-16">
-            {top1 && (
+            {top1 ? (
               <Link 
                 href={type === 'rooms' ? `/rooms/${top1.id}` : `/profile/${top1.id}`} 
                 className="flex flex-col items-center gap-1 -mt-12"
@@ -367,12 +637,21 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
                   <GoldCoinIcon className="h-4 w-4" />
                 </div>
               </Link>
+            ) : (
+              <div className="flex flex-col items-center gap-1 -mt-12">
+                <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
+                <span className="text-[13px] font-black uppercase text-white/50 mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-1 opacity-50">
+                  <span className="text-amber-400/50 font-black text-base">0</span>
+                  <GoldCoinIcon className="h-4 w-4 opacity-50" />
+                </div>
+              </div>
             )}
           </div>
 
           {/* Top 3 - Right side */}
           <div className="flex-1 flex justify-center">
-            {top3 && (
+            {top3 ? (
               <Link 
                 href={type === 'rooms' ? `/rooms/${top3.id}` : `/profile/${top3.id}`} 
                 className="flex flex-col items-center gap-1 mt-16 -translate-x-4"
@@ -384,19 +663,28 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
                   <GoldCoinIcon className="h-3 w-3" />
                 </div>
               </Link>
+            ) : (
+              <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
+                <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
+                <span className="text-[10px] font-black uppercase text-white/50 truncate w-16 text-center mt-12">---</span>
+                <div className="flex items-center gap-1 -mt-0.5 opacity-50">
+                  <span className="text-amber-400/50 font-black text-xs">0</span>
+                  <GoldCoinIcon className="h-3 w-3 opacity-50" />
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* 20vh Space — Fixed gap between Top 3 and scrollable list */}
+        {/* 10vh Space — Fixed gap between Top 3 and scrollable list */}
         <div className="h-[10vh]" />
       </div>
 
       {/* Scrollable Section — Rank 4 se baaki sab */}
-      {scrollablePlayers.length > 0 && (
+      {scrollablePlayers.length > 0 ? (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1 pb-20">
           {scrollablePlayers.map((item, index) => {
-            const rank = index + 4; // rank 4,5,6,7,8,9,10,11...
+            const rank = index + 4;
             return (
               <Link
                 key={item.id}
@@ -416,6 +704,14 @@ const RankingList = ({ items, type, isLoading, theme }: { items: any[] | null; t
             );
           })}
         </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
+          <div className="text-center py-20 opacity-60">
+            <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
+            <p className="font-bold uppercase text-sm text-white/50">No Data</p>
+            <p className="text-xs text-white/30 mt-2">Waiting for more players...</p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -431,6 +727,7 @@ function LeaderboardContent() {
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
   const [mounted, setMounted] = useState(false);
   const [activeTheme, setActiveTheme] = useState<LeaderboardThemeConfig | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -529,14 +826,21 @@ function LeaderboardContent() {
           ))}
         </div>
 
-        <div className="flex items-center justify-center w-10 h-10">
+        {/* HelpCircle Icon - Click pe info modal open hoga */}
+        <button 
+          onClick={() => setShowInfo(true)}
+          className="flex items-center justify-center w-10 h-10"
+        >
           <HelpCircle className="h-5 w-5 text-white" />
-        </div>
+        </button>
       </header>
 
       <main className="relative z-10 flex-1 overflow-hidden">
         <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} />
       </main>
+
+      {/* Info Modal */}
+      <InfoModal isOpen={showInfo} onClose={() => setShowInfo(false)} />
     </div>
   );
 }
@@ -549,4 +853,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-        }
+  }
