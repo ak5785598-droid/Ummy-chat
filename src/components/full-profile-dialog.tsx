@@ -40,8 +40,6 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 // 1. BUDGET LEVEL BADGE (UPDATED - RED/ORANGE/YELLOW SVG)
 // ==========================================
 const BudgetLevelBadge = ({ level }: { level: number }) => {
-  // Patti (width) reduced and height slightly reduced. 
-  // If level < 1 (Level 0), we apply grayscale and slight opacity to make it colorless.
   return (
     <div className={cn("inline-flex items-center shrink-0", level < 1 && "grayscale opacity-75")}>
       <svg viewBox="0 0 280 120" style={{ height: '22px', width: 'auto' }} className="drop-shadow-md cursor-default transition-transform hover:-translate-y-[2px] hover:scale-[1.015]">
@@ -97,21 +95,18 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
         </defs>
 
         <g filter="url(#badgeShadow)">
-          {/* BANNER - Patti width further reduced */}
           <path d="M85 34 H235 L249 86 H85 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
           <path d="M85 34 H235 L249 86 H85 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
           <path d="M85 34 H235 L249 86 H85 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
           <path d="M85 34 H235 L249 86 H85 Z" fill="url(#redGloss)" opacity="0.24"/>
           <path d="M85 38 H232 L245 82 H89 Z" fill="none" stroke="#000" strokeWidth="1.5" strokeLinejoin="round" opacity="0.18"/>
 
-          {/* PENTAGON */}
           <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
           <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
           <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
           <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redGloss)" opacity="0.22"/>
           <path d="M66 12 L112 45 L93.5 98.5 L38.5 98.5 L20 45 Z" fill="none" stroke="#000" strokeWidth="1.5" opacity="0.18"/>
 
-          {/* STAR - 10 faceted triangles */}
           <g filter="url(#starGlow)" stroke="#b25f00" strokeOpacity="0.28" strokeWidth="0.6" strokeLinejoin="round">
             <path d="M66 60 L66 26 L74.229 48.674 Z" fill="url(#starTop)"/>
             <path d="M66 60 L57.771 48.674 L66 26 Z" fill="url(#starTop)"/>
@@ -125,10 +120,7 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
             <path d="M66 60 L66 74 L46.015 87.506 Z" fill="url(#starDark)"/>
           </g>
 
-          {/* TEXT - Adjusted X dynamically since patti is smaller */}
-          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="0.5" filter="url(#textShadow)">
-            ELITE
-          </text>
+          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
         </g>
       </svg>
     </div>
@@ -140,7 +132,7 @@ const BudgetLevelBadge = ({ level }: { level: number }) => {
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 py-1">
+  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
     <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
@@ -150,7 +142,7 @@ export const SVGA_OfficialTag = () => (
 );
 
 export const SVGA_SellerTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 py-1">
+  <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
       <svg viewBox="0 0 40 40" className="w-full h-full">
@@ -178,7 +170,7 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
   const idNum = label ? label.replace('ID: ', '').trim() : '000000';
 
   return (
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] px-2 py-1">
+    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
       <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
         <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
@@ -215,9 +207,7 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
           <path d="M30 8 L50 20 L50 40 L30 52 L10 40 L10 20 Z" fill="url(#purpleGem)" />
           <path d="M10 20 L30 8 L50 20 L30 28 Z" fill="white" fillOpacity="0.15" />
 
-          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>
-            S
-          </text>
+          <text x="30" y="38" fontFamily="sans-serif" fontWeight="900" fontSize="24" fill="url(#textGloss)" textAnchor="middle" letterSpacing="-1" style={{ textShadow: '0px 2px 4px rgba(0,0,0,0.6)' }}>ID</text>
 
           <path d="M18 45 C 24 58, 36 58, 42 45 C 36 52, 24 52, 18 45 Z" fill="url(#goldFrame)" />
           <path d="M22 43 L38 43 L34 54 L26 54 Z" fill="url(#goldFrame)" />
@@ -379,8 +369,9 @@ export function FullProfileDialog({
   // Using ?? 0 ensures that if there's no budget it defaults to 0, activating the colorless state.
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // Show only profile.accountNumber - no fallback ID generation
-  const displayId = profile.accountNumber || '';
+  // ID ab seedha profile.accountNumber se aayegi, koi naya generate nahi hoga
+  // Agar accountNumber nahi hai toh default "000000" dikhayega
+  const displayId = profile.accountNumber || '000000';
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
@@ -456,17 +447,15 @@ export function FullProfileDialog({
                 </div>
 
                 {/* 2) ID */}
-                {displayId && (
-                  <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
-                    {hasOfficialTag ? (
-                      <SVGA_GlossyID label={`ID: ${displayId}`} />
-                    ) : profile.isBudget ? (
-                      <SVGA_GlossyID label={`ID: ${displayId}`} />
-                    ) : (
-                      <StandardIDTag idNum={displayId} />
-                    )}
-                  </div>
-                )}
+                <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
+                  {hasOfficialTag ? (
+                    <SVGA_GlossyID label={`ID: ${displayId}`} />
+                  ) : profile.isBudget ? (
+                    <SVGA_GlossyID label={`ID: ${displayId}`} />
+                  ) : (
+                    <StandardIDTag idNum={displayId} />
+                  )}
+                </div>
 
                 {/* 3) Tags (Budget, Official, Seller) */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
@@ -724,4 +713,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-}
+      }
