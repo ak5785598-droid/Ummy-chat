@@ -28,7 +28,8 @@ import {
   Users,
   Zap,
   ShieldAlert,
-  ExternalLink
+  ExternalLink,
+  Video
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -204,6 +205,32 @@ const GenderCircle = ({ gender }: { gender: string | null | undefined }) => (
   </div>
 );
 
+// ==================== VIDEO URL SUPPORT COMPONENT ====================
+
+const VideoUrlFrame = ({ videoUrl }: { videoUrl: string | null | undefined }) => {
+  if (!videoUrl) return null;
+  
+  return (
+    <div className="w-full px-6 mt-2 mb-2">
+      <div className="relative rounded-xl overflow-hidden bg-black/5 border border-gray-200 group">
+        <video 
+          src={videoUrl} 
+          controls 
+          className="w-full h-auto max-h-48 object-cover rounded-xl"
+          playsInline
+          preload="metadata"
+        >
+          Your browser does not support the video tag.
+        </video>
+        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1">
+          <Video className="h-3 w-3 text-white" />
+          <span className="text-[9px] font-bold text-white uppercase">Video</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ==================== INTERFACES ====================
 
 interface RoomProfileMainProps {
@@ -317,7 +344,7 @@ export function RoomOwnerProfile({
       <SheetContent
         side="bottom"
         hideOverlay={true}
-        className="sm:max-w-[360px] mx-auto h-auto rounded-3xl border border-white/10 p-0 overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-300 pb-6"
+        className="sm:max-w-[320px] mx-auto h-auto rounded-[2rem] border-0 p-0 overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-300 pb-6"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Room Owner Profile</SheetTitle>
@@ -330,19 +357,19 @@ export function RoomOwnerProfile({
           </div>
         ) : profile ? (
           <div className="flex flex-col items-center">
-            {/* Avatar - Half inside, half outside */}
-            <div className="relative w-full flex justify-center -mt-10 mb-1">
+            {/* Avatar - Circle, half outside half inside */}
+            <div className="relative w-full flex justify-center -mt-12 mb-1 z-20">
               <div
-                className="cursor-pointer active:scale-95 transition-transform z-10"
+                className="cursor-pointer active:scale-95 transition-transform"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewFullProfile();
                 }}
               >
                 <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
-                  <Avatar className="h-20 w-20 border-[3px] border-white shadow-xl ring-2 ring-gray-100">
-                    <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
-                    <AvatarFallback className="text-2xl bg-slate-100 text-slate-400">
+                  <Avatar className="h-20 w-20 border-[4px] border-white shadow-xl ring-2 ring-gray-100 rounded-full">
+                    <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
+                    <AvatarFallback className="text-2xl bg-slate-100 text-slate-400 rounded-full">
                       {(profile.username || 'U').charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -387,6 +414,9 @@ export function RoomOwnerProfile({
                 </div>
               )}
             </div>
+
+            {/* Video URL Frame Support */}
+            <VideoUrlFrame videoUrl={profile.videoUrl} />
 
             {/* ID + Fans + Gift Box - Compact Single Row */}
             <div className="flex items-center justify-center gap-2 mt-2 px-4">
@@ -483,7 +513,7 @@ export function RoomOwnerProfile({
   );
 }
 
-// ==================== ROOM PROFILE MAIN (UPDATED) ====================
+// ==================== ROOM PROFILE MAIN (SQUARE SHEET + CIRCLE AVATAR) ====================
 
 export function RoomProfileMain({
   userId,
@@ -571,7 +601,7 @@ export function RoomProfileMain({
       <SheetContent
         side="bottom"
         hideOverlay={true}
-        className="sm:max-w-none h-auto max-h-[75vh] border-t border-white/10 p-0 rounded-t-[3rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-8"
+        className="sm:max-w-[340px] mx-auto h-auto max-h-[70vh] border-0 p-0 rounded-[2.5rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-6"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>User Profile</SheetTitle>
@@ -579,34 +609,23 @@ export function RoomProfileMain({
         </SheetHeader>
 
         {isLoading ? (
-          <div className="h-[400px] flex items-center justify-center">
+          <div className="h-[350px] flex items-center justify-center">
             <Loader className="animate-spin h-8 w-8 text-primary" />
           </div>
         ) : profile ? (
           <div className="flex flex-col items-center">
-            {/* More Options Button */}
-            <div className="w-full flex justify-between items-center p-6 pb-0">
-              <button
-                onClick={() => setShowReport(true)}
-                className="text-gray-300 hover:text-red-500 transition-colors active:scale-90"
-              >
-                <MoreHorizontal className="h-6 w-6" />
-              </button>
-              <div />
-            </div>
-
-            {/* Avatar */}
+            {/* Avatar - Circle, Half outside half inside square sheet */}
             <div
-              className="mt-[-60px] mb-1 cursor-pointer active:scale-95 transition-transform relative z-[120]"
+              className="mt-[-48px] mb-1 cursor-pointer active:scale-95 transition-transform relative z-[120]"
               onClick={(e) => {
                 e.stopPropagation();
                 handleViewFullProfile();
               }}
             >
               <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
-                <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-xl">
-                  <AvatarImage src={profile.avatarUrl || undefined} className="object-cover" />
-                  <AvatarFallback className="text-3xl bg-slate-100 text-slate-400">
+                <Avatar className="h-22 w-22 border-[5px] border-white shadow-2xl rounded-full">
+                  <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
+                  <AvatarFallback className="text-3xl bg-slate-100 text-slate-400 rounded-full">
                     {(profile.username || 'U').charAt(0)}
                   </AvatarFallback>
                 </Avatar>
@@ -616,7 +635,7 @@ export function RoomProfileMain({
             {/* Name + Gender + Country */}
             <div className="text-center space-y-1 mb-1 w-full px-6">
               <div className="flex flex-wrap justify-center items-center gap-2">
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight leading-none truncate max-w-[200px]">
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-none truncate max-w-[180px]">
                   {profile.username}
                 </h2>
                 <GenderCircle gender={profile.gender} />
@@ -628,7 +647,7 @@ export function RoomProfileMain({
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1.5 px-6">
+              <div className="flex flex-wrap justify-center items-center gap-1.5 mt-1.5 px-4">
                 {isOfficial && <SVGA_OfficialTag />}
                 {isCSLeader && <SVGA_ServiceTag />}
                 {isHost && <SVGA_HostTag />}
@@ -636,7 +655,7 @@ export function RoomProfileMain({
                 {isCS && <SVGA_ServiceTag />}
 
                 {profile.relationship && profile.relationship.type !== 'None' && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
                     <Heart className="h-3 w-3 text-rose-500 fill-current" />
                     <span className="text-[9px] font-black uppercase text-rose-500 tracking-tight">
                       {profile.relationship.type}: {profile.relationship.partnerName}
@@ -646,9 +665,12 @@ export function RoomProfileMain({
               </div>
             </div>
 
+            {/* Video URL Frame Support */}
+            <VideoUrlFrame videoUrl={profile.videoUrl} />
+
             {/* Medals */}
             {profile.medals && profile.medals.length > 0 && (
-              <div className="flex flex-wrap justify-center gap-3 mb-2 px-6">
+              <div className="flex flex-wrap justify-center gap-2 mb-2 px-6">
                 {profile.medals.map(medalId => {
                   const fsMedal = firestoreMedals?.find((m: any) => m.id === medalId);
                   const staticMedal = MEDAL_REGISTRY[medalId];
@@ -661,7 +683,7 @@ export function RoomProfileMain({
                       <img
                         src={medal.imageUrl}
                         alt={medal.name}
-                        className="h-12 w-12 object-contain drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1"
+                        className="h-10 w-10 object-contain drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1"
                       />
                       <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none border border-white/10">
                         {medal.name}
@@ -673,7 +695,7 @@ export function RoomProfileMain({
             )}
 
             {/* ID + Fans + Gift */}
-            <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-3">
+            <div className="flex items-center gap-2.5 text-[11px] font-bold text-gray-400 uppercase tracking-tight mb-2">
               <div onClick={handleCopyId} className="cursor-pointer active:scale-95 transition-transform">
                 {isBudget ? (
                   <SVGA_GlossyID variant={idStatusVariant} label={`ID:${displayID}`} />
@@ -681,73 +703,71 @@ export function RoomProfileMain({
                   <SVGA_NormalIDTag displayID={displayID} />
                 )}
               </div>
-              <span className="opacity-20 text-lg">|</span>
+              <span className="opacity-20 text-base">|</span>
               <div className="flex items-center gap-1">
                 <span>{profile.stats?.fans || 0} Fans</span>
               </div>
-              <span className="opacity-20 text-lg">|</span>
+              <span className="opacity-20 text-base">|</span>
               <button
                 onClick={() => {
                   onOpenChange(false);
                   onOpenGiftPicker({ uid: profile.id, name: profile.username, avatarUrl: profile.avatarUrl || '' });
                 }}
-                className="relative h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl active:scale-90 transition-transform shrink-0"
+                className="relative h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg active:scale-90 transition-transform shrink-0"
               >
-                <GiftIcon className="h-5 w-5 text-white fill-white" />
+                <GiftIcon className="h-4.5 w-4.5 text-white fill-white" />
               </button>
             </div>
 
             {/* Action Buttons */}
-            <div className="w-full flex items-center justify-between px-10 mb-4">
-              {!isMe && (
-                <>
-                  <button className="flex items-center gap-2 group active:scale-95 transition-transform">
-                    <Heart className="h-6 w-6 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
-                    <span className="font-bold text-[10px] uppercase text-pink-500">Follow</span>
-                  </button>
+            {!isMe && (
+              <div className="w-full flex items-center justify-between px-8 mb-3">
+                <button className="flex items-center gap-1.5 group active:scale-95 transition-transform">
+                  <Heart className="h-5 w-5 text-pink-500 group-hover:fill-pink-500 transition-colors" strokeWidth={2.5} />
+                  <span className="font-bold text-[10px] uppercase text-pink-500">Follow</span>
+                </button>
+                <button
+                  onClick={() => onOpenChat?.(profile)}
+                  className="flex items-center gap-1.5 group active:scale-95 transition-transform"
+                >
+                  <MessageSquare className="h-5 w-5 text-gray-800" strokeWidth={2.5} />
+                  <span className="font-bold text-[10px] uppercase text-gray-800">Chat</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onOpenChange(false);
+                    if (typeof (window as any).triggerAiEcho === 'function') {
+                      (window as any).triggerAiEcho(profile);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 group active:scale-95 transition-transform"
+                >
+                  <Sparkles className="h-5 w-5 text-purple-600 animate-pulse" strokeWidth={2.5} />
+                  <span className="font-bold text-[10px] uppercase text-purple-600">AI Echo</span>
+                </button>
+                <button
+                  onClick={() => onMention(profile.username)}
+                  className="p-1.5 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90"
+                >
+                  <AtSign className="h-5 w-5" strokeWidth={3} />
+                </button>
+                {(!profile.relationship || profile.relationship.type === 'None') && (
                   <button
-                    onClick={() => onOpenChat?.(profile)}
-                    className="flex items-center gap-2 group active:scale-95 transition-transform"
+                    onClick={() => setShowPropose(true)}
+                    className="h-9 w-9 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 active:scale-90 transition-transform"
                   >
-                    <MessageSquare className="h-6 w-6 text-gray-800" strokeWidth={2.5} />
-                    <span className="font-bold text-[10px] uppercase text-gray-800">Chat</span>
+                    <Zap className="h-4.5 w-4.5 fill-current" />
                   </button>
-                  <button
-                    onClick={() => {
-                      onOpenChange(false);
-                      if (typeof (window as any).triggerAiEcho === 'function') {
-                        (window as any).triggerAiEcho(profile);
-                      }
-                    }}
-                    className="flex items-center gap-2 group active:scale-95 transition-transform"
-                  >
-                    <Sparkles className="h-6 w-6 text-purple-600 animate-pulse" strokeWidth={2.5} />
-                    <span className="font-bold text-[10px] uppercase text-purple-600">AI Echo</span>
-                  </button>
-                  <button
-                    onClick={() => onMention(profile.username)}
-                    className="p-2 text-gray-800 hover:bg-gray-50 rounded-full transition-colors active:scale-90"
-                  >
-                    <AtSign className="h-6 w-6" strokeWidth={3} />
-                  </button>
-                  {(!profile.relationship || profile.relationship.type === 'None') && (
-                    <button
-                      onClick={() => setShowPropose(true)}
-                      className="h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 active:scale-90 transition-transform"
-                    >
-                      <Zap className="h-5 w-5 fill-current" />
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
-            {/* Seat Leave - WIDER + NICHE */}
+            {/* Seat Leave Button */}
             {isMe && isInSeat && (
-              <div className="w-full px-8 mt-1 mb-5">
+              <div className="w-full px-6 mt-1 mb-4">
                 <button
                   onClick={() => onLeaveSeat(userId)}
-                  className="w-full h-12 rounded-full bg-[#00E676] text-white flex items-center justify-center gap-2 font-bold uppercase text-base shadow-lg shadow-green-500/20 active:scale-95 transition-all"
+                  className="w-full h-11 rounded-full bg-[#00E676] text-white flex items-center justify-center gap-2 font-bold uppercase text-sm shadow-lg shadow-green-500/20 active:scale-95 transition-all"
                 >
                   <Mic className="h-5 w-5 rotate-180" />
                   Seat leave
@@ -757,16 +777,16 @@ export function RoomProfileMain({
 
             {/* Mod Controls */}
             {canManage && !isMe && (
-              <div className="w-full border-t border-gray-50 py-6 px-8 animate-in fade-in duration-500">
-                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-gray-400">
+              <div className="w-full border-t border-gray-50 py-4 px-6 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
                   <button onClick={() => onSilence(userId, isSilenced)} className="hover:text-primary transition-colors">
                     {isSilenced ? 'Unmute' : 'Mute'}
                   </button>
-                  <span className="opacity-20 text-lg">|</span>
+                  <span className="opacity-20 text-base">|</span>
                   <button onClick={() => onLeaveSeat(userId)} className="hover:text-orange-600 transition-colors">Leave</button>
-                  <span className="opacity-20 text-lg">|</span>
+                  <span className="opacity-20 text-base">|</span>
                   <button onClick={() => { toast({ title: 'Slot Locked' }); onOpenChange(false); }} className="hover:text-indigo-600 transition-colors">Lock</button>
-                  <span className="opacity-20 text-lg">|</span>
+                  <span className="opacity-20 text-base">|</span>
                   <button onClick={() => onKick(userId, 10)} className="hover:text-red-600 transition-colors">Kick out</button>
                 </div>
               </div>
@@ -800,4 +820,4 @@ export function RoomProfileMain({
       )}
     </Sheet>
   );
-        }
+          }
