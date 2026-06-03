@@ -868,6 +868,48 @@ function AdminPageContent() {
   }, [firestore, isCreator]);
   const { data: customThemes } = useCollection(themesQuery);
 
+  const filteredLevelsList = useMemo(() => {
+    if (!levelsList) return [];
+    return levelsList.filter((level: any) => {
+      if (levelTab === "budget") {
+        return (level.budget !== undefined && level.budget !== null && level.budget !== "") || (!level.reward && !level.frameId);
+      }
+      if (levelTab === "rewards") {
+        return level.reward !== undefined && level.reward !== null && level.reward !== "";
+      }
+      if (levelTab === "frame") {
+        return level.frameId !== undefined && level.frameId !== null && level.frameId !== "";
+      }
+      return true;
+    });
+  }, [levelsList, levelTab]);
+
+  const filteredMedalsList = useMemo(() => {
+    if (!medalsList) return [];
+    return medalsList.filter((medal: any) => medal.category === medalTab);
+  }, [medalsList, medalTab]);
+
+  // Reset level form state when subtab changes
+  useEffect(() => {
+    setLevelName("");
+    setLevelRange("");
+    setLevelBudget("");
+    setLevelReward("");
+    setLevelFrameId("");
+    setLevelImageFile(null);
+    setLevelImagePreview("");
+  }, [levelTab]);
+
+  // Reset medal form state when subtab changes
+  useEffect(() => {
+    setMedalId("");
+    setMedalName("");
+    setMedalDescription("");
+    setMedalTier("common");
+    setMedalImageFile(null);
+    setMedalImagePreview("");
+  }, [medalTab]);
+
   const gamesList = useMemo(() => {
     return ACTIVE_GAME_FREQUENCIES.map((base) => {
       const match = firestoreGames?.find((g) => g.slug === base.slug);
@@ -6892,9 +6934,9 @@ function AdminPageContent() {
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Existing Levels</h3>
                     {isLoadingLevels ? (
                       <div className="flex justify-center py-8"><Loader className="h-6 w-6 animate-spin text-cyan-600" /></div>
-                    ) : levelsList && levelsList.length > 0 ? (
+                    ) : filteredLevelsList && filteredLevelsList.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {levelsList.map((level: any) => (
+                        {filteredLevelsList.map((level: any) => (
                           <div key={level.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                             {level.imageUrl ? (
                               <img src={level.imageUrl} alt={level.name} className="h-10 w-10 rounded-lg object-cover" />
@@ -7071,9 +7113,9 @@ function AdminPageContent() {
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Existing Medals</h3>
                     {isLoadingMedals ? (
                       <div className="flex justify-center py-8"><Loader className="h-6 w-6 animate-spin text-amber-500" /></div>
-                    ) : medalsList && medalsList.length > 0 ? (
+                    ) : filteredMedalsList && filteredMedalsList.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {medalsList.map((medal: any) => (
+                        {filteredMedalsList.map((medal: any) => (
                           <div key={medal.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                             {medal.imageUrl ? (
                               <img src={medal.imageUrl} alt={medal.name} className="h-10 w-10 rounded-lg object-cover" />

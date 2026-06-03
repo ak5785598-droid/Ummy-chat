@@ -225,7 +225,7 @@ export default function UserLevelPage() {
   const firestore = useFirestore();
   const { userProfile } = useUserProfile(user?.uid);
   
-  const [showRules, setShowRules] = useState(false);
+    const [showRules, setShowRules] = useState(false);
 
   const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
 
@@ -234,6 +234,24 @@ export default function UserLevelPage() {
     return query(collection(firestore, "levels"), orderBy("updatedAt", "desc"));
   }, [firestore]);
   const { data: levels } = useCollection(levelsQuery);
+
+  const budgetLevels = React.useMemo(() => {
+    if (!levels) return [];
+    return levels.filter((level: any) => 
+      (level.budget !== undefined && level.budget !== null && level.budget !== "") || 
+      (!level.reward && !level.frameId)
+    );
+  }, [levels]);
+
+  const rewardLevels = React.useMemo(() => {
+    if (!levels) return [];
+    return levels.filter((level: any) => level.reward !== undefined && level.reward !== null && level.reward !== "");
+  }, [levels]);
+
+  const frameLevels = React.useMemo(() => {
+    if (!levels) return [];
+    return levels.filter((level: any) => level.frameId !== undefined && level.frameId !== null && level.frameId !== "");
+  }, [levels]);
 
   return (
     <AppLayout>
@@ -322,9 +340,9 @@ export default function UserLevelPage() {
             </h2>
             
             <div className="grid grid-cols-3 gap-3">
-              {levels && levels.length > 0 ? (
-                levels.map((level: any, idx: number) => {
-                  const uniqueKey = level.id || `level-${idx}`;
+              {budgetLevels && budgetLevels.length > 0 ? (
+                budgetLevels.map((level: any, idx: number) => {
+                  const uniqueKey = level.id || `level-budget-${idx}`;
                   
                   return (
                     <div 
@@ -362,11 +380,44 @@ export default function UserLevelPage() {
           <div className="space-y-4 pt-4">
             <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">Rewards</h2>
             <div className="grid grid-cols-3 gap-3">
-              {['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
-                <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
-                </div>
-              ))}
+              {rewardLevels && rewardLevels.length > 0 ? (
+                rewardLevels.map((level: any, idx: number) => {
+                  const uniqueKey = level.id || `level-reward-${idx}`;
+                  
+                  return (
+                    <div 
+                      key={uniqueKey}
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                    >
+                      {level.imageUrl ? (
+                        <LevelMedia 
+                          mediaUrl={level.imageUrl} 
+                          alt={level.name || `Level ${idx}`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-transparent">
+                          <span className="text-[9px] text-gray-300">No Media</span>
+                        </div>
+                      )}
+                      
+                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
+                        {level.range || `Lv.${idx}`}
+                      </span>
+                      {level.reward && (
+                        <div className="absolute top-2 right-2 bg-purple-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded animate-pulse">
+                          {level.reward}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                ['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
+                  <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
+                    <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -374,11 +425,39 @@ export default function UserLevelPage() {
           <div className="space-y-4 pt-4">
             <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">Frames</h2>
             <div className="grid grid-cols-3 gap-3">
-              {['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
-                <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
-                </div>
-              ))}
+              {frameLevels && frameLevels.length > 0 ? (
+                frameLevels.map((level: any, idx: number) => {
+                  const uniqueKey = level.id || `level-frame-${idx}`;
+                  
+                  return (
+                    <div 
+                      key={uniqueKey}
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                    >
+                      {level.imageUrl ? (
+                        <LevelMedia 
+                          mediaUrl={level.imageUrl} 
+                          alt={level.name || `Level ${idx}`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-transparent">
+                          <span className="text-[9px] text-gray-300">No Media</span>
+                        </div>
+                      )}
+                      
+                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
+                        {level.range || `Lv.${idx}`}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                ['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
+                  <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
+                    <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
