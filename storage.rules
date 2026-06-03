@@ -2,6 +2,17 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    // Helper function to check if user is admin (supreme creator, developer, or has isAdmin custom property in Firestore users doc)
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' ||
+        request.auth.uid == '1338' ||
+        (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+         'isAdmin' in firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data &&
+         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+      );
+    }
+
     // User profile images: Owner only write access
     match /users/{userId}/{allPaths=**} {
       allow read: if true;
@@ -32,52 +43,52 @@ service firebase.storage {
     // Admin Managed Assets (Gifts, Boutique, Banners, RoomBanners)
     match /store/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
     }
 
     match /gifts/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
     }
 
     match /banners/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
     }
     
     match /roomBanners/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
     }
 
     // Loot Management (Images & Videos)
     match /loot/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
     }
 
     // Emoji Management (Images & Animations)
     match /emojis/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1'
-      );
+      allow write: if isAdmin();
+    }
+
+    // Level Management (Badge Images)
+    match /levels/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Medal Management (Medal Images)
+    match /medals/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Global fallback for supreme creator or standard read
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && (request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1');
+      allow write: if isAdmin();
     }
   }
 }

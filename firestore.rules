@@ -307,6 +307,24 @@ service cloud.firestore {
     }
 
     // ============================================
+    // LEVELS, MEDALS & CUSTOM EMOJIS (Admin Only)
+    // ============================================
+    match /levels/{levelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /medals/{medalId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /customEmojis/{emojiId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================
     // GLOBAL BROADCASTS
     // ============================================
     match /globalBroadcasts/{id} {
