@@ -285,6 +285,7 @@ interface FullProfileDialogProps {
   isProcessingFollow?: boolean;
   isOwnProfile?: boolean;
   onChat?: (recipient: any) => void;
+  displayId?: string;
 }
 
 const calculateAge = (birthday: string) => {
@@ -327,40 +328,34 @@ const ProfileSection = ({ children, isEmpty, emptyLabel }: { children: React.Rea
   </div>
 );
 
-// ⚡ FIXED: Stable ID generator using useRef - ek baar generate, hamesha same
-const generateUnique6DigitId = () => {
-  const nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  for (let i = nums.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [nums[i], nums[j]] = [nums[j], nums[i]];
+const getDeterministicFallbackId = (userId: string) => {
+  if (userId === '901piBzTQ0VzCtAvlyyobwvAaTs1') return '0000'; // CREATOR_ID
+  let hash = 0;
+  const str = userId || 'fallback';
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return nums.slice(0, 6).join('');
+  return (Math.abs(hash % 900000) + 100000).toString();
 };
 
 export function FullProfileDialog({
   open,
   onOpenChange,
   profile,
-  displayID, // ⚡ NAYA PROP: Parent se ID receive karo
+  displayID,
   stats,
   followData,
   onFollow,
   isProcessingFollow,
   isOwnProfile,
-  onChat
+  onChat,
+  displayId: displayIdProp
 }: FullProfileDialogProps) {
   const [api, setApi] = useState<CarouselApi>();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'medal' | 'vehicle' | 'frame' | 'gift'>('medal');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const firestore = useFirestore();
-  
-  // ⚡ FIXED: useRef se ID stable rakho
-  const lockedFallbackIdRef = useRef<string>('');
-  
-  if (!lockedFallbackIdRef.current) {
-    lockedFallbackIdRef.current = generateUnique6DigitId();
-  }
 
   const images = profile?.spaceImages || [];
 
@@ -387,8 +382,10 @@ export function FullProfileDialog({
 
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // ⚡ FIXED: Priority order - 1) Parent se aaya displayID, 2) profile.accountNumber, 3) stable fallback
-  const displayId = displayID || profile.accountNumber || lockedFallbackIdRef.current;
+  // LOGIC APPLY: Priority to parent's displayID or displayIdProp, then backend profile's accountNumber, then deterministic fallback
+  const userId = profile?.id || profile?.uid || '';
+  const deterministicId = getDeterministicFallbackId(userId);
+  const displayId = displayID || displayIdProp || profile?.accountNumber || deterministicId;
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');

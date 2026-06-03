@@ -786,7 +786,9 @@ function AdminPageContent() {
   const [levelImageFile, setLevelImageFile] = useState<File | null>(null);
   const [levelImagePreview, setLevelImagePreview] = useState("");
   const [isUploadingLevel, setIsUploadingLevel] = useState(false);
-  const levelImageInputRef = useRef<HTMLInputElement>(null);
+  const budgetLevelImageInputRef = useRef<HTMLInputElement>(null);
+  const rewardsLevelImageInputRef = useRef<HTMLInputElement>(null);
+  const frameLevelImageInputRef = useRef<HTMLInputElement>(null);
 
   // MEDAL MANAGEMENT STATE
   const [medalTab, setMedalTab] = useState("achievement");
@@ -797,7 +799,9 @@ function AdminPageContent() {
   const [medalImageFile, setMedalImageFile] = useState<File | null>(null);
   const [medalImagePreview, setMedalImagePreview] = useState("");
   const [isUploadingMedal, setIsUploadingMedal] = useState(false);
-  const medalImageInputRef = useRef<HTMLInputElement>(null);
+  const achievementMedalImageInputRef = useRef<HTMLInputElement>(null);
+  const giftMedalImageInputRef = useRef<HTMLInputElement>(null);
+  const activityMedalImageInputRef = useRef<HTMLInputElement>(null);
 
   // MEDAL ASSIGNMENT STATE
   const [medalAssignSearchMode, setMedalAssignSearchMode] = useState<"id" | "name">("id");
@@ -6806,11 +6810,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Level Badge Image</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={budgetLevelImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => budgetLevelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
                           </div>
                         </div>
@@ -6819,7 +6823,7 @@ function AdminPageContent() {
                         {isUploadingLevel ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Level Budget"}
                       </Button>
                     </TabsContent>
-
+ 
                     <TabsContent value="rewards" className="mt-6 space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -6837,11 +6841,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Reward Icon</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={rewardsLevelImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => rewardsLevelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
                           </div>
                         </div>
@@ -6850,7 +6854,7 @@ function AdminPageContent() {
                         {isUploadingLevel ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Level Reward"}
                       </Button>
                     </TabsContent>
-
+ 
                     <TabsContent value="frame" className="mt-6 space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -6868,11 +6872,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-cyan-500">Frame Preview</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={levelImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={frameLevelImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setLevelImageFile(f); setLevelImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => levelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => frameLevelImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {levelImagePreview && <img src={levelImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-cyan-200" />}
                           </div>
                         </div>
@@ -6961,11 +6965,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={achievementMedalImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => achievementMedalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
                           </div>
                         </div>
@@ -6974,7 +6978,7 @@ function AdminPageContent() {
                         {isUploadingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Achievement Medal"}
                       </Button>
                     </TabsContent>
-
+ 
                     <TabsContent value="gift" className="mt-6 space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -7004,11 +7008,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={giftMedalImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => giftMedalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
                           </div>
                         </div>
@@ -7017,7 +7021,7 @@ function AdminPageContent() {
                         {isUploadingMedal ? <Loader className="animate-spin h-5 w-5" /> : "Synchronize Gift Medal"}
                       </Button>
                     </TabsContent>
-
+ 
                     <TabsContent value="activity" className="mt-6 space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
@@ -7047,11 +7051,11 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-amber-500">Medal Image</Label>
                           <div className="flex items-center gap-4">
-                            <input type="file" accept="image/*" ref={medalImageInputRef} className="hidden" onChange={e => {
+                            <input type="file" accept="image/*" ref={activityMedalImageInputRef} className="hidden" onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) { setMedalImageFile(f); setMedalImagePreview(URL.createObjectURL(f)); }
                             }} />
-                            <Button type="button" variant="outline" onClick={() => medalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
+                            <Button type="button" variant="outline" onClick={() => activityMedalImageInputRef.current?.click()} className="h-12 rounded-xl">Select Image</Button>
                             {medalImagePreview && <img src={medalImagePreview} alt="Preview" className="h-12 w-12 rounded-xl object-cover border-2 border-amber-200" />}
                           </div>
                         </div>
@@ -7223,6 +7227,7 @@ function AdminPageContent() {
                             ref={emojiImageInputRef}
                             className="hidden"
                             accept="image/*" 
+                            onClick={(e) => e.stopPropagation()}
                             onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) {
@@ -7254,6 +7259,7 @@ function AdminPageContent() {
                             ref={emojiAnimationInputRef}
                             className="hidden"
                             accept="video/*,.gif" 
+                            onClick={(e) => e.stopPropagation()}
                             onChange={e => {
                               const f = e.target.files?.[0];
                               if (f) {

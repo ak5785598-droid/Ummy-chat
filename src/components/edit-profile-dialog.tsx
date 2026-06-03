@@ -47,10 +47,14 @@ const COUNTRIES = [
 interface EditProfileDialogProps {
   profile: any;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EditProfileDialog({ profile, trigger }: EditProfileDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EditProfileDialog({ profile, trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: EditProfileDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange !== undefined ? controlledOnOpenChange : setInternalOpen;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   

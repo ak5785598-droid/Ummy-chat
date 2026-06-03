@@ -1452,6 +1452,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         onFollow={handleFollow}
         isProcessingFollow={isProcessingFollow}
         isOwnProfile={false}
+        displayId={displayID}
       />
     );
   }
@@ -1650,7 +1651,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         {/* Dialogs */}
         <MedalModal open={medalModalOpen} onClose={() => setMedalModalOpen(false)} />
         <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
-        <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} />
+        <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} displayId={displayID} />
         <ReportUserDialog
           open={reportOpen}
           onOpenChange={setReportOpen}
