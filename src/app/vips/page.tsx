@@ -41,8 +41,9 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useCachedMedia } from '@/hooks/use-cached-media';
 
-// --- DATA STRUCTURES (SAME RAKHA HAI) ---
+// --- DATA STRUCTURES ---
 
+// Define the 18 level thresholds and maintenance requirements
 const SVIP_LEVELS_DATA = [
   { level: 1, name: 'SVIP 1', points: '1.5M', exp: 1500000, validity: '7 Days', maintPoints: '375K', maintExp: 375000, theme: 'owl' },
   { level: 2, name: 'SVIP 2', points: '3.0M', exp: 3000000, validity: '7 Days', maintPoints: '375K', maintExp: 375000, theme: 'owl' },
@@ -64,6 +65,7 @@ const SVIP_LEVELS_DATA = [
   { level: 18, name: 'SVIP 18', points: '750.0M', exp: 750000000, validity: '60 Days', maintPoints: '100.0M', maintExp: 100000000, theme: 'dragon' },
 ];
 
+// Define the 31 unique privileges with respective unlock levels
 const SVIP_PRIVILEGES_DATA = [
   { id: 1, name: 'SVIP Badge', desc: 'Premium level status marker', level: 1, icon: Award, category: 'Identity' },
   { id: 2, name: 'Silver-Wing Frame', desc: 'Noble Owl Avatar frame decoration', level: 1, icon: Crown, category: 'Identity' },
@@ -105,6 +107,7 @@ export default function VipsClubPage() {
   const { toast } = useToast();
   const { userProfile, isLoading } = useUserProfile(user?.uid);
 
+  // States
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
@@ -114,13 +117,7 @@ export default function VipsClubPage() {
     levels: {}
   });
 
-  // Check karo ki koi custom background active hai ya nahi
-  const hasCustomBackground = (vipConfig.bgType === 'image' || vipConfig.bgType === 'video') && vipConfig.bgUrl;
-  const hasLevelCustomBg = vipConfig?.levels?.[selectedLevel]?.bgUrl;
-  // Agar koi bhi custom background hai toh saara content hide karo
-  const shouldHideContent = !!(hasCustomBackground || hasLevelCustomBg);
-
-  // Sync global VIP configs
+  // Sync global VIP configs from Firestore in real-time
   useEffect(() => {
     if (!firestore) return;
     const docRef = doc(firestore, 'settings', 'svipConfig');
@@ -140,6 +137,7 @@ export default function VipsClubPage() {
     return () => unsubscribe();
   }, [firestore]);
 
+  // Stealth toggle states local replica for quick feedback
   const [stealthSettings, setStealthSettings] = useState({
     mysteriousVisitor: false,
     hideGiftRecord: false,
@@ -148,6 +146,7 @@ export default function VipsClubPage() {
     avoidBeingKicked: false,
   });
 
+  // Sync toggles when profile loads
   useEffect(() => {
     if (userProfile) {
       setStealthSettings({
@@ -160,13 +159,25 @@ export default function VipsClubPage() {
     }
   }, [userProfile]);
 
+  // Current user's real SVIP level
   const userSvipLevel = userProfile?.svip || 0;
+
+  // Active theme based on selected level
   const activeLevelData = SVIP_LEVELS_DATA.find(l => l.level === selectedLevel) || SVIP_LEVELS_DATA[0];
+  const activeTheme = activeLevelData.theme;
+
+  // Custom level background override
+  const levelBgUrl = vipConfig?.levels?.[selectedLevel]?.bgUrl;
+  const showCustomBg = !!levelBgUrl;
+
+  // Caching integration for high-speed media rendering (0.1s load time)
+  const cachedGlobalBgUrl = useCachedMedia(vipConfig?.bgUrl);
+  const cachedLevelBgUrl = useCachedMedia(levelBgUrl);
+
+  // Count privileges unlocked for the currently selected level
   const unlockedCount = SVIP_PRIVILEGES_DATA.filter(p => p.level <= selectedLevel).length;
 
-  const cachedGlobalBgUrl = useCachedMedia(vipConfig?.bgUrl);
-  const cachedLevelBgUrl = useCachedMedia(vipConfig?.levels?.[selectedLevel]?.bgUrl);
-
+  // Firestore update for toggles
   const handleToggleChange = async (key: keyof typeof stealthSettings, requiredLevel: number) => {
     if (userSvipLevel < requiredLevel) {
       toast({
@@ -195,10 +206,12 @@ export default function VipsClubPage() {
         title: 'Sync Failed',
         description: e.message,
       });
+      // Rollback
       setStealthSettings(prev => ({ ...prev, [key]: !newStatus }));
     }
   };
 
+  // Render SVIP Badge
   const renderUniqueBadge = (lvl: number, animated = true) => {
     const customBadgeUrl = vipConfig?.levels?.[lvl]?.badgeUrl;
 
@@ -213,7 +226,6 @@ export default function VipsClubPage() {
 
     let baseStyle = "";
     let glowStyle = "";
-    let label = `SVIP ${lvl}`;
 
     if (lvl >= 1 && lvl <= 6) {
       baseStyle = "bg-gradient-to-r from-slate-400 via-cyan-400 to-slate-400 border border-cyan-300 text-slate-900";
@@ -230,261 +242,278 @@ export default function VipsClubPage() {
     }
 
     return (
-      <div className={cn("relative rounded-full px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase select-none transition-all duration-300", baseStyle, glowStyle)}>
-        <Star className={cn("h-3 w-3 fill-current shrink-0", lvl >= 16 && "text-yellow-300 animate-spin")} style={{ animationDuration: '4s' }} />
-        <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">{label}</span>
+      <div className={cn(
+        "relative rounded-full px-3 py-1 flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase select-none transition-all duration-300", 
+        baseStyle, 
+        glowStyle
+      )}>
+        <Star className="h-3 w-3 fill-current shrink-0" />
+        <span className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">SVIP {lvl}</span>
       </div>
     );
   };
 
   return (
     <AppLayout>
-      <div className="min-h-screen text-white font-outfit relative flex flex-col overflow-x-hidden">
+      <div className="min-h-screen animate-bg-gradient text-white font-outfit relative flex flex-col overflow-x-hidden animate-in fade-in duration-500">
         
-        {/* Default Background - Jab koi custom background nahi hai */}
-        {!shouldHideContent && (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-950 z-0" />
-        )}
+        {/* BACKGROUND LAYER - Full Screen background with image/video */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          {showCustomBg && levelBgUrl ? (
+            levelBgUrl.includes('.mp4') || levelBgUrl.includes('video') ? (
+              <video 
+                src={cachedLevelBgUrl} 
+                className="w-full h-full object-cover" 
+                muted 
+                autoPlay 
+                loop 
+                playsInline 
+              />
+            ) : (
+              <div 
+                className="w-full h-full bg-cover bg-center" 
+                style={{ backgroundImage: `url(${cachedLevelBgUrl})` }}
+              />
+            )
+          ) : vipConfig.bgType === 'image' && vipConfig.bgUrl ? (
+            <div 
+              className="w-full h-full bg-cover bg-center" 
+              style={{ backgroundImage: `url(${cachedGlobalBgUrl})`, opacity: 0.25 }}
+            />
+          ) : vipConfig.bgType === 'video' && vipConfig.bgUrl ? (
+            <video 
+              src={cachedGlobalBgUrl} 
+              className="w-full h-full object-cover opacity-20" 
+              muted 
+              autoPlay 
+              loop 
+              playsInline 
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#070922] via-[#1d0f3a] to-[#0b1d3d]" />
+          )}
+        </div>
 
-        {/* Custom Background - Jab aata hai tab dikhega */}
-        {shouldHideContent && (
-          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-            {hasLevelCustomBg && cachedLevelBgUrl ? (
-              cachedLevelBgUrl.includes('.mp4') || cachedLevelBgUrl.includes('video') ? (
-                <video src={cachedLevelBgUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
-              ) : (
-                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${cachedLevelBgUrl})` }} />
-              )
-            ) : hasCustomBackground && cachedGlobalBgUrl ? (
-              vipConfig.bgType === 'video' ? (
-                <video src={cachedGlobalBgUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
-              ) : (
-                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${cachedGlobalBgUrl})` }} />
-              )
-            ) : null}
-          </div>
-        )}
-
-        {/* Header - Hamesha rahega */}
-        <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-transparent backdrop-blur-sm z-[90] shrink-0">
+        {/* HEADER BAR - Back Icon, SVIP Title, Settings & Help Icons */}
+        <header className="px-6 pt-10 pb-4 flex items-center justify-between sticky top-0 bg-black/30 backdrop-blur-md border-b border-white/[0.05] z-[90] shrink-0">
           <button 
             onClick={() => router.back()} 
-            className="p-2.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.08] active:scale-95 transition-all"
+            className="p-2.5 bg-white/[0.06] border border-white/[0.1] rounded-full hover:bg-white/[0.12] active:scale-95 transition-all shadow-lg"
           >
-            <ChevronLeft className="h-5.5 w-5.5 text-slate-300" />
+            <ChevronLeft className="h-5.5 w-5.5 text-white" />
           </button>
           
-          <h1 className="text-[17px] font-black tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">
-            VIP CLUB
+          <h1 className="text-[17px] font-black tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-300">
+            SVIP CLUB
           </h1>
 
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setIsRulesOpen(true)}
-              className="p-2.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.08] active:scale-95 transition-all"
+              className="p-2.5 bg-white/[0.06] border border-white/[0.1] rounded-full hover:bg-white/[0.12] active:scale-95 transition-all shadow-lg"
             >
-              <HelpCircle className="h-5 w-5 text-slate-300" />
+              <HelpCircle className="h-5 w-5 text-white" />
             </button>
             <button 
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2.5 bg-white/[0.04] border border-white/[0.08] rounded-full hover:bg-white/[0.08] active:scale-95 transition-all"
+              className="p-2.5 bg-white/[0.06] border border-white/[0.1] rounded-full hover:bg-white/[0.12] active:scale-95 transition-all shadow-lg"
             >
-              <Settings className="h-5 w-5 text-slate-300" />
+              <Settings className="h-5 w-5 text-white" />
             </button>
           </div>
         </header>
 
-        {/* 🔥🔥 TEXT TABS - HAMESHA DIKHENGE (Background ho ya na ho) 🔥🔥 */}
-        <div className="px-4 pt-2 pb-4 z-10 relative">
-          <div className="flex flex-wrap items-center justify-center gap-2 gap-y-3">
-            {SVIP_LEVELS_DATA.map((lvl) => {
-              const isSelected = selectedLevel === lvl.level;
-              const isUserLevel = userSvipLevel >= lvl.level;
-              
-              return (
-                <button 
-                  key={lvl.level}
-                  onClick={() => setSelectedLevel(lvl.level)}
-                  className={cn(
-                    "px-4 py-2 rounded-full text-xs font-black uppercase transition-all active:scale-95",
-                    isSelected 
-                      ? "bg-amber-500 text-black shadow-lg" 
-                      : "bg-white/5 text-slate-400 hover:text-white hover:bg-white/10",
-                    isUserLevel && !isSelected && "text-emerald-400"
-                  )}
-                >
-                  {lvl.name}
-                  {isUserLevel && <CheckCircle className="inline h-3 w-3 ml-1 text-emerald-400" />}
-                </button>
-              );
-            })}
-          </div>
+        {/* BACKGROUND AREA - Pura screen background ke liye flexible space */}
+        <div className="flex-1 w-full relative z-10">
+          {/* Ye area background dikhane ke liye khali rakha hai */}
         </div>
 
-        {/* Main Content - Jab custom background ho toh pura HIDE ho jayega, nahi toh dikhega */}
-        {!shouldHideContent ? (
-          <main className="flex-1 px-4 pt-2 space-y-8 z-10 relative pb-32">
+        {/* PRIVILEGES SECTION - Background ke niche scroll karne pe dikhega */}
+        <section className="relative z-20 bg-[#0a0c1a]/95 backdrop-blur-xl border-t border-white/[0.08] pt-8 pb-32 px-4">
+          
+          {/* Section Header */}
+          <div className="max-w-lg mx-auto space-y-3 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-1.5 bg-gradient-to-b from-amber-400 to-yellow-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+              <div>
+                <h2 className="text-xl font-black text-white uppercase tracking-wider">
+                  PRIVILEGES
+                </h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  SVIP {selectedLevel} • {unlockedCount} Unlocked Benefits
+                </p>
+              </div>
+            </div>
             
-            {/* Identity Card */}
-            <div className="bg-[#0b0e1e]/60 border border-white/[0.04] rounded-[2.5rem] p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-              <div className="flex items-center gap-5">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-amber-500/20 to-yellow-500/10 flex items-center justify-center border border-white/10">
-                  <span className="text-2xl font-black text-white">
-                    {(userProfile?.username || 'U').charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1 space-y-1 min-w-0">
-                  <h3 className="text-[17px] font-black text-white leading-tight truncate">{userProfile?.username || 'Gamer'}</h3>
-                  <div className="flex items-center gap-2">
-                    {userSvipLevel > 0 ? (
-                      renderUniqueBadge(userSvipLevel, false)
-                    ) : (
-                      <span className="text-[9px] font-black uppercase text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700">
-                        Non-SVIP Member
-                      </span>
+            {/* Level Switcher - Horizontal Scroll Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 -mx-1 px-1 mask-gradient">
+              {SVIP_LEVELS_DATA.map((lvl) => {
+                const isSelected = selectedLevel === lvl.level;
+                
+                return (
+                  <button 
+                    key={lvl.level}
+                    onClick={() => setSelectedLevel(lvl.level)}
+                    className={cn(
+                      "shrink-0 h-10 px-4 rounded-2xl border flex items-center gap-2 font-black text-[11px] transition-all active:scale-95",
+                      isSelected 
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-500 border-amber-300/50 text-black shadow-[0_0_15px_rgba(245,158,11,0.4)]" 
+                        : "bg-white/[0.03] border-white/[0.06] text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]"
                     )}
-                  </div>
-                </div>
-              </div>
+                  >
+                    <Star className={cn("h-3 w-3", isSelected ? "fill-black text-black" : "fill-slate-600 text-slate-600")} />
+                    <span>{lvl.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-              {/* EXP Progress Bar */}
-              <div className="mt-6 pt-2 border-t border-white/[0.03] space-y-2">
-                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  <span>VIP EXP Progress</span>
-                  <span className="text-amber-400">
-                    {userProfile?.wallet?.totalSpent?.toLocaleString() || '0'} / 1,500,000
-                  </span>
-                </div>
-                <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-white/[0.02]">
+          {/* Privileges Grid - 3 Columns */}
+          <div className="max-w-lg mx-auto">
+            <div className="grid grid-cols-3 gap-3">
+              {SVIP_PRIVILEGES_DATA.map((benefit) => {
+                const isUnlockedForSelected = benefit.level <= selectedLevel;
+                const BenefitIcon = benefit.icon;
+                
+                return (
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min(100, ((userProfile?.wallet?.totalSpent || 0) / 1500000) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
+                    key={benefit.id} 
+                    className={cn(
+                      "p-4 rounded-2xl border flex flex-col items-center text-center gap-2.5 relative overflow-hidden transition-all duration-300 select-none",
+                      isUnlockedForSelected 
+                        ? "bg-white/[0.04] border-amber-500/25 shadow-[0_0_12px_rgba(245,158,11,0.08)]" 
+                        : "bg-white/[0.01] border-white/[0.03] opacity-35"
+                    )}
+                  >
+                    {/* Unlock glow effect */}
+                    {isUnlockedForSelected && (
+                      <div className="absolute inset-0 bg-gradient-to-b from-amber-500/[0.03] to-transparent pointer-events-none" />
+                    )}
 
-            {/* Unlocked Privileges Counter */}
-            <div className="flex items-center justify-between bg-white/[0.02] border border-white/[0.05] rounded-3xl p-5">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">SVIP Benefits</p>
-                <h4 className="text-[17px] font-black text-white">
-                  Unlocked: <span className="text-amber-400">{unlockedCount} / 31</span>
-                </h4>
-              </div>
-              <button 
-                onClick={() => setIsSettingsOpen(true)}
-                className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.09] active:scale-95 border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-wider"
-              >
-                Stealth
-              </button>
-            </div>
+                    {/* Lock icon for locked privileges */}
+                    {!isUnlockedForSelected && (
+                      <div className="absolute top-2 right-2">
+                        <Lock className="h-3 w-3 text-slate-600" />
+                      </div>
+                    )}
 
-            {/* Privileges Grid */}
-            <div className="space-y-4 pb-8">
-              <div className="flex items-center justify-between ml-1">
-                <h4 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.2em]">Privileges</h4>
-                <span className="text-[9px] font-black text-slate-500 uppercase">SVIP {selectedLevel}+ unlocks</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {SVIP_PRIVILEGES_DATA.map((benefit) => {
-                  const isUnlockedForSelected = benefit.level <= selectedLevel;
-                  const BenefitIcon = benefit.icon;
-                  
-                  return (
+                    {/* Icon Container */}
                     <div 
-                      key={benefit.id} 
                       className={cn(
-                        "p-4 rounded-3xl border flex flex-col items-center text-center gap-2.5 relative transition-all",
+                        "h-10 w-10 rounded-xl flex items-center justify-center transition-all border",
                         isUnlockedForSelected 
-                          ? "bg-[#0b0e1e]/80 border-amber-500/30" 
-                          : "bg-[#050711]/60 border-white/[0.02] opacity-40"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
+                          : "bg-white/[0.02] text-slate-600 border-white/[0.04]"
                       )}
                     >
-                      {!isUnlockedForSelected && (
-                        <div className="absolute top-2 right-2 p-1 bg-black/60 rounded-full border border-white/5">
-                          <Lock className="h-2.5 w-2.5 text-slate-400" />
-                        </div>
-                      )}
-                      <div className={cn("h-11 w-11 rounded-2xl flex items-center justify-center border",
-                        isUnlockedForSelected ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : "bg-white/[0.02] text-slate-500 border-white/[0.04]"
-                      )}>
-                        <BenefitIcon className="h-5.5 w-5.5" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-[11px] font-black text-white truncate max-w-full">{benefit.name}</p>
-                        <p className="text-[7.5px] font-black text-slate-400 uppercase">SVIP {benefit.level}+</p>
-                      </div>
-                      <p className="text-[8px] font-medium text-slate-500 leading-normal line-clamp-2">{benefit.desc}</p>
+                      <BenefitIcon className="h-5 w-5" />
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Benefit Name & Level */}
+                    <div className="space-y-0.5">
+                      <p className={cn(
+                        "text-[10px] font-bold leading-snug truncate max-w-full",
+                        isUnlockedForSelected ? "text-white" : "text-slate-500"
+                      )}>
+                        {benefit.name}
+                      </p>
+                      <p className={cn(
+                        "text-[8px] font-black uppercase tracking-widest",
+                        isUnlockedForSelected ? "text-amber-400" : "text-slate-600"
+                      )}>
+                        SVIP {benefit.level}+
+                      </p>
+                    </div>
+
+                    {/* Description micro-text */}
+                    <p className="text-[7px] font-medium text-slate-600 leading-tight line-clamp-2">
+                      {benefit.desc}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
-          </main>
-        ) : (
-          /* Jab custom background ho - saara content hide, sirf tabs dikhenge */
-          <div className="flex-1" />
-        )}
-
-        {/* Recharge Button - Hamesha rahega */}
-        <footer className="fixed bottom-0 left-0 right-0 p-5 z-[80] shrink-0">
-          <div className="max-w-lg mx-auto">
-            <Button 
-              onClick={() => {
-                toast({
-                  title: 'Recharge',
-                  description: 'Redirecting to wallet...',
-                });
-                router.push('/wallet');
-              }}
-              className="w-full h-14 rounded-2xl font-black uppercase text-[15px] tracking-widest shadow-xl active:scale-95 transition-all bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black"
-            >
-              <Zap className="h-4.5 w-4.5 fill-current mr-2" />
-              RECHARGE NOW
-            </Button>
           </div>
-        </footer>
 
-        {/* Settings Drawer - Same */}
+        </section>
+
+        {/* SETTINGS DRAWER - Privilege Stealth Settings */}
         {isSettingsOpen && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="absolute inset-x-0 bottom-0 max-h-[85vh] bg-[#070914] border-t border-white/[0.05] rounded-t-[3rem] p-6 pb-12 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300 overflow-y-auto">
-              <div className="flex justify-between items-center pb-2 border-b border-white/[0.03]">
+          <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="absolute inset-x-0 bottom-0 max-h-[85vh] bg-[#0a0c1a] border-t border-white/[0.08] rounded-t-[3rem] p-6 pb-12 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300 overflow-y-auto custom-scrollbar">
+              
+              {/* Drawer Header */}
+              <div className="flex justify-between items-center pb-3 border-b border-white/[0.05]">
                 <div>
-                  <h3 className="text-[17px] font-black text-white uppercase">STEALTH MODE</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Configure hidden options</p>
+                  <h3 className="text-[17px] font-black text-white uppercase tracking-wider">PRIVILEGE STEALTH</h3>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Hidden immunity options</p>
                 </div>
-                <button onClick={() => setIsSettingsOpen(false)} className="px-4 py-1.5 bg-white/[0.04] rounded-xl text-[9px] font-black uppercase">Close</button>
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all"
+                >
+                  Close
+                </button>
               </div>
 
-              <div className="bg-white/[0.02] border border-white/[0.04] rounded-2xl p-4 flex justify-between items-center">
-                <span className="text-[10px] font-black text-slate-400 uppercase">Your Level:</span>
+              {/* Current Level Badge */}
+              <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 flex justify-between items-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Your Level:</span>
                 {renderUniqueBadge(userSvipLevel, false)}
               </div>
 
+              {/* Stealth Toggles */}
               <div className="space-y-4">
                 {[
-                  { key: 'mysteriousVisitor', label: 'Mysterious Visitor', desc: 'Visit profiles incognito.', reqLevel: 5 },
-                  { key: 'hideGiftRecord', label: 'Hide Gift Record', desc: 'Hide gift history.', reqLevel: 8 },
-                  { key: 'rankInvisible', label: 'Rank Invisible', desc: 'Hide from leaderboards.', reqLevel: 9 },
-                  { key: 'roomInvisible', label: 'Room Invisible', desc: 'Enter rooms silently.', reqLevel: 12 },
-                  { key: 'avoidBeingKicked', label: 'Kick Immunity', desc: 'Cannot be kicked.', reqLevel: 13 },
+                  { key: 'mysteriousVisitor', label: 'Mysterious Visitor', desc: 'Browse profiles completely incognito.', reqLevel: 5 },
+                  { key: 'hideGiftRecord', label: 'Hide Gift Record', desc: 'Gift transactions stay private always.', reqLevel: 8 },
+                  { key: 'rankInvisible', label: 'Rank Invisible', desc: 'Disappear from all public leaderboards.', reqLevel: 9 },
+                  { key: 'roomInvisible', label: 'Room Invisible', desc: 'Enter chatrooms in total silence.', reqLevel: 12 },
+                  { key: 'avoidBeingKicked', label: 'Kick Immunity', desc: 'Absolute protection from kicks/bans.', reqLevel: 13 },
                 ].map((sw) => {
                   const isLocked = userSvipLevel < sw.reqLevel;
                   const isActive = stealthSettings[sw.key as keyof typeof stealthSettings];
+                  
                   return (
-                    <div key={sw.key} className={cn("p-4 rounded-2xl border flex items-center justify-between gap-5", isLocked ? "bg-black/40 border-white/[0.02] opacity-40" : "bg-[#0b0e1e]/60 border-white/[0.04]")}>
+                    <div 
+                      key={sw.key} 
+                      className={cn(
+                        "p-4 rounded-2xl border flex items-center justify-between gap-4 transition-all",
+                        isLocked ? "bg-black/30 border-white/[0.02] opacity-40" : "bg-white/[0.03] border-white/[0.05]"
+                      )}
+                    >
                       <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13px] font-black text-white">{sw.label}</span>
-                          {isLocked && <span className="text-[8px] font-black bg-orange-500/10 border border-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full">SVIP {sw.reqLevel}+</span>}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[13px] font-bold text-white">{sw.label}</span>
+                          {isLocked ? (
+                            <span className="text-[8px] font-black uppercase bg-red-500/10 border border-red-500/20 text-red-400 px-2 py-0.5 rounded-full">
+                              SVIP {sw.reqLevel}+
+                            </span>
+                          ) : (
+                            <span className="text-[8px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
+                              Unlocked
+                            </span>
+                          )}
                         </div>
-                        <p className="text-[10px] font-medium text-slate-400">{sw.desc}</p>
+                        <p className="text-[10px] text-slate-400 leading-normal">{sw.desc}</p>
                       </div>
-                      <button disabled={isLocked} onClick={() => handleToggleChange(sw.key as keyof typeof stealthSettings, sw.reqLevel)} className={cn("w-12 h-6 rounded-full p-1 transition-colors", isActive ? "bg-amber-400" : "bg-slate-800")}>
-                        <div className={cn("w-4 h-4 bg-white rounded-full shadow-md transform transition-transform", isActive ? "translate-x-6" : "translate-x-0")} />
+
+                      {/* Toggle Switch */}
+                      <button 
+                        disabled={isLocked}
+                        onClick={() => handleToggleChange(sw.key as keyof typeof stealthSettings, sw.reqLevel)}
+                        className={cn(
+                          "w-12 h-6 rounded-full p-1 transition-colors duration-300 relative shrink-0",
+                          isActive ? "bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]" : "bg-slate-700"
+                        )}
+                      >
+                        <div 
+                          className={cn(
+                            "w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300",
+                            isActive ? "translate-x-6" : "translate-x-0"
+                          )}
+                        />
                       </button>
                     </div>
                   );
@@ -494,52 +523,141 @@ export default function VipsClubPage() {
           </div>
         )}
 
-        {/* Rules Modal */}
+        {/* RULES DRAWER - SVIP Information & Tables */}
         {isRulesOpen && (
-          <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="absolute inset-x-0 bottom-0 max-h-[90vh] bg-[#070914] border-t border-white/[0.05] rounded-t-[3rem] p-6 pb-12 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300">
-              <div className="flex justify-between items-center pb-2 border-b border-white/[0.03]">
+          <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="absolute inset-x-0 bottom-0 max-h-[90vh] bg-[#0a0c1a] border-t border-white/[0.08] rounded-t-[3rem] p-6 pb-12 flex flex-col gap-6 animate-in slide-in-from-bottom duration-300">
+              
+              {/* Drawer Header */}
+              <div className="flex justify-between items-center pb-3 border-b border-white/[0.05] shrink-0">
                 <div>
-                  <h3 className="text-[17px] font-black text-white uppercase">SVIP RULES</h3>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5">Validity & Guidelines</p>
+                  <h3 className="text-[17px] font-black text-white uppercase tracking-wider">SVIP RULES</h3>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">EXP, Validity & Thresholds</p>
                 </div>
-                <button onClick={() => setIsRulesOpen(false)} className="px-4 py-1.5 bg-white/[0.04] rounded-xl text-[9px] font-black uppercase">Close</button>
+                <button 
+                  onClick={() => setIsRulesOpen(false)}
+                  className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-300 transition-all"
+                >
+                  Close
+                </button>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-6 pr-1">
-                <div className="bg-[#0b0e1e]/60 border border-white/[0.04] rounded-2xl p-4">
-                  <h4 className="font-black text-white uppercase text-[10px] tracking-widest text-amber-400">1. EXP Earning</h4>
-                  <ul className="list-disc list-inside space-y-1.5 font-medium text-slate-400 text-xs mt-2">
-                    <li>1 Coin = 1 EXP</li>
-                    <li>Instant points accumulation</li>
-                    <li>Deductions on chargebacks</li>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto space-y-5 pr-1 custom-scrollbar text-[12px] leading-relaxed text-slate-300">
+                
+                {/* EXP Rules */}
+                <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-4 space-y-2">
+                  <h4 className="font-black text-amber-400 uppercase text-[10px] tracking-widest">1. EXP Earning</h4>
+                  <ul className="list-disc list-inside space-y-1.5 font-medium text-slate-400 text-[11px]">
+                    <li>1 Coin purchase = <span className="text-white font-bold">1 EXP</span> instantly.</li>
+                    <li>Refunds ya chargebacks pe EXP deduct hota hai.</li>
                   </ul>
                 </div>
-                <div className="border border-white/[0.03] rounded-2xl overflow-hidden">
-                  <table className="w-full text-center">
-                    <thead>
-                      <tr className="bg-white/[0.02] text-[9px] uppercase font-black text-slate-400">
-                        <th className="py-2.5 px-3">Level</th>
-                        <th className="py-2.5 px-3">EXP</th>
-                        <th className="py-2.5 px-3">Validity</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-[10px] font-bold text-slate-400">
-                      {SVIP_LEVELS_DATA.slice(0, 6).map((lvl) => (
-                        <tr key={lvl.level} className="border-t border-white/[0.02]">
-                          <td className="py-2 text-white">SVIP {lvl.level}</td>
-                          <td className="py-2 text-amber-400">{lvl.points}</td>
-                          <td className="py-2">{lvl.validity}</td>
+
+                {/* Level Table */}
+                <div className="space-y-2">
+                  <h4 className="font-black text-amber-400 uppercase text-[10px] tracking-widest ml-1">2. Level EXP Table</h4>
+                  <div className="border border-white/[0.04] rounded-2xl overflow-hidden">
+                    <table className="w-full text-center border-collapse text-[10px]">
+                      <thead>
+                        <tr className="bg-white/[0.03] uppercase font-black tracking-wider text-slate-400 border-b border-white/[0.04]">
+                          <th className="py-2.5 px-3">Level</th>
+                          <th className="py-2.5 px-3">EXP</th>
+                          <th className="py-2.5 px-3">Tier</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="font-bold text-slate-400 divide-y divide-white/[0.02]">
+                        {SVIP_LEVELS_DATA.map((lvl) => (
+                          <tr key={lvl.level} className="hover:bg-white/[0.02]">
+                            <td className="py-2 px-3 text-white">SVIP {lvl.level}</td>
+                            <td className="py-2 px-3 text-amber-400">{lvl.points}</td>
+                            <td className="py-2 px-3 uppercase text-[8px] tracking-widest text-slate-500">{lvl.theme}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
+
+                {/* Validity Table */}
+                <div className="space-y-2">
+                  <h4 className="font-black text-amber-400 uppercase text-[10px] tracking-widest ml-1">3. Validity Periods</h4>
+                  <div className="border border-white/[0.04] rounded-2xl overflow-hidden">
+                    <table className="w-full text-center border-collapse text-[10px]">
+                      <thead>
+                        <tr className="bg-white/[0.03] uppercase font-black tracking-wider text-slate-400 border-b border-white/[0.04]">
+                          <th className="py-2.5 px-3">Level</th>
+                          <th className="py-2.5 px-3">Days</th>
+                          <th className="py-2.5 px-3">Maint. EXP</th>
+                        </tr>
+                      </thead>
+                      <tbody className="font-bold text-slate-400 divide-y divide-white/[0.02]">
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white">1-2</td>
+                          <td className="py-2.5 px-3">7</td>
+                          <td className="py-2.5 px-3 text-orange-400">375K</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white">3-6</td>
+                          <td className="py-2.5 px-3">15</td>
+                          <td className="py-2.5 px-3 text-orange-400">1.25M</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white">7-10</td>
+                          <td className="py-2.5 px-3">30</td>
+                          <td className="py-2.5 px-3 text-orange-400">5.0M</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white">11-15</td>
+                          <td className="py-2.5 px-3">45</td>
+                          <td className="py-2.5 px-3 text-orange-400">20.0M</td>
+                        </tr>
+                        <tr className="hover:bg-white/[0.02]">
+                          <td className="py-2.5 px-3 text-white">16-18</td>
+                          <td className="py-2.5 px-3">60</td>
+                          <td className="py-2.5 px-3 text-orange-400">100.0M</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Global Styles */}
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .mask-gradient {
+          mask-image: linear-gradient(to right, black 80%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 99px;
+        }
+        @keyframes gradientBackground {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animate-bg-gradient {
+          background: linear-gradient(-45deg, #0a0c1a, #141028, #0d1a2d, #100d26);
+          background-size: 400% 400%;
+          animation: gradientBackground 14s ease infinite;
+        }
+      `}</style>
     </AppLayout>
   );
-   }
+    }
