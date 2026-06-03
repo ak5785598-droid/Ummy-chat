@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, HelpCircle, User } from 'lucide-react';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -8,256 +8,6 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { calculateLevelProgress } from '@/lib/level-utils';
 import { collection, query, orderBy } from 'firebase/firestore';
-
-// ============ SOLID BLACK BACKGROUND REMOVER ============
-// Sirf solid black remove karega, kuch aur nahi
-function processImageTransparent(imageUrl: string): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    
-    // Cache check
-    const cacheKey = `img_${imageUrl}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        resolve(cached);
-        return;
-      }
-    } catch(e) {}
-    
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) {
-        resolve(imageUrl);
-        return;
-      }
-      
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      const width = canvas.width;
-      const height = canvas.height;
-      
-      // 4 corners check - SOLID BLACK ONLY
-      const corners = [
-        getPixel(data, width, 0, 0),           // top-left
-        getPixel(data, width, width-1, 0),     // top-right  
-        getPixel(data, width, 0, height-1),    // bottom-left
-        getPixel(data, width, width-1, height-1) // bottom-right
-      ];
-      
-      const allBlack = corners.every(c => c.r < 40 && c.g < 40 && c.b < 40);
-      
-      // Agar 4 corners solid black nahi hai toh kuch mat karo
-      if (!allBlack) {
-        try { sessionStorage.setItem(cacheKey, imageUrl); } catch(e) {}
-        resolve(imageUrl);
-        return;
-      }
-      
-      // Sirf solid black pixels remove karo
-      const len = data.length;
-      for (let i = 0; i < len; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        // SOLID BLACK (0-50) → fully transparent
-        if (r < 50 && g < 50 && b < 50) {
-          data[i + 3] = 0;
-        } 
-        // NEAR BLACK (50-90) → semi transparent edges
-        else if (r < 90 && g < 90 && b < 90) {
-          const max = Math.max(r, g, b);
-          data[i + 3] = Math.round((max / 90) * 255);
-        }
-        // Baki sab colors → as is (no change)
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-      
-      // Data URL banao
-      const dataUrl = canvas.toDataURL('image/png');
-      
-      // Cache
-      try { sessionStorage.setItem(cacheKey, dataUrl); } catch(e) {}
-      
-      resolve(dataUrl);
-    };
-    
-    img.onerror = () => resolve(imageUrl);
-    img.src = imageUrl;
-  });
-}
-
-// Helper function - pixel color nikalne ke liye
-function getPixel(data: Uint8ClampedArray, width: number, x: number, y: number) {
-  const i = (y * width + x) * 4;
-  return { r: data[i], g: data[i+1], b: data[i+2], a: data[i+3] };
-}
-
-// ============ VIDEO PROCESSOR - SIRF PEHLA FRAME ============
-function processVideoThumbnail(videoUrl: string): Promise<string> {
-  return new Promise((resolve) => {
-    const video = document.createElement('video');
-    video.crossOrigin = "anonymous";
-    video.preload = "metadata";
-    video.muted = true;
-    video.playsInline = true;
-    
-    // Cache check
-    const cacheKey = `vid_${videoUrl}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        resolve(cached);
-        return;
-      }
-    } catch(e) {}
-    
-    video.onloadeddata = () => {
-      // Sirf pehla frame capture karo
-      video.currentTime = 0.1;
-    };
-    
-    video.onseeked = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) {
-        resolve(videoUrl);
-        return;
-      }
-      
-      // Video frame draw karo
-      ctx.drawImage(video, 0, 0);
-      
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      const width = canvas.width;
-      const height = canvas.height;
-      
-      // 4 corners check - SOLID BLACK ONLY
-      const corners = [
-        getPixel(data, width, 0, 0),
-        getPixel(data, width, width-1, 0),
-        getPixel(data, width, 0, height-1),
-        getPixel(data, width, width-1, height-1)
-      ];
-      
-      const allBlack = corners.every(c => c.r < 40 && c.g < 40 && c.b < 40);
-      
-      if (!allBlack) {
-        try { sessionStorage.setItem(cacheKey, videoUrl); } catch(e) {}
-        resolve(videoUrl);
-        return;
-      }
-      
-      // Sirf solid black remove karo
-      const len = data.length;
-      for (let i = 0; i < len; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        if (r < 50 && g < 50 && b < 50) {
-          data[i + 3] = 0;
-        } else if (r < 90 && g < 90 && b < 90) {
-          const max = Math.max(r, g, b);
-          data[i + 3] = Math.round((max / 90) * 255);
-        }
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-      
-      const dataUrl = canvas.toDataURL('image/png');
-      
-      try { sessionStorage.setItem(cacheKey, dataUrl); } catch(e) {}
-      resolve(dataUrl);
-    };
-    
-    video.onerror = () => resolve(videoUrl);
-    video.src = videoUrl;
-    video.load();
-  });
-}
-
-// ============ MEDIA COMPONENT - IMAGE + VIDEO SUPPORT ============
-function LevelMedia({ mediaUrl, alt }: { mediaUrl: string; alt: string }) {
-  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isVideo, setIsVideo] = useState(false);
-  
-  useEffect(() => {
-    let active = true;
-    
-    async function load() {
-      setLoading(true);
-      
-      // Check karo image hai ya video
-      const isVideoFile = mediaUrl.match(/\.(mp4|webm|ogg|mov)($|\?)/i);
-      const isVideoType = mediaUrl.includes('video');
-      const videoExt = isVideoFile || isVideoType;
-      
-      setIsVideo(!!videoExt);
-      
-      let result: string;
-      
-      if (videoExt) {
-        // Video ka pehla frame lo
-        result = await processVideoThumbnail(mediaUrl);
-      } else {
-        // Normal image process karo
-        result = await processImageTransparent(mediaUrl);
-      }
-      
-      if (active) {
-        setDisplayUrl(result);
-        setLoading(false);
-      }
-    }
-    
-    load();
-    
-    return () => { active = false; };
-  }, [mediaUrl]);
-  
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-5 h-5 border-2 border-purple-200 border-t-purple-400 rounded-full animate-spin" />
-          <span className="text-[8px] text-gray-400">{isVideo ? 'video...' : 'image...'}</span>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!displayUrl) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <span className="text-[9px] text-gray-300">No Media</span>
-      </div>
-    );
-  }
-  
-  return (
-    <img 
-      src={displayUrl} 
-      alt={alt}
-      className="w-full h-full object-contain p-1"
-      style={{ background: 'transparent' }}
-      loading="lazy"
-    />
-  );
-}
 
 export default function UserLevelPage() {
   const router = useRouter();
@@ -277,10 +27,14 @@ export default function UserLevelPage() {
 
   return (
     <AppLayout>
+      {/* Light Theme Background with Purple Top */}
       <div className="relative min-h-screen bg-gray-50 font-sans pb-20 overflow-hidden text-gray-900">
         
+        {/* Top 30vh Purple Glossy Effect mixing with White */}
         <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-purple-500/30 via-purple-400/15 to-transparent pointer-events-none blur-xl" />
         <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-br from-purple-600/20 via-fuchsia-500/10 to-transparent pointer-events-none" />
+        
+        {/* Bottom Glossy Effects */}
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Header */}
@@ -298,12 +52,16 @@ export default function UserLevelPage() {
 
         <div className="relative z-10 p-6 space-y-8">
           
-          {/* User Profile Card */}
+          {/* User Profile Card - Glossy Solid Purple for Light Theme */}
           <div className="relative bg-gradient-to-br from-purple-600 via-fuchsia-500 to-purple-700 backdrop-blur-2xl border border-purple-400/50 rounded-2xl p-5 shadow-lg overflow-hidden">
+            
+            {/* Card ke andar glossy highlight */}
             <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
             
+            {/* User Info Section */}
             <div className="relative flex items-center gap-4 mb-5">
+              {/* Profile Avatar */}
               <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-200 to-white p-0.5 shadow-md">
                 <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/60">
                   {userProfile && 'photoURL' in userProfile && userProfile.photoURL ? (
@@ -320,6 +78,7 @@ export default function UserLevelPage() {
                 </div>
               </div>
               
+              {/* User Name */}
               <div>
                 <p className="text-xs text-purple-100 tracking-wider">WELCOME BACK</p>
                 <h2 className="text-lg font-bold text-white tracking-wide">
@@ -328,6 +87,7 @@ export default function UserLevelPage() {
               </div>
             </div>
 
+            {/* Progress Bar Section */}
             <div className="relative space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-2.5 bg-black/20 rounded-full overflow-hidden shadow-inner border border-white/10">
@@ -363,35 +123,44 @@ export default function UserLevelPage() {
             
             <div className="grid grid-cols-3 gap-3">
               {levels && levels.length > 0 ? (
-                levels.map((level: any, idx: number) => {
-                  const uniqueKey = level.id || `level-${idx}`;
-                  
-                  return (
-                    <div 
-                      key={uniqueKey}
-                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
-                    >
-                      {level.imageUrl ? (
-                        <LevelMedia 
-                          mediaUrl={level.imageUrl} 
-                          alt={level.name || `Level ${idx}`}
+                levels.map((level: any, idx: number) => (
+                  <div 
+                    key={level.id || idx} 
+                    className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-between overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300 group"
+                  >
+                    {/* Image with NO blur, NO fade, NO black background - completely transparent */}
+                    {level.imageUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <img 
+                          src={level.imageUrl} 
+                          alt={level.name} 
+                          className="w-full h-full object-contain"
+                          style={{ filter: 'none', opacity: 1 }}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <span className="text-[9px] text-gray-300">No Media</span>
-                        </div>
-                      )}
-                      
-                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
-                        {level.range || `Lv.${idx}`}
-                      </span>
-                    </div>
-                  );
-                })
+                      </div>
+                    )}
+                    
+                    <span className="text-[10px] font-bold text-gray-500 tracking-wider relative z-10 bg-white/80 px-1.5 py-0.5 rounded">
+                      {level.range || `Lv.${idx}`}
+                    </span>
+                  </div>
+                ))
               ) : (
-                ['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
-                  <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                    <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
+                [
+                  'Lv.0 - Lv.10',
+                  'Lv.20 - Lv.35',
+                  'Lv.40 - Lv.56',
+                  'Lv.63 - Lv.75',
+                  'Lv.78 - Lv.87',
+                  'Lv.88 - Lv.99'
+                ].map((range, idx) => (
+                  <div 
+                    key={idx} 
+                    className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                  >
+                    <span className="text-[10px] font-bold text-gray-500 tracking-wider">
+                      {range}
+                    </span>
                   </div>
                 ))
               )}
@@ -401,10 +170,23 @@ export default function UserLevelPage() {
           {/* Rewards Section */}
           <div className="space-y-4 pt-4">
             <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">Rewards</h2>
+            
             <div className="grid grid-cols-3 gap-3">
-              {['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
-                <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
+              {[
+                'Lv.0 - Lv.10',
+                'Lv.20 - Lv.35',
+                'Lv.40 - Lv.56',
+                'Lv.63 - Lv.75',
+                'Lv.78 - Lv.87',
+                'Lv.88 - Lv.99'
+              ].map((range, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                >
+                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">
+                    {range}
+                  </span>
                 </div>
               ))}
             </div>
@@ -413,10 +195,23 @@ export default function UserLevelPage() {
           {/* Frames Section */}
           <div className="space-y-4 pt-4">
             <h2 className="text-lg font-bold tracking-[0.2em] text-gray-800 uppercase">Frames</h2>
+            
             <div className="grid grid-cols-3 gap-3">
-              {['Lv.0 - Lv.10','Lv.20 - Lv.35','Lv.40 - Lv.56','Lv.63 - Lv.75','Lv.78 - Lv.87','Lv.88 - Lv.99'].map((range, idx) => (
-                <div key={idx} className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300">
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">{range}</span>
+              {[
+                'Lv.0 - Lv.10',
+                'Lv.20 - Lv.35',
+                'Lv.40 - Lv.56',
+                'Lv.63 - Lv.75',
+                'Lv.78 - Lv.87',
+                'Lv.88 - Lv.99'
+              ].map((range, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl p-3 flex flex-col justify-start hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                >
+                  <span className="text-[10px] font-bold text-gray-500 tracking-wider">
+                    {range}
+                  </span>
                 </div>
               ))}
             </div>
@@ -424,44 +219,61 @@ export default function UserLevelPage() {
 
         </div>
 
-        {/* Rules Modal */}
+        {/* Rules Modal - Updated for Light Theme */}
         {showRules && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="w-full max-w-sm bg-white border border-purple-200 shadow-2xl rounded-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              
               <div className="p-4 border-b border-gray-100 flex items-center bg-gradient-to-r from-purple-50 to-transparent">
-                <button onClick={() => setShowRules(false)} className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors">
+                <button 
+                  onClick={() => setShowRules(false)} 
+                  className="p-1 -ml-1 rounded-full hover:bg-gray-100 transition-colors"
+                >
                   <ChevronLeft className="h-6 w-6 text-gray-800" />
                 </button>
-                <h2 className="text-lg font-bold flex-1 text-center -ml-6 bg-gradient-to-r from-purple-700 to-fuchsia-600 bg-clip-text text-transparent">Rules</h2>
+                <h2 className="text-lg font-bold flex-1 text-center -ml-6 bg-gradient-to-r from-purple-700 to-fuchsia-600 bg-clip-text text-transparent">
+                  Rules
+                </h2>
               </div>
 
               <div className="p-5 max-h-[60vh] overflow-y-auto space-y-5 text-gray-800">
+                
                 <div className="space-y-2">
                   <h3 className="text-sm text-purple-700 font-bold">Gift coins consumption</h3>
                   <p className="text-xs text-amber-600 font-semibold">5 coins = 1 Exp</p>
-                  <div className="bg-amber-50 text-amber-700 text-[11px] p-2.5 rounded-lg border border-amber-200">Svip2 privilege: 5coins = 1.2EXP</div>
-                  <div className="bg-amber-50 text-amber-700 text-[11px] p-2.5 rounded-lg border border-amber-200">Svip7 privilege: 5coins = 1.3EXP</div>
+                  <div className="bg-amber-50 text-amber-700 text-[11px] p-2.5 rounded-lg border border-amber-200">
+                    Svip2 privilege: 5coins = 1.2EXP
+                  </div>
+                  <div className="bg-amber-50 text-amber-700 text-[11px] p-2.5 rounded-lg border border-amber-200">
+                    Svip7 privilege: 5coins = 1.3EXP
+                  </div>
                 </div>
+
                 <div className="space-y-1">
                   <h3 className="text-sm text-purple-700 font-bold">Enter the room</h3>
                   <p className="text-xs text-amber-600 font-semibold">2000 Exp/day</p>
                 </div>
+
                 <div className="space-y-1">
                   <h3 className="text-sm text-purple-700 font-bold">Share the room</h3>
                   <p className="text-xs text-amber-600 font-semibold">2000 Exp/day</p>
                 </div>
+
                 <div className="space-y-1">
                   <h3 className="text-sm text-purple-700 font-bold">Stay in your own room (Limited Time)</h3>
                   <p className="text-xs text-amber-600 font-semibold">10mins = 1000 Exp, 10000Exp/day</p>
                 </div>
+
                 <div className="space-y-1">
                   <h3 className="text-sm text-purple-700 font-bold">Stay on other rooms (Limited Time)</h3>
                   <p className="text-xs text-amber-600 font-semibold">10mins = 1000 Exp, 20000 Exp/day</p>
                 </div>
+
                 <div className="space-y-1 pb-4">
                   <h3 className="text-sm text-purple-700 font-bold">Participate in activities</h3>
                   <p className="text-xs text-amber-600 font-semibold">Speed up upgrade</p>
                 </div>
+
               </div>
             </div>
           </div>
@@ -470,4 +282,4 @@ export default function UserLevelPage() {
       </div>
     </AppLayout>
   );
-                }
+}
