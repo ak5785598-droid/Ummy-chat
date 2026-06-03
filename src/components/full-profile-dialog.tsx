@@ -339,208 +339,112 @@ const getDeterministicFallbackId = (userId: string) => {
 };
 
 // ==========================================
-// CP CARD COMPONENT
+// CP CARD COMPONENT (MODIFIED WITH PLUS-HEART-PLUS)
 // ==========================================
 const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string }) => {
-  const playablesSDK = `// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
+  const heartGemSVG = `<svg viewBox="0 0 600 550" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Faceted Rose-Gold Heart Gem">
+  <defs>
+    <radialGradient id="rimGold" cx="0.28" cy="0.22" r="0.85">
+      <stop offset="0%" stop-color="#fde1d2"/>
+      <stop offset="25%" stop-color="#f8c7b5"/>
+      <stop offset="55%" stop-color="#d48a78"/>
+      <stop offset="85%" stop-color="#a05a4a"/>
+      <stop offset="100%" stop-color="#7a3c2e"/>
+    </radialGradient>
+    <linearGradient id="bevelLight" x1="0" y1="0" x2="0.8" y2="0.8">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bevelDark" x1="1" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="f1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="35%" stop-color="#fde8ee"/><stop offset="100%" stop-color="#f5c2d0"/></linearGradient>
+    <linearGradient id="f2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff5f8"/><stop offset="100%" stop-color="#e9a6b8"/></linearGradient>
+    <linearGradient id="f3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fbe0e7"/><stop offset="100%" stop-color="#d98ca2"/></linearGradient>
+    <linearGradient id="f4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f0c1ce"/><stop offset="100%" stop-color="#b96b81"/></linearGradient>
+    <linearGradient id="f5" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2a9b9"/><stop offset="100%" stop-color="#9d4f66"/></linearGradient>
+    <linearGradient id="f6" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d18fa3"/><stop offset="100%" stop-color="#7c2e48"/></linearGradient>
+    <linearGradient id="f7" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#bc738a"/><stop offset="100%" stop-color="#672139"/></linearGradient>
+    <linearGradient id="f8" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a4576f"/><stop offset="100%" stop-color="#54162a"/></linearGradient>
+    <linearGradient id="f9" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8a2a44"/><stop offset="100%" stop-color="#3d0a18"/></linearGradient>
+    <linearGradient id="f10" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffedf2"/><stop offset="100%" stop-color="#e2a0b2"/></linearGradient>
+    <linearGradient id="f11" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f3cbd6"/><stop offset="100%" stop-color="#c27a8e"/></linearGradient>
+    <linearGradient id="f12" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e4b0bf"/><stop offset="100%" stop-color="#9f5a70"/></linearGradient>
+    <linearGradient id="f13" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#cc8ca2"/><stop offset="100%" stop-color="#7e3450"/></linearGradient>
+    <linearGradient id="f14" x1="1" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#7a2540"/><stop offset="100%" stop-color="#4b0f24"/></linearGradient>
+    <linearGradient id="f15" x1="1" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#5c142a"/><stop offset="100%" stop-color="#2a0712"/></linearGradient>
+    <radialGradient id="centerGlow" cx="0.5" cy="0.38" r="0.65">
+      <stop offset="0%" stop-color="#ffe4ec" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#e291a8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#7a1e3e" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14" result="b"/><feBlend in="SourceGraphic" in2="b" mode="screen"/></filter>
+    <filter id="specular" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <clipPath id="clipHeart"><path d="M300 457 C160 363 52 258 90 162 C117 93 207 73 280 121 C291 129 297 139 300 150 C303 139 309 129 320 121 C393 73 483 93 510 162 C548 258 440 363 300 457 Z"/></clipPath>
+  </defs>
 
-  if (window.playablesSDK) return;
+  <g clip-path="url(#clipHeart)">
+    <polygon points="185,115 280,121 300,150 220,180" fill="url(#f1)"/>
+    <polygon points="185,115 120,135 140,210 220,180" fill="url(#f2)"/>
+    <polygon points="120,135 95,160 140,210" fill="url(#f3)"/>
+    <polygon points="95,160 86,245 140,210" fill="url(#f4)"/>
+    <polygon points="86,245 160,280 140,210" fill="url(#f5)"/>
+    <polygon points="86,245 128,328 160,280" fill="url(#f6)"/>
+    <polygon points="128,328 198,398 210,330 160,280" fill="url(#f7)"/>
+    <polygon points="128,328 198,398 300,457 210,330" fill="url(#f8)"/>
+    <polygon points="198,398 300,457 270,360" fill="url(#f9)"/>
+    <polygon points="415,115 320,121 300,150 380,180" fill="url(#f10)"/>
+    <polygon points="415,115 480,135 460,210 380,180" fill="url(#f11)"/>
+    <polygon points="480,135 505,160 460,210" fill="url(#f12)"/>
+    <polygon points="505,160 514,245 460,210" fill="url(#f13)"/>
+    <polygon points="514,245 440,280 460,210" fill="url(#f5)"/>
+    <polygon points="514,245 472,328 440,280" fill="url(#f6)"/>
+    <polygon points="472,328 402,398 390,330 440,280" fill="url(#f7)"/>
+    <polygon points="472,328 402,398 300,457 390,330" fill="url(#f14)"/>
+    <polygon points="402,398 300,457 330,360" fill="url(#f15)"/>
+    <polygon points="220,180 300,200 300,150" fill="url(#f2)" opacity="0.95"/>
+    <polygon points="380,180 300,200 300,150" fill="url(#f10)" opacity="0.9"/>
+    <polygon points="220,180 240,250 300,200" fill="url(#f3)"/>
+    <polygon points="380,180 360,250 300,200" fill="url(#f11)"/>
+    <polygon points="240,250 300,270 300,200" fill="url(#f4)"/>
+    <polygon points="360,250 300,270 300,200" fill="url(#f12)"/>
+    <polygon points="220,180 160,280 240,250" fill="url(#f4)"/>
+    <polygon points="380,180 440,280 360,250" fill="url(#f13)"/>
+    <polygon points="160,280 210,330 240,250" fill="url(#f6)"/>
+    <polygon points="440,280 390,330 360,250" fill="url(#f13)"/>
+    <polygon points="240,250 270,360 300,270" fill="url(#f7)"/>
+    <polygon points="360,250 330,360 300,270" fill="url(#f14)"/>
+    <polygon points="210,330 270,360 240,250" fill="url(#f7)"/>
+    <polygon points="390,330 330,360 360,250" fill="url(#f14)"/>
+    <polygon points="210,330 270,360 300,457" fill="url(#f8)"/>
+    <polygon points="390,330 330,360 300,457" fill="url(#f15)"/>
+  </g>
 
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
+  <g clip-path="url(#clipHeart)">
+    <polygon points="185,115 280,121 220,180" fill="#ffffff" opacity="0.58"/>
+    <polygon points="185,115 120,135 140,210 220,180" fill="#ffffff" opacity="0.35"/>
+    <polygon points="280,121 300,150 300,200 220,180" fill="#ffffff" opacity="0.22"/>
+    <polygon points="402,398 472,328 514,245 440,280" fill="#000000" opacity="0.18"/>
+    <polygon points="330,360 390,330 300,457" fill="#000000" opacity="0.22"/>
+  </g>
 
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
+  <ellipse cx="300" cy="255" rx="95" ry="75" fill="url(#centerGlow)" opacity="0.7" filter="url(#softGlow)"/>
 
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
+  <g filter="url(#specular)">
+    <circle cx="196" cy="126" r="5" fill="#ffffff" opacity="0.95"/>
+    <circle cx="167" cy="152" r="3" fill="#ffffff" opacity="0.85"/>
+    <circle cx="132" cy="188" r="2" fill="#ffffff" opacity="0.7"/>
+    <path d="M274 108 l10 -4 2 11 -12 -7z" fill="#ffffff" opacity="0.9"/>
+    <circle cx="248" cy="142" r="1.8" fill="#ffffff" opacity="0.8"/>
+  </g>
 
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
+  <path d="M300 488 C140 390 20 270 62 150 C92 75 195 48 272 103 C289 115 296 128 300 143 C304 128 311 115 328 103 C405 48 508 75 538 150 C580 270 460 390 300 488 Z M300 457 C160 363 52 258 90 162 C117 93 207 73 280 121 C291 129 297 139 300 150 C303 139 309 129 320 121 C393 73 483 93 510 162 C548 258 440 363 300 457 Z" fill="url(#rimGold)" fill-rule="evenodd" stroke="#6e3a2e" stroke-width="1.2"/>
 
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      p.timestamp = message.timestamp;
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();`;
-
-  const touchPatch = `(function() {
-  if (window.__playableTouchPatchInstalled) return;
-  window.__playableTouchPatchInstalled = true;
-  var origAdd = EventTarget.prototype.addEventListener;
-  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
-  EventTarget.prototype.addEventListener = function(type, listener, options) {
-    if (blockedTypes[type]) {
-      if (options === undefined || options === null) {
-        options = { passive: true };
-      } else if (typeof options === 'boolean') {
-        options = { capture: options, passive: true };
-      } else {
-        options = Object.assign({}, options, { passive: true });
-      }
-    }
-    return origAdd.call(this, type, listener, options);
-  };
-})();`;
-
-  const intlPatch = `window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};`;
-
-  const clickHandler = `(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();`;
+  <path d="M300 457 C160 363 52 258 90 162 C117 93 207 73 280 121 C291 129 297 139 300 150 C303 139 309 129 320 121 C393 73 483 93 510 162 C548 258 440 363 300 457 Z" fill="none" stroke="url(#bevelLight)" stroke-width="9" stroke-linejoin="round" opacity="0.5"/>
+  <path d="M300 488 C140 390 20 270 62 150 C92 75 195 48 272 103 C289 115 296 128 300 143 C304 128 311 115 328 103 C405 48 508 75 538 150 C580 270 460 390 300 488 Z" fill="none" stroke="#5a2a20" stroke-width="2.5" opacity="0.55"/>
+  <path d="M62 150 C92 75 195 48 272 103 C289 115 296 128 300 143" fill="none" stroke="#ffe0d1" stroke-width="6" stroke-linecap="round" opacity="0.45" filter="url(#specular)"/>
+</svg>`;
 
   const styles = `
     * {
@@ -604,36 +508,48 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
     height: 100%;
     pointer-events: none;
   }
-  .plus {
+  .icon-container {
     position: absolute;
     top: 50%;
     width: 19.44%;
     max-width: 140px;
     aspect-ratio: 1;
     z-index: 3;
+    transform: translate(-50%, -58%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .plus.left {
+  .icon-container.left {
     left: 18%;
-    transform: translate(-50%, -58%);
   }
-  .plus.right {
+  .icon-container.center {
+    left: 50%;
+  }
+  .icon-container.right {
     left: 82%;
-    transform: translate(-50%, -58%);
   }
-  .plus svg {
+  .icon-container svg {
     width: 100%;
     height: 100%;
     display: block;
     overflow: visible;
   }
-  .plus circle {
+  .plus-icon circle {
     fill: rgba(255,255,255,0.06);
     stroke: rgba(255,255,255,0.95);
     stroke-width: 2.8;
     backdrop-filter: blur(2px);
   }
-  .plus rect {
+  .plus-icon rect {
     fill: #FFFFFF;
+  }
+  .heart-icon svg {
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
+    transition: transform 0.2s ease;
+  }
+  .heart-icon:hover svg {
+    transform: scale(1.05);
   }
   .tab {
     position: absolute;
@@ -657,52 +573,63 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
     position: absolute;
     top: 50%;
     left: 18%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -58%);
     z-index: 10;
+    width: 19.44%;
+    max-width: 140px;
+    aspect-ratio: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    width: 19.44%;
-    max-width: 140px;
+    justify-content: center;
   }
-  .avatar-overlay img {
-    width: 60%;
-    aspect-ratio: 1;
+  .avatar-circle {
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
-    border: 2.5px solid rgba(255,255,255,0.9);
+    overflow: hidden;
+    border: 2.8px solid rgba(255,255,255,0.95);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    backdrop-filter: blur(2px);
+    background: rgba(255,255,255,0.06);
+  }
+  .avatar-circle img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: block;
   }
-  .avatar-overlay .avatar-fallback {
-    width: 60%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    border: 2.5px solid rgba(255,255,255,0.9);
+  .avatar-circle .avatar-fallback {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255,255,255,0.15);
     color: white;
     font-weight: 700;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-size: clamp(1.2rem, 3vw, 2.2rem);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
-  .avatar-overlay .username {
+  .avatar-name {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
     color: white;
-    font-size: 0.7rem;
+    font-size: clamp(0.55rem, 1.5vw, 0.85rem);
     font-weight: 700;
     text-align: center;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-    max-width: 100%;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    letter-spacing: 0.02em;
   }
   @media (max-width: 480px) {
     body { padding: 16px; }
-    .avatar-overlay .username { font-size: 0.6rem; }
-    .avatar-overlay img, .avatar-overlay .avatar-fallback { width: 55%; }
+    .avatar-name { bottom: -22px; font-size: 0.55rem; }
   }
 `;
 
@@ -723,21 +650,37 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
               </svg>
             </div>
 
-            {/* Left Plus - Now shows Avatar + Username */}
+            {/* Left Side - Avatar Circle */}
             <div className="avatar-overlay">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={username || 'User'} />
-              ) : (
-                <div className="avatar-fallback">
-                  {(username || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="username">{username || 'User'}</span>
+              <div className="avatar-circle">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={username || 'User'} />
+                ) : (
+                  <div className="avatar-fallback">
+                    {(username || 'U').charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <span className="avatar-name">{username || 'User'}</span>
             </div>
 
-            {/* Right Plus - kept as is */}
-            <div className="plus right">
-              <svg viewBox="0 0 140 140" fill="none">
+            {/* Left Plus Icon */}
+            <div className="icon-container left">
+              <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
+                <circle cx="70" cy="70" r="68" />
+                <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
+                <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
+              </svg>
+            </div>
+
+            {/* Center Heart Icon */}
+            <div className="icon-container center heart-icon">
+              <div dangerouslySetInnerHTML={{ __html: heartGemSVG }} />
+            </div>
+
+            {/* Right Plus Icon */}
+            <div className="icon-container right">
+              <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
                 <circle cx="70" cy="70" r="68" />
                 <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
                 <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
@@ -761,231 +704,6 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                 <text x="90" y="20" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="20" fill="#5A2105" letterSpacing="0.5">CP</text>
               </svg>
             </div>
-          </div>
-        </div>
-      </div>
-      <style>{styles}</style>
-    </div>
-  );
-};
-
-// ==========================================
-// FRIENDSHIP CARD COMPONENT
-// ==========================================
-const FriendshipCard = () => {
-  const styles = `
-    .friendship-card-wrap {
-      display: flex;
-      justify-content: center;
-      width: 100%;
-    }
-
-    .friendship-card {
-      position: relative;
-      width: 360px;
-      height: auto;
-      background: linear-gradient(180deg, #0a1835 0%, #0c1f46 22%, #112a63 45%, #153a8a 100%);
-      border-left: 1.5px solid #d4b76a;
-      border-right: 1.5px solid #d4b76a;
-      border-bottom: 1.5px solid #d4b76a;
-      border-bottom-left-radius: 18px;
-      border-bottom-right-radius: 18px;
-      box-shadow: 
-        0 0 0 1px rgba(0,0,0,0.8) inset,
-        0 10px 30px rgba(0,0,0,0.6),
-        0 0 40px rgba(10,24,53,0.5);
-      overflow: hidden;
-      padding-bottom: 24px;
-    }
-
-    .friendship-card::before {
-      content: '';
-      position: absolute;
-      inset: 1.5px;
-      bottom: 1.5px;
-      background: radial-gradient(ellipse 280px 220px at 50% 28%, rgba(90,140,255,0.18) 0%, rgba(60,100,200,0.08) 35%, transparent 70%);
-      pointer-events: none;
-      border-bottom-left-radius: 16px;
-      border-bottom-right-radius: 16px;
-    }
-
-    .friendship-card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      box-shadow: inset 0 0 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-      pointer-events: none;
-      border-bottom-left-radius: 18px;
-      border-bottom-right-radius: 18px;
-    }
-
-    .friendship-frame {
-      position: relative;
-      width: 100%;
-      height: auto;
-      z-index: 10;
-      pointer-events: none;
-      overflow: visible;
-    }
-
-    .friendship-slots {
-      position: relative;
-      z-index: 5;
-      padding: 10px 30px 0;
-      display: grid;
-      grid-template-columns: repeat(3, 72px);
-      justify-content: space-between;
-      row-gap: 59px;
-    }
-
-    .friendship-slot {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 72px;
-    }
-
-    .friendship-circle {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: rgba(47, 70, 120, 0.7);
-      border: 1px solid #4a5f92;
-      box-shadow: 
-        inset 0 4px 10px rgba(0,0,0,0.55),
-        inset 0 -2px 4px rgba(120,160,255,0.08),
-        inset 0 0 0 1px rgba(0,0,0,0.3),
-        0 2px 6px rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-
-    .friendship-circle::before {
-      content: '';
-      position: absolute;
-      inset: 3px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.08), transparent 50%);
-      pointer-events: none;
-    }
-
-    .friendship-plus {
-      color: rgba(255,255,255,0.94);
-      font-size: 40px;
-      font-weight: 300;
-      line-height: 1;
-      transform: translateY(-1px);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    }
-
-    .friendship-label {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #e6e6e6;
-      font-weight: 400;
-      letter-spacing: 0.2px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
-    }
-
-    @media (max-width: 380px) {
-      .friendship-card {
-        transform: scale(0.94);
-        transform-origin: top center;
-      }
-    }
-  `;
-
-  return (
-    <div className="mt-2 mb-4">
-      <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Friendship 0/9</h3>
-      <div className="friendship-card-wrap">
-        <div className="friendship-card">
-          <svg className="friendship-frame" viewBox="0 0 360 78" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="goldMain" x1="0" y1="0" x2="0" y2="24" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#f0d98e"/>
-                <stop offset="0.25" stopColor="#d4b76a"/>
-                <stop offset="0.5" stopColor="#c5a45d"/>
-                <stop offset="0.75" stopColor="#b8934a"/>
-                <stop offset="1" stopColor="#8a6e38"/>
-              </linearGradient>
-              <linearGradient id="goldDark" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#a47e37"/>
-                <stop offset="1" stopColor="#6e531f"/>
-              </linearGradient>
-              <radialGradient id="gemBlue" cx="0.3" cy="0.2" r="0.8">
-                <stop stopColor="#7aa4ff"/>
-                <stop offset="0.3" stopColor="#4a7fff"/>
-                <stop offset="0.7" stopColor="#3a6be0"/>
-                <stop offset="1" stopColor="#1e3a7a"/>
-              </radialGradient>
-              <filter id="gemGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="1.5" result="blur"/>
-                <feFlood floodColor="#4a7fff" floodOpacity="0.6"/>
-                <feComposite in2="blur" operator="in"/>
-                <feMerge>
-                  <feMergeNode/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-            
-            <rect x="1.5" y="17.5" width="357" height="2.5" fill="url(#goldMain)" rx="1.25"/>
-            <rect x="1.5" y="17.5" width="357" height="1" fill="#f3e4b1" opacity="0.5"/>
-            <rect x="1.5" y="17.5" width="1.5" height="62" fill="url(#goldMain)"/>
-            <rect x="357" y="17.5" width="1.5" height="62" fill="url(#goldMain)"/>
-            
-            <g transform="translate(1.5, 17.5)">
-              <path d="M0 0 L26 0 C26 0 26 6 22 10 C18.5 13.2 14 10 13 13 C13 11.5 15.5 9.5 16.5 6.5 C17 5 17 3 16 1.5 L2 1.5 C2 5.5 3.5 9 6.5 11.5 C2.5 9 0 4.5 0 0Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.5"/>
-              <path d="M0 0 L24 0 C24 0 23 4.5 20 7" stroke="#f0d98e" strokeWidth="0.7" opacity="0.7" fill="none"/>
-              <circle cx="11" cy="11" r="5.8" fill="#0a1835" stroke="url(#goldDark)" strokeWidth="1.2"/>
-              <circle cx="11" cy="11" r="4.3" fill="url(#gemBlue)" filter="url(#gemGlow)"/>
-              <circle cx="9.8" cy="9.7" r="1.4" fill="#b8d4ff" opacity="0.9"/>
-            </g>
-            
-            <g transform="translate(358.5, 17.5) scale(-1,1)">
-              <path d="M0 0 L26 0 C26 0 26 6 22 10 C18.5 13.2 14 14 10 13 C13 11.5 15.5 9.5 16.5 6.5 C17 5 17 3 16 1.5 L2 1.5 C2 5.5 3.5 9 6.5 11.5 C2.5 9 0 4.5 0 0Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.5"/>
-              <path d="M0 0 L24 0 C24 0 23 4.5 20 7" stroke="#f0d98e" strokeWidth="0.7" opacity="0.7" fill="none"/>
-              <circle cx="11" cy="11" r="5.8" fill="#0a1835" stroke="url(#goldDark)" strokeWidth="1.2"/>
-              <circle cx="11" cy="11" r="4.3" fill="url(#gemBlue)" filter="url(#gemGlow)"/>
-              <circle cx="9.8" cy="9.7" r="1.4" fill="#b8d4ff" opacity="0.9"/>
-            </g>
-            
-            <g transform="translate(180, 0)">
-              <path d="M-44 19.5 C-38 14 -28 11.5 -15 13.5 C-15 13.5 -11 9 -6 7.5 L0 4 L6 7.5 L11 9 L15 13.5 C28 11.5 38 14 44 19.5 C36 22 24 23.5 0 23.5 C-24 23.5 -36 22 -44 19.5Z" fill="#0a1020" opacity="0.5"/>
-              <path d="M-44 18.5 C-36 12 -22 10 -12 13 L-8 10 L-4 8 L0 5 L4 8 L8 10 L12 13 C22 10 36 12 44 18.5 C38 21 26 22.5 14 22.8 L10 18 L6 15 L0 12 L-6 15 L-10 18 L-14 22.8 C-26 22.5 -38 21 -44 18.5Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.6"/>
-              <path d="M-41 17.5 C-32 12.5 -20 11.5 -12 13.5" stroke="#f0d98e" strokeWidth="1" fill="none" opacity="0.8"/>
-              <path d="M41 17.5 C32 12.5 20 11.5 12 13.5" stroke="#f0d98e" strokeWidth="1" fill="none" opacity="0.8"/>
-              <path d="M-12 13 C-18 8 -28 8.5 -37 4 C-31 10 -22 12.5 -14 13.5 L-10 11.5 C-11 10 -11.5 9 -12 8.5 V13Z" fill="#9c7a3c" stroke="#5f451e" strokeWidth="0.5"/>
-              <path d="M12 13 C18 8 28 8.5 37 4 C31 10 22 12.5 14 13.5 L10 11.5 C11 10 11.5 9 12 8.5 V13Z" fill="#9c7a3c" stroke="#5f451e" strokeWidth="0.5"/>
-              <path d="M-28 12 C-32 10 -35 8 -37 4.5 C-33 7 -30 8.5 -26 9.5" stroke="#d4b76a" strokeWidth="1" fill="none" opacity="0.9"/>
-              <path d="M28 12 C32 10 35 8 37 4.5 C33 7 30 8.5 26 9.5" stroke="#d4b76a" strokeWidth="1" fill="none" opacity="0.9"/>
-              <path d="M-9 7 L0 0.5 L9 7 L7.5 17.5 L0 22.5 L-7.5 17.5 Z" fill="url(#goldMain)" stroke="#3d2a12" strokeWidth="0.8"/>
-              <path d="M-8 7.5 L0 2 L8 7.5 L7 16.5 L0 21 L-7 16.5 Z" fill="#7a5928" opacity="0.3"/>
-              <path d="M-7.5 7.8 L0 1.5 L7.5 7.8" stroke="#f0d98e" strokeWidth="0.6" fill="none" opacity="0.7"/>
-              
-              <g filter="url(#gemGlow)">
-                <path d="M0 2.5 L6.2 9.2 L0 20 L-6.2 9.2 Z" fill="#1a3a7a" stroke="#0e1f44" strokeWidth="0.5"/>
-                <path d="M0 2.5 L6.2 9.2 L0 18.5 L-6.2 9.2 Z" fill="url(#gemBlue)"/>
-                <path d="M0 2.5 L4.5 8.5 L0 12 L-4.5 8.5 Z" fill="#5a85ff" opacity="0.9"/>
-                <path d="M0 2.5 L3 7 L0 9.5 L-3 7 Z" fill="#a8c4ff" opacity="0.95"/>
-                <path d="M-1.5 5 L0 3.5 L1.5 5 L0 6.2 Z" fill="#e6f0ff"/>
-              </g>
-              
-              <path d="M-6 18.5 C-3 20 3 20 6 18.5 C4 19.5 1.5 20 0 20 C-1.5 20 -4 19.5 -6 18.5Z" fill="#5a421a" opacity="0.8"/>
-            </g>
-          </svg>
-
-          <div className="friendship-slots">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div className="friendship-slot" key={i}>
-                <div className="friendship-circle"><span className="friendship-plus">+</span></div>
-                <div className="friendship-label">Invite</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -1165,11 +883,8 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* CP Card */}
+            {/* CP Card - REPLACED TOP CONTRIBUTION WITH PLUS-HEART-PLUS */}
             <CPCard avatarUrl={profile.avatarUrl} username={profile.username} />
-
-            {/* Friendship Card - ADDED HERE BELOW CP CARD */}
-            <FriendshipCard />
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
@@ -1351,4 +1066,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-          }
+            }
