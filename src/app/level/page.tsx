@@ -237,20 +237,27 @@ export default function UserLevelPage() {
 
   const budgetLevels = React.useMemo(() => {
     if (!levels) return [];
-    return levels.filter((level: any) => 
-      (level.budget !== undefined && level.budget !== null && level.budget !== "") || 
-      (!level.reward && !level.frameId)
-    );
+    return levels.filter((level: any) => {
+      if (level.type) return level.type === "budget";
+      return (level.budget !== undefined && level.budget !== null && level.budget !== "") || 
+             (!level.reward && !level.frameId);
+    });
   }, [levels]);
 
   const rewardLevels = React.useMemo(() => {
     if (!levels) return [];
-    return levels.filter((level: any) => level.reward !== undefined && level.reward !== null && level.reward !== "");
+    return levels.filter((level: any) => {
+      if (level.type) return level.type === "rewards";
+      return level.reward !== undefined && level.reward !== null && level.reward !== "";
+    });
   }, [levels]);
 
   const frameLevels = React.useMemo(() => {
     if (!levels) return [];
-    return levels.filter((level: any) => level.frameId !== undefined && level.frameId !== null && level.frameId !== "");
+    return levels.filter((level: any) => {
+      if (level.type) return level.type === "frame";
+      return level.frameId !== undefined && level.frameId !== null && level.frameId !== "";
+    });
   }, [levels]);
 
   return (

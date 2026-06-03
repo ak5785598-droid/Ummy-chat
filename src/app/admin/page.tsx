@@ -871,6 +871,7 @@ function AdminPageContent() {
   const filteredLevelsList = useMemo(() => {
     if (!levelsList) return [];
     return levelsList.filter((level: any) => {
+      if (level.type) return level.type === levelTab;
       if (levelTab === "budget") {
         return (level.budget !== undefined && level.budget !== null && level.budget !== "") || (!level.reward && !level.frameId);
       }
@@ -2365,6 +2366,7 @@ function AdminPageContent() {
         name: levelName,
         range: levelRange,
         imageUrl,
+        type: levelTab,
         updatedAt: serverTimestamp(),
       };
       if (levelTab === "budget") levelData.budget = levelBudget;
