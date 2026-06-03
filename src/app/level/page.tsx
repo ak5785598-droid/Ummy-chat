@@ -10,7 +10,6 @@ import { calculateLevelProgress } from '@/lib/level-utils';
 import { collection, query, orderBy } from 'firebase/firestore';
 
 // ============ CANVAS BLACK REMOVER - NO STORAGE ============
-// Sirf canvas use karo, koi cache nahi, koi storage nahi
 function processImageTransparent(imageUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -33,7 +32,6 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       const width = canvas.width;
       const height = canvas.height;
       
-      // 4 corners check - SOLID BLACK ONLY
       const corners = [
         getPixel(data, width, 0, 0),
         getPixel(data, width, width-1, 0),
@@ -43,13 +41,11 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       
       const allBlack = corners.every(c => c.r < 40 && c.g < 40 && c.b < 40);
       
-      // Agar 4 corners solid black nahi hai toh original dikhao
       if (!allBlack) {
         resolve(imageUrl);
         return;
       }
       
-      // Sirf solid black pixels remove karo
       const len = data.length;
       for (let i = 0; i < len; i += 4) {
         const r = data[i];
@@ -66,7 +62,6 @@ function processImageTransparent(imageUrl: string): Promise<string> {
       
       ctx.putImageData(imageData, 0, 0);
       
-      // Direct data URL return karo - no storage
       const dataUrl = canvas.toDataURL('image/png');
       resolve(dataUrl);
     };
@@ -225,7 +220,7 @@ export default function UserLevelPage() {
   const firestore = useFirestore();
   const { userProfile } = useUserProfile(user?.uid);
   
-    const [showRules, setShowRules] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   const stats = calculateLevelProgress(userProfile?.wallet?.totalSpent || 0);
 
@@ -235,28 +230,51 @@ export default function UserLevelPage() {
   }, [firestore]);
   const { data: levels } = useCollection(levelsQuery);
 
+  // ============ 🎯 FIXED FILTERING LOGIC ============
   const budgetLevels = React.useMemo(() => {
     if (!levels) return [];
     return levels.filter((level: any) => {
-      if (level.type) return level.type === "budget";
-      return (level.budget !== undefined && level.budget !== null && level.budget !== "") || 
-             (!level.reward && !level.frameId);
+      // Agar type field hai toh strictly type === "budget" hona chahiye
+      if (level.type) {
+        return level.type === "budget";
+      }
+      // Agar type field nahi hai, toh budget field check karo
+      // Budget tabhi maano jab reward aur frameId DONO defined na ho
+      if (level.budget !== undefined && level.budget !== null && level.budget !== "") {
+        return true;
+      }
+      // Agar kuch bhi define nahi hai toh budget mat maano - skip karo
+      return false;
     });
   }, [levels]);
 
   const rewardLevels = React.useMemo(() => {
     if (!levels) return [];
     return levels.filter((level: any) => {
-      if (level.type) return level.type === "rewards";
-      return level.reward !== undefined && level.reward !== null && level.reward !== "";
+      // Agar type field hai toh strictly type === "rewards" hona chahiye
+      if (level.type) {
+        return level.type === "rewards";
+      }
+      // Agar type field nahi hai, toh reward field check karo
+      if (level.reward !== undefined && level.reward !== null && level.reward !== "") {
+        return true;
+      }
+      return false;
     });
   }, [levels]);
 
   const frameLevels = React.useMemo(() => {
     if (!levels) return [];
     return levels.filter((level: any) => {
-      if (level.type) return level.type === "frame";
-      return level.frameId !== undefined && level.frameId !== null && level.frameId !== "";
+      // Agar type field hai toh strictly type === "frame" hona chahiye
+      if (level.type) {
+        return level.type === "frame";
+      }
+      // Agar type field nahi hai, toh frameId field check karo
+      if (level.frameId !== undefined && level.frameId !== null && level.frameId !== "") {
+        return true;
+      }
+      return false;
     });
   }, [levels]);
 
