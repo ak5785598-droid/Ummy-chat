@@ -278,7 +278,7 @@ interface FullProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profile: any;
-  displayID?: string; // ⚡ NAYA PROP: Parent se ID aayegi
+  displayID?: string;
   stats: any;
   followData?: any;
   onFollow?: () => void;
@@ -329,7 +329,7 @@ const ProfileSection = ({ children, isEmpty, emptyLabel }: { children: React.Rea
 );
 
 const getDeterministicFallbackId = (userId: string) => {
-  if (userId === '901piBzTQ0VzCtAvlyyobwvAaTs1') return '0000'; // CREATOR_ID
+  if (userId === '901piBzTQ0VzCtAvlyyobwvAaTs1') return '0000';
   let hash = 0;
   const str = userId || 'fallback';
   for (let i = 0; i < str.length; i++) {
@@ -338,6 +338,665 @@ const getDeterministicFallbackId = (userId: string) => {
   return (Math.abs(hash % 900000) + 100000).toString();
 };
 
+// ==========================================
+// CP CARD COMPONENT
+// ==========================================
+const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string }) => {
+  const playablesSDK = `// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();`;
+
+  const touchPatch = `(function() {
+  if (window.__playableTouchPatchInstalled) return;
+  window.__playableTouchPatchInstalled = true;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (blockedTypes[type]) {
+      if (options === undefined || options === null) {
+        options = { passive: true };
+      } else if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else {
+        options = Object.assign({}, options, { passive: true });
+      }
+    }
+    return origAdd.call(this, type, listener, options);
+  };
+})();`;
+
+  const intlPatch = `window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};`;
+
+  const clickHandler = `(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();`;
+
+  const styles = `
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background: #0F0F12;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    padding: 24px;
+  }
+  .wrapper {
+    width: 720px;
+    max-width: 92vw;
+    aspect-ratio: 720 / 300;
+    position: relative;
+    filter: drop-shadow(0 24px 48px rgba(0,0,0,0.55));
+  }
+  .card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .card-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 26px;
+    overflow: hidden;
+    background: 
+      linear-gradient(180deg, rgba(142,29,76,0.88) 0%, rgba(196,59,108,0.72) 100%),
+      radial-gradient(ellipse 90% 75% at 50% 0%, #D44C7A 0%, #B53163 38%, #9A1F50 62%, #7A1741 100%);
+    box-shadow: 
+      inset 0 0 30px rgba(0,0,0,0.25),
+      inset 0 1px 0 rgba(255,255,255,0.14),
+      inset 0 -1px 2px rgba(0,0,0,0.25);
+    z-index: 1;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: 29px;
+    padding: 3px;
+    background: linear-gradient(90deg, #F7C49F, #E99B8E);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .bokeh {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  .plus {
+    position: absolute;
+    top: 50%;
+    width: 19.44%;
+    max-width: 140px;
+    aspect-ratio: 1;
+    z-index: 3;
+  }
+  .plus.left {
+    left: 18%;
+    transform: translate(-50%, -58%);
+  }
+  .plus.right {
+    left: 82%;
+    transform: translate(-50%, -58%);
+  }
+  .plus svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+  .plus circle {
+    fill: rgba(255,255,255,0.06);
+    stroke: rgba(255,255,255,0.95);
+    stroke-width: 2.8;
+    backdrop-filter: blur(2px);
+  }
+  .plus rect {
+    fill: #FFFFFF;
+  }
+  .tab {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 25%;
+    max-width: 180px;
+    aspect-ratio: 180 / 42;
+    z-index: 6;
+    pointer-events: none;
+  }
+  .tab svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35));
+  }
+  .avatar-overlay {
+    position: absolute;
+    top: 50%;
+    left: 18%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 19.44%;
+    max-width: 140px;
+  }
+  .avatar-overlay img {
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.9);
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .avatar-overlay .avatar-fallback {
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .avatar-overlay .username {
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    body { padding: 16px; }
+    .avatar-overlay .username { font-size: 0.6rem; }
+    .avatar-overlay img, .avatar-overlay .avatar-fallback { width: 55%; }
+  }
+`;
+
+  return (
+    <div className="mt-2 mb-4">
+      <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">CP Card</h3>
+      <div className="rounded-2xl overflow-hidden shadow-lg">
+        <div className="wrapper" style={{ maxWidth: '100%', aspectRatio: '720 / 300' }}>
+          <div className="card">
+            <div className="card-bg">
+              <svg className="bokeh" viewBox="0 0 720 300" preserveAspectRatio="none" aria-hidden="true">
+                <g transform="translate(60,220) scale(0.8)" opacity="0.10" style={{ filter: 'blur(12px)' }}>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" transform="translate(-12,-12)" fill="#FF9EC2" />
+                </g>
+                <g transform="translate(640,210) scale(0.9)" opacity="0.10" style={{ filter: 'blur(12px)' }}>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" transform="translate(-12,-12)" fill="#FF9EC2" />
+                </g>
+              </svg>
+            </div>
+
+            {/* Left Plus - Now shows Avatar + Username */}
+            <div className="avatar-overlay">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={username || 'User'} />
+              ) : (
+                <div className="avatar-fallback">
+                  {(username || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="username">{username || 'User'}</span>
+            </div>
+
+            {/* Right Plus - kept as is */}
+            <div className="plus right">
+              <svg viewBox="0 0 140 140" fill="none">
+                <circle cx="70" cy="70" r="68" />
+                <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
+                <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
+              </svg>
+            </div>
+
+            <div className="tab">
+              <svg viewBox="0 0 180 42" fill="none">
+                <defs>
+                  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#FDE6A8" />
+                    <stop offset="0.5" stopColor="#E9B96A" />
+                    <stop offset="1" stopColor="#D68A32" />
+                  </linearGradient>
+                  <linearGradient id="goldStroke" x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#FFF3D1" stopOpacity="0.9" />
+                    <stop offset="1" stopColor="#D68A32" stopOpacity="0.2" />
+                  </linearGradient>
+                </defs>
+                <path d="M10 0 H170 L158 28 Q90 38 22 28 L10 0 Z" fill="url(#gold)" stroke="url(#goldStroke)" strokeWidth="1" />
+                <text x="90" y="20" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="20" fill="#5A2105" letterSpacing="0.5">CP</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>{styles}</style>
+    </div>
+  );
+};
+
+// ==========================================
+// FRIENDSHIP CARD COMPONENT
+// ==========================================
+const FriendshipCard = () => {
+  const styles = `
+    .friendship-card-wrap {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .friendship-card {
+      position: relative;
+      width: 360px;
+      height: auto;
+      background: linear-gradient(180deg, #0a1835 0%, #0c1f46 22%, #112a63 45%, #153a8a 100%);
+      border-left: 1.5px solid #d4b76a;
+      border-right: 1.5px solid #d4b76a;
+      border-bottom: 1.5px solid #d4b76a;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      box-shadow: 
+        0 0 0 1px rgba(0,0,0,0.8) inset,
+        0 10px 30px rgba(0,0,0,0.6),
+        0 0 40px rgba(10,24,53,0.5);
+      overflow: hidden;
+      padding-bottom: 24px;
+    }
+
+    .friendship-card::before {
+      content: '';
+      position: absolute;
+      inset: 1.5px;
+      bottom: 1.5px;
+      background: radial-gradient(ellipse 280px 220px at 50% 28%, rgba(90,140,255,0.18) 0%, rgba(60,100,200,0.08) 35%, transparent 70%);
+      pointer-events: none;
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+    }
+
+    .friendship-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+      pointer-events: none;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+    }
+
+    .friendship-frame {
+      position: relative;
+      width: 100%;
+      height: auto;
+      z-index: 10;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .friendship-slots {
+      position: relative;
+      z-index: 5;
+      padding: 10px 30px 0;
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      justify-content: space-between;
+      row-gap: 59px;
+    }
+
+    .friendship-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 72px;
+    }
+
+    .friendship-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(47, 70, 120, 0.7);
+      border: 1px solid #4a5f92;
+      box-shadow: 
+        inset 0 4px 10px rgba(0,0,0,0.55),
+        inset 0 -2px 4px rgba(120,160,255,0.08),
+        inset 0 0 0 1px rgba(0,0,0,0.3),
+        0 2px 6px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .friendship-circle::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.08), transparent 50%);
+      pointer-events: none;
+    }
+
+    .friendship-plus {
+      color: rgba(255,255,255,0.94);
+      font-size: 40px;
+      font-weight: 300;
+      line-height: 1;
+      transform: translateY(-1px);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    .friendship-label {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #e6e6e6;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    }
+
+    @media (max-width: 380px) {
+      .friendship-card {
+        transform: scale(0.94);
+        transform-origin: top center;
+      }
+    }
+  `;
+
+  return (
+    <div className="mt-2 mb-4">
+      <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Friendship 0/9</h3>
+      <div className="friendship-card-wrap">
+        <div className="friendship-card">
+          <svg className="friendship-frame" viewBox="0 0 360 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="goldMain" x1="0" y1="0" x2="0" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#f0d98e"/>
+                <stop offset="0.25" stopColor="#d4b76a"/>
+                <stop offset="0.5" stopColor="#c5a45d"/>
+                <stop offset="0.75" stopColor="#b8934a"/>
+                <stop offset="1" stopColor="#8a6e38"/>
+              </linearGradient>
+              <linearGradient id="goldDark" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#a47e37"/>
+                <stop offset="1" stopColor="#6e531f"/>
+              </linearGradient>
+              <radialGradient id="gemBlue" cx="0.3" cy="0.2" r="0.8">
+                <stop stopColor="#7aa4ff"/>
+                <stop offset="0.3" stopColor="#4a7fff"/>
+                <stop offset="0.7" stopColor="#3a6be0"/>
+                <stop offset="1" stopColor="#1e3a7a"/>
+              </radialGradient>
+              <filter id="gemGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                <feFlood floodColor="#4a7fff" floodOpacity="0.6"/>
+                <feComposite in2="blur" operator="in"/>
+                <feMerge>
+                  <feMergeNode/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            
+            <rect x="1.5" y="17.5" width="357" height="2.5" fill="url(#goldMain)" rx="1.25"/>
+            <rect x="1.5" y="17.5" width="357" height="1" fill="#f3e4b1" opacity="0.5"/>
+            <rect x="1.5" y="17.5" width="1.5" height="62" fill="url(#goldMain)"/>
+            <rect x="357" y="17.5" width="1.5" height="62" fill="url(#goldMain)"/>
+            
+            <g transform="translate(1.5, 17.5)">
+              <path d="M0 0 L26 0 C26 0 26 6 22 10 C18.5 13.2 14 10 13 13 C13 11.5 15.5 9.5 16.5 6.5 C17 5 17 3 16 1.5 L2 1.5 C2 5.5 3.5 9 6.5 11.5 C2.5 9 0 4.5 0 0Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.5"/>
+              <path d="M0 0 L24 0 C24 0 23 4.5 20 7" stroke="#f0d98e" strokeWidth="0.7" opacity="0.7" fill="none"/>
+              <circle cx="11" cy="11" r="5.8" fill="#0a1835" stroke="url(#goldDark)" strokeWidth="1.2"/>
+              <circle cx="11" cy="11" r="4.3" fill="url(#gemBlue)" filter="url(#gemGlow)"/>
+              <circle cx="9.8" cy="9.7" r="1.4" fill="#b8d4ff" opacity="0.9"/>
+            </g>
+            
+            <g transform="translate(358.5, 17.5) scale(-1,1)">
+              <path d="M0 0 L26 0 C26 0 26 6 22 10 C18.5 13.2 14 14 10 13 C13 11.5 15.5 9.5 16.5 6.5 C17 5 17 3 16 1.5 L2 1.5 C2 5.5 3.5 9 6.5 11.5 C2.5 9 0 4.5 0 0Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.5"/>
+              <path d="M0 0 L24 0 C24 0 23 4.5 20 7" stroke="#f0d98e" strokeWidth="0.7" opacity="0.7" fill="none"/>
+              <circle cx="11" cy="11" r="5.8" fill="#0a1835" stroke="url(#goldDark)" strokeWidth="1.2"/>
+              <circle cx="11" cy="11" r="4.3" fill="url(#gemBlue)" filter="url(#gemGlow)"/>
+              <circle cx="9.8" cy="9.7" r="1.4" fill="#b8d4ff" opacity="0.9"/>
+            </g>
+            
+            <g transform="translate(180, 0)">
+              <path d="M-44 19.5 C-38 14 -28 11.5 -15 13.5 C-15 13.5 -11 9 -6 7.5 L0 4 L6 7.5 L11 9 L15 13.5 C28 11.5 38 14 44 19.5 C36 22 24 23.5 0 23.5 C-24 23.5 -36 22 -44 19.5Z" fill="#0a1020" opacity="0.5"/>
+              <path d="M-44 18.5 C-36 12 -22 10 -12 13 L-8 10 L-4 8 L0 5 L4 8 L8 10 L12 13 C22 10 36 12 44 18.5 C38 21 26 22.5 14 22.8 L10 18 L6 15 L0 12 L-6 15 L-10 18 L-14 22.8 C-26 22.5 -38 21 -44 18.5Z" fill="url(#goldMain)" stroke="#5a421a" strokeWidth="0.6"/>
+              <path d="M-41 17.5 C-32 12.5 -20 11.5 -12 13.5" stroke="#f0d98e" strokeWidth="1" fill="none" opacity="0.8"/>
+              <path d="M41 17.5 C32 12.5 20 11.5 12 13.5" stroke="#f0d98e" strokeWidth="1" fill="none" opacity="0.8"/>
+              <path d="M-12 13 C-18 8 -28 8.5 -37 4 C-31 10 -22 12.5 -14 13.5 L-10 11.5 C-11 10 -11.5 9 -12 8.5 V13Z" fill="#9c7a3c" stroke="#5f451e" strokeWidth="0.5"/>
+              <path d="M12 13 C18 8 28 8.5 37 4 C31 10 22 12.5 14 13.5 L10 11.5 C11 10 11.5 9 12 8.5 V13Z" fill="#9c7a3c" stroke="#5f451e" strokeWidth="0.5"/>
+              <path d="M-28 12 C-32 10 -35 8 -37 4.5 C-33 7 -30 8.5 -26 9.5" stroke="#d4b76a" strokeWidth="1" fill="none" opacity="0.9"/>
+              <path d="M28 12 C32 10 35 8 37 4.5 C33 7 30 8.5 26 9.5" stroke="#d4b76a" strokeWidth="1" fill="none" opacity="0.9"/>
+              <path d="M-9 7 L0 0.5 L9 7 L7.5 17.5 L0 22.5 L-7.5 17.5 Z" fill="url(#goldMain)" stroke="#3d2a12" strokeWidth="0.8"/>
+              <path d="M-8 7.5 L0 2 L8 7.5 L7 16.5 L0 21 L-7 16.5 Z" fill="#7a5928" opacity="0.3"/>
+              <path d="M-7.5 7.8 L0 1.5 L7.5 7.8" stroke="#f0d98e" strokeWidth="0.6" fill="none" opacity="0.7"/>
+              
+              <g filter="url(#gemGlow)">
+                <path d="M0 2.5 L6.2 9.2 L0 20 L-6.2 9.2 Z" fill="#1a3a7a" stroke="#0e1f44" strokeWidth="0.5"/>
+                <path d="M0 2.5 L6.2 9.2 L0 18.5 L-6.2 9.2 Z" fill="url(#gemBlue)"/>
+                <path d="M0 2.5 L4.5 8.5 L0 12 L-4.5 8.5 Z" fill="#5a85ff" opacity="0.9"/>
+                <path d="M0 2.5 L3 7 L0 9.5 L-3 7 Z" fill="#a8c4ff" opacity="0.95"/>
+                <path d="M-1.5 5 L0 3.5 L1.5 5 L0 6.2 Z" fill="#e6f0ff"/>
+              </g>
+              
+              <path d="M-6 18.5 C-3 20 3 20 6 18.5 C4 19.5 1.5 20 0 20 C-1.5 20 -4 19.5 -6 18.5Z" fill="#5a421a" opacity="0.8"/>
+            </g>
+          </svg>
+
+          <div className="friendship-slots">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div className="friendship-slot" key={i}>
+                <div className="friendship-circle"><span className="friendship-plus">+</span></div>
+                <div className="friendship-label">Invite</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <style>{styles}</style>
+    </div>
+  );
+};
+
+// ==========================================
+// MAIN COMPONENT
+// ==========================================
 export function FullProfileDialog({
   open,
   onOpenChange,
@@ -382,7 +1041,6 @@ export function FullProfileDialog({
 
   const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
   
-  // LOGIC APPLY: Priority to parent's displayID or displayIdProp, then backend profile's accountNumber, then deterministic fallback
   const userId = profile?.id || profile?.uid || '';
   const deterministicId = getDeterministicFallbackId(userId);
   const displayId = displayID || displayIdProp || profile?.accountNumber || deterministicId;
@@ -460,7 +1118,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ⚡ ID - AB STABLE, PARENT SE AAYA HUA DISPLAY ID USE KAREGA */}
+                {/* ID */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
@@ -507,45 +1165,11 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* Top Contribution */}
-            <div className="mt-2 mb-4">
-              <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Top Contribution</h3>
-              <div className="flex items-end justify-center gap-4 mt-5">
-                <div className="flex flex-col items-center justify-center space-y-1.5 -mb-2">
-                  <div className="relative inline-block">
-                    <div className="absolute -top-4 -left-2.5 z-30 -rotate-[22deg] text-xl drop-shadow-md">👑</div>
-                    <div className="relative w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#F2D06B] bg-slate-50 shadow-md">
-                      {profile?.avatarUrl ? (
-                        <img src={profile.avatarUrl} className="w-full h-full object-cover" alt="" />
-                      ) : (
-                        <Armchair className="w-5 h-5 text-amber-200" fill="#F4D368" strokeWidth={1} />
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-600 uppercase">{profile.username || 'Empty'}</span>
-                </div>
+            {/* CP Card */}
+            <CPCard avatarUrl={profile.avatarUrl} username={profile.username} />
 
-                <div className="flex flex-col items-center justify-center space-y-1.5">
-                  <div className="relative inline-block">
-                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
-                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#C0C0C0] bg-slate-100 shadow-inner">
-                      <Armchair className="w-4 h-4 text-slate-300" fill="#C0C0C0" strokeWidth={1} />
-                    </div>
-                  </div>
-                  <span className="text-[8px] font-bold text-slate-400 uppercase">Empty</span>
-                </div>
-
-                <div className="flex flex-col items-center justify-center space-y-1.5">
-                  <div className="relative inline-block">
-                    <div className="absolute -top-3.5 -left-2 z-30 -rotate-[22deg] text-lg drop-shadow-md">👑</div>
-                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden border-[2px] border-[#8B4513] bg-slate-100 shadow-inner">
-                      <Armchair className="w-4 h-4 text-slate-300" fill="#A0522D" strokeWidth={1} />
-                    </div>
-                  </div>
-                  <span className="text-[8px] font-bold text-slate-400 uppercase">Empty</span>
-                </div>
-              </div>
-            </div>
+            {/* Friendship Card - ADDED HERE BELOW CP CARD */}
+            <FriendshipCard />
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
@@ -727,4 +1351,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-            }
+          }
