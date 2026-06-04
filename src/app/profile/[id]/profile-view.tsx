@@ -1490,7 +1490,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
                 >
-                  <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                  <AvatarFrame 
+                    frameId={profile.inventory?.activeFrame} 
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>

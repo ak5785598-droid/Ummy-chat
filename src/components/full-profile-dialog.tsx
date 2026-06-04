@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ChevronLeft,
@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/carousel";
 import { GoldCoinIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, doc, where, limit } from 'firebase/firestore';
 
 // Registries
 import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
@@ -765,6 +765,55 @@ export function FullProfileDialog({
   
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
+  const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
+  const isHost = profile.tags?.includes('Host');
+
+  // Family query
+  const familyDocRef = useMemoFirebase(() => {
+    if (!firestore || !profile?.familyId) return null;
+    return doc(firestore, 'families', profile.familyId);
+  }, [firestore, profile?.familyId]);
+  const { data: familyDoc } = useDoc(familyDocRef);
+  const familyData = familyDoc as any;
+
+  // CP pair query
+  const cpPairsQuery = useMemoFirebase(() => {
+    if (!firestore || !userId) return null;
+    return query(collection(firestore, 'cpPairs'), where('participantIds', 'array-contains', userId), limit(1));
+  }, [firestore, userId]);
+  const { data: cpPairsData } = useCollection(cpPairsQuery);
+  const activeCp = cpPairsData?.[0];
+
+  const resolvedBackground = useMemo(() => {
+    // Tier 1: Custom spaceImages
+    if (images.filter(Boolean).length > 0) {
+      return { type: 'carousel', data: images.filter(Boolean) };
+    }
+    
+    // Tier 2: Family banner
+    if (profile?.familyId && familyData?.bannerUrl) {
+      return { type: 'family', data: familyData.bannerUrl };
+    }
+    
+    // Tier 3: CP background (romantic rose gradient with heart overlay)
+    if (activeCp) {
+      return { type: 'cp', data: null };
+    }
+    
+    // Tier 4: Tag-based premium gradients
+    if (hasOfficialTag) {
+      return { type: 'official', data: null };
+    }
+    if (isSeller) {
+      return { type: 'seller', data: null };
+    }
+    if (isHost) {
+      return { type: 'host', data: null };
+    }
+    
+    // Tier 5: Standard fallback
+    return { type: 'fallback', data: profile.avatarUrl };
+  }, [images, profile?.familyId, familyData?.bannerUrl, activeCp, hasOfficialTag, isSeller, isHost, profile.avatarUrl]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -773,20 +822,67 @@ export function FullProfileDialog({
 
           {/* Top Section - Background */}
           <div className="relative h-[35vh] w-full shrink-0 bg-slate-900 overflow-hidden">
-            {images.filter(Boolean).length > 0 ? (
+            {resolvedBackground.type === 'carousel' ? (
               <Carousel setApi={setApi} className="h-full w-full" opts={{ loop: true }}>
                 <CarouselContent className="h-full ml-0">
-                  {images.filter(Boolean).map((url: string, i: number) => (
+                  {(resolvedBackground.data as string[]).map((url: string, i: number) => (
                     <CarouselItem key={i} className="h-full pl-0 basis-full">
                       <img src={url} className="h-full w-full object-cover" alt="" />
                     </CarouselItem>
                   ))}
                 </CarouselContent>
               </Carousel>
+            ) : resolvedBackground.type === 'family' ? (
+              <div className="h-full w-full relative">
+                <img
+                  src={resolvedBackground.data as string}
+                  className="h-full w-full object-cover"
+                  alt="family-banner"
+                />
+              </div>
+            ) : resolvedBackground.type === 'cp' ? (
+              <div className="h-full w-full bg-gradient-to-br from-pink-500 via-red-400 to-rose-500 flex items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 flex items-center justify-center pointer-events-none">
+                  <svg className="w-64 h-64 text-white fill-current animate-pulse" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </div>
+                <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                  <div className="absolute top-10 left-[10%] animate-pulse"><Heart className="h-8 w-8 text-white fill-white" /></div>
+                  <div className="absolute bottom-12 right-[15%] animate-pulse delay-500"><Heart className="h-10 w-10 text-white fill-white" /></div>
+                  <div className="absolute top-24 right-[25%] animate-pulse delay-1000"><Heart className="h-6 w-6 text-white fill-white" /></div>
+                </div>
+                <div className="text-white/90 font-black text-sm uppercase tracking-[0.2em] relative z-10 flex flex-col items-center gap-1.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+                  <Heart className="h-8 w-8 text-white fill-white animate-bounce" />
+                  <span>CP Sanctuary</span>
+                </div>
+              </div>
+            ) : resolvedBackground.type === 'official' ? (
+              <div className="h-full w-full bg-gradient-to-br from-yellow-600 via-amber-500 to-yellow-700 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none" />
+                <Sparkles className="h-8 w-8 text-amber-200 animate-pulse mb-1" />
+                <span className="text-amber-100 font-black text-[10px] tracking-[0.3em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Official Member</span>
+              </div>
+            ) : resolvedBackground.type === 'seller' ? (
+              <div className="h-full w-full bg-gradient-to-br from-[#B87333] via-[#D27D2D] to-[#8B5A2B] flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
+                <Sparkles className="h-8 w-8 text-orange-200 animate-pulse mb-1" />
+                <span className="text-orange-100 font-black text-[10px] tracking-[0.3em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Authorized Seller</span>
+              </div>
+            ) : resolvedBackground.type === 'host' ? (
+              <div className="h-full w-full bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-900 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-30 pointer-events-none">
+                  <div className="absolute top-6 left-[20%] w-1 h-1 bg-white rounded-full animate-ping" />
+                  <div className="absolute top-16 right-[30%] w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                  <div className="absolute bottom-10 left-[40%] w-1.5 h-1.5 bg-white rounded-full animate-pulse delay-700" />
+                </div>
+                <Sparkles className="h-8 w-8 text-purple-300 animate-pulse mb-1" />
+                <span className="text-purple-100 font-black text-[10px] tracking-[0.3em] uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Super Host</span>
+              </div>
             ) : (
               <div className="h-full w-full relative">
                  <img
-                   src={profile.avatarUrl}
+                   src={resolvedBackground.data as string}
                    className="h-full w-full object-cover"
                    alt="background-avatar"
                  />
@@ -817,7 +913,11 @@ export function FullProfileDialog({
 
             <div className="flex flex-col items-center">
               <div className="relative -mt-10 mb-1 z-30">
-                <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                <AvatarFrame 
+                  frameId={profile.inventory?.activeFrame} 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                  size="xl"
+                >
                   <Avatar className="h-28 w-28 border-4 border-white shadow-xl relative">
                     <AvatarImage src={profile.avatarUrl} className="object-cover" />
                     <AvatarFallback className="text-4xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>

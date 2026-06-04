@@ -339,7 +339,11 @@ export function RoomOwnerProfile({
                   handleViewFullProfile();
                 }}
               >
-                <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
+                <AvatarFrame 
+                  frameId={profile.inventory?.activeFrame || 'None'} 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                  size="xl"
+                >
                   <Avatar className="h-20 w-20 border-[4px] border-white shadow-xl ring-2 ring-gray-100 rounded-full">
                     <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
                     <AvatarFallback className="text-2xl bg-slate-100 text-slate-400 rounded-full">
@@ -592,7 +596,11 @@ export function RoomProfileMain({
                 handleViewFullProfile();
               }}
             >
-              <AvatarFrame frameId={profile.inventory?.activeFrame || 'None'} size="xl">
+              <AvatarFrame 
+                frameId={profile.inventory?.activeFrame || 'None'} 
+                frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                size="xl"
+              >
                 <Avatar className="h-20 w-20 border-[5px] border-white shadow-2xl rounded-full">
                   <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
                   <AvatarFallback className="text-3xl bg-slate-100 text-slate-400 rounded-full">

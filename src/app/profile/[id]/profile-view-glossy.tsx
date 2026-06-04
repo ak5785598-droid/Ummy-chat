@@ -221,7 +221,11 @@ const PublicProfileView = ({
                
                <div className="flex items-center gap-7 relative z-10">
                   <div className="shrink-0 relative">
-                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <AvatarFrame 
+                      frameId={profile.inventory?.activeFrame} 
+                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                      size="xl"
+                    >
                       <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
                         <AvatarImage src={profile.avatarUrl} className="object-cover" />
                         <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
@@ -453,7 +457,11 @@ export function ProfileViewGlossy({ profileId, mode = 'public' }: { profileId: s
                <div className="absolute top-0 right-0 w-40 h-40 bg-slate-50 rounded-full -mr-20 -mt-20 blur-3xl opacity-50"></div>
                <div className="flex items-center gap-7 relative z-10">
                   <div className="shrink-0 relative">
-                    <AvatarFrame frameId={profile.inventory?.activeFrame} size="xl">
+                    <AvatarFrame 
+                      frameId={profile.inventory?.activeFrame} 
+                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                      size="xl"
+                    >
                       <Avatar className="h-28 w-28 border-[6px] border-white shadow-2xl rounded-[2.2rem]">
                         <AvatarImage src={profile.avatarUrl} className="object-cover" />
                         <AvatarFallback className="text-3xl font-black bg-slate-100 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>

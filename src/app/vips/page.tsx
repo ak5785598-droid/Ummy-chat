@@ -480,7 +480,11 @@ export default function VipsClubPage() {
             <div className="absolute top-0 right-0 w-28 h-28 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
             
             <div className="flex items-center gap-5">
-              <AvatarFrame frameId={userProfile?.inventory?.activeFrame} size="lg">
+              <AvatarFrame 
+                frameId={userProfile?.inventory?.activeFrame} 
+                frameMediaUrl={userProfile?.inventory?.activeFrameMediaUrl}
+                size="lg"
+              >
                 <Avatar className="h-16 w-16 border-2 border-white/10 shadow-xl">
                   <AvatarImage src={userProfile?.avatarUrl || undefined} />
                   <AvatarFallback className="bg-slate-900 text-xl font-bold">

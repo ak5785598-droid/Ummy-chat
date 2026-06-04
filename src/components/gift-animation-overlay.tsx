@@ -33,6 +33,7 @@ export function GiftAnimationOverlay({
   soundUrl,
   tier = 'normal',
   onComplete, 
+  targetSeat,
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
@@ -52,6 +53,40 @@ export function GiftAnimationOverlay({
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processingActiveRef = useRef(false);
   const processBufferRef = useRef<Uint8ClampedArray | null>(null);
+
+  const [flyCoordinates, setFlyCoordinates] = useState<{ x: number; y: number } | null>(null);
+
+  // Calculate seat relative translation offsets for fly animation
+  useEffect(() => {
+    if (activeGift && targetSeat !== undefined && targetSeat !== null) {
+      const timer = setTimeout(() => {
+        const seatEl = document.getElementById(`room-seat-${targetSeat}`);
+        const containerEl = containerRef.current;
+        if (seatEl && containerEl) {
+          const seatRect = seatEl.getBoundingClientRect();
+          const containerRect = containerEl.getBoundingClientRect();
+          
+          // Center of the target seat
+          const seatCenterX = seatRect.left + seatRect.width / 2;
+          const seatCenterY = seatRect.top + seatRect.height / 2;
+          
+          // Center of the container
+          const containerCenterX = containerRect.left + containerRect.width / 2;
+          const containerCenterY = containerRect.top + containerRect.height / 2;
+          
+          // Difference
+          const xDiff = seatCenterX - containerCenterX;
+          const yDiff = seatCenterY - containerCenterY;
+          
+          setFlyCoordinates({ x: xDiff, y: yDiff });
+        }
+      }, 1500); // Sit in center for 1.5s then fly to target seat
+      
+      return () => clearTimeout(timer);
+    } else {
+      setFlyCoordinates(null);
+    }
+  }, [activeGift, targetSeat]);
 
   // ============================================
   // IMAGE BLACK BACKGROUND REMOVAL - SUPFAST
@@ -443,7 +478,7 @@ export function GiftAnimationOverlay({
 
     // Step 4: Apply processed data to canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const processedImageData = new ImageData(processedData, width, height);
+    const processedImageData = new ImageData(processedData as any, width, height);
     ctx.putImageData(processedImageData, 0, 0);
 
     // Step 5: Continue processing loop
@@ -676,7 +711,7 @@ export function GiftAnimationOverlay({
                           <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
                           
                           <foreignObject x="200" y="110" width="600" height="150">
-                            <div xmlns="http://www.w3.org/1999/xhtml" className="w-full h-full flex flex-col items-center justify-center text-center [&>p]:m-0 [&>p]:leading-tight gap-0">
+                            <div className="w-full h-full flex flex-col items-center justify-center text-center [&>p]:m-0 [&>p]:leading-tight gap-0">
                               <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
                                 <span className="text-yellow-400">{senderName}</span>
                               </p>
@@ -821,17 +856,33 @@ export function GiftAnimationOverlay({
                   )}
                 </motion.div>
               ) : imageUrl ? (
-                // ============================================
-                // SUPFAST IMAGE - NO LOADING, INSTANT SWAP
-                // ============================================
                 <motion.img 
                   src={processedImageUrl || imageUrl}
                   alt={giftName || 'Gift'} 
                   className="max-h-[280px] object-contain drop-shadow-2xl"
-                  initial={{ scale: 0, rotateZ: -20 }}
-                  animate={{ scale: 1, rotateZ: 0 }}
+                  initial={{ scale: 0, rotateZ: -20, x: 0, y: 0, opacity: 1 }}
+                  animate={flyCoordinates ? {
+                    scale: 0.05,
+                    rotateZ: 360,
+                    x: flyCoordinates.x,
+                    y: flyCoordinates.y,
+                    opacity: 0
+                  } : {
+                    scale: 1,
+                    rotateZ: 0,
+                    x: 0,
+                    y: 0,
+                    opacity: 1
+                  }}
                   exit={{ scale: 0, rotateZ: 20, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                  transition={flyCoordinates ? {
+                    duration: 0.8,
+                    ease: [0.25, 1, 0.5, 1]
+                  } : {
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 18
+                  }}
                   style={{
                     background: 'transparent',
                     mixBlendMode: 'normal',

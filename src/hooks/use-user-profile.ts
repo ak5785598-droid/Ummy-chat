@@ -45,6 +45,7 @@ export interface UserProfile {
   };
   inventory?: {
    activeFrame?: string;
+   activeFrameMediaUrl?: string | null;
    activeWave?: string;
    activeBubble?: string;
    activeTheme?: string;

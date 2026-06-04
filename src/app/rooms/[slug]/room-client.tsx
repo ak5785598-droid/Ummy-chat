@@ -284,7 +284,7 @@ const Seat = memo(({
   const seatIsSpeaking = intensity > 20; // Increased threshold for softer detection
 
   return (
-    <div className="flex flex-col items-center gap-1 w-full">
+    <div id={`room-seat-${index}`} className="flex flex-col items-center gap-1 w-full">
       <div className="relative overflow-visible">
         <EmojiReactionOverlay 
           emoji={occupant?.activeEmoji} 
@@ -302,6 +302,7 @@ const Seat = memo(({
 
         <AvatarFrame
           frameId={occupant?.activeFrame || 'None'}
+          frameMediaUrl={occupant?.activeFrameMediaUrl}
           size="md"
         >
           <div className="relative p-0.5 rounded-full">

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
 
 interface AvatarFrameProps {
   frameId?: string | null;
+  frameMediaUrl?: string | null;
   dynamicConfig?: AvatarFrameConfig | null;
   children: React.ReactNode;
   className?: string;
@@ -231,7 +232,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
   );
 };
 
-export const AvatarFrame = memo(({ frameId, dynamicConfig, children, className, size = 'md' }: AvatarFrameProps) => {
+export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, children, className, size = 'md' }: AvatarFrameProps) => {
   const sizeMap = {
     sm: 40,
     md: 60,
@@ -247,8 +248,31 @@ export const AvatarFrame = memo(({ frameId, dynamicConfig, children, className, 
   };
 
   const pixelSize = sizeMap[size];
-  const config = dynamicConfig || (frameId ? AVATAR_FRAMES[frameId] : null);
-  const isElite = !!config && (frameId !== 'None' || !!dynamicConfig);
+  
+  const config = useMemo(() => {
+    if (dynamicConfig) return dynamicConfig;
+    if (frameMediaUrl) {
+      const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('video') || frameMediaUrl.includes('m3u8');
+      return {
+        id: frameId || 'custom-dynamic',
+        name: 'Custom Frame',
+        tier: 'legendary' as const,
+        price: 0,
+        gradient: 'transparent',
+        borderColor: '#FFD700',
+        glowColor: 'rgba(255, 215, 0, 0.6)',
+        animationType: 'none' as const,
+        imageUrl: isVideo ? undefined : frameMediaUrl,
+        videoUrl: isVideo ? frameMediaUrl : undefined,
+        scaleMultiplier: 1.15,
+        offsetX: 0,
+        offsetY: 0
+      };
+    }
+    return frameId ? AVATAR_FRAMES[frameId] : null;
+  }, [frameId, frameMediaUrl, dynamicConfig]);
+
+  const isElite = !!config && (frameId !== 'None' || !!dynamicConfig || !!frameMediaUrl);
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>

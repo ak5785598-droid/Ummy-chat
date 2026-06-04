@@ -40,6 +40,7 @@ export type User = {
  };
  inventory?: {
   activeFrame?: string;
+  activeFrameMediaUrl?: string | null;
   activeTheme?: string;
   activeBubble?: string;
   activeWave?: string;
@@ -109,6 +110,7 @@ export type RoomParticipant = {
  isSilenced?: boolean; // Admin imposed silence
  joinedAt: any;
  activeFrame?: string;
+ activeFrameMediaUrl?: string | null;
  activeWave?: string;
  activeBubble?: string;
  activeEmoji?: string | null;

@@ -40,10 +40,11 @@ import { App } from '@capacitor/app';
    username: userProfile?.username,
    avatarUrl: userProfile?.avatarUrl,
    activeFrame: userProfile?.inventory?.activeFrame,
+   activeFrameMediaUrl: userProfile?.inventory?.activeFrameMediaUrl,
    activeWave: userProfile?.inventory?.activeWave,
    activeBubble: userProfile?.inventory?.activeBubble,
    accountNumber: userProfile?.accountNumber
-  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.accountNumber]);
+  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeFrameMediaUrl, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.accountNumber]);
 
   // EFFECT 1: JOIN & CLEANUP & BACKGROUND RESILIENCE
   useEffect(() => {
@@ -95,6 +96,7 @@ import { App } from '@capacitor/app';
           name: userMetadata.username || 'Guest',
           avatarUrl: userMetadata.avatarUrl || null,
           activeFrame: userMetadata.activeFrame || 'None',
+          activeFrameMediaUrl: userMetadata.activeFrameMediaUrl || null,
           activeWave: userMetadata.activeWave || 'Default',
           activeBubble: userMetadata.activeBubble || 'None',
           joinedAt: serverTimestamp(),
@@ -314,6 +316,7 @@ import { App } from '@capacitor/app';
       n: userMetadata.username,
       a: userMetadata.avatarUrl,
       f: userMetadata.activeFrame,
+      fm: userMetadata.activeFrameMediaUrl,
       w: userMetadata.activeWave,
       b: userMetadata.activeBubble,
       acc: userMetadata.accountNumber
@@ -329,6 +332,7 @@ import { App } from '@capacitor/app';
           name: userMetadata.username || 'Guest',
           avatarUrl: userMetadata.avatarUrl || null,
           activeFrame: userMetadata.activeFrame || 'None',
+          activeFrameMediaUrl: userMetadata.activeFrameMediaUrl || null,
           activeWave: userMetadata.activeWave || 'Default',
           activeBubble: userMetadata.activeBubble || 'None',
           accountNumber: userMetadata.accountNumber || null,

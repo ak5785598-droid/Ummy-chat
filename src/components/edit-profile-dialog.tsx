@@ -233,7 +233,12 @@ export function EditProfileDialog({ profile, trigger, open: controlledOpen, onOp
                 
                 <div className="flex flex-col items-center gap-2">
                   <div className="relative group">
-                    <AvatarFrame frameId={profile?.inventory?.activeFrame} size="xl" className="h-44 w-44 translate-y-2 translate-x-2">
+                    <AvatarFrame 
+                      frameId={profile?.inventory?.activeFrame} 
+                      frameMediaUrl={profile?.inventory?.activeFrameMediaUrl}
+                      size="xl" 
+                      className="h-44 w-44 translate-y-2 translate-x-2"
+                    >
                       <Avatar className="h-36 w-36 border-4 border-white shadow-2xl">
                         <AvatarImage key={profile?.avatarUrl} src={profile?.avatarUrl || undefined} alt={name} />
                         <AvatarFallback className="text-4xl font-bold bg-slate-50">{(name || 'U').charAt(0)}</AvatarFallback>
