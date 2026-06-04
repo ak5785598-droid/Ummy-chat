@@ -18,8 +18,10 @@ interface GiftAnimationOverlayProps {
   videoUrl?: string | null;
   soundUrl?: string | null;
   tier?: 'normal' | 'epic' | 'legendary';
+  category?: 'luxury' | 'hot' | 'event' | 'customized' | 'lucky'; // Naya prop category
   onComplete: () => void;
   targetSeat?: number; 
+  avatarRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function GiftAnimationOverlay({ 
@@ -32,7 +34,9 @@ export function GiftAnimationOverlay({
   videoUrl,
   soundUrl,
   tier = 'normal',
+  category = 'luxury', // Default luxury
   onComplete, 
+  avatarRef,
 }: GiftAnimationOverlayProps) {
   const [activeGift, setActiveGift] = useState<any>(null);
   const [lottieData, setLottieData] = useState<any>(null);
@@ -40,18 +44,26 @@ export function GiftAnimationOverlay({
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [showNameplate, setShowNameplate] = useState(false);
   const [useCanvasProcessing, setUseCanvasProcessing] = useState(false);
+  const [imageTargetPosition, setImageTargetPosition] = useState({ x: 0, y: 0, scale: 0 });
+  const [startImageAnimation, setStartImageAnimation] = useState(false);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const detectionVideoRef = useRef<HTMLVideoElement>(null);
   const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const imageCanvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Canvas refs for black-fade processing and detection
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processingActiveRef = useRef(false);
   const processBufferRef = useRef<Uint8ClampedArray | null>(null);
+
+  // Check if banner should be shown (Lucky ke liye band)
+  const shouldShowBanner = React.useMemo(() => {
+    return category !== 'lucky';
+  }, [category]);
 
   // Load Lottie Data
   useEffect(() => {
@@ -65,7 +77,6 @@ export function GiftAnimationOverlay({
     }
   }, [animationUrl]);
 
-  // Advanced black background detection with edge sampling
   const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
@@ -97,11 +108,8 @@ export function GiftAnimationOverlay({
 
       const BLACK_THRESHOLD = 35;
       const BLACK_PIXEL_RATIO = 0.92;
+      const EDGE_DEPTH = 5;
 
-      // Check multiple rows on each edge for better accuracy
-      const EDGE_DEPTH = 5; // Check 5 pixels deep from edge
-
-      // Check top edge (multiple rows)
       let topBlackCount = 0;
       let topTotal = 0;
       for (let y = 0; y < EDGE_DEPTH; y++) {
@@ -117,7 +125,6 @@ export function GiftAnimationOverlay({
       }
       const topRatio = topBlackCount / topTotal;
 
-      // Check bottom edge (multiple rows)
       let bottomBlackCount = 0;
       let bottomTotal = 0;
       for (let y = height - EDGE_DEPTH; y < height; y++) {
@@ -133,7 +140,6 @@ export function GiftAnimationOverlay({
       }
       const bottomRatio = bottomBlackCount / bottomTotal;
 
-      // Check left edge (multiple columns)
       let leftBlackCount = 0;
       let leftTotal = 0;
       for (let y = 0; y < height; y++) {
@@ -149,7 +155,6 @@ export function GiftAnimationOverlay({
       }
       const leftRatio = leftBlackCount / leftTotal;
 
-      // Check right edge (multiple columns)
       let rightBlackCount = 0;
       let rightTotal = 0;
       for (let y = 0; y < height; y++) {
@@ -165,7 +170,6 @@ export function GiftAnimationOverlay({
       }
       const rightRatio = rightBlackCount / rightTotal;
 
-      // Check corners with larger radius
       const checkCorner = (startX: number, startY: number, radius: number = 15) => {
         let blackPixels = 0;
         let totalPixels = 0;
@@ -208,34 +212,120 @@ export function GiftAnimationOverlay({
     });
   };
 
-  // Animation trigger logic
+  const removeBlackBackgroundFromImage = (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      
+      img.onload = () => {
+        const canvas = imageCanvasRef.current;
+        if (!canvas) {
+          resolve(imageUrl);
+          return;
+        }
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          resolve(imageUrl);
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        const BLACK_THRESHOLD = 50;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          if (r <= BLACK_THRESHOLD && g <= BLACK_THRESHOLD && b <= BLACK_THRESHOLD) {
+            data[i + 3] = 0;
+          }
+        }
+        
+        ctx.putImageData(imageData, 0, 0);
+        
+        const transparentImageUrl = canvas.toDataURL('image/png');
+        resolve(transparentImageUrl);
+      };
+      
+      img.onerror = () => resolve(imageUrl);
+      img.src = imageUrl;
+    });
+  };
+
+  const calculateTargetPosition = () => {
+    if (avatarRef?.current) {
+      const avatarRect = avatarRef.current.getBoundingClientRect();
+      const centerX = avatarRect.left + (avatarRect.width / 2);
+      const centerY = avatarRect.top + (avatarRect.height / 2);
+      setImageTargetPosition({
+        x: centerX,
+        y: centerY,
+        scale: 0.1
+      });
+      return true;
+    }
+    setImageTargetPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+      scale: 0.05
+    });
+    return false;
+  };
+
   useEffect(() => {
     if (giftId) {
       setActiveGift({ id: Date.now() });
       setIsVideoReady(false);
-      setIsVideoLoading(!!videoUrl); // Show loading if video gift
+      setIsVideoLoading(!!videoUrl);
       setUseCanvasProcessing(false);
       processingActiveRef.current = false;
+      setStartImageAnimation(false);
       
-      setShowNameplate(true);
-      if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
-      nameplateTimerRef.current = setTimeout(() => {
+      // Sirf tabhi banner dikhao jab category lucky nahi hai
+      if (shouldShowBanner) {
+        setShowNameplate(true);
+        if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
+        nameplateTimerRef.current = setTimeout(() => {
+          setShowNameplate(false);
+        }, 3500);
+      } else {
         setShowNameplate(false);
-      }, 3500);
+      }
 
-      // 1. Play Sound
       if (soundUrl) {
         const audio = new Audio(soundUrl);
         audio.play().catch(e => console.log('Audio error:', e));
       }
 
-      // 2. Haptics
       if (Capacitor.isNativePlatform()) {
         Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
       }
 
-      // 3. Dynamic Timeout Logic
-      if (!videoUrl) {
+      if (imageUrl && !videoUrl && !animationUrl) {
+        setTimeout(() => {
+          calculateTargetPosition();
+          setTimeout(() => {
+            setStartImageAnimation(true);
+          }, 100);
+        }, 100);
+        
+        const finishTimer = setTimeout(() => {
+          handleCleanup();
+        }, 3000);
+        
+        return () => clearTimeout(finishTimer);
+      }
+      
+      if (!videoUrl && !animationUrl) {
         const finishTimer = setTimeout(() => {
           handleCleanup();
         }, 4000);
@@ -245,9 +335,8 @@ export function GiftAnimationOverlay({
       setShowNameplate(false);
       if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
     }
-  }, [giftId, soundUrl, videoUrl]);
+  }, [giftId, soundUrl, videoUrl, animationUrl, imageUrl, shouldShowBanner]);
 
-  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing (OPTIMIZED)
   const processBlackFade = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -263,14 +352,12 @@ export function GiftAnimationOverlay({
 
     processingActiveRef.current = true;
 
-    // Create offscreen canvas for processing if not exists
     if (!offscreenCanvasRef.current) {
       offscreenCanvasRef.current = document.createElement('canvas');
     }
     
     const offscreen = offscreenCanvasRef.current;
     
-    // Use lower resolution for detection to reduce pixel processing (50% of original)
     const processWidth = Math.min(video.videoWidth, 360);
     const processHeight = Math.round(processWidth * (video.videoHeight / video.videoWidth) || video.videoHeight);
     
@@ -293,16 +380,13 @@ export function GiftAnimationOverlay({
     
     if (!ctx || !offCtx) return;
 
-    // Step 1: Draw current video frame to offscreen at lower resolution
     offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
 
-    // Step 2: Get pixel data
     const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
     const data = imageData.data;
     const width = offscreen.width;
     const height = offscreen.height;
 
-    // Step 3: Reuse processedData buffer to avoid GC pressure
     if (!processBufferRef.current || processBufferRef.current.length !== data.length) {
       processBufferRef.current = new Uint8ClampedArray(data);
     } else {
@@ -310,12 +394,11 @@ export function GiftAnimationOverlay({
     }
     const processedData = processBufferRef.current;
 
-    // Enhanced Black Detection Parameters
-    const BLACK_R_THRESHOLD = 25;    // Red channel max for black
-    const BLACK_G_THRESHOLD = 25;    // Green channel max for black  
-    const BLACK_B_THRESHOLD = 25;    // Blue channel max for black
-    const DARK_GRAY_THRESHOLD = 45;  // For edge transition pixels
-    const ALPHA_REDUCTION = 0.92;    // 92% opacity reduction per frame (smooth but fast)
+    const BLACK_R_THRESHOLD = 25;
+    const BLACK_G_THRESHOLD = 25;
+    const BLACK_B_THRESHOLD = 25;
+    const DARK_GRAY_THRESHOLD = 45;
+    const ALPHA_REDUCTION = 0.92;
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -323,15 +406,12 @@ export function GiftAnimationOverlay({
       const b = data[i + 2];
       const a = data[i + 3];
       
-      // Skip already transparent pixels
       if (a === 0) continue;
       
-      // Check if pixel is pure black
       const isPureBlack = (r <= BLACK_R_THRESHOLD && 
                           g <= BLACK_G_THRESHOLD && 
                           b <= BLACK_B_THRESHOLD);
       
-      // Check if pixel is very dark (near black transition)
       const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
                          g <= DARK_GRAY_THRESHOLD && 
                          b <= DARK_GRAY_THRESHOLD);
@@ -358,23 +438,19 @@ export function GiftAnimationOverlay({
       }
     }
 
-    // Step 4: Apply processed data to canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const processedImageData = new ImageData(processedData, width, height);
     ctx.putImageData(processedImageData, 0, 0);
 
-    // Step 5: Continue processing loop
     animationFrameRef.current = requestAnimationFrame(processBlackFade);
   };
 
-  // Skip canvas processing for normal-tier gifts to save CPU
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady) {
       setUseCanvasProcessing(tier === 'epic' || tier === 'legendary');
     }
   }, [activeGift, videoUrl, isVideoReady, tier]);
 
-  // Start/Stop Black Fade Processor when video plays
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
       const startTimer = setTimeout(() => {
@@ -393,7 +469,6 @@ export function GiftAnimationOverlay({
     }
   }, [activeGift, videoUrl, isVideoReady, useCanvasProcessing]);
 
-  // Cleanup function
   const handleCleanup = () => {
     processingActiveRef.current = false;
     
@@ -412,17 +487,20 @@ export function GiftAnimationOverlay({
     setIsVideoReady(false);
     setShowNameplate(false);
     setUseCanvasProcessing(false);
+    setStartImageAnimation(false);
     
-    // Clear canvases
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    }
+    if (imageCanvasRef.current) {
+      const ctx = imageCanvasRef.current.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, imageCanvasRef.current.width, imageCanvasRef.current.height);
     }
     
     onComplete();
   };
 
-  // Handle Video Metadata
   const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const duration = e.currentTarget.duration * 1000; 
     
@@ -431,7 +509,6 @@ export function GiftAnimationOverlay({
     }, duration + 500); 
   };
 
-  // Handle Video Ready - Detect black background
   const handleVideoCanPlay = async () => {
     setIsVideoReady(true);
     setIsVideoLoading(false);
@@ -441,28 +518,20 @@ export function GiftAnimationOverlay({
       
       const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
       setUseCanvasProcessing(hasSolidBlackBg);
-      
-      if (hasSolidBlackBg) {
-      } else {
-      }
     }
   };
 
-  // Handle Video Auto-play with enhanced fallback
   useEffect(() => {
     if (activeGift && videoUrl && videoRef.current) {
       const playVideo = async () => {
         try {
           const video = videoRef.current!;
           
-          // Check if we have a cached version
           const cachedVideo = getCachedVideo(videoUrl);
           if (cachedVideo && cachedVideo.readyState >= 2) {
-            // Use cached video - copy state to our ref
             video.src = cachedVideo.src;
             video.currentTime = 0;
           } else {
-            // Load from network
             video.defaultMuted = false;
             video.muted = false;
             video.playbackRate = 1.0;
@@ -497,7 +566,8 @@ export function GiftAnimationOverlay({
       ref={containerRef}
       className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden"
     >
-      {/* Hidden detection canvas */}
+      <canvas ref={imageCanvasRef} className="hidden" />
+      
       <canvas 
         ref={detectionCanvasRef}
         className="hidden"
@@ -513,8 +583,8 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* 3D SCROLL BANNER NAME PLATE - UNCHANGED */}
-            {showNameplate && senderName && receiverName && (
+            {/* SCROLL BANNER - SIRF TABHI DIKHEGA JAB CATEGORY LUCKY NAHI HAI */}
+            {shouldShowBanner && showNameplate && senderName && receiverName && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: -220 }}
@@ -660,7 +730,6 @@ export function GiftAnimationOverlay({
               </motion.div>
             )}
 
-            {/* THE GIFT ITSELF */}
             <div className="relative flex items-center justify-center">
               <div className={cn(
                 "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
@@ -686,7 +755,6 @@ export function GiftAnimationOverlay({
                     maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
                   }}
                 >
-                  {/* Loading state while video buffers */}
                   {isVideoLoading && !isVideoReady && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className={cn(
@@ -696,7 +764,6 @@ export function GiftAnimationOverlay({
                     </div>
                   )}
                   
-                  {/* Hidden original video (for audio + timing reference) */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -719,7 +786,6 @@ export function GiftAnimationOverlay({
                     }}
                   />
                   
-                  {/* Enhanced Canvas showing perfectly clean black-removed video */}
                   {useCanvasProcessing && (
                     <canvas 
                       ref={canvasRef}
@@ -741,10 +807,49 @@ export function GiftAnimationOverlay({
                   src={imageUrl} 
                   alt={giftName || 'Gift'} 
                   className="max-h-[280px] object-contain drop-shadow-2xl"
-                  initial={{ scale: 0, rotateZ: -20 }}
-                  animate={{ scale: 1, rotateZ: 0 }}
+                  initial={{ 
+                    scale: 0, 
+                    rotateZ: -20,
+                    x: 0,
+                    y: 0
+                  }}
+                  animate={startImageAnimation ? {
+                    scale: imageTargetPosition.scale,
+                    x: imageTargetPosition.x - (window.innerWidth / 2),
+                    y: imageTargetPosition.y - (window.innerHeight / 2),
+                    rotateZ: 0,
+                    opacity: 0
+                  } : {
+                    scale: 1,
+                    rotateZ: 0,
+                    x: 0,
+                    y: 0,
+                    opacity: 1
+                  }}
                   exit={{ scale: 0, rotateZ: 20, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 200, 
+                    damping: 18,
+                    duration: startImageAnimation ? 0.8 : 0.5
+                  }}
+                  style={{
+                    filter: "drop-shadow(0 0 20px rgba(0,0,0,0.3))",
+                    position: "fixed",
+                    top: "50%",
+                    left: "50%",
+                    transform: startImageAnimation ? "none" : "translate(-50%, -50%)",
+                    marginLeft: startImageAnimation ? 0 : "-50%",
+                    marginTop: startImageAnimation ? 0 : "-50%",
+                    willChange: "transform"
+                  }}
+                  onLoad={async (e) => {
+                    const img = e.currentTarget;
+                    const transparentUrl = await removeBlackBackgroundFromImage(imageUrl);
+                    if (transparentUrl !== imageUrl) {
+                      img.src = transparentUrl;
+                    }
+                  }}
                 />
               ) : null} 
             </div>
@@ -752,7 +857,6 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -765,7 +869,6 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* Scroll Banner Animations Scoped Styles */}
       <style>{`
         .scroll-stage {
           width: 100%; max-width: 900px;
