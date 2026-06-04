@@ -62,3 +62,6 @@ firestore-debug.log
 /store_icon.png
 *.zip
 ummy documnets/
+/jdk17/
+/jdk21/
+
