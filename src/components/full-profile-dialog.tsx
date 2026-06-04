@@ -766,54 +766,16 @@ export function FullProfileDialog({
   const countryFlag = getCountryFlagEmoji(profile.country || '');
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
   const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
-  const isHost = profile.tags?.includes('Host');
 
-  // Family query
-  const familyDocRef = useMemoFirebase(() => {
-    if (!firestore || !profile?.familyId) return null;
-    return doc(firestore, 'families', profile.familyId);
-  }, [firestore, profile?.familyId]);
-  const { data: familyDoc } = useDoc(familyDocRef);
-  const familyData = familyDoc as any;
-
-  // CP pair query
-  const cpPairsQuery = useMemoFirebase(() => {
-    if (!firestore || !userId) return null;
-    return query(collection(firestore, 'cpPairs'), where('participantIds', 'array-contains', userId), limit(1));
-  }, [firestore, userId]);
-  const { data: cpPairsData } = useCollection(cpPairsQuery);
-  const activeCp = cpPairsData?.[0];
 
   const resolvedBackground = useMemo(() => {
-    // Tier 1: Custom spaceImages
+    // Custom spaceImages
     if (images.filter(Boolean).length > 0) {
       return { type: 'carousel', data: images.filter(Boolean) };
     }
-    
-    // Tier 2: Family banner
-    if (profile?.familyId && familyData?.bannerUrl) {
-      return { type: 'family', data: familyData.bannerUrl };
-    }
-    
-    // Tier 3: CP background (romantic rose gradient with heart overlay)
-    if (activeCp) {
-      return { type: 'cp', data: null };
-    }
-    
-    // Tier 4: Tag-based premium gradients
-    if (hasOfficialTag) {
-      return { type: 'official', data: null };
-    }
-    if (isSeller) {
-      return { type: 'seller', data: null };
-    }
-    if (isHost) {
-      return { type: 'host', data: null };
-    }
-    
-    // Tier 5: Standard fallback
+    // Standard fallback (user's DP image)
     return { type: 'fallback', data: profile.avatarUrl };
-  }, [images, profile?.familyId, familyData?.bannerUrl, activeCp, hasOfficialTag, isSeller, isHost, profile.avatarUrl]);
+  }, [images, profile.avatarUrl]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
