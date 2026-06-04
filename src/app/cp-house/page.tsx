@@ -369,13 +369,19 @@ export default function CpHousePage() {
           <div 
             className="relative h-[30vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000"
             style={{ 
-              backgroundColor: activeMainTab === 'cp' ? cpHeaderTheme : '#60a5fa', 
+              backgroundColor: activeMainTab === 'cp' ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) : '#60a5fa', 
               background: activeMainTab === 'cp' 
-                ? `linear-gradient(to bottom, ${cpHeaderTheme}, #FFCC00)` 
+                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'none' : `linear-gradient(to bottom, ${cpHeaderTheme}, #FFCC00)`) 
                 : 'linear-gradient(to bottom, #60a5fa, #3b82f6)'
             }}
           >
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20" />
+            {activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl && (
+              <img src={config.cpBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="CP Background" />
+            )}
+            {activeMainTab === 'cp' && config?.cpBgType === 'video' && config?.cpBgUrl && (
+              <video src={config.cpBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
+            )}
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20 z-0" />
             
             <FloatingHeart x="15%" delay={0} color="text-white/40" />
             <FloatingHeart x="85%" delay={2} color="text-white/40" />
