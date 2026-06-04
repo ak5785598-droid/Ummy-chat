@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, X, Plus } from 'lucide-react';
+import { Loader, Check, X, Plus, ArrowLeft } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
@@ -134,14 +134,14 @@ const GiftImage = ({ gift }: { gift: any }) => {
 
   // If no imageUrl, try icon name
   if (!gift.imageUrl) {
-    return <span className="text-3xl">🎁</span>;
+    return <span className="text-4xl">🎁</span>;
   }
 
   return (
     <img 
       src={processedUrl || cachedUrl} 
       alt={gift.name} 
-      className="h-14 w-14 rounded-lg object-contain" 
+      className="h-20 w-20 rounded-xl object-contain" 
     />
   );
 };
@@ -168,6 +168,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
  const [showCustomLink, setShowCustomLink] = useState(false);
  const [isProcessingCustom, setIsProcessingCustom] = useState(false);
+ const [showRulesSheet, setShowRulesSheet] = useState(false);
  
  // Track karne ke liye ki initial selection ho chuka hai ya nahi
  const hasInitialized = useRef(false);
@@ -276,12 +277,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    return () => window.removeEventListener('popstate', handlePopState);
  }, [showCustomLink]);
 
- const handleCustomGift = async () => {
+ // Yeh function ab + icon pe click karne se rules sheet open karega
+ const handleCustomGiftClick = () => {
+   setShowRulesSheet(true);
+ };
+
+ // Yeh function confirm & pay button se call hoga
+ const handleConfirmAndPay = async () => {
     if (!user || !firestore || !userProfile) return;
     if ((userProfile.wallet?.coins || 0) < 50000) return;
     if (isProcessingCustom) return;
     
     setIsProcessingCustom(true);
+    setShowRulesSheet(false); // Rules sheet band karo
     
     try {
       const batch = writeBatch(firestore);
@@ -313,7 +321,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       await batch.commit();
       
       // Open the link in a new window/tab
-      const customWindow = window.open(
+      window.open(
         'https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh',
         '_blank'
       );
@@ -566,7 +574,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        ))}
       </TabsList>
       
-       <div className="h-[200px] overflow-y-auto no-scrollbar px-4 pt-3 pb-16 grid grid-cols-4 gap-x-2 gap-y-4 content-start">
+       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start">
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
             <Loader className="animate-spin text-cyan-400 h-6 w-6" />
@@ -579,16 +587,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
                <div className="col-span-4 py-10 text-center opacity-30 text- font-bold uppercase tracking-widest">No Gifts in {cat}</div>
             ) : (
               items.map(gift => (
-                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100")}>
-                <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
+                <button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-2 rounded-xl", selectedGift?.id === gift.id ? "brightness-125 bg-white/10 scale-105" : "opacity-70 hover:opacity-100")}>
+                <div className="h-20 w-20 flex items-center justify-center mb-2 filter drop-shadow-lg">
                   <GiftImage gift={gift} />
                 </div>
-                <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-                <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-[12px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+                <div className="flex items-center gap-1.5 mt-1">
                   <GoldenDollar /> 
-                  <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
+                  <span className="text-[11px] text-yellow-500 font-black leading-none">{gift.price}</span>
                 </div>
-                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+                {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1.5 w-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)]" />}
                 </button>
               ))
             )}
@@ -604,35 +612,35 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
               key={gift.id} 
               onClick={() => setSelectedGift(gift)} 
               className={cn(
-                "flex flex-col items-center transition-all duration-300 relative py-1 rounded-lg", 
-                selectedGift?.id === gift.id ? "brightness-125 bg-white/10" : "opacity-70 hover:opacity-100"
+                "flex flex-col items-center transition-all duration-300 relative py-2 rounded-xl", 
+                selectedGift?.id === gift.id ? "brightness-125 bg-white/10 scale-105" : "opacity-70 hover:opacity-100"
               )}
             >
-              <div className="h-14 w-14 flex items-center justify-center mb-1 filter drop-shadow-md">
+              <div className="h-20 w-20 flex items-center justify-center mb-2 filter drop-shadow-lg">
                 <GiftImage gift={gift} />
               </div>
-              <span className="text-[11px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
-              <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-[12px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span>
+              <div className="flex items-center gap-1.5 mt-1">
                 <GoldenDollar /> 
-                <span className="text-[10px] text-yellow-500 font-black leading-none">{gift.price}</span>
+                <span className="text-[11px] text-yellow-500 font-black leading-none">{gift.price}</span>
               </div>
-              {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1 w-4 bg-cyan-400 rounded-full" />}
+              {selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1.5 w-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)]" />}
             </button>
           ))}
 
-          {/* Submission button card */}
-          <div className="col-span-2 flex justify-start">
+          {/* Submission button card - 1st Row, 1st Column (col-span-1) */}
+          <div className="col-span-1 flex justify-start">
             <button 
-              onClick={handleCustomGift}
+              onClick={handleCustomGiftClick}
               disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000}
-              className="flex flex-col items-center justify-center gap-2 p-3 w-full h-[88px] rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none text-left"
+              className="flex flex-col items-center justify-center gap-2 p-3 w-full h-[110px] rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none text-left"
             >
-              <Plus className="h-5 w-5 text-blue-400 shrink-0" />
+              <Plus className="h-6 w-6 text-blue-400 shrink-0" />
               <div className="text-center space-y-0.5">
-                <span className="text-[10px] font-black text-blue-400 block uppercase tracking-wider">
+                <span className="text-[11px] font-black text-blue-400 block uppercase tracking-wider">
                   Request Custom Gift
                 </span>
-                <span className="text-[8px] text-blue-300/80 block font-semibold">
+                <span className="text-[9px] text-blue-300/80 block font-semibold">
                   50,000 Coins / 7 Days
                 </span>
               </div>
@@ -642,25 +650,103 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        </div>
      </Tabs>
 
-     <div className="absolute bottom-0 left-0 right-0 p-3 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-2">
-      <div className="flex items-center gap-2 bg-transparent px-3 py-2 min-w-0 flex-1">
+     <div className="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-3">
+      <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-1">
        <div className="shrink-0"><GoldenDollar /></div>
        <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
          {(userProfile?.wallet?.coins || 0).toLocaleString()}
        </span>
       </div>
       
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
        <Select value={quantity} onValueChange={setQuantity}>
-         <SelectTrigger className="w-16 h-10 bg-white/5 border-white/10 rounded-2xl text-cyan-400 font-bold focus:ring-0 shrink-0"><SelectValue /></SelectTrigger>
-         <SelectContent className="bg-[#151921] border-white/10 text-white font-bold">{['1','10','99','520','1314'].map(q=><SelectItem key={q} value={q}>{q}</SelectItem>)}</SelectContent>
+         <SelectTrigger className="w-[70px] h-11 bg-white/10 border border-white/20 rounded-2xl text-white font-bold focus:ring-0 shrink-0 [&>span]:text-white">
+           <SelectValue placeholder="1" />
+         </SelectTrigger>
+         <SelectContent className="bg-[#151921] border-white/10 text-white font-bold min-w-[70px]">
+           {['1','10','99','520','1314'].map(q => (
+             <SelectItem key={q} value={q} className="text-white font-bold focus:bg-cyan-500/20 focus:text-cyan-400 cursor-pointer">
+               {q}
+             </SelectItem>
+           ))}
+         </SelectContent>
        </Select>
-       <button onClick={() => handleSend()} disabled={!selectedGift || isSending || selectedUids.length === 0} className="h-10 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-xs shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 shrink-0">
-         {isSending ? <Loader className="h-4 w-4 animate-spin" /> : 'SEND'}
+       <button onClick={() => handleSend()} disabled={!selectedGift || isSending || selectedUids.length === 0} className="h-11 px-8 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 shrink-0">
+         {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
        </button>
       </div>
      </div>
     </SheetContent>
+   </Sheet>
+
+   {/* ============ RULES BOTTOM SHEET ============ */}
+   <Sheet open={showRulesSheet} onOpenChange={setShowRulesSheet}>
+     <SheetContent 
+       side="bottom" 
+       className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-2xl overflow-hidden text-white shadow-2xl max-h-[70vh] [&>button]:hidden"
+     >
+       {/* Header with Back Arrow and Title */}
+       <div className="flex items-center gap-3 p-4 border-b border-white/10 sticky top-0 bg-[#0b0e14] z-10">
+         <button 
+           onClick={() => setShowRulesSheet(false)}
+           className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all shrink-0"
+         >
+           <ArrowLeft className="h-5 w-5 text-white" />
+         </button>
+         <span className="text-lg font-bold text-white">Rules</span>
+       </div>
+
+       {/* Scrollable Rules Content */}
+       <div className="overflow-y-auto p-5 space-y-6 text-white/90" style={{ maxHeight: 'calc(70vh - 70px - 80px)' }}>
+         <div className="space-y-4">
+           <div className="flex gap-3">
+             <span className="text-cyan-400 font-black text-lg shrink-0">1.</span>
+             <p className="text-sm font-medium leading-relaxed">Upload Your Imagination into Real World</p>
+           </div>
+           
+           <div className="flex gap-3">
+             <span className="text-cyan-400 font-black text-lg shrink-0">2.</span>
+             <p className="text-sm font-medium leading-relaxed">Upload Image for Display Gifts, Also Video for Animation</p>
+           </div>
+           
+           <div className="flex gap-3">
+             <span className="text-cyan-400 font-black text-lg shrink-0">3.</span>
+             <p className="text-sm font-medium leading-relaxed">Click on the Confirm & Pay and Then Upload Your Gifts</p>
+           </div>
+           
+           <div className="flex gap-3">
+             <span className="text-cyan-400 font-black text-lg shrink-0">4.</span>
+             <p className="text-sm font-medium leading-relaxed">Make Sure Don't Exit the Gift Uploading Page. You Can Only Exit When Your Uploading is Complete and Click on the Submit Button for Submission</p>
+           </div>
+           
+           <div className="flex gap-3">
+             <span className="text-cyan-400 font-black text-lg shrink-0">5.</span>
+             <p className="text-sm font-medium leading-relaxed">Display Time 7 Days. In Case if Rejected, Your Coins Will Be Returned to Your Coins Wallet Within 24 to 48 Hrs (Also Official Preview Time is 24 to 48 Hrs)</p>
+           </div>
+         </div>
+       </div>
+
+       {/* Confirm & Pay Button at Bottom */}
+       <div className="p-4 border-t border-white/10 bg-[#0b0e14] sticky bottom-0">
+         <button 
+           onClick={handleConfirmAndPay}
+           disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000}
+           className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 flex items-center justify-center gap-2"
+         >
+           {isProcessingCustom ? (
+             <Loader className="h-5 w-5 animate-spin" />
+           ) : (
+             <>
+               Confirm & Pay
+               <div className="flex items-center gap-1">
+                 <GoldenDollar />
+                 <span className="text-yellow-200">50,000</span>
+               </div>
+             </>
+           )}
+         </button>
+       </div>
+     </SheetContent>
    </Sheet>
 
    {/* Custom Gift Link Overlay */}
@@ -693,4 +779,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-      }
+ }
