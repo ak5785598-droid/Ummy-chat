@@ -239,8 +239,7 @@ export default function UserLevelPage() {
     if (!levels) return [];
     return levels.filter((level: any) => {
       if (level.type) return level.type === "budget";
-      return (level.budget !== undefined && level.budget !== null && level.budget !== "") || 
-             (!level.reward && !level.frameId);
+      return ("budget" in level) || (!("reward" in level) && !("frameId" in level));
     });
   }, [levels]);
 
@@ -248,7 +247,7 @@ export default function UserLevelPage() {
     if (!levels) return [];
     return levels.filter((level: any) => {
       if (level.type) return level.type === "rewards";
-      return level.reward !== undefined && level.reward !== null && level.reward !== "";
+      return ("reward" in level);
     });
   }, [levels]);
 
@@ -256,7 +255,7 @@ export default function UserLevelPage() {
     if (!levels) return [];
     return levels.filter((level: any) => {
       if (level.type) return level.type === "frame";
-      return level.frameId !== undefined && level.frameId !== null && level.frameId !== "";
+      return ("frameId" in level);
     });
   }, [levels]);
 

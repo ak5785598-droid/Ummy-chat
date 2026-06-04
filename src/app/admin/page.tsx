@@ -873,13 +873,13 @@ function AdminPageContent() {
     return levelsList.filter((level: any) => {
       if (level.type) return level.type === levelTab;
       if (levelTab === "budget") {
-        return (level.budget !== undefined && level.budget !== null && level.budget !== "") || (!level.reward && !level.frameId);
+        return ("budget" in level) || (!("reward" in level) && !("frameId" in level));
       }
       if (levelTab === "rewards") {
-        return level.reward !== undefined && level.reward !== null && level.reward !== "";
+        return ("reward" in level);
       }
       if (levelTab === "frame") {
-        return level.frameId !== undefined && level.frameId !== null && level.frameId !== "";
+        return ("frameId" in level);
       }
       return true;
     });
