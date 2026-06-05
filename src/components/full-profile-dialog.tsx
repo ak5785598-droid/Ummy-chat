@@ -339,6 +339,37 @@ const getDeterministicFallbackId = (userId: string) => {
 };
 
 // ==========================================
+// VIDEO FRAME COMPONENT (FIXED)
+// ==========================================
+const VideoFrame = ({ videoUrl }: { videoUrl: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+    }
+  }, [videoUrl]);
+
+  return (
+    <div className="relative w-full h-full bg-transparent">
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        className="absolute inset-0 w-full h-full object-cover"
+        autoPlay
+        loop
+        muted
+        playsInline
+        controls={false}
+        disablePictureInPicture
+        controlsList="nodownload nofullscreen noremoteplayback"
+        style={{ background: 'transparent' }}
+      />
+    </div>
+  );
+};
+
+// ==========================================
 // CP CARD COMPONENT (MODIFIED WITH PLUS-HEART-PLUS)
 // ==========================================
 const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string }) => {
@@ -767,13 +798,16 @@ export function FullProfileDialog({
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
   const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
-
   const resolvedBackground = useMemo(() => {
-    // Custom spaceImages
+    // Check if there's a video in spaceImages
     if (images.filter(Boolean).length > 0) {
+      const firstImage = images[0];
+      // Check if it's a video URL
+      if (firstImage && (firstImage.endsWith('.mp4') || firstImage.endsWith('.webm') || firstImage.includes('video'))) {
+        return { type: 'video', data: firstImage };
+      }
       return { type: 'carousel', data: images.filter(Boolean) };
     }
-    // Standard fallback (user's DP image)
     return { type: 'fallback', data: profile.avatarUrl };
   }, [images, profile.avatarUrl]);
 
@@ -784,12 +818,18 @@ export function FullProfileDialog({
 
           {/* Top Section - Background */}
           <div className="relative h-[35vh] w-full shrink-0 bg-slate-900 overflow-hidden">
-            {resolvedBackground.type === 'carousel' ? (
+            {resolvedBackground.type === 'video' ? (
+              <VideoFrame videoUrl={resolvedBackground.data as string} />
+            ) : resolvedBackground.type === 'carousel' ? (
               <Carousel setApi={setApi} className="h-full w-full" opts={{ loop: true }}>
                 <CarouselContent className="h-full ml-0">
                   {(resolvedBackground.data as string[]).map((url: string, i: number) => (
                     <CarouselItem key={i} className="h-full pl-0 basis-full">
-                      <img src={url} className="h-full w-full object-cover" alt="" />
+                      {url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('video') ? (
+                        <VideoFrame videoUrl={url} />
+                      ) : (
+                        <img src={url} className="h-full w-full object-cover" alt="" />
+                      )}
                     </CarouselItem>
                   ))}
                 </CarouselContent>
@@ -945,7 +985,7 @@ export function FullProfileDialog({
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
-            {/* CP Card - REPLACED TOP CONTRIBUTION WITH PLUS-HEART-PLUS */}
+            {/* CP Card */}
             <CPCard avatarUrl={profile.avatarUrl} username={profile.username} />
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
@@ -1128,4 +1168,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-            }
+  }
