@@ -137,6 +137,7 @@ import { AVATAR_FRAMES } from "@/constants/avatar-frames";
 import { useSearchParams, useRouter } from "next/navigation";
 import { VipManagementTab } from "@/components/admin/vip-management-tab";
 import { CpManagementTab } from "@/components/admin/cp-management-tab";
+import { FamilyManagementTab } from "@/components/admin/family-management-tab";
 import { LeaderboardThemeAdmin } from "@/components/admin/leaderboard-theme-admin";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
@@ -3330,6 +3331,12 @@ function AdminPageContent() {
                 >
                   <Heart className="h-4 w-4 text-pink-500 fill-current animate-pulse" /> CP Background
                 </TabsTrigger>
+                <TabsTrigger
+                  value="family-management"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-emerald-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Users className="h-4 w-4 text-emerald-500 fill-current animate-pulse" /> Family Management
+                </TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -3339,6 +3346,9 @@ function AdminPageContent() {
             </TabsContent>
             <TabsContent value="cp-management" className="m-0 space-y-6">
               <CpManagementTab />
+            </TabsContent>
+            <TabsContent value="family-management" className="m-0 space-y-6">
+              <FamilyManagementTab />
             </TabsContent>
             <TabsContent value="loot-management" className="m-0 space-y-6">
               <Card className="rounded-3xl border-none shadow-xl bg-white p-8">

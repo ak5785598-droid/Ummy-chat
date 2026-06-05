@@ -369,10 +369,12 @@ export default function CpHousePage() {
           <div 
             className="relative h-[30vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000"
             style={{ 
-              backgroundColor: activeMainTab === 'cp' ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) : '#60a5fa', 
+              backgroundColor: activeMainTab === 'cp' 
+                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) 
+                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'transparent' : (config?.friendHeaderTheme || '#60a5fa')), 
               background: activeMainTab === 'cp' 
                 ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'none' : `linear-gradient(to bottom, ${cpHeaderTheme}, #FFCC00)`) 
-                : 'linear-gradient(to bottom, #60a5fa, #3b82f6)'
+                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'none' : `linear-gradient(to bottom, ${config?.friendHeaderTheme || '#60a5fa'}, #3b82f6)`)
             }}
           >
             {activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl && (
@@ -380,6 +382,12 @@ export default function CpHousePage() {
             )}
             {activeMainTab === 'cp' && config?.cpBgType === 'video' && config?.cpBgUrl && (
               <video src={config.cpBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
+            )}
+            {activeMainTab === 'friend' && config?.friendBgType === 'image' && config?.friendBgUrl && (
+              <img src={config.friendBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Friend Background" />
+            )}
+            {activeMainTab === 'friend' && config?.friendBgType === 'video' && config?.friendBgUrl && (
+              <video src={config.friendBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
             )}
             <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20 z-0" />
             

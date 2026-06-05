@@ -117,6 +117,13 @@ export default function FamilyHQPage() {
       console.error("Leave failed:", err);
     }
   };
+  const isVideoBanner = (url: string) => {
+    return url && (
+      url.includes('.mp4') || 
+      url.includes('.webm') || 
+      url.includes('video')
+    );
+  };
 
   if (isFamilyLoading) return null;
   if (!family) return <AppLayout><div className="flex h-screen items-center justify-center bg-ummy-gradient text-white">Family Registry Not Found</div></AppLayout>;
@@ -126,19 +133,33 @@ export default function FamilyHQPage() {
       <div className="min-h-screen pb-32 animate-in fade-in duration-1000">
         {/* HERO BANNER SECTION */}
         <section className="relative h-80 w-full overflow-hidden">
-           <Image 
-             src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/800`} 
-             alt="HQ Banner" 
-             fill 
-             className="object-cover scale-105 blur-[2px] opacity-40"
-             unoptimized
-           />
+           {isVideoBanner(family.bannerUrl) ? (
+             <video 
+               src={family.bannerUrl} 
+               className="absolute inset-0 w-full h-full object-cover scale-105 blur-[2px] opacity-40 z-0" 
+               muted 
+               autoPlay 
+               loop 
+             />
+           ) : (
+             <Image 
+               src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/800`} 
+               alt="HQ Banner" 
+               fill 
+               className="object-cover scale-105 blur-[2px] opacity-40"
+               unoptimized
+             />
+           )}
            <div className="absolute inset-0 bg-gradient-to-t from-ummy-gradient to-transparent" />
            
            <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
               <div className="flex items-center gap-6">
-                 <div className="h-24 w-24 rounded-[2rem] border-4 border-white/20 overflow-hidden shadow-2xl relative">
-                    <Image src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/200`} fill className="object-cover" alt="Family" unoptimized />
+                 <div className="h-24 w-24 rounded-[2rem] border-4 border-white/20 overflow-hidden shadow-2xl relative bg-slate-900 flex items-center justify-center">
+                    {isVideoBanner(family.bannerUrl) ? (
+                      <video src={family.bannerUrl} className="w-full h-full object-cover" muted autoPlay loop />
+                    ) : (
+                      <Image src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/200`} fill className="object-cover" alt="Family" unoptimized />
+                    )}
                  </div>
                  <div className="mb-2">
                     <div className="flex items-center gap-2">
