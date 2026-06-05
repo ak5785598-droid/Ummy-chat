@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
+import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -339,18 +340,23 @@ export function RoomOwnerProfile({
                   handleViewFullProfile();
                 }}
               >
-                <AvatarFrame 
-                  frameId={profile.inventory?.activeFrame || 'None'} 
-                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                  size="xl"
+                <CompactVideoAvatarFrame 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
+                  avatarSize={80}
                 >
-                  <Avatar className="h-20 w-20 border-[4px] border-white shadow-xl ring-2 ring-gray-100 rounded-full">
-                    <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
-                    <AvatarFallback className="text-2xl bg-slate-100 text-slate-400 rounded-full">
-                      {(profile.username || 'U').charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                </AvatarFrame>
+                  <AvatarFrame 
+                    frameId={profile.inventory?.activeFrame || 'None'} 
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  >
+                    <Avatar className="h-[80px] w-[80px] border-[4px] border-white shadow-xl ring-2 ring-gray-100 rounded-full">
+                      <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
+                      <AvatarFallback className="text-2xl bg-slate-100 text-slate-400 rounded-full">
+                        {(profile.username || 'U').charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+                </CompactVideoAvatarFrame>
               </div>
             </div>
 
@@ -596,18 +602,23 @@ export function RoomProfileMain({
                 handleViewFullProfile();
               }}
             >
-              <AvatarFrame 
-                frameId={profile.inventory?.activeFrame || 'None'} 
-                frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                size="xl"
+              <CompactVideoAvatarFrame 
+                frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
+                avatarSize={80}
               >
-                <Avatar className="h-20 w-20 border-[5px] border-white shadow-2xl rounded-full">
-                  <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
-                  <AvatarFallback className="text-3xl bg-slate-100 text-slate-400 rounded-full">
-                    {(profile.username || 'U').charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-              </AvatarFrame>
+                <AvatarFrame 
+                  frameId={profile.inventory?.activeFrame || 'None'} 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                  size="xl"
+                >
+                  <Avatar className="h-[80px] w-[80px] border-[5px] border-white shadow-2xl rounded-full">
+                    <AvatarImage src={profile.avatarUrl || undefined} className="object-cover rounded-full" />
+                    <AvatarFallback className="text-3xl bg-slate-100 text-slate-400 rounded-full">
+                      {(profile.username || 'U').charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                </AvatarFrame>
+              </CompactVideoAvatarFrame>
             </div>
 
             {/* Name + Gender + Country */}

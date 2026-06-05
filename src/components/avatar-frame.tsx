@@ -96,7 +96,7 @@ const ParticleSystem = ({ type, color }: { type?: string, color: string }) => {
 };
 
 const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, pixelSize: number }) => {
-  const { id, imageUrl, borderColor, glowColor, gradient, animationType, extraType, extraColor, particleType, particleColor, Ornament } = config;
+  const { id, imageUrl, borderColor, glowColor, gradient, animationType, extraType, extraColor, particleType, particleColor, ornament: Ornament } = config;
   const isSakura = id === 'sakura-blossom';
   const imgSize = pixelSize * 2.2;
   const isMediaFrame = imageUrl || config.videoUrl;
@@ -252,7 +252,7 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
   const config = useMemo(() => {
     if (dynamicConfig) return dynamicConfig;
     if (frameMediaUrl) {
-      const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('video') || frameMediaUrl.includes('m3u8');
+      const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov') || frameMediaUrl.includes('video') || frameMediaUrl.includes('m3u8');
       return {
         id: frameId || 'custom-dynamic',
         name: 'Custom Frame',

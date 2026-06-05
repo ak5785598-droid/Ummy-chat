@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarFrame } from '@/components/avatar-frame';
+import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame';
 import { cn } from '@/lib/utils';
 import {
   Carousel,
@@ -915,16 +916,21 @@ export function FullProfileDialog({
 
             <div className="flex flex-col items-center">
               <div className="relative -mt-10 mb-1 z-30">
-                <AvatarFrame 
-                  frameId={profile.inventory?.activeFrame} 
-                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                  size="xl"
+                <CompactVideoAvatarFrame 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
+                  avatarSize={88}
                 >
-                  <Avatar className="h-28 w-28 border-4 border-white shadow-xl relative">
-                    <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="text-4xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </AvatarFrame>
+                  <AvatarFrame 
+                    frameId={profile.inventory?.activeFrame} 
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  >
+                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+                </CompactVideoAvatarFrame>
               </div>
 
               <div className="text-center space-y-1.5 w-full">
