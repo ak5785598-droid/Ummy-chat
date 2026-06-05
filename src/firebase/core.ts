@@ -43,6 +43,8 @@ export function initializeFirebase() {
         localCache: persistentLocalCache({
           tabManager: persistentSingleTabManager({ forceOwnership: true })
         }),
+        experimentalAutoDetectLongPolling: false,
+        experimentalForceLongPolling: false
       });
       console.log('[Firebase Core] Firestore initialized with persistent cache');
     } catch (e: any) {
