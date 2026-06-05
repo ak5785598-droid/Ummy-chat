@@ -51,14 +51,18 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   }, [gameDocRef, userId, gameState, roomId, isLoading]);
 
   const selectMode = useCallback(async (mode: 'freestyle' | 'professional', entryFee: number = 0) => {
-    if (!gameDocRef || gameState?.status !== 'mode_select') return;
+    if (!gameDocRef) return;
     await updateDocumentNonBlocking(gameDocRef, { 
       status: 'lobby',
       mode,
       entryFee,
+      players: [],
+      pieces: [],
+      turn: '',
+      strikerPos: 50,
       updatedAt: serverTimestamp()
     });
-  }, [gameDocRef, gameState]);
+  }, [gameDocRef]);
 
   const joinArena = useCallback(async (userProfile: any) => {
     if (!gameDocRef || !userId || !userProfile || isLoading) {
