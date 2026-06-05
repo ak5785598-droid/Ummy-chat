@@ -43,9 +43,8 @@ export function initializeFirebase() {
         localCache: persistentLocalCache({
           tabManager: persistentSingleTabManager({ forceOwnership: true })
         }),
-        experimentalAutoDetectLongPolling: true,
       });
-      console.log('[Firebase Core] Firestore initialized with auto-long-polling');
+      console.log('[Firebase Core] Firestore initialized with persistent cache');
     } catch (e: any) {
       if (e?.code === 'failed-precondition' && (e?.message?.includes('newer version') || e?.message?.includes('persistence'))) {
         console.error('[Firebase Core] SDK Version Conflict or Persistence Error. Forcing memory-only mode and requesting reset.');
