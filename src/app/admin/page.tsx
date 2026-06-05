@@ -2109,13 +2109,13 @@ function AdminPageContent() {
 
       // 1. Upload Icon Thumbnail
       const tRef = ref(storage, `gifts/thumb_${Date.now()}_${giftThumbnail.name}`);
-      const tRes = await uploadBytes(tRef, giftThumbnail);
+      const tRes = await uploadBytes(tRef, giftThumbnail, { cacheControl: 'public,max-age=31536000,immutable' });
       imageUrl = await getDownloadURL(tRes.ref);
 
       // 2. Upload Animation Video (Optional)
       if (giftVideo) {
         const vRef = ref(storage, `gifts/anim_${Date.now()}_${giftVideo.name}`);
-        const vRes = await uploadBytes(vRef, giftVideo);
+        const vRes = await uploadBytes(vRef, giftVideo, { cacheControl: 'public,max-age=31536000,immutable' });
         videoUrl = await getDownloadURL(vRes.ref);
       }
 
@@ -2293,7 +2293,7 @@ function AdminPageContent() {
     setUploadingLevelVideo(levelId);
     try {
       const videoRef = ref(storage, `loot/videos/${levelId}_${Date.now()}_${file.name}`);
-      const uploadRes = await uploadBytes(videoRef, file);
+      const uploadRes = await uploadBytes(videoRef, file, { cacheControl: 'public,max-age=31536000,immutable' });
       const videoUrl = await getDownloadURL(uploadRes.ref);
       
       const updatedLevels = lootLevels.map(l => l.id === levelId ? { ...l, videoUrl } : l);
@@ -2325,7 +2325,7 @@ function AdminPageContent() {
     setUploadingLootImage(levelId);
     try {
       const imageRef = ref(storage, `loot/images/${levelId}_${Date.now()}_${file.name}`);
-      const uploadRes = await uploadBytes(imageRef, file);
+      const uploadRes = await uploadBytes(imageRef, file, { cacheControl: 'public,max-age=31536000,immutable' });
       const imageUrl = await getDownloadURL(uploadRes.ref);
       
       const updatedLevels = lootLevels.map(l => l.id === levelId ? { ...l, image: imageUrl } : l);
@@ -2361,7 +2361,7 @@ function AdminPageContent() {
       let imageUrl = "";
       if (levelImageFile) {
         const iRef = ref(storage, `levels/${Date.now()}_${levelImageFile.name}`);
-        const iRes = await uploadBytes(iRef, levelImageFile);
+        const iRes = await uploadBytes(iRef, levelImageFile, { cacheControl: 'public,max-age=31536000,immutable' });
         imageUrl = await getDownloadURL(iRes.ref);
       }
       const levelData: any = {
@@ -2405,7 +2405,7 @@ function AdminPageContent() {
       let imageUrl = "";
       if (medalImageFile) {
         const iRef = ref(storage, `medals/${Date.now()}_${medalImageFile.name}`);
-        const iRes = await uploadBytes(iRef, medalImageFile);
+        const iRes = await uploadBytes(iRef, medalImageFile, { cacheControl: 'public,max-age=31536000,immutable' });
         imageUrl = await getDownloadURL(iRes.ref);
       }
       const medalData = {
@@ -2475,13 +2475,13 @@ function AdminPageContent() {
 
       if (emojiImageFile) {
         const iRef = ref(storage, `emojis/${Date.now()}_${emojiImageFile.name}`);
-        const iRes = await uploadBytes(iRef, emojiImageFile);
+        const iRes = await uploadBytes(iRef, emojiImageFile, { cacheControl: 'public,max-age=31536000,immutable' });
         imageUrl = await getDownloadURL(iRes.ref);
       }
 
       if (emojiAnimationFile) {
         const aRef = ref(storage, `emojis/anim_${Date.now()}_${emojiAnimationFile.name}`);
-        const aRes = await uploadBytes(aRef, emojiAnimationFile);
+        const aRes = await uploadBytes(aRef, emojiAnimationFile, { cacheControl: 'public,max-age=31536000,immutable' });
         animationUrl = await getDownloadURL(aRes.ref);
       }
 
@@ -2638,7 +2638,7 @@ function AdminPageContent() {
     setIsUploadingBanner(index);
     try {
       const sRef = ref(storage, `banners/slide_${index}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];
@@ -2664,7 +2664,7 @@ function AdminPageContent() {
     setIsUploadingRoomBanner(index);
     try {
       const sRef = ref(storage, `roomBanners/slide_${index}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       const currentSlides = roomBannerConfig?.slides || [
         { id: 'weekly-star', title: 'Weekly Star', imageUrl: '' },
@@ -2696,7 +2696,7 @@ function AdminPageContent() {
     setUploadingRankingKey(key);
     try {
       const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(rankingConfigRef, { [key]: url }, { merge: true })
         .then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
@@ -2783,14 +2783,14 @@ function AdminPageContent() {
     try {
       // 1. Upload Display Image
       const sRef = ref(storage, `store/item_${Date.now()}_${f.name}`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
 
       // 2. Upload Video Animation (Optional)
       let videoUrl = "";
       if (storeVideoFile) {
         const vRef = ref(storage, `store/anim_${Date.now()}_${storeVideoFile.name}`);
-        const vResult = await uploadBytes(vRef, storeVideoFile);
+        const vResult = await uploadBytes(vRef, storeVideoFile, { cacheControl: 'public,max-age=31536000,immutable' });
         videoUrl = await getDownloadURL(vResult.ref);
       }
 
@@ -2839,7 +2839,7 @@ function AdminPageContent() {
     setIsUploadingLoginBG(true);
     try {
       const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { loginBackgroundUrl: url }, { merge: true })
         .then(() => toast({ title: "Login Background Synchronized" }))
@@ -2862,7 +2862,7 @@ function AdminPageContent() {
     setIsUploadingLoadingBG(true);
     try {
       const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true })
         .then(() => toast({ title: "App Loading Sync Complete" }))
@@ -2888,7 +2888,7 @@ function AdminPageContent() {
         storage,
         `games/${selectedGameForSync.slug}/loading_bg_${Date.now()}.jpg`,
       );
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       const gameRef = doc(firestore, "games", selectedGameForSync.slug);
       updateDoc(gameRef, {
@@ -2908,7 +2908,7 @@ function AdminPageContent() {
     setIsUploadingSplashBG(true);
     try {
       const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { splashScreenUrl: url }, { merge: true })
         .then(() => toast({ title: "Splash Background Synchronized" }))
@@ -3001,7 +3001,7 @@ function AdminPageContent() {
     setIsUploadingPaymentQr(true);
     try {
       const sRef = ref(storage, `branding/payment_qr_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       await updateDoc(configRef, {
         paymentQrUrl: url,
@@ -3018,7 +3018,7 @@ function AdminPageContent() {
     setIsUploadingLogo(true);
     try {
       const sRef = ref(storage, `branding/logo_${Date.now()}.png`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public,max-age=31536000,immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { customLogoUrl: url }, { merge: true })
         .then(() =>
@@ -4015,7 +4015,7 @@ function AdminPageContent() {
                                     setIsUploadingPaymentQr(true);
                                     const path = `appConfig/payment_qr_${Date.now()}`;
                                     const sRef = ref(storage, path);
-                                    uploadBytes(sRef, file)
+                                    uploadBytes(sRef, file, { cacheControl: 'public,max-age=31536000,immutable' })
                                        .then(snap => getDownloadURL(snap.ref))
                                        .then(url => updateDoc(configRef, { paymentQrUrl: url, updatedAt: serverTimestamp() }))
                                        .then(() => toast({ title: "QR Updated Successfully" }))

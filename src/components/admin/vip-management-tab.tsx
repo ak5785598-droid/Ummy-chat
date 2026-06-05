@@ -89,7 +89,7 @@ export function VipManagementTab() {
     try {
       const storagePath = `settings/vip_bg_${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
-      const result = await uploadBytes(fileRef, file);
+      const result = await uploadBytes(fileRef, file, { cacheControl: 'public,max-age=31536000,immutable' });
       const downloadURL = await getDownloadURL(result.ref);
 
       setConfig((prev: any) => ({ ...prev, bgUrl: downloadURL }));
@@ -126,7 +126,7 @@ export function VipManagementTab() {
     try {
       const storagePath = `settings/svip_level_${level}_${type}_${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
-      const result = await uploadBytes(fileRef, file);
+      const result = await uploadBytes(fileRef, file, { cacheControl: 'public,max-age=31536000,immutable' });
       const downloadURL = await getDownloadURL(result.ref);
 
       setConfig((prev: any) => {
