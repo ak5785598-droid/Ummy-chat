@@ -68,8 +68,7 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 // ============================================================
-// ⚡ ULTIMATE BLACK BACKGROUND REMOVER - FULL FIX ⚡
-// Ab kabhi bhi black flash nahi aayega, animation ke time bhi nahi
+// ⚡ SMART BLACK REMOVER - SIRF CANVAS RENDERS, NO OVERLAP ⚡
 // ============================================================
 
 const SmartBlackRemover = ({ 
@@ -90,8 +89,6 @@ const SmartBlackRemover = ({
   const [useCanvas, setUseCanvas] = useState(false);
   const [isProcessed, setIsProcessed] = useState(false);
   const hasProcessedRef = useRef(false);
-  
-  // ⚡ IMPORTANT: Track karo ki original media ready hai ya nahi
   const mediaLoadedRef = useRef(false);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
@@ -181,7 +178,6 @@ const SmartBlackRemover = ({
 
     const queue: [number, number][] = [];
     
-    // Saari edges se flood fill
     for (let sx = 0; sx < scaledW; sx++) {
       if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
       if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
@@ -191,7 +187,6 @@ const SmartBlackRemover = ({
       if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
     }
 
-    // Center bhi check karo
     const centerSX = Math.floor(scaledW / 2);
     const centerSY = Math.floor(scaledH / 2);
     if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
@@ -214,7 +209,6 @@ const SmartBlackRemover = ({
       }
     }
 
-    // Visited black pixels ko transparent karo
     for (let sy = 0; sy < scaledH; sy++) {
       for (let sx = 0; sx < scaledW; sx++) {
         if (visited[sy * scaledW + sx]) {
@@ -236,13 +230,11 @@ const SmartBlackRemover = ({
     ctx.putImageData(imageData, 0, 0);
     processingRef.current = false;
     
-    // ⚡ Pehli baar process hone ke baad mark karo
     if (!hasProcessedRef.current) {
       hasProcessedRef.current = true;
       setIsProcessed(true);
     }
 
-    // Video ke liye continuously process karo
     if (type === 'video' && video) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -251,7 +243,6 @@ const SmartBlackRemover = ({
     }
   };
 
-  // Image load handling
   useEffect(() => {
     if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
       const img = mediaRef.current as HTMLImageElement;
@@ -260,7 +251,6 @@ const SmartBlackRemover = ({
         const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
         setUseCanvas(hasBlackBg);
         if (hasBlackBg) {
-          // Thoda delay deke process karo taaki sab ready ho
           setTimeout(() => processFrame(), 100);
         }
       }
@@ -284,13 +274,11 @@ const SmartBlackRemover = ({
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
       setUseCanvas(hasBlackBg);
       if (hasBlackBg) {
-        // Pehla frame turant process karo
         setTimeout(() => processFrame(video), 100);
       }
     }
   };
 
-  // Cleanup
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
@@ -303,7 +291,6 @@ const SmartBlackRemover = ({
     };
   }, [src]);
 
-  // Src change hone pe reset
   useEffect(() => {
     hasProcessedRef.current = false;
     setIsProcessed(false);
@@ -311,13 +298,17 @@ const SmartBlackRemover = ({
     mediaLoadedRef.current = false;
   }, [src]);
 
+  // ⚡ SIRF CANVAS RENDER - NO ORIGINAL VIDEO (OVERLAP HAT GAYA)
   if (type === 'video') {
     return (
       <div className={cn("relative", className)} style={style}>
-        {/* 
-          ⚡ FIX: Original video ko hamesha render hone do lekin 
-          canvas ready hone ke baad usko hide karo BINA kisi flash ke
-        */}
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            background: 'transparent',
+          }}
+        />
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -325,30 +316,9 @@ const SmartBlackRemover = ({
           muted
           loop
           playsInline
+          className="hidden"
           onLoadedData={handleVideoReady}
-          className="w-full h-full object-cover"
-          style={{ 
-            // ⚡ Smooth fade-out jab canvas ready ho
-            opacity: useCanvas && isProcessed ? 0 : 1,
-            transition: 'opacity 0.3s ease',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-          }}
           crossOrigin="anonymous"
-        />
-        {/* Canvas layer - hamesha render karo lekin smooth fade-in ke saath */}
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-cover"
-          style={{ 
-            opacity: useCanvas && isProcessed ? 1 : 0,
-            transition: 'opacity 0.3s ease',
-            background: 'transparent',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-          }}
         />
       </div>
     );
@@ -356,40 +326,27 @@ const SmartBlackRemover = ({
 
   return (
     <div className={cn("relative", className)} style={style}>
-      <img
-        ref={mediaRef as React.RefObject<HTMLImageElement>}
-        src={src}
-        alt=""
-        onLoad={handleImageLoad}
-        className="w-full h-full object-cover"
-        style={{ 
-          opacity: useCanvas && isProcessed ? 0 : 1,
-          transition: 'opacity 0.3s ease',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
-        crossOrigin="anonymous"
-      />
       <canvas
         ref={canvasRef}
         className="w-full h-full object-cover"
         style={{ 
-          opacity: useCanvas && isProcessed ? 1 : 0,
-          transition: 'opacity 0.3s ease',
           background: 'transparent',
-          position: 'absolute',
-          top: 0,
-          left: 0,
         }}
+      />
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        className="hidden"
+        onLoad={handleImageLoad}
+        crossOrigin="anonymous"
       />
     </div>
   );
 };
 
 // ============================================================
-// ⚡ COMPACT VIDEO AVATAR FRAME - FULLY FIXED ⚡
-// Ab animation ke time black nahi aayega, smooth transition hoga
+// ⚡ COMPACT VIDEO AVATAR FRAME - USING SMART BLACK REMOVER ⚡
 // ============================================================
 
 const CompactVideoAvatarFrame = ({ 
@@ -404,17 +361,13 @@ const CompactVideoAvatarFrame = ({
   const frameSize = avatarSize * 1.70;
   const isVideo = frameMediaUrl?.includes('.mp4') || frameMediaUrl?.includes('.webm') || frameMediaUrl?.includes('.mov');
   
-  // ⚡ Frame ready state with longer transition for smoothness
   const [frameReady, setFrameReady] = useState(false);
   const prevFrameRef = useRef<string | null>(null);
   
   useEffect(() => {
-    // Agar frame change hua hai to pehle fade out karo
     if (prevFrameRef.current !== frameMediaUrl) {
       setFrameReady(false);
       prevFrameRef.current = frameMediaUrl;
-      
-      // Thoda zyada delay deke ready mark karo - 300ms
       const timer = setTimeout(() => setFrameReady(true), 300);
       return () => clearTimeout(timer);
     }
@@ -426,12 +379,11 @@ const CompactVideoAvatarFrame = ({
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
-      {/* Frame layer with smooth opacity transition */}
       <div 
-        className="absolute inset-0 z-10 pointer-events-none"
+        className="absolute inset-0 z-10 pointer-events-none rounded-full overflow-hidden"
         style={{ 
           opacity: frameReady ? 1 : 0,
-          transition: 'opacity 0.5s ease-in-out',
+          transition: 'opacity 0.3s ease-in-out',
         }}
       >
         <SmartBlackRemover 
@@ -440,8 +392,7 @@ const CompactVideoAvatarFrame = ({
           className="w-full h-full"
         />
       </div>
-      {/* Avatar center mein */}
-      <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize, marginLeft: '-4px' }}>
+      <div className="relative z-0 flex items-center justify-center" style={{ width: avatarSize, height: avatarSize }}>
         {children}
       </div>
     </div>
@@ -449,7 +400,7 @@ const CompactVideoAvatarFrame = ({
 };
 
 // ============================================================
-// ⚡ SAARE SVG COMPONENTS - KOI CHANGE NAHI ⚡
+// ⚡ SAARE SVG COMPONENTS ⚡
 // ============================================================
 
 const SVGA_OfficialTag = () => (
@@ -1039,7 +990,7 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 );
 
 // ============================================================
-// ⚡ MEDAL MODAL - NO CHANGES ⚡
+// ⚡ MEDAL MODAL ⚡
 // ============================================================
 
 const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
@@ -1208,7 +1159,7 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
 
 
 // ============================================================
-// ⚡ MAIN PROFILE COMPONENT - BLACK FLASH FULLY FIXED ⚡
+// ⚡ MAIN PROFILE COMPONENT ⚡
 // ============================================================
 
 export default function ProfileView({ profileId, mode = 'public' }: { profileId: string; mode?: 'public' | 'editable' }) {
@@ -1229,7 +1180,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
   const isOwnProfile = currentUser?.uid === profileId;
 
-  // Firebase Queries
   const fansQuery = useMemoFirebase(() => {
     if (!firestore || !profileId) return null;
     return query(collection(firestore, 'followers'), where('followingId', '==', profileId));
@@ -1298,7 +1248,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
   const isCorrectFormat = /^\d{6}$/.test(String(currentDBId)) || (profileId === CREATOR_ID && String(currentDBId) === '0000');
   const displayID = isCorrectFormat ? String(currentDBId) : fallbackID;
 
-  // ✅ PERMANENT ID LOCK LOGIC
   useEffect(() => {
     const syncUserID = async () => {
       if (!isOwnProfile || !profile || !firestore || !profileId) return;
@@ -1418,14 +1367,12 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
-  // ⚡ ACTIVE FRAME MEDIA URL - with proper memoization
   const activeFrameMediaUrl = useMemo(() => {
     const inv = profile?.inventory as any;
     if (!inv?.activeFrameMediaUrl) return null;
     return inv.activeFrameMediaUrl;
   }, [profile?.inventory]);
 
-  // ⚡ BAG CLICK HANDLER - purchased items
   const handleBagClick = () => {
     router.push('/store?filter=purchased');
   };
@@ -1457,9 +1404,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     );
   }
 
-  // ============================================================
-  // ⚡ OWN PROFILE VIEW - SMOOTH TRANSITION, NO BLACK FLASH ⚡
-  // ============================================================
   return (
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden bg-white font-outfit text-[13px] relative">
@@ -1480,10 +1424,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
 
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
-            {/* 
-              ⚡ AVATAR WITH FRAME - Ab koi black flash nahi aayega
-              Smooth transition ke saath frame change hoga
-            */}
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
                 <CompactVideoAvatarFrame 
@@ -1531,7 +1471,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
             </div>
 
-            {/* Stats */}
             <div className="flex justify-start gap-8 items-center py-2 px-1 border-b border-slate-100 mb-4 mt-[-5px] pl-1">
               <StatItem label="Fans" value={stats.fans} onClick={() => { setSocialTab('followers'); setSocialOpen(true); }} />
               <StatItem label="Following" value={stats.following} onClick={() => { setSocialTab('following'); setSocialOpen(true); }} />
@@ -1539,7 +1478,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <StatItem label="Visitors" value={stats.visitors} onClick={() => { setSocialTab('visitors'); setSocialOpen(true); }} />
             </div>
 
-            {/* Wallet Section */}
             {isOwnProfile && (
               <div className="grid grid-cols-2 gap-3 mt-2 -mx-2">
                 <div onClick={() => router.push('/wallet')} className="h-[85px] bg-gradient-to-br from-[#FFD700] via-[#FDB931] to-[#9E7302] rounded-2xl p-4 shadow-[0_8px_20px_rgba(253,185,49,0.25)] active:scale-95 transition-all group cursor-pointer relative overflow-hidden backdrop-blur-sm">
@@ -1566,12 +1504,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               </div>
             )}
 
-            {/* VIP Banner */}
             <div className="-mx-2">
               <SVGA_VIPBanner onClick={() => router.push('/vips')} />
             </div>
 
-            {/* Quick Actions */}
             <div className="flex justify-between items-center px-4 mt-6">
               <IconButton customIcon={SVGA_LevelCrown} label="Level" onClick={() => router.push('/level')} />
               <IconButton customIcon={SVGA_StoreCart} label="Store" onClick={() => router.push('/store')} />
@@ -1579,7 +1515,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/room-tasks')} />
             </div>
 
-            {/* Main Menu List */}
             <div className="space-y-3 pt-6 pb-32">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <ProfileMenuItem
@@ -1596,7 +1531,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                   onClick={() => router.push('/families')}
                 />
                 
-                {/* ⚡ BAG BUTTON */}
                 <ProfileMenuItem
                   customIcon={SVGA_BagShirt}
                   label="My-Iteam"
@@ -1652,7 +1586,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </div>
 
-        {/* Dialogs */}
         <MedalModal open={medalModalOpen} onClose={() => setMedalModalOpen(false)} />
         <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
         <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} displayId={displayID} />
@@ -1668,4 +1601,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
+    }
