@@ -63,7 +63,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
   if (!gameState) return null;
   const isJoined = gameState.players.some(p => p.uid === currentUser?.uid);
 
-  if (!gameState.mode) {
+  if (!gameState.mode || gameState.mode === 'none' || gameState.status === 'loading' || gameState.status === 'mode_select') {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-[#01091A] p-6 relative overflow-hidden min-h-[400px]">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
