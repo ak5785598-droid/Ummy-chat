@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { AppLayout } from '@/components/layout/app-layout';
+import { getOptimizedMediaUrl } from '@/lib/media-proxy';
 import {
   ChevronLeft,
   Plus,
@@ -378,16 +379,16 @@ export default function CpHousePage() {
             }}
           >
             {activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl && (
-              <img src={config.cpBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="CP Background" />
+              <img src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="CP Background" />
             )}
             {activeMainTab === 'cp' && config?.cpBgType === 'video' && config?.cpBgUrl && (
-              <video src={config.cpBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
+              <video src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
             )}
             {activeMainTab === 'friend' && config?.friendBgType === 'image' && config?.friendBgUrl && (
-              <img src={config.friendBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Friend Background" />
+              <img src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="Friend Background" />
             )}
             {activeMainTab === 'friend' && config?.friendBgType === 'video' && config?.friendBgUrl && (
-              <video src={config.friendBgUrl} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
+              <video src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
             )}
             <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20 z-0" />
             

@@ -53,7 +53,8 @@ export function FamilyManagementTab() {
     try {
       const storagePath = `families/${familyId}/banner_${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
-      const result = await uploadBytes(fileRef, file);
+      const metadata = { cacheControl: 'public,max-age=31536000,immutable' };
+      const result = await uploadBytes(fileRef, file, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       // Directly update the family's bannerUrl in Firestore

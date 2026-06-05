@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
+import { getOptimizedMediaUrl } from '@/lib/media-proxy';
 import { 
   Users, 
   Trophy, 
@@ -143,7 +144,7 @@ export default function FamilyHQPage() {
              />
            ) : (
              <Image 
-               src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/800`} 
+               src={getOptimizedMediaUrl(family.bannerUrl) || `https://picsum.photos/seed/${family.id}/800`} 
                alt="HQ Banner" 
                fill 
                className="object-cover scale-105 blur-[2px] opacity-40"
@@ -156,9 +157,9 @@ export default function FamilyHQPage() {
               <div className="flex items-center gap-6">
                  <div className="h-24 w-24 rounded-[2rem] border-4 border-white/20 overflow-hidden shadow-2xl relative bg-slate-900 flex items-center justify-center">
                     {isVideoBanner(family.bannerUrl) ? (
-                      <video src={family.bannerUrl} className="w-full h-full object-cover" muted autoPlay loop />
+                      <video src={getOptimizedMediaUrl(family.bannerUrl)} className="w-full h-full object-cover" muted autoPlay loop />
                     ) : (
-                      <Image src={family.bannerUrl || `https://picsum.photos/seed/${family.id}/200`} fill className="object-cover" alt="Family" unoptimized />
+                      <Image src={getOptimizedMediaUrl(family.bannerUrl) || `https://picsum.photos/seed/${family.id}/200`} fill className="object-cover" alt="Family" unoptimized />
                     )}
                  </div>
                  <div className="mb-2">

@@ -84,7 +84,8 @@ export function CpManagementTab() {
     try {
       const storagePath = `settings/cp_bg_${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
-      const result = await uploadBytes(fileRef, file);
+      const metadata = { cacheControl: 'public,max-age=31536000,immutable' };
+      const result = await uploadBytes(fileRef, file, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       setConfig((prev: any) => ({ ...prev, cpBgUrl: downloadURL }));
@@ -113,7 +114,8 @@ export function CpManagementTab() {
     try {
       const storagePath = `settings/friend_bg_${Date.now()}_${file.name}`;
       const fileRef = ref(storage, storagePath);
-      const result = await uploadBytes(fileRef, file);
+      const metadata = { cacheControl: 'public,max-age=31536000,immutable' };
+      const result = await uploadBytes(fileRef, file, metadata);
       const downloadURL = await getDownloadURL(result.ref);
 
       setConfig((prev: any) => ({ ...prev, friendBgUrl: downloadURL }));
