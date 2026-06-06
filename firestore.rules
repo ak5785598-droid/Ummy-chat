@@ -197,10 +197,7 @@ service cloud.firestore {
     match /games/{gameId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isNotBanned();
-      allow update: if isSignedIn() && isNotBanned() && (
-        (resource.data.players is list && resource.data.players.hasAny([request.auth.uid])) ||
-        isAdmin()
-      )
+      allow update: if isSignedIn() && isNotBanned()
       // dice: 1-6 integer (prevents Ludo dice hack)
       && (!('dice' in request.resource.data) ||
           (request.resource.data.dice is number &&
