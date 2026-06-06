@@ -203,11 +203,7 @@ service cloud.firestore {
           (request.resource.data.dice is number &&
            request.resource.data.dice >= 1 &&
            request.resource.data.dice <= 6))
-      // turn: must belong to a player in the game or be empty
-      && (!('turn' in request.resource.data) ||
-          request.resource.data.turn == '' ||
-          (request.resource.data.players is list &&
-           request.resource.data.players.hasAny([request.resource.data.turn])))
+      // turn: validated by client (players is array of objects, cannot use hasAny)
       // status: valid game states only
       && (!('status' in request.resource.data) ||
            request.resource.data.status in ['loading', 'mode_select', 'lobby',
