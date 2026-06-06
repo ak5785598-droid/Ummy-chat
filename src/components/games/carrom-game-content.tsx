@@ -184,14 +184,20 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
   return (
     <motion.div 
-      drag
+      drag="y"
       dragControls={dragControls}
       dragListener={false}
-      dragMomentum={false}
-      initial={isOverlay ? { y: '35%' } : {}}
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.2}
+      onDragEnd={(e, info) => {
+        if (info.offset.y > 100 && onClose) onClose();
+      }}
+      initial={isOverlay ? { y: '100%' } : {}}
+      animate={{ y: 0 }}
+      exit={isOverlay ? { y: '100%' } : {}}
       className={cn(
-        "h-fit max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none pb-4 rounded-[2.8rem] border border-white/20 shadow-2xl",
-        !isOverlay && "min-h-screen"
+        "h-full max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none rounded-t-[2.8rem] border-t border-x border-white/20 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] mt-auto",
+        !isOverlay && "min-h-screen rounded-none h-auto max-h-none border-none mt-0"
       )}
     >
       
@@ -252,7 +258,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
              alt="Board"
            />
 
-           <div className="relative w-full h-full z-10 pointer-events-none">
+           <div className="absolute inset-0 z-10 pointer-events-none">
               {/* Aim Line SVG Overlay */}
               {gameState.turn === currentUser?.uid && gameState.status === 'playing' && (
                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
