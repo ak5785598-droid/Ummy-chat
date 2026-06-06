@@ -4,18 +4,16 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, Crown, Check, Palette, Heart, Zap, Eye, Circle, X, Activity, IdCard, Ticket, Play } from 'lucide-react';
+import { ShoppingBag, Sparkles, Loader, ChevronLeft, Check, Palette, Heart, X, Activity, Play, ImageIcon, Ticket, MessageSquare } from 'lucide-react';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
-import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 // ============================================
-// SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
+// SMART BLACK BACKGROUND REMOVER
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
@@ -344,7 +342,7 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// DIRECT MEDIA WRAPPER (No Blob Cache - Direct Display)
+// DIRECT MEDIA WRAPPER
 // ============================================
 const DirectMedia = ({ 
   src, 
@@ -357,7 +355,6 @@ const DirectMedia = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  // Direct src use karo, koi download nahi, koi cache nahi
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
       <SmartBlackRemover 
@@ -371,10 +368,9 @@ const DirectMedia = ({
 };
 
 // ============================================
-// ALL ICONS (EXISTING - NO TOUCH)
+// ICONS
 // ============================================
 
-// --- CUSTOM DOLLAR COIN ICON ---
 const DollarCoinIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" className={cn("text-[#FCD535]", className)} xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#B8860B" strokeWidth="2"/>
@@ -389,7 +385,6 @@ const DollarCoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// --- WAVE CIRCLE UI ---
 const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false }: any) => {
   const borderColor = colorClass.replace('text-', 'border-');
   
@@ -417,7 +412,6 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-// --- PINK DIAMOND ID BADGE ---
 const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -452,7 +446,6 @@ const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- RED ID BADGE ICON (sss) ---
 const IDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
@@ -478,7 +471,6 @@ const IDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- SILVER BLUE ID BADGE ICON ---
 const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
     <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#0C3E8A] to-[#1D5DC2] rounded-r-full border-[1px] border-t-[#4A85E6] border-b-[#072456] border-r-[#4A85E6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
@@ -513,11 +505,6 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- ENTRY TICKET ICON (SVG removed, ab sirf imageUrl/videoUrl use hoga) ---
-// Yeh component ab use nahi hoga, lekin code me rakha hai for reference
-// Entry ke liye ab DirectMedia se imageUrl/videoUrl dikhega
-
-// --- FRAME ICON FOR STORE CARDS ---
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center justify-center", className)}>
     <svg viewBox="0 0 60 60" className="w-full h-full">
@@ -535,11 +522,13 @@ const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
-// --- STORE ITEMS ---
+// ============================================
+// STATIC STORE ITEMS
+// ============================================
 const STATIC_STORE_ITEMS = [
   { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
   { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
-  { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 7, description: 'Exclusive premium gold trimmed bubble.', icon: Crown, color: 'text-yellow-400' },
+  { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 7, description: 'Exclusive premium gold trimmed bubble.', icon: Heart, color: 'text-yellow-400' },
   { id: 'w-lovelyshine', name: 'Lovely Shine', type: 'Wave', price: 59999, durationDays: 7, description: 'Magical blue glow with floating hearts.', icon: Activity, color: 'text-blue-400' },
   { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
   { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
@@ -688,14 +677,12 @@ export default function StorePage() {
   const { data: config } = useDoc(configRef);
   const storeNotForSale = (config?.storeNotForSale || {}) as Record<string, boolean>;
 
-  // 🔥 FILTER: Not for sale wale items ko hatao, sirf sale wale dikhao
   const allItemsWithFlags = useMemo(() => {
     return allItems
       .map(item => ({ ...item, notForSale: !!storeNotForSale[item.id] }))
       .filter(item => !item.notForSale);
   }, [allItems, storeNotForSale]);
 
-  // --- PURCHASED ITEMS (Mine Tab) ---
   const purchasedItems = useMemo(() => {
     const inventory = userProfile?.inventory as any;
     if (!inventory?.ownedItems) return [];
@@ -712,14 +699,12 @@ export default function StorePage() {
     return allItemsWithFlags.filter(item => validOwnedIds.includes(item.id));
   }, [userProfile?.inventory, allItemsWithFlags]);
 
-  // Get expiry date for an item
   const getItemExpiryDate = (itemId: string) => {
     const expiry = (userProfile?.inventory as any)?.expiries?.[itemId];
     if (!expiry) return null;
     return expiry.toDate();
   };
 
-  // Check expiry every minute and auto-unequip if expired
   useEffect(() => {
     if (!userProfile || !firestore || !user) return;
 
@@ -765,7 +750,6 @@ export default function StorePage() {
     return Math.floor((basePrice / 7) * 3);
   };
 
-  // Check if item is owned and not expired
   const isItemOwnedAndValid = (itemId: string) => {
     const inventory = userProfile?.inventory as any;
     if (!inventory?.ownedItems) return false;
@@ -777,7 +761,6 @@ export default function StorePage() {
     return true;
   };
 
-  // 🔥 Check if item has video (for play button)
   const hasVideo = (item: any): boolean => {
     if (!item.videoUrl) return false;
     return true;
@@ -877,7 +860,6 @@ export default function StorePage() {
     }
   };
 
-  // 🔥 Helper to get frame display image URL
   const getFrameDisplayImage = (item: any): string | null => {
     if (item.type !== 'Frame') return null;
     if (item.imageUrl) return item.imageUrl;
@@ -887,7 +869,7 @@ export default function StorePage() {
 
   // Helper to render store card icon
   const renderStoreCardIcon = (item: any) => {
-    // 🔥 FRAME: Display pe IMAGE dikhega, VIDEO nahi chalegi
+    // FRAME
     if (item.type === 'Frame') {
       const displayImage = getFrameDisplayImage(item);
       if (displayImage) {
@@ -905,6 +887,7 @@ export default function StorePage() {
       return <FramePlaceholderIcon className="h-12 w-12" />;
     }
     
+    // THEME
     if (item.type === 'Theme') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -923,7 +906,7 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // 🔥 BUBBLE: Ab sirf imageUrl/videoUrl dikhega, SVG ChatMessageBubble nahi
+    // BUBBLE - NO SVG CARD, only imageUrl/videoUrl
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -939,21 +922,23 @@ export default function StorePage() {
           </div>
         );
       }
-      // Agar koi mediaUrl nahi hai toh simple placeholder
+      // No media, simple icon
       return <MessageSquare className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
+    // WAVE
     if (item.type === 'Wave') {
       return <WaveCircleIcon colorClass={item.color} size="h-20 w-20" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
+    // ID
     if (item.type === 'ID') {
       if (item.isPinkDiamond) return <PinkDiamondIDBadgeIcon number={item.displayId || ''} />;
       if (item.isSilver) return <SilverBlueIDBadgeIcon number={item.displayId || ''} />;
       return <IDBadgeIcon number={item.displayId || ''} />;
     }
     
-    // 🔥 ENTRY: Ab sirf imageUrl/videoUrl dikhega, SVG EntryTicketIcon nahi
+    // ENTRY - NO SVG CARD, only imageUrl/videoUrl
     if (item.type === 'Entry') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -969,7 +954,7 @@ export default function StorePage() {
           </div>
         );
       }
-      // Agar koi mediaUrl nahi hai toh simple placeholder
+      // No media, simple icon
       return <Ticket className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
@@ -980,8 +965,9 @@ export default function StorePage() {
     return <ShoppingBag className="h-12 w-12 opacity-50 text-gray-400" />;
   };
 
-  // 🔥 PREVIEW CARD: Helper to render preview icon
+  // PREVIEW CARD ICON
   const renderPreviewIcon = (item: any) => {
+    // THEME
     if (item.type === 'Theme') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1000,6 +986,7 @@ export default function StorePage() {
       return <Palette className={cn("h-20 w-20 opacity-80", item.color || "text-purple-400")} />;
     }
     
+    // ID
     if (item.type === 'ID') {
       return (
         <div className="scale-125 pt-2">
@@ -1010,7 +997,7 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 FRAME PREVIEW: Video chalegi agar videoUrl hai
+    // FRAME
     if (item.type === 'Frame') {
       const mediaUrl = item.videoUrl || item.imageUrl;
       if (mediaUrl) {
@@ -1033,7 +1020,7 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 BUBBLE PREVIEW: Ab sirf imageUrl/videoUrl dikhega, ChatMessageBubble nahi
+    // BUBBLE - NO SVG CARD, only imageUrl/videoUrl
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -1052,11 +1039,12 @@ export default function StorePage() {
       return <MessageSquare className="h-20 w-20 opacity-80 text-gray-400" />;
     }
     
+    // WAVE
     if (item.type === 'Wave') {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    // 🔥 ENTRY PREVIEW: Ab sirf imageUrl/videoUrl dikhega, SVG EntryTicketIcon nahi
+    // ENTRY - NO SVG CARD, only imageUrl/videoUrl
     if (item.type === 'Entry') {
       if (item.videoUrl) {
         return (
@@ -1101,7 +1089,6 @@ export default function StorePage() {
   const storeItems = allItemsWithFlags;
   const mineItems = purchasedItems;
 
-  // 🔥 Categories list - "All" hata diya gaya
   const categories = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
 
   return (
@@ -1156,7 +1143,6 @@ export default function StorePage() {
                       onClick={() => setPreviewItem(item)} 
                       className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                     >
-                      {/* 🔥 PLAY BUTTON - Top Right Corner */}
                       {hasVideo(item) && (
                         <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                           <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1217,7 +1203,6 @@ export default function StorePage() {
                         onClick={() => setPreviewItem(item)} 
                         className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                       >
-                        {/* 🔥 PLAY BUTTON - Top Right Corner */}
                         {hasVideo(item) && (
                           <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                             <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1252,7 +1237,7 @@ export default function StorePage() {
           </Tabs>
         )}
 
-        {/* 🔥 PREVIEW CARD */}
+        {/* PREVIEW CARD */}
         {previewItem && (() => {
           const isOwnedAndValid = isItemOwnedAndValid(previewItem.id);
           const isCurrentlyEquipped = userProfile?.inventory?.[`active${previewItem.type}` as keyof typeof userProfile.inventory] === previewItem.id;
@@ -1304,7 +1289,6 @@ export default function StorePage() {
                   )}
                 </div>
 
-                {/* Bottom action bar */}
                 {isOwnedAndValid ? (
                   <div className="bg-[#222222] rounded-t-[20px] p-4 pb-6 flex-shrink-0">
                     <Button 
@@ -1368,4 +1352,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-  }
+}
