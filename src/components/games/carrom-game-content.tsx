@@ -212,7 +212,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
             {isMuted ? <VolumeX className="h-4 w-4 text-white" /> : <Volume2 className="h-4 w-4 text-white" />}
           </button>
           <button 
-            onClick={() => initializeGame()} 
+            onClick={() => initializeGame(true)} 
             className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
           >
             <RotateCcw className="h-4 w-4 text-white" />

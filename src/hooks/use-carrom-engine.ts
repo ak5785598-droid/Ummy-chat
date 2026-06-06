@@ -26,11 +26,11 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   const gameDocRef = useMemo(() => (!firestore || !roomId) ? null : doc(firestore, 'games', `carrom_${roomId}`), [firestore, roomId]);
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
-  const initializeGame = useCallback(async () => {
+  const initializeGame = useCallback(async (force = false) => {
     if (!gameDocRef || !userId || isLoading) return;
     
-    // Initialize if doesn't exist
-    if (!gameState) {
+    // Initialize if doesn't exist OR forced
+    if (!gameState || force) {
       await setDoc(gameDocRef, {
         id: `carrom_${roomId}`,
         roomId,
