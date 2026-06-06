@@ -42,7 +42,8 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     joinArena, 
     startMatch,
     updateStriker,
-    strike 
+    strike,
+    localPieces
   } = useCarromEngine(roomId, currentUser?.uid || null);
 
   const [isSplashing, setIsSplashing] = useState(true);
@@ -379,7 +380,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                 </svg>
               )}
 
-              {gameState.pieces.map(piece => {
+              {(localPieces.length > 0 ? localPieces : gameState.pieces).map(piece => {
                 if (piece.isPocketed) return null;
                 const isStriker = piece.id === 'striker';
                 const xPos = isStriker ? (localStrikerPos ?? gameState.strikerPos ?? piece.position.x) : piece.position.x;

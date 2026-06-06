@@ -26,6 +26,15 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   const gameDocRef = useMemo(() => (!firestore || !roomId) ? null : doc(firestore, 'games', `carrom_${roomId}`), [firestore, roomId]);
   const { data: gameState, isLoading } = useDoc(gameDocRef);
 
+  const [localPieces, setLocalPieces] = useState<CarromPiece[]>([]);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (gameState?.pieces && !isAnimating) {
+      setLocalPieces(gameState.pieces);
+    }
+  }, [gameState?.pieces, isAnimating]);
+
   const initializeGame = useCallback(async (force = false) => {
     if (!gameDocRef || !userId || isLoading) return;
     
@@ -207,10 +216,10 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
   }, [gameDocRef, gameState, firestore, roomId]);
 
   const strike = useCallback(async (angle: number, power: number) => {
-    if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing') return;
-    if (!firestore) return;
+    if (!gameDocRef || !gameState || gameState.turn !== userId || gameState.status !== 'playing' || isAnimating) return;
+    
+    setIsAnimating(true);
 
-    // Apply impulse to striker (set starting X to the synchronized strikerPos)
     const pieces = gameState.pieces.map((p: any) => {
       if (p.id === 'striker') {
         return {
@@ -221,87 +230,95 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
       return p;
     });
     const striker = pieces.find((p: any) => p.id === 'striker');
-    if (!striker) return;
+    if (!striker) {
+      setIsAnimating(false);
+      return;
+    }
 
-    // Convert angle/power to velocity
     const rad = (angle - 90) * Math.PI / 180;
     striker.velocity = {
       x: Math.cos(rad) * power,
       y: Math.sin(rad) * power
     };
 
-    // Simulate physics until stop
     let currentPieces = pieces;
-    for (let i = 0; i < 300; i++) {
+    let frameCount = 0;
+    const maxFrames = 300;
+
+    const animateFrame = () => {
+      frameCount++;
       const { pieces: nextPieces, hasMovement } = updatePhysics(currentPieces);
       currentPieces = nextPieces;
-      if (!hasMovement) break;
-    }
+      setLocalPieces(currentPieces);
 
-    // Calculate newly pocketed pieces and score
-    let scoreGained = 0;
-    let pocketedThisTurn = false;
-    
-    currentPieces.forEach((p: any) => {
-      const oldPiece = pieces.find((oldP: any) => oldP.id === p.id);
-      if (p.isPocketed && oldPiece && !oldPiece.isPocketed) {
-        if (p.id === 'striker') {
-          scoreGained -= 10;
-        } else {
-          pocketedThisTurn = true;
-          if (p.type === 'white') scoreGained += 20;
-          if (p.type === 'black') scoreGained += 10;
-          if (p.type === 'queen') scoreGained += 50;
-        }
+      if (hasMovement && frameCount < maxFrames) {
+        requestAnimationFrame(animateFrame);
+      } else {
+        finalizeStrike(currentPieces);
       }
-    });
-
-    // Reset striker for next turn
-    const finalPieces = currentPieces.map((p: any) => {
-      if (p.id === 'striker') {
-        return { ...p, position: { x: 50, y: 85 }, velocity: { x: 0, y: 0 }, isPocketed: false };
-      }
-      return p;
-    });
-
-    // Update Scores and Turn
-    const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === userId);
-    const updatedPlayers = [...gameState.players];
-    updatedPlayers[currentPlayerIndex] = {
-      ...updatedPlayers[currentPlayerIndex],
-      score: Math.max(0, updatedPlayers[currentPlayerIndex].score + scoreGained)
     };
 
-    // Check if game ended
-    const piecesRemaining = finalPieces.some((p: any) => p.id !== 'striker' && !p.isPocketed);
-    const nextTurn = pocketedThisTurn ? userId : gameState.players[(currentPlayerIndex + 1) % gameState.players.length].uid;
+    const finalizeStrike = async (finalPhysicsPieces: CarromPiece[]) => {
+      let scoreGained = 0;
+      let pocketedThisTurn = false;
+      
+      finalPhysicsPieces.forEach((p: any) => {
+        const oldPiece = pieces.find((oldP: any) => oldP.id === p.id);
+        if (p.isPocketed && oldPiece && !oldPiece.isPocketed) {
+          if (p.id === 'striker') {
+            scoreGained -= 10;
+          } else {
+            pocketedThisTurn = true;
+            if (p.type === 'white') scoreGained += 20;
+            if (p.type === 'black') scoreGained += 10;
+            if (p.type === 'queen') scoreGained += 50;
+          }
+        }
+      });
 
-    // Atomic write via transaction
-    try {
-      await runTransaction(firestore as any, async (tx: any) => {
-        const snap = await tx.get(gameDocRef);
-        if (!snap.exists()) return;
-        const state = snap.data();
-        if (state.turn !== userId || state.status !== 'playing') return;
-        tx.update(gameDocRef, {
+      const finalPieces = finalPhysicsPieces.map((p: any) => {
+        if (p.id === 'striker') {
+          return { ...p, position: { x: 50, y: 85 }, velocity: { x: 0, y: 0 }, isPocketed: false };
+        }
+        return p;
+      });
+
+      const currentPlayerIndex = gameState.players.findIndex((p: any) => p.uid === userId);
+      const updatedPlayers = [...gameState.players];
+      updatedPlayers[currentPlayerIndex] = {
+        ...updatedPlayers[currentPlayerIndex],
+        score: Math.max(0, updatedPlayers[currentPlayerIndex].score + scoreGained)
+      };
+
+      const piecesRemaining = finalPieces.some((p: any) => p.id !== 'striker' && !p.isPocketed);
+      const nextTurn = pocketedThisTurn ? userId : gameState.players[(currentPlayerIndex + 1) % gameState.players.length].uid;
+
+      try {
+        await updateDocumentNonBlocking(gameDocRef, {
           pieces: finalPieces,
           players: updatedPlayers,
           turn: nextTurn,
           strikerPos: 50,
           updatedAt: serverTimestamp()
         });
-      });
-      if (!piecesRemaining) {
-        const winner = updatedPlayers.reduce((prev, current) => (prev.score > current.score) ? prev : current);
-        await endMatch(winner.uid);
+        
+        if (!piecesRemaining) {
+          const winner = updatedPlayers.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+          await endMatch(winner.uid);
+        }
+      } catch (e) {
+        console.error('Strike update failed', e);
+      } finally {
+        setIsAnimating(false);
       }
-    } catch (e) {
-      console.log('Strike tx failed', e);
-    }
-  }, [gameDocRef, gameState, userId, endMatch, firestore]);
+    };
+
+    requestAnimationFrame(animateFrame);
+  }, [gameDocRef, gameState, userId, isAnimating, endMatch]);
 
   return {
     gameState: gameState as CarromGameState | undefined,
+    localPieces,
     isLoading,
     initializeGame,
     selectMode,
