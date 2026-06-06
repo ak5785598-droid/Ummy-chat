@@ -184,6 +184,7 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
   return (
     <motion.div 
+      dir="ltr"
       drag="y"
       dragControls={dragControls}
       dragListener={false}
@@ -258,9 +259,12 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
              alt="Board"
            />
 
-           <div className="absolute inset-0 z-10 pointer-events-none">
-              {/* Aim Line SVG Overlay */}
-              {gameState.turn === currentUser?.uid && gameState.status === 'playing' && (
+            <div className="absolute inset-0 z-10 pointer-events-none">
+              {(() => {
+                const mapToVisual = (val: number) => 12 + (val / 100) * 76;
+                return (
+                  <>
+                    {gameState.turn === currentUser?.uid && gameState.status === 'playing' && (
                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
                   <defs>
                     <linearGradient id="aimGlow" x1="0" y1="1" x2="0" y2="0">
@@ -269,8 +273,8 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                     </linearGradient>
                   </defs>
                   {(() => {
-                    const strikerX = gameState.strikerPos ?? 50;
-                    const strikerY = 85;
+                    const strikerX = mapToVisual(gameState.strikerPos ?? 50);
+                    const strikerY = mapToVisual(85);
                     const rad = (angle - 90) * Math.PI / 180;
                     const lineLength = power * 0.4;
                     const endX = strikerX + Math.cos(rad) * lineLength;
@@ -297,26 +301,27 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                 const xPos = isStriker ? (gameState.strikerPos ?? piece.position.x) : piece.position.x;
                 const yPos = piece.position.y;
                 
+                const visualX = mapToVisual(xPos);
+                const visualY = mapToVisual(yPos);
+                
                 return (
                   <div 
                     key={piece.id}
                     className={cn(
-                      "absolute rounded-full border border-black/30 shadow-[0_6px_12px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all duration-300 relative overflow-hidden group",
+                      "absolute rounded-full border border-black/30 shadow-[0_6px_12px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all duration-300 overflow-hidden group",
                       isStriker ? "h-8 w-8 bg-gradient-to-br from-yellow-300 via-amber-500 to-amber-700 border-2 border-white ring-2 ring-yellow-400/30 z-30" :
                       piece.type === 'queen' ? "h-6 w-6 bg-gradient-to-br from-rose-500 via-red-600 to-red-800 border-2 border-yellow-400 ring-1 ring-red-400/20 z-20" :
                       piece.type === 'white' ? "h-6 w-6 bg-gradient-to-br from-slate-100 via-stone-200 to-stone-300" :
                       "h-6 w-6 bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950"
                     )}
                     style={{ 
-                      left: `${xPos}%`, 
-                      top: `${yPos}%`,
+                      left: `${visualX}%`, 
+                      top: `${visualY}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
                   >
-                    {/* Inner 3D Rim Ring */}
                     <div className="absolute inset-[15%] rounded-full border border-black/10 opacity-60" />
                     
-                    {/* Golden Center Pin for Striker and Queen */}
                     {(isStriker || piece.type === 'queen') && (
                       <div className="h-2.5 w-2.5 rounded-full bg-yellow-400 shadow-md border border-amber-600 animate-pulse" />
                     )}
@@ -331,6 +336,9 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                   </div>
                 );
               })}
+                  </>
+                );
+              })()}
            </div>
         </div>
       </div>
