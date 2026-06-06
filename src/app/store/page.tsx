@@ -15,150 +15,6 @@ import { useRouter } from 'next/navigation';
 import { ChatMessageBubble } from '@/components/chat-message-bubble';
 
 // ============================================
-// 🎯 SIMPLE BLOB CACHE (Download → Store → Display)
-// ============================================
-const BLOB_CACHE_KEY = 'blob_cache_v1';
-
-interface CacheEntry {
-  url: string;
-  timestamp: number;
-}
-
-// Cache se blob URL fetch karo
-const getCachedBlob = (itemId: string): string | null => {
-  if (typeof window === 'undefined') return null;
-  
-  try {
-    const data = localStorage.getItem(BLOB_CACHE_KEY);
-    if (!data) return null;
-    
-    const cache: Record<string, CacheEntry> = JSON.parse(data);
-    const entry = cache[itemId];
-    
-    if (!entry) return null;
-    
-    // 24 hours expiry check
-    if (Date.now() - entry.timestamp > 24 * 60 * 60 * 1000) {
-      delete cache[itemId];
-      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
-      return null;
-    }
-    
-    return entry.url;
-  } catch {
-    return null;
-  }
-};
-
-// Blob URL cache me store karo
-const setCachedBlob = (itemId: string, blobUrl: string): void => {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    const data = localStorage.getItem(BLOB_CACHE_KEY);
-    const cache: Record<string, CacheEntry> = data ? JSON.parse(data) : {};
-    
-    // Max 20 items rakho cache me
-    const entries = Object.entries(cache);
-    if (entries.length >= 20) {
-      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      // Purane 10 hatao
-      entries.slice(0, 10).forEach(([key]) => {
-        delete cache[key];
-      });
-    }
-    
-    cache[itemId] = {
-      url: blobUrl,
-      timestamp: Date.now()
-    };
-    
-    localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify(cache));
-  } catch (e) {
-    // Storage full - poori cache clear karo
-    localStorage.removeItem(BLOB_CACHE_KEY);
-    try {
-      localStorage.setItem(BLOB_CACHE_KEY, JSON.stringify({
-        [itemId]: { url: blobUrl, timestamp: Date.now() }
-      }));
-    } catch {}
-  }
-};
-
-// Hook - Image download + blob cache (sirf image ke liye, video nahi)
-const useBlobCache = (itemId: string, imageUrl: string | null) => {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const doneRef = useRef(false);
-  const retryCountRef = useRef(0);
-  const lastItemIdRef = useRef('');
-  const lastImageUrlRef = useRef('');
-
-  useEffect(() => {
-    // 🔥 FIX: Agar itemId ya imageUrl change hua toh reset karo
-    if (lastItemIdRef.current !== itemId || lastImageUrlRef.current !== imageUrl) {
-      doneRef.current = false;
-      retryCountRef.current = 0;
-      setBlobUrl(null);
-      setIsLoading(false);
-      setHasError(false);
-      lastItemIdRef.current = itemId;
-      lastImageUrlRef.current = imageUrl || '';
-    }
-
-    if (!imageUrl || !itemId || doneRef.current) return;
-    
-    // Step 1: Cache check - pehle cache dekho
-    const cached = getCachedBlob(itemId);
-    if (cached) {
-      setBlobUrl(cached);
-      doneRef.current = true;
-      setHasError(false);
-      setIsLoading(false);
-      return;
-    }
-    
-    // Step 2: Download and cache with retry logic
-    setIsLoading(true);
-    setHasError(false);
-    
-    const downloadImage = () => {
-      fetch(imageUrl, { mode: 'cors' })
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-          return res.blob();
-        })
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          setCachedBlob(itemId, url);
-          setBlobUrl(url);
-          doneRef.current = true;
-          setHasError(false);
-        })
-        .catch(err => {
-          console.error('Download failed:', err);
-          retryCountRef.current++;
-          if (retryCountRef.current < 3) {
-            // Retry after 1 second
-            setTimeout(downloadImage, 1000);
-          } else {
-            // Fallback to original URL after 3 retries
-            setBlobUrl(imageUrl);
-            setHasError(true);
-          }
-        })
-        .finally(() => setIsLoading(false));
-    };
-    
-    downloadImage();
-    
-  }, [itemId, imageUrl]);
-  
-  return { blobUrl: blobUrl || imageUrl, isLoading, hasError };
-};
-
-// ============================================
 // SMART BLACK BACKGROUND REMOVER (EXISTING - NO TOUCH)
 // ============================================
 const SmartBlackRemover = ({ 
@@ -488,37 +344,24 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// CACHED MEDIA WRAPPER (Blob Cache + SmartBlackRemover)
+// DIRECT MEDIA WRAPPER (No Blob Cache - Direct Display)
 // ============================================
-const CachedMedia = ({ 
-  itemId, 
+const DirectMedia = ({ 
   src, 
   type = 'image', 
   className = '', 
   style = {} 
 }: { 
-  itemId: string; 
   src: string; 
   type?: 'image' | 'video'; 
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  // Sirf image type ke liye blob cache use karo, video ke liye direct src
-  const { blobUrl, isLoading, hasError } = useBlobCache(itemId, type === 'image' ? src : null);
-  
-  // Agar video hai toh direct src use karo (blob cache nahi)
-  // Agar image hai toh cached blob use karo
-  const mediaSource = type === 'video' ? src : (blobUrl || src);
-  
+  // Direct src use karo, koi download nahi, koi cache nahi
   return (
     <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      {isLoading && type === 'image' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg z-10">
-          <Loader className="animate-spin h-6 w-6 text-white/60" />
-        </div>
-      )}
       <SmartBlackRemover 
-        src={mediaSource} 
+        src={src} 
         type={type} 
         className="w-full h-full"
         style={{ background: 'transparent' }}
@@ -670,79 +513,9 @@ const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
   </div>
 );
 
-// --- ENTRY TICKET ICON ---
-const EntryTicketIcon = ({ variant = 'golden', className = '' }: { variant?: string; className?: string }) => {
-  if (variant === 'platinum') {
-    return (
-      <div className={cn("relative", className)}>
-        <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_12px_rgba(147,197,253,0.6)]">
-          <defs>
-            <linearGradient id="platGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#E2E8F0" />
-              <stop offset="25%" stopColor="#F8FAFC" />
-              <stop offset="50%" stopColor="#94A3B8" />
-              <stop offset="75%" stopColor="#F1F5F9" />
-              <stop offset="100%" stopColor="#64748B" />
-            </linearGradient>
-          </defs>
-          <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#platGrad)" stroke="#CBD5E1" strokeWidth="1.5" />
-          <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#93C5FD" strokeWidth="0.8" strokeDasharray="3 3" />
-          <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#1E3A8A" textAnchor="middle" fontWeight="bold">ENTRY</text>
-          <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#3B82F6" textAnchor="middle" letterSpacing="2">PLATINUM PASS</text>
-          <circle cx="115" cy="30" r="6" fill="#1E293B" stroke="#93C5FD" strokeWidth="1" />
-          <circle cx="115" cy="30" r="3" fill="#3B82F6" className="animate-pulse" />
-          <path d="M25,48 L30,52 L35,48 L40,52 L45,48" stroke="#3B82F6" fill="none" strokeWidth="1.5" />
-        </svg>
-      </div>
-    );
-  }
-
-  if (variant === 'diamond') {
-    return (
-      <div className={cn("relative", className)}>
-        <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_15px_rgba(236,72,153,0.5)]">
-          <defs>
-            <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#FCE7F3" />
-              <stop offset="30%" stopColor="#F9A8D4" />
-              <stop offset="60%" stopColor="#F472B6" />
-              <stop offset="100%" stopColor="#DB2777" />
-            </linearGradient>
-          </defs>
-          <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#diamondGrad)" stroke="#FBCFE8" strokeWidth="1.5" />
-          <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#FFF" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.6" />
-          <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#831843" textAnchor="middle" fontWeight="bold">ENTRY</text>
-          <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#9D174D" textAnchor="middle" letterSpacing="2">DIAMOND PASS</text>
-          <circle cx="115" cy="30" r="6" fill="#4C0519" stroke="#F472B6" strokeWidth="1" />
-          <circle cx="115" cy="30" r="3" fill="#EC4899" className="animate-pulse" />
-          <path d="M20,15 L25,10 L30,15 Z" fill="#FFF" opacity="0.7" />
-          <path d="M90,15 L95,10 L100,15 Z" fill="#FFF" opacity="0.7" />
-        </svg>
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("relative", className)}>
-      <svg viewBox="0 0 120 60" className="w-full h-full drop-shadow-[0_4px_12px_rgba(252,213,53,0.5)]">
-        <defs>
-          <linearGradient id="ticketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF1AA" />
-            <stop offset="30%" stopColor="#FFD335" />
-            <stop offset="60%" stopColor="#C98B13" />
-            <stop offset="100%" stopColor="#9E6100" />
-          </linearGradient>
-        </defs>
-        <rect x="5" y="5" width="110" height="50" rx="8" fill="url(#ticketGrad)" stroke="#FFE373" strokeWidth="1.5" />
-        <rect x="12" y="12" width="96" height="36" rx="4" fill="none" stroke="#FFF" strokeWidth="0.8" strokeDasharray="3 3" opacity="0.7" />
-        <text x="60" y="33" fontFamily="Impact, Arial Black" fontSize="18" fill="#6B4E00" textAnchor="middle" fontWeight="bold">ENTRY</text>
-        <text x="60" y="43" fontFamily="Arial" fontSize="7" fill="#6B4E00" textAnchor="middle" letterSpacing="2">GOLDEN PASS</text>
-        <circle cx="115" cy="30" r="6" fill="#3D2D00" stroke="#FFD335" strokeWidth="1" />
-        <circle cx="115" cy="30" r="3" fill="#FCD535" className="animate-pulse" />
-      </svg>
-    </div>
-  );
-};
+// --- ENTRY TICKET ICON (SVG removed, ab sirf imageUrl/videoUrl use hoga) ---
+// Yeh component ab use nahi hoga, lekin code me rakha hai for reference
+// Entry ke liye ab DirectMedia se imageUrl/videoUrl dikhega
 
 // --- FRAME ICON FOR STORE CARDS ---
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
@@ -1004,10 +777,10 @@ export default function StorePage() {
     return true;
   };
 
-  // 🔥 Check if item has video (for play button) - STRICTLY sabhi types ke liye
+  // 🔥 Check if item has video (for play button)
   const hasVideo = (item: any): boolean => {
     if (!item.videoUrl) return false;
-    return true; // Agar videoUrl hai toh play button dikhao, chahe koi bhi type ho
+    return true;
   };
 
   const handlePurchase = async (item: any, duration: number) => {
@@ -1120,8 +893,7 @@ export default function StorePage() {
       if (displayImage) {
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={displayImage} 
               type="image"
               className="w-full h-full"
@@ -1139,8 +911,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1152,15 +923,14 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // 🔥 BUBBLE: Square shape me dikhega
+    // 🔥 BUBBLE: Ab sirf imageUrl/videoUrl dikhega, SVG ChatMessageBubble nahi
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1169,7 +939,8 @@ export default function StorePage() {
           </div>
         );
       }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-[10px]">Hello Ummy</ChatMessageBubble>;
+      // Agar koi mediaUrl nahi hai toh simple placeholder
+      return <MessageSquare className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
     if (item.type === 'Wave') {
@@ -1182,8 +953,24 @@ export default function StorePage() {
       return <IDBadgeIcon number={item.displayId || ''} />;
     }
     
+    // 🔥 ENTRY: Ab sirf imageUrl/videoUrl dikhega, SVG EntryTicketIcon nahi
     if (item.type === 'Entry') {
-      return <EntryTicketIcon variant={item.variant} className="w-28 h-14" />;
+      if (item.videoUrl || item.imageUrl) {
+        const mediaUrl = item.videoUrl || item.imageUrl;
+        const mediaType = item.videoUrl ? 'video' : 'image';
+        return (
+          <div className="relative h-full w-full flex items-center justify-center overflow-hidden" style={{ background: 'transparent' }}>
+            <DirectMedia 
+              src={mediaUrl} 
+              type={mediaType} 
+              className="w-full h-full"
+              style={{ background: 'transparent' }}
+            />
+          </div>
+        );
+      }
+      // Agar koi mediaUrl nahi hai toh simple placeholder
+      return <Ticket className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
     if (item.icon) {
@@ -1201,8 +988,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent', maxHeight: '45vh' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={mediaUrl} 
               type={mediaType} 
               className="w-auto h-auto max-w-full max-h-full"
@@ -1231,8 +1017,7 @@ export default function StorePage() {
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={mediaUrl} 
               type={mediaType}
               className="w-full h-full"
@@ -1248,15 +1033,14 @@ export default function StorePage() {
       );
     }
     
-    // 🔥 BUBBLE PREVIEW: Square shape
+    // 🔥 BUBBLE PREVIEW: Ab sirf imageUrl/videoUrl dikhega, ChatMessageBubble nahi
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
         const mediaType = item.videoUrl ? 'video' : 'image';
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={mediaUrl} 
               type={mediaType} 
               className="w-full h-full"
@@ -1265,20 +1049,19 @@ export default function StorePage() {
           </div>
         );
       }
-      return <ChatMessageBubble bubbleId={item.id} isMe={true} className="text-sm">Hello Ummy</ChatMessageBubble>;
+      return <MessageSquare className="h-20 w-20 opacity-80 text-gray-400" />;
     }
     
     if (item.type === 'Wave') {
       return <WaveCircleIcon colorClass={item.color} size="h-32 w-32" isLovelyShine={item.id === 'w-lovelyshine'} />;
     }
     
-    // 🔥 ENTRY: Direct videoUrl use hoga
+    // 🔥 ENTRY PREVIEW: Ab sirf imageUrl/videoUrl dikhega, SVG EntryTicketIcon nahi
     if (item.type === 'Entry') {
       if (item.videoUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={item.videoUrl} 
               type="video"
               className="w-full h-full"
@@ -1290,8 +1073,7 @@ export default function StorePage() {
       if (item.imageUrl) {
         return (
           <div className="relative h-36 w-36 flex items-center justify-center overflow-hidden rounded-lg" style={{ background: 'transparent' }}>
-            <CachedMedia 
-              itemId={item.id}
+            <DirectMedia 
               src={item.imageUrl} 
               type="image"
               className="w-full h-full"
@@ -1300,11 +1082,7 @@ export default function StorePage() {
           </div>
         );
       }
-      return (
-        <div className="scale-125">
-          <EntryTicketIcon variant={item.variant} className="w-36 h-18" />
-        </div>
-      );
+      return <Ticket className="h-20 w-20 opacity-80 text-gray-400" />;
     }
     
     if (item.icon) {
@@ -1322,6 +1100,9 @@ export default function StorePage() {
 
   const storeItems = allItemsWithFlags;
   const mineItems = purchasedItems;
+
+  // 🔥 Categories list - "All" hata diya gaya
+  const categories = ['Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'];
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] text-white pb-safe overflow-x-hidden">
@@ -1351,10 +1132,10 @@ export default function StorePage() {
         </header>
 
         {activeTab === 'Store' ? (
-          <Tabs defaultValue="All" className="w-full">
+          <Tabs defaultValue="Frame" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-                {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
+                {categories.map(cat => (
                   <TabsTrigger 
                     key={cat} 
                     value={cat} 
@@ -1366,16 +1147,16 @@ export default function StorePage() {
               </TabsList>
             </div>
 
-            {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
+            {categories.map(category => (
               <TabsContent key={category} value={category}>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {storeItems.filter(i => category === 'All' || i.type === category).map(item => (
+                  {storeItems.filter(i => i.type === category).map(item => (
                     <Card 
                       key={item.id} 
                       onClick={() => setPreviewItem(item)} 
                       className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                     >
-                      {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho, SABHI types ke liye */}
+                      {/* 🔥 PLAY BUTTON - Top Right Corner */}
                       {hasVideo(item) && (
                         <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                           <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1397,7 +1178,7 @@ export default function StorePage() {
                     </Card>
                   ))}
                 </div>
-                {storeItems.filter(i => category === 'All' || i.type === category).length === 0 && (
+                {storeItems.filter(i => i.type === category).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
                     <p className="text-white text-lg">Is category me abhi koi item available nahi hai</p>
@@ -1408,10 +1189,10 @@ export default function StorePage() {
             ))}
           </Tabs>
         ) : (
-          <Tabs defaultValue="All" className="w-full">
+          <Tabs defaultValue="Frame" className="w-full">
             <div className="w-full overflow-x-auto no-scrollbar mb-6">
               <TabsList className="bg-transparent inline-flex min-w-full md:min-w-0 gap-2 border-b border-white/5 pb-1 rounded-none">
-                {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(cat => (
+                {categories.map(cat => (
                   <TabsTrigger 
                     key={cat} 
                     value={cat} 
@@ -1423,10 +1204,10 @@ export default function StorePage() {
               </TabsList>
             </div>
 
-            {['All', 'Frame', 'Theme', 'Bubble', 'Wave', 'ID', 'Entry'].map(category => (
+            {categories.map(category => (
               <TabsContent key={category} value={category}>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {mineItems.filter(i => category === 'All' || i.type === category).map(item => {
+                  {mineItems.filter(i => i.type === category).map(item => {
                     const expiryDate = getItemExpiryDate(item.id);
                     const expiryDateStr = expiryDate ? expiryDate.toLocaleDateString('en-IN') : 'Never';
                     
@@ -1436,7 +1217,7 @@ export default function StorePage() {
                         onClick={() => setPreviewItem(item)} 
                         className="overflow-hidden rounded-[1rem] bg-gradient-to-b from-[#18232D] to-[#0D141A] border border-[#23303D] shadow-xl transition-all cursor-pointer hover:scale-[1.02] hover:border-[#384A5D] active:scale-95 text-white relative"
                       >
-                        {/* 🔥 PLAY BUTTON - Top Right Corner - Sirf tab dikhega jab videoUrl ho, SABHI types ke liye */}
+                        {/* 🔥 PLAY BUTTON - Top Right Corner */}
                         {hasVideo(item) && (
                           <div className="absolute top-2 right-2 z-10 bg-black/60 backdrop-blur-sm rounded-full p-1.5 shadow-lg">
                             <Play className="h-3.5 w-3.5 text-white fill-white" />
@@ -1459,10 +1240,10 @@ export default function StorePage() {
                     );
                   })}
                 </div>
-                {mineItems.filter(i => category === 'All' || i.type === category).length === 0 && (
+                {mineItems.filter(i => i.type === category).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <ShoppingBag className="h-16 w-16 text-gray-500 mb-4" />
-                    <p className="text-white text-lg">Aapne abhi koi {category !== 'All' ? category : ''} item nahi khareeda hai</p>
+                    <p className="text-white text-lg">Aapne abhi koi {category} item nahi khareeda hai</p>
                     <p className="text-gray-400 text-sm mt-2">Store se kuch kharidein aur yahan dekhein!</p>
                   </div>
                 )}
@@ -1587,4 +1368,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-        }
+  }
