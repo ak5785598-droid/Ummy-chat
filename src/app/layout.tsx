@@ -19,8 +19,27 @@ const fontBody = Inter({
 });
 
 export const metadata: Metadata = {
- title: 'Ummy - Connect Your Tribe',
- description: 'Elite real-time social voice chat frequency.',
+ metadataBase: new URL('https://ummychat.in'),
+ title: {
+  default: 'Ummy - Chat, Share, Connect',
+  template: '%s | Ummy'
+ },
+ description: 'Whether you are discussing a punchline or sharing your own stories, Ummy helps you find your crowd and express yourself freely. Join Ummy and make your day.',
+ keywords: ['ummy', 'voice chat', 'social audio', 'carrom game', 'real-time chat', 'community'],
+ authors: [{ name: 'Ummy Team' }],
+ openGraph: {
+  title: 'Ummy - Chat, Share, Connect',
+  description: 'Elite real-time social voice chat and games.',
+  url: 'https://ummychat.in',
+  siteName: 'Ummy',
+  locale: 'en_US',
+  type: 'website',
+ },
+ twitter: {
+  card: 'summary_large_image',
+  title: 'Ummy - Chat, Share, Connect',
+  description: 'Elite real-time social voice chat and games.',
+ },
  manifest: '/manifest.webmanifest',
  appleWebApp: {
   capable: true,
