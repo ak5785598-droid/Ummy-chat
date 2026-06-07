@@ -15,56 +15,30 @@ import {
   X,
   Lock,
   Handshake,
-  Sparkles,
-  Gift,
-  Trophy,
-  Crown,
-  Camera,
-  Palette,
-  Users,
-  History,
+  Wrench,
   RotateCw,
   Trash2,
   ChevronUp,
   ChevronDown,
   ChevronRight,
   ChevronLeft as ChevronLeftIcon,
-  CheckCircle,
   Save,
-  Wrench,
-  Sparkle
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { collection, query, where, limit, doc, increment, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, limit, doc, serverTimestamp } from 'firebase/firestore';
 import { CPProposeDialog } from '@/components/cp-propose-dialog';
 import { UserSearchDialog } from '@/components/user-search-dialog';
 import { FURNITURE_CATALOG, FurnitureItem } from '@/constants/cp-furniture-catalog';
 import { useToast } from '@/hooks/use-toast';
 
-type TabType = 'mansion' | 'privileges' | 'rules';
-
 interface PlacedItem {
-  id: string; // instance unique id
+  id: string;
   catalogId: string;
-  x: number; // grid position X
-  y: number; // grid position Y
+  x: number;
+  y: number;
   rotation: 0 | 90 | 180 | 270;
 }
-
-// Daily relationship pool questions - 0 token cost rotation
-const ORACLE_QUESTIONS = [
-  "What is your partner's absolute favorite food?",
-  "What is the first gift you sent to each other in Ummy?",
-  "Where would be your partner's dream vacation destination?",
-  "Which song does your partner play most in the chat rooms?",
-  "What is one thing that always makes your partner smile?",
-  "What was your first impression of your partner?",
-  "Who is more likely to stay up late chatting on Ummy?",
-  "What is your partner's favorite chat bubble in Ummy?",
-  "If your partner could have any superpower, what would it be?",
-  "What is your favorite shared memory together?"
-];
 
 const FloatingHeart = ({ delay = 0, x = "50%", color = "text-white/40" }) => (
   <motion.div
@@ -78,33 +52,6 @@ const FloatingHeart = ({ delay = 0, x = "50%", color = "text-white/40" }) => (
   </motion.div>
 );
 
-const PrivilegeCard = ({ label, icon: Icon, isLocked, imageUrl }: { label: string, icon: any, isLocked?: boolean, imageUrl?: string }) => (
-  <motion.div 
-    whileTap={{ scale: 0.95 }}
-    className="flex flex-col items-center gap-2 group cursor-pointer"
-  >
-    <div className={cn(
-      "w-24 h-24 rounded-[1.5rem] flex items-center justify-center relative overflow-hidden transition-all shadow-md border-2",
-      isLocked ? "bg-white border-pink-100" : "bg-gradient-to-br from-pink-400 to-rose-400 border-white"
-    )}>
-      {imageUrl ? (
-        <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
-      ) : (
-        <Icon className={cn("h-8 w-8 text-white", isLocked && "text-pink-200")} />
-      )}
-      {isLocked && (
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] flex items-center justify-center">
-          <Lock className="h-4 w-4 text-pink-300" />
-        </div>
-      )}
-    </div>
-    <span className={cn(
-      "text-[10px] font-bold tracking-tight",
-      isLocked ? "text-pink-300 uppercase" : "text-slate-600 font-black uppercase"
-    )}>{label}</span>
-  </motion.div>
-);
-
 export default function CpHousePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -112,13 +59,11 @@ export default function CpHousePage() {
   const { toast } = useToast();
   const { userProfile } = useUserProfile(user?.uid);
   
-  // Hydration state
   const [isMounted, setIsMounted] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'cp' | 'friend'>('cp');
   const [showSearch, setShowSearch] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<any>(null);
   const [showPropose, setShowPropose] = useState(false);
-  const [showRules, setShowRules] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
 
   // Mansion Editor states
@@ -128,11 +73,6 @@ export default function CpHousePage() {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [savingMansion, setSavingMansion] = useState(false);
 
-  // AI Oracle states
-  const [oracleAnswerInput, setOracleAnswerInput] = useState('');
-  const [hasAnsweredOracle, setHasAnsweredOracle] = useState(false);
-
-  // Global Config for Theme/Images
   const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
   const { data: config } = useDoc(configRef);
   const cpHeaderTheme = config?.cpHeaderTheme || '#FF91B5';
@@ -151,13 +91,6 @@ export default function CpHousePage() {
   const partnerUid = activeCp?.participantIds?.find((id: string) => id !== user?.uid);
   const { userProfile: partnerProfile } = useUserProfile(partnerUid);
 
-  // Get active question of the day
-  const todayString = new Date().toISOString().split('T')[0];
-  const activeQuestion = useMemo(() => {
-    const day = new Date().getDate();
-    return ORACLE_QUESTIONS[day % ORACLE_QUESTIONS.length];
-  }, []);
-
   // Sync mansion layout from Firestore on load
   useEffect(() => {
     if (activeCp?.mansionLayout) {
@@ -165,24 +98,15 @@ export default function CpHousePage() {
     } else {
       setPlacedItems([]);
     }
-
-    // Check if user has already answered the oracle question today
-    if (activeCp?.oracleAnswers?.[todayString]?.[user?.uid || '']) {
-      setHasAnsweredOracle(true);
-    } else {
-      setHasAnsweredOracle(false);
-    }
-  }, [activeCp, user?.uid]);
+  }, [activeCp]);
 
   // Determine which image URL to show full screen
   const fullScreenImageUrl = useMemo(() => {
     if (activeMainTab === 'cp') {
       if (config?.cpBgType === 'image' && config?.cpBgUrl) return getOptimizedMediaUrl(config.cpBgUrl);
-      if (config?.cpBgType === 'video' && config?.cpBgUrl) return null; // video ke liye full screen nahi
       return null;
     } else {
       if (config?.friendBgType === 'image' && config?.friendBgUrl) return getOptimizedMediaUrl(config.friendBgUrl);
-      if (config?.friendBgType === 'video' && config?.friendBgUrl) return null;
       return null;
     }
   }, [activeMainTab, config]);
@@ -193,12 +117,11 @@ export default function CpHousePage() {
     setShowPropose(true);
   };
 
-  // --- MANSION EDITOR CONTROLS (FREE CLIENT-SIDE MECHANISM) ---
+  // --- MANSION EDITOR CONTROLS ---
   const handlePlaceItem = (catalogId: string) => {
     const catalogItem = FURNITURE_CATALOG.find(item => item.id === catalogId);
     if (!catalogItem) return;
 
-    // Check CP Level requirements
     const cpLevel = activeCp?.level || 1;
     if (cpLevel < catalogItem.unlockLevel) {
       toast({
@@ -209,7 +132,6 @@ export default function CpHousePage() {
       return;
     }
 
-    // Check Wallet coins
     if (catalogItem.price > 0 && (userProfile?.wallet?.coins || 0) < catalogItem.price) {
       toast({
         variant: 'destructive',
@@ -219,7 +141,6 @@ export default function CpHousePage() {
       return;
     }
 
-    // Add item to center of 5x5 grid
     const newItem: PlacedItem = {
       id: `${catalogId}_${Date.now()}`,
       catalogId,
@@ -290,43 +211,6 @@ export default function CpHousePage() {
       });
     } finally {
       setSavingMansion(false);
-    }
-  };
-
-  // --- SUBMIT AI LOVE ORACLE ANSWER (FREE API TIER OVERLAY) ---
-  const handleSubmitOracle = async () => {
-    if (!firestore || !activeCp?.id || !oracleAnswerInput.trim() || !user?.uid) return;
-
-    try {
-      const cpRef = doc(firestore, 'cpPairs', activeCp.id);
-      const answerField = `oracleAnswers.${todayString}.${user.uid}`;
-      
-      const updates: Record<string, any> = {
-        [answerField]: oracleAnswerInput,
-        updatedAt: serverTimestamp()
-      };
-
-      // Increment intimacy levels when both answer successfully
-      const otherAnswers = activeCp.oracleAnswers?.[todayString] || {};
-      const partnerAnswer = otherAnswers[partnerUid || ''];
-
-      if (partnerAnswer) {
-        updates.intimacyPoints = increment(50);
-        toast({
-          title: '💖 Oracle Match Sync Achieved! 💖',
-          description: 'Intimacy synced! Intimacy level gained +50 points!'
-        });
-      }
-
-      await updateDocumentNonBlocking(cpRef, updates);
-      setHasAnsweredOracle(true);
-      setOracleAnswerInput('');
-      toast({
-        title: 'Answer Saved!',
-        description: 'Waiting for your partner to answer to unlock the Sync boost.'
-      });
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -405,9 +289,7 @@ export default function CpHousePage() {
             </button>
           </div>
 
-          <button onClick={() => setShowRules(true)} className="p-2 bg-black/5 backdrop-blur-md rounded-full text-white mt-4">
-            <HelpCircle className="h-5 w-5" />
-          </button>
+          <div className="w-10 h-10 mt-4" />
         </header>
 
         {/* --- MAIN HEADER LANDSCAPE GRAPHIC --- */}
@@ -416,7 +298,7 @@ export default function CpHousePage() {
           <div 
             onClick={toggleFullImage}
             className={cn(
-              "relative h-[30vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000",
+              "relative h-[45vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000",
               fullScreenImageUrl && "cursor-pointer"
             )}
             style={{ 
@@ -498,7 +380,7 @@ export default function CpHousePage() {
             </div>
           </div>
 
-          {/* BOTTOM CONTENT - NOW DIRECTLY SHOWING PRIVILEGES + AI ORACLE WITHOUT TABS */}
+          {/* BOTTOM CONTENT - MANSION EDITOR ONLY */}
           <main className="flex-1 mt-4 mx-4 mb-4 rounded-[2.5rem] bg-white border border-pink-100 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start">
             
             {/* CP LEVEL & INTIMACY INFO */}
@@ -519,7 +401,7 @@ export default function CpHousePage() {
               </div>
             )}
 
-            {/* MANSION EDITOR SECTION - Show when edit mode is on */}
+            {/* MANSION EDITOR SECTION */}
             {isEditMode && activeCp && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
@@ -529,7 +411,6 @@ export default function CpHousePage() {
               >
                 {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
                 <div className="relative w-full h-[220px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
-                  {/* Grid Floor Projector */}
                   <div 
                     className="absolute w-[200px] h-[200px] transform transition-transform"
                     style={{
@@ -537,14 +418,12 @@ export default function CpHousePage() {
                       transformStyle: 'preserve-3d'
                     }}
                   >
-                    {/* 5x5 Grid Cells */}
                     <div className="grid grid-cols-5 grid-rows-5 w-full h-full border border-white/10 bg-slate-900/40">
                       {Array.from({ length: 25 }).map((_, i) => (
                         <div key={i} className="border border-white/5 hover:bg-white/5 transition-colors" />
                       ))}
                     </div>
 
-                    {/* Placed Items Render */}
                     {placedItems.map((placed, idx) => {
                       const catalogItem = FURNITURE_CATALOG.find(item => item.id === placed.catalogId);
                       if (!catalogItem) return null;
@@ -634,99 +513,6 @@ export default function CpHousePage() {
               </motion.div>
             )}
 
-            {/* PRIVILEGES GRID - Always visible */}
-            <div className="mb-6">
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-4">CP Privileges</h3>
-              <div className="grid grid-cols-3 gap-y-8 gap-x-4">
-                <PrivilegeCard 
-                  label="Frame" 
-                  icon={Palette} 
-                  imageUrl={activeCp?.rewards?.frame || config?.cpFrameIcon} 
-                  isLocked={!activeCp?.rewards?.frame && !config?.cpFrameIcon}
-                />
-                <PrivilegeCard 
-                  label="Room BG" 
-                  icon={Camera} 
-                  imageUrl={activeCp?.rewards?.roomBg || config?.cpRoomBgIcon} 
-                  isLocked={!activeCp?.rewards?.roomBg && !config?.cpRoomBgIcon}
-                />
-                <PrivilegeCard 
-                  label="Emoji" 
-                  icon={Handshake} 
-                  imageUrl={activeCp?.rewards?.emoji || config?.cpEmojiIcon} 
-                  isLocked={!activeCp?.rewards?.emoji && !config?.cpEmojiIcon}
-                />
-                <PrivilegeCard 
-                  label="Gift" 
-                  icon={Gift} 
-                  imageUrl={activeCp?.rewards?.gift}
-                  isLocked={!activeCp?.rewards?.gift} 
-                />
-                <PrivilegeCard 
-                  label="Badge" 
-                  icon={Trophy} 
-                  imageUrl={activeCp?.rewards?.badge}
-                  isLocked={!activeCp?.rewards?.badge} 
-                />
-                <PrivilegeCard 
-                  label="Card" 
-                  icon={Crown} 
-                  imageUrl={activeCp?.rewards?.card}
-                  isLocked={!activeCp?.rewards?.card} 
-                />
-              </div>
-            </div>
-
-            {/* RULES SECTION */}
-            <div className="mb-6">
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">CP Rules</h3>
-              <div className="space-y-3 text-slate-400 text-[11px] leading-relaxed font-medium bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
-                <p className="text-slate-600 font-bold">• Establish a CP connection to unlock shared exclusive privileges.</p>
-                <p>• Stay in room together for 30 minutes daily to maintain intimacy.</p>
-                <p>• Higher intimacy levels unlock custom Frames and specialized Chat Bubbles.</p>
-                <p>• Sending high-value gifts contributes 10x points to the relationship level.</p>
-                <p>• Intimacy points can also be gained daily by answering the **AI Love Oracle** question sync card!</p>
-              </div>
-            </div>
-
-            {/* --- THE AI LOVE ORACLE PANEL (100% FREE RELATIONSHIP GAME) --- */}
-            {activeCp && (
-              <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-3xl p-4 flex flex-col gap-2 shadow-md">
-                <div className="flex items-center gap-1.5">
-                  <div className="p-1 bg-rose-500 rounded-lg text-white">
-                    <Sparkle className="h-3.5 w-3.5 animate-spin-slow" />
-                  </div>
-                  <span className="text-xs font-black text-rose-950 uppercase tracking-tight">AI Love Oracle Daily Question</span>
-                </div>
-
-                <p className="text-slate-600 text-[11px] font-semibold italic">"{activeQuestion}"</p>
-
-                {hasAnsweredOracle ? (
-                  <div className="flex items-center gap-2 mt-1 py-2 px-3 bg-white/60 border border-rose-100 rounded-2xl">
-                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span className="text-[10px] text-slate-500 font-bold">Answer submitted successfully! Waiting for your partner's response.</span>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 mt-1.5">
-                    <input 
-                      type="text"
-                      value={oracleAnswerInput}
-                      onChange={(e) => setOracleAnswerInput(e.target.value)}
-                      placeholder="Type your sync answer..."
-                      className="flex-1 bg-white border border-rose-100 rounded-full px-4 py-1.5 text-[11px] focus:outline-none focus:border-rose-400 shadow-sm"
-                    />
-                    <button 
-                      onClick={handleSubmitOracle}
-                      disabled={!oracleAnswerInput.trim()}
-                      className="px-5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-[10px] rounded-full shadow-md active:scale-95 disabled:opacity-50 transition-all uppercase tracking-wider"
-                    >
-                      Submit
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* No CP Connected State */}
             {!activeCp && (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4">
@@ -808,4 +594,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-                                                     }
+}
