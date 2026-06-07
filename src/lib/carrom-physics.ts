@@ -13,8 +13,8 @@ const BOARD_SIZE = 100; // Normalized 100x100
 const FRICTION = 0.985; // Deceleration factor
 const MIN_VELOCITY = 0.1;
 const BOUNCE_DAMPING = 0.7;
-const PIECE_RADIUS = 3.5; // Normalized radius
-const STRIKER_RADIUS = 5.5;
+const PIECE_RADIUS = 3.0; // Normalized radius
+const STRIKER_RADIUS = 3.5;
 const POCKET_RADIUS = 8;
 
 export const POCKETS: Vector[] = [

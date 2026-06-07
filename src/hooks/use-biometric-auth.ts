@@ -19,13 +19,12 @@ const loadBiometricPlugin = async (): Promise<BiometricAuthPlugin | null> => {
 
   try {
     // Try to dynamically import the biometric plugin
-    // This will fail gracefully if plugin is not installed
-    const module = await import('capacitor-biometric-auth');
-    BiometricAuth = (module as any).CapacitorBiometricAuth || 
-                    (module as any).BiometricAuth || 
-                    (module as any).default || 
-                    null;
-    return BiometricAuth;
+    // const module = await import('capacitor-biometric-auth');
+    // BiometricAuth = (module as any).CapacitorBiometricAuth || 
+    //                 (module as any).BiometricAuth || 
+    //                 (module as any).default || 
+    //                 null;
+    return null;
   } catch (error) {
     // Plugin not available - this is expected if capacitor-biometric-auth is not installed
     console.info('[Biometric] Plugin not available, using fallback login methods');

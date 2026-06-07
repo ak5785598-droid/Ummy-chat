@@ -7,6 +7,8 @@ import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+import { useState, useEffect } from 'react';
+
 /**
  * Official Ummy Brand Signature.
  * Synchronized with the high-fidelity mascot visual.
@@ -16,10 +18,17 @@ export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLD
  const firestore = useFirestore();
  const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
  const { data: config } = useDoc(configRef);
+ const [mounted, setMounted] = useState(false);
+
+ useEffect(() => {
+   setMounted(true);
+ }, []);
 
   const fallbackLogo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
   const baseSrc = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://api.dicebear.com/7.x/bottts/svg?seed=Ummy";
-  const src = `${baseSrc}${baseSrc.includes('?') ? '&' : '?'}v=${config?.updatedAt?.toMillis?.() || Date.now()}`;
+  
+  // Prevent hydration mismatch by omitting Date.now() on initial SSR pass
+  const src = mounted ? `${baseSrc}${baseSrc.includes('?') ? '&' : '?'}v=${config?.updatedAt?.toMillis?.() || Date.now()}` : baseSrc;
  
  return (
   <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>

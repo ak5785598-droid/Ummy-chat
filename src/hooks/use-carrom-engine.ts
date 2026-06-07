@@ -236,9 +236,10 @@ export function useCarromEngine(roomId: string | null, userId: string | null) {
     }
 
     const rad = (angle - 90) * Math.PI / 180;
+    const scaledPower = power * 0.15; // Scale down power to prevent teleportation
     striker.velocity = {
-      x: Math.cos(rad) * power,
-      y: Math.sin(rad) * power
+      x: Math.cos(rad) * scaledPower,
+      y: Math.sin(rad) * scaledPower
     };
 
     let currentPieces = pieces;

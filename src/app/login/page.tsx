@@ -473,7 +473,18 @@ const accountNumber = await generateNumericID(firestore, uid);
       // Web-based Google Sign-In (Fallback if native fails or on Web platform)
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithRedirect(auth, provider);
+      
+      // Use Popup for web/local development as redirect can be flaky
+      const result = await signInWithPopup(auth, provider);
+      
+      if (result.user) {
+        await syncUserIdentity(
+          result.user.uid,
+          result.user.email,
+          result.user.displayName
+        );
+        router.replace('/rooms');
+      }
     } catch (error: any) {
       console.error("❌ Google Login Error:", error.code, error.message);
       toast({

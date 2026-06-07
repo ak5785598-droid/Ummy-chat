@@ -75,15 +75,70 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
   if (!gameState) return null;
   const isJoined = gameState.players.some(p => p.uid === currentUser?.uid);
 
+  const handleBack = () => {
+    if (onClose) onClose();
+    else router.back();
+  };
+
+  const renderHeader = () => (
+    <header className="relative z-50 flex items-center justify-between p-3 pt-6 shrink-0 bg-gradient-to-b from-black/40 to-transparent w-full">
+      <div className="flex items-center gap-1.5">
+        <button 
+          onPointerDown={(e) => dragControls.start(e)}
+          className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90 cursor-grab"
+        >
+          <Move className="h-4 w-4 text-white" />
+        </button>
+        <button 
+          onClick={() => setIsMuted(!isMuted)} 
+          className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
+        >
+          {isMuted ? <VolumeX className="h-4 w-4 text-white" /> : <Volume2 className="h-4 w-4 text-white" />}
+        </button>
+        <button 
+          onClick={() => initializeGame(true)} 
+          className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
+        >
+          <RotateCcw className="h-4 w-4 text-white" />
+        </button>
+      </div>
+      
+      <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+          <h2 className="text-base font-black uppercase tracking-tight italic text-white flex items-center gap-2">
+            Carrom <span className="opacity-60 text-xs">•</span> Quick
+          </h2>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+          <button className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90">
+            <HelpCircle className="h-4 w-4 text-white" />
+          </button>
+          <button 
+            onClick={handleBack}
+            className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
+          >
+            <ChevronDown className="h-4 w-4 text-white" />
+          </button>
+          <button 
+            onClick={handleBack} 
+            className="p-2 bg-red-500/20 backdrop-blur-md rounded-full border border-red-500/20 text-white hover:bg-red-500/30 transition-all active:scale-90"
+          >
+            <X className="h-4 w-4 font-bold" />
+          </button>
+      </div>
+    </header>
+  );
+
   if (!gameState.mode || gameState.mode === 'none' || gameState.status === 'loading' || gameState.status === 'mode_select') {
     return (
       <div className={cn(
-        "w-full flex flex-col items-center justify-center p-6 relative overflow-hidden",
-        isOverlay ? "h-auto rounded-[2.8rem] bg-black/80 my-auto mb-20 border border-white/10 mx-4" : "h-full min-h-[400px] bg-[#01091A]"
+        "flex flex-col items-center justify-start overflow-hidden",
+        isOverlay ? "absolute bottom-0 left-0 w-full h-auto rounded-t-[3rem] bg-black/80 pb-10 border-t border-white/10" : "w-full h-full min-h-[400px] bg-[#01091A] relative"
       )}>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
-        
-        <motion.div 
+        {renderHeader()}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 w-full mt-4">
+          <motion.div 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="w-full max-w-[400px] bg-black/40 backdrop-blur-xl rounded-[40px] p-8 border border-white/10 shadow-2xl flex flex-col items-center"
@@ -115,16 +170,21 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
             </button>
           </div>
         </motion.div>
+        </div>
       </div>
     );
   }
 
   if (gameState.status === 'lobby') {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-[#01091A] overflow-hidden relative p-4 min-h-[400px]">
+      <div className={cn(
+        "flex flex-col items-center justify-start overflow-hidden",
+        isOverlay ? "absolute bottom-0 left-0 w-full h-auto rounded-t-[3rem] bg-black/80 pb-10 border-t border-white/10" : "w-full h-full min-h-[400px] bg-[#01091A] relative"
+      )}>
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 10px 10px, white 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-
-        <motion.div 
+        {renderHeader()}
+        <div className="flex-1 flex flex-col items-center justify-center p-4 w-full mt-4">
+          <motion.div 
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           className="relative z-10 w-full max-w-[400px] bg-gradient-to-b from-blue-600 to-indigo-900 rounded-[40px] p-8 shadow-[0_30px_70px_rgba(0,0,0,0.7)] border-4 border-white/10"
@@ -188,14 +248,12 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
             )}
           </div>
         </motion.div>
+        </div>
       </div>
     );
   }
 
-  const handleBack = () => {
-    if (onClose) onClose();
-    else router.back();
-  };
+  // handleBack is defined above now
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (gameState.turn !== currentUser?.uid || gameState.status !== 'playing') return;
@@ -246,58 +304,13 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
       animate={{ y: 0 }}
       exit={isOverlay ? { y: '100%' } : {}}
       className={cn(
-        "w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none",
-        isOverlay ? "h-auto rounded-t-[2.8rem] border-t border-x border-white/20 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] mt-auto" : "h-screen min-h-screen rounded-none max-h-none border-none mt-0 mb-0"
+        "mx-auto flex flex-col overflow-hidden bg-[#004D40] text-white select-none",
+        isOverlay ? "absolute bottom-0 left-0 w-full h-auto max-h-[85vh] rounded-t-[3rem] border-t border-white/20 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]" : "w-full h-full min-h-screen relative rounded-none max-h-none border-none"
       )}
     >
       
-      {/* Arena Header - Updated to match your image style */}
-      <header className="relative z-50 flex items-center justify-between p-3 pt-6 shrink-0 bg-gradient-to-b from-black/40 to-transparent">
-        {/* Left Side Icons */}
-        <div className="flex items-center gap-1.5">
-          <button 
-            onPointerDown={(e) => dragControls.start(e)}
-            className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90 cursor-grab"
-          >
-            <Move className="h-4 w-4 text-white" />
-          </button>
-          <button 
-            onClick={() => setIsMuted(!isMuted)} 
-            className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
-          >
-            {isMuted ? <VolumeX className="h-4 w-4 text-white" /> : <Volume2 className="h-4 w-4 text-white" />}
-          </button>
-          <button 
-            onClick={() => initializeGame(true)} 
-            className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90"
-          >
-            <RotateCcw className="h-4 w-4 text-white" />
-          </button>
-        </div>
-        
-        {/* Center Title */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <h2 className="text-base font-black uppercase tracking-tight italic text-white flex items-center gap-2">
-              Carrom <span className="opacity-60 text-xs">•</span> Quick
-            </h2>
-        </div>
-
-        {/* Right Side Icons */}
-        <div className="flex items-center gap-1.5">
-            <button className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90">
-              <HelpCircle className="h-4 w-4 text-white" />
-            </button>
-            <button className="p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90">
-              <ChevronDown className="h-4 w-4 text-white" />
-            </button>
-            <button 
-              onClick={handleBack} 
-              className="p-2 bg-red-500/20 backdrop-blur-md rounded-full border border-red-500/20 text-white hover:bg-red-500/30 transition-all active:scale-90"
-            >
-              <X className="h-4 w-4 font-bold" />
-            </button>
-        </div>
-      </header>
+      {/* Arena Header - Now using the shared renderHeader() */}
+      {renderHeader()}
 
       {/* The Board */}
       <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -365,10 +378,10 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                     key={piece.id}
                     className={cn(
                       "absolute rounded-full border border-black/30 shadow-[0_6px_12px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all duration-300 overflow-hidden group",
-                      isStriker ? "h-8 w-8 bg-gradient-to-br from-yellow-300 via-amber-500 to-amber-700 border-2 border-white ring-2 ring-yellow-400/30 z-30" :
-                      piece.type === 'queen' ? "h-6 w-6 bg-gradient-to-br from-rose-500 via-red-600 to-red-800 border-2 border-yellow-400 ring-1 ring-red-400/20 z-20" :
-                      piece.type === 'white' ? "h-6 w-6 bg-gradient-to-br from-slate-100 via-stone-200 to-stone-300" :
-                      "h-6 w-6 bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950"
+                      isStriker ? "h-[28px] w-[28px] bg-gradient-to-br from-yellow-300 via-amber-500 to-amber-700 border-2 border-white ring-2 ring-yellow-400/30 z-30" :
+                      piece.type === 'queen' ? "h-[24px] w-[24px] bg-gradient-to-br from-rose-500 via-red-600 to-red-800 border-2 border-yellow-400 ring-1 ring-red-400/20 z-20" :
+                      piece.type === 'white' ? "h-[24px] w-[24px] bg-gradient-to-br from-slate-100 via-stone-200 to-stone-300" :
+                      "h-[24px] w-[24px] bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-950"
                     )}
                     style={{ 
                       left: `${visualX}%`, 
@@ -412,35 +425,15 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
            </div>
         </div>
 
-        <div className="space-y-3">
-           {/* Power / Interaction Indicator */}
+        <div className="space-y-4">
            {gameState.turn === currentUser?.uid && gameState.status === 'playing' ? (
-             <div className="animate-in slide-in-from-bottom-2 duration-300">
-               <div className="flex justify-between text-[10px] font-black uppercase text-white/60 italic mb-2">
-                 <span className={interactionState === 'aiming' ? "text-emerald-400" : ""}>
-                   {interactionState === 'idle' ? 'DRAG TO AIM & SHOOT' : 'PULL TO STRIKE'}
-                 </span>
-                 <span className="text-blue-400">{Math.round(power)}% PWR</span>
-               </div>
+             <div className="animate-in slide-in-from-bottom-2 duration-300 flex flex-col items-center">
                
-               {/* Power Bar Visualization */}
-               <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-white/10 relative mb-4">
-                 <div 
-                   className={cn(
-                     "absolute left-0 top-0 bottom-0 transition-all duration-75",
-                     power > 80 ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" :
-                     power > 40 ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)]" : 
-                     "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"
-                   )}
-                   style={{ width: `${power}%` }}
-                 />
-                 {/* Strike threshold marker */}
-                 <div className="absolute left-[15%] top-0 bottom-0 w-[2px] bg-white/30 z-10" />
-               </div>
-
-               {/* Position Slider */}
-               <div className="flex flex-col gap-1 mt-2">
-                 <span className="text-[10px] font-black uppercase text-white/40 italic">Striker Position</span>
+               {/* Wooden Position Slider exactly like screenshot */}
+               <div className="w-4/5 max-w-[280px] h-8 bg-gradient-to-b from-[#8B5A2B] to-[#5C3A21] rounded-full relative shadow-[inset_0_3px_6px_rgba(0,0,0,0.6),0_2px_4px_rgba(255,255,255,0.1)] border-2 border-[#3E2723] flex items-center px-1">
+                 {/* Decorative line in middle of slider */}
+                 <div className="absolute left-2 right-2 h-[2px] bg-black/30 top-1/2 -translate-y-1/2 rounded-full pointer-events-none" />
+                 
                  <input 
                    type="range" 
                    min="22" 
@@ -451,16 +444,24 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                      setLocalStrikerPos(val);
                      updateStriker(val);
                    }}
-                   className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer border border-white/10 accent-yellow-500"
+                   className="w-full h-full opacity-0 absolute inset-0 cursor-pointer z-10"
                  />
+                 
+                 {/* Custom wooden knob */}
+                 <div 
+                   className="h-9 w-9 rounded-full bg-gradient-to-br from-[#E8DCC4] to-[#C1A87D] shadow-[0_2px_8px_rgba(0,0,0,0.5),inset_0_2px_0_rgba(255,255,255,0.4)] border border-[#8B7355] flex items-center justify-center pointer-events-none z-0 relative"
+                   style={{ 
+                     left: `calc(${((localStrikerPos ?? 50) - 22) / (78 - 22)} * (100% - 36px))`
+                   }}
+                 >
+                    {/* Inner decorative circle */}
+                    <div className="h-4 w-4 rounded-full border border-[#8B7355] opacity-50" />
+                 </div>
                </div>
                
-               <p className="text-[10px] text-center text-white/30 mt-3 italic font-semibold">
-                 {interactionState === 'aiming' && power <= 15 ? 'Pull further to strike' : 'Pull back on the board to shoot'}
-               </p>
              </div>
            ) : (
-             <div className="h-16 flex items-center justify-center opacity-50">
+             <div className="h-12 flex items-center justify-center opacity-50">
                <span className="text-xs font-black uppercase tracking-[0.2em] animate-pulse">Waiting for opponent</span>
              </div>
            )}
