@@ -115,11 +115,11 @@ export default function CpHousePage() {
   // Hydration state
   const [isMounted, setIsMounted] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState<'cp' | 'friend'>('cp');
-  const [activeSubTab, setActiveSubTab] = useState<TabType>('mansion');
   const [showSearch, setShowSearch] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<any>(null);
   const [showPropose, setShowPropose] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showFullImage, setShowFullImage] = useState(false);
 
   // Mansion Editor states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -173,6 +173,19 @@ export default function CpHousePage() {
       setHasAnsweredOracle(false);
     }
   }, [activeCp, user?.uid]);
+
+  // Determine which image URL to show full screen
+  const fullScreenImageUrl = useMemo(() => {
+    if (activeMainTab === 'cp') {
+      if (config?.cpBgType === 'image' && config?.cpBgUrl) return getOptimizedMediaUrl(config.cpBgUrl);
+      if (config?.cpBgType === 'video' && config?.cpBgUrl) return null; // video ke liye full screen nahi
+      return null;
+    } else {
+      if (config?.friendBgType === 'image' && config?.friendBgUrl) return getOptimizedMediaUrl(config.friendBgUrl);
+      if (config?.friendBgType === 'video' && config?.friendBgUrl) return null;
+      return null;
+    }
+  }, [activeMainTab, config]);
 
   const handleProposeTarget = (target: any) => {
     setSelectedTarget(target);
@@ -317,6 +330,13 @@ export default function CpHousePage() {
     }
   };
 
+  // Toggle full screen image view
+  const toggleFullImage = () => {
+    if (fullScreenImageUrl) {
+      setShowFullImage(!showFullImage);
+    }
+  };
+
   if (!isMounted) return null;
 
   return (
@@ -325,6 +345,32 @@ export default function CpHousePage() {
         "h-[100dvh] w-full flex flex-col relative overflow-hidden font-sans select-none transition-colors duration-700 bg-white",
         activeMainTab === 'cp' ? "bg-pink-50" : "bg-blue-50"
       )}>
+
+        {/* --- FULL SCREEN IMAGE OVERLAY --- */}
+        <AnimatePresence>
+          {showFullImage && fullScreenImageUrl && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-black flex items-center justify-center"
+              onClick={toggleFullImage}
+            >
+              <button 
+                onClick={toggleFullImage}
+                className="absolute top-6 right-6 z-10 p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition"
+              >
+                <X className="h-6 w-6" />
+              </button>
+              <img 
+                src={fullScreenImageUrl} 
+                alt="Full Screen Background" 
+                className="w-full h-full object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* --- HEADER --- */}
         <header className="absolute top-0 w-full z-50 flex items-center justify-between px-6 pt-safe">
@@ -368,7 +414,11 @@ export default function CpHousePage() {
         <div className="flex flex-col h-full">
           
           <div 
-            className="relative h-[30vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000"
+            onClick={toggleFullImage}
+            className={cn(
+              "relative h-[30vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000",
+              fullScreenImageUrl && "cursor-pointer"
+            )}
             style={{ 
               backgroundColor: activeMainTab === 'cp' 
                 ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) 
@@ -406,6 +456,13 @@ export default function CpHousePage() {
                  <Handshake className="h-28 w-28 text-white drop-shadow-[0_0_30px_rgba(100,100,255,0.5)]" />
                )}
             </motion.div>
+
+            {/* Full screen indicator */}
+            {fullScreenImageUrl && (
+              <div className="absolute bottom-3 right-3 z-10 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-white text-[9px] font-bold">
+                Tap to expand
+              </div>
+            )}
           </div>
 
           {/* MIDDLE AVATAR LINK LOBBY */}
@@ -441,291 +498,248 @@ export default function CpHousePage() {
             </div>
           </div>
 
-          {/* BOTTOM CONTENT TAB SWITCHER */}
-          <div className="flex justify-center mt-4 gap-6">
-             {(['mansion', 'privileges', 'rules'] as TabType[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveSubTab(tab)}
-                  className={cn(
-                    "text-[10px] font-black uppercase tracking-[0.2em] relative pb-1 transition-colors",
-                    activeSubTab === tab ? "text-slate-800" : "text-slate-300"
-                  )}
-                >
-                  {tab === 'mansion' ? '🏡 Dream Mansion' : tab}
-                  {activeSubTab === tab && (
-                    <motion.div layoutId="sub-tab-active" className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 to-rose-400 rounded-full" />
-                  )}
-                </button>
-             ))}
-          </div>
-
-          {/* TAB CONTENT GRID SECTION */}
+          {/* BOTTOM CONTENT - NOW DIRECTLY SHOWING PRIVILEGES + AI ORACLE WITHOUT TABS */}
           <main className="flex-1 mt-4 mx-4 mb-4 rounded-[2.5rem] bg-white border border-pink-100 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start">
-            <AnimatePresence mode="wait">
-              
-              {/* --- MANSION VIEW (ISOMETRIC ROOM DESIGNER - 100% FREE) --- */}
-              {activeSubTab === 'mansion' && (
-                <motion.div 
-                  key="mansion"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex-1 flex flex-col gap-4 min-h-0"
-                >
-                  {!activeCp ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4">
-                      <div className="h-16 w-16 bg-pink-100 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner">
-                        <Lock className="h-8 w-8" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">Mansion Locked</h3>
-                        <p className="text-xs text-slate-400 mt-1 max-w-[220px] mx-auto leading-relaxed">Establish a CP (Close Partner) connection to unlock and decorate your shared virtual mansion!</p>
-                      </div>
-                      <button onClick={() => setShowSearch(true)} className="px-6 py-2 bg-[#FF91B5] hover:bg-pink-400 transition text-white text-xs font-black rounded-full shadow-lg">Propose CP</button>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col gap-4 min-h-0">
-                      {/* Control Panel Header */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-black text-slate-800 uppercase tracking-tight">CP Intimacy Level: {activeCp?.level || 1}</span>
-                          <span className="text-[10px] text-pink-500 font-bold">Intimacy Points: {activeCp?.intimacyPoints || 0}</span>
-                        </div>
-                        
-                        {/* Editor Toggle */}
-                        <div className="flex gap-2">
-                          {isEditMode ? (
-                            <>
-                              <button 
-                                onClick={handleSaveMansion}
-                                disabled={savingMansion}
-                                className="px-4 py-1.5 bg-emerald-500 text-white font-bold text-[10px] rounded-full hover:bg-emerald-600 transition flex items-center gap-1 shadow-md"
-                              >
-                                <Save className="h-3 w-3" /> Save
-                              </button>
-                              <button 
-                                onClick={() => { setIsEditMode(false); setSelectedItemIdx(null); }}
-                                className="px-4 py-1.5 bg-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-300 transition"
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <button 
-                              onClick={() => setIsEditMode(true)}
-                              className="px-4 py-1.5 bg-pink-400 text-white font-bold text-[10px] rounded-full hover:bg-pink-500 transition flex items-center gap-1 shadow-md"
-                            >
-                              <Wrench className="h-3 w-3" /> Design Room
-                            </button>
-                          )}
-                        </div>
-                      </div>
+            
+            {/* CP LEVEL & INTIMACY INFO */}
+            {activeCp && (
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-tight">CP Intimacy Level: {activeCp?.level || 1}</span>
+                  <span className="text-[10px] text-pink-500 font-bold">Intimacy Points: {activeCp?.intimacyPoints || 0}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className="px-4 py-1.5 bg-pink-400 text-white font-bold text-[10px] rounded-full hover:bg-pink-500 transition flex items-center gap-1 shadow-md"
+                  >
+                    <Wrench className="h-3 w-3" /> {isEditMode ? 'Close Editor' : 'Design Room'}
+                  </button>
+                </div>
+              </div>
+            )}
 
-                      {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
-                      <div className="relative w-full h-[220px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
-                        {/* Grid Floor Projector */}
-                        <div 
-                          className="absolute w-[200px] h-[200px] transform transition-transform"
+            {/* MANSION EDITOR SECTION - Show when edit mode is on */}
+            {isEditMode && activeCp && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 flex flex-col gap-3"
+              >
+                {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
+                <div className="relative w-full h-[220px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
+                  {/* Grid Floor Projector */}
+                  <div 
+                    className="absolute w-[200px] h-[200px] transform transition-transform"
+                    style={{
+                      transform: 'rotateX(60deg) rotateZ(-45deg)',
+                      transformStyle: 'preserve-3d'
+                    }}
+                  >
+                    {/* 5x5 Grid Cells */}
+                    <div className="grid grid-cols-5 grid-rows-5 w-full h-full border border-white/10 bg-slate-900/40">
+                      {Array.from({ length: 25 }).map((_, i) => (
+                        <div key={i} className="border border-white/5 hover:bg-white/5 transition-colors" />
+                      ))}
+                    </div>
+
+                    {/* Placed Items Render */}
+                    {placedItems.map((placed, idx) => {
+                      const catalogItem = FURNITURE_CATALOG.find(item => item.id === placed.catalogId);
+                      if (!catalogItem) return null;
+
+                      const cellSize = 40;
+                      const left = placed.x * cellSize;
+                      const top = placed.y * cellSize;
+                      const isSelected = selectedItemIdx === idx;
+
+                      return (
+                        <div
+                          key={placed.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItemIdx(idx);
+                          }}
+                          className={cn(
+                            "absolute cursor-pointer transition-all duration-100",
+                            isSelected ? "scale-105 filter brightness-125 z-50 border border-dashed border-cyan-400" : "hover:brightness-105 z-30"
+                          )}
                           style={{
-                            transform: 'rotateX(60deg) rotateZ(-45deg)',
-                            transformStyle: 'preserve-3d'
+                            left,
+                            top,
+                            width: catalogItem.gridWidth * cellSize,
+                            height: catalogItem.gridLength * cellSize,
+                            transformStyle: 'preserve-3d',
+                            transform: `translateZ(0px) rotate(${placed.rotation}deg)`,
                           }}
                         >
-                          {/* 5x5 Grid Cells */}
-                          <div className="grid grid-cols-5 grid-rows-5 w-full h-full border border-white/10 bg-slate-900/40">
-                            {Array.from({ length: 25 }).map((_, i) => (
-                              <div key={i} className="border border-white/5 hover:bg-white/5 transition-colors" />
-                            ))}
-                          </div>
-
-                          {/* Placed Items Render */}
-                          {placedItems.map((placed, idx) => {
-                            const catalogItem = FURNITURE_CATALOG.find(item => item.id === placed.catalogId);
-                            if (!catalogItem) return null;
-
-                            // Calculate Absolute position on Isometric Plane
-                            // 5x5 grid cells where each cell is 40px
-                            const cellSize = 40;
-                            const left = placed.x * cellSize;
-                            const top = placed.y * cellSize;
-
-                            const isSelected = isEditMode && selectedItemIdx === idx;
-
-                            return (
-                              <div
-                                key={placed.id}
-                                onClick={(e) => {
-                                  if (!isEditMode) return;
-                                  e.stopPropagation();
-                                  setSelectedItemIdx(idx);
-                                }}
-                                className={cn(
-                                  "absolute cursor-pointer transition-all duration-100",
-                                  isSelected ? "scale-105 filter brightness-125 z-50 border border-dashed border-cyan-400" : "hover:brightness-105 z-30"
-                                )}
-                                style={{
-                                  left,
-                                  top,
-                                  width: catalogItem.gridWidth * cellSize,
-                                  height: catalogItem.gridLength * cellSize,
-                                  transformStyle: 'preserve-3d',
-                                  transform: `translateZ(0px) rotate(${placed.rotation}deg)`,
-                                }}
-                              >
-                                {catalogItem.renderSvg(isSelected ? '#22d3ee' : '#ec4899')}
-                              </div>
-                            );
-                          })}
+                          {catalogItem.renderSvg(isSelected ? '#22d3ee' : '#ec4899')}
                         </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* --- EDITOR CONTROLS --- */}
+                <div className="bg-slate-50 border border-pink-100 rounded-2xl p-3 flex flex-col gap-2 shadow-inner">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">Mansion Editor Console</span>
+                    <button 
+                      onClick={() => setIsCatalogOpen(true)}
+                      className="px-3 py-1 bg-cyan-400 hover:bg-cyan-500 transition rounded-full font-black text-[9px] text-black"
+                    >
+                      + PLACE FURNITURE
+                    </button>
+                  </div>
+
+                  {selectedItemIdx !== null ? (
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <div className="flex gap-2">
+                        <button onClick={handleRotateItem} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-700 shadow-sm active:scale-95 transition-transform">
+                          <RotateCw className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={handleRemoveItem} className="p-2 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 text-red-500 shadow-sm active:scale-95 transition-transform">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
 
-                      {/* --- EDITOR CONTROLS INTERVIEW (Mansion Edit Tools) --- */}
-                      {isEditMode && (
-                        <div className="bg-slate-50 border border-pink-100 rounded-2xl p-3 flex flex-col gap-2 shadow-inner">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">Mansion Editor Console</span>
-                            <button 
-                              onClick={() => setIsCatalogOpen(true)}
-                              className="px-3 py-1 bg-cyan-400 hover:bg-cyan-500 transition rounded-full font-black text-[9px] text-black"
-                            >
-                              + PLACE FURNITURE
-                            </button>
-                          </div>
-
-                          {selectedItemIdx !== null ? (
-                            <div className="flex items-center justify-between gap-2 mt-1">
-                              {/* Rotate / Delete */}
-                              <div className="flex gap-2">
-                                <button onClick={handleRotateItem} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-700 shadow-sm active:scale-95 transition-transform">
-                                  <RotateCw className="h-3.5 w-3.5" />
-                                </button>
-                                <button onClick={handleRemoveItem} className="p-2 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 text-red-500 shadow-sm active:scale-95 transition-transform">
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-
-                              {/* Direction D-Pad */}
-                              <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-24 h-24 bg-white/70 border rounded-2xl p-1 shadow-inner relative justify-items-center items-center shrink-0">
-                                <button onClick={() => handleMoveItem('up')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-1"><ChevronUp className="h-3.5 w-3.5" /></button>
-                                <button onClick={() => handleMoveItem('left')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-1 row-start-2"><ChevronLeftIcon className="h-3.5 w-3.5" /></button>
-                                <button onClick={() => handleMoveItem('right')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-3 row-start-2"><ChevronRight className="h-3.5 w-3.5" /></button>
-                                <button onClick={() => handleMoveItem('down')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-3"><ChevronDown className="h-3.5 w-3.5" /></button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-[10px] text-slate-400 italic text-center py-4">Click any furniture item in the room to move, rotate, or remove it.</p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* --- THE AI LOVE ORACLE PANEL (100% FREE RELATIONSHIP GAME) --- */}
-                      {!isEditMode && (
-                        <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-3xl p-4 flex flex-col gap-2 shadow-md">
-                          <div className="flex items-center gap-1.5">
-                            <div className="p-1 bg-rose-500 rounded-lg text-white">
-                              <Sparkle className="h-3.5 w-3.5 animate-spin-slow" />
-                            </div>
-                            <span className="text-xs font-black text-rose-950 uppercase tracking-tight">AI Love Oracle Daily Question</span>
-                          </div>
-
-                          <p className="text-slate-600 text-[11px] font-semibold italic">"{activeQuestion}"</p>
-
-                          {hasAnsweredOracle ? (
-                            <div className="flex items-center gap-2 mt-1 py-2 px-3 bg-white/60 border border-rose-100 rounded-2xl">
-                              <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                              <span className="text-[10px] text-slate-500 font-bold">Answer submitted successfully! Waiting for your partner's response.</span>
-                            </div>
-                          ) : (
-                            <div className="flex gap-2 mt-1.5">
-                              <input 
-                                type="text"
-                                value={oracleAnswerInput}
-                                onChange={(e) => setOracleAnswerInput(e.target.value)}
-                                placeholder="Type your sync answer..."
-                                className="flex-1 bg-white border border-rose-100 rounded-full px-4 py-1.5 text-[11px] focus:outline-none focus:border-rose-400 shadow-sm"
-                              />
-                              <button 
-                                onClick={handleSubmitOracle}
-                                disabled={!oracleAnswerInput.trim()}
-                                className="px-5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-[10px] rounded-full shadow-md active:scale-95 disabled:opacity-50 transition-all uppercase tracking-wider"
-                              >
-                                Submit
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-24 h-24 bg-white/70 border rounded-2xl p-1 shadow-inner relative justify-items-center items-center shrink-0">
+                        <button onClick={() => handleMoveItem('up')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-1"><ChevronUp className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleMoveItem('left')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-1 row-start-2"><ChevronLeftIcon className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleMoveItem('right')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-3 row-start-2"><ChevronRight className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => handleMoveItem('down')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-3"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      </div>
                     </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 italic text-center py-4">Click any furniture item in the room to move, rotate, or remove it.</p>
                   )}
-                </motion.div>
-              )}
 
-              {/* --- PRIVILEGES VIEW --- */}
-              {activeSubTab === 'privileges' && (
-                <motion.div 
-                  key="privileges"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="grid grid-cols-3 gap-y-8 gap-x-4"
-                >
-                  <PrivilegeCard 
-                    label="Frame" 
-                    icon={Palette} 
-                    imageUrl={activeCp?.rewards?.frame || config?.cpFrameIcon} 
-                    isLocked={!activeCp?.rewards?.frame && !config?.cpFrameIcon}
-                  />
-                  <PrivilegeCard 
-                    label="Room BG" 
-                    icon={Camera} 
-                    imageUrl={activeCp?.rewards?.roomBg || config?.cpRoomBgIcon} 
-                    isLocked={!activeCp?.rewards?.roomBg && !config?.cpRoomBgIcon}
-                  />
-                  <PrivilegeCard 
-                    label="Emoji" 
-                    icon={Handshake} 
-                    imageUrl={activeCp?.rewards?.emoji || config?.cpEmojiIcon} 
-                    isLocked={!activeCp?.rewards?.emoji && !config?.cpEmojiIcon}
-                  />
-                  <PrivilegeCard 
-                    label="Gift" 
-                    icon={Gift} 
-                    imageUrl={activeCp?.rewards?.gift}
-                    isLocked={!activeCp?.rewards?.gift} 
-                  />
-                  <PrivilegeCard 
-                    label="Badge" 
-                    icon={Trophy} 
-                    imageUrl={activeCp?.rewards?.badge}
-                    isLocked={!activeCp?.rewards?.badge} 
-                  />
-                  <PrivilegeCard 
-                    label="Card" 
-                    icon={Crown} 
-                    imageUrl={activeCp?.rewards?.card}
-                    isLocked={!activeCp?.rewards?.card} 
-                  />
-                </motion.div>
-              )}
+                  <div className="flex gap-2 mt-1">
+                    <button 
+                      onClick={handleSaveMansion}
+                      disabled={savingMansion}
+                      className="flex-1 px-4 py-1.5 bg-emerald-500 text-white font-bold text-[10px] rounded-full hover:bg-emerald-600 transition flex items-center justify-center gap-1 shadow-md"
+                    >
+                      <Save className="h-3 w-3" /> Save Mansion
+                    </button>
+                    <button 
+                      onClick={() => { setIsEditMode(false); setSelectedItemIdx(null); }}
+                      className="px-4 py-1.5 bg-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-300 transition"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-              {/* --- RULES VIEW --- */}
-              {activeSubTab === 'rules' && (
-                <motion.div 
-                  key="rules"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4 text-slate-400 text-[11px] leading-relaxed font-medium"
-                >
-                   <p className="bg-pink-50 p-4 rounded-2xl border border-pink-100 text-slate-600 font-bold">• Establish a CP connection to unlock shared exclusive privileges.</p>
-                   <p>• Stay in room together for 30 minutes daily to maintain intimacy.</p>
-                   <p>• Higher intimacy levels unlock custom Frames and specialized Chat Bubbles.</p>
-                   <p>• Sending high-value gifts contributes 10x points to the relationship level.</p>
-                   <p>• Intimacy points can also be gained daily by answering the **AI Love Oracle** question sync card!</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* PRIVILEGES GRID - Always visible */}
+            <div className="mb-6">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-4">CP Privileges</h3>
+              <div className="grid grid-cols-3 gap-y-8 gap-x-4">
+                <PrivilegeCard 
+                  label="Frame" 
+                  icon={Palette} 
+                  imageUrl={activeCp?.rewards?.frame || config?.cpFrameIcon} 
+                  isLocked={!activeCp?.rewards?.frame && !config?.cpFrameIcon}
+                />
+                <PrivilegeCard 
+                  label="Room BG" 
+                  icon={Camera} 
+                  imageUrl={activeCp?.rewards?.roomBg || config?.cpRoomBgIcon} 
+                  isLocked={!activeCp?.rewards?.roomBg && !config?.cpRoomBgIcon}
+                />
+                <PrivilegeCard 
+                  label="Emoji" 
+                  icon={Handshake} 
+                  imageUrl={activeCp?.rewards?.emoji || config?.cpEmojiIcon} 
+                  isLocked={!activeCp?.rewards?.emoji && !config?.cpEmojiIcon}
+                />
+                <PrivilegeCard 
+                  label="Gift" 
+                  icon={Gift} 
+                  imageUrl={activeCp?.rewards?.gift}
+                  isLocked={!activeCp?.rewards?.gift} 
+                />
+                <PrivilegeCard 
+                  label="Badge" 
+                  icon={Trophy} 
+                  imageUrl={activeCp?.rewards?.badge}
+                  isLocked={!activeCp?.rewards?.badge} 
+                />
+                <PrivilegeCard 
+                  label="Card" 
+                  icon={Crown} 
+                  imageUrl={activeCp?.rewards?.card}
+                  isLocked={!activeCp?.rewards?.card} 
+                />
+              </div>
+            </div>
+
+            {/* RULES SECTION */}
+            <div className="mb-6">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider mb-3">CP Rules</h3>
+              <div className="space-y-3 text-slate-400 text-[11px] leading-relaxed font-medium bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
+                <p className="text-slate-600 font-bold">• Establish a CP connection to unlock shared exclusive privileges.</p>
+                <p>• Stay in room together for 30 minutes daily to maintain intimacy.</p>
+                <p>• Higher intimacy levels unlock custom Frames and specialized Chat Bubbles.</p>
+                <p>• Sending high-value gifts contributes 10x points to the relationship level.</p>
+                <p>• Intimacy points can also be gained daily by answering the **AI Love Oracle** question sync card!</p>
+              </div>
+            </div>
+
+            {/* --- THE AI LOVE ORACLE PANEL (100% FREE RELATIONSHIP GAME) --- */}
+            {activeCp && (
+              <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-3xl p-4 flex flex-col gap-2 shadow-md">
+                <div className="flex items-center gap-1.5">
+                  <div className="p-1 bg-rose-500 rounded-lg text-white">
+                    <Sparkle className="h-3.5 w-3.5 animate-spin-slow" />
+                  </div>
+                  <span className="text-xs font-black text-rose-950 uppercase tracking-tight">AI Love Oracle Daily Question</span>
+                </div>
+
+                <p className="text-slate-600 text-[11px] font-semibold italic">"{activeQuestion}"</p>
+
+                {hasAnsweredOracle ? (
+                  <div className="flex items-center gap-2 mt-1 py-2 px-3 bg-white/60 border border-rose-100 rounded-2xl">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span className="text-[10px] text-slate-500 font-bold">Answer submitted successfully! Waiting for your partner's response.</span>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mt-1.5">
+                    <input 
+                      type="text"
+                      value={oracleAnswerInput}
+                      onChange={(e) => setOracleAnswerInput(e.target.value)}
+                      placeholder="Type your sync answer..."
+                      className="flex-1 bg-white border border-rose-100 rounded-full px-4 py-1.5 text-[11px] focus:outline-none focus:border-rose-400 shadow-sm"
+                    />
+                    <button 
+                      onClick={handleSubmitOracle}
+                      disabled={!oracleAnswerInput.trim()}
+                      className="px-5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-[10px] rounded-full shadow-md active:scale-95 disabled:opacity-50 transition-all uppercase tracking-wider"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* No CP Connected State */}
+            {!activeCp && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4">
+                <div className="h-16 w-16 bg-pink-100 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">No CP Connection</h3>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[220px] mx-auto leading-relaxed">Establish a CP (Close Partner) connection to unlock privileges and decorate your shared virtual mansion!</p>
+                </div>
+                <button onClick={() => setShowSearch(true)} className="px-6 py-2 bg-[#FF91B5] hover:bg-pink-400 transition text-white text-xs font-black rounded-full shadow-lg">Propose CP</button>
+              </div>
+            )}
           </main>
         </div>
 
@@ -794,4 +808,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-}
+                                                     }
