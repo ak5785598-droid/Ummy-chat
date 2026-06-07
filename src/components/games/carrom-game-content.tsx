@@ -201,60 +201,28 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
     if (gameState.turn !== currentUser?.uid || gameState.status !== 'playing') return;
     
     setDragStart({ x: e.clientX, y: e.clientY });
-    setInteractionState('pending');
+    setInteractionState('aiming');
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (interactionState === 'idle') return;
+    if (interactionState !== 'aiming') return;
     
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
+    const aimDx = dragStart.x - e.clientX;
+    const aimDy = dragStart.y - e.clientY;
+    const dist = Math.sqrt(aimDx*aimDx + aimDy*aimDy);
     
-    let currentState = interactionState;
+    const newPower = Math.min(100, Math.max(10, (dist / 150) * 100));
+    setPower(newPower);
 
-    if (currentState === 'pending') {
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist > 5) { // threshold to start drag
-        // If primarily horizontal movement, it's positioning
-        if (Math.abs(dx) > Math.abs(dy)) {
-           currentState = 'positioning';
-           setInteractionState('positioning');
-        } else {
-           currentState = 'aiming';
-           setInteractionState('aiming');
-        }
-      }
-    }
-
-    if (currentState === 'positioning') {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
-      let physicsX = ((xPercent - 12) / 76) * 100;
-      physicsX = Math.max(22, Math.min(78, physicsX));
-      setLocalStrikerPos(physicsX);
-    } else if (currentState === 'aiming') {
-      // Slingshot pulls back, the trajectory is start - current
-      const aimDx = dragStart.x - e.clientX;
-      const aimDy = dragStart.y - e.clientY;
-      const dist = Math.sqrt(aimDx*aimDx + aimDy*aimDy);
-      
-      const newPower = Math.min(100, Math.max(10, (dist / 150) * 100));
-      setPower(newPower);
-
-      if (aimDx !== 0 || aimDy !== 0) {
-        let rad = Math.atan2(aimDy, aimDx);
-        let deg = (rad * 180 / Math.PI) + 90;
-        setAngle(deg);
-      }
+    if (aimDx !== 0 || aimDy !== 0) {
+      let rad = Math.atan2(aimDy, aimDx);
+      let deg = (rad * 180 / Math.PI) + 90;
+      setAngle(deg);
     }
   };
 
   const handlePointerUp = () => {
-    if (interactionState === 'positioning') {
-      if (localStrikerPos !== null) {
-        updateStriker(localStrikerPos);
-      }
-    } else if (interactionState === 'aiming') {
+    if (interactionState === 'aiming') {
       if (power > 15) {
         strike(angle, power);
       }
@@ -278,13 +246,13 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
       animate={{ y: 0 }}
       exit={isOverlay ? { y: '100%' } : {}}
       className={cn(
-        "w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none rounded-[2.8rem] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] my-auto",
-        isOverlay ? "h-auto max-h-[60vh] mb-20" : "h-screen min-h-screen rounded-none max-h-none border-none mt-0 mb-0"
+        "w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none",
+        isOverlay ? "h-auto rounded-t-[2.8rem] border-t border-x border-white/20 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] mt-auto" : "h-screen min-h-screen rounded-none max-h-none border-none mt-0 mb-0"
       )}
     >
       
       {/* Arena Header - Updated to match your image style */}
-      <header className="relative z-50 flex items-center justify-between p-3 pt-8 shrink-0 bg-gradient-to-b from-black/40 to-transparent">
+      <header className="relative z-50 flex items-center justify-between p-3 pt-6 shrink-0 bg-gradient-to-b from-black/40 to-transparent">
         {/* Left Side Icons */}
         <div className="flex items-center gap-1.5">
           <button 
@@ -450,14 +418,13 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
              <div className="animate-in slide-in-from-bottom-2 duration-300">
                <div className="flex justify-between text-[10px] font-black uppercase text-white/60 italic mb-2">
                  <span className={interactionState === 'aiming' ? "text-emerald-400" : ""}>
-                   {interactionState === 'idle' ? 'DRAG TO AIM & SHOOT' : 
-                    interactionState === 'positioning' ? 'POSITIONING...' : 'PULL TO STRIKE'}
+                   {interactionState === 'idle' ? 'DRAG TO AIM & SHOOT' : 'PULL TO STRIKE'}
                  </span>
                  <span className="text-blue-400">{Math.round(power)}% PWR</span>
                </div>
                
                {/* Power Bar Visualization */}
-               <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-white/10 relative">
+               <div className="w-full h-2 bg-black/40 rounded-full overflow-hidden border border-white/10 relative mb-4">
                  <div 
                    className={cn(
                      "absolute left-0 top-0 bottom-0 transition-all duration-75",
@@ -470,9 +437,26 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
                  {/* Strike threshold marker */}
                  <div className="absolute left-[15%] top-0 bottom-0 w-[2px] bg-white/30 z-10" />
                </div>
+
+               {/* Position Slider */}
+               <div className="flex flex-col gap-1 mt-2">
+                 <span className="text-[10px] font-black uppercase text-white/40 italic">Striker Position</span>
+                 <input 
+                   type="range" 
+                   min="22" 
+                   max="78" 
+                   value={localStrikerPos ?? 50} 
+                   onChange={(e) => {
+                     const val = Number(e.target.value);
+                     setLocalStrikerPos(val);
+                     updateStriker(val);
+                   }}
+                   className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer border border-white/10 accent-yellow-500"
+                 />
+               </div>
                
                <p className="text-[10px] text-center text-white/30 mt-3 italic font-semibold">
-                 {interactionState === 'aiming' && power <= 15 ? 'Pull further to strike' : 'Swipe left/right to move • Pull back to shoot'}
+                 {interactionState === 'aiming' && power <= 15 ? 'Pull further to strike' : 'Pull back on the board to shoot'}
                </p>
              </div>
            ) : (
