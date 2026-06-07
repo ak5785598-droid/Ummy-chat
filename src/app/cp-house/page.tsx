@@ -223,6 +223,27 @@ export default function CpHousePage() {
 
   if (!isMounted) return null;
 
+  // Background style for header area
+  const headerBackgroundStyle = useMemo(() => {
+    if (activeMainTab === 'cp' && config?.cpBgUrl) {
+      return {
+        backgroundImage: `url(${getOptimizedMediaUrl(config.cpBgUrl)})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    if (activeMainTab === 'friend' && config?.friendBgUrl) {
+      return {
+        backgroundImage: `url(${getOptimizedMediaUrl(config.friendBgUrl)})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    return {
+      backgroundColor: activeMainTab === 'cp' ? cpHeaderTheme : (config?.friendHeaderTheme || '#60a5fa'),
+    };
+  }, [activeMainTab, config, cpHeaderTheme]);
+
   return (
     <AppLayout fullScreen>
       <div className={cn(
@@ -256,289 +277,189 @@ export default function CpHousePage() {
           )}
         </AnimatePresence>
 
-        {/* --- HEADER --- */}
-        <header className="absolute top-0 w-full z-50 flex items-center justify-between px-6 pt-safe">
-          <button onClick={() => router.back()} className="p-2 bg-black/5 backdrop-blur-md rounded-full text-white mt-4">
+        {/* --- FULL SCREEN BACKGROUND --- */}
+        <div 
+          className="absolute inset-0 cursor-pointer"
+          style={headerBackgroundStyle}
+          onClick={toggleFullImage}
+        />
+
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 z-[1] pointer-events-none" />
+
+        {/* --- TOP HEADER --- */}
+        <header className="relative z-50 flex items-center justify-between px-4 pt-safe pb-2">
+          {/* Back Button */}
+          <button 
+            onClick={() => router.back()} 
+            className="p-2.5 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition"
+          >
             <ChevronLeft className="h-5 w-5" />
           </button>
           
-          <div className="flex gap-8 mt-4">
+          {/* Tab Switcher - Text Only */}
+          <div className="flex items-center gap-6">
             <button 
               onClick={() => setActiveMainTab('cp')}
               className={cn(
-                "text-base font-black transition-all tracking-tight relative pb-1",
-                activeMainTab === 'cp' ? "text-white" : "text-white/60"
+                "text-base font-bold transition-all relative py-1",
+                activeMainTab === 'cp' ? "text-white" : "text-white/50"
               )}
             >
               CP
               {activeMainTab === 'cp' && (
-                <motion.div layoutId="header-active-tab" className="absolute -bottom-1 left-0 right-0 h-1 bg-white rounded-full" />
+                <motion.div 
+                  layoutId="activeTabIndicator" 
+                  className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full" 
+                />
               )}
             </button>
             <button 
               onClick={() => setActiveMainTab('friend')}
               className={cn(
-                "text-base font-black transition-all tracking-tight relative pb-1",
-                activeMainTab === 'friend' ? "text-white" : "text-white/60"
+                "text-base font-bold transition-all relative py-1",
+                activeMainTab === 'friend' ? "text-white" : "text-white/50"
               )}
             >
-              Friend
+              Friends
               {activeMainTab === 'friend' && (
-                <motion.div layoutId="header-active-tab" className="absolute -bottom-1 left-0 right-0 h-1 bg-white rounded-full" />
+                <motion.div 
+                  layoutId="activeTabIndicator" 
+                  className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white rounded-full" 
+                />
               )}
             </button>
           </div>
 
-          <div className="w-10 h-10 mt-4" />
+          {/* Help/Info Button */}
+          <button className="p-2.5 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition">
+            <HelpCircle className="h-5 w-5" />
+          </button>
         </header>
 
-        {/* --- MAIN HEADER LANDSCAPE GRAPHIC --- */}
-        <div className="flex flex-col h-full">
+        {/* --- MAIN CONTENT AREA --- */}
+        <div className="relative z-10 flex-1 flex flex-col">
           
-          <div 
-            onClick={toggleFullImage}
-            className={cn(
-              "relative h-[45vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000",
-              fullScreenImageUrl && "cursor-pointer"
-            )}
-            style={{ 
-              backgroundColor: activeMainTab === 'cp' 
-                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) 
-                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'transparent' : (config?.friendHeaderTheme || '#60a5fa')), 
-              background: activeMainTab === 'cp' 
-                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'none' : `linear-gradient(to bottom, ${cpHeaderTheme}, #FFCC00)`) 
-                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'none' : `linear-gradient(to bottom, ${config?.friendHeaderTheme || '#60a5fa'}, #3b82f6)`)
-            }}
-          >
-            {activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl && (
-              <img src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="CP Background" />
-            )}
-            {activeMainTab === 'cp' && config?.cpBgType === 'video' && config?.cpBgUrl && (
-              <video src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
-            )}
-            {activeMainTab === 'friend' && config?.friendBgType === 'image' && config?.friendBgUrl && (
-              <img src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="Friend Background" />
-            )}
-            {activeMainTab === 'friend' && config?.friendBgType === 'video' && config?.friendBgUrl && (
-              <video src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
-            )}
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20 z-0" />
-            
-            <FloatingHeart x="15%" delay={0} color="text-white/40" />
-            <FloatingHeart x="85%" delay={2} color="text-white/40" />
-
+          {/* Center Icon */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <motion.div 
-               animate={{ y: [0, -6, 0] }} 
-               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-               className="relative z-10"
+              animate={{ y: [0, -8, 0] }} 
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             >
-               {activeMainTab === 'cp' ? (
-                 <Heart className="h-28 w-28 text-white fill-white drop-shadow-[0_0_30px_rgba(255,100,100,0.5)]" />
-               ) : (
-                 <Handshake className="h-28 w-28 text-white drop-shadow-[0_0_30px_rgba(100,100,255,0.5)]" />
-               )}
+              {activeMainTab === 'cp' ? (
+                <Heart className="h-24 w-24 text-white fill-white drop-shadow-[0_0_30px_rgba(255,100,100,0.5)]" />
+              ) : (
+                <Handshake className="h-24 w-24 text-white drop-shadow-[0_0_30px_rgba(100,100,255,0.5)]" />
+              )}
+            </motion.div>
+          </div>
+
+          {/* Floating Hearts */}
+          <FloatingHeart x="10%" delay={0} color="text-white/30" />
+          <FloatingHeart x="90%" delay={2} color="text-white/30" />
+          <FloatingHeart x="75%" delay={4} color="text-white/20" />
+
+          {/* Full screen indicator */}
+          {fullScreenImageUrl && (
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-white text-[9px] font-bold">
+              Tap anywhere to expand
+            </div>
+          )}
+
+          {/* --- BOTTOM AVATAR SECTION --- */}
+          <div className="absolute bottom-8 left-0 right-0 z-30 flex items-center justify-between px-8">
+            
+            {/* Left Avatar - Current User */}
+            <div className="flex flex-col items-center gap-2">
+              <button 
+                className="relative group"
+                onClick={() => {/* Optional: Edit profile */}}
+              >
+                <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+                  <AvatarImage src={userProfile?.avatarUrl || ''} className="object-cover" />
+                  <AvatarFallback className="bg-pink-200 text-pink-600 font-bold text-lg">
+                    {(userProfile?.username?.[0] || 'M').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-1 -right-1 h-5 w-5 bg-green-400 rounded-full border-2 border-white" />
+              </button>
+              <span className="text-[10px] font-bold text-white uppercase tracking-widest drop-shadow-md">
+                {userProfile?.username?.split(' ')[0] || 'You'}
+              </span>
+            </div>
+
+            {/* Center Heart Indicator */}
+            <motion.div 
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="flex flex-col items-center gap-1"
+            >
+              {activeCp ? (
+                <Heart className="h-8 w-8 text-white fill-white drop-shadow-lg" />
+              ) : (
+                <div className="h-8 w-8 flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-white/60" />
+                </div>
+              )}
+              <span className="text-[8px] font-bold text-white/70 uppercase tracking-widest">
+                {activeCp ? 'Connected' : 'Search'}
+              </span>
             </motion.div>
 
-            {/* Full screen indicator */}
-            {fullScreenImageUrl && (
-              <div className="absolute bottom-3 right-3 z-10 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-white text-[9px] font-bold">
-                Tap to expand
-              </div>
-            )}
-          </div>
-
-          {/* MIDDLE AVATAR LINK LOBBY */}
-          <div className="relative z-30 -mt-14 flex justify-center px-6">
-            <div className="bg-white/95 backdrop-blur-2xl rounded-[2rem] p-4 border border-pink-100 flex items-center gap-12 w-full max-w-sm justify-between shadow-2xl relative">
-              
-              <div className="flex flex-col items-center gap-1">
-                <Avatar className="h-14 w-14 border-2 border-pink-200">
-                  <AvatarImage src={userProfile?.avatarUrl || ''} className="object-cover" />
-                  <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">ME</AvatarFallback>
-                </Avatar>
-                <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest">{userProfile?.username?.split(' ')[0] || 'Me'}</span>
-              </div>
-
-              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-4">
-                 <Heart className={cn("h-6 w-6 animate-pulse", activeCp ? "text-rose-500 fill-rose-500" : "text-pink-100")} />
-              </div>
-
-              <div className="flex flex-col items-center gap-1">
-                 {partnerProfile ? (
-                    <Avatar className="h-14 w-14 border-2 border-pink-200">
-                      <AvatarImage src={partnerProfile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">P</AvatarFallback>
-                    </Avatar>
-                 ) : (
-                    <button onClick={() => setShowSearch(true)} className="h-14 w-14 rounded-full border-2 border-dashed border-pink-100 bg-pink-50/50 flex items-center justify-center active:scale-95 transition-transform group">
-                      <Plus className="h-6 w-6 text-pink-200 group-hover:text-pink-400" />
-                    </button>
-                 )}
-                 <span className="text-[9px] font-black text-pink-300 uppercase tracking-widest">{partnerProfile?.username?.split(' ')[0] || 'Partner'}</span>
-              </div>
-
+            {/* Right Avatar - Partner/Search */}
+            <div className="flex flex-col items-center gap-2">
+              {partnerProfile ? (
+                <button 
+                  className="relative group"
+                  onClick={() => {/* Optional: View partner profile */}}
+                >
+                  <Avatar className="h-16 w-16 border-2 border-white shadow-lg">
+                    <AvatarImage src={partnerProfile.avatarUrl} className="object-cover" />
+                    <AvatarFallback className="bg-blue-200 text-blue-600 font-bold text-lg">
+                      {(partnerProfile.username?.[0] || 'P').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -top-1 -right-1 h-5 w-5 bg-green-400 rounded-full border-2 border-white" />
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowSearch(true)}
+                  className="h-16 w-16 rounded-full border-2 border-dashed border-white/50 bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition group"
+                >
+                  <Plus className="h-6 w-6 text-white/70 group-hover:text-white group-hover:scale-110 transition-transform" />
+                </button>
+              )}
+              <span className="text-[10px] font-bold text-white uppercase tracking-widest drop-shadow-md">
+                {partnerProfile?.username?.split(' ')[0] || 'Partner'}
+              </span>
             </div>
           </div>
-
-          {/* BOTTOM CONTENT - MANSION EDITOR ONLY */}
-          <main className="flex-1 mt-4 mx-4 mb-4 rounded-[2.5rem] bg-white border border-pink-100 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start">
-            
-            {/* CP LEVEL & INTIMACY INFO */}
-            {activeCp && (
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-tight">CP Intimacy Level: {activeCp?.level || 1}</span>
-                  <span className="text-[10px] text-pink-500 font-bold">Intimacy Points: {activeCp?.intimacyPoints || 0}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    className="px-4 py-1.5 bg-pink-400 text-white font-bold text-[10px] rounded-full hover:bg-pink-500 transition flex items-center gap-1 shadow-md"
-                  >
-                    <Wrench className="h-3 w-3" /> {isEditMode ? 'Close Editor' : 'Design Room'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* MANSION EDITOR SECTION */}
-            {isEditMode && activeCp && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-4 flex flex-col gap-3"
-              >
-                {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
-                <div className="relative w-full h-[220px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
-                  <div 
-                    className="absolute w-[200px] h-[200px] transform transition-transform"
-                    style={{
-                      transform: 'rotateX(60deg) rotateZ(-45deg)',
-                      transformStyle: 'preserve-3d'
-                    }}
-                  >
-                    <div className="grid grid-cols-5 grid-rows-5 w-full h-full border border-white/10 bg-slate-900/40">
-                      {Array.from({ length: 25 }).map((_, i) => (
-                        <div key={i} className="border border-white/5 hover:bg-white/5 transition-colors" />
-                      ))}
-                    </div>
-
-                    {placedItems.map((placed, idx) => {
-                      const catalogItem = FURNITURE_CATALOG.find(item => item.id === placed.catalogId);
-                      if (!catalogItem) return null;
-
-                      const cellSize = 40;
-                      const left = placed.x * cellSize;
-                      const top = placed.y * cellSize;
-                      const isSelected = selectedItemIdx === idx;
-
-                      return (
-                        <div
-                          key={placed.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedItemIdx(idx);
-                          }}
-                          className={cn(
-                            "absolute cursor-pointer transition-all duration-100",
-                            isSelected ? "scale-105 filter brightness-125 z-50 border border-dashed border-cyan-400" : "hover:brightness-105 z-30"
-                          )}
-                          style={{
-                            left,
-                            top,
-                            width: catalogItem.gridWidth * cellSize,
-                            height: catalogItem.gridLength * cellSize,
-                            transformStyle: 'preserve-3d',
-                            transform: `translateZ(0px) rotate(${placed.rotation}deg)`,
-                          }}
-                        >
-                          {catalogItem.renderSvg(isSelected ? '#22d3ee' : '#ec4899')}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* --- EDITOR CONTROLS --- */}
-                <div className="bg-slate-50 border border-pink-100 rounded-2xl p-3 flex flex-col gap-2 shadow-inner">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">Mansion Editor Console</span>
-                    <button 
-                      onClick={() => setIsCatalogOpen(true)}
-                      className="px-3 py-1 bg-cyan-400 hover:bg-cyan-500 transition rounded-full font-black text-[9px] text-black"
-                    >
-                      + PLACE FURNITURE
-                    </button>
-                  </div>
-
-                  {selectedItemIdx !== null ? (
-                    <div className="flex items-center justify-between gap-2 mt-1">
-                      <div className="flex gap-2">
-                        <button onClick={handleRotateItem} className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 text-slate-700 shadow-sm active:scale-95 transition-transform">
-                          <RotateCw className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={handleRemoveItem} className="p-2 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 text-red-500 shadow-sm active:scale-95 transition-transform">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-24 h-24 bg-white/70 border rounded-2xl p-1 shadow-inner relative justify-items-center items-center shrink-0">
-                        <button onClick={() => handleMoveItem('up')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-1"><ChevronUp className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => handleMoveItem('left')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-1 row-start-2"><ChevronLeftIcon className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => handleMoveItem('right')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-3 row-start-2"><ChevronRight className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => handleMoveItem('down')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-3"><ChevronDown className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic text-center py-4">Click any furniture item in the room to move, rotate, or remove it.</p>
-                  )}
-
-                  <div className="flex gap-2 mt-1">
-                    <button 
-                      onClick={handleSaveMansion}
-                      disabled={savingMansion}
-                      className="flex-1 px-4 py-1.5 bg-emerald-500 text-white font-bold text-[10px] rounded-full hover:bg-emerald-600 transition flex items-center justify-center gap-1 shadow-md"
-                    >
-                      <Save className="h-3 w-3" /> Save Mansion
-                    </button>
-                    <button 
-                      onClick={() => { setIsEditMode(false); setSelectedItemIdx(null); }}
-                      className="px-4 py-1.5 bg-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-300 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* No CP Connected State */}
-            {!activeCp && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4">
-                <div className="h-16 w-16 bg-pink-100 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner">
-                  <Lock className="h-8 w-8" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">No CP Connection</h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[220px] mx-auto leading-relaxed">Establish a CP (Close Partner) connection to unlock privileges and decorate your shared virtual mansion!</p>
-                </div>
-                <button onClick={() => setShowSearch(true)} className="px-6 py-2 bg-[#FF91B5] hover:bg-pink-400 transition text-white text-xs font-black rounded-full shadow-lg">Propose CP</button>
-              </div>
-            )}
-          </main>
         </div>
 
         {/* --- Dialogs --- */}
-        <UserSearchDialog isOpen={showSearch} onClose={() => setShowSearch(false)} onSelect={handleProposeTarget} />
+        <UserSearchDialog 
+          isOpen={showSearch} 
+          onClose={() => setShowSearch(false)} 
+          onSelect={handleProposeTarget} 
+        />
         {selectedTarget && (
-          <CPProposeDialog isOpen={showPropose} onClose={() => { setShowPropose(false); setSelectedTarget(null); }} targetUser={selectedTarget} />
+          <CPProposeDialog 
+            isOpen={showPropose} 
+            onClose={() => { 
+              setShowPropose(false); 
+              setSelectedTarget(null); 
+            }} 
+            targetUser={selectedTarget} 
+          />
         )}
 
         {/* --- FURNITURE CATALOG SHEET OVERLAY --- */}
         <AnimatePresence>
           {isCatalogOpen && (
-            <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end justify-center select-none" onClick={() => setIsCatalogOpen(false)}>
+            <div 
+              className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end justify-center select-none" 
+              onClick={() => setIsCatalogOpen(false)}
+            >
               <motion.div 
                 initial={{ y: 300 }}
                 animate={{ y: 0 }}
@@ -547,8 +468,11 @@ export default function CpHousePage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between border-b pb-3">
-                  <span className="font-black text-xs text-slate-800 uppercase tracking-widest">Furniture Catalog (0 Cost)</span>
-                  <button onClick={() => setIsCatalogOpen(false)} className="p-1 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500">
+                  <span className="font-black text-xs text-slate-800 uppercase tracking-widest">Furniture Catalog</span>
+                  <button 
+                    onClick={() => setIsCatalogOpen(false)} 
+                    className="p-1 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -571,7 +495,9 @@ export default function CpHousePage() {
                         <div className="w-14 h-14 flex items-center justify-center mb-1">
                           {item.renderSvg()}
                         </div>
-                        <span className="text-[10px] font-black text-slate-700 truncate w-full text-center">{item.name}</span>
+                        <span className="text-[10px] font-black text-slate-700 truncate w-full text-center">
+                          {item.name}
+                        </span>
                         <span className="text-[8px] font-bold text-slate-400 mt-0.5">
                           {item.price > 0 ? `${item.price} Coins` : 'FREE'}
                         </span>
@@ -579,7 +505,9 @@ export default function CpHousePage() {
                         {isLocked && (
                           <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center gap-1">
                             <Lock className="h-4 w-4 text-pink-300" />
-                            <span className="text-[8px] font-black text-pink-400 uppercase tracking-tighter">LVL {item.unlockLevel}</span>
+                            <span className="text-[8px] font-black text-pink-400 uppercase tracking-tighter">
+                              LVL {item.unlockLevel}
+                            </span>
                           </div>
                         )}
                       </button>
@@ -590,8 +518,7 @@ export default function CpHousePage() {
             </div>
           )}
         </AnimatePresence>
-
       </div>
     </AppLayout>
   );
-}
+    }
