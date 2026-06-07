@@ -77,7 +77,10 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
 
   if (!gameState.mode || gameState.mode === 'none' || gameState.status === 'loading' || gameState.status === 'mode_select') {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-[#01091A] p-6 relative overflow-hidden min-h-[400px]">
+      <div className={cn(
+        "w-full flex flex-col items-center justify-center p-6 relative overflow-hidden",
+        isOverlay ? "h-auto rounded-[2.8rem] bg-black/80 my-auto mb-20 border border-white/10 mx-4" : "h-full min-h-[400px] bg-[#01091A]"
+      )}>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none" />
         
         <motion.div 
@@ -275,8 +278,8 @@ export function CarromGameContent({ roomId: propsRoomId, isOverlay = false, onCl
       animate={{ y: 0 }}
       exit={isOverlay ? { y: '100%' } : {}}
       className={cn(
-        "h-full max-h-[90vh] w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none rounded-t-[2.8rem] border-t border-x border-white/20 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] mt-auto",
-        !isOverlay && "min-h-screen rounded-none h-auto max-h-none border-none mt-0"
+        "w-full max-w-lg mx-auto flex flex-col relative overflow-hidden bg-[#004D40] text-white select-none rounded-[2.8rem] border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] my-auto",
+        isOverlay ? "h-auto max-h-[60vh] mb-20" : "h-screen min-h-screen rounded-none max-h-none border-none mt-0 mb-0"
       )}
     >
       
