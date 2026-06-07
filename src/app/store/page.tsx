@@ -523,12 +523,9 @@ const FramePlaceholderIcon = ({ className }: { className?: string }) => (
 );
 
 // ============================================
-// STATIC STORE ITEMS
+// STATIC STORE ITEMS (Bubble aur Entry remove)
 // ============================================
 const STATIC_STORE_ITEMS = [
-  { id: 'heart-bubble', name: 'Heart Bubble', type: 'Bubble', price: 14995, durationDays: 7, description: 'Pink gradient bubble with floating hearts.', icon: Heart, color: 'text-pink-500' },
-  { id: 'love-bubble', name: 'Love Bubble', type: 'Bubble', price: 13495, durationDays: 7, description: 'Deep red romantic chat bubble.', icon: Heart, color: 'text-red-500' },
-  { id: 'royal-gold-bubble', name: 'Royal Gold', type: 'Bubble', price: 75000, durationDays: 7, description: 'Exclusive premium gold trimmed bubble.', icon: Heart, color: 'text-yellow-400' },
   { id: 'w-lovelyshine', name: 'Lovely Shine', type: 'Wave', price: 59999, durationDays: 7, description: 'Magical blue glow with floating hearts.', icon: Activity, color: 'text-blue-400' },
   { id: 'w-waveflew', name: 'Waveflew', type: 'Wave', price: 10000, durationDays: 7, description: 'Premium 3D Glossy frequency wave.', icon: Activity, color: 'text-white' },
   { id: 'w-tonepink', name: 'Tone Pink', type: 'Wave', price: 30000, durationDays: 7, description: '3D Glossy Pink rhythmic frequency.', icon: Activity, color: 'text-pink-500' },
@@ -597,10 +594,9 @@ export default function StorePage() {
     return boutiqueItems.filter(item => item.type === 'Frame' || item.category === 'Frame');
   }, [boutiqueItems]);
 
+  // Bubble items sirf dynamic (Firestore se aane wale) rahenge, static wale hata diye
   const bubbleItems = useMemo(() => {
-    const staticBubbles = STATIC_STORE_ITEMS.filter(i => i.type === 'Bubble');
-    const dynamicBubbles = boutiqueItems.filter(item => item.type === 'Bubble' || item.category === 'Bubble');
-    return [...staticBubbles, ...dynamicBubbles];
+    return boutiqueItems.filter(item => item.type === 'Bubble' || item.category === 'Bubble');
   }, [boutiqueItems]);
 
   const waveItems = useMemo(() => STATIC_STORE_ITEMS.filter(i => i.type === 'Wave'), []);
@@ -659,14 +655,16 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  const entryItems = useMemo(() => [
-    { id: 'entry-golden', name: 'Golden Entry', type: 'Entry', price: 1000000, durationDays: 7, description: 'Premium Golden entry pass with exclusive golden trim.', variant: 'golden' },
-    { id: 'entry-platinum', name: 'Platinum Entry', type: 'Entry', price: 2500000, durationDays: 7, description: 'Exclusive Platinum entry pass with diamond shine.', variant: 'platinum' },
-    { id: 'entry-diamond', name: 'Diamond Entry', type: 'Entry', price: 5000000, durationDays: 7, description: 'Ultra Premium Diamond entry pass - rarest of all.', variant: 'diamond' },
-  ], []);
+  // Entry items completely removed
+  const entryItems = useMemo(() => [], []);
 
   const nonFrameBoutiqueItems = useMemo(() => {
-    return boutiqueItems.filter(item => item.type !== 'Frame' && item.category !== 'Frame' && item.type !== 'Bubble' && item.category !== 'Bubble');
+    return boutiqueItems.filter(item => 
+      item.type !== 'Frame' && 
+      item.category !== 'Frame' && 
+      item.type !== 'Bubble' && 
+      item.category !== 'Bubble'
+    );
   }, [boutiqueItems]);
 
   const allItems = useMemo(() => {
@@ -906,7 +904,7 @@ export default function StorePage() {
       return <Palette className={cn("h-12 w-12 opacity-50", item.color || "text-purple-400")} />;
     }
     
-    // BUBBLE - NO SVG CARD, only imageUrl/videoUrl
+    // BUBBLE - NO SVG CARD, only imageUrl/videoUrl (static wale hata diye toh sirf dynamic wale aayenge jinke paas media hoga)
     if (item.type === 'Bubble') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -922,7 +920,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // No media, simple icon
       return <MessageSquare className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
@@ -938,7 +935,7 @@ export default function StorePage() {
       return <IDBadgeIcon number={item.displayId || ''} />;
     }
     
-    // ENTRY - NO SVG CARD, only imageUrl/videoUrl
+    // ENTRY - NO SVG CARD, only imageUrl/videoUrl (sirf dynamic wale aayenge)
     if (item.type === 'Entry') {
       if (item.videoUrl || item.imageUrl) {
         const mediaUrl = item.videoUrl || item.imageUrl;
@@ -954,7 +951,6 @@ export default function StorePage() {
           </div>
         );
       }
-      // No media, simple icon
       return <Ticket className="h-12 w-12 opacity-50 text-gray-400" />;
     }
     
@@ -1352,4 +1348,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-}
+      }
