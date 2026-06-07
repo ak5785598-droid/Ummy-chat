@@ -40,18 +40,6 @@ interface PlacedItem {
   rotation: 0 | 90 | 180 | 270;
 }
 
-const FloatingHeart = ({ delay = 0, x = "50%", color = "text-white/40" }) => (
-  <motion.div
-    initial={{ y: 100, opacity: 0, scale: 0 }}
-    animate={{ y: -500, opacity: [0, 1, 0], scale: [0.5, 1, 0.8] }}
-    transition={{ duration: 6, repeat: Infinity, delay, ease: "linear" }}
-    className="absolute z-0 pointer-events-none"
-    style={{ left: x }}
-  >
-    <Heart className={cn("h-6 w-6 fill-current", color)} />
-  </motion.div>
-);
-
 export default function CpHousePage() {
   const router = useRouter();
   const { user } = useUser();
@@ -64,7 +52,6 @@ export default function CpHousePage() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<any>(null);
   const [showPropose, setShowPropose] = useState(false);
-  const [showFullImage, setShowFullImage] = useState(false);
 
   // Mansion Editor states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -100,15 +87,15 @@ export default function CpHousePage() {
     }
   }, [activeCp]);
 
-  // Determine which image URL to show full screen
-  const fullScreenImageUrl = useMemo(() => {
-    if (activeMainTab === 'cp') {
-      if (config?.cpBgType === 'image' && config?.cpBgUrl) return getOptimizedMediaUrl(config.cpBgUrl);
-      return null;
-    } else {
-      if (config?.friendBgType === 'image' && config?.friendBgUrl) return getOptimizedMediaUrl(config.friendBgUrl);
-      return null;
+  // Get background image URL based on active tab
+  const backgroundImageUrl = useMemo(() => {
+    if (activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl) {
+      return getOptimizedMediaUrl(config.cpBgUrl);
     }
+    if (activeMainTab === 'friend' && config?.friendBgType === 'image' && config?.friendBgUrl) {
+      return getOptimizedMediaUrl(config.friendBgUrl);
+    }
+    return null;
   }, [activeMainTab, config]);
 
   const handleProposeTarget = (target: any) => {
@@ -214,51 +201,27 @@ export default function CpHousePage() {
     }
   };
 
-  // Toggle full screen image view
-  const toggleFullImage = () => {
-    if (fullScreenImageUrl) {
-      setShowFullImage(!showFullImage);
-    }
-  };
-
   if (!isMounted) return null;
 
   return (
     <AppLayout fullScreen>
       <div className={cn(
-        "h-[100dvh] w-full flex flex-col relative overflow-hidden font-sans select-none transition-colors duration-700 bg-white",
+        "h-[100dvh] w-full flex flex-col relative overflow-hidden font-sans select-none transition-colors duration-700",
         activeMainTab === 'cp' ? "bg-pink-50" : "bg-blue-50"
       )}>
 
-        {/* --- FULL SCREEN IMAGE OVERLAY --- */}
-        <AnimatePresence>
-          {showFullImage && fullScreenImageUrl && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[200] bg-black flex items-center justify-center"
-              onClick={toggleFullImage}
-            >
-              <button 
-                onClick={toggleFullImage}
-                className="absolute top-6 right-6 z-10 p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition"
-              >
-                <X className="h-6 w-6" />
-              </button>
-              <img 
-                src={fullScreenImageUrl} 
-                alt="Full Screen Background" 
-                className="w-full h-full object-contain"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* --- SINGLE 100DVH BACKGROUND IMAGE --- */}
+        {backgroundImageUrl && (
+          <img 
+            src={backgroundImageUrl} 
+            className="absolute inset-0 w-full h-full object-cover z-0" 
+            alt="Background" 
+          />
+        )}
 
-        {/* --- HEADER --- */}
+        {/* --- HEADER OVERLAY --- */}
         <header className="absolute top-0 w-full z-50 flex items-center justify-between px-6 pt-safe">
-          <button onClick={() => router.back()} className="p-2 bg-black/5 backdrop-blur-md rounded-full text-white mt-4">
+          <button onClick={() => router.back()} className="p-2 bg-black/20 backdrop-blur-md rounded-full text-white mt-4">
             <ChevronLeft className="h-5 w-5" />
           </button>
           
@@ -292,64 +255,12 @@ export default function CpHousePage() {
           <div className="w-10 h-10 mt-4" />
         </header>
 
-        {/* --- MAIN HEADER LANDSCAPE GRAPHIC --- */}
-        <div className="flex flex-col h-full">
+        {/* --- CONTENT OVERLAY ON TOP OF BACKGROUND --- */}
+        <div className="relative z-10 flex flex-col h-full">
           
-          <div 
-            onClick={toggleFullImage}
-            className={cn(
-              "relative h-[45vh] w-full flex flex-col items-center justify-center overflow-hidden transition-all duration-1000",
-              fullScreenImageUrl && "cursor-pointer"
-            )}
-            style={{ 
-              backgroundColor: activeMainTab === 'cp' 
-                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'transparent' : cpHeaderTheme) 
-                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'transparent' : (config?.friendHeaderTheme || '#60a5fa')), 
-              background: activeMainTab === 'cp' 
-                ? (config?.cpBgType !== 'dynamic' && config?.cpBgUrl ? 'none' : `linear-gradient(to bottom, ${cpHeaderTheme}, #FFCC00)`) 
-                : (config?.friendBgType !== 'dynamic' && config?.friendBgUrl ? 'none' : `linear-gradient(to bottom, ${config?.friendHeaderTheme || '#60a5fa'}, #3b82f6)`)
-            }}
-          >
-            {activeMainTab === 'cp' && config?.cpBgType === 'image' && config?.cpBgUrl && (
-              <img src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="CP Background" />
-            )}
-            {activeMainTab === 'cp' && config?.cpBgType === 'video' && config?.cpBgUrl && (
-              <video src={getOptimizedMediaUrl(config.cpBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
-            )}
-            {activeMainTab === 'friend' && config?.friendBgType === 'image' && config?.friendBgUrl && (
-              <img src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" alt="Friend Background" />
-            )}
-            {activeMainTab === 'friend' && config?.friendBgType === 'video' && config?.friendBgUrl && (
-              <video src={getOptimizedMediaUrl(config.friendBgUrl)} className="absolute inset-0 w-full h-full object-cover z-0" muted autoPlay loop />
-            )}
-            <div className="absolute inset-0 bg-white/10 backdrop-blur-[20px] opacity-20 z-0" />
-            
-            <FloatingHeart x="15%" delay={0} color="text-white/40" />
-            <FloatingHeart x="85%" delay={2} color="text-white/40" />
-
-            <motion.div 
-               animate={{ y: [0, -6, 0] }} 
-               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-               className="relative z-10"
-            >
-               {activeMainTab === 'cp' ? (
-                 <Heart className="h-28 w-28 text-white fill-white drop-shadow-[0_0_30px_rgba(255,100,100,0.5)]" />
-               ) : (
-                 <Handshake className="h-28 w-28 text-white drop-shadow-[0_0_30px_rgba(100,100,255,0.5)]" />
-               )}
-            </motion.div>
-
-            {/* Full screen indicator */}
-            {fullScreenImageUrl && (
-              <div className="absolute bottom-3 right-3 z-10 bg-white/10 backdrop-blur-md rounded-full px-3 py-1 text-white text-[9px] font-bold">
-                Tap to expand
-              </div>
-            )}
-          </div>
-
           {/* MIDDLE AVATAR LINK LOBBY */}
-          <div className="relative z-30 -mt-14 flex justify-center px-6">
-            <div className="bg-white/95 backdrop-blur-2xl rounded-[2rem] p-4 border border-pink-100 flex items-center gap-12 w-full max-w-sm justify-between shadow-2xl relative">
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-pink-100/50 flex items-center gap-12 w-full max-w-sm justify-between shadow-2xl">
               
               <div className="flex flex-col items-center gap-1">
                 <Avatar className="h-14 w-14 border-2 border-pink-200">
@@ -359,8 +270,8 @@ export default function CpHousePage() {
                 <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest">{userProfile?.username?.split(' ')[0] || 'Me'}</span>
               </div>
 
-              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-4">
-                 <Heart className={cn("h-6 w-6 animate-pulse", activeCp ? "text-rose-500 fill-rose-500" : "text-pink-100")} />
+              <div className="relative">
+                 <Heart className={cn("h-8 w-8 animate-pulse", activeCp ? "text-rose-500 fill-rose-500" : "text-pink-200")} />
               </div>
 
               <div className="flex flex-col items-center gap-1">
@@ -370,18 +281,18 @@ export default function CpHousePage() {
                       <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">P</AvatarFallback>
                     </Avatar>
                  ) : (
-                    <button onClick={() => setShowSearch(true)} className="h-14 w-14 rounded-full border-2 border-dashed border-pink-100 bg-pink-50/50 flex items-center justify-center active:scale-95 transition-transform group">
-                      <Plus className="h-6 w-6 text-pink-200 group-hover:text-pink-400" />
+                    <button onClick={() => setShowSearch(true)} className="h-14 w-14 rounded-full border-2 border-dashed border-pink-200 bg-pink-50/50 flex items-center justify-center active:scale-95 transition-transform group">
+                      <Plus className="h-6 w-6 text-pink-300 group-hover:text-pink-400" />
                     </button>
                  )}
-                 <span className="text-[9px] font-black text-pink-300 uppercase tracking-widest">{partnerProfile?.username?.split(' ')[0] || 'Partner'}</span>
+                 <span className="text-[9px] font-black text-pink-400 uppercase tracking-widest">{partnerProfile?.username?.split(' ')[0] || 'Partner'}</span>
               </div>
 
             </div>
           </div>
 
-          {/* BOTTOM CONTENT - MANSION EDITOR ONLY */}
-          <main className="flex-1 mt-4 mx-4 mb-4 rounded-[2.5rem] bg-white border border-pink-100 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start">
+          {/* BOTTOM CONTENT - MANSION EDITOR */}
+          <main className="mx-4 mb-4 rounded-[2.5rem] bg-white/90 backdrop-blur-xl border border-pink-100/50 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start max-h-[55vh]">
             
             {/* CP LEVEL & INTIMACY INFO */}
             {activeCp && (
@@ -410,9 +321,9 @@ export default function CpHousePage() {
                 className="mb-4 flex flex-col gap-3"
               >
                 {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
-                <div className="relative w-full h-[220px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
+                <div className="relative w-full h-[180px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
                   <div 
-                    className="absolute w-[200px] h-[200px] transform transition-transform"
+                    className="absolute w-[160px] h-[160px] transform transition-transform"
                     style={{
                       transform: 'rotateX(60deg) rotateZ(-45deg)',
                       transformStyle: 'preserve-3d'
@@ -428,7 +339,7 @@ export default function CpHousePage() {
                       const catalogItem = FURNITURE_CATALOG.find(item => item.id === placed.catalogId);
                       if (!catalogItem) return null;
 
-                      const cellSize = 40;
+                      const cellSize = 32;
                       const left = placed.x * cellSize;
                       const top = placed.y * cellSize;
                       const isSelected = selectedItemIdx === idx;
@@ -483,7 +394,7 @@ export default function CpHousePage() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-24 h-24 bg-white/70 border rounded-2xl p-1 shadow-inner relative justify-items-center items-center shrink-0">
+                      <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-20 h-20 bg-white/70 border rounded-2xl p-1 shadow-inner relative justify-items-center items-center shrink-0">
                         <button onClick={() => handleMoveItem('up')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-2 row-start-1"><ChevronUp className="h-3.5 w-3.5" /></button>
                         <button onClick={() => handleMoveItem('left')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-1 row-start-2"><ChevronLeftIcon className="h-3.5 w-3.5" /></button>
                         <button onClick={() => handleMoveItem('right')} className="p-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 col-start-3 row-start-2"><ChevronRight className="h-3.5 w-3.5" /></button>
@@ -594,7 +505,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-}
-
-
-
+  }
