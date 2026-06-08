@@ -256,10 +256,10 @@ export default function CpHousePage() {
         </header>
 
         {/* --- CONTENT OVERLAY ON TOP OF BACKGROUND --- */}
-        <div className="relative z-10 flex flex-col h-full">
+        <div className="relative z-10 flex flex-col h-full items-center justify-center">
           
-          {/* MIDDLE AVATAR LINK LOBBY - NO CARD, SHIFTED UP */}
-          <div className="flex items-center justify-center px-6 mt-24 mb-auto">
+          {/* MIDDLE AVATAR LINK LOBBY */}
+          <div className="flex items-center justify-center px-6">
             <div className="flex items-center gap-12">
               
               <div className="flex flex-col items-center gap-1">
@@ -302,35 +302,15 @@ export default function CpHousePage() {
             </div>
           </div>
 
-          {/* BOTTOM CONTENT - MANSION EDITOR */}
-          <main className="mx-4 mb-4 rounded-[2.5rem] bg-white/90 backdrop-blur-xl border border-pink-100/50 shadow-xl overflow-y-auto no-scrollbar p-6 flex flex-col justify-start max-h-[55vh]">
-            
-            {/* CP LEVEL & INTIMACY INFO */}
-            {activeCp && (
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-tight">CP Intimacy Level: {activeCp?.level || 1}</span>
-                  <span className="text-[10px] text-pink-500 font-bold">Intimacy Points: {activeCp?.intimacyPoints || 0}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    className="px-4 py-1.5 bg-pink-400 text-white font-bold text-[10px] rounded-full hover:bg-pink-500 transition flex items-center gap-1 shadow-md"
-                  >
-                    <Wrench className="h-3 w-3" /> {isEditMode ? 'Close Editor' : 'Design Room'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* MANSION EDITOR SECTION */}
-            {isEditMode && activeCp && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-4 flex flex-col gap-3"
-              >
+          {/* MANSION EDITOR CONTROLS (Only visible in edit mode) */}
+          {isEditMode && activeCp && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-8 left-4 right-4 z-50 bg-white/95 backdrop-blur-xl rounded-[2.5rem] border border-pink-100/50 shadow-2xl p-6"
+            >
+              <div className="flex flex-col gap-3">
                 {/* --- THE ISOMETRIC 3D GRID CONTAINER --- */}
                 <div className="relative w-full h-[180px] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center select-none">
                   <div 
@@ -432,23 +412,19 @@ export default function CpHousePage() {
                     </button>
                   </div>
                 </div>
-              </motion.div>
-            )}
-
-            {/* No CP Connected State */}
-            {!activeCp && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 gap-4">
-                <div className="h-16 w-16 bg-pink-100 rounded-2xl flex items-center justify-center text-rose-400 shadow-inner">
-                  <Lock className="h-8 w-8" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">No CP Connection</h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-[220px] mx-auto leading-relaxed">Establish a CP (Close Partner) connection to unlock privileges and decorate your shared virtual mansion!</p>
-                </div>
-                <button onClick={() => setShowSearch(true)} className="px-6 py-2 bg-[#FF91B5] hover:bg-pink-400 transition text-white text-xs font-black rounded-full shadow-lg">Propose CP</button>
               </div>
-            )}
-          </main>
+            </motion.div>
+          )}
+
+          {/* Design Room button (only visible when not in edit mode and CP exists) */}
+          {!isEditMode && activeCp && (
+            <button 
+              onClick={() => setIsEditMode(true)}
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-2 bg-pink-400 text-white font-bold text-sm rounded-full hover:bg-pink-500 transition flex items-center gap-2 shadow-lg"
+            >
+              <Wrench className="h-4 w-4" /> Design Room
+            </button>
+          )}
         </div>
 
         {/* --- Dialogs --- */}
@@ -516,4 +492,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-                  }
+}
