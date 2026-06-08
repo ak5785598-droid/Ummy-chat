@@ -67,7 +67,115 @@ import { MEDAL_REGISTRY } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame';
+// ============================================================
+// ⚡ COMPACT VIDEO AVATAR FRAME COMPONENT ⚡
+// ============================================================
+
+const CompactVideoAvatarFrame = ({ 
+  frameMediaUrl, 
+  avatarSize = 88,
+  children 
+}: { 
+  frameMediaUrl?: string | null; 
+  avatarSize?: number;
+  children: React.ReactNode;
+}) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoError, setVideoError] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !frameMediaUrl || videoError) return;
+
+    const playVideo = async () => {
+      try {
+        video.muted = true;
+        video.playsInline = true;
+        video.loop = true;
+        await video.play();
+      } catch (err) {
+        console.log('Video autoplay blocked, trying again on user interaction');
+      }
+    };
+
+    const handleLoadedData = () => {
+      playVideo();
+    };
+
+    const handleError = () => {
+      setVideoError(true);
+      console.error('Video failed to load');
+    };
+
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('error', handleError);
+    
+    // Initial play attempt
+    playVideo();
+
+    return () => {
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('error', handleError);
+    };
+  }, [frameMediaUrl, videoError]);
+
+  // If no frame URL or video error, just show children
+  if (!frameMediaUrl || videoError) {
+    return <>{children}</>;
+  }
+
+  // Calculate frame size (slightly larger than avatar)
+  const frameSize = avatarSize + 16;
+
+  return (
+    <div 
+      className="relative inline-flex items-center justify-center"
+      style={{ 
+        width: frameSize, 
+        height: frameSize 
+      }}
+    >
+      {/* Video Frame - No controls, no play button, no transparent overlay */}
+      <div 
+        className="absolute inset-0 overflow-hidden"
+        style={{
+          width: frameSize,
+          height: frameSize,
+          borderRadius: '50%', // Circular frame
+        }}
+      >
+        <video
+          ref={videoRef}
+          src={frameMediaUrl}
+          className="absolute inset-0 w-full h-full"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+          muted
+          playsInline
+          loop
+          disablePictureInPicture
+          controlsList="nodownload nofullscreen noremoteplayback"
+          // Prevent default video UI
+          controls={false}
+        />
+      </div>
+      
+      {/* Avatar centered on top of video */}
+      <div 
+        className="relative z-10 flex items-center justify-center"
+        style={{ 
+          width: avatarSize, 
+          height: avatarSize 
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 // ============================================================
 // ⚡ SAARE SVG COMPONENTS ⚡
