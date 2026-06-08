@@ -11,7 +11,11 @@ export default function SecretResetPage() {
   const [status, setStatus] = useState('');
 
   const handleReset = async () => {
-    if (!firestore || !user) return;
+    if (!firestore) return;
+    if (!user) {
+      setStatus('ERROR: You must be logged in to use this tool!');
+      return;
+    }
     setLoading(true);
     setStatus('Fetching users...');
     
