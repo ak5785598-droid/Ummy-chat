@@ -258,34 +258,45 @@ export default function CpHousePage() {
         {/* --- CONTENT OVERLAY ON TOP OF BACKGROUND --- */}
         <div className="relative z-10 flex flex-col h-full">
           
-          {/* MIDDLE AVATAR LINK LOBBY */}
-          <div className="flex-1 flex items-center justify-center px-6">
-            <div className="bg-white/90 backdrop-blur-2xl rounded-[2rem] p-4 border border-pink-100/50 flex items-center gap-12 w-full max-w-sm justify-between shadow-2xl">
+          {/* MIDDLE AVATAR LINK LOBBY - NO CARD, SHIFTED UP */}
+          <div className="flex items-center justify-center px-6 mt-24 mb-auto">
+            <div className="flex items-center gap-12">
               
               <div className="flex flex-col items-center gap-1">
-                <Avatar className="h-14 w-14 border-2 border-pink-200">
+                <Avatar className="h-16 w-16 border-2 border-white/60 shadow-lg">
                   <AvatarImage src={userProfile?.avatarUrl || ''} className="object-cover" />
                   <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">ME</AvatarFallback>
                 </Avatar>
-                <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest">{userProfile?.username?.split(' ')[0] || 'Me'}</span>
+                <span className="text-[10px] font-black text-white drop-shadow-md uppercase tracking-widest bg-black/30 px-3 py-0.5 rounded-full">
+                  {userProfile?.username?.split(' ')[0] || 'Me'}
+                </span>
               </div>
 
               <div className="relative">
-                 <Heart className={cn("h-8 w-8 animate-pulse", activeCp ? "text-rose-500 fill-rose-500" : "text-pink-200")} />
+                 <Heart className={cn("h-10 w-10 animate-pulse drop-shadow-lg", activeCp ? "text-rose-400 fill-rose-400" : "text-white/70")} />
               </div>
 
               <div className="flex flex-col items-center gap-1">
                  {partnerProfile ? (
-                    <Avatar className="h-14 w-14 border-2 border-pink-200">
-                      <AvatarImage src={partnerProfile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">P</AvatarFallback>
-                    </Avatar>
+                    <>
+                      <Avatar className="h-16 w-16 border-2 border-white/60 shadow-lg">
+                        <AvatarImage src={partnerProfile.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="bg-pink-100 text-pink-500 font-bold">P</AvatarFallback>
+                      </Avatar>
+                      <span className="text-[10px] font-black text-white drop-shadow-md uppercase tracking-widest bg-black/30 px-3 py-0.5 rounded-full">
+                        {partnerProfile?.username?.split(' ')[0] || 'Partner'}
+                      </span>
+                    </>
                  ) : (
-                    <button onClick={() => setShowSearch(true)} className="h-14 w-14 rounded-full border-2 border-dashed border-pink-200 bg-pink-50/50 flex items-center justify-center active:scale-95 transition-transform group">
-                      <Plus className="h-6 w-6 text-pink-300 group-hover:text-pink-400" />
-                    </button>
+                    <div className="flex flex-col items-center gap-1">
+                      <button onClick={() => setShowSearch(true)} className="h-16 w-16 rounded-full border-2 border-dashed border-white/60 bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-95 transition-transform group shadow-lg">
+                        <Plus className="h-7 w-7 text-white/80 group-hover:text-white" />
+                      </button>
+                      <span className="text-[10px] font-black text-white/70 drop-shadow-md uppercase tracking-widest">
+                        Partner
+                      </span>
+                    </div>
                  )}
-                 <span className="text-[9px] font-black text-pink-400 uppercase tracking-widest">{partnerProfile?.username?.split(' ')[0] || 'Partner'}</span>
               </div>
 
             </div>
@@ -505,4 +516,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-  }
+                  }
