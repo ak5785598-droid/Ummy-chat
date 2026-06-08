@@ -15,17 +15,17 @@ export interface LevelProgress {
 
 const THRESHOLDS = [
  { level: 0, spent: 0 },
- { level: 1, spent: 10000 },
- { level: 10, spent: 100000 },
- { level: 20, spent: 200000 },
- { level: 30, spent: 300000 },
- { level: 40, spent: 500000 },
- { level: 50, spent: 1000000 },
- { level: 60, spent: 5000000 },
- { level: 70, spent: 10000000 },
- { level: 80, spent: 50000000 },
- { level: 90, spent: 200000000 },
- { level: 100, spent: 1000000000 },
+ { level: 1, spent: 20000 },
+ { level: 10, spent: 3500000000 },
+ { level: 20, spent: 10000000000 },
+ { level: 30, spent: 100000000000 },
+ { level: 40, spent: 2000000000000 },
+ { level: 50, spent: 25000000000000 },
+ { level: 60, spent: 350000500000000 },
+ { level: 70, spent: 5000002500000000 },
+ { level: 80, spent: 70000000000000000 },
+ { level: 90, spent: 850000000000000000 },
+ { level: 100, spent: 1000000000000000000 },
 ];
 
 /**

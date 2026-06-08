@@ -31,6 +31,7 @@ import { GoldCoinIcon } from '@/components/icons';
 import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, where, limit } from 'firebase/firestore';
+import { calculateLevelProgress } from '@/lib/level-utils';
 
 // Registries
 import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
@@ -40,90 +41,30 @@ import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 // ==========================================
 // 1. BUDGET LEVEL BADGE
 // ==========================================
-const BudgetLevelBadge = ({ level }: { level: number }) => {
+const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: string | null }) => {
+  if (imageUrl) {
+    return (
+      <div className={cn("relative inline-flex items-center justify-center shrink-0 w-16 h-8", level < 1 && "grayscale opacity-75")}>
+        <img 
+          src={imageUrl} 
+          alt={`Level ${level}`} 
+          className="absolute inset-0 w-full h-full object-contain filter drop-shadow-md"
+        />
+        <span className="relative z-10 text-[11px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5 ml-2" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)' }}>
+          Lv.{level}
+        </span>
+      </div>
+    );
+  }
+
+  // Fallback if no image
   return (
     <div className={cn("inline-flex items-center shrink-0", level < 1 && "grayscale opacity-75")}>
-      <svg viewBox="0 0 280 120" style={{ height: '22px', width: 'auto' }} className="drop-shadow-md cursor-default transition-transform hover:-translate-y-[2px] hover:scale-[1.015]">
-        <defs>
-          <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#e92848"/>
-            <stop offset="50%" stopColor="#c4122f"/>
-            <stop offset="100%" stopColor="#8f0a1f"/>
-          </linearGradient>
-          <linearGradient id="orangeBorder" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffad42"/>
-            <stop offset="50%" stopColor="#ff7e00"/>
-            <stop offset="100%" stopColor="#d65a00"/>
-          </linearGradient>
-          <linearGradient id="orangeHighlight" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffe0b3" stopOpacity="0.95"/>
-            <stop offset="40%" stopColor="#ffcc80" stopOpacity="0.55"/>
-            <stop offset="100%" stopColor="#ffad42" stopOpacity="0"/>
-          </linearGradient>
-          <linearGradient id="redGloss" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.36"/>
-            <stop offset="28%" stopColor="#ffffff" stopOpacity="0.14"/>
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0"/>
-          </linearGradient>
-          <linearGradient id="starTop" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fff176"/>
-            <stop offset="38%" stopColor="#ffeb3b"/>
-            <stop offset="100%" stopColor="#ffca28"/>
-          </linearGradient>
-          <linearGradient id="starMid" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffeb3b"/>
-            <stop offset="100%" stopColor="#ffca28"/>
-          </linearGradient>
-          <linearGradient id="starDeep" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffca28"/>
-            <stop offset="100%" stopColor="#ffa000"/>
-          </linearGradient>
-          <linearGradient id="starDark" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffa000"/>
-            <stop offset="100%" stopColor="#c67100"/>
-          </linearGradient>
-
-          <filter id="badgeShadow" x="-30%" y="-40%" width="160%" height="200%">
-            <feDropShadow dx="0" dy="6" stdDeviation="7" floodColor="#000" floodOpacity="0.75"/>
-          </filter>
-          <filter id="textShadow" x="-20%" y="-20%" width="140%" height="180%">
-            <feDropShadow dx="0" dy="2.5" stdDeviation="1.3" floodColor="#8f0a1f" floodOpacity="1"/>
-            <feDropShadow dx="0" dy="1" stdDeviation="0.8" floodColor="#000" floodOpacity="0.55"/>
-          </filter>
-          <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#ffb300" floodOpacity="0.45"/>
-          </filter>
-        </defs>
-
-        <g filter="url(#badgeShadow)">
-          <path d="M85 34 H235 L249 86 H85 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
-          <path d="M85 34 H235 L249 86 H85 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
-          <path d="M85 34 H235 L249 86 H85 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
-          <path d="M85 34 H235 L249 86 H85 Z" fill="url(#redGloss)" opacity="0.24"/>
-          <path d="M85 38 H232 L245 82 H89 Z" fill="none" stroke="#000" strokeWidth="1.5" strokeLinejoin="round" opacity="0.18"/>
-
-          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="#4a0a14" strokeWidth="14" strokeLinejoin="round" opacity="0.65"/>
-          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redFill)" stroke="url(#orangeBorder)" strokeWidth="10" strokeLinejoin="round"/>
-          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="none" stroke="url(#orangeHighlight)" strokeWidth="2.4" strokeLinejoin="round" opacity="0.92"/>
-          <path d="M66 6 L117.35 43.31 L97.74 103.69 L34.26 103.69 L14.64 43.31 Z" fill="url(#redGloss)" opacity="0.22"/>
-          <path d="M66 12 L112 45 L93.5 98.5 L38.5 98.5 L20 45 Z" fill="none" stroke="#000" strokeWidth="1.5" opacity="0.18"/>
-
-          <g filter="url(#starGlow)" stroke="#b25f00" strokeOpacity="0.28" strokeWidth="0.6" strokeLinejoin="round">
-            <path d="M66 60 L66 26 L74.229 48.674 Z" fill="url(#starTop)"/>
-            <path d="M66 60 L57.771 48.674 L66 26 Z" fill="url(#starTop)"/>
-            <path d="M66 60 L74.229 48.674 L98.34 49.494 Z" fill="url(#starMid)"/>
-            <path d="M66 60 L33.663 49.494 L57.771 48.674 Z" fill="url(#starMid)"/>
-            <path d="M66 60 L98.34 49.494 L79.315 64.326 Z" fill="url(#starMid)"/>
-            <path d="M66 60 L52.685 64.326 L33.663 49.494 Z" fill="url(#starMid)"/>
-            <path d="M66 60 L79.315 64.326 L85.985 87.506 Z" fill="url(#starDeep)"/>
-            <path d="M66 60 L46.015 87.506 L52.685 64.326 Z" fill="url(#starDeep)"/>
-            <path d="M66 60 L85.985 87.506 L66 74 Z" fill="url(#starDark)"/>
-            <path d="M66 60 L66 74 L46.015 87.506 Z" fill="url(#starDark)"/>
-          </g>
-
-          <text x="165" y="68.5" textAnchor="middle" fontFamily="Inter, 'Segoe UI Black', 'Arial Black', sans-serif" fontSize="36" fontWeight="900" letterSpacing="0.5" fill="#ffffff" stroke="#ff7e00" strokeWidth="2.8" strokeLinejoin="round" paintOrder="stroke" filter="url(#textShadow)">lv.{level}</text>
-        </g>
-      </svg>
+      <div className="relative flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-b from-[#e92848] via-[#c4122f] to-[#8f0a1f] border-2 border-[#ff7e00] shadow-md shadow-black/50">
+        <span className="text-[12px] font-black italic tracking-wider text-white drop-shadow-[0_1.5px_1px_rgba(0,0,0,0.8)]">
+          Lv.{level}
+        </span>
+      </div>
     </div>
   );
 };
@@ -782,6 +723,12 @@ export function FullProfileDialog({
   }, [firestore]);
   const { data: firestoreMedals } = useCollection(medalsQuery);
 
+  const levelsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "levels"), where("type", "==", "budget"));
+  }, [firestore]);
+  const { data: budgetLevelsData } = useCollection(levelsQuery);
+
   const ownedItems = profile.inventory?.ownedItems || [];
   const medals = profile.medals || [];
   const receivedGifts = profile.stats?.receivedGifts || {};
@@ -789,7 +736,26 @@ export function FullProfileDialog({
   const ownedVehicles = ownedItems.filter((id: string) => VEHICLE_REGISTRY[id]);
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
-  const budgetLevel = profile.budgetLevel ?? profile.level?.budget ?? 0;
+  const calculatedLevelStats = calculateLevelProgress(profile.wallet?.totalExp || 0);
+  const budgetLevel = calculatedLevelStats.currentLevel;
+  
+  const budgetImageUrl = useMemo(() => {
+    if (!budgetLevelsData) return null;
+    let rangeStr = 'Lv.0';
+    if (budgetLevel > 0 && budgetLevel <= 10) rangeStr = 'Lv.1~Lv.10';
+    else if (budgetLevel > 10 && budgetLevel <= 20) rangeStr = 'Lv.11~Lv.20';
+    else if (budgetLevel > 20 && budgetLevel <= 30) rangeStr = 'Lv.21~Lv.30';
+    else if (budgetLevel > 30 && budgetLevel <= 40) rangeStr = 'Lv.31~Lv.40';
+    else if (budgetLevel > 40 && budgetLevel <= 50) rangeStr = 'Lv.41~Lv.50';
+    else if (budgetLevel > 50 && budgetLevel <= 60) rangeStr = 'Lv.51~Lv.60';
+    else if (budgetLevel > 60 && budgetLevel <= 70) rangeStr = 'Lv.61~Lv.70';
+    else if (budgetLevel > 70 && budgetLevel <= 80) rangeStr = 'Lv.71~Lv.80';
+    else if (budgetLevel > 80 && budgetLevel <= 90) rangeStr = 'Lv.81~Lv.90';
+    else if (budgetLevel > 90) rangeStr = 'Lv.91~Lv.100';
+    
+    const docData = budgetLevelsData.find((d: any) => d.range === rangeStr);
+    return docData?.imageUrl || docData?.image || null;
+  }, [budgetLevelsData, budgetLevel]);
   
   const userId = profile?.id || profile?.uid || '';
   const deterministicId = getDeterministicFallbackId(userId);
@@ -957,7 +923,7 @@ export function FullProfileDialog({
 
                 {/* Tags */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
-                  <BudgetLevelBadge level={budgetLevel} />
+                  <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
                   {hasOfficialTag && <SVGA_OfficialTag />}
                   {(profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t))) && (
                     <SVGA_SellerTag />

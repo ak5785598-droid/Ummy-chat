@@ -379,16 +379,20 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    const senderUserRef = doc(firestore, 'users', user.uid);
    const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
    const coinAdjustment = -totalCost + winAmount;
+   const expAdjustment = Math.floor(totalCost / 5);
 
    batch.update(senderProfileRef, { 
      'wallet.coins': increment(coinAdjustment),
      'wallet.totalSpent': increment(totalCost),
+     'wallet.totalExp': increment(expAdjustment),
      'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
      'wallet.lastDailyResetDate': today,
      updatedAt: serverTimestamp() 
    });
    batch.update(senderUserRef, { 
      'wallet.coins': increment(coinAdjustment),
+     'wallet.totalSpent': increment(totalCost),
+     'wallet.totalExp': increment(expAdjustment),
      'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
      'wallet.lastDailyResetDate': today
     });
