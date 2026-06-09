@@ -227,11 +227,33 @@ export default function SettingsPage() {
   }
  };
 
- const handleDeleteAccount = () => {
-  if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone.")) {
-   toast({ variant: 'destructive', title: 'Action Restricted', description: 'Account deletion requires manual tribal authority review.' });
-  }
- };
+  const handleDeleteAccount = async () => {
+   if (confirm("Are you sure you want to PERMANENTLY DELETE your account? This action cannot be undone.")) {
+    if (!auth || !user || !firestore) return;
+    
+    try {
+      const userRef = doc(firestore, 'users', user.uid);
+      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      
+      const batch = writeBatch(firestore);
+      batch.update(userRef, { isDeleted: true, isOnline: false, updatedAt: serverTimestamp() });
+      batch.update(profileRef, { isDeleted: true, isOnline: false, updatedAt: serverTimestamp() });
+      
+      await batch.commit();
+      
+      try {
+        await auth.currentUser?.delete();
+      } catch (e) {
+        // Ignored if it requires re-authentication, user is still marked deleted and signed out
+      }
+      
+      await signOut(auth);
+      window.location.href = '/login';
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not delete account. Please try again or contact support.' });
+    }
+   }
+  };
 
  if (isUserLoading || isProfileLoading) {
   return (

@@ -793,7 +793,7 @@ const accountNumber = await generateNumericID(firestore, uid);
           </button>
 
           <p className="text-[11px] text-white/70 leading-snug">
-            By continuing you agree to the <Link href="/help-center" className="underline">User Agreement</Link> & <Link href="/help-center" className="underline">Privacy Policy</Link>
+            By continuing you agree to the <Link href="/terms" className="underline">User Agreement</Link> & <Link href="/privacy-policy" className="underline">Privacy Policy</Link>
           </p>
         </div>
       </div>

@@ -621,6 +621,51 @@ export function RoomProfileMain({
               </CompactVideoAvatarFrame>
             </div>
 
+            {/* Top Right More Menu */}
+            {!isMe && (
+              <div className="absolute top-4 right-4 z-[130]">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="rounded-2xl border-0 shadow-xl w-40">
+                    <DropdownMenuItem 
+                      onClick={() => setShowReport(true)}
+                      className="text-orange-600 font-bold focus:text-orange-700 focus:bg-orange-50 cursor-pointer"
+                    >
+                      <Flag className="w-4 h-4 mr-2" /> Report User
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={async () => {
+                        if (confirm(`Are you sure you want to block ${profile.username}? You won't see their posts or messages.`)) {
+                          const { getAuth } = await import('firebase/auth');
+                          const { doc, updateDoc, arrayUnion } = await import('firebase/firestore');
+                          const auth = getAuth();
+                          if (auth.currentUser) {
+                            try {
+                              const userRef = doc(firestore, 'users', auth.currentUser.uid);
+                              const pRef = doc(firestore, 'users', auth.currentUser.uid, 'profile', auth.currentUser.uid);
+                              await updateDoc(userRef, { blockedUsers: arrayUnion(userId) });
+                              await updateDoc(pRef, { blockedUsers: arrayUnion(userId) });
+                              toast({ title: 'User Blocked', description: 'You will no longer see content from this user.' });
+                              onOpenChange(false);
+                            } catch (e) {
+                              toast({ variant: 'destructive', title: 'Error', description: 'Could not block user.' });
+                            }
+                          }
+                        }
+                      }}
+                      className="text-red-600 font-bold focus:text-red-700 focus:bg-red-50 cursor-pointer"
+                    >
+                      <ShieldAlert className="w-4 h-4 mr-2" /> Block User
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+
             {/* Name + Gender + Country */}
             <div className="text-center space-y-1 mb-1 w-full px-6">
               <div className="flex flex-wrap justify-center items-center gap-2">
