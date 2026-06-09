@@ -34,6 +34,7 @@ export default function SecretResetPage() {
         
         batchArray[batchIndex].update(userRef, {
           'wallet.coins': 0,
+          'wallet.diamonds': 0,
           'wallet.totalSpent': 0,
           'wallet.totalExp': 0
         });
@@ -47,6 +48,7 @@ export default function SecretResetPage() {
         
         batchArray[batchIndex].update(profileRef, {
           'wallet.coins': 0,
+          'wallet.diamonds': 0,
           'wallet.totalSpent': 0,
           'wallet.totalExp': 0
         });
@@ -76,7 +78,7 @@ export default function SecretResetPage() {
   return (
     <div className="min-h-screen bg-black text-white p-10 flex flex-col items-center justify-center">
       <h1 className="text-3xl font-bold mb-4">Secret Data Reset</h1>
-      <p className="mb-8 text-gray-400">Warning: This will set all user coins and EXP to 0!</p>
+      <p className="mb-8 text-gray-400">Warning: This will set all user coins, diamonds, and EXP to 0!</p>
       
       <button 
         onClick={handleReset} 
