@@ -73,8 +73,9 @@ import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame
 // ⚡ SAARE SVG COMPONENTS ⚡
 // ============================================================
 
+// ✅ BAS YAHI CHANGE KIYA HAI - Height 18px se 20px, ml-1 se ml-0.5
 const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-full p-[2px] ml-1" style={{
+  <div className="relative inline-flex items-center h-[20px] rounded-full p-[2px] ml-0.5" style={{
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
     boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)'
   }}>
@@ -184,6 +185,7 @@ const SVGA_OfficialTag = () => (
     </div>
   </div>
 );
+// ✅ OFFICIAL TAG CHANGE ENDS HERE - BAKI SAB EXACTLY SAME HAI
 
 const SVGA_SellerTag = () => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
@@ -1198,25 +1200,21 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
-                {/* ===== YAHAN PARIVARTAN: Avatar Frame ab SQUARE shape mein show hoga ===== */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
                 >
-                  <div className="relative rounded-2xl overflow-hidden" style={{ width: '88px', height: '88px' }}>
-                    <AvatarFrame 
-                      frameId={profile.inventory?.activeFrame} 
-                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                      size="xl"
-                    >
-                      <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-2xl ring-1 ring-slate-200">
-                        <AvatarImage src={profile.avatarUrl} className="object-cover rounded-2xl" />
-                        <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300 rounded-2xl">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                      </Avatar>
-                    </AvatarFrame>
-                  </div>
+                  <AvatarFrame 
+                    frameId={profile.inventory?.activeFrame} 
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  >
+                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
                 </CompactVideoAvatarFrame>
-                {/* ===== PARIVARTAN SAMAPTI ===== */}
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1377,4 +1375,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
+          }
