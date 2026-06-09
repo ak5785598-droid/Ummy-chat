@@ -74,12 +74,114 @@ import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame
 // ============================================================
 
 const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
-    <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
-       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
-    </svg>
-    <span className="relative z-10 text-[9px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
+  <div className="relative inline-flex items-center h-[18px] rounded-full p-[2px] ml-1" style={{
+    background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
+    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)'
+  }}>
+    <div className="relative w-full h-full rounded-full flex items-center pl-[22px] pr-2.5" style={{
+      background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
+      boxShadow: 'inset 0 1px 2px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)'
+    }}>
+      {/* Top glossy shine */}
+      <div style={{
+        content: '""',
+        position: 'absolute',
+        top: '1px',
+        left: '8%',
+        right: '8%',
+        height: '48%',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
+        borderRadius: '20px 20px 80px 80px / 12px 12px 30px 30px',
+        pointerEvents: 'none'
+      }} />
+      
+      {/* Bottom shadow line */}
+      <div style={{
+        content: '""',
+        position: 'absolute',
+        left: '14%',
+        right: '14%',
+        bottom: '2px',
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
+        opacity: 0.6
+      }} />
+
+      {/* U Medallion */}
+      <div className="absolute left-[2px] top-1/2 -translate-y-1/2 z-[3]" style={{
+        width: '20px',
+        height: '20px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
+        border: '1px solid #e9a84a',
+        boxShadow: '0 0 0 1px #3b1800, 0 0 0 1.5px #f3c26f, 0 0 0 2.2px #5b2700, inset 0 1.5px 2px rgba(255,255,225,0.75), inset 0 -2px 2.5px rgba(90,35,0,0.9), 0 1px 1.5px rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {/* Medallion inner shine */}
+        <div style={{
+          position: 'absolute',
+          inset: '2px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.6), rgba(255,255,255,0.18) 38%, transparent 62%)',
+          mixBlendMode: 'screen',
+          pointerEvents: 'none'
+        }} />
+        <span className="relative z-10" style={{
+          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+          fontWeight: 900,
+          fontSize: '13px',
+          lineHeight: 1,
+          top: '-0.5px',
+          background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+          textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
+        }}>
+          U
+          {/* Letter top shine */}
+          <span style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(180deg, #fffce8 0%, rgba(255,252,232,0) 38%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            opacity: 0.92
+          }}>U</span>
+        </span>
+      </div>
+
+      {/* Official Text */}
+      <span className="relative z-10" style={{
+        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+        fontWeight: 900,
+        fontSize: '11px',
+        letterSpacing: '0.2px',
+        lineHeight: 1,
+        top: '-0.5px',
+        marginLeft: '4px',
+        background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+        textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
+      }}>
+        Official
+        {/* Text top shine */}
+        <span style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, #fffde9 0%, rgba(255,253,233,0) 42%)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+          opacity: 0.94
+        }}>Official</span>
+      </span>
+    </div>
   </div>
 );
 
@@ -1096,21 +1198,25 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
+                {/* ===== YAHAN PARIVARTAN: Avatar Frame ab SQUARE shape mein show hoga ===== */}
                 <CompactVideoAvatarFrame 
                   frameMediaUrl={activeFrameMediaUrl} 
                   avatarSize={88}
                 >
-                  <AvatarFrame 
-                    frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                    size="xl"
-                  >
-                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
+                  <div className="relative rounded-2xl overflow-hidden" style={{ width: '88px', height: '88px' }}>
+                    <AvatarFrame 
+                      frameId={profile.inventory?.activeFrame} 
+                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                      size="xl"
+                    >
+                      <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-2xl ring-1 ring-slate-200">
+                        <AvatarImage src={profile.avatarUrl} className="object-cover rounded-2xl" />
+                        <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300 rounded-2xl">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </AvatarFrame>
+                  </div>
                 </CompactVideoAvatarFrame>
+                {/* ===== PARIVARTAN SAMAPTI ===== */}
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1271,4 +1377,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-    }
+}
