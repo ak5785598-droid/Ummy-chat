@@ -21,24 +21,24 @@ const fontBody = Inter({
 export const metadata: Metadata = {
  metadataBase: new URL('https://ummychat.in'),
  title: {
-  default: 'Ummy - Chat, Share, Connect',
-  template: '%s | Ummy'
+  default: 'Ummy Chat - Voice Rooms, Games & Connections',
+  template: '%s | Ummy Chat'
  },
- description: 'Whether you are discussing a punchline or sharing your own stories, Ummy helps you find your crowd and express yourself freely. Join Ummy and make your day.',
- keywords: ['ummy', 'voice chat', 'social audio', 'carrom game', 'real-time chat', 'community'],
- authors: [{ name: 'Ummy Team' }],
+ description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games like Ludo and Carrom, send premium virtual gifts, and make lifelong friends online.',
+ keywords: ['ummy chat', 'ummy', 'voice rooms', 'social audio', 'carrom', 'ludo', 'live chat', 'friends'],
+ authors: [{ name: 'Ummy Chat Team' }],
  openGraph: {
-  title: 'Ummy - Chat, Share, Connect',
-  description: 'Elite real-time social voice chat and games.',
+  title: 'Ummy Chat - Voice Rooms, Games & Connections',
+  description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games, and make friends.',
   url: 'https://ummychat.in',
-  siteName: 'Ummy',
-  locale: 'en_US',
+  siteName: 'Ummy Chat',
+  locale: 'en_IN',
   type: 'website',
  },
  twitter: {
   card: 'summary_large_image',
-  title: 'Ummy - Chat, Share, Connect',
-  description: 'Elite real-time social voice chat and games.',
+  title: 'Ummy Chat - Voice Rooms, Games & Connections',
+  description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games, and make friends.',
  },
  manifest: '/manifest.webmanifest',
  appleWebApp: {
