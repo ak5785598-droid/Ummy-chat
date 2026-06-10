@@ -70,40 +70,40 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG - SIZE 20px)
+// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
   <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
-    width: '20px',
-    height: '20px',
-    borderRadius: '10px',
-    padding: '1.5px',
+    width: '150px',
+    height: '39px',
+    borderRadius: '19.5px',
+    padding: '2.5px',
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
-    boxShadow: 'inset 0 0.5px 0 #fff5d6, inset 0 -0.5px 0.5px #a66a1e, 0 2px 5px rgba(0,0,0,0.08), 0 0.5px 1.5px rgba(0,0,0,0.15)',
+    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.15)',
     position: 'relative',
   }}>
     <div style={{
       position: 'relative',
       width: '100%',
       height: '100%',
-      borderRadius: '8.5px',
+      borderRadius: '17px',
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
-      boxShadow: 'inset 0 1px 1px rgba(255,200,210,0.22), inset 0 -1.5px 2px rgba(0,0,0,0.45)',
+      boxShadow: 'inset 0 2px 2px rgba(255,200,210,0.22), inset 0 -3px 4px rgba(0,0,0,0.45)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
+      paddingLeft: '40px',
     }}>
       {/* Top Gloss */}
       <div style={{
         content: '""',
         position: 'absolute',
-        top: '0.5px',
+        top: '1px',
         left: '8%',
         right: '8%',
         height: '48%',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
-        borderRadius: '10px 10px 40px 40px / 6px 6px 15px 15px',
+        borderRadius: '20px 20px 80px 80px / 12px 12px 30px 30px',
         pointerEvents: 'none',
       }} />
       {/* Bottom Shadow Line */}
@@ -112,27 +112,72 @@ export const SVGA_OfficialTag = () => (
         position: 'absolute',
         left: '14%',
         right: '14%',
-        bottom: '1px',
-        height: '0.5px',
+        bottom: '2px',
+        height: '1px',
         background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
         opacity: 0.6,
       }} />
       
-      {/* U Letter */}
+      {/* Medallion with U */}
+      <div style={{
+        position: 'absolute',
+        left: '3px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: '33px',
+        height: '33px',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
+        border: '1px solid #e9a84a',
+        boxShadow: '0 0 0 1px #3b1800, 0 0 0 2.4px #f3c26f, 0 0 0 3.6px #5b2700, inset 0 2.5px 3px rgba(255,255,225,0.75), inset 0 -3.5px 4px rgba(90,35,0,0.9), 0 1.5px 2px rgba(0,0,0,0.4)',
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: 3,
+      }}>
+        {/* Medallion Inner Gloss */}
+        <div style={{
+          content: '""',
+          position: 'absolute',
+          inset: '3.5px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.6), rgba(255,255,255,0.18) 38%, transparent 62%)',
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+        }} />
+        <span style={{
+          fontFamily: "Georgia, 'Times New Roman', Times, serif",
+          fontWeight: 900,
+          fontSize: '22px',
+          lineHeight: 1,
+          position: 'relative',
+          top: '-0.5px',
+          background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+          WebkitBackgroundClip: 'text',
+          backgroundClip: 'text',
+          color: 'transparent',
+          textShadow: '0 1px 0 #fff7c8, 0 2px 0 #d9a43a, 0 3px 2px rgba(90,42,0,0.6), 0 4px 3px rgba(0,0,0,0.7)',
+        }}>
+          U
+        </span>
+      </div>
+      
+      {/* Official Label */}
       <span style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
-        fontSize: '11px',
+        fontSize: '21px',
+        letterSpacing: '0.2px',
         lineHeight: 1,
         position: 'relative',
-        top: '-0.5px',
+        top: '-1px',
+        marginLeft: '3px',
         background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
         color: 'transparent',
-        textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
+        textShadow: '0 1px 0 #fff7c8, 0 2px 0 #d9a43a, 0 3px 2px rgba(90,42,0,0.6), 0 4px 3px rgba(0,0,0,0.7)',
       }}>
-        U
+        Official
       </span>
     </div>
   </div>
@@ -1195,4 +1240,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-  }
+    }
