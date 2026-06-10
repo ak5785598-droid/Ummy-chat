@@ -90,7 +90,7 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
         className="w-full"
         opts={{
           align: "start",
-          loop: true,
+          loop: false,
         }}
       >
         <CarouselContent className="-ml-0">
@@ -98,8 +98,8 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
             <CarouselItem key={banner.id} className="pl-0">
               <div 
                 className={cn(
-                  "relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.4)] border border-white/20 bg-gradient-to-br transition-all duration-300 active:scale-95 cursor-pointer",
-                  banner.color
+                  "relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-all duration-300 active:scale-95 cursor-pointer",
+                  banner.imageUrl ? "bg-transparent" : cn("border border-white/20 bg-gradient-to-br", banner.color)
                 )}
                 onClick={() => {
                   if (banner.id === 'room-support') onOpenSupport?.();
@@ -108,13 +108,13 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
                 }}
               >
                 {banner.imageUrl && (
-                  <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover" unoptimized />
+                  <Image src={banner.imageUrl} alt={banner.title} fill className="object-contain" unoptimized />
                 )}
                 
                 {/* Content Overlay - REMOVED TEXT AND ICONS PER USER REQUEST */}
                 <div className="absolute inset-0" />
 
-                {/* Animated Shine Effect */}
+                {/* Animated Shine Effect - Only show if no custom image, or keep it? Let's keep it to make it shiny */}
                 <div className="absolute inset-x-0 h-10 -top-10 bg-white/10 blur-xl animate-[shine_3s_infinite]" />
               </div>
             </CarouselItem>

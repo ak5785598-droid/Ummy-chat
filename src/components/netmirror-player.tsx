@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, AlertTriangle } from 'lucide-react';
+import { MovieAdProtection } from './movie-ad-protection';
 
-const NETMIRROR_HOME = 'https://netmirror.gg/5/en-in';
-const ALLOWED_DOMAIN = 'netmirror.gg';
+const NETMIRROR_HOME = 'https://netmirror.world/';
+const ALLOWED_DOMAIN = 'netmirror.world';
 
 interface NetMirrorPlayerProps {
   open: boolean;
@@ -53,7 +54,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
   }, [open]);
 
   const openExternal = useCallback(() => {
-    window.open('https://netmirror.gg/5/en-in', '_blank');
+    window.open('https://netmirror.world/', '_blank');
   }, []);
 
   if (!open) return null;
@@ -123,6 +124,13 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                     <span>Use &quot;Open in Browser&quot; to sign in ({blockedNavCount})</span>
                   </div>
                 )}
+                <MovieAdProtection
+                  isOpen={open}
+                  videoUrl={NETMIRROR_HOME}
+                  iframeRef={iframeRef}
+                  onAdBlocked={() => setBlockedNavCount(prev => prev + 1)}
+                  allowedDomains={[ALLOWED_DOMAIN]}
+                />
                 <iframe
                   ref={iframeRef}
                   key={`netmirror-${open}`}
@@ -130,6 +138,7 @@ export function NetMirrorPlayer({ open, onOpenChange, movieUrl, movieTitle, star
                   className="w-full h-full border-0"
                   allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                   allowFullScreen
+                  referrerPolicy="no-referrer"
                   onLoad={() => setIsLoading(false)}
                 />
               </div>

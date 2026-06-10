@@ -25,7 +25,7 @@ interface NetMirrorState {
   isActive: boolean;
 }
 
-const NETMIRROR_WEB_URL = 'https://netmirror.gg/5/en-in';
+const NETMIRROR_WEB_URL = 'https://netmirror.world/';
 const NETMIRROR_APP_PACKAGE = 'com.movie.NetMirror';
 
 export function NetMirrorDialog({ open, onOpenChange, roomId, userId, isHost, onCloseForAll, onWatchInRoom }: NetMirrorDialogProps) {

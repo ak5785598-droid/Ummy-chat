@@ -76,7 +76,7 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
 
       // 1. Load data from Firestore
       snap.docs.forEach(doc => {
-        const d = doc.data();
+        const d = doc.data({ serverTimestamps: 'estimate' });
         const updatedAt = d.updatedAt?.toDate();
         if (updatedAt) {
           const istUpdate = new Date(updatedAt.getTime() + (5.5 * 60 * 60 * 1000));

@@ -61,40 +61,47 @@ export function UserSearchDialog({ isOpen, onClose, onSelect }: UserSearchDialog
         const inputId = searchId.trim();
         
         if (activeTab === 'user') {
-          const inputId = searchId.trim();
+          const isNumeric = /^\d+$/.test(inputId);
+          const queries = [
+            getDocs(query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1))),
+            getDocs(query(collection(firestore, 'users'), where('username', '==', inputId), limit(1)))
+          ];
           
-          // 1. Search by ID (Try String format first)
-          const idQueryStr = query(collection(firestore, 'users'), where('accountNumber', '==', inputId), limit(1));
-          const idSnapStr = await getDocs(idQueryStr);
-          let foundUser = !idSnapStr.empty ? { ...idSnapStr.docs[0].data(), id: idSnapStr.docs[0].id, type: 'user' } : null;
-
-          // 2. Try Number format if not found and input is numeric
-          if (!foundUser && /^\d+$/.test(inputId)) {
-            const idQueryNum = query(collection(firestore, 'users'), where('accountNumber', '==', Number(inputId)), limit(1));
-            const idSnapNum = await getDocs(idQueryNum);
-            if (!idSnapNum.empty) {
-              foundUser = { ...idSnapNum.docs[0].data(), id: idSnapNum.docs[0].id, type: 'user' };
-            }
+          if (isNumeric) {
+            queries.push(getDocs(query(collection(firestore, 'users'), where('accountNumber', '==', Number(inputId)), limit(1))));
           }
 
-          // 3. Try Username fallback
-          if (!foundUser) {
-            const nameQuery = query(collection(firestore, 'users'), where('username', '==', inputId), limit(1));
-            const nameSnap = await getDocs(nameQuery);
-            if (!nameSnap.empty) {
-              foundUser = { ...nameSnap.docs[0].data(), id: nameSnap.docs[0].id, type: 'user' };
+          const results = await Promise.allSettled(queries);
+          let foundUser = null;
+
+          for (const res of results) {
+            if (res.status === 'fulfilled' && !res.value.empty) {
+              foundUser = { ...res.value.docs[0].data(), id: res.value.docs[0].id, type: 'user' };
+              break;
             }
           }
 
           setResult(foundUser);
         } else {
-          const roomQ = query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1));
-          const rSnap = await getDocs(roomQ);
-          if (!rSnap.empty) {
-            setResult({ ...rSnap.docs[0].data(), id: rSnap.docs[0].id, type: 'room' });
-          } else {
-            setResult(null);
+          const isNumeric = /^\d+$/.test(inputId);
+          const queries = [
+            getDocs(query(collection(firestore, 'chatRooms'), where('roomNumber', '==', inputId), limit(1)))
+          ];
+
+          if (isNumeric) {
+            queries.push(getDocs(query(collection(firestore, 'chatRooms'), where('roomNumber', '==', Number(inputId)), limit(1))));
           }
+
+          const results = await Promise.allSettled(queries);
+          let foundRoom = null;
+
+          for (const res of results) {
+            if (res.status === 'fulfilled' && !res.value.empty) {
+              foundRoom = { ...res.value.docs[0].data(), id: res.value.docs[0].id, type: 'room' };
+              break;
+            }
+          }
+          setResult(foundRoom);
         }
       } catch (e) {
         console.error("[Search Sync] Live lookup failed:", e);

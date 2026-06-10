@@ -1691,7 +1691,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
   //   const unsubNetMirror = onSnapshot(netMirrorRef, (snap) => {
   //     if (snap.exists()) {
   //       const data = snap.data();
-  //       if (data.isActive) {
+  //       if (data.isActive && data.movieTitle) {
   //         setNetMirrorSession({ movieTitle: data.movieTitle, movieUrl: data.movieUrl, startedBy: data.startedBy, isActive: true });
   //       } else {
   //         setNetMirrorSession(null);
@@ -3414,7 +3414,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               {/* SLIM SYSTEM ANNOUNCEMENT: COMPACT & LOW-PROFILE */}
               {(globalConfig?.globalAnnouncement || room.announcement) &&
                 (!(room as any).chatClearedAt || ((room as any).chatClearedAt?.toDate?.() || 0) < (sessionJoinTime || new Date())) && (
-                  <div className="flex flex-col gap-1 mb-3 px-3 py-1.5 mx-3 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 animate-in fade-in slide-in-from-top-2 duration-700 shadow-xl">
+                  <div className="flex flex-col gap-1 mb-3 px-3 py-1.5 mx-3 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 animate-in fade-in slide-in-from-top-2 duration-700 shadow-xl relative z-10">
                     {globalConfig?.globalAnnouncement && (
                       <p className="text-[11px] font-bold text-white leading-tight tracking-tight">
                         {globalConfig.globalAnnouncement}
@@ -3483,7 +3483,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                       }
                     }}
                     className={cn(
-                      "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full"
+                      "flex items-start gap-1.5 animate-in fade-in slide-in-from-left-2 mb-1.5 cursor-pointer active:scale-95 transition-all pointer-events-auto self-start flex-row w-full relative z-10"
                     )}
                   >
                     <Avatar 
@@ -4083,6 +4083,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
         onOpenSports={() => { setIsRoomPlayOpen(false); setTimeout(() => setIsSportsOpen(true), 300); }}
+        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
