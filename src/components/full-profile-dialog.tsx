@@ -11,9 +11,7 @@ import {
   Calendar,
   Loader,
   Armchair,
-  Pencil,
-  Copy,
-  Check
+  Pencil
 } from 'lucide-react';
 import {
   Dialog,
@@ -73,29 +71,29 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG - SIZE REDUCED)
+// 2. GLOSSY 3D ROLE TAGS (OFFICIAL TAG AUR CHOTA)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
   <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
-    width: '120px',  // Pehle 150px tha, ab 120px kar diya
-    height: '31px',   // Pehle 39px tha, ab 31px kar diya
-    borderRadius: '15.5px',  // Height ka aadha
-    padding: '2px',   // Pehle 2.5px tha
+    width: '100px',    // Aur chota - 120 se 100
+    height: '26px',    // Aur chota - 31 se 26
+    borderRadius: '13px',
+    padding: '1.5px',  // Aur chota
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
-    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.15)',
+    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 3px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)',
     position: 'relative',
   }}>
     <div style={{
       position: 'relative',
       width: '100%',
       height: '100%',
-      borderRadius: '13.5px',  // Inner border radius adjust kiya
+      borderRadius: '11.5px',
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
-      boxShadow: 'inset 0 2px 2px rgba(255,200,210,0.22), inset 0 -3px 4px rgba(0,0,0,0.45)',
+      boxShadow: 'inset 0 1.5px 1.5px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)',
       display: 'flex',
       alignItems: 'center',
-      paddingLeft: '32px',  // Pehle 40px tha
+      paddingLeft: '26px',  // Aur chota
     }}>
       {/* Top Gloss */}
       <div style={{
@@ -104,9 +102,9 @@ export const SVGA_OfficialTag = () => (
         top: '1px',
         left: '8%',
         right: '8%',
-        height: '48%',
+        height: '45%',
         background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
-        borderRadius: '20px 20px 80px 80px / 12px 12px 30px 30px',
+        borderRadius: '20px 20px 80px 80px / 10px 10px 25px 25px',
         pointerEvents: 'none',
       }} />
       {/* Bottom Shadow Line */}
@@ -115,7 +113,7 @@ export const SVGA_OfficialTag = () => (
         position: 'absolute',
         left: '14%',
         right: '14%',
-        bottom: '2px',
+        bottom: '1.5px',
         height: '1px',
         background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
         opacity: 0.6,
@@ -124,15 +122,15 @@ export const SVGA_OfficialTag = () => (
       {/* Medallion with U */}
       <div style={{
         position: 'absolute',
-        left: '3px',
+        left: '2px',
         top: '50%',
         transform: 'translateY(-50%)',
-        width: '26px',   // Pehle 33px tha
-        height: '26px',  // Pehle 33px tha
+        width: '22px',    // Aur chota
+        height: '22px',   // Aur chota
         borderRadius: '50%',
         background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
         border: '1px solid #e9a84a',
-        boxShadow: '0 0 0 1px #3b1800, 0 0 0 2.4px #f3c26f, 0 0 0 3.6px #5b2700, inset 0 2.5px 3px rgba(255,255,225,0.75), inset 0 -3.5px 4px rgba(90,35,0,0.9), 0 1.5px 2px rgba(0,0,0,0.4)',
+        boxShadow: '0 0 0 0.8px #3b1800, 0 0 0 2px #f3c26f, 0 0 0 3px #5b2700, inset 0 2px 2.5px rgba(255,255,225,0.75), inset 0 -3px 3.5px rgba(90,35,0,0.9), 0 1px 1.5px rgba(0,0,0,0.4)',
         display: 'grid',
         placeItems: 'center',
         zIndex: 3,
@@ -141,7 +139,7 @@ export const SVGA_OfficialTag = () => (
         <div style={{
           content: '""',
           position: 'absolute',
-          inset: '3.5px',
+          inset: '3px',
           borderRadius: '50%',
           background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.6), rgba(255,255,255,0.18) 38%, transparent 62%)',
           mixBlendMode: 'screen',
@@ -150,7 +148,7 @@ export const SVGA_OfficialTag = () => (
         <span style={{
           fontFamily: "Georgia, 'Times New Roman', Times, serif",
           fontWeight: 900,
-          fontSize: '18px',  // Pehle 22px tha
+          fontSize: '15px',  // Aur chota
           lineHeight: 1,
           position: 'relative',
           top: '-0.5px',
@@ -158,7 +156,7 @@ export const SVGA_OfficialTag = () => (
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
           color: 'transparent',
-          textShadow: '0 1px 0 #fff7c8, 0 2px 0 #d9a43a, 0 3px 2px rgba(90,42,0,0.6), 0 4px 3px rgba(0,0,0,0.7)',
+          textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2.5px 1.5px rgba(90,42,0,0.6), 0 3px 2px rgba(0,0,0,0.7)',
         }}>
           U
         </span>
@@ -168,17 +166,17 @@ export const SVGA_OfficialTag = () => (
       <span style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
-        fontSize: '17px',  // Pehle 21px tha
-        letterSpacing: '0.2px',
+        fontSize: '14px',  // Aur chota
+        letterSpacing: '0.1px',
         lineHeight: 1,
         position: 'relative',
         top: '-1px',
-        marginLeft: '3px',
+        marginLeft: '2px',
         background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
         color: 'transparent',
-        textShadow: '0 1px 0 #fff7c8, 0 2px 0 #d9a43a, 0 3px 2px rgba(90,42,0,0.6), 0 4px 3px rgba(0,0,0,0.7)',
+        textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 3px 2px rgba(0,0,0,0.7)',
       }}>
         Official
       </span>
@@ -208,24 +206,21 @@ export const SVGA_SellerTag = () => (
 );
 
 // ==========================================
-// 3. IDENTIFICATION BADGES (WITH COPY FUNCTIONALITY)
+// 3. IDENTIFICATION BADGES (SILENT COPY - NO ICONS)
 // ==========================================
 
 export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: string }) => {
   const idNum = label ? label.replace('ID: ', '').trim() : '000000';
-  const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(idNum);
-      setCopied(true);
       toast({
         title: "Copied! 📋",
         description: `ID ${idNum} copied to clipboard`,
         duration: 2000,
       });
-      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
@@ -234,13 +229,11 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      setCopied(true);
       toast({
         title: "Copied! 📋",
         description: `ID ${idNum} copied to clipboard`,
         duration: 2000,
       });
-      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -299,33 +292,24 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
       </div>
       <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px] pointer-events-none" />
       
-      {/* Copy Icon or Check Icon */}
-      <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] flex items-center gap-1">
+      {/* Bina icon ke - sirf ID number */}
+      <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {idNum}
-        {copied ? (
-          <Check className="h-3 w-3 text-green-300" />
-        ) : (
-          <Copy className="h-3 w-3 text-white/70 group-hover:text-white transition-colors" />
-        )}
       </span>
     </div>
   );
 };
 
 export const StandardIDTag = ({ idNum }: { idNum: string }) => {
-  const [copied, setCopied] = useState(false);
-
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(idNum);
-      setCopied(true);
       toast({
         title: "Copied! 📋",
         description: `ID ${idNum} copied to clipboard`,
         duration: 2000,
       });
-      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       const textArea = document.createElement('textarea');
       textArea.value = idNum;
@@ -333,28 +317,21 @@ export const StandardIDTag = ({ idNum }: { idNum: string }) => {
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      setCopied(true);
       toast({
         title: "Copied! 📋",
         description: `ID ${idNum} copied to clipboard`,
         duration: 2000,
       });
-      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
     <span 
       onClick={handleCopy}
-      className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-0 backdrop-blur-sm border border-slate-200/50 cursor-pointer hover:bg-slate-200/80 active:scale-95 transition-all inline-flex items-center gap-1 group"
+      className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-0 backdrop-blur-sm border border-slate-200/50 cursor-pointer hover:bg-slate-200/80 active:scale-95 transition-all inline-flex items-center gap-1"
       title="Click to copy ID"
     >
       ID: {idNum}
-      {copied ? (
-        <Check className="h-3 w-3 text-green-500" />
-      ) : (
-        <Copy className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
-      )}
     </span>
   );
 };
@@ -466,7 +443,7 @@ const getDeterministicFallbackId = (userId: string) => {
 };
 
 // ==========================================
-// VIDEO FRAME COMPONENT (FIXED)
+// VIDEO FRAME COMPONENT
 // ==========================================
 const VideoFrame = ({ videoUrl }: { videoUrl: string }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -497,7 +474,7 @@ const VideoFrame = ({ videoUrl }: { videoUrl: string }) => {
 };
 
 // ==========================================
-// CP CARD COMPONENT (MODIFIED WITH PLUS-HEART-PLUS)
+// CP CARD COMPONENT
 // ==========================================
 const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string }) => {
   const heartGemSVG = `<svg viewBox="0 0 600 550" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Faceted Rose-Gold Heart Gem">
@@ -951,10 +928,8 @@ export function FullProfileDialog({
   const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
   const resolvedBackground = useMemo(() => {
-    // Check if there's a video in spaceImages
     if (images.filter(Boolean).length > 0) {
       const firstImage = images[0];
-      // Check if it's a video URL
       if (firstImage && (firstImage.endsWith('.mp4') || firstImage.endsWith('.webm') || firstImage.includes('video'))) {
         return { type: 'video', data: firstImage };
       }
@@ -1095,7 +1070,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ID - Now clickable for copy */}
+                {/* ID - Silent click to copy */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
