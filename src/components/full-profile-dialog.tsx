@@ -70,16 +70,71 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS
+// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG - SIZE 20px)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 -ml-0.5 overflow-hidden">
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
-    <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
-       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
-    </svg>
-    <span className="relative z-10 text-[9px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
+  <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
+    width: '20px',
+    height: '20px',
+    borderRadius: '10px',
+    padding: '1.5px',
+    background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
+    boxShadow: 'inset 0 0.5px 0 #fff5d6, inset 0 -0.5px 0.5px #a66a1e, 0 2px 5px rgba(0,0,0,0.08), 0 0.5px 1.5px rgba(0,0,0,0.15)',
+    position: 'relative',
+  }}>
+    <div style={{
+      position: 'relative',
+      width: '100%',
+      height: '100%',
+      borderRadius: '8.5px',
+      background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
+      boxShadow: 'inset 0 1px 1px rgba(255,200,210,0.22), inset 0 -1.5px 2px rgba(0,0,0,0.45)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      {/* Top Gloss */}
+      <div style={{
+        content: '""',
+        position: 'absolute',
+        top: '0.5px',
+        left: '8%',
+        right: '8%',
+        height: '48%',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
+        borderRadius: '10px 10px 40px 40px / 6px 6px 15px 15px',
+        pointerEvents: 'none',
+      }} />
+      {/* Bottom Shadow Line */}
+      <div style={{
+        content: '""',
+        position: 'absolute',
+        left: '14%',
+        right: '14%',
+        bottom: '1px',
+        height: '0.5px',
+        background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
+        opacity: 0.6,
+      }} />
+      
+      {/* U Letter */}
+      <span style={{
+        fontFamily: "Georgia, 'Times New Roman', Times, serif",
+        fontWeight: 900,
+        fontSize: '11px',
+        lineHeight: 1,
+        position: 'relative',
+        top: '-0.5px',
+        background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+        textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
+      }}>
+        U
+      </span>
+    </div>
   </div>
 );
 
