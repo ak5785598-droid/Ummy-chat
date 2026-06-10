@@ -71,40 +71,40 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS (OFFICIAL TAG AUR CHOTA)
+// 2. GLOSSY 3D ROLE TAGS (OFFICIAL TAG - AUR CHOTA 75x20)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
   <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
-    width: '100px',    // Aur chota - 120 se 100
-    height: '26px',    // Aur chota - 31 se 26
-    borderRadius: '13px',
-    padding: '1.5px',  // Aur chota
+    width: '75px',      // Final chota size
+    height: '20px',     // Final chota size
+    borderRadius: '10px',
+    padding: '1px',
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
-    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 3px 8px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)',
+    boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)',
     position: 'relative',
   }}>
     <div style={{
       position: 'relative',
       width: '100%',
       height: '100%',
-      borderRadius: '11.5px',
+      borderRadius: '9px',
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
-      boxShadow: 'inset 0 1.5px 1.5px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)',
+      boxShadow: 'inset 0 1px 1px rgba(255,200,210,0.22), inset 0 -1.5px 2px rgba(0,0,0,0.45)',
       display: 'flex',
       alignItems: 'center',
-      paddingLeft: '26px',  // Aur chota
+      paddingLeft: '19px',
     }}>
       {/* Top Gloss */}
       <div style={{
         content: '""',
         position: 'absolute',
-        top: '1px',
+        top: '0.5px',
         left: '8%',
         right: '8%',
         height: '45%',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
-        borderRadius: '20px 20px 80px 80px / 10px 10px 25px 25px',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.15) 35%, rgba(255,255,255,0.03) 70%, transparent 100%)',
+        borderRadius: '15px 15px 60px 60px / 8px 8px 20px 20px',
         pointerEvents: 'none',
       }} />
       {/* Bottom Shadow Line */}
@@ -113,24 +113,24 @@ export const SVGA_OfficialTag = () => (
         position: 'absolute',
         left: '14%',
         right: '14%',
-        bottom: '1.5px',
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
+        bottom: '1px',
+        height: '0.5px',
+        background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.5), transparent)',
         opacity: 0.6,
       }} />
       
       {/* Medallion with U */}
       <div style={{
         position: 'absolute',
-        left: '2px',
+        left: '1.5px',
         top: '50%',
         transform: 'translateY(-50%)',
-        width: '22px',    // Aur chota
-        height: '22px',   // Aur chota
+        width: '17px',
+        height: '17px',
         borderRadius: '50%',
         background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
-        border: '1px solid #e9a84a',
-        boxShadow: '0 0 0 0.8px #3b1800, 0 0 0 2px #f3c26f, 0 0 0 3px #5b2700, inset 0 2px 2.5px rgba(255,255,225,0.75), inset 0 -3px 3.5px rgba(90,35,0,0.9), 0 1px 1.5px rgba(0,0,0,0.4)',
+        border: '0.5px solid #e9a84a',
+        boxShadow: '0 0 0 0.6px #3b1800, 0 0 0 1.5px #f3c26f, 0 0 0 2.2px #5b2700, inset 0 1.5px 2px rgba(255,255,225,0.7), inset 0 -2px 2.5px rgba(90,35,0,0.85), 0 0.8px 1px rgba(0,0,0,0.4)',
         display: 'grid',
         placeItems: 'center',
         zIndex: 3,
@@ -139,24 +139,24 @@ export const SVGA_OfficialTag = () => (
         <div style={{
           content: '""',
           position: 'absolute',
-          inset: '3px',
+          inset: '2px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.6), rgba(255,255,255,0.18) 38%, transparent 62%)',
+          background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.55), rgba(255,255,255,0.15) 38%, transparent 62%)',
           mixBlendMode: 'screen',
           pointerEvents: 'none',
         }} />
         <span style={{
           fontFamily: "Georgia, 'Times New Roman', Times, serif",
           fontWeight: 900,
-          fontSize: '15px',  // Aur chota
+          fontSize: '12px',
           lineHeight: 1,
           position: 'relative',
-          top: '-0.5px',
+          top: '-0.3px',
           background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
           WebkitBackgroundClip: 'text',
           backgroundClip: 'text',
           color: 'transparent',
-          textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2.5px 1.5px rgba(90,42,0,0.6), 0 3px 2px rgba(0,0,0,0.7)',
+          textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
         }}>
           U
         </span>
@@ -166,17 +166,17 @@ export const SVGA_OfficialTag = () => (
       <span style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
-        fontSize: '14px',  // Aur chota
-        letterSpacing: '0.1px',
+        fontSize: '11px',
+        letterSpacing: '0.05px',
         lineHeight: 1,
         position: 'relative',
-        top: '-1px',
-        marginLeft: '2px',
+        top: '-0.5px',
+        marginLeft: '1.5px',
         background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
         WebkitBackgroundClip: 'text',
         backgroundClip: 'text',
         color: 'transparent',
-        textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 3px 2px rgba(0,0,0,0.7)',
+        textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
       }}>
         Official
       </span>
@@ -222,7 +222,6 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
         duration: 2000,
       });
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = idNum;
       document.body.appendChild(textArea);
@@ -292,7 +291,6 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
       </div>
       <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px] pointer-events-none" />
       
-      {/* Bina icon ke - sirf ID number */}
       <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
         {idNum}
       </span>
@@ -785,7 +783,6 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
               </svg>
             </div>
 
-            {/* Left Side - Avatar Circle */}
             <div className="avatar-overlay">
               <div className="avatar-circle">
                 {avatarUrl ? (
@@ -799,7 +796,6 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
               <span className="avatar-name">{username || 'User'}</span>
             </div>
 
-            {/* Left Plus Icon */}
             <div className="icon-container left">
               <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
                 <circle cx="70" cy="70" r="68" />
@@ -808,12 +804,10 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
               </svg>
             </div>
 
-            {/* Center Heart Icon */}
             <div className="icon-container center heart-icon">
               <div dangerouslySetInnerHTML={{ __html: heartGemSVG }} />
             </div>
 
-            {/* Right Plus Icon */}
             <div className="icon-container right">
               <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
                 <circle cx="70" cy="70" r="68" />
@@ -1300,4 +1294,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-    }
+        }
