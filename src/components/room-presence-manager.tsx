@@ -43,8 +43,10 @@ import { App } from '@capacitor/app';
    activeFrameMediaUrl: userProfile?.inventory?.activeFrameMediaUrl,
    activeWave: userProfile?.inventory?.activeWave,
    activeBubble: userProfile?.inventory?.activeBubble,
+   activeEntryMediaUrl: userProfile?.inventory?.activeEntryMediaUrl,
+   activeIdBadge: userProfile?.inventory?.activeIdBadge,
    accountNumber: userProfile?.accountNumber
-  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeFrameMediaUrl, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.accountNumber]);
+  }), [userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeFrameMediaUrl, userProfile?.inventory?.activeWave, userProfile?.inventory?.activeBubble, userProfile?.inventory?.activeEntryMediaUrl, userProfile?.inventory?.activeIdBadge, userProfile?.accountNumber]);
 
   // EFFECT 1: JOIN & CLEANUP & BACKGROUND RESILIENCE
   useEffect(() => {
@@ -83,6 +85,7 @@ import { App } from '@capacitor/app';
          senderId: uid,
          senderName: userMetadata.username || 'Tribe Member',
          senderAvatar: userMetadata.avatarUrl || null,
+         mediaUrl: userMetadata.activeEntryMediaUrl || null,
          chatRoomId: roomId,
          timestamp: serverTimestamp(),
          type: 'entrance'
@@ -99,6 +102,7 @@ import { App } from '@capacitor/app';
           activeFrameMediaUrl: userMetadata.activeFrameMediaUrl || null,
           activeWave: userMetadata.activeWave || 'Default',
           activeBubble: userMetadata.activeBubble || 'None',
+          activeIdBadge: userMetadata.activeIdBadge || null,
           joinedAt: serverTimestamp(),
           lastSeen: serverTimestamp(),
           isMuted: true,
@@ -335,6 +339,7 @@ import { App } from '@capacitor/app';
           activeFrameMediaUrl: userMetadata.activeFrameMediaUrl || null,
           activeWave: userMetadata.activeWave || 'Default',
           activeBubble: userMetadata.activeBubble || 'None',
+          activeIdBadge: userMetadata.activeIdBadge || null,
           accountNumber: userMetadata.accountNumber || null,
           lastSeen: serverTimestamp(),
         });

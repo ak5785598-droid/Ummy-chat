@@ -3450,20 +3450,22 @@ function AdminPageContent() {
                                   >
                                     {uploadingLootImage === level.id ? (
                                       <Loader className="h-4 w-4 animate-spin" />
+                                    ) : level.image ? (
+                                      "Replace Image"
                                     ) : (
                                       "Upload Image"
                                     )}
                                   </Button>
                                 </div>
                                 {level.image && (
-                                  <div className="relative h-10 w-10 shrink-0 group">
+                                  <div className="relative h-10 w-10 shrink-0">
                                     <img src={level.image} className="h-10 w-10 rounded-lg object-cover border border-indigo-200" alt={level.name} />
                                     <button 
                                       type="button"
                                       onClick={() => setLootLevels(prev => prev.map(l => l.id === level.id ? { ...l, image: '' } : l))}
-                                      className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                      className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 hover:bg-red-600 transition-all opacity-100 z-20"
                                     >
-                                      <X className="h-2.5 w-2.5" />
+                                      <X className="h-3 w-3" />
                                     </button>
                                   </div>
                                 )}
@@ -3491,20 +3493,22 @@ function AdminPageContent() {
                                   >
                                     {uploadingLevelVideo === level.id ? (
                                       <Loader className="h-4 w-4 animate-spin" />
+                                    ) : level.videoUrl ? (
+                                      "Replace Video"
                                     ) : (
                                       "Upload Video"
                                     )}
                                   </Button>
                                 </div>
                                 {level.videoUrl && (
-                                  <div className="relative h-10 w-10 shrink-0 group">
+                                  <div className="relative h-10 w-10 shrink-0">
                                     <video src={level.videoUrl} className="h-10 w-10 rounded-lg object-cover border border-indigo-200" muted loop autoPlay />
                                     <button 
                                       type="button"
                                       onClick={() => setLootLevels(prev => prev.map(l => l.id === level.id ? { ...l, videoUrl: '' } : l))}
-                                      className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                                      className="absolute -top-2 -right-2 h-5 w-5 bg-red-500 rounded-full text-white flex items-center justify-center shadow-md active:scale-90 hover:bg-red-600 transition-all opacity-100 z-20"
                                     >
-                                      <X className="h-2.5 w-2.5" />
+                                      <X className="h-3 w-3" />
                                     </button>
                                   </div>
                                 )}

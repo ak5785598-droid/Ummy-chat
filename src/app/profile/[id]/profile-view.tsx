@@ -68,6 +68,7 @@ import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
 import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame';
+import { ActiveIDBadge } from '@/components/id-badge';
 
 // ============================================================
 // ⚡ SAARE SVG COMPONENTS ⚡
@@ -1225,7 +1226,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                 
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   <div onClick={handleCopyId} className="cursor-pointer active:opacity-60 transition-opacity">
-                    {profile.tags?.includes('Official') ? (
+                    {profile.inventory?.activeIdBadge ? (
+                      <ActiveIDBadge badgeData={profile.inventory.activeIdBadge} fallbackNumber={displayID} />
+                    ) : profile.tags?.includes('Official') ? (
                       <SVGA_GlossyID
                         variant={getBudgetVariant(profile)}
                         label={`ID: ${displayID}`}

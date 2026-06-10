@@ -21,24 +21,24 @@ const fontBody = Inter({
 export const metadata: Metadata = {
  metadataBase: new URL('https://ummychat.in'),
  title: {
-  default: 'Ummy Chat - Voice Rooms, Games & Connections',
-  template: '%s | Ummy Chat'
+  default: 'Ummy Chat Official - Voice Rooms & Games',
+  template: '%s | Ummy Chat Official'
  },
- description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games like Ludo and Carrom, send premium virtual gifts, and make lifelong friends online.',
- keywords: ['ummy chat', 'ummy', 'voice rooms', 'social audio', 'carrom', 'ludo', 'live chat', 'friends'],
- authors: [{ name: 'Ummy Chat Team' }],
+ description: 'Welcome to Ummy Chat Official. The ultimate voice chat platform to meet new people, play Ludo and Carrom, and join live audio rooms. Download the Ummy Chat app now!',
+ keywords: ['ummy chat official', 'ummy chat app', 'ummy chat india', 'voice chat rooms', 'social audio', 'carrom game', 'ludo game', 'live audio chat', 'make friends online'],
+ authors: [{ name: 'Ummy Chat Official Team' }],
  openGraph: {
-  title: 'Ummy Chat - Voice Rooms, Games & Connections',
-  description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games, and make friends.',
+  title: 'Ummy Chat Official - Voice Rooms & Games',
+  description: 'Welcome to Ummy Chat Official. Join lively audio rooms, play interactive games, and make friends on the best voice chat app.',
   url: 'https://ummychat.in',
-  siteName: 'Ummy Chat',
+  siteName: 'Ummy Chat Official',
   locale: 'en_IN',
   type: 'website',
  },
  twitter: {
   card: 'summary_large_image',
-  title: 'Ummy Chat - Voice Rooms, Games & Connections',
-  description: 'Experience the ultimate social hub with Ummy Chat. Join lively audio rooms, play interactive games, and make friends.',
+  title: 'Ummy Chat Official - Voice Rooms & Games',
+  description: 'Welcome to Ummy Chat Official. Join lively audio rooms, play interactive games, and make friends on the best voice chat app.',
  },
  manifest: '/manifest.webmanifest',
  appleWebApp: {

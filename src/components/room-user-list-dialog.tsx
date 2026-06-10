@@ -16,6 +16,7 @@ import { Loader, Users, Star, Crown, ChevronRight, X, Heart } from 'lucide-react
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { ActiveIDBadge } from '@/components/id-badge';
 
 interface RoomUserListDialogProps {
  open: boolean;
@@ -136,7 +137,11 @@ export function RoomUserListDialog({ open, onOpenChange, roomId, participants: p
            </div>
            
            <div className="flex items-center gap-2">
-               <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || (p.uid ? p.uid.slice(-6).toUpperCase() : '----')}</p>
+               {p.activeIdBadge ? (
+                 <ActiveIDBadge badgeData={p.activeIdBadge} fallbackNumber={p.accountNumber || (p.uid ? p.uid.slice(-6).toUpperCase() : '----')} />
+               ) : (
+                 <p className="text-[8px] text-gray-300 font-bold uppercase tracking-tight">ID:{p.accountNumber || (p.uid ? p.uid.slice(-6).toUpperCase() : '----')}</p>
+               )}
               <ChevronRight className="h-4 w-4 text-gray-200" />
            </div>
           </div>

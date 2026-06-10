@@ -156,9 +156,26 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
    if (userIsOfficial || isOwner) return true;
    return theme.category === 'entertainment' || theme.category === 'general';
   });
+  
+  // Add user's purchased themes from inventory
+  const purchasedThemes: RoomTheme[] = [];
+  if (userProfile?.inventory?.ownedItems) {
+    const owned = Object.values(userProfile.inventory.ownedItems) as any[];
+    owned.forEach(item => {
+      if (item.type === 'Theme' || item.type === 'theme') {
+        purchasedThemes.push({
+          id: item.id || `purchased-${Date.now()}`,
+          name: item.name || 'Purchased Theme',
+          url: item.imageUrl || item.videoUrl || '',
+          category: 'inventory',
+          isOfficial: false
+        });
+      }
+    });
+  }
 
-  return [...baseline, ...dynamic];
- }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes]);
+  return [...baseline, ...dynamic, ...purchasedThemes];
+ }, [isOfficialHelpRoom, userIsOfficial, isOwner, customThemes, userProfile?.inventory?.ownedItems]);
 
  const handleUpdate = (field: string, value: any) => {
   if (!firestore || !canManage) return;
@@ -206,7 +223,7 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
   if (firestore) {
    updateDocumentNonBlocking(doc(firestore, 'chatRooms', room.id), {
     roomThemeId: theme.id,
-    backgroundUrl: null,
+    backgroundUrl: theme.category === 'inventory' ? theme.url : null,
     updatedAt: serverTimestamp()
    });
   }
