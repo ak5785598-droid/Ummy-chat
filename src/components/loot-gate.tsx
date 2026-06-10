@@ -90,7 +90,7 @@ export function LootGate({
                     className="w-full h-full object-cover z-0" 
                   />
                 ) : levelImage ? (
-                  <img src={levelImage} alt="" className="w-full h-full object-cover blur-xs opacity-60 z-0" />
+                  <img src={levelImage} alt="" className="w-full h-full object-cover opacity-80 z-0" />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-yellow-950 via-slate-900 to-amber-950 opacity-40 z-0" />
                 )}

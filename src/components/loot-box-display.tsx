@@ -141,7 +141,7 @@ export function LootBoxDisplay({
                   alt="" 
                   className="absolute inset-0 w-full h-full object-cover z-0" 
                 />
-                <div className="absolute inset-0 bg-black/55 z-[1]" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/70 z-[1]" />
               </>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center opacity-20 z-0">
