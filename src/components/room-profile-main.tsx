@@ -59,15 +59,135 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ReportUserDialog } from '@/components/report-user-dialog';
 
-// ==================== NEW SVG TAGS ====================
+// ==================== NEW OFFICIAL TAG (U STYLE) ====================
 
 const SVGA_OfficialTag = () => (
-  <div className="relative inline-flex items-center h-[18px] rounded-md bg-gradient-to-r from-[#1DA1F2] to-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.25),inset_0_1px_2px_rgba(255,255,255,0.5)] px-1.5 border border-[#1DA1F2]/50 overflow-hidden">
-    <div className="absolute top-[1px] left-[5%] right-[5%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-sm blur-[0.5px]" />
-    <svg viewBox="0 0 24 24" className="w-3 h-3 relative z-10 drop-shadow-sm mr-1" fill="none">
-       <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="white" />
-    </svg>
-    <span className="relative z-10 text-[9px] font-black text-white tracking-widest uppercase drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Official</span>
+  <div className="relative inline-flex items-center" style={{ width: '75px', height: '20px' }}>
+    <div 
+      className="v-badge" 
+      role="img" 
+      aria-label="U Official"
+      style={{
+        width: '75px',
+        height: '20px',
+        borderRadius: '10px',
+        padding: '1px',
+        background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
+        boxShadow: 'inset 0 0.5px 0 #fff5d6, inset 0 -0.5px 0.5px #a66a1e, 0 2px 5px rgba(0,0,0,0.08), 0 0.5px 1.5px rgba(0,0,0,0.15)',
+        position: 'relative',
+      }}
+    >
+      <div 
+        className="v-badge-inner"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          borderRadius: '9px',
+          background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
+          boxShadow: 'inset 0 1px 1px rgba(255,200,210,0.22), inset 0 -1.5px 2px rgba(0,0,0,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          paddingLeft: '19px',
+        }}
+      >
+        {/* Inner shine */}
+        <div style={{
+          content: '""',
+          position: 'absolute',
+          top: '0.5px',
+          left: '8%',
+          right: '8%',
+          height: '48%',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.18) 35%, rgba(255,255,255,0.05) 70%, transparent 100%)',
+          borderRadius: '10px 10px 40px 40px / 6px 6px 15px 15px',
+          pointerEvents: 'none',
+        }} />
+        
+        {/* Bottom shadow line */}
+        <div style={{
+          content: '""',
+          position: 'absolute',
+          left: '14%',
+          right: '14%',
+          bottom: '1px',
+          height: '0.5px',
+          background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.55), transparent)',
+          opacity: 0.6,
+        }} />
+        
+        {/* Medallion with U */}
+        <div 
+          className="v-medallion"
+          style={{
+            position: 'absolute',
+            left: '1.5px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '17px',
+            height: '17px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
+            border: '0.5px solid #e9a84a',
+            boxShadow: '0 0 0 0.5px #3b1800, 0 0 0 1.2px #f3c26f, 0 0 0 1.8px #5b2700, inset 0 1.25px 1.5px rgba(255,255,225,0.75), inset 0 -1.75px 2px rgba(90,35,0,0.9), 0 0.75px 1px rgba(0,0,0,0.4)',
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 3,
+          }}
+        >
+          {/* Medallion shine */}
+          <div style={{
+            content: '""',
+            position: 'absolute',
+            inset: '1.75px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 30% 22%, rgba(255,255,255,0.6), rgba(255,255,255,0.18) 38%, transparent 62%)',
+            mixBlendMode: 'screen',
+            pointerEvents: 'none',
+          }} />
+          
+          <span 
+            className="v-letter"
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', Times, serif",
+              fontWeight: 900,
+              fontSize: '12px',
+              lineHeight: 1,
+              position: 'relative',
+              top: '-0.25px',
+              background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
+            }}
+          >
+            U
+          </span>
+        </div>
+        
+        <span 
+          className="v-label"
+          style={{
+            fontFamily: "Georgia, 'Times New Roman', Times, serif",
+            fontWeight: 900,
+            fontSize: '11px',
+            letterSpacing: '0.1px',
+            lineHeight: 1,
+            position: 'relative',
+            top: '-0.5px',
+            marginLeft: '1.5px',
+            background: 'linear-gradient(180deg, #fff9d1 0%, #ffe08a 25%, #f5c44e 55%, #e0a732 80%, #c98a1a 100%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            textShadow: '0 0.5px 0 #fff7c8, 0 1px 0 #d9a43a, 0 1.5px 1px rgba(90,42,0,0.6), 0 2px 1.5px rgba(0,0,0,0.7)',
+          }}
+        >
+          Official
+        </span>
+      </div>
+    </div>
   </div>
 );
 
@@ -318,7 +438,8 @@ export function RoomOwnerProfile({
       <SheetContent
         side="bottom"
         hideOverlay={true}
-        className="sm:max-w-[320px] mx-auto h-auto rounded-[2rem] border-0 p-0 overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-300 pb-6"
+        hideCloseButton={true}
+        className="sm:max-w-[320px] mx-auto h-auto rounded-none border-0 p-0 overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-300 pb-6"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Room Owner Profile</SheetTitle>
@@ -581,7 +702,8 @@ export function RoomProfileMain({
       <SheetContent
         side="bottom"
         hideOverlay={true}
-        className="sm:max-w-[340px] mx-auto h-auto max-h-[70vh] border-0 p-0 rounded-[2.5rem] overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-6"
+        hideCloseButton={true}
+        className="sm:max-w-[340px] mx-auto h-auto max-h-[70vh] border-0 p-0 rounded-none overflow-visible shadow-2xl bg-white text-black font-sans animate-in slide-in-from-bottom duration-500 pb-safe pb-6"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>User Profile</SheetTitle>
@@ -620,51 +742,6 @@ export function RoomProfileMain({
                 </AvatarFrame>
               </CompactVideoAvatarFrame>
             </div>
-
-            {/* Top Right More Menu */}
-            {!isMe && (
-              <div className="absolute top-4 right-4 z-[130]">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 active:scale-95 transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="rounded-2xl border-0 shadow-xl w-40">
-                    <DropdownMenuItem 
-                      onClick={() => setShowReport(true)}
-                      className="text-orange-600 font-bold focus:text-orange-700 focus:bg-orange-50 cursor-pointer"
-                    >
-                      <Flag className="w-4 h-4 mr-2" /> Report User
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={async () => {
-                        if (confirm(`Are you sure you want to block ${profile.username}? You won't see their posts or messages.`)) {
-                          const { getAuth } = await import('firebase/auth');
-                          const { doc, updateDoc, arrayUnion } = await import('firebase/firestore');
-                          const auth = getAuth();
-                          if (auth.currentUser) {
-                            try {
-                              const userRef = doc(firestore, 'users', auth.currentUser.uid);
-                              const pRef = doc(firestore, 'users', auth.currentUser.uid, 'profile', auth.currentUser.uid);
-                              await updateDoc(userRef, { blockedUsers: arrayUnion(userId) });
-                              await updateDoc(pRef, { blockedUsers: arrayUnion(userId) });
-                              toast({ title: 'User Blocked', description: 'You will no longer see content from this user.' });
-                              onOpenChange(false);
-                            } catch (e) {
-                              toast({ variant: 'destructive', title: 'Error', description: 'Could not block user.' });
-                            }
-                          }
-                        }
-                      }}
-                      className="text-red-600 font-bold focus:text-red-700 focus:bg-red-50 cursor-pointer"
-                    >
-                      <ShieldAlert className="w-4 h-4 mr-2" /> Block User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
 
             {/* Name + Gender + Country */}
             <div className="text-center space-y-1 mb-1 w-full px-6">
@@ -851,4 +928,4 @@ export function RoomProfileMain({
       )}
     </Sheet>
   );
-                }
+    }
