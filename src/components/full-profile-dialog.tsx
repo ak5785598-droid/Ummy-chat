@@ -11,7 +11,9 @@ import {
   Calendar,
   Loader,
   Armchair,
-  Pencil
+  Pencil,
+  Copy,
+  Check
 } from 'lucide-react';
 import {
   Dialog,
@@ -32,6 +34,7 @@ import { EditProfileDialog } from '@/components/edit-profile-dialog';
 import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, query, doc, where, limit } from 'firebase/firestore';
 import { calculateLevelProgress } from '@/lib/level-utils';
+import { toast } from '@/hooks/use-toast';
 
 // Registries
 import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
@@ -70,15 +73,15 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG)
+// 2. GLOSSY 3D ROLE TAGS (UPDATED OFFICIAL TAG - SIZE REDUCED)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
   <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
-    width: '150px',
-    height: '39px',
-    borderRadius: '19.5px',
-    padding: '2.5px',
+    width: '120px',  // Pehle 150px tha, ab 120px kar diya
+    height: '31px',   // Pehle 39px tha, ab 31px kar diya
+    borderRadius: '15.5px',  // Height ka aadha
+    padding: '2px',   // Pehle 2.5px tha
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
     boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 4px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.15)',
     position: 'relative',
@@ -87,12 +90,12 @@ export const SVGA_OfficialTag = () => (
       position: 'relative',
       width: '100%',
       height: '100%',
-      borderRadius: '17px',
+      borderRadius: '13.5px',  // Inner border radius adjust kiya
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
       boxShadow: 'inset 0 2px 2px rgba(255,200,210,0.22), inset 0 -3px 4px rgba(0,0,0,0.45)',
       display: 'flex',
       alignItems: 'center',
-      paddingLeft: '40px',
+      paddingLeft: '32px',  // Pehle 40px tha
     }}>
       {/* Top Gloss */}
       <div style={{
@@ -124,8 +127,8 @@ export const SVGA_OfficialTag = () => (
         left: '3px',
         top: '50%',
         transform: 'translateY(-50%)',
-        width: '33px',
-        height: '33px',
+        width: '26px',   // Pehle 33px tha
+        height: '26px',  // Pehle 33px tha
         borderRadius: '50%',
         background: 'radial-gradient(circle at 30% 30%, #ffc46a 0%, #ffb03a 35%, #f18c1f 65%, #d87312 100%)',
         border: '1px solid #e9a84a',
@@ -147,7 +150,7 @@ export const SVGA_OfficialTag = () => (
         <span style={{
           fontFamily: "Georgia, 'Times New Roman', Times, serif",
           fontWeight: 900,
-          fontSize: '22px',
+          fontSize: '18px',  // Pehle 22px tha
           lineHeight: 1,
           position: 'relative',
           top: '-0.5px',
@@ -165,7 +168,7 @@ export const SVGA_OfficialTag = () => (
       <span style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
-        fontSize: '21px',
+        fontSize: '17px',  // Pehle 21px tha
         letterSpacing: '0.2px',
         lineHeight: 1,
         position: 'relative',
@@ -205,15 +208,49 @@ export const SVGA_SellerTag = () => (
 );
 
 // ==========================================
-// 3. IDENTIFICATION BADGES
+// 3. IDENTIFICATION BADGES (WITH COPY FUNCTIONALITY)
 // ==========================================
 
 export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: string }) => {
   const idNum = label ? label.replace('ID: ', '').trim() : '000000';
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(idNum);
+      setCopied(true);
+      toast({
+        title: "Copied! 📋",
+        description: `ID ${idNum} copied to clipboard`,
+        duration: 2000,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = idNum;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      toast({
+        title: "Copied! 📋",
+        description: `ID ${idNum} copied to clipboard`,
+        duration: 2000,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
-    <div className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8]">
-      <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center">
+    <div 
+      onClick={handleCopy}
+      className="relative flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#6b1e60] via-[#912480] to-[#b33596] shadow-[0_2px_6px_rgba(0,0,0,0.25),inset_0_1px_2px_rgba(255,255,255,0.4)] ml-1 pr-2.5 pl-[20px] border border-[#c157a8] cursor-pointer hover:scale-105 active:scale-95 transition-all group"
+      title="Click to copy ID"
+    >
+      <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-[30px] h-[30px] z-10 flex items-center justify-center pointer-events-none">
         <svg viewBox="0 0 60 60" className="w-full h-full drop-shadow-[0_3px_5px_rgba(0,0,0,0.5)]">
           <defs>
             <linearGradient id="goldFrame" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -260,19 +297,67 @@ export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: str
           <path d="M 12 38 Q 14 38 14 36 Q 14 38 16 38 Q 14 38 14 40 Q 14 38 12 38 Z" fill="white" filter="url(#glow)"/>
         </svg>
       </div>
-      <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px]" />
-      <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+      <div className="absolute top-[1px] left-[15%] right-[15%] h-[40%] bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.5px] pointer-events-none" />
+      
+      {/* Copy Icon or Check Icon */}
+      <span className="relative z-10 text-[10px] font-bold text-white ml-1.5 tracking-[0.1em] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] flex items-center gap-1">
         {idNum}
+        {copied ? (
+          <Check className="h-3 w-3 text-green-300" />
+        ) : (
+          <Copy className="h-3 w-3 text-white/70 group-hover:text-white transition-colors" />
+        )}
       </span>
     </div>
   );
 };
 
-export const StandardIDTag = ({ idNum }: { idNum: string }) => (
-  <span className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-0 backdrop-blur-sm border border-slate-200/50">
-    ID: {idNum}
-  </span>
-);
+export const StandardIDTag = ({ idNum }: { idNum: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(idNum);
+      setCopied(true);
+      toast({
+        title: "Copied! 📋",
+        description: `ID ${idNum} copied to clipboard`,
+        duration: 2000,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      const textArea = document.createElement('textarea');
+      textArea.value = idNum;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      toast({
+        title: "Copied! 📋",
+        description: `ID ${idNum} copied to clipboard`,
+        duration: 2000,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <span 
+      onClick={handleCopy}
+      className="text-[12px] font-bold text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md ml-0 backdrop-blur-sm border border-slate-200/50 cursor-pointer hover:bg-slate-200/80 active:scale-95 transition-all inline-flex items-center gap-1 group"
+      title="Click to copy ID"
+    >
+      ID: {idNum}
+      {copied ? (
+        <Check className="h-3 w-3 text-green-500" />
+      ) : (
+        <Copy className="h-3 w-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+      )}
+    </span>
+  );
+};
 
 // Country code to flag emoji mapping
 const getCountryFlagEmoji = (countryName: string): string => {
@@ -1010,7 +1095,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ID */}
+                {/* ID - Now clickable for copy */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
