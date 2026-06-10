@@ -129,8 +129,10 @@ const ChatListItem = ({ chat, currentUid, onSelect }: any) => {
   };
 
   const isUnread = chat.lastSenderId !== currentUid && !(chat.lastMessageReadBy || []).includes(currentUid);
-  const isOnline = otherUser.isOnline === true;
-  const inRoomId = otherUser.currentRoomId;
+  const isActuallyOnline = otherUser.isOnline === true && otherUser.lastSeen && 
+                           (new Date().getTime() - otherUser.lastSeen.toDate().getTime() < 120000);
+  const isOnline = isActuallyOnline;
+  const inRoomId = isActuallyOnline ? otherUser.currentRoomId : null;
   const isPinned = (chat.pinnedBy || []).includes(currentUid);
 
   return (
@@ -457,7 +459,8 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const msgLongPressTimer = useRef<any>(null);
 
   const { userProfile: liveOtherUser } = useUserProfile(otherUser?.id);
-  const isOnline = liveOtherUser?.isOnline;
+  const isOnline = liveOtherUser?.isOnline === true && liveOtherUser?.lastSeen && 
+                   (new Date().getTime() - liveOtherUser.lastSeen.toDate().getTime() < 120000);
 
   const chatRef = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
