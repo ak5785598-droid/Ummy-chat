@@ -98,8 +98,10 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
             <CarouselItem key={banner.id} className="pl-0">
               <div 
                 className={cn(
-                  "relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-all duration-300 active:scale-95 cursor-pointer",
-                  banner.imageUrl ? "bg-transparent" : cn("border border-white/20 bg-gradient-to-br", banner.color)
+                  "relative aspect-[2/3] w-full rounded-2xl transition-all duration-300 active:scale-95 cursor-pointer",
+                  banner.imageUrl 
+                    ? "bg-transparent" 
+                    : cn("border border-white/20 bg-gradient-to-br overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.4)]", banner.color)
                 )}
                 onClick={() => {
                   if (banner.id === 'room-support') onOpenSupport?.();
@@ -108,7 +110,7 @@ export function RoomBanners({ onOpenSupport, onOpenSpin, onOpenChest }: RoomBann
                 }}
               >
                 {banner.imageUrl && (
-                  <Image src={banner.imageUrl} alt={banner.title} fill className="object-contain" unoptimized />
+                  <Image src={banner.imageUrl} alt={banner.title} fill className="object-contain drop-shadow-[0_8px_15px_rgba(0,0,0,0.5)]" unoptimized />
                 )}
                 
                 {/* Content Overlay - REMOVED TEXT AND ICONS PER USER REQUEST */}
