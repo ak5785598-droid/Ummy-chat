@@ -462,6 +462,14 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const isOnline = liveOtherUser?.isOnline === true && liveOtherUser?.lastSeen && 
                    (new Date().getTime() - liveOtherUser.lastSeen.toDate().getTime() < 120000);
 
+  const getLastSeenText = (timestamp: any) => {
+    if (!timestamp) return 'offline';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isToday(date)) return `last seen today at ${format(date, 'h:mm a')}`;
+    if (isYesterday(date)) return `last seen yesterday at ${format(date, 'h:mm a')}`;
+    return `last seen on ${format(date, 'MMM d, yyyy')}`;
+  };
+
   const chatRef = useMemoFirebase(() => {
     if (!firestore || !chatId) return null;
     return doc(firestore, 'privateChats', chatId);
@@ -685,7 +693,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
               <div className="flex-1 min-w-0 text-left">
                 <DialogTitle className="text-lg font-bold uppercase tracking-tight truncate">{otherUser?.username}</DialogTitle>
                 <p className={cn("text-[9px] font-bold uppercase tracking-wider", isOnline ? "text-green-500" : "text-gray-400")}>
-                  {isOnline ? 'online' : 'offline'}
+                  {isOnline ? 'online' : getLastSeenText(liveOtherUser?.lastSeen)}
                 </p>
               </div>
               <button 
