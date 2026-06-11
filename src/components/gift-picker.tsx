@@ -142,8 +142,6 @@ const getTodayString = () => {
 };
 
 // ============ COMBO NOTIFICATION SLIDE ============
-// Positioned at top:60vh (screen ke 60% neeche) - patli slide
-// Bottom 40vh khali rehta hai
 const ComboNotification = ({ 
   avatarUrl, 
   giftImageUrl, 
@@ -168,17 +166,14 @@ const ComboNotification = ({
       className="fixed left-1/2 -translate-x-1/2 z-[1100] pointer-events-none"
       style={{ top: '60vh' }}
     >
-      {/* Patli Slide - Single Row Layout */}
       <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-yellow-500/40 rounded-2xl px-3 py-2 shadow-[0_0_25px_rgba(234,179,8,0.35)] flex items-center gap-2.5 min-w-[320px] max-w-[400px] backdrop-blur-sm">
         
-        {/* User Avatar - Chota Size */}
         <div className="shrink-0">
           <Avatar className="h-9 w-9 border-1.5 border-yellow-400/80 shadow-[0_0_12px_rgba(234,179,8,0.5)]">
             <AvatarImage src={avatarUrl} />
           </Avatar>
         </div>
 
-        {/* Gift Image - Chota Size */}
         <div className="shrink-0 h-9 w-9 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden border border-white/10">
           {giftImageUrl ? (
             <img src={giftImageUrl} alt="gift" className="h-7 w-7 object-contain" />
@@ -187,14 +182,11 @@ const ComboNotification = ({
           )}
         </div>
 
-        {/* Info Section - Ek Line Mein Sab Kuch */}
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          {/* COMBO Label */}
           <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest bg-yellow-400/10 px-1.5 py-0.5 rounded-md shrink-0">
             COMBO
           </span>
           
-          {/* Multiplier - Bada Gold Text */}
           <motion.span 
             key={multiplier}
             initial={{ scale: 1.4, opacity: 0 }}
@@ -204,15 +196,12 @@ const ComboNotification = ({
             x{multiplier}
           </motion.span>
           
-          {/* Price Info */}
           <span className="text-[10px] text-white/40 font-medium shrink-0">
             ({giftPrice.toLocaleString()} × {quantity})
           </span>
           
-          {/* Divider Dot */}
           <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
           
-          {/* Coins Won */}
           <div className="flex items-center gap-1 shrink-0">
             <GoldenDollar />
             <span className="text-sm font-black text-yellow-400">
@@ -221,7 +210,6 @@ const ComboNotification = ({
           </div>
         </div>
 
-        {/* Sparkle Effect - Rotating */}
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
@@ -249,8 +237,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [showRulesSheet, setShowRulesSheet] = useState(false);
  const [showQuantityPopup, setShowQuantityPopup] = useState(false);
  
- // ============ COMBO STATE ============
- // Combo sirf Lucky Section mein active hoga
+ // ============ COMBO STATE - SABHI GIFTS KE LIYE ============
  const [comboState, setComboState] = useState<{
    show: boolean;
    multiplier: number;
@@ -425,9 +412,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   };
 
   // ============ CORE SEND LOGIC ============
-  // Har gift send ke liye yahi function use hota hai
-  // Lucky gift ke liye random multiplier generate karta hai
-  const executeSend = useCallback(async (gift: any, qty: number, uids: string[]) => {
+  const executeSend = useCallback(async (gift: any, qty: number, uids: string[], forceMultiplier?: number) => {
     if (!user || !firestore || !userProfile || uids.length === 0) return null;
 
     const totalCost = gift.price * qty * uids.length;
@@ -440,8 +425,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       let winAmount = 0;
       let selectedMult = 1;
 
-      // Lucky gift hai toh random multiplier generate karo
-      if (gift.isLucky) {
+      // Agar forceMultiplier diya hai toh wahi use karo, nahi toh random generate karo
+      if (forceMultiplier) {
+        selectedMult = forceMultiplier;
+      } else {
+        // Random multiplier sabhi gifts ke liye
         const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
         if (rand < 0.7) selectedMult = 1;
         else if (rand < 0.85) selectedMult = 2;
@@ -451,9 +439,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         else if (rand < 0.995) selectedMult = 100;
         else if (rand < 0.999) selectedMult = 500;
         else selectedMult = 1000;
-        
-        winAmount = (gift.price * qty * selectedMult);
       }
+      
+      winAmount = (gift.price * qty * selectedMult);
 
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const senderUserRef = doc(firestore, 'users', user.uid);
@@ -605,13 +593,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   }, [user, firestore, userProfile, roomId, participants]);
 
   // ============ START COMBO TIMER ============
-  // Combo notification + Circle button 5 second ke liye show hoga
-  // Agar user 5 sec ke andar combo press karega toh timer reset hoga
   const startComboTimer = useCallback((gift: any, multiplier: number, winAmount: number) => {
-    // Pehle se koi timer chal raha hai toh clear karo
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     
-    // Combo state update karo - Notification + Circle Button dono show honge
     setComboState({
       show: true,
       multiplier,
@@ -619,14 +603,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       gift
     });
     
-    // 5 second baad combo khatam
     comboTimerRef.current = setTimeout(() => {
       setComboState(null);
     }, 5000);
   }, []);
 
-  // ============ HANDLE SEND (Pehla Send) ============
-  // Sirf Lucky Tab mein combo start hoga
+  // ============ HANDLE SEND - SABHI GIFTS KE LIYE COMBO ============
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
     if (isSending) return;
@@ -637,13 +619,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const result = await executeSend(selectedGift, qty, selectedUids);
 
       if (result) {
-        // Sirf Lucky Section mein aur Lucky Gift pe Combo Start hoga
-        if (selectedGift.isLucky && activeTab === 'Lucky') {
-          startComboTimer(selectedGift, result.selectedMult, result.winAmount);
-        } else {
-          // Normal gifts - direct close
-          onOpenChange(false);
-        }
+        // SABHI gifts ke liye Combo start hoga
+        startComboTimer(selectedGift, result.selectedMult, result.winAmount);
       }
     } catch (e) {
       console.error(e);
@@ -657,21 +634,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   };
 
-  // ============ HANDLE COMBO PRESS (Circle Button) ============
-  // Circle button press karne pe same gift firse send hoga naye multiplier ke saath
+  // ============ HANDLE COMBO PRESS ============
   const handleComboPress = async () => {
     if (!comboState || isSending) return;
-    if (!selectedGift || !selectedGift.isLucky) return;
+    if (!selectedGift) return;
     
     setIsSending(true);
 
     try {
       const qty = parseInt(quantity);
+      // Combo press pe naya random multiplier
       const result = await executeSend(selectedGift, qty, selectedUids);
 
       if (result) {
-        // Nayi multiplier ke saath combo update karo
-        // Timer reset hoga - user ko aur 5 sec milenge
         startComboTimer(selectedGift, result.selectedMult, result.winAmount);
       }
     } catch (e) {
@@ -689,8 +664,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  return (
   <>
    {/* ============ COMBO NOTIFICATION SLIDE ============ */}
-   {/* Yeh screen ke 60vh neeche dikhega - patli slide */}
-   {/* Bottom 40vh area khali hai */}
    <AnimatePresence>
      {comboState?.show && (
        <ComboNotification 
@@ -705,8 +678,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
 
    {/* ============ COMBO CIRCLE BUTTON ============ */}
-   {/* Screen ke Right-Bottom corner mein gol button */}
-   {/* Isme multiplier dikhega, click karne pe naya multiplier generate hoga */}
    <AnimatePresence>
      {comboState?.show && (
        <motion.button
@@ -717,7 +688,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          disabled={isSending}
          className="fixed right-4 bottom-28 z-[1000] h-16 w-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-600 shadow-[0_0_25px_rgba(234,179,8,0.6)] border-2 border-yellow-300 flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform"
        >
-         {/* Multiplier change hone pe animation */}
          <motion.span
            key={comboState.multiplier}
            initial={{ scale: 1.5, opacity: 0 }}
@@ -732,7 +702,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
    {/* ============ MAIN GIFT PICKER SHEET ============ */}
    <Sheet open={open} onOpenChange={(val) => {
-     // Agar combo chal raha hai toh sheet close mat karo
      if (!comboState?.show) {
        onOpenChange(val);
      }
