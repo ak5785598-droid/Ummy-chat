@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, X, Plus, ArrowLeft } from 'lucide-react';
+import { Loader, Check, X, Plus, ArrowLeft, ChevronUp, Zap } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedMedia } from '@/hooks/use-cached-media';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // --- GOLDEN DOLLAR ICON COMPONENT ---
 const GoldenDollar = () => (
@@ -136,6 +137,8 @@ const MULTIPLIERS = [1, 2, 5, 10, 50, 100, 499, 999];
 
 const QUANTITY_OPTIONS = ['1', '10', '99', '520', '1314'];
 
+const COMBO_MULTIPLIERS = [1, 2, 5, 10, 50, 100];
+
 const getTodayString = () => {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
@@ -157,6 +160,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [showCustomLink, setShowCustomLink] = useState(false);
  const [isProcessingCustom, setIsProcessingCustom] = useState(false);
  const [showRulesSheet, setShowRulesSheet] = useState(false);
+ 
+ const [luckyMultiplier, setLuckyMultiplier] = useState(1);
+ const [showComboOptions, setShowComboOptions] = useState(false);
  
  const hasInitialized = useRef(false);
  const lastRecipientUid = useRef<string | null>(null);
@@ -222,6 +228,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     hasInitialized.current = false;
     lastRecipientUid.current = null;
     setShowCustomLink(false);
+    setLuckyMultiplier(1);
+    setShowComboOptions(false);
     return;
   }
 
@@ -238,6 +246,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     hasInitialized.current = true;
   }
  }, [open, initialRecipient?.uid, seatedParticipants]);
+
+ useEffect(() => {
+   setLuckyMultiplier(1);
+   setShowComboOptions(false);
+ }, [selectedGift?.id]);
 
  useEffect(() => {
    const handlePopState = () => {
@@ -318,9 +331,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
 
   const qty = parseInt(quantity);
-  const totalCost = selectedGift.price * qty * selectedUids.length;
+  const isLucky = selectedGift.category === 'Lucky' || selectedGift.isLucky;
   
-  if ((userProfile.wallet?.coins || 0) < totalCost) return;
+  const baseCost = selectedGift.price * qty * selectedUids.length;
+  const totalCost = isLucky ? baseCost * luckyMultiplier : baseCost;
+  
+  if ((userProfile.wallet?.coins || 0) < totalCost) {
+    toast({
+      variant: 'destructive',
+      title: 'Insufficient Coins',
+      description: `You need ${totalCost.toLocaleString()} coins!`
+    });
+    return;
+  }
   if (isSending) return;
   setIsSending(true);
 
@@ -328,24 +351,33 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    const batch = writeBatch(firestore);
    const today = getTodayString();
    let winAmount = 0;
-   let selectedMult = 1;
+   let didWin = false;
 
-    if (selectedGift.isLucky) {
+    // ============ LUCKY GIFT LOGIC ============
+    // User hamesha jeetega? NAHI. Kabhi kabhi jeetega lekin overall coins katenge zyada
+    if (isLucky && luckyMultiplier > 1) {
        const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-       if (rand < 0.7) selectedMult = 1;
-       else if (rand < 0.85) selectedMult = 2;
-       else if (rand < 0.93) selectedMult = 5;
-       else if (rand < 0.97) selectedMult = 10;
-       else selectedMult = MULTIPLIERS[crypto.getRandomValues(new Uint32Array(1))[0] % MULTIPLIERS.length];
-      
-      if (selectedMult > 1) {
-         winAmount = (selectedGift.price * qty) * selectedMult;
-      }
-   }
+       
+       // Win chances - deliberately low so house always wins in long run
+       // But user ko feel hoga "arey main jeet sakta hoon" kyunki occasionally win hoga
+       let winChance = 0;
+       if (luckyMultiplier === 2) winChance = 0.30;       // 30% - 100 coins lagao, 200 wapas milenge (100 profit)
+       else if (luckyMultiplier === 5) winChance = 0.15;   // 15% - 100 coins lagao, 500 wapas (400 profit)
+       else if (luckyMultiplier === 10) winChance = 0.07;  // 7%  - 100 coins lagao, 1000 wapas (900 profit)
+       else if (luckyMultiplier === 50) winChance = 0.02;  // 2%  - bahut rare, jackpot feel
+       else if (luckyMultiplier === 100) winChance = 0.008; // 0.8% - almost impossible, super jackpot
+       
+       if (rand < winChance) {
+         didWin = true;
+         winAmount = totalCost * luckyMultiplier;
+       }
+       // Loss case: didWin false, winAmount 0 -> coins silently kat gaye
+    }
 
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
    const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
+   
    const coinAdjustment = -totalCost + winAmount;
    const expAdjustment = Math.floor(totalCost / 5);
 
@@ -474,20 +506,53 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        recipientId: firstRecipientUid,
        receiverName: recipientName,
        recipientSeat: recipientSeat,
-       text: `sent ${selectedGift.name} x${qty} to ${recipientName}`,
-       timestamp: serverTimestamp()
+       text: isLucky && didWin 
+         ? `sent ${selectedGift.name} x${qty} (LUCKY x${luckyMultiplier} WIN +${winAmount.toLocaleString()}💰) to ${recipientName}`
+         : isLucky 
+           ? `sent ${selectedGift.name} x${qty} (LUCKY x${luckyMultiplier}) to ${recipientName}`
+           : `sent ${selectedGift.name} x${qty} to ${recipientName}`,
+       timestamp: serverTimestamp(),
+       isLuckyGift: isLucky,
+       luckyMultiplier: isLucky ? luckyMultiplier : 1,
+       didWin: didWin,
+       winAmount: winAmount
      });
 
    await batch.commit();
 
-   if (winAmount > 0) {
-      setWinData({ show: true, multiplier: selectedMult });
-      setTimeout(() => setWinData(null), 4000);
+   // ============ SIRF WIN PE MESSAGE ============
+   if (isLucky && didWin && winAmount > 0) {
+     setWinData({ show: true, multiplier: luckyMultiplier });
+     setTimeout(() => setWinData(null), 4000);
+     
+     toast({
+       title: '🎉 LUCKY WIN!',
+       description: `+${winAmount.toLocaleString()} coins (${luckyMultiplier}x)`,
+       className: "bg-purple-900 border-purple-500 text-white"
+     });
    }
+   // LOSS = SILENT, no message
 
-   if (!selectedGift.isLucky) onOpenChange(false);
-  } catch (e) { console.error(e); } finally { setIsSending(false); }
+   if (!isLucky) onOpenChange(false);
+  } catch (e) { 
+    console.error(e); 
+  } finally { 
+    setIsSending(false);
+    setLuckyMultiplier(1);
+    setShowComboOptions(false);
+  }
  };
+
+ const toggleComboOptions = () => {
+   setShowComboOptions(!showComboOptions);
+ };
+
+ const selectLuckyMultiplier = (mult: number) => {
+   setLuckyMultiplier(mult);
+   setShowComboOptions(false);
+ };
+
+ const isLuckyGift = selectedGift && (selectedGift.category === 'Lucky' || selectedGift.isLucky);
 
  return (
   <>
@@ -499,19 +564,22 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          exit={{ x: -500, opacity: 0 }}
          className="fixed top-1/3 left-0 z-[1000] pointer-events-none"
        >
-         <div className="relative w-60 h-36 bg-gradient-to-br from-blue-500 to-blue-800 rounded-r- border- border-white shadow-[0_20px_50px_rgba(0,0,0,0.5),inset_0_0_20px_rgba(255,255,255,0.3)] flex flex-col items-center justify-center overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1/2 bg-white/10 skew-y-[-10deg] -translate-y-10" />
-            <motion.span 
-              animate={{ scale: [1, 1.1, 1] }} 
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-500 to-yellow-700 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]"
-              style={{ WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
+         <div className="relative w-64 h-40 bg-gradient-to-br from-purple-600 via-pink-600 to-purple-800 rounded-r-2xl border-2 border-yellow-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),inset_0_0_30px_rgba(255,215,0,0.3)] flex flex-col items-center justify-center overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent skew-y-[-10deg] -translate-y-10" />
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 0.5 }}
             >
-              WIN x{winData.multiplier}
-            </motion.span>
-            <div className="mt-1 px-3 py-0.5 bg-white/20 rounded-full backdrop-blur-sm border border-white/30">
-               <span className="text-white font-bold text- uppercase tracking-widest">Lucky Reward</span>
+              <span className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+                style={{ WebkitTextStroke: '2px rgba(0,0,0,0.3)' }}
+              >
+                WIN x{winData.multiplier}
+              </span>
+            </motion.div>
+            <div className="mt-2 px-4 py-1 bg-yellow-400/30 rounded-full backdrop-blur-sm border border-yellow-300/50">
+               <span className="text-white font-bold text-xs uppercase tracking-widest">LUCKY REWARD</span>
             </div>
+            <div className="absolute -top-4 -right-4 text-6xl animate-bounce">🎰</div>
          </div>
        </motion.div>
      )}
@@ -535,14 +603,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         <TabsTrigger 
           key={id} 
           value={id} 
-          className="text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent border-b-2 border-transparent hover:text-white/80"
+          className={cn(
+            "text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:bg-transparent data-[state=active]:border-b-2 bg-transparent border-b-2 border-transparent hover:text-white/80",
+            id === 'Lucky' 
+              ? "data-[state=active]:text-purple-400 data-[state=active]:border-purple-400" 
+              : "data-[state=active]:text-cyan-400 data-[state=active]:border-cyan-400"
+          )}
         >
           {id}
         </TabsTrigger>
        ))}
       </TabsList>
       
-       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start">
+       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start relative">
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
             <Loader className="animate-spin text-cyan-400 h-6 w-6" />
@@ -601,54 +674,136 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
             </TabsContent>
           ))
         )}
+
+        {/* ============ LUCKY COMBO FLOATING BUTTON ============ */}
+        <AnimatePresence>
+          {isLuckyGift && (
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2"
+            >
+              <AnimatePresence>
+                {showComboOptions && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                    className="flex flex-col gap-1.5 bg-[#151921]/95 backdrop-blur-sm p-2 rounded-2xl border border-purple-500/30 shadow-[0_0_25px_rgba(168,85,247,0.4)]"
+                  >
+                    {COMBO_MULTIPLIERS.filter(m => m !== luckyMultiplier).map((mult) => (
+                      <motion.button
+                        key={mult}
+                        onClick={() => selectLuckyMultiplier(mult)}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className={cn(
+                          "h-10 w-10 rounded-full font-black text-sm transition-all flex items-center justify-center border",
+                          mult >= 50 
+                            ? "bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/40 text-yellow-400 hover:from-yellow-500/30 hover:to-orange-500/30" 
+                            : "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:border-purple-400"
+                        )}
+                      >
+                        x{mult}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <motion.button
+                onClick={toggleComboOptions}
+                whileTap={{ scale: 0.9 }}
+                animate={showComboOptions ? { rotate: [0, -10, 10, -10, 0] } : {}}
+                className={cn(
+                  "h-14 w-14 rounded-full font-black text-lg flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.6)] border-2 transition-all relative overflow-hidden",
+                  showComboOptions 
+                    ? "bg-purple-600 border-purple-300 text-white" 
+                    : "bg-gradient-to-br from-purple-500 to-pink-600 border-purple-300/50 text-white"
+                )}
+              >
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                  className="absolute inset-0 opacity-20"
+                  style={{ 
+                    background: 'conic-gradient(from 0deg, transparent, rgba(255,255,255,0.4), transparent)' 
+                  }}
+                />
+                <Zap className="h-6 w-6 absolute opacity-40" fill="white" />
+                <span className="relative z-10 text-sm font-black drop-shadow-lg">x{luckyMultiplier}</span>
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
        </div>
      </Tabs>
 
      {/* ============ BOTTOM BAR ============ */}
      <div className="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-3">
        
-       {/* Coins Balance - hamesha dikhega */}
-       <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-shrink">
+       <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-1">
          <div className="shrink-0"><GoldenDollar /></div>
          <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
            {(userProfile?.wallet?.coins || 0).toLocaleString()}
          </span>
        </div>
 
-       {/* Quantity Pills - sirf tab dikhega jab gift select ho */}
-       <AnimatePresence>
-         {selectedGift && (
-           <motion.div 
-             initial={{ opacity: 0, scale: 0.8 }}
-             animate={{ opacity: 1, scale: 1 }}
-             exit={{ opacity: 0, scale: 0.8 }}
-             className="flex items-center gap-1.5"
+       {selectedGift && (
+         <Popover>
+           <PopoverTrigger asChild>
+             <button className="h-11 px-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold flex items-center gap-1.5 hover:bg-white/15 transition-all shrink-0">
+               <span className="text-sm">{quantity}</span>
+               <ChevronUp className="h-4 w-4 text-white/60" />
+             </button>
+           </PopoverTrigger>
+           <PopoverContent 
+             className="w-[80px] p-1.5 bg-[#151921] border-white/10 rounded-2xl shadow-2xl" 
+             align="center" 
+             side="top" 
+             sideOffset={8}
            >
-             {QUANTITY_OPTIONS.map((q) => (
-               <button
-                 key={q}
-                 onClick={() => setQuantity(q)}
-                 className={cn(
-                   "h-8 w-9 rounded-full text-xs font-bold transition-all border",
-                   quantity === q 
-                     ? "bg-cyan-500/20 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]" 
-                     : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80"
-                 )}
-               >
-                 {q}
-               </button>
-             ))}
-           </motion.div>
-         )}
-       </AnimatePresence>
+             <div className="flex flex-col gap-1">
+               {QUANTITY_OPTIONS.map((q) => (
+                 <button
+                   key={q}
+                   onClick={() => setQuantity(q)}
+                   className={cn(
+                     "h-9 w-full rounded-xl text-sm font-bold transition-all",
+                     quantity === q 
+                       ? "bg-cyan-500/20 text-cyan-400" 
+                       : "text-white/70 hover:bg-white/10 hover:text-white"
+                   )}
+                 >
+                   {q}
+                 </button>
+               ))}
+             </div>
+           </PopoverContent>
+         </Popover>
+       )}
        
-       {/* Send Button */}
        <button 
          onClick={() => handleSend()} 
          disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className="h-11 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 shrink-0"
+         className={cn(
+           "h-11 px-8 rounded-2xl font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 shrink-0",
+           isLuckyGift 
+             ? "bg-gradient-to-r from-purple-600 to-pink-600 border-purple-800/30 animate-pulse" 
+             : "bg-gradient-to-r from-blue-600 to-cyan-500 border-black/20"
+         )}
        >
-         {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
+         {isSending ? (
+           <Loader className="h-5 w-5 animate-spin" />
+         ) : isLuckyGift ? (
+           <span className="flex items-center gap-1">
+             <Zap className="h-4 w-4" fill="white" />
+             BET x{luckyMultiplier}
+           </span>
+         ) : (
+           'SEND'
+         )}
        </button>
      </div>
 
@@ -752,4 +907,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-             }
+      }
