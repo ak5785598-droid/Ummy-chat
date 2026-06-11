@@ -132,8 +132,6 @@ const GiftImage = ({ gift }: { gift: any }) => {
   );
 };
 
-const MULTIPLIERS = [1, 2, 5, 10, 50, 100, 500, 1000];
-
 const QUANTITY_OPTIONS = ['1', '10', '99', '520', '1314'];
 
 const getTodayString = () => {
@@ -143,8 +141,10 @@ const getTodayString = () => {
     return istDate.toISOString().split('T')[0];
 };
 
-// ============ LUCKY WIN SLIDE NOTIFICATION ============
-const LuckyWinNotification = ({ 
+// ============ COMBO NOTIFICATION SLIDE ============
+// Positioned at top:60vh (screen ke 60% neeche) - patli slide
+// Bottom 40vh khali rehta hai
+const ComboNotification = ({ 
   avatarUrl, 
   giftImageUrl, 
   multiplier, 
@@ -161,59 +161,73 @@ const LuckyWinNotification = ({
 }) => {
   return (
     <motion.div
-      initial={{ y: -200, opacity: 0, scale: 0.8 }}
+      initial={{ y: -60, opacity: 0, scale: 0.9 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: -200, opacity: 0, scale: 0.8 }}
+      exit={{ y: -60, opacity: 0, scale: 0.9 }}
       transition={{ type: "spring", stiffness: 200, damping: 20 }}
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-[1100] pointer-events-none"
+      className="fixed left-1/2 -translate-x-1/2 z-[1100] pointer-events-none"
+      style={{ top: '60vh' }}
     >
-      <div className="bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] border-2 border-yellow-500/50 rounded-2xl px-4 py-3 shadow-[0_0_30px_rgba(234,179,8,0.4)] flex items-center gap-3 min-w-[300px] max-w-[360px]">
+      {/* Patli Slide - Single Row Layout */}
+      <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] border border-yellow-500/40 rounded-2xl px-3 py-2 shadow-[0_0_25px_rgba(234,179,8,0.35)] flex items-center gap-2.5 min-w-[320px] max-w-[400px] backdrop-blur-sm">
         
-        {/* User Avatar */}
+        {/* User Avatar - Chota Size */}
         <div className="shrink-0">
-          <Avatar className="h-12 w-12 border-2 border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.5)]">
+          <Avatar className="h-9 w-9 border-1.5 border-yellow-400/80 shadow-[0_0_12px_rgba(234,179,8,0.5)]">
             <AvatarImage src={avatarUrl} />
           </Avatar>
         </div>
 
-        {/* Gift Image */}
-        <div className="shrink-0 h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden border border-white/10">
+        {/* Gift Image - Chota Size */}
+        <div className="shrink-0 h-9 w-9 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden border border-white/10">
           {giftImageUrl ? (
-            <img src={giftImageUrl} alt="gift" className="h-10 w-10 object-contain" />
+            <img src={giftImageUrl} alt="gift" className="h-7 w-7 object-contain" />
           ) : (
-            <span className="text-2xl">🎁</span>
+            <span className="text-lg">🎁</span>
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">LUCKY WIN!</span>
-          </div>
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-orange-500">
-              x{multiplier}
-            </span>
-            <span className="text-[11px] text-white/60 font-medium">
-              × {giftPrice.toLocaleString()} × {quantity}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-1">
+        {/* Info Section - Ek Line Mein Sab Kuch */}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          {/* COMBO Label */}
+          <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest bg-yellow-400/10 px-1.5 py-0.5 rounded-md shrink-0">
+            COMBO
+          </span>
+          
+          {/* Multiplier - Bada Gold Text */}
+          <motion.span 
+            key={multiplier}
+            initial={{ scale: 1.4, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-orange-500 shrink-0"
+          >
+            x{multiplier}
+          </motion.span>
+          
+          {/* Price Info */}
+          <span className="text-[10px] text-white/40 font-medium shrink-0">
+            ({giftPrice.toLocaleString()} × {quantity})
+          </span>
+          
+          {/* Divider Dot */}
+          <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
+          
+          {/* Coins Won */}
+          <div className="flex items-center gap-1 shrink-0">
             <GoldenDollar />
-            <span className="text-base font-black text-yellow-400">
+            <span className="text-sm font-black text-yellow-400">
               +{winAmount.toLocaleString()}
             </span>
-            <span className="text-[10px] text-green-400 font-bold">COINS WON</span>
           </div>
         </div>
 
-        {/* Sparkle effect */}
+        {/* Sparkle Effect - Rotating */}
         <motion.div 
           animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-          className="absolute -top-1 -right-1"
+          transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+          className="shrink-0"
         >
-          <span className="text-lg">✨</span>
+          <span className="text-base">✨</span>
         </motion.div>
       </div>
     </motion.div>
@@ -230,24 +244,21 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [quantity, setQuantity] = useState('1');
  const [isSending, setIsSending] = useState(false);
  const [selectedUids, setSelectedUids] = useState<string[]>([]);
- const [winData, setWinData] = useState<{ show: boolean, multiplier: number } | null>(null);
  const [showCustomLink, setShowCustomLink] = useState(false);
  const [isProcessingCustom, setIsProcessingCustom] = useState(false);
  const [showRulesSheet, setShowRulesSheet] = useState(false);
  const [showQuantityPopup, setShowQuantityPopup] = useState(false);
  
- // Lucky multiplier button state
- const [luckyButton, setLuckyButton] = useState<{ show: boolean; multiplier: number; gift: any } | null>(null);
- const luckyTimerRef = useRef<NodeJS.Timeout | null>(null);
- 
- // Lucky win notification state
- const [luckyWinNotification, setLuckyWinNotification] = useState<{
+ // ============ COMBO STATE ============
+ // Combo sirf Lucky Section mein active hoga
+ const [comboState, setComboState] = useState<{
    show: boolean;
    multiplier: number;
    winAmount: number;
    gift: any;
  } | null>(null);
- const winNotifTimerRef = useRef<NodeJS.Timeout | null>(null);
+ const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
+ const [activeTab, setActiveTab] = useState('Hot');
  
  const hasInitialized = useRef(false);
  const lastRecipientUid = useRef<string | null>(null);
@@ -313,6 +324,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     hasInitialized.current = false;
     lastRecipientUid.current = null;
     setShowCustomLink(false);
+    setComboState(null);
     return;
   }
 
@@ -344,8 +356,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  // Cleanup timers on unmount
  useEffect(() => {
    return () => {
-     if (luckyTimerRef.current) clearTimeout(luckyTimerRef.current);
-     if (winNotifTimerRef.current) clearTimeout(winNotifTimerRef.current);
+     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
    };
  }, []);
 
@@ -413,7 +424,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   };
 
-  // Core send logic (reusable) - now returns coin win info
+  // ============ CORE SEND LOGIC ============
+  // Har gift send ke liye yahi function use hota hai
+  // Lucky gift ke liye random multiplier generate karta hai
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[]) => {
     if (!user || !firestore || !userProfile || uids.length === 0) return null;
 
@@ -427,6 +440,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       let winAmount = 0;
       let selectedMult = 1;
 
+      // Lucky gift hai toh random multiplier generate karo
       if (gift.isLucky) {
         const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
         if (rand < 0.7) selectedMult = 1;
@@ -438,7 +452,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         else if (rand < 0.999) selectedMult = 500;
         else selectedMult = 1000;
         
-        // Always calculate win amount for lucky gifts (coins reward)
         winAmount = (gift.price * qty * selectedMult);
       }
 
@@ -446,9 +459,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const senderUserRef = doc(firestore, 'users', user.uid);
       const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
       
-      // Net: -cost + winAmount (winAmount already includes cost × multiplier)
-      // Actually: coins deducted = totalCost, coins won = winAmount
-      // Net change = winAmount - totalCost
       const coinAdjustment = winAmount - totalCost;
       const expAdjustment = Math.floor(totalCost / 5);
 
@@ -594,36 +604,29 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   }, [user, firestore, userProfile, roomId, participants]);
 
-  // Show win notification
-  const showWinNotification = useCallback((gift: any, multiplier: number, winAmount: number) => {
-    if (winNotifTimerRef.current) clearTimeout(winNotifTimerRef.current);
+  // ============ START COMBO TIMER ============
+  // Combo notification + Circle button 5 second ke liye show hoga
+  // Agar user 5 sec ke andar combo press karega toh timer reset hoga
+  const startComboTimer = useCallback((gift: any, multiplier: number, winAmount: number) => {
+    // Pehle se koi timer chal raha hai toh clear karo
+    if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     
-    setLuckyWinNotification({
+    // Combo state update karo - Notification + Circle Button dono show honge
+    setComboState({
       show: true,
       multiplier,
       winAmount,
       gift
     });
     
-    winNotifTimerRef.current = setTimeout(() => {
-      setLuckyWinNotification(null);
-    }, 3000);
+    // 5 second baad combo khatam
+    comboTimerRef.current = setTimeout(() => {
+      setComboState(null);
+    }, 5000);
   }, []);
 
-  // Start lucky timer
-  const startLuckyTimer = useCallback((gift: any, mult: number) => {
-    if (luckyTimerRef.current) clearTimeout(luckyTimerRef.current);
-    
-    setLuckyButton({ show: true, multiplier: mult, gift });
-    
-    luckyTimerRef.current = setTimeout(() => {
-      setLuckyButton(null);
-      setLuckyWinNotification(null);
-      onOpenChange(false);
-    }, 3000);
-  }, [onOpenChange]);
-
-  // Handle initial send
+  // ============ HANDLE SEND (Pehla Send) ============
+  // Sirf Lucky Tab mein combo start hoga
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
     if (isSending) return;
@@ -634,11 +637,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const result = await executeSend(selectedGift, qty, selectedUids);
 
       if (result) {
-        if (selectedGift.isLucky) {
-          // Show win notification with coins won
-          showWinNotification(selectedGift, result.selectedMult, result.winAmount);
-          startLuckyTimer(selectedGift, result.selectedMult);
+        // Sirf Lucky Section mein aur Lucky Gift pe Combo Start hoga
+        if (selectedGift.isLucky && activeTab === 'Lucky') {
+          startComboTimer(selectedGift, result.selectedMult, result.winAmount);
         } else {
+          // Normal gifts - direct close
           onOpenChange(false);
         }
       }
@@ -654,21 +657,22 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   };
 
-  // Handle lucky button press (combo)
-  const handleLuckyPress = async () => {
-    if (!luckyButton || isSending) return;
+  // ============ HANDLE COMBO PRESS (Circle Button) ============
+  // Circle button press karne pe same gift firse send hoga naye multiplier ke saath
+  const handleComboPress = async () => {
+    if (!comboState || isSending) return;
+    if (!selectedGift || !selectedGift.isLucky) return;
+    
     setIsSending(true);
 
     try {
       const qty = parseInt(quantity);
-      const result = await executeSend(luckyButton.gift, qty, selectedUids);
+      const result = await executeSend(selectedGift, qty, selectedUids);
 
       if (result) {
-        // Update notification with new multiplier and win amount
-        showWinNotification(luckyButton.gift, result.selectedMult, result.winAmount);
-        
-        // Reset timer with new multiplier
-        startLuckyTimer(luckyButton.gift, result.selectedMult);
+        // Nayi multiplier ke saath combo update karo
+        // Timer reset hoga - user ko aur 5 sec milenge
+        startComboTimer(selectedGift, result.selectedMult, result.winAmount);
       }
     } catch (e) {
       console.error(e);
@@ -684,40 +688,58 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* ============ LUCKY WIN NOTIFICATION (Center) ============ */}
+   {/* ============ COMBO NOTIFICATION SLIDE ============ */}
+   {/* Yeh screen ke 60vh neeche dikhega - patli slide */}
+   {/* Bottom 40vh area khali hai */}
    <AnimatePresence>
-     {luckyWinNotification?.show && (
-       <LuckyWinNotification 
+     {comboState?.show && (
+       <ComboNotification 
          avatarUrl={userProfile?.avatarUrl || ''}
-         giftImageUrl={luckyWinNotification.gift?.imageUrl || null}
-         multiplier={luckyWinNotification.multiplier}
-         winAmount={luckyWinNotification.winAmount}
-         giftPrice={luckyWinNotification.gift?.price || 0}
+         giftImageUrl={comboState.gift?.imageUrl || null}
+         multiplier={comboState.multiplier}
+         winAmount={comboState.winAmount}
+         giftPrice={comboState.gift?.price || 0}
          quantity={parseInt(quantity)}
        />
      )}
    </AnimatePresence>
 
-   {/* ============ LUCKY CIRCLE BUTTON (Right Bottom) ============ */}
+   {/* ============ COMBO CIRCLE BUTTON ============ */}
+   {/* Screen ke Right-Bottom corner mein gol button */}
+   {/* Isme multiplier dikhega, click karne pe naya multiplier generate hoga */}
    <AnimatePresence>
-     {luckyButton?.show && (
+     {comboState?.show && (
        <motion.button
          initial={{ scale: 0, opacity: 0 }}
          animate={{ scale: 1, opacity: 1 }}
          exit={{ scale: 0, opacity: 0 }}
-         onClick={handleLuckyPress}
+         onClick={handleComboPress}
          disabled={isSending}
-         className="fixed right-4 bottom-28 z-[1000] h-16 w-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-600 shadow-[0_0_25px_rgba(234,179,8,0.6)] border-2 border-yellow-300 flex items-center justify-center font-black text-white text-xl disabled:opacity-50 active:scale-90 transition-transform"
+         className="fixed right-4 bottom-28 z-[1000] h-16 w-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-600 shadow-[0_0_25px_rgba(234,179,8,0.6)] border-2 border-yellow-300 flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform"
        >
-         x{luckyButton.multiplier}
+         {/* Multiplier change hone pe animation */}
+         <motion.span
+           key={comboState.multiplier}
+           initial={{ scale: 1.5, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           className="text-xl font-black text-white drop-shadow-lg"
+         >
+           x{comboState.multiplier}
+         </motion.span>
        </motion.button>
      )}
    </AnimatePresence>
 
-   <Sheet open={open} onOpenChange={onOpenChange}>
+   {/* ============ MAIN GIFT PICKER SHEET ============ */}
+   <Sheet open={open} onOpenChange={(val) => {
+     // Agar combo chal raha hai toh sheet close mat karo
+     if (!comboState?.show) {
+       onOpenChange(val);
+     }
+   }}>
     <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t- overflow-hidden text-white shadow-2xl pb-10 [&>button]:hidden">
      
-     {/* ============ QUANTITY POPUP OVERLAY ============ */}
+     {/* ============ QUANTITY POPUP ============ */}
      <AnimatePresence>
        {showQuantityPopup && selectedGift && (
          <motion.div 
@@ -768,6 +790,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        )}
      </AnimatePresence>
 
+     {/* ============ RECIPIENT SELECTOR ============ */}
      <div className="p-3 flex gap-3 overflow-x-auto no-scrollbar border-b border-white/5 bg-white/5">
       <button onClick={() => setSelectedUids(seatedParticipants.map((p:any)=>p.uid))} className={cn("h-10 w-10 rounded-full border-2 text- font-black shrink-0 transition-all", selectedUids.length === seatedParticipants.length ? "border-cyan-400 bg-cyan-400/20 text-cyan-400" : "border-white/10 bg-white/5 text-white/40")}>ALL</button>
       {seatedParticipants.map((p: any) => (
@@ -778,7 +801,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       ))}
      </div>
 
-     <Tabs defaultValue="Hot" className="w-full mt-2">
+     {/* ============ GIFT CATEGORY TABS ============ */}
+     <Tabs defaultValue="Hot" className="w-full mt-2" value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="mx-4 bg-transparent p-1 flex justify-between gap-1">
        {['Hot', 'Lucky', 'Luxury', 'Event', 'Customized'].map(id => (
         <TabsTrigger 
@@ -791,6 +815,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
        ))}
       </TabsList>
       
+       {/* ============ GIFTS GRID ============ */}
        <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start">
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
@@ -856,6 +881,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      {/* ============ BOTTOM BAR ============ */}
      <div className="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-3 z-20">
        
+       {/* Coins Wallet */}
        <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-shrink">
          <div className="shrink-0"><GoldenDollar /></div>
          <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
@@ -863,6 +889,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          </span>
        </div>
 
+       {/* Quantity Selector */}
        <AnimatePresence>
          {selectedGift && (
            <motion.button
@@ -880,6 +907,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          )}
        </AnimatePresence>
        
+       {/* Send Button */}
        <button 
          onClick={() => handleSend()} 
          disabled={!selectedGift || isSending || selectedUids.length === 0} 
@@ -959,7 +987,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      </SheetContent>
    </Sheet>
 
-   {/* Custom Gift Link Overlay */}
+   {/* ============ CUSTOM GIFT LINK OVERLAY ============ */}
    <AnimatePresence>
      {showCustomLink && (
        <motion.div 
@@ -989,4 +1017,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-      }
+    }
