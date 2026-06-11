@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Loader, Check, X, Plus, ArrowLeft, ChevronUp, Zap } from 'lucide-react';
+import { Loader, Check, X, Plus, ArrowLeft } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedMedia } from '@/hooks/use-cached-media';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // --- GOLDEN DOLLAR ICON COMPONENT ---
 const GoldenDollar = () => (
@@ -137,8 +136,6 @@ const MULTIPLIERS = [1, 2, 5, 10, 50, 100, 499, 999];
 
 const QUANTITY_OPTIONS = ['1', '10', '99', '520', '1314'];
 
-const COMBO_MULTIPLIERS = [1, 2, 5, 10, 50, 100];
-
 const getTodayString = () => {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
@@ -161,8 +158,24 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [isProcessingCustom, setIsProcessingCustom] = useState(false);
  const [showRulesSheet, setShowRulesSheet] = useState(false);
  
- const [luckyMultiplier, setLuckyMultiplier] = useState(1);
- const [showComboOptions, setShowComboOptions] = useState(false);
+ // ============ COMBO STATE ============
+ const [comboData, setComboData] = useState<{ 
+   show: boolean; 
+   gift: any; 
+   quantity: number; 
+ } | null>(null);
+ const comboTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+ const isComboSending = useRef(false);
+ // ====================================
+ 
+ // ============ WIN NOTIFICATION STATE ============
+ const [winNotifications, setWinNotifications] = useState<Array<{
+   id: string;
+   multiplier: number;
+   amount: number;
+   giftName: string;
+ }>>([]);
+ // ===============================================
  
  const hasInitialized = useRef(false);
  const lastRecipientUid = useRef<string | null>(null);
@@ -228,8 +241,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     hasInitialized.current = false;
     lastRecipientUid.current = null;
     setShowCustomLink(false);
-    setLuckyMultiplier(1);
-    setShowComboOptions(false);
     return;
   }
 
@@ -248,11 +259,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  }, [open, initialRecipient?.uid, seatedParticipants]);
 
  useEffect(() => {
-   setLuckyMultiplier(1);
-   setShowComboOptions(false);
- }, [selectedGift?.id]);
-
- useEffect(() => {
    const handlePopState = () => {
      if (showCustomLink) {
        setShowCustomLink(false);
@@ -262,6 +268,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    window.addEventListener('popstate', handlePopState);
    return () => window.removeEventListener('popstate', handlePopState);
  }, [showCustomLink]);
+
+ // ============ COMBO TIMEOUT CLEANUP ============
+ useEffect(() => {
+   return () => {
+     if (comboTimeoutRef.current) {
+       clearTimeout(comboTimeoutRef.current);
+     }
+   };
+ }, []);
+ // ==============================================
 
  const handleCustomGiftClick = () => {
    setShowRulesSheet(true);
@@ -327,57 +343,31 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   };
 
- const handleSend = async () => {
-  if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
-
-  const qty = parseInt(quantity);
-  const isLucky = selectedGift.category === 'Lucky' || selectedGift.isLucky;
-  
-  const baseCost = selectedGift.price * qty * selectedUids.length;
-  const totalCost = isLucky ? baseCost * luckyMultiplier : baseCost;
-  
-  if ((userProfile.wallet?.coins || 0) < totalCost) {
-    toast({
-      variant: 'destructive',
-      title: 'Insufficient Coins',
-      description: `You need ${totalCost.toLocaleString()} coins!`
-    });
-    return;
-  }
-  if (isSending) return;
-  setIsSending(true);
-
-  try {
+ // ============ CORE SEND FUNCTION (extracted for reuse) ============
+ const executeGiftSend = async (giftToSend: any, qty: number, uids: string[]) => {
+   const totalCost = giftToSend.price * qty * uids.length;
+   
    const batch = writeBatch(firestore);
    const today = getTodayString();
    let winAmount = 0;
-   let didWin = false;
+   let selectedMult = 1;
 
-    // ============ LUCKY GIFT LOGIC ============
-    // User hamesha jeetega? NAHI. Kabhi kabhi jeetega lekin overall coins katenge zyada
-    if (isLucky && luckyMultiplier > 1) {
-       const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-       
-       // Win chances - deliberately low so house always wins in long run
-       // But user ko feel hoga "arey main jeet sakta hoon" kyunki occasionally win hoga
-       let winChance = 0;
-       if (luckyMultiplier === 2) winChance = 0.30;       // 30% - 100 coins lagao, 200 wapas milenge (100 profit)
-       else if (luckyMultiplier === 5) winChance = 0.15;   // 15% - 100 coins lagao, 500 wapas (400 profit)
-       else if (luckyMultiplier === 10) winChance = 0.07;  // 7%  - 100 coins lagao, 1000 wapas (900 profit)
-       else if (luckyMultiplier === 50) winChance = 0.02;  // 2%  - bahut rare, jackpot feel
-       else if (luckyMultiplier === 100) winChance = 0.008; // 0.8% - almost impossible, super jackpot
-       
-       if (rand < winChance) {
-         didWin = true;
-         winAmount = totalCost * luckyMultiplier;
-       }
-       // Loss case: didWin false, winAmount 0 -> coins silently kat gaye
-    }
+   if (giftToSend.isLucky) {
+      const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
+      if (rand < 0.7) selectedMult = 1;
+      else if (rand < 0.85) selectedMult = 2;
+      else if (rand < 0.93) selectedMult = 5;
+      else if (rand < 0.97) selectedMult = 10;
+      else selectedMult = MULTIPLIERS[crypto.getRandomValues(new Uint32Array(1))[0] % MULTIPLIERS.length];
+      
+      if (selectedMult > 1) {
+         winAmount = (giftToSend.price * qty) * selectedMult;
+      }
+   }
 
    const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
    const senderUserRef = doc(firestore, 'users', user.uid);
    const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
-   
    const coinAdjustment = -totalCost + winAmount;
    const expAdjustment = Math.floor(totalCost / 5);
 
@@ -395,54 +385,54 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'wallet.totalExp': increment(expAdjustment),
      'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
      'wallet.lastDailyResetDate': today
-    });
+   });
 
-   const diamondPerRecipient = Math.floor((selectedGift.price * qty) * 0.4);
-    selectedUids.forEach(uid => {
-      const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
-      batch.update(recProfileRef, { 
-        'wallet.diamonds': increment(diamondPerRecipient),
-        'stats.dailyGiftsReceived': increment(diamondPerRecipient)
-      });
-    });
+   const diamondPerRecipient = Math.floor((giftToSend.price * qty) * 0.4);
+   uids.forEach(uid => {
+     const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
+     batch.update(recProfileRef, { 
+       'wallet.diamonds': increment(diamondPerRecipient),
+       'stats.dailyGiftsReceived': increment(diamondPerRecipient)
+     });
+   });
 
-    const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
-    let dailyAmountVal: any = increment(totalCost);
-    let weeklyAmountVal: any = increment(totalCost);
+   const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
+   let dailyAmountVal: any = increment(totalCost);
+   let weeklyAmountVal: any = increment(totalCost);
 
-    try {
-      const supporterSnap = await getDoc(supporterRef);
-      if (supporterSnap.exists()) {
-        const supData = supporterSnap.data();
-        const lastUpdate = supData.updatedAt?.toDate() || new Date(0);
-        const now = new Date();
-        const isSameDay = lastUpdate.toDateString() === now.toDateString();
+   try {
+     const supporterSnap = await getDoc(supporterRef);
+     if (supporterSnap.exists()) {
+       const supData = supporterSnap.data();
+       const lastUpdate = supData.updatedAt?.toDate() || new Date(0);
+       const now = new Date();
+       const isSameDay = lastUpdate.toDateString() === now.toDateString();
 
-        const getWeekNumber = (d: Date) => {
-          const date = new Date(d.getTime());
-          date.setHours(0, 0, 0, 0);
-          date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-          const week1 = new Date(date.getFullYear(), 0, 4);
-          return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-        };
-        const isSameWeek = lastUpdate.getFullYear() === now.getFullYear() && getWeekNumber(lastUpdate) === getWeekNumber(now);
+       const getWeekNumber = (d: Date) => {
+         const date = new Date(d.getTime());
+         date.setHours(0, 0, 0, 0);
+         date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+         const week1 = new Date(date.getFullYear(), 0, 4);
+         return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+       };
+       const isSameWeek = lastUpdate.getFullYear() === now.getFullYear() && getWeekNumber(lastUpdate) === getWeekNumber(now);
 
-        dailyAmountVal = isSameDay ? increment(totalCost) : totalCost;
-        weeklyAmountVal = isSameWeek ? increment(totalCost) : totalCost;
-      }
-    } catch (e) {
-      console.warn("Supporter lazy reset check failed:", e);
-    }
+       dailyAmountVal = isSameDay ? increment(totalCost) : totalCost;
+       weeklyAmountVal = isSameWeek ? increment(totalCost) : totalCost;
+     }
+   } catch (e) {
+     console.warn("Supporter lazy reset check failed:", e);
+   }
 
-    batch.set(supporterRef, {
-      uid: user.uid,
-      username: userProfile.username || 'Tribe Member',
-      avatarUrl: userProfile.avatarUrl || null,
-      amount: increment(totalCost),
-      dailyAmount: dailyAmountVal,
-      weeklyAmount: weeklyAmountVal,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+   batch.set(supporterRef, {
+     uid: user.uid,
+     username: userProfile.username || 'Tribe Member',
+     avatarUrl: userProfile.avatarUrl || null,
+     amount: increment(totalCost),
+     dailyAmount: dailyAmountVal,
+     weeklyAmount: weeklyAmountVal,
+     updatedAt: serverTimestamp()
+   }, { merge: true });
 
    const roomRef = doc(firestore, 'chatRooms', roomId);
    batch.update(roomRef, {
@@ -451,139 +441,229 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      'rocket.progress': increment(totalCost)
    });
 
-    try {
-      const battleRef = doc(firestore, 'chatRooms', roomId, 'features', 'giftBattle');
-      const battleSnap = await getDoc(battleRef);
-      if (battleSnap.exists()) {
-        const battleData = battleSnap.data();
-        if (battleData.isActive) {
-          let scoreLeftInc = 0;
-          let scoreRightInc = 0;
-          
-          if (battleData.leftUser?.uid && selectedUids.includes(battleData.leftUser.uid)) {
-            scoreLeftInc += totalCost;
-          }
-          if (battleData.rightUser?.uid && selectedUids.includes(battleData.rightUser.uid)) {
-            scoreRightInc += totalCost;
-          }
+   try {
+     const battleRef = doc(firestore, 'chatRooms', roomId, 'features', 'giftBattle');
+     const battleSnap = await getDoc(battleRef);
+     if (battleSnap.exists()) {
+       const battleData = battleSnap.data();
+       if (battleData.isActive) {
+         let scoreLeftInc = 0;
+         let scoreRightInc = 0;
+         
+         if (battleData.leftUser?.uid && uids.includes(battleData.leftUser.uid)) {
+           scoreLeftInc += totalCost;
+         }
+         if (battleData.rightUser?.uid && uids.includes(battleData.rightUser.uid)) {
+           scoreRightInc += totalCost;
+         }
 
-          if (scoreLeftInc > 0 || scoreRightInc > 0) {
-            const updates: Record<string, any> = {};
-            if (scoreLeftInc > 0) updates.scoreLeft = increment(scoreLeftInc);
-            if (scoreRightInc > 0) updates.scoreRight = increment(scoreRightInc);
+         if (scoreLeftInc > 0 || scoreRightInc > 0) {
+           const updates: Record<string, any> = {};
+           if (scoreLeftInc > 0) updates.scoreLeft = increment(scoreLeftInc);
+           if (scoreRightInc > 0) updates.scoreRight = increment(scoreRightInc);
 
-            if (totalCost >= 500) {
-              updates.takeoverEffect = scoreLeftInc >= scoreRightInc ? 'gold' : 'cosmic';
-            }
+           if (totalCost >= 500) {
+             updates.takeoverEffect = scoreLeftInc >= scoreRightInc ? 'gold' : 'cosmic';
+           }
 
-            batch.update(battleRef, updates);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to update Gift Battle scores:", err);
-    }
+           batch.update(battleRef, updates);
+         }
+       }
+     }
+   } catch (err) {
+     console.warn("Failed to update Gift Battle scores:", err);
+   }
 
-   const firstRecipientUid = selectedUids[0];
+   const firstRecipientUid = uids[0];
    const recipientObj = participants.find((p: any) => p.uid === firstRecipientUid);
    const recipientSeat = recipientObj?.seatIndex || 1;
    const recipientName = recipientObj?.name || 'Someone';
 
-    const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
-     batch.set(msgRef, {
-       type: 'gift',
-       senderId: user.uid,
-       senderName: userProfile.username,
-       giftId: selectedGift.id,
-       giftName: selectedGift.name,
-       giftValue: totalCost,
-       animationId: selectedGift.animationId,
-       imageUrl: selectedGift.imageUrl || null,
-       animationUrl: selectedGift.animationUrl || null,
-       videoUrl: selectedGift.videoUrl || null,
-       soundUrl: selectedGift.soundUrl || null,
-       tier: selectedGift.tier || 'normal',
-       recipientId: firstRecipientUid,
-       receiverName: recipientName,
-       recipientSeat: recipientSeat,
-       text: isLucky && didWin 
-         ? `sent ${selectedGift.name} x${qty} (LUCKY x${luckyMultiplier} WIN +${winAmount.toLocaleString()}💰) to ${recipientName}`
-         : isLucky 
-           ? `sent ${selectedGift.name} x${qty} (LUCKY x${luckyMultiplier}) to ${recipientName}`
-           : `sent ${selectedGift.name} x${qty} to ${recipientName}`,
-       timestamp: serverTimestamp(),
-       isLuckyGift: isLucky,
-       luckyMultiplier: isLucky ? luckyMultiplier : 1,
-       didWin: didWin,
-       winAmount: winAmount
-     });
+   const msgRef = doc(collection(firestore, 'chatRooms', roomId, 'messages'));
+   batch.set(msgRef, {
+     type: 'gift',
+     senderId: user.uid,
+     senderName: userProfile.username,
+     giftId: giftToSend.id,
+     giftName: giftToSend.name,
+     giftValue: totalCost,
+     animationId: giftToSend.animationId,
+     imageUrl: giftToSend.imageUrl || null,
+     animationUrl: giftToSend.animationUrl || null,
+     videoUrl: giftToSend.videoUrl || null,
+     soundUrl: giftToSend.soundUrl || null,
+     tier: giftToSend.tier || 'normal',
+     recipientId: firstRecipientUid,
+     receiverName: recipientName,
+     recipientSeat: recipientSeat,
+     text: `sent ${giftToSend.name} x${qty} to ${recipientName}`,
+     timestamp: serverTimestamp()
+   });
 
    await batch.commit();
 
-   // ============ SIRF WIN PE MESSAGE ============
-   if (isLucky && didWin && winAmount > 0) {
-     setWinData({ show: true, multiplier: luckyMultiplier });
-     setTimeout(() => setWinData(null), 4000);
-     
-     toast({
-       title: '🎉 LUCKY WIN!',
-       description: `+${winAmount.toLocaleString()} coins (${luckyMultiplier}x)`,
-       className: "bg-purple-900 border-purple-500 text-white"
-     });
-   }
-   // LOSS = SILENT, no message
+   return { winAmount, selectedMult, totalCost };
+ };
+ // =================================================================
 
-   if (!isLucky) onOpenChange(false);
+ const handleSend = async () => {
+  if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
+
+  const qty = parseInt(quantity);
+  const totalCost = selectedGift.price * qty * selectedUids.length;
+  
+  if ((userProfile.wallet?.coins || 0) < totalCost) return;
+  if (isSending) return;
+  setIsSending(true);
+
+  try {
+   const result = await executeGiftSend(selectedGift, qty, selectedUids);
+
+   if (result.winAmount > 0) {
+      // Win notification add karo
+      const notifId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      setWinNotifications(prev => [...prev, {
+        id: notifId,
+        multiplier: result.selectedMult,
+        amount: result.winAmount,
+        giftName: selectedGift.name
+      }]);
+      
+      // 4 second baad notification remove karo
+      setTimeout(() => {
+        setWinNotifications(prev => prev.filter(n => n.id !== notifId));
+      }, 4000);
+   }
+
+   // LUCKY GIFT: Sheet close karo aur COMBO button dikhao 3 second ke liye
+   if (selectedGift.isLucky) {
+      onOpenChange(false);
+      
+      // Combo data set karo
+      setComboData({
+        show: true,
+        gift: selectedGift,
+        quantity: qty
+      });
+      
+      // 3 second baad combo button hide karo
+      if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
+      comboTimeoutRef.current = setTimeout(() => {
+        setComboData(null);
+      }, 3000);
+   } else {
+      // Non-lucky gift: normal close
+      onOpenChange(false);
+   }
+   
   } catch (e) { 
     console.error(e); 
   } finally { 
-    setIsSending(false);
-    setLuckyMultiplier(1);
-    setShowComboOptions(false);
+    setIsSending(false); 
   }
  };
 
- const toggleComboOptions = () => {
-   setShowComboOptions(!showComboOptions);
+ // ============ COMBO SEND HANDLER ============
+ const handleComboSend = async () => {
+   if (!comboData || !user || !firestore || !userProfile || isComboSending.current) return;
+   
+   const totalCost = comboData.gift.price * comboData.quantity * selectedUids.length;
+   if ((userProfile.wallet?.coins || 0) < totalCost) return;
+   
+   isComboSending.current = true;
+   
+   try {
+     const result = await executeGiftSend(comboData.gift, comboData.quantity, selectedUids);
+     
+     if (result.winAmount > 0) {
+       const notifId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+       setWinNotifications(prev => [...prev, {
+         id: notifId,
+         multiplier: result.selectedMult,
+         amount: result.winAmount,
+         giftName: comboData.gift.name
+       }]);
+       
+       setTimeout(() => {
+         setWinNotifications(prev => prev.filter(n => n.id !== notifId));
+       }, 4000);
+     }
+     
+     // Combo timer reset karo - 3 second aur
+     if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
+     comboTimeoutRef.current = setTimeout(() => {
+       setComboData(null);
+     }, 3000);
+     
+   } catch (e) {
+     console.error(e);
+   } finally {
+     isComboSending.current = false;
+   }
  };
-
- const selectLuckyMultiplier = (mult: number) => {
-   setLuckyMultiplier(mult);
-   setShowComboOptions(false);
- };
-
- const isLuckyGift = selectedGift && (selectedGift.category === 'Lucky' || selectedGift.isLucky);
+ // =========================================
 
  return (
   <>
+   {/* ============ WIN NOTIFICATIONS - Screen Center Right to Left Slide ============ */}
+   <div className="fixed top-1/2 -translate-y-1/2 right-0 z-[2000] flex flex-col gap-2 pointer-events-none">
+     <AnimatePresence>
+       {winNotifications.map((notif) => (
+         <motion.div
+           key={notif.id}
+           initial={{ x: 400, opacity: 0 }}
+           animate={{ x: 0, opacity: 1 }}
+           exit={{ x: -400, opacity: 0 }}
+           transition={{ type: "spring", stiffness: 200, damping: 20 }}
+           className="bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-400 px-4 py-3 rounded-l-2xl shadow-[0_0_30px_rgba(234,179,8,0.6)] border-l-4 border-yellow-200 flex items-center gap-3 min-w-[250px]"
+         >
+           <Avatar className="h-9 w-9 border-2 border-yellow-200 shrink-0">
+             <AvatarImage src={userProfile?.avatarUrl || ''} />
+           </Avatar>
+           <div className="flex flex-col">
+             <span className="text-black font-black text-sm leading-tight">
+               WIN x{notif.multiplier}!
+             </span>
+             <span className="text-black/80 font-bold text-xs flex items-center gap-1">
+               +{notif.amount.toLocaleString()}
+               <GoldenDollar />
+             </span>
+           </div>
+         </motion.div>
+       ))}
+     </AnimatePresence>
+   </div>
+   {/* ======================================================================== */}
+
+   {/* ============ COMBO BUTTON - Right Side Bottom Corner ============ */}
    <AnimatePresence>
-     {winData?.show && (
-       <motion.div 
-         initial={{ x: -300, opacity: 0, rotateY: -30 }}
-         animate={{ x: 20, opacity: 1, rotateY: 0 }}
-         exit={{ x: -500, opacity: 0 }}
-         className="fixed top-1/3 left-0 z-[1000] pointer-events-none"
+     {comboData?.show && (
+       <motion.button
+         initial={{ scale: 0, opacity: 0 }}
+         animate={{ scale: 1, opacity: 1 }}
+         exit={{ scale: 0, opacity: 0 }}
+         transition={{ type: "spring", stiffness: 300, damping: 15 }}
+         onClick={handleComboSend}
+         disabled={isComboSending.current}
+         className="fixed bottom-6 right-6 z-[1500] h-16 w-16 rounded-full bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 shadow-[0_0_30px_rgba(236,72,153,0.7)] border-2 border-white/30 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
        >
-         <div className="relative w-64 h-40 bg-gradient-to-br from-purple-600 via-pink-600 to-purple-800 rounded-r-2xl border-2 border-yellow-400 shadow-[0_20px_50px_rgba(0,0,0,0.6),inset_0_0_30px_rgba(255,215,0,0.3)] flex flex-col items-center justify-center overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent skew-y-[-10deg] -translate-y-10" />
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 0.5 }}
-            >
-              <span className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-                style={{ WebkitTextStroke: '2px rgba(0,0,0,0.3)' }}
-              >
-                WIN x{winData.multiplier}
-              </span>
-            </motion.div>
-            <div className="mt-2 px-4 py-1 bg-yellow-400/30 rounded-full backdrop-blur-sm border border-yellow-300/50">
-               <span className="text-white font-bold text-xs uppercase tracking-widest">LUCKY REWARD</span>
-            </div>
-            <div className="absolute -top-4 -right-4 text-6xl animate-bounce">🎰</div>
-         </div>
-       </motion.div>
+         <img 
+           src={comboData.gift.imageUrl || ''} 
+           alt={comboData.gift.name}
+           className="h-12 w-12 rounded-full object-contain"
+         />
+         <motion.div
+           animate={{ rotate: 360 }}
+           transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+           className="absolute -inset-1 rounded-full border-2 border-dashed border-white/40"
+         />
+         <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-lg">
+           COMBO
+         </span>
+       </motion.button>
      )}
    </AnimatePresence>
+   {/* =========================================================== */}
 
    <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t- overflow-hidden text-white shadow-2xl pb-10 [&>button]:hidden">
@@ -597,25 +677,20 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       ))}
      </div>
 
-     <Tabs defaultValue="Hot" className="w-full mt-2">
+     <Tabs defaultValue="Hot" className="w-full mt-2 relative">
       <TabsList className="mx-4 bg-transparent p-1 flex justify-between gap-1">
        {['Hot', 'Lucky', 'Luxury', 'Event', 'Customized'].map(id => (
         <TabsTrigger 
           key={id} 
           value={id} 
-          className={cn(
-            "text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:bg-transparent data-[state=active]:border-b-2 bg-transparent border-b-2 border-transparent hover:text-white/80",
-            id === 'Lucky' 
-              ? "data-[state=active]:text-purple-400 data-[state=active]:border-purple-400" 
-              : "data-[state=active]:text-cyan-400 data-[state=active]:border-cyan-400"
-          )}
+          className="text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent border-b-2 border-transparent hover:text-white/80"
         >
           {id}
         </TabsTrigger>
        ))}
       </TabsList>
       
-       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start relative">
+       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start">
         {isGiftsLoading ? (
           <div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2">
             <Loader className="animate-spin text-cyan-400 h-6 w-6" />
@@ -674,136 +749,55 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
             </TabsContent>
           ))
         )}
-
-        {/* ============ LUCKY COMBO FLOATING BUTTON ============ */}
-        <AnimatePresence>
-          {isLuckyGift && (
-            <motion.div 
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-2"
-            >
-              <AnimatePresence>
-                {showComboOptions && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.8 }}
-                    className="flex flex-col gap-1.5 bg-[#151921]/95 backdrop-blur-sm p-2 rounded-2xl border border-purple-500/30 shadow-[0_0_25px_rgba(168,85,247,0.4)]"
-                  >
-                    {COMBO_MULTIPLIERS.filter(m => m !== luckyMultiplier).map((mult) => (
-                      <motion.button
-                        key={mult}
-                        onClick={() => selectLuckyMultiplier(mult)}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className={cn(
-                          "h-10 w-10 rounded-full font-black text-sm transition-all flex items-center justify-center border",
-                          mult >= 50 
-                            ? "bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/40 text-yellow-400 hover:from-yellow-500/30 hover:to-orange-500/30" 
-                            : "bg-purple-500/10 border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:border-purple-400"
-                        )}
-                      >
-                        x{mult}
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <motion.button
-                onClick={toggleComboOptions}
-                whileTap={{ scale: 0.9 }}
-                animate={showComboOptions ? { rotate: [0, -10, 10, -10, 0] } : {}}
-                className={cn(
-                  "h-14 w-14 rounded-full font-black text-lg flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.6)] border-2 transition-all relative overflow-hidden",
-                  showComboOptions 
-                    ? "bg-purple-600 border-purple-300 text-white" 
-                    : "bg-gradient-to-br from-purple-500 to-pink-600 border-purple-300/50 text-white"
-                )}
-              >
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-                  className="absolute inset-0 opacity-20"
-                  style={{ 
-                    background: 'conic-gradient(from 0deg, transparent, rgba(255,255,255,0.4), transparent)' 
-                  }}
-                />
-                <Zap className="h-6 w-6 absolute opacity-40" fill="white" />
-                <span className="relative z-10 text-sm font-black drop-shadow-lg">x{luckyMultiplier}</span>
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
        </div>
      </Tabs>
+
+     {/* ============ QUANTITY PILLS - Gift sheet ke upar overlap (absolute) ============ */}
+     <AnimatePresence>
+       {selectedGift && (
+         <motion.div 
+           initial={{ opacity: 0, y: 10 }}
+           animate={{ opacity: 1, y: 0 }}
+           exit={{ opacity: 0, y: 10 }}
+           className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 bg-[#0b0e14]/95 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/15 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]"
+         >
+           {QUANTITY_OPTIONS.map((q) => (
+             <button
+               key={q}
+               onClick={() => setQuantity(q)}
+               className={cn(
+                 "h-8 w-9 rounded-full text-xs font-bold transition-all border",
+                 quantity === q 
+                   ? "bg-cyan-500/20 border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]" 
+                   : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80"
+               )}
+             >
+               {q}
+             </button>
+           ))}
+         </motion.div>
+       )}
+     </AnimatePresence>
+     {/* ======================================================================== */}
 
      {/* ============ BOTTOM BAR ============ */}
      <div className="absolute bottom-0 left-0 right-0 p-4 pb-safe bg-[#0b0e14] flex items-center justify-between border-t border-white/10 shadow-2xl gap-3">
        
-       <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-1">
+       {/* Coins Balance */}
+       <div className="flex items-center gap-2 bg-white/5 rounded-2xl px-4 py-2.5 min-w-0 flex-shrink">
          <div className="shrink-0"><GoldenDollar /></div>
          <span className="text-sm font-black text-yellow-500 truncate" title={(userProfile?.wallet?.coins || 0).toLocaleString()}>
            {(userProfile?.wallet?.coins || 0).toLocaleString()}
          </span>
        </div>
-
-       {selectedGift && (
-         <Popover>
-           <PopoverTrigger asChild>
-             <button className="h-11 px-4 rounded-2xl bg-white/10 border border-white/20 text-white font-bold flex items-center gap-1.5 hover:bg-white/15 transition-all shrink-0">
-               <span className="text-sm">{quantity}</span>
-               <ChevronUp className="h-4 w-4 text-white/60" />
-             </button>
-           </PopoverTrigger>
-           <PopoverContent 
-             className="w-[80px] p-1.5 bg-[#151921] border-white/10 rounded-2xl shadow-2xl" 
-             align="center" 
-             side="top" 
-             sideOffset={8}
-           >
-             <div className="flex flex-col gap-1">
-               {QUANTITY_OPTIONS.map((q) => (
-                 <button
-                   key={q}
-                   onClick={() => setQuantity(q)}
-                   className={cn(
-                     "h-9 w-full rounded-xl text-sm font-bold transition-all",
-                     quantity === q 
-                       ? "bg-cyan-500/20 text-cyan-400" 
-                       : "text-white/70 hover:bg-white/10 hover:text-white"
-                   )}
-                 >
-                   {q}
-                 </button>
-               ))}
-             </div>
-           </PopoverContent>
-         </Popover>
-       )}
        
+       {/* Send Button */}
        <button 
          onClick={() => handleSend()} 
          disabled={!selectedGift || isSending || selectedUids.length === 0} 
-         className={cn(
-           "h-11 px-8 rounded-2xl font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 shrink-0",
-           isLuckyGift 
-             ? "bg-gradient-to-r from-purple-600 to-pink-600 border-purple-800/30 animate-pulse" 
-             : "bg-gradient-to-r from-blue-600 to-cyan-500 border-black/20"
-         )}
+         className="h-11 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 shrink-0"
        >
-         {isSending ? (
-           <Loader className="h-5 w-5 animate-spin" />
-         ) : isLuckyGift ? (
-           <span className="flex items-center gap-1">
-             <Zap className="h-4 w-4" fill="white" />
-             BET x{luckyMultiplier}
-           </span>
-         ) : (
-           'SEND'
-         )}
+         {isSending ? <Loader className="h-5 w-5 animate-spin" /> : 'SEND'}
        </button>
      </div>
 
@@ -907,4 +901,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-      }
+   }
