@@ -234,8 +234,55 @@ export function EmojiReactionOverlay({
   size?: string 
 }) {
   const [activeEmoji, setActiveEmoji] = useState<{ id: number, type: string, data?: any } | null>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number>();
+
+  // Black color removal function using canvas
+  const removeBlackBackground = (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const drawFrame = () => {
+      if (video.paused || video.ended) return;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Get image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Remove black/solid black pixels from all sides
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Remove solid black and near-black pixels
+        if (r < 30 && g < 30 && b < 30) {
+          data[i + 3] = 0; // Make transparent
+        }
+      }
+      
+      // Put processed image data back
+      ctx.putImageData(imageData, 0, 0);
+      
+      animationFrameRef.current = requestAnimationFrame(drawFrame);
+    };
+
+    video.addEventListener('play', drawFrame);
+    
+    // If video is already playing
+    if (!video.paused) {
+      drawFrame();
+    }
+  };
 
   useEffect(() => {
     if (emoji) {
@@ -249,13 +296,19 @@ export function EmojiReactionOverlay({
         data: customEmojiData
       };
       setActiveEmoji(newEmoji);
+      setVideoLoaded(false);
       
-      timerRef.current = setTimeout(() => setActiveEmoji(null), displayTime);
+      timerRef.current = setTimeout(() => {
+        setActiveEmoji(null);
+        setVideoLoaded(false);
+      }, displayTime);
     } else {
       setActiveEmoji(null);
+      setVideoLoaded(false);
     }
     return () => { 
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       if (videoRef.current) {
         videoRef.current.pause();
         videoRef.current.src = '';
@@ -263,8 +316,47 @@ export function EmojiReactionOverlay({
     };
   }, [emoji, customEmojiData]);
 
+  // Handle video playback and black removal
+  useEffect(() => {
+    if (activeEmoji?.data?.animationUrl && videoRef.current) {
+      const video = videoRef.current;
+      
+      const handleCanPlay = () => {
+        setVideoLoaded(true);
+        video.play().catch(err => {
+          console.error('Video autoplay failed:', err);
+        });
+      };
+
+      const handleLoadedMetadata = () => {
+        if (canvasRef.current) {
+          removeBlackBackground(video, canvasRef.current);
+        }
+      };
+
+      video.addEventListener('canplay', handleCanPlay);
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      
+      // Start loading the video
+      video.load();
+
+      return () => {
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
+    }
+  }, [activeEmoji]);
+
   if (!activeEmoji) return null;
-  const sizeClasses: Record<string, string> = { sm: 'w-16 h-16', md: 'w-24 h-24', lg: 'w-32 h-32' };
+  
+  const sizeClasses: Record<string, string> = { 
+    sm: 'w-16 h-16', 
+    md: 'w-24 h-24', 
+    lg: 'w-32 h-32' 
+  };
 
   const isCustomEmoji = activeEmoji.data?.isCustom || activeEmoji.data?.imageUrl || activeEmoji.data?.animationUrl;
 
@@ -273,35 +365,62 @@ export function EmojiReactionOverlay({
       <AnimatePresence mode="wait">
         <motion.div
           key={activeEmoji.id}
-          className={cn("drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex items-center justify-center", sizeClasses[size] || sizeClasses.md)}
+          className={cn(
+            "drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex items-center justify-center",
+            sizeClasses[size] || sizeClasses.md
+          )}
           initial={{ scale: 0, y: 50, opacity: 0 }}
           animate={{ scale: 1.4, y: 0, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           {isCustomEmoji ? (
-            // Custom emoji: show video or image
+            // Custom emoji: show video in square with black removed
             activeEmoji.data?.animationUrl ? (
-              <video
-                ref={videoRef}
-                src={activeEmoji.data.animationUrl}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-contain"
-              />
+              <div className="relative w-full h-full flex items-center justify-center bg-transparent rounded-lg overflow-hidden">
+                {/* Hidden video element for processing */}
+                <video
+                  ref={videoRef}
+                  src={activeEmoji.data.animationUrl}
+                  muted
+                  playsInline
+                  loop
+                  preload="auto"
+                  className="hidden"
+                  crossOrigin="anonymous"
+                  disableRemotePlayback
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  style={{ display: 'none' }}
+                />
+                {/* Canvas where video will be rendered without black background */}
+                <canvas
+                  ref={canvasRef}
+                  className="w-full h-full object-contain"
+                  style={{
+                    mixBlendMode: 'normal',
+                    filter: 'none',
+                    opacity: videoLoaded ? 1 : 0,
+                    transition: 'opacity 0.3s ease-in-out'
+                  }}
+                />
+              </div>
             ) : activeEmoji.data?.imageUrl ? (
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 0.5 }}
+                className="w-full h-full flex items-center justify-center"
               >
                 <Image
                   src={activeEmoji.data.imageUrl}
                   alt={activeEmoji.data.name || 'Emoji'}
                   width={96}
                   height={96}
-                  className="object-contain"
+                  className="object-contain w-full h-full"
                   unoptimized
+                  style={{
+                    mixBlendMode: 'screen',
+                    filter: 'brightness(1.1) contrast(1.1)'
+                  }}
                 />
               </motion.div>
             ) : null
@@ -313,4 +432,4 @@ export function EmojiReactionOverlay({
       </AnimatePresence>
     </div>
   );
-}
+          }
