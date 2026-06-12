@@ -141,80 +141,139 @@ const getTodayString = () => {
     return istDate.toISOString().split('T')[0];
 };
 
-// ============ COMBO NOTIFICATION SLIDE ============
-// RIGHT se LEFT ki taraf slide hoti hai
-// Purple-Pink gradient color
-// Isi ke andar MULTIPLIER show hota hai
-const ComboNotification = ({ 
+// ============ GOLDEN BAR SVG COMPONENT ============
+const GoldenBarSvg = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="800"
+    height="120"
+    viewBox="0 0 800 120"
+    className="w-full h-auto block overflow-visible"
+  >
+    <defs>
+      <linearGradient id="goldBar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#FFF0A0" />
+        <stop offset="30%" stopColor="#E6C14A" />
+        <stop offset="70%" stopColor="#C99A2E" />
+        <stop offset="100%" stopColor="#8B6914" />
+      </linearGradient>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <rect
+      x="20"
+      y="18"
+      width="760"
+      height="84"
+      rx="42"
+      fill="url(#goldBar)"
+      stroke="#8B6914"
+      strokeWidth={2}
+      filter="url(#glow)"
+    />
+    <rect
+      x="25"
+      y="23"
+      width="750"
+      height="30"
+      rx="15"
+      fill="white"
+      opacity={0.15}
+    />
+  </svg>
+);
+
+// ============ COMBO PATTI (GOLDEN BAR) NOTIFICATION SLIDE ============
+// Right se Left ki taraf slide hoti hai - GOLDEN BAR design
+// Avatar, Name, Gift Image, Multiplier - Sparkle HATA DIYA
+const ComboPatti = ({ 
   avatarUrl, 
+  username,
   giftImageUrl, 
   multiplier, 
-  winAmount,
-  giftPrice,
-  quantity 
 }: { 
-  avatarUrl: string; 
+  avatarUrl: string;
+  username: string;
   giftImageUrl: string | null; 
   multiplier: number;
-  winAmount: number;
-  giftPrice: number;
-  quantity: number;
 }) => {
   return (
     <motion.div
-      initial={{ x: 400, opacity: 0 }}
+      initial={{ x: 500, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 400, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      exit={{ x: 500, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className="fixed right-4 z-[1100] pointer-events-none"
-      style={{ top: '60vh' }}
+      style={{ top: '55vh' }}
     >
-      <div className="bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-500 border-2 border-pink-300/50 rounded-2xl px-4 py-3 shadow-[0_0_30px_rgba(168,85,247,0.5)] flex items-center gap-3 min-w-[320px] max-w-[400px]">
-        
-        {/* User Avatar */}
-        <div className="shrink-0">
-          <Avatar className="h-11 w-11 border-2 border-pink-300 shadow-[0_0_15px_rgba(236,72,153,0.5)]">
-            <AvatarImage src={avatarUrl} />
-          </Avatar>
+      {/* Golden Bar Container with pulse animation */}
+      <motion.div 
+        className="relative w-[290px]"
+        animate={{ 
+          filter: [
+            'drop-shadow(0 0 8px rgba(230, 193, 74, 0.28)) brightness(1)',
+            'drop-shadow(0 0 18px rgba(255, 240, 160, 0.5)) brightness(1.04)',
+            'drop-shadow(0 0 8px rgba(230, 193, 74, 0.28)) brightness(1)'
+          ]
+        }}
+        transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+      >
+        {/* SVG Golden Bar Background */}
+        <div className="absolute inset-0">
+          <GoldenBarSvg />
         </div>
 
-        {/* Gift Image */}
-        <div className="shrink-0 h-11 w-11 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden border border-pink-200/30">
-          {giftImageUrl ? (
-            <img src={giftImageUrl} alt="gift" className="h-9 w-9 object-contain" />
-          ) : (
-            <span className="text-xl">🎁</span>
-          )}
-        </div>
+        {/* Content Overlay on Golden Bar */}
+        <div className="relative z-10 flex items-center gap-3 px-6 py-4 min-h-[100px]">
+          
+          {/* Left: User Avatar */}
+          <div className="shrink-0">
+            <Avatar className="h-12 w-12 border-2 border-yellow-600/60 shadow-[0_0_18px_rgba(255,215,0,0.5)]">
+              <AvatarImage src={avatarUrl} />
+            </Avatar>
+          </div>
 
-        {/* MULTIPLIER - Bada aur prominent isi slide mein */}
-        <div className="flex-1 min-w-0 flex flex-col items-center justify-center">
-          <motion.span 
-            key={multiplier}
-            initial={{ scale: 1.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 12 }}
-            className="text-3xl font-black text-white drop-shadow-lg leading-none"
-          >
-            x{multiplier}
-          </motion.span>
-          <div className="flex items-center gap-1 mt-1">
-            <GoldenDollar />
-            <span className="text-sm font-black text-yellow-300">
-              +{winAmount.toLocaleString()}
+          {/* Center Left: Username */}
+          <div className="shrink-0 min-w-[50px] max-w-[65px]">
+            <span className="text-sm font-black text-[#5C3D0E] truncate block leading-tight">
+              {username}
             </span>
+            <span className="text-[10px] font-bold text-[#7A5A1E] opacity-70">
+              sent
+            </span>
+          </div>
+
+          {/* Center: Gift Image */}
+          <div className="shrink-0 h-12 w-12 rounded-xl bg-white/20 flex items-center justify-center overflow-hidden border border-yellow-400/40 shadow-inner">
+            {giftImageUrl ? (
+              <img src={giftImageUrl} alt="gift" className="h-10 w-10 object-contain" />
+            ) : (
+              <span className="text-2xl">🎁</span>
+            )}
+          </div>
+
+          {/* Right: MULTIPLIER - Bada aur prominent */}
+          <div className="flex-1 flex items-center justify-center min-w-0">
+            <motion.span 
+              key={multiplier}
+              initial={{ scale: 2, opacity: 0, y: -10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 12 }}
+              className="text-4xl font-black text-[#3D2000] drop-shadow-[0_2px_4px_rgba(255,240,160,0.6)] leading-none"
+            >
+              x{multiplier}
+            </motion.span>
           </div>
         </div>
 
-        {/* Sparkle */}
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-          className="shrink-0"
-        >
-          <span className="text-xl">✨</span>
-        </motion.div>
-      </div>
+        {/* Shine highlight bar (top reflection) */}
+        <div className="absolute top-2 left-8 right-8 h-[2px] bg-white/30 rounded-full blur-[2px]" />
+      </motion.div>
     </motion.div>
   );
 };
@@ -244,6 +303,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
  const [activeTab, setActiveTab] = useState('Hot');
  const [sheetOpen, setSheetOpen] = useState(false);
+ 
+ // ============ COMBO CLICK COUNTER ============
+ const comboClicksRef = useRef<number>(0);
+ const comboClickTimerRef = useRef<NodeJS.Timeout | null>(null);
  
  const hasInitialized = useRef(false);
  const lastRecipientUid = useRef<string | null>(null);
@@ -346,6 +409,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  useEffect(() => {
    return () => {
      if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+     if (comboClickTimerRef.current) clearTimeout(comboClickTimerRef.current);
    };
  }, []);
 
@@ -414,7 +478,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
   };
 
   // ============ CORE SEND LOGIC ============
-  const executeSend = useCallback(async (gift: any, qty: number, uids: string[]) => {
+  const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
     if (!user || !firestore || !userProfile || uids.length === 0) return null;
 
     const totalCost = gift.price * qty * uids.length;
@@ -425,20 +489,26 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const batch = writeBatch(firestore);
       const today = getTodayString();
       let winAmount = 0;
-      let selectedMult = 1;
+      let selectedMult = comboMultiplier;
 
-      // Random multiplier
-      const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-      if (rand < 0.7) selectedMult = 1;
-      else if (rand < 0.85) selectedMult = 2;
-      else if (rand < 0.93) selectedMult = 5;
-      else if (rand < 0.97) selectedMult = 10;
-      else if (rand < 0.985) selectedMult = 50;
-      else if (rand < 0.995) selectedMult = 100;
-      else if (rand < 0.999) selectedMult = 500;
-      else selectedMult = 1000;
+      // ============ SIRF LUCKY CATEGORY KE LIYE CHOTA COINS REWARD ============
+      const isLuckyGift = gift.category === 'Lucky';
       
-      winAmount = (gift.price * qty * selectedMult);
+      if (isLuckyGift) {
+        if (comboMultiplier <= 1) {
+          const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
+          if (rand < 0.80) selectedMult = 1;
+          else if (rand < 0.92) selectedMult = 2;
+          else if (rand < 0.97) selectedMult = 3;
+          else if (rand < 0.99) selectedMult = 5;
+          else selectedMult = 10;
+        }
+        
+        if (selectedMult > 1) {
+          const rawWin = gift.price * qty * selectedMult;
+          winAmount = Math.min(rawWin, totalCost * 2);
+        }
+      }
 
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const senderUserRef = doc(firestore, 'users', user.uid);
@@ -581,7 +651,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       return { 
         winAmount, 
         selectedMult,
-        totalCost
+        totalCost,
+        isLuckyGift
       };
     } catch (e) {
       console.error("Send gift error:", e);
@@ -602,10 +673,11 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     
     comboTimerRef.current = setTimeout(() => {
       setComboState(null);
+      comboClicksRef.current = 0;
     }, 5000);
   }, []);
 
-  // ============ HANDLE SEND - SHEET CLOSE + COMBO START ============
+  // ============ HANDLE SEND ============
   const handleSend = async () => {
     if (!user || !firestore || !selectedGift || !userProfile || selectedUids.length === 0) return;
     if (isSending) return;
@@ -613,15 +685,16 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
     try {
       const qty = parseInt(quantity);
-      const result = await executeSend(selectedGift, qty, selectedUids);
+      const result = await executeSend(selectedGift, qty, selectedUids, 1);
 
       if (result) {
-        // Sheet close
         setSheetOpen(false);
         onOpenChange(false);
         
-        // Combo start - Notification slide + Circle button
-        startComboTimer(selectedGift, result.selectedMult, result.winAmount);
+        if (result.isLuckyGift && result.winAmount > 0) {
+          comboClicksRef.current = 1;
+          startComboTimer(selectedGift, result.selectedMult, result.winAmount);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -635,18 +708,33 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     }
   };
 
-  // ============ HANDLE COMBO PRESS - FAST SMOOTH ============
+  // ============ HANDLE COMBO PRESS ============
   const handleComboPress = async () => {
     if (!comboState || isSending) return;
+    
+    comboClicksRef.current += 1;
+    const newMultiplier = comboClicksRef.current;
     
     setIsSending(true);
 
     try {
       const qty = parseInt(quantity);
-      const result = await executeSend(comboState.gift, qty, selectedUids);
+      const result = await executeSend(comboState.gift, qty, selectedUids, newMultiplier);
 
       if (result) {
-        startComboTimer(comboState.gift, result.selectedMult, result.winAmount);
+        if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
+        
+        setComboState({
+          show: true,
+          multiplier: newMultiplier,
+          winAmount: (comboState.gift.price * qty * newMultiplier),
+          gift: comboState.gift
+        });
+        
+        comboTimerRef.current = setTimeout(() => {
+          setComboState(null);
+          comboClicksRef.current = 0;
+        }, 5000);
       }
     } catch (e) {
       console.error(e);
@@ -662,23 +750,19 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* ============ COMBO NOTIFICATION SLIDE ============ */}
-   {/* RIGHT side se LEFT ki taraf slide hoti hai */}
-   {/* Isi slide ke ANDAR MULTIPLIER dikhta hai */}
+   {/* ============ COMBO PATTI (GOLDEN BAR) NOTIFICATION ============ */}
    <AnimatePresence>
      {comboState?.show && (
-       <ComboNotification 
+       <ComboPatti 
          avatarUrl={userProfile?.avatarUrl || ''}
+         username={userProfile?.username || 'User'}
          giftImageUrl={comboState.gift?.imageUrl || null}
          multiplier={comboState.multiplier}
-         winAmount={comboState.winAmount}
-         giftPrice={comboState.gift?.price || 0}
-         quantity={parseInt(quantity)}
        />
      )}
    </AnimatePresence>
 
-   {/* ============ COMBO CIRCLE BUTTON (BADA - Right Bottom) ============ */}
+   {/* ============ COMBO CIRCLE BUTTON ============ */}
    <AnimatePresence>
      {comboState?.show && (
        <motion.button
@@ -688,23 +772,22 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
          transition={{ type: "spring", stiffness: 400, damping: 15 }}
          onClick={handleComboPress}
          disabled={isSending}
-         className="fixed right-6 bottom-32 z-[1000] h-20 w-20 rounded-full bg-gradient-to-br from-purple-600 via-fuchsia-500 to-pink-500 shadow-[0_0_40px_rgba(168,85,247,0.7)] border-3 border-pink-300 flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform cursor-pointer"
+         className="fixed right-6 bottom-32 z-[1000] h-20 w-20 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-700 shadow-[0_0_40px_rgba(255,215,0,0.7)] border-3 border-yellow-200 flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform cursor-pointer"
        >
          <motion.span
            key={comboState.multiplier}
            initial={{ scale: 1.8, opacity: 0 }}
            animate={{ scale: 1, opacity: 1 }}
            transition={{ type: "spring", stiffness: 500, damping: 10 }}
-           className="text-2xl font-black text-white drop-shadow-lg"
+           className="text-2xl font-black text-[#3D2000] drop-shadow-[0_2px_4px_rgba(255,240,160,0.8)]"
          >
            x{comboState.multiplier}
          </motion.span>
          
-         {/* Pulse ring */}
          <motion.div
            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
            transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-           className="absolute inset-0 rounded-full border-2 border-pink-300/50"
+           className="absolute inset-0 rounded-full border-2 border-yellow-300/50"
          />
        </motion.button>
      )}
@@ -995,4 +1078,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-              }
+                           }
