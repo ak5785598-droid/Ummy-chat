@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { AppLayout } from '@/components/layout/app-layout';
 import Image from 'next/image';
 import { 
@@ -23,7 +23,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   useFirestore, 
   useUser,
-  useDoc
+  useDoc,
+  useStorage
 } from '@/firebase';
 import { 
   doc, 
@@ -32,6 +33,7 @@ import {
   increment,
   runTransaction
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { GoldCoinIcon } from '@/components/icons';
@@ -43,9 +45,13 @@ export default function CreateFamilyPage() {
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -53,6 +59,25 @@ export default function CreateFamilyPage() {
   });
 
   const CREATE_COST = 100000;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !storage) return;
+
+    setIsUploading(true);
+    try {
+      const storageRef = ref(storage, `families/logos/${Date.now()}_${file.name}`);
+      const uploadRes = await uploadBytes(storageRef, file, { cacheControl: 'public,max-age=31536000,immutable' });
+      const downloadUrl = await getDownloadURL(uploadRes.ref);
+      setFormData(prev => ({ ...prev, bannerUrl: downloadUrl }));
+      toast({ title: 'Image Uploaded', description: 'Family insignia image successfully uploaded.' });
+    } catch (err: any) {
+      console.error(err);
+      toast({ variant: 'destructive', title: 'Upload Failed', description: err.message || 'Failed to upload family insignia.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,19 +166,33 @@ export default function CreateFamilyPage() {
         <main className="px-6 space-y-8">
            <Card className="bg-white/5 border-white/10 overflow-hidden rounded-[2.5rem]">
               <CardContent className="p-8 space-y-6">
-                 <div className="flex flex-col items-center text-center gap-4">
-                    <div className="h-24 w-24 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center relative group overflow-hidden">
-                       {formData.bannerUrl ? (
-                          <Image src={formData.bannerUrl} fill className="object-cover" alt="Banner" unoptimized />
-                       ) : (
-                          <Plus className="h-10 w-10 text-primary" />
-                       )}
-                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-                          <Camera className="h-6 w-6 text-white" />
-                       </div>
-                    </div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Upload Family Insignia</p>
-                 </div>
+                  <div className="flex flex-col items-center text-center gap-4">
+                     <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="image/*" 
+                        className="hidden" 
+                     />
+                     <div 
+                        onClick={() => !isUploading && fileInputRef.current?.click()}
+                        className="h-24 w-24 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center relative group overflow-hidden cursor-pointer active:scale-95 transition-transform"
+                     >
+                        {isUploading ? (
+                           <Loader className="animate-spin h-8 w-8 text-primary" />
+                        ) : formData.bannerUrl ? (
+                           <Image src={formData.bannerUrl} fill className="object-cover" alt="Banner" unoptimized />
+                        ) : (
+                           <Plus className="h-10 w-10 text-primary" />
+                        )}
+                        {!isUploading && (
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <Camera className="h-6 w-6 text-white" />
+                           </div>
+                        )}
+                     </div>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Upload Family Insignia</p>
+                  </div>
 
                  <form className="space-y-6" onSubmit={handleCreate}>
                     <div className="space-y-2">
