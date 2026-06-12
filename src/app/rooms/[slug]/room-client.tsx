@@ -1761,6 +1761,24 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     return () => clearInterval(heartbeat);
   }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
 
+  // SEAT TIME TRACKING: Update daily seat time in minutes when user is on a seat
+  useEffect(() => {
+    if (!firestore || !currentUser?.uid || !isInSeat) return;
+
+    const trackSeatTime = () => {
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const userRef = doc(firestore, 'userProfiles', currentUser.uid);
+      setDocumentNonBlocking(userRef, {
+        [`seatTime.${today}`]: increment(1),
+        totalSeatTime: increment(1)
+      }, { merge: true });
+    };
+
+    // Track 1 minute of seat time every 60 seconds
+    const seatInterval = setInterval(trackSeatTime, 60000);
+    return () => clearInterval(seatInterval);
+  }, [firestore, currentUser?.uid, isInSeat]);
+
   // Initialize Room Tasks Hook
   const { taskProgress, achievedTasks, claimedTasks, claimTask, triggerTask } = useRoomTasks(
     room?.id || 'pending',

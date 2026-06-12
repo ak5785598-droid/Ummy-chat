@@ -139,6 +139,7 @@ import { VipManagementTab } from "@/components/admin/vip-management-tab";
 import { CpManagementTab } from "@/components/admin/cp-management-tab";
 import { FamilyManagementTab } from "@/components/admin/family-management-tab";
 import { LeaderboardThemeAdmin } from "@/components/admin/leaderboard-theme-admin";
+import { SeatTimingTab } from "@/components/admin/seat-timing-tab";
 
 const CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1";
 
@@ -3272,6 +3273,12 @@ function AdminPageContent() {
                   <Gift className="h-4 w-4" /> Loot Management
                 </TabsTrigger>
                 <TabsTrigger
+                  value="seat-timing"
+                  className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-teal-600 data-[state=active]:text-white shadow-lg"
+                >
+                  <Clock className="h-4 w-4" /> Seat Timing Tracker
+                </TabsTrigger>
+                <TabsTrigger
                   value="loading-screen"
                   className="w-full justify-start h-14 rounded-2xl px-6 font-bold uppercase text-xs gap-3 text-slate-600 data-[state=active]:bg-primary data-[state=active]:text-white"
                 >
@@ -4318,6 +4325,9 @@ function AdminPageContent() {
                   handleGameLoadingBGUpload(e.target.files[0])
                 }
               />
+            </TabsContent>
+            <TabsContent value="seat-timing" className="m-0 space-y-6">
+              <SeatTimingTab />
             </TabsContent>
 
             <TabsContent value="loading-screen" className="m-0 space-y-6">
