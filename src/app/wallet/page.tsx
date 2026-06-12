@@ -234,43 +234,49 @@ function WalletContent() {
      name: 'Ummy Chat',
      description: `Recharge ${pkg.amount} Coins`,
      order_id: order.orderId,
-     handler: async (response: any) => {
-      const verification = await verifyPaymentAction(
-       response.razorpay_order_id,
-       response.razorpay_payment_id,
-       response.razorpay_signature
-      );
+      handler: async (response: any) => {
+       try {
+        const verification = await verifyPaymentAction(
+         response.razorpay_order_id,
+         response.razorpay_payment_id,
+         response.razorpay_signature
+        );
 
-      if (!verification.success) {
-       toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error || 'Payment verification failed.' });
-       setIsProcessing(false);
-       return;
-      }
+        if (!verification.success) {
+         toast({ variant: 'destructive', title: 'Verification Failed', description: verification.error || 'Payment verification failed.' });
+         setIsProcessing(false);
+         return;
+        }
 
-      const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
-      const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
-      const totalGain = amountValue + bonusValue;
+        const amountValue = parseInt(pkg.amount.replace(/,/g, ''));
+        const bonusValue = pkg.bonus ? parseInt(pkg.bonus.replace('+', '')) : 0;
+        const totalGain = amountValue + bonusValue;
 
-      const userRef = doc(firestore, 'users', user.uid);
-      const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      
-      await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
-      
-      const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
-      await addDoc(historyRef, {
-        type: 'purchase',
-        coinAmount: totalGain,
-        packageId: pkg.id,
-        amountPaid: pkg.price,
-        razorpayOrderId: response.razorpay_order_id,
-        razorpayPaymentId: response.razorpay_payment_id,
-        timestamp: serverTimestamp()
-      });
-      
-      toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
-      setIsProcessing(false);
-     },
+        const userRef = doc(firestore, 'users', user.uid);
+        const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+        
+        await updateDocumentNonBlocking(userRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+        await updateDocumentNonBlocking(profileRef, { 'wallet.coins': increment(totalGain), updatedAt: serverTimestamp() });
+        
+        const historyRef = collection(firestore, 'users', user.uid, 'diamondExchanges');
+        await addDoc(historyRef, {
+          type: 'purchase',
+          coinAmount: totalGain,
+          packageId: pkg.id,
+          amountPaid: pkg.price,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          timestamp: serverTimestamp()
+        });
+        
+        toast({ title: 'Recharge Successful', description: `Synchronized ${totalGain.toLocaleString()} Coins to your vault.` });
+       } catch (e) {
+        console.error('[Razorpay Handler Error]', e);
+        toast({ variant: 'destructive', title: 'Payment Error', description: 'Something went wrong. Please contact support.' });
+       } finally {
+        setIsProcessing(false);
+       }
+      },
      prefill: {
       name: user.displayName || '',
       email: user.email || '',

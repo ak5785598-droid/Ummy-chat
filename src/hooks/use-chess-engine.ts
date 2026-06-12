@@ -61,6 +61,12 @@ export function useChessEngine(roomId: string | null, userId: string | null) {
   const makeMove = useCallback(async (newFen: string, san: string, status: 'playing' | 'checkmate' | 'draw' = 'playing', winnerUid: string | null = null) => {
     if (!gameDocRef || !gameState) return;
 
+    const isWhite = gameState.white?.uid === userId;
+    const isBlack = gameState.black?.uid === userId;
+    
+    if (!isWhite && !isBlack) return;
+    if ((isWhite && gameState.turn !== 'w') || (isBlack && gameState.turn !== 'b')) return;
+
     const nextTurn = gameState.turn === 'w' ? 'b' : 'w';
 
     await updateDocumentNonBlocking(gameDocRef, {
@@ -71,7 +77,7 @@ export function useChessEngine(roomId: string | null, userId: string | null) {
       history: [...(gameState.history || []), san],
       updatedAt: serverTimestamp()
     });
-  }, [gameDocRef, gameState]);
+  }, [gameDocRef, gameState, userId]);
 
   return {
     gameState: gameState as ChessGameState | undefined,

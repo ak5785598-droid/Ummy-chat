@@ -3178,12 +3178,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       <ThemeColorMeta color={currentTheme.accentColor || "#1a0b2e"} />
       <ThemeSync color={themeSyncColor} />
       {/* <DailyRewardDialog /> */}
-      <ExitRoomDialog
-        isOpen={showExitDialog}
-        onClose={() => setShowExitDialog(false)}
-        onMinimize={handleMinimize}
-        onConfirmExit={handleExit}
-      />
         {/* DISABLED: Rocket Dialog
         <RocketDialog
           open={isRocketOpen}
@@ -4116,7 +4110,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onOpenMovies={() => { setIsMoviesOpen(true); setIsRoomPlayOpen(false); }}
         onOpenScreenMirror={() => { setIsScreenMirrorOpen(true); setIsRoomPlayOpen(false); }}
         onOpenSports={() => { setIsRoomPlayOpen(false); setTimeout(() => setIsSportsOpen(true), 300); }}
-        onOpenNetMirror={() => { setIsNetMirrorOpen(true); setIsRoomPlayOpen(false); }}
         defaultView={portalDefaultView}
       />
       <RoomGamesDialog
@@ -4376,14 +4369,6 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         onMention={handleMention}
         isMe={selectedParticipantUid === currentUser?.uid}
         isInSeat={onlineParticipants.find(p => p.uid === selectedParticipantUid)?.seatIndex !== undefined && (onlineParticipants.find(p => p.uid === selectedParticipantUid)?.seatIndex ?? 0) > 0}
-      />
-
-      <RoomInfoDialog
-        open={isRoomInfoOpen}
-        onOpenChange={setIsRoomInfoOpen}
-        room={room}
-        isOwner={isOwner}
-        isAdmin={canManageRoom}
       />
 
       <RoomSettingsDialog

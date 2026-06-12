@@ -261,8 +261,8 @@ export function useLudoEngine(roomId: string | null, userId: string | null) {
           const winnerProfileRef = doc(firestore!, 'users', winnerId, 'profile', winnerId);
           const walletRef = doc(firestore!, 'walletTransactions', `win_ludo_${winnerId}_${Date.now()}`);
 
-          transaction.update(winnerRef, { coins: increment(prize) });
-          transaction.update(winnerProfileRef, { coins: increment(prize) });
+          transaction.update(winnerRef, { 'wallet.coins': increment(prize) });
+          transaction.update(winnerProfileRef, { 'wallet.coins': increment(prize) });
           transaction.set(walletRef, {
             userId: winnerId,
             amount: prize,

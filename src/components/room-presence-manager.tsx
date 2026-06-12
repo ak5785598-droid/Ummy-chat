@@ -29,6 +29,7 @@ import { App } from '@capacitor/app';
   const hasStayAwarded = useRef<boolean>(false);
   const presenceRef = useRef<any>(null);
   const appStateListener = useRef<any>(null);
+  const appStateListenerPromise = useRef<Promise<any> | null>(null);
 
   const latestRoomRef = useRef({ activeRoomId: activeRoom?.id || null, minimizedRoomId: minimizedRoom?.id || null });
   latestRoomRef.current = {
@@ -236,7 +237,7 @@ import { App } from '@capacitor/app';
         isOnline: true
       });
       
-      App.addListener('appStateChange', ({ isActive }) => {
+      const listenerPromise = App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive && presenceRef.current) {
           set(presenceRef.current, null);
         } else if (isActive && presenceRef.current) {
@@ -250,7 +251,9 @@ import { App } from '@capacitor/app';
           });
           onDisconnect(presenceRef.current).remove();
         }
-      }).then(listener => {
+      });
+      appStateListenerPromise.current = listenerPromise;
+      listenerPromise.then(listener => {
         appStateListener.current = listener;
       });
     }
@@ -269,10 +272,13 @@ import { App } from '@capacitor/app';
      if (cleanupInterval.current) clearInterval(cleanupInterval.current);
      document.removeEventListener('visibilitychange', handleVisibility);
      
-     if (appStateListener.current) {
-       appStateListener.current.remove();
-       appStateListener.current = null;
-     }
+      if (appStateListener.current) {
+        appStateListener.current.remove();
+        appStateListener.current = null;
+      } else if (appStateListenerPromise.current) {
+        appStateListenerPromise.current.then(listener => listener?.remove());
+        appStateListenerPromise.current = null;
+      }
       if (presenceRef.current) {
        set(presenceRef.current, null);
        presenceRef.current = null;
