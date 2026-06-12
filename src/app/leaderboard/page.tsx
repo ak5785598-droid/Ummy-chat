@@ -70,7 +70,7 @@ const LeaderboardFrame = ({
         style={{ 
           width: containerSize + 'px',
           height: containerSize + 'px',
-          filter: 'url(#remove-black-background)'
+          mixBlendMode: 'screen'
         }}
       >
         <video
@@ -91,8 +91,7 @@ const LeaderboardFrame = ({
       className="absolute inset-0 z-10 pointer-events-none m-auto overflow-visible"
       style={{ 
         width: containerSize + 'px',
-        height: containerSize + 'px',
-        filter: 'url(#remove-black-background)'
+        height: containerSize + 'px'
       }}
     >
       <img

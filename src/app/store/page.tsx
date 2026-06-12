@@ -95,7 +95,7 @@ const SmartBlackRemover = ({
 
   const finalStyle: React.CSSProperties = {
     ...style,
-    ...((isBlackBg || isVideoUrl) ? { filter: 'url(#remove-black-background)' } : {})
+    ...((isBlackBg || isVideoUrl) ? { mixBlendMode: 'screen' } : {})
   };
 
   if (type === 'video') {

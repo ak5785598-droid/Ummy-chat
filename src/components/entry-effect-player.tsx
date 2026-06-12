@@ -62,14 +62,13 @@ export function EntryEffectPlayer({ effect, onComplete }: EntryEffectProps) {
                 playsInline
                 onEnded={handleVideoEnd}
                 className="h-full w-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                style={{ filter: 'url(#remove-black-background)' }} // Ensure black background becomes transparent
+                style={{ mixBlendMode: 'screen' }} // Ensure black background becomes transparent
               />
             ) : (
               <img
                 src={effect.mediaUrl}
                 alt="Entry Effect"
                 className="h-full w-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                style={{ filter: 'url(#remove-black-background)' }}
               />
             )}
             
