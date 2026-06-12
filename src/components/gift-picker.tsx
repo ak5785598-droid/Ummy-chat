@@ -76,38 +76,7 @@ const getTodayString = () => {
   return istDate.toISOString().split('T')[0];
 };
 
-// ============ BIG WIN BANNER SVG ============
-const BigWinBannerSvg = ({ amount }: { amount: number | string }) => (
-  <svg viewBox="0 0 1000 500" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="bannerGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#e53935" />
-        <stop offset="100%" stopColor="#7f0b0b" />
-      </linearGradient>
-      <linearGradient id="winFillGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#fff9c4" />
-        <stop offset="52%" stopColor="#ffc107" />
-        <stop offset="100%" stopColor="#ff8f00" />
-      </linearGradient>
-    </defs>
-    <rect x="56" y="153" width="888" height="150" rx="22" fill="url(#bannerGrad)" />
-    <g transform="translate(500 110)"><path d="M-61 30 L-44 -3 L-27 18 L0 -16 L27 18 L44 -3 L61 30 L61 44 Q0 60 -61 44 Z" fill="gold"/></g>
-    <text x="500" y="266" textAnchor="middle" fontFamily="Impact" fontWeight={900} fontSize={132} fill="url(#winFillGrad)" stroke="#7a2e00" strokeWidth={10}>BIG WIN</text>
-    <rect x="280" y="283" width="440" height="122" rx="61" fill="#3e1c08" stroke="orange" strokeWidth={14}/>
-    <circle cx="346" cy="342" r="39" fill="gold"/>
-    <text x="346" y="360" textAnchor="middle" fontSize={46} fill="#fff">$</text>
-    <text x="527" y="373" fontFamily="Impact" fontSize={96} fill="#ffe082">{amount}</text>
-  </svg>
-);
-
-// ============ WINNER BANNER ============
-const WinnerBanner = ({ amount }: { amount: number }) => (
-  <motion.div initial={{ scale: 0, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0, opacity: 0, y: -10 }} transition={{ type: "spring", stiffness: 400, damping: 15 }} className="w-[200px]">
-    <BigWinBannerSvg amount={amount.toLocaleString()} />
-  </motion.div>
-);
-
-// ============ COMBO PATTI (Non-Lucky: TOP position) ============
+// ============ COMBO PATTI (Non-Lucky: TOP RIGHT) ============
 const ComboPatti = ({ 
   avatarUrl, 
   username,
@@ -167,21 +136,21 @@ const ComboPatti = ({
   );
 };
 
-// ============ LUCKY HALF PATTI (LEFT side se aati hai, HALF hi dikhti hai) ============
-const LuckyHalfPatti = ({ 
+// ============ LUCKY PATTI (LEFT side, HALF visible, NICHE position, +Amount ACCUMULATE) ============
+const LuckyPatti = ({ 
   avatarUrl, 
   username,
   receiverName,
   giftImageUrl, 
   multiplier,
-  winAmount,
+  totalWinAmount,
 }: { 
   avatarUrl: string;
   username: string;
   receiverName: string;
   giftImageUrl: string | null; 
   multiplier: number;
-  winAmount: number;
+  totalWinAmount: number;
 }) => {
   return (
     <motion.div
@@ -190,94 +159,52 @@ const LuckyHalfPatti = ({
       exit={{ x: -400, opacity: 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className="fixed left-0 z-[1100] pointer-events-none"
-      style={{ top: '50vh' }}
+      style={{ top: '65vh' }}
     >
-      {/* Container - Half bahar, half andar */}
-      <div className="relative w-[380px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden">
+      <div className="relative w-[340px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden">
         <div className="absolute top-1 left-4 right-4 h-[1px] bg-white/40 rounded-full" />
         <div className="relative z-10 flex items-center gap-2 px-3 h-full">
-          {/* Sender Avatar */}
           <div className="shrink-0">
             <Avatar className="h-7 w-7 border border-yellow-600/30">
               <AvatarImage src={avatarUrl} />
             </Avatar>
           </div>
-          {/* Sender Name */}
-          <div className="shrink-0 min-w-[35px] max-w-[45px]">
+          <div className="shrink-0 min-w-[40px] max-w-[55px]">
             <span className="text-[10px] font-black text-[#5C3D0E] truncate block leading-tight">{username}</span>
           </div>
-          {/* Gift Image */}
           <div className="shrink-0 h-7 w-7 rounded-md bg-white/15 flex items-center justify-center overflow-hidden border border-yellow-400/20">
             {giftImageUrl ? <img src={giftImageUrl} alt="gift" className="h-5 w-5 object-contain" /> : <span className="text-sm">🎁</span>}
           </div>
-          {/* Arrow + Receiver */}
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[#5C3D0E] text-xs">→</span>
-            <span className="text-[10px] font-black text-[#5C3D0E] truncate max-w-[45px] block leading-tight">{receiverName}</span>
+            <span className="text-[10px] font-black text-[#5C3D0E] truncate max-w-[55px] block leading-tight">{receiverName}</span>
           </div>
-          {/* Multiplier */}
-          <div className="flex-1 flex items-center justify-center min-w-0">
+          <div className="flex items-center justify-center min-w-[30px]">
             <motion.span 
               key={multiplier}
               initial={{ scale: 1.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 12 }}
-              className="text-lg font-black text-[#3D2000] leading-none"
+              className="text-base font-black text-[#3D2000] leading-none"
             >
               x{multiplier}
             </motion.span>
           </div>
-          {/* Win Amount */}
-          <div className="shrink-0 flex items-center gap-1">
+          <div className="shrink-0 flex items-center gap-1 bg-[#3D2000]/15 rounded-full px-2 py-0.5">
             <GoldenDollar />
-            <span className="text-[11px] font-black text-[#3D2000]">+{winAmount.toLocaleString()}</span>
+            <motion.span 
+              key={totalWinAmount}
+              initial={{ scale: 1.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              className="text-[11px] font-black text-[#3D2000]"
+            >
+              +{totalWinAmount.toLocaleString()}
+            </motion.span>
           </div>
         </div>
       </div>
     </motion.div>
-  );
-};
-
-// ============ LUCKY WIN COMBO (BigWin LEFT + Half Patti LEFT) ============
-const LuckyWinCombo = ({ 
-  avatarUrl, 
-  username,
-  receiverName,
-  giftImageUrl, 
-  multiplier,
-  winAmount,
-}: { 
-  avatarUrl: string;
-  username: string;
-  receiverName: string;
-  giftImageUrl: string | null; 
-  multiplier: number;
-  winAmount: number;
-}) => {
-  return (
-    <>
-      {/* Winner Banner - LEFT side */}
-      <motion.div
-        initial={{ x: -300, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        exit={{ x: -300, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 280, damping: 22 }}
-        className="fixed left-2 z-[1110] pointer-events-none"
-        style={{ top: '38vh' }}
-      >
-        <WinnerBanner amount={winAmount} />
-      </motion.div>
-
-      {/* Half Patti - LEFT side */}
-      <LuckyHalfPatti 
-        avatarUrl={avatarUrl}
-        username={username}
-        receiverName={receiverName}
-        giftImageUrl={giftImageUrl}
-        multiplier={multiplier}
-        winAmount={winAmount}
-      />
-    </>
   );
 };
 
@@ -299,15 +226,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  const [comboState, setComboState] = useState<{
    show: boolean;
    multiplier: number;
-   winAmount: number;
+   totalWinAmount: number;
    gift: any;
    isLucky: boolean;
    receiverName: string;
  } | null>(null);
  const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
  
- const [winnerBanner, setWinnerBanner] = useState<{ show: boolean; amount: number }>({ show: false, amount: 0 });
- const winnerTimerRef = useRef<NodeJS.Timeout | null>(null);
+ const accumulatedWinRef = useRef<number>(0);
  
  const [activeTab, setActiveTab] = useState('Hot');
  const [sheetOpen, setSheetOpen] = useState(false);
@@ -370,7 +296,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    return () => window.removeEventListener('popstate', handlePopState);
  }, [showCustomLink]);
 
- useEffect(() => { return () => { if (comboTimerRef.current) clearTimeout(comboTimerRef.current); if (winnerTimerRef.current) clearTimeout(winnerTimerRef.current); }; }, []);
+ useEffect(() => { return () => { if (comboTimerRef.current) clearTimeout(comboTimerRef.current); }; }, []);
 
  const handleCustomGiftClick = () => setShowRulesSheet(true);
 
@@ -470,16 +396,14 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     } catch (e) { console.error("Send gift error:", e); throw e; }
   }, [user, firestore, userProfile, roomId, participants]);
 
-  const showWinnerBanner = useCallback((amount: number) => {
-    if (winnerTimerRef.current) clearTimeout(winnerTimerRef.current);
-    setWinnerBanner({ show: true, amount });
-    winnerTimerRef.current = setTimeout(() => setWinnerBanner({ show: false, amount: 0 }), 3000);
-  }, []);
-
-  const startComboTimer = useCallback((gift: any, multiplier: number, winAmount: number, isLucky: boolean, receiverName: string) => {
+  const startComboTimer = useCallback((gift: any, multiplier: number, totalWinAmount: number, isLucky: boolean, receiverName: string) => {
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-    setComboState({ show: true, multiplier, winAmount, gift, isLucky, receiverName });
-    comboTimerRef.current = setTimeout(() => { setComboState(null); comboClicksRef.current = 0; }, 5000);
+    setComboState({ show: true, multiplier, totalWinAmount, gift, isLucky, receiverName });
+    comboTimerRef.current = setTimeout(() => { 
+      setComboState(null); 
+      comboClicksRef.current = 0; 
+      accumulatedWinRef.current = 0;
+    }, 5000);
   }, []);
 
   const handleSend = async () => {
@@ -494,9 +418,13 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         setSheetOpen(false);
         onOpenChange(false);
         const rName = getReceiverName();
-        if (result.isLuckyGift && result.winAmount > 0) showWinnerBanner(result.winAmount);
         comboClicksRef.current = 1;
-        startComboTimer(selectedGift, result.selectedMult, result.winAmount, result.isLuckyGift, rName);
+        
+        if (result.isLuckyGift && result.winAmount > 0) {
+          accumulatedWinRef.current += result.winAmount;
+        }
+        
+        startComboTimer(selectedGift, result.selectedMult, accumulatedWinRef.current, result.isLuckyGift, rName);
       }
     } catch (e) { console.error(e); toast({ variant: 'destructive', title: 'Send Failed' }); }
     finally { setIsSending(false); }
@@ -513,10 +441,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const result = await executeSend(comboState.gift, qty, selectedUids, newMultiplier);
       if (result) {
         const rName = getReceiverName();
-        if (result.isLuckyGift && result.winAmount > 0) showWinnerBanner(result.winAmount);
+        
+        if (result.isLuckyGift && result.winAmount > 0) {
+          accumulatedWinRef.current += result.winAmount;
+        }
+        
         if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
-        setComboState({ show: true, multiplier: newMultiplier, winAmount: result.winAmount, gift: comboState.gift, isLucky: result.isLuckyGift, receiverName: rName });
-        comboTimerRef.current = setTimeout(() => { setComboState(null); comboClicksRef.current = 0; }, 5000);
+        setComboState({ show: true, multiplier: newMultiplier, totalWinAmount: accumulatedWinRef.current, gift: comboState.gift, isLucky: result.isLuckyGift, receiverName: rName });
+        comboTimerRef.current = setTimeout(() => { 
+          setComboState(null); 
+          comboClicksRef.current = 0; 
+          accumulatedWinRef.current = 0;
+        }, 5000);
       }
     } catch (e) { console.error(e); toast({ variant: 'destructive', title: 'Send Failed' }); }
     finally { setIsSending(false); }
@@ -524,32 +460,20 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* ============ WINNER BANNER (LEFT side, 3 sec) ============ */}
-   <AnimatePresence mode="wait">
-     {winnerBanner.show && (
-       <motion.div key="winner-banner" initial={{ x: -300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -300, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}
-         className="fixed left-2 z-[1110] pointer-events-none" style={{ top: '38vh' }}>
-         <WinnerBanner amount={winnerBanner.amount} />
-       </motion.div>
-     )}
-   </AnimatePresence>
-
    {/* ============ COMBO NOTIFICATION ============ */}
    <AnimatePresence mode="wait">
      {comboState?.show && (
        comboState.isLucky ? (
-         /* LUCKY: LEFT side - BigWin + Half Patti */
-         <LuckyWinCombo 
+         <LuckyPatti 
            key="lucky-combo"
            avatarUrl={userProfile?.avatarUrl || ''}
            username={userProfile?.username || 'User'}
            receiverName={comboState.receiverName}
            giftImageUrl={comboState.gift?.imageUrl || null}
            multiplier={comboState.multiplier}
-           winAmount={comboState.winAmount}
+           totalWinAmount={comboState.totalWinAmount}
          />
        ) : (
-         /* Non-Lucky: RIGHT side TOP */
          <ComboPatti 
            key="normal-combo"
            avatarUrl={userProfile?.avatarUrl || ''}
@@ -631,4 +555,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-  }
+        }
