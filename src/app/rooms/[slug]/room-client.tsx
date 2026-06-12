@@ -3331,7 +3331,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
       {/* FLOAT-RIGHT EVENT BANNERS: HAZA STYLE */}
       {!isAnyDialogShowing && (
-        <div className="absolute right-3 bottom-[270px] z-40 animate-in fade-in slide-in-from-right-4 duration-700">
+        <div className="absolute right-2 bottom-[200px] z-30 animate-in fade-in slide-in-from-right-4 duration-700">
           <RoomBanners 
             onOpenSupport={() => setIsRoomSupportOpen(true)}
             onOpenSpin={() => setIsSpinOpen(true)}
