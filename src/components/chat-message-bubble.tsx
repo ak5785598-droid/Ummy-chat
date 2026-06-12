@@ -23,7 +23,7 @@ export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bu
     const isVideo = bubbleMediaUrl.toLowerCase().includes('.mp4') || bubbleMediaUrl.includes('video');
     return (
       <div className={cn(
-        "relative px-4 py-2 rounded-2xl max-w-full transition-all flex items-center min-h-[38px] min-w-[60px] overflow-hidden border border-white/20 text-white font-semibold shadow-lg bg-black/45",
+        "relative px-4 py-2 rounded-2xl max-w-full transition-all flex items-center min-h-[38px] min-w-[60px] overflow-hidden border border-white/10 text-white font-semibold shadow-lg bg-transparent",
         className
       )}>
         {/* Full-bleed background media */}
@@ -44,19 +44,9 @@ export const ChatMessageBubble = memo(({ bubbleId, isMe, children, className, bu
               className="w-full h-full object-cover scale-105" 
             />
           )}
-          {/* Subtle vignette/overlay to maintain text readability */}
-          <div className="absolute inset-0 bg-black/25 mix-blend-multiply" />
         </div>
 
-        {/* Pointy Talk Bubble Tail for realism */}
-        <svg 
-          viewBox="0 0 10 10" 
-          className="absolute w-3 h-3 bottom-0 -left-1.5 translate-y-[-4px] fill-black/45"
-        >
-          <path d="M0 0 L10 10 L0 10 Z" />
-        </svg>
-
-        <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-words drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+        <div className="relative z-10 w-full whitespace-normal pr-3 overflow-visible break-words drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)]">
           {children}
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // ============================================
 // SMART BLACK BACKGROUND REMOVER
@@ -446,8 +446,10 @@ const STATIC_STORE_ITEMS = [
 // ============================================
 // MAIN STORE PAGE COMPONENT
 // ============================================
-export default function StorePage() {
+function StoreContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filter = searchParams ? searchParams.get('filter') : null;
   const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -456,7 +458,13 @@ export default function StorePage() {
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>('Store');
+  const [activeTab, setActiveTab] = useState<string>(filter === 'purchased' ? 'Mine' : 'Store');
+
+  useEffect(() => {
+    if (filter === 'purchased') {
+      setActiveTab('Mine');
+    }
+  }, [filter]);
 
   useEffect(() => {
     if (previewItem) {
@@ -564,15 +572,19 @@ export default function StorePage() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  // Entry items completely removed
-  const entryItems = useMemo(() => [], []);
+  // Entry items restored from boutiqueItems
+  const entryItems = useMemo(() => {
+    return boutiqueItems.filter(item => item.type === 'Entry' || item.category === 'Entry');
+  }, [boutiqueItems]);
 
   const nonFrameBoutiqueItems = useMemo(() => {
     return boutiqueItems.filter(item => 
       item.type !== 'Frame' && 
       item.category !== 'Frame' && 
       item.type !== 'Bubble' && 
-      item.category !== 'Bubble'
+      item.category !== 'Bubble' &&
+      item.type !== 'Entry' &&
+      item.category !== 'Entry'
     );
   }, [boutiqueItems]);
 
@@ -1279,4 +1291,16 @@ export default function StorePage() {
       </div>
     </div>
   );
-      }
+}
+
+export default function StorePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] flex items-center justify-center">
+        <Loader className="animate-spin h-8 w-8 text-[#FCD535]" />
+      </div>
+    }>
+      <StoreContent />
+    </Suspense>
+  );
+}

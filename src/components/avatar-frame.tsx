@@ -4,6 +4,7 @@ import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { AVATAR_FRAMES, type AvatarFrameConfig } from '@/constants/avatar-frames';
+import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame';
 
 interface AvatarFrameProps {
   frameId?: string | null;
@@ -237,7 +238,7 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
     sm: 40,
     md: 60,
     lg: 80,
-    xl: 100
+    xl: 88 // Set XL display to match the standard 88px profile image hole
   };
 
   const sizeClasses = {
@@ -251,7 +252,7 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
   
   const config = useMemo(() => {
     if (dynamicConfig) return dynamicConfig;
-    if (frameMediaUrl) {
+    if (frameMediaUrl && frameMediaUrl !== 'None' && frameMediaUrl !== '') {
       const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov') || frameMediaUrl.includes('video') || frameMediaUrl.includes('m3u8');
       return {
         id: frameId || 'custom-dynamic',
@@ -269,10 +270,34 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
         offsetY: 0
       };
     }
-    return frameId ? AVATAR_FRAMES[frameId] : null;
+    return frameId && frameId !== 'None' && frameId !== 'none' ? AVATAR_FRAMES[frameId] : null;
   }, [frameId, frameMediaUrl, dynamicConfig]);
 
-  const isElite = !!config && (frameId !== 'None' || !!dynamicConfig || !!frameMediaUrl);
+  // Completely ignore default/transparent frames unless they are active store items
+  const isElite = !!config && (!!dynamicConfig);
+
+  const innerAvatarContent = (
+    <div className={cn(
+      "relative rounded-full bg-transparent overflow-visible flex items-center justify-center",
+      size === 'sm' ? 'w-10 h-10' : 
+      size === 'md' ? 'w-[60px] h-[60px]' : 
+      size === 'lg' ? 'w-20 h-20' : 
+      'w-[88px] h-[88px]'
+    )}>
+      {children}
+    </div>
+  );
+
+  // If a valid store frame is equipped, we wrap the children inside CompactVideoAvatarFrame directly
+  if (frameMediaUrl && frameMediaUrl !== 'None' && frameMediaUrl !== '') {
+    return (
+      <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>
+        <CompactVideoAvatarFrame frameMediaUrl={frameMediaUrl} avatarSize={pixelSize}>
+          {innerAvatarContent}
+        </CompactVideoAvatarFrame>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('relative flex items-center justify-center shrink-0 z-40 overflow-visible', sizeClasses[size], className)}>
@@ -288,17 +313,7 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className={cn(
-        "relative rounded-full bg-transparent overflow-visible flex items-center justify-center",
-        // The display size of the avatar itself
-        size === 'sm' ? 'w-10 h-10' : 
-        size === 'md' ? 'w-[60px] h-[60px]' : 
-        size === 'lg' ? 'w-20 h-20' : 
-        'w-24 h-24'
-      )}>
-        {children}
-      </div>
+      {innerAvatarContent}
     </div>
   );
 });

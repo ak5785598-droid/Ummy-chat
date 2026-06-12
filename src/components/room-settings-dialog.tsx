@@ -159,14 +159,14 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
   
   // Add user's purchased themes from inventory
   const purchasedThemes: RoomTheme[] = [];
-  if (userProfile?.inventory?.ownedItems) {
-    const owned = Object.values(userProfile.inventory.ownedItems) as any[];
-    owned.forEach(item => {
-      if (item.type === 'Theme' || item.type === 'theme') {
+  if (userProfile?.inventory?.ownedItems && customThemes) {
+    const ownedIds = userProfile.inventory.ownedItems as string[];
+    customThemes.forEach(theme => {
+      if (ownedIds.includes(theme.id)) {
         purchasedThemes.push({
-          id: item.id || `purchased-${Date.now()}`,
-          name: item.name || 'Purchased Theme',
-          url: item.imageUrl || item.videoUrl || '',
+          id: theme.id,
+          name: theme.name || 'Purchased Theme',
+          url: theme.videoUrl || theme.imageUrl || theme.mediaUrl || theme.thumbnailUrl || '',
           category: 'inventory',
           isOfficial: false
         });
