@@ -881,7 +881,7 @@ export function FullProfileDialog({
 
   const levelsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, "levels"), where("type", "==", "budget"));
+    return query(collection(firestore, "levels"));
   }, [firestore]);
   const { data: budgetLevelsData } = useCollection(levelsQuery);
 
@@ -909,7 +909,12 @@ export function FullProfileDialog({
       return level >= start && level <= end;
     };
     
-    const docData = budgetLevelsData.find((d: any) => isLevelInRange(budgetLevel, d.range));
+    const budgetDocs = budgetLevelsData.filter((level: any) => {
+      if (level.type) return level.type === "budget";
+      return ("budget" in level) || (!("reward" in level) && !("frameId" in level));
+    });
+    
+    const docData = budgetDocs.find((d: any) => isLevelInRange(budgetLevel, d.range));
     return docData?.imageUrl || docData?.image || null;
   }, [budgetLevelsData, budgetLevel]);
   
