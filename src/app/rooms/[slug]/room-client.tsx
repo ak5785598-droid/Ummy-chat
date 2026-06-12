@@ -1767,7 +1767,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
     const trackSeatTime = () => {
       const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-      const userRef = doc(firestore, 'userProfiles', currentUser.uid);
+      const userRef = doc(firestore, 'users', currentUser.uid);
       setDocumentNonBlocking(userRef, {
         [`seatTime.${today}`]: increment(1),
         totalSeatTime: increment(1)
