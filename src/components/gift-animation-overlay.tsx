@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from "lottie-react";
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
 import { cn } from '@/lib/utils';
-import { getCachedVideo, isMediaCached } from '@/hooks/use-media-preloader';
+import { getCachedVideo } from '@/hooks/use-media-preloader';
 
 interface GiftAnimationOverlayProps {
   giftId: string | null;
@@ -20,14 +20,14 @@ interface GiftAnimationOverlayProps {
   tier?: 'normal' | 'epic' | 'legendary';
   onComplete: () => void;
   targetSeat?: number;
-  isLuckyGift?: boolean; // Naya prop - Lucky gift ko identify karne ke liye
+  isLuckyGift?: boolean;
 }
 
 export function GiftAnimationOverlay({ 
   giftId, 
-  giftName,
-  senderName,
-  receiverName,
+  giftName: _giftName,
+  senderName: _senderName,
+  receiverName: _receiverName,
   imageUrl, 
   animationUrl,
   videoUrl,
@@ -35,18 +35,15 @@ export function GiftAnimationOverlay({
   tier = 'normal',
   onComplete, 
   targetSeat,
-  isLuckyGift = false, // Default false
+  isLuckyGift: _isLuckyGift,
 }: GiftAnimationOverlayProps) {
-  const [activeGift, setActiveGift] = useState<any>(null);
+  const [activeGift, setActiveGift] = useState<{ id: number } | null>(null);
   const [lottieData, setLottieData] = useState<any>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
-  const [showNameplate, setShowNameplate] = useState(false);
   const [useCanvasProcessing, setUseCanvasProcessing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const detectionVideoRef = useRef<HTMLVideoElement>(null);
-  const nameplateTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Canvas refs for black-fade processing and detection
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,84 +52,138 @@ export function GiftAnimationOverlay({
   const offscreenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const processingActiveRef = useRef(false);
   const processBufferRef = useRef<Uint8ClampedArray | null>(null);
+  const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [flyCoordinates, setFlyCoordinates] = useState<{ x: number; y: number } | null>(null);
+  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+
+  // Cleanup function - memoized to prevent stale closures
+  const handleCleanup = useCallback(() => {
+    processingActiveRef.current = false;
+    
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    
+    if (cleanupTimerRef.current) {
+      clearTimeout(cleanupTimerRef.current);
+      cleanupTimerRef.current = null;
+    }
+    
+    setActiveGift(null);
+    setLottieData(null);
+    setIsVideoReady(false);
+    setIsVideoLoading(false);
+    setUseCanvasProcessing(false);
+    setProcessedImageUrl(null);
+    setFlyCoordinates(null);
+    
+    // Clean up canvases
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      canvasRef.current.width = 0;
+      canvasRef.current.height = 0;
+    }
+    
+    if (offscreenCanvasRef.current) {
+      offscreenCanvasRef.current.width = 0;
+      offscreenCanvasRef.current.height = 0;
+      offscreenCanvasRef.current = null;
+    }
+    
+    processBufferRef.current = null;
+    
+    onComplete();
+  }, [onComplete]);
 
   // Calculate seat relative translation offsets for fly animation
   useEffect(() => {
-    if (activeGift && targetSeat !== undefined && targetSeat !== null) {
-      const timer = setTimeout(() => {
-        const seatEl = document.getElementById(`room-seat-${targetSeat}`);
-        const containerEl = containerRef.current;
-        if (seatEl && containerEl) {
-          const seatRect = seatEl.getBoundingClientRect();
-          const containerRect = containerEl.getBoundingClientRect();
-          
-          // Center of the target seat
-          const seatCenterX = seatRect.left + seatRect.width / 2;
-          const seatCenterY = seatRect.top + seatRect.height / 2;
-          
-          // Center of the container
-          const containerCenterX = containerRect.left + containerRect.width / 2;
-          const containerCenterY = containerRect.top + containerRect.height / 2;
-          
-          // Difference
-          const xDiff = seatCenterX - containerCenterX;
-          const yDiff = seatCenterY - containerCenterY;
-          
-          setFlyCoordinates({ x: xDiff, y: yDiff });
-        }
-      }, 1500); // Sit in center for 1.5s then fly to target seat
-      
-      return () => clearTimeout(timer);
-    } else {
+    if (!activeGift || targetSeat === undefined || targetSeat === null) {
       setFlyCoordinates(null);
+      return;
     }
+
+    const timer = setTimeout(() => {
+      const seatEl = document.getElementById(`room-seat-${targetSeat}`);
+      const containerEl = containerRef.current;
+      
+      if (!seatEl || !containerEl) {
+        setFlyCoordinates(null);
+        return;
+      }
+      
+      const seatRect = seatEl.getBoundingClientRect();
+      const containerRect = containerEl.getBoundingClientRect();
+      
+      if (seatRect.width === 0 || containerRect.width === 0) {
+        setFlyCoordinates(null);
+        return;
+      }
+      
+      const seatCenterX = seatRect.left + seatRect.width / 2;
+      const seatCenterY = seatRect.top + seatRect.height / 2;
+      const containerCenterX = containerRect.left + containerRect.width / 2;
+      const containerCenterY = containerRect.top + containerRect.height / 2;
+      
+      setFlyCoordinates({ 
+        x: seatCenterX - containerCenterX, 
+        y: seatCenterY - containerCenterY 
+      });
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, [activeGift, targetSeat]);
 
-  // ============================================
-  // IMAGE BLACK BACKGROUND REMOVAL - SUPFAST
-  // ============================================
-  const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
-
-  // Process image to remove black background - Ultra fast version
+  // Process image to remove black background
   useEffect(() => {
-    if (imageUrl && !animationUrl && !videoUrl) {
-      // Turant original dikhega, background me processing hogi
+    if (!imageUrl || animationUrl || videoUrl) {
       setProcessedImageUrl(null);
+      return;
+    }
+
+    let isCancelled = false;
+    setProcessedImageUrl(null);
+    
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    img.onload = () => {
+      if (isCancelled) return;
       
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = imageUrl;
+      const maxSize = 280;
+      let width = img.width;
+      let height = img.height;
       
-      img.onload = () => {
-        // Chota canvas for fast pixel processing
-        const maxSize = 280;
-        let width = img.width;
-        let height = img.height;
-        
-        // Agar image bahut badi hai toh scale down karo
-        if (height > maxSize) {
-          const ratio = maxSize / height;
-          width = Math.floor(width * ratio);
-          height = maxSize;
-        }
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        if (!ctx) {
-          setProcessedImageUrl(imageUrl);
-          return;
-        }
-        
+      if (width === 0 || height === 0) {
+        setProcessedImageUrl(imageUrl);
+        return;
+      }
+      
+      if (height > maxSize) {
+        const ratio = maxSize / height;
+        width = Math.floor(width * ratio);
+        height = maxSize;
+      }
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      if (!ctx) {
+        setProcessedImageUrl(imageUrl);
+        return;
+      }
+      
+      try {
         ctx.drawImage(img, 0, 0, width, height);
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
         
-        // Fast black detection thresholds
         const BLACK_THRESHOLD = 35;
         const DARK_EDGE_THRESHOLD = 60;
         
@@ -141,12 +192,9 @@ export function GiftAnimationOverlay({
           const g = data[i + 1];
           const b = data[i + 2];
           
-          // Pure black - fully transparent
           if (r <= BLACK_THRESHOLD && g <= BLACK_THRESHOLD && b <= BLACK_THRESHOLD) {
             data[i + 3] = 0;
-          } 
-          // Dark gray edges - smooth fade
-          else if (r <= DARK_EDGE_THRESHOLD && g <= DARK_EDGE_THRESHOLD && b <= DARK_EDGE_THRESHOLD) {
+          } else if (r <= DARK_EDGE_THRESHOLD && g <= DARK_EDGE_THRESHOLD && b <= DARK_EDGE_THRESHOLD) {
             const darkness = Math.max(0, 1 - ((r + g + b) / (3 * DARK_EDGE_THRESHOLD)));
             const newAlpha = Math.floor(255 * (1 - darkness * 0.85));
             data[i + 3] = Math.max(0, Math.min(255, newAlpha));
@@ -155,46 +203,65 @@ export function GiftAnimationOverlay({
         
         ctx.putImageData(imageData, 0, 0);
         
-        // Smooth swap using requestAnimationFrame
-        requestAnimationFrame(() => {
-          setProcessedImageUrl(canvas.toDataURL('image/png'));
-        });
-      };
-      
-      img.onerror = () => {
+        if (!isCancelled) {
+          requestAnimationFrame(() => {
+            if (!isCancelled) {
+              setProcessedImageUrl(canvas.toDataURL('image/png'));
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Image processing failed:', error);
+        if (!isCancelled) {
+          setProcessedImageUrl(imageUrl);
+        }
+      }
+    };
+    
+    img.onerror = () => {
+      if (!isCancelled) {
         setProcessedImageUrl(imageUrl);
-      };
-    } else {
-      setProcessedImageUrl(null);
-    }
+      }
+    };
+    
+    img.src = imageUrl;
+    
+    return () => {
+      isCancelled = true;
+    };
   }, [imageUrl, animationUrl, videoUrl]);
 
-  // ============================================
-  // END IMAGE PROCESSING
-  // ============================================
-
-  // Load Lottie Data
+  // Load Lottie Data with abort controller
   useEffect(() => {
-    if (animationUrl) {
-      fetch(animationUrl)
-        .then(res => res.json())
-        .then(data => setLottieData(data))
-        .catch(err => console.error('Lottie Load Failed:', err));
-    } else {
+    if (!animationUrl) {
       setLottieData(null);
+      return;
     }
+
+    const abortController = new AbortController();
+    
+    fetch(animationUrl, { signal: abortController.signal })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => setLottieData(data))
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('Lottie Load Failed:', err);
+        }
+      });
+    
+    return () => {
+      abortController.abort();
+    };
   }, [animationUrl]);
 
-  // Advanced black background detection with edge sampling
-  const detectBlackBackground = (video: HTMLVideoElement): Promise<boolean> => {
+  // Black background detection for video
+  const detectBlackBackground = useCallback((video: HTMLVideoElement): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = detectionCanvasRef.current;
-      if (!canvas) {
-        resolve(false);
-        return;
-      }
-
-      if (video.videoWidth <= 0 || video.videoHeight <= 0 || isNaN(video.videoWidth) || isNaN(video.videoHeight)) {
+      if (!canvas || video.videoWidth <= 0 || video.videoHeight <= 0) {
         resolve(false);
         return;
       }
@@ -208,178 +275,85 @@ export function GiftAnimationOverlay({
         return;
       }
 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      try {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const width = canvas.width;
+        const height = canvas.height;
 
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      const width = canvas.width;
-      const height = canvas.height;
+        const BLACK_THRESHOLD = 35;
+        const BLACK_PIXEL_RATIO = 0.92;
+        const EDGE_DEPTH = 5;
 
-      const BLACK_THRESHOLD = 35;
-      const BLACK_PIXEL_RATIO = 0.92;
-
-      // Check multiple rows on each edge for better accuracy
-      const EDGE_DEPTH = 5; // Check 5 pixels deep from edge
-
-      // Check top edge (multiple rows)
-      let topBlackCount = 0;
-      let topTotal = 0;
-      for (let y = 0; y < EDGE_DEPTH; y++) {
-        for (let x = 0; x < width; x++) {
-          const index = (y * width + x) * 4;
-          topTotal++;
-          if (data[index] < BLACK_THRESHOLD && 
-              data[index + 1] < BLACK_THRESHOLD && 
-              data[index + 2] < BLACK_THRESHOLD) {
-            topBlackCount++;
-          }
-        }
-      }
-      const topRatio = topBlackCount / topTotal;
-
-      // Check bottom edge (multiple rows)
-      let bottomBlackCount = 0;
-      let bottomTotal = 0;
-      for (let y = height - EDGE_DEPTH; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const index = (y * width + x) * 4;
-          bottomTotal++;
-          if (data[index] < BLACK_THRESHOLD && 
-              data[index + 1] < BLACK_THRESHOLD && 
-              data[index + 2] < BLACK_THRESHOLD) {
-            bottomBlackCount++;
-          }
-        }
-      }
-      const bottomRatio = bottomBlackCount / bottomTotal;
-
-      // Check left edge (multiple columns)
-      let leftBlackCount = 0;
-      let leftTotal = 0;
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < EDGE_DEPTH; x++) {
-          const index = (y * width + x) * 4;
-          leftTotal++;
-          if (data[index] < BLACK_THRESHOLD && 
-              data[index + 1] < BLACK_THRESHOLD && 
-              data[index + 2] < BLACK_THRESHOLD) {
-            leftBlackCount++;
-          }
-        }
-      }
-      const leftRatio = leftBlackCount / leftTotal;
-
-      // Check right edge (multiple columns)
-      let rightBlackCount = 0;
-      let rightTotal = 0;
-      for (let y = 0; y < height; y++) {
-        for (let x = width - EDGE_DEPTH; x < width; x++) {
-          const index = (y * width + x) * 4;
-          rightTotal++;
-          if (data[index] < BLACK_THRESHOLD && 
-              data[index + 1] < BLACK_THRESHOLD && 
-              data[index + 2] < BLACK_THRESHOLD) {
-            rightBlackCount++;
-          }
-        }
-      }
-      const rightRatio = rightBlackCount / rightTotal;
-
-      // Check corners with larger radius
-      const checkCorner = (startX: number, startY: number, radius: number = 15) => {
-        let blackPixels = 0;
-        let totalPixels = 0;
-        for (let dy = 0; dy < radius; dy++) {
-          for (let dx = 0; dx < radius; dx++) {
-            const px = startX + dx;
-            const py = startY + dy;
-            if (px >= 0 && px < width && py >= 0 && py < height) {
-              const index = (py * width + px) * 4;
-              totalPixels++;
+        const checkEdge = (startY: number, endY: number, startX: number, endX: number) => {
+          let blackCount = 0;
+          let total = 0;
+          for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+              const index = (y * width + x) * 4;
+              total++;
               if (data[index] < BLACK_THRESHOLD && 
                   data[index + 1] < BLACK_THRESHOLD && 
                   data[index + 2] < BLACK_THRESHOLD) {
-                blackPixels++;
+                blackCount++;
               }
             }
           }
-        }
-        return blackPixels / Math.max(totalPixels, 1);
-      };
+          return total > 0 ? blackCount / total : 0;
+        };
 
-      const topLeftCorner = checkCorner(0, 0);
-      const topRightCorner = checkCorner(width - 15, 0);
-      const bottomLeftCorner = checkCorner(0, height - 15);
-      const bottomRightCorner = checkCorner(width - 15, height - 15);
+        const topRatio = checkEdge(0, EDGE_DEPTH, 0, width);
+        const bottomRatio = checkEdge(height - EDGE_DEPTH, height, 0, width);
+        const leftRatio = checkEdge(0, height, 0, EDGE_DEPTH);
+        const rightRatio = checkEdge(0, height, width - EDGE_DEPTH, width);
 
-      const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
-                           bottomRatio > BLACK_PIXEL_RATIO && 
-                           leftRatio > BLACK_PIXEL_RATIO && 
-                           rightRatio > BLACK_PIXEL_RATIO;
+        const checkCorner = (startX: number, startY: number, radius: number = 15) => {
+          let blackPixels = 0;
+          let totalPixels = 0;
+          for (let dy = 0; dy < radius; dy++) {
+            for (let dx = 0; dx < radius; dx++) {
+              const px = startX + dx;
+              const py = startY + dy;
+              if (px >= 0 && px < width && py >= 0 && py < height) {
+                const index = (py * width + px) * 4;
+                totalPixels++;
+                if (data[index] < BLACK_THRESHOLD && 
+                    data[index + 1] < BLACK_THRESHOLD && 
+                    data[index + 2] < BLACK_THRESHOLD) {
+                  blackPixels++;
+                }
+              }
+            }
+          }
+          return totalPixels > 0 ? blackPixels / totalPixels : 0;
+        };
 
-      const allCornersBlack = topLeftCorner > 0.85 && 
-                             topRightCorner > 0.85 && 
-                             bottomLeftCorner > 0.85 && 
-                             bottomRightCorner > 0.85;
+        const allEdgesBlack = topRatio > BLACK_PIXEL_RATIO && 
+                             bottomRatio > BLACK_PIXEL_RATIO && 
+                             leftRatio > BLACK_PIXEL_RATIO && 
+                             rightRatio > BLACK_PIXEL_RATIO;
 
-      const isSolidBlackBackground = allEdgesBlack && allCornersBlack;
+        const allCornersBlack = checkCorner(0, 0) > 0.85 && 
+                               checkCorner(width - 15, 0) > 0.85 && 
+                               checkCorner(0, height - 15) > 0.85 && 
+                               checkCorner(width - 15, height - 15) > 0.85;
 
-      resolve(isSolidBlackBackground);
+        resolve(allEdgesBlack && allCornersBlack);
+      } catch (error) {
+        console.error('Black background detection failed:', error);
+        resolve(false);
+      }
     });
-  };
+  }, []);
 
-  // Animation trigger logic
-  useEffect(() => {
-    if (giftId) {
-      setActiveGift({ id: Date.now() });
-      setIsVideoReady(false);
-      setIsVideoLoading(!!videoUrl); // Show loading if video gift
-      setUseCanvasProcessing(false);
-      processingActiveRef.current = false;
-      
-      // SIRF LUCKY GIFT NAHI HAI TOH NAMEPLATE DIKHEGA
-      // Lucky gift ko chhodkar baki sab gifts me showNameplate true rahega
-      if (isLuckyGift) {
-        setShowNameplate(false); // Lucky gift - NO scroll banner
-        if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
-      } else {
-        setShowNameplate(true); // Normal/Hot/Luxury/Customized - YES scroll banner
-        if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
-        nameplateTimerRef.current = setTimeout(() => {
-          setShowNameplate(false);
-        }, 3500);
-      }
-
-      // 1. Play Sound
-      if (soundUrl) {
-        const audio = new Audio(soundUrl);
-        audio.play().catch(e => console.log('Audio error:', e));
-      }
-
-      // 2. Haptics
-      if (Capacitor.isNativePlatform()) {
-        Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
-      }
-
-      // 3. Dynamic Timeout Logic
-      if (!videoUrl) {
-        const finishTimer = setTimeout(() => {
-          handleCleanup();
-        }, 4000);
-        return () => clearTimeout(finishTimer);
-      }
-    } else {
-      setShowNameplate(false);
-      if (nameplateTimerRef.current) clearTimeout(nameplateTimerRef.current);
-    }
-  }, [giftId, soundUrl, videoUrl, isLuckyGift]);
-
-  // Super Advanced Black Fade Processor with Anti-Aliasing & Edge Smoothing (OPTIMIZED)
-  const processBlackFade = () => {
+  // Black Fade Processor for video
+  const processBlackFade = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (!video || !canvas || video.paused || video.ended || video.videoWidth <= 0 || video.videoHeight <= 0 || isNaN(video.videoWidth) || isNaN(video.videoHeight)) {
+    if (!video || !canvas || video.paused || video.ended || 
+        video.videoWidth <= 0 || video.videoHeight <= 0) {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
@@ -390,246 +364,225 @@ export function GiftAnimationOverlay({
 
     processingActiveRef.current = true;
 
-    // Create offscreen canvas for processing if not exists
-    if (!offscreenCanvasRef.current) {
-      offscreenCanvasRef.current = document.createElement('canvas');
-    }
-    
-    const offscreen = offscreenCanvasRef.current;
-    
-    // Use lower resolution for detection to reduce pixel processing (50% of original)
-    const processWidth = Math.min(video.videoWidth, 360);
-    const processHeight = Math.round(processWidth * (video.videoHeight / video.videoWidth) || video.videoHeight);
-    
-    if (canvas.width !== processWidth || canvas.height !== processHeight) {
-      canvas.width = processWidth;
-      canvas.height = processHeight;
-      offscreen.width = processWidth;
-      offscreen.height = processHeight;
-    }
-
-    const ctx = canvas.getContext('2d', { 
-      willReadFrequently: true,
-      alpha: true 
-    });
-    
-    const offCtx = offscreen.getContext('2d', { 
-      willReadFrequently: true,
-      alpha: true 
-    });
-    
-    if (!ctx || !offCtx) return;
-
-    // Step 1: Draw current video frame to offscreen at lower resolution
-    offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
-
-    // Step 2: Get pixel data
-    const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
-    const data = imageData.data;
-    const width = offscreen.width;
-    const height = offscreen.height;
-
-    // Step 3: Reuse processedData buffer to avoid GC pressure
-    if (!processBufferRef.current || processBufferRef.current.length !== data.length) {
-      processBufferRef.current = new Uint8ClampedArray(data);
-    } else {
-      processBufferRef.current.set(data);
-    }
-    const processedData = processBufferRef.current;
-
-    // Enhanced Black Detection Parameters
-    const BLACK_R_THRESHOLD = 25;    // Red channel max for black
-    const BLACK_G_THRESHOLD = 25;    // Green channel max for black  
-    const BLACK_B_THRESHOLD = 25;    // Blue channel max for black
-    const DARK_GRAY_THRESHOLD = 45;  // For edge transition pixels
-    const ALPHA_REDUCTION = 0.92;    // 92% opacity reduction per frame (smooth but fast)
-
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
+    try {
+      if (!offscreenCanvasRef.current) {
+        offscreenCanvasRef.current = document.createElement('canvas');
+      }
       
-      // Skip already transparent pixels
-      if (a === 0) continue;
+      const offscreen = offscreenCanvasRef.current;
+      const processWidth = Math.min(video.videoWidth, 360);
+      const processHeight = Math.round(processWidth * (video.videoHeight / video.videoWidth));
       
-      // Check if pixel is pure black
-      const isPureBlack = (r <= BLACK_R_THRESHOLD && 
-                          g <= BLACK_G_THRESHOLD && 
-                          b <= BLACK_B_THRESHOLD);
+      if (canvas.width !== processWidth || canvas.height !== processHeight) {
+        canvas.width = processWidth;
+        canvas.height = processHeight;
+        offscreen.width = processWidth;
+        offscreen.height = processHeight;
+      }
+
+      const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true });
+      const offCtx = offscreen.getContext('2d', { willReadFrequently: true, alpha: true });
       
-      // Check if pixel is very dark (near black transition)
-      const isDarkGray = (r <= DARK_GRAY_THRESHOLD && 
-                         g <= DARK_GRAY_THRESHOLD && 
-                         b <= DARK_GRAY_THRESHOLD);
-      
-      if (isPureBlack) {
-        const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
-        processedData[i + 3] = newAlpha;
-        if (newAlpha < 20) {
-          processedData[i] = Math.floor(r * 0.9);
-          processedData[i + 1] = Math.floor(g * 0.9);
-          processedData[i + 2] = Math.floor(b * 0.9);
-        }
-      } else if (isDarkGray) {
-        const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
-        const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
-        const newAlpha = Math.floor(a * (1 - softAlphaReduction));
-        processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
-        if (darknessFactor > 0.5) {
-          const blend = darknessFactor * 0.3;
-          processedData[i] = Math.floor(r * (1 - blend));
-          processedData[i + 1] = Math.floor(g * (1 - blend));
-          processedData[i + 2] = Math.floor(b * (1 - blend));
+      if (!ctx || !offCtx) return;
+
+      offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
+      const imageData = offCtx.getImageData(0, 0, offscreen.width, offscreen.height);
+      const data = imageData.data;
+
+      if (!processBufferRef.current || processBufferRef.current.length !== data.length) {
+        processBufferRef.current = new Uint8ClampedArray(data);
+      } else {
+        processBufferRef.current.set(data);
+      }
+      const processedData = processBufferRef.current;
+
+      const BLACK_THRESHOLD = 25;
+      const DARK_GRAY_THRESHOLD = 45;
+      const ALPHA_REDUCTION = 0.92;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        
+        if (a === 0) continue;
+        
+        const isPureBlack = r <= BLACK_THRESHOLD && g <= BLACK_THRESHOLD && b <= BLACK_THRESHOLD;
+        const isDarkGray = r <= DARK_GRAY_THRESHOLD && g <= DARK_GRAY_THRESHOLD && b <= DARK_GRAY_THRESHOLD;
+        
+        if (isPureBlack) {
+          const newAlpha = Math.floor(a * (1 - ALPHA_REDUCTION));
+          processedData[i + 3] = newAlpha;
+          if (newAlpha < 20) {
+            processedData[i] = Math.floor(r * 0.9);
+            processedData[i + 1] = Math.floor(g * 0.9);
+            processedData[i + 2] = Math.floor(b * 0.9);
+          }
+        } else if (isDarkGray) {
+          const darknessFactor = 1 - ((r + g + b) / (3 * DARK_GRAY_THRESHOLD));
+          const softAlphaReduction = ALPHA_REDUCTION * darknessFactor * 0.7;
+          const newAlpha = Math.floor(a * (1 - softAlphaReduction));
+          processedData[i + 3] = Math.max(0, Math.min(255, newAlpha));
+          if (darknessFactor > 0.5) {
+            const blend = darknessFactor * 0.3;
+            processedData[i] = Math.floor(r * (1 - blend));
+            processedData[i + 1] = Math.floor(g * (1 - blend));
+            processedData[i + 2] = Math.floor(b * (1 - blend));
+          }
         }
       }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const processedImageData = new ImageData(processedData, offscreen.width, offscreen.height);
+      ctx.putImageData(processedImageData, 0, 0);
+
+      animationFrameRef.current = requestAnimationFrame(processBlackFade);
+    } catch (error) {
+      console.error('Black fade processing failed:', error);
+      processingActiveRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    }
+  }, []);
+
+  // Animation trigger logic
+  useEffect(() => {
+    if (!giftId) return;
+
+    setActiveGift({ id: Date.now() });
+    setIsVideoReady(false);
+    setIsVideoLoading(!!videoUrl);
+    setUseCanvasProcessing(false);
+    processingActiveRef.current = false;
+
+    // Play Sound
+    if (soundUrl) {
+      const audio = new Audio(soundUrl);
+      audio.play().catch(() => {
+        // Silently handle audio errors
+      });
     }
 
-    // Step 4: Apply processed data to canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const processedImageData = new ImageData(processedData as any, width, height);
-    ctx.putImageData(processedImageData, 0, 0);
+    // Haptics
+    if (Capacitor.isNativePlatform()) {
+      Haptics.impact({ style: ImpactStyle.Heavy }).catch(() => {});
+    }
 
-    // Step 5: Continue processing loop
-    animationFrameRef.current = requestAnimationFrame(processBlackFade);
-  };
+    // Timeout for non-video gifts
+    if (!videoUrl) {
+      cleanupTimerRef.current = setTimeout(() => {
+        handleCleanup();
+      }, 4000);
+    }
 
-  // Skip canvas processing for normal-tier gifts to save CPU
+    return () => {
+      if (cleanupTimerRef.current) {
+        clearTimeout(cleanupTimerRef.current);
+        cleanupTimerRef.current = null;
+      }
+    };
+  }, [giftId, soundUrl, videoUrl, handleCleanup]);
+
+  // Canvas processing for video
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady) {
       setUseCanvasProcessing(tier === 'epic' || tier === 'legendary');
     }
   }, [activeGift, videoUrl, isVideoReady, tier]);
 
-  // Start/Stop Black Fade Processor when video plays
+  // Start/Stop Black Fade Processor
   useEffect(() => {
-    if (activeGift && videoUrl && isVideoReady && useCanvasProcessing) {
-      const startTimer = setTimeout(() => {
-        processingActiveRef.current = true;
-        processBlackFade();
-      }, 100);
-      
-      return () => {
-        clearTimeout(startTimer);
-        processingActiveRef.current = false;
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-      };
-    }
-  }, [activeGift, videoUrl, isVideoReady, useCanvasProcessing]);
+    if (!activeGift || !videoUrl || !isVideoReady || !useCanvasProcessing) return;
 
-  // Cleanup function
-  const handleCleanup = () => {
-    processingActiveRef.current = false;
+    const startTimer = setTimeout(() => {
+      processingActiveRef.current = true;
+      processBlackFade();
+    }, 100);
     
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    
-    if (nameplateTimerRef.current) {
-      clearTimeout(nameplateTimerRef.current);
-      nameplateTimerRef.current = null;
-    }
-    
-    setActiveGift(null);
-    setLottieData(null);
-    setIsVideoReady(false);
-    setShowNameplate(false);
-    setUseCanvasProcessing(false);
-    setProcessedImageUrl(null);
-    
-    // Clear canvases
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
-    
-    onComplete();
-  };
+    return () => {
+      clearTimeout(startTimer);
+      processingActiveRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [activeGift, videoUrl, isVideoReady, useCanvasProcessing, processBlackFade]);
 
-  // Handle Video Metadata
-  const handleVideoMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const duration = e.currentTarget.duration * 1000; 
-    
-    setTimeout(() => {
-      handleCleanup();
-    }, duration + 500); 
-  };
-
-  // Handle Video Ready - Detect black background
-  const handleVideoCanPlay = async () => {
+  // Handle Video Ready
+  const handleVideoCanPlay = useCallback(async () => {
     setIsVideoReady(true);
     setIsVideoLoading(false);
     
     if (videoRef.current) {
       await new Promise(resolve => setTimeout(resolve, 50));
-      
       const hasSolidBlackBg = await detectBlackBackground(videoRef.current);
       setUseCanvasProcessing(hasSolidBlackBg);
-      
-      if (hasSolidBlackBg) {
-      } else {
-      }
     }
-  };
+  }, [detectBlackBackground]);
 
-  // Handle Video Auto-play with enhanced fallback
-  useEffect(() => {
-    if (activeGift && videoUrl && videoRef.current) {
-      const playVideo = async () => {
-        try {
-          const video = videoRef.current!;
-          
-          // Check if we have a cached version
-          const cachedVideo = getCachedVideo(videoUrl);
-          if (cachedVideo && cachedVideo.readyState >= 2) {
-            // Use cached video - copy state to our ref
-            video.src = cachedVideo.src;
-            video.currentTime = 0;
-          } else {
-            // Load from network
-            video.defaultMuted = false;
-            video.muted = false;
-            video.playbackRate = 1.0;
-            video.setAttribute('playsinline', 'true');
-            video.setAttribute('webkit-playsinline', 'true');
-            video.preload = 'auto';
-            video.load();
-          }
-          
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            await playPromise;
-          }
-        } catch (err) {
-          console.warn('[Gift Video] Playback failed, trying muted fallback:', err);
-          try {
-            if (videoRef.current) {
-              videoRef.current.muted = true;
-              await videoRef.current.play();
-            }
-          } catch (e) {
-            console.error('[Gift Video] Complete playback failure', e);
-          }
-        }
-      };
-      playVideo();
+  // Handle Video Metadata
+  const handleVideoMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const duration = e.currentTarget.duration;
+    
+    if (isNaN(duration) || duration <= 0) {
+      handleCleanup();
+      return;
     }
-  }, [activeGift, videoUrl]);
+    
+    cleanupTimerRef.current = setTimeout(() => {
+      handleCleanup();
+    }, duration * 1000 + 500);
+  }, [handleCleanup]);
+
+  // Handle Video Auto-play
+  useEffect(() => {
+    if (!activeGift || !videoUrl || !videoRef.current) return;
+
+    const playVideo = async () => {
+      try {
+        const video = videoRef.current!;
+        
+        const cachedVideo = getCachedVideo(videoUrl);
+        if (cachedVideo && cachedVideo.readyState >= 2) {
+          video.src = cachedVideo.src;
+          video.currentTime = 0;
+        } else {
+          video.muted = false;
+          video.playbackRate = 1.0;
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          video.preload = 'auto';
+          video.load();
+        }
+        
+        await video.play();
+      } catch (err) {
+        console.warn('[Gift Video] Playback failed, trying muted fallback:', err);
+        try {
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            await videoRef.current.play();
+          }
+        } catch (e) {
+          console.error('[Gift Video] Complete playback failure', e);
+          handleCleanup();
+        }
+      }
+    };
+    
+    playVideo();
+  }, [activeGift, videoUrl, handleCleanup]);
 
   return (
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[1000] pointer-events-none flex items-center justify-center overflow-hidden"
     >
-      {/* Hidden detection canvas */}
-      <canvas 
-        ref={detectionCanvasRef}
-        className="hidden"
-      />
+      <canvas ref={detectionCanvasRef} className="hidden" />
 
       <AnimatePresence>
         {activeGift && (
@@ -641,160 +594,7 @@ export function GiftAnimationOverlay({
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >
-            {/* 3D SCROLL BANNER NAME PLATE - LUCKY GIFT KE LIYE NAHI DIKHEGA */}
-            {/* isLuckyGift false hai ya undefined hai tabhi showNameplate true hoga */}
-            {!isLuckyGift && showNameplate && senderName && receiverName && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: -220 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="absolute text-center w-[480px] z-[1002]"
-              >
-                <div className="scroll-stage playing">
-                  <div className="svg-wrap">
-                    <svg viewBox="0 0 1000 400" aria-label="3D Chinese Scroll Banner">
-                      <defs>
-                        <linearGradient id="gold" x1="0" x2="1" y1="0" y2="0">
-                          <stop offset="0%" stopColor="#5e4200"/>
-                          <stop offset="10%" stopColor="#FFD700"/>
-                          <stop offset="22%" stopColor="#FFF5B0"/>
-                          <stop offset="38%" stopColor="#B8860B"/>
-                          <stop offset="52%" stopColor="#FFD700"/>
-                          <stop offset="66%" stopColor="#FFF5B0"/>
-                          <stop offset="82%" stopColor="#D4AF37"/>
-                          <stop offset="100%" stopColor="#5a3e00"/>
-                        </linearGradient>
-                        <linearGradient id="goldEdge" x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor="#FFF5B0"/>
-                          <stop offset="45%" stopColor="#D4AF37"/>
-                          <stop offset="100%" stopColor="#8a6a10"/>
-                        </linearGradient>
-                        <linearGradient id="spec" x1="0" x2="1">
-                          <stop offset="0%" stopColor="rgba(255,255,255,0)"/>
-                          <stop offset="45%" stopColor="rgba(255,255,255,.9)"/>
-                          <stop offset="55%" stopColor="rgba(255,255,255,.9)"/>
-                          <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-                        </linearGradient>
-                        <radialGradient id="blue" cx="50%" cy="38%" r="78%">
-                          <stop offset="0%" stopColor="#1E3AFF"/>
-                          <stop offset="38%" stopColor="#1a2fe6"/>
-                          <stop offset="72%" stopColor="#0f1fb0"/>
-                          <stop offset="100%" stopColor="#0A1A9C"/>
-                        </radialGradient>
-                        <radialGradient id="blueCap" cx="35%" cy="28%" r="70%">
-                          <stop offset="0%" stopColor="#3550ff"/>
-                          <stop offset="55%" stopColor="#0A1A9C"/>
-                          <stop offset="100%" stopColor="#050c54"/>
-                        </radialGradient>
-                        <radialGradient id="floorShadow" cx="50%" cy="50%" r="50%">
-                          <stop offset="0%" stopColor="rgba(0,0,0,.5)"/>
-                          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
-                        </radialGradient>
-                        <filter id="bannerShadow" x="-20%" y="-30%" width="140%" height="180%">
-                          <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="b"/>
-                          <feOffset dy="18" result="o"/>
-                          <feComponentTransfer><feFuncA type="linear" slope="0.8"/></feComponentTransfer>
-                          <feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge>
-                        </filter>
-                        <filter id="innerGlow" x="-10%" y="-10%" width="120%" height="120%">
-                          <feGaussianBlur stdDeviation="9" result="g"/>
-                          <feComposite in="g" in2="SourceAlpha" operator="in"/>
-                          <feFlood floodColor="#8aa6ff" floodOpacity=".28"/>
-                          <feComposite operator="in" in2="SourceAlpha"/>
-                          <feBlend in="SourceGraphic" mode="screen"/>
-                        </filter>
-                        <filter id="rodDepth" x="-40%" y="-15%" width="180%" height="160%">
-                          <feDropShadow dx="0" dy="14" stdDeviation="12" floodColor="#000" floodOpacity=".55"/>
-                        </filter>
-                        <g id="corner" fill="none" stroke="url(#goldEdge)" strokeWidth="2.4" strokeLinecap="round">
-                          <path d="M0 22 v-9 c0-6.2 5-11.2 11.2-11.2 h9.8" opacity=".98"/>
-                          <path d="M3.5 19 v-5 c0-3.8 3.1-6.9 6.9-6.9 h5.6" opacity=".6"/>
-                        </g>
-                      </defs>
-
-                      <g className="floatGroup">
-                        <ellipse cx="500" cy="334" rx="300" ry="30" fill="url(#floorShadow)" opacity=".55"/>
-
-                        <g className="bannerGroup" filter="url(#bannerShadow)">
-                          <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="url(#blue)" stroke="#07105a" strokeWidth="2.5"/>
-                          <path d="M 145 92 Q 500 118 855 92 L 855 268 Q 500 242 145 268 Z" fill="none" filter="url(#innerGlow)"/>
-                          
-                          <foreignObject x="200" y="110" width="600" height="150">
-                            <div className="w-full h-full flex flex-col items-center justify-center text-center [&>p]:m-0 [&>p]:leading-tight gap-0">
-                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
-                                <span className="text-yellow-400">{senderName}</span>
-                              </p>
-                              <p className="text-white/80 text-[14px] font-bold uppercase tracking-[0.2em] my-0 leading-tight">
-                                sent gift to
-                              </p>
-                              <p className="text-white text-[32px] font-black tracking-tight leading-tight m-0 drop-shadow-md">
-                                <span className="text-cyan-400">{receiverName}</span>
-                              </p>
-                              {giftName && (
-                                <p className="text-white/50 text-[12px] font-black uppercase tracking-[0.3em] mt-1 mb-0 leading-tight drop-shadow-lg">
-                                  {giftName}
-                                </p>
-                              )}
-                            </div>
-                          </foreignObject>
-
-                          <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="url(#goldEdge)" strokeWidth="3.2"/>
-                          <path d="M 167 109 Q 500 129 833 109 L 833 251 Q 500 231 167 251 Z" fill="none" stroke="#fff3b0" strokeWidth="1" opacity=".35"/>
-                          <path d="M 146 93 Q 500 119 854 93" fill="none" stroke="rgba(255,255,255,.16)" strokeWidth="2"/>
-                          <path d="M 146 267 Q 500 241 854 267" fill="none" stroke="rgba(0,0,0,.45)" strokeWidth="2.5"/>
-                          <g transform="translate(172,114)"><use href="#corner"/></g>
-                          <g transform="translate(828,114) rotate(90)"><use href="#corner"/></g>
-                          <g transform="translate(828,246) rotate(180)"><use href="#corner"/></g>
-                          <g transform="translate(172,246) rotate(270)"><use href="#corner"/></g>
-                        </g>
-
-                        <g className="leftRod" filter="url(#rodDepth)">
-                          <ellipse cx="120" cy="324" rx="28" ry="9" fill="#000" opacity=".26"/>
-                          <rect x="102" y="52" width="36" height="256" rx="18" fill="url(#gold)"/>
-                          <rect x="102" y="52" width="36" height="256" rx="18" fill="none" stroke="rgba(0,0,0,.28)" strokeWidth="2"/>
-                          <rect x="110" y="58" width="5" height="244" rx="2.5" fill="url(#spec)" opacity=".78"/>
-                          <rect x="124.5" y="58" width="2.2" height="244" rx="1.1" fill="rgba(255,255,255,.18)"/>
-                          <ellipse cx="120" cy="52" rx="19" ry="7.5" fill="#050a3b"/>
-                          <circle cx="120" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
-                          <ellipse cx="120" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
-                          <ellipse cx="120" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
-                          <ellipse cx="120" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
-                          <circle cx="120" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
-                          <ellipse cx="120" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
-                          <rect x="99.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
-                          <rect x="99.5" y="283.5" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
-                        </g>
-
-                        <g className="rightRod" filter="url(#rodDepth)">
-                          <ellipse cx="880" cy="324" rx="28" ry="9" fill="#000" opacity=".26"/>
-                          <rect x="862" y="52" width="36" height="256" rx="18" fill="url(#gold)"/>
-                          <rect x="862" y="52" width="36" height="256" rx="18" fill="none" stroke="rgba(0,0,0,.28)" strokeWidth="2"/>
-                          <rect x="870" y="58" width="5" height="244" rx="2.5" fill="url(#spec)" opacity=".78"/>
-                          <rect x="884.5" y="58" width="2.2" height="244" rx="1.1" fill="rgba(255,255,255,.18)"/>
-                          <ellipse cx="880" cy="52" rx="19" ry="7.5" fill="#050a3b"/>
-                          <circle cx="880" cy="45" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
-                          <ellipse cx="880" cy="45" rx="9" ry="3.8" fill="rgba(255,255,255,.16)"/>
-                          <ellipse cx="880" cy="52" rx="18.5" ry="6" fill="none" stroke="url(#goldEdge)" strokeWidth="1.2" opacity=".9"/>
-                          <ellipse cx="880" cy="308" rx="19" ry="7.5" fill="#050a3b"/>
-                          <circle cx="880" cy="315" r="14.5" fill="url(#blueCap)" stroke="#02062a" strokeWidth="1.6"/>
-                          <ellipse cx="880" cy="315" rx="9" ry="4.2" fill="rgba(0,0,0,.38)"/>
-                          <rect x="859.5" y="70" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
-                          <rect x="859.5" y="283.5" width="41" height="6.5" rx="3.25" fill="url(#gold)" stroke="#7a5a00" strokeWidth="1"/>
-                        </g>
-                      </g>
-                    </svg>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* THE GIFT ITSELF */}
             <div className="relative flex items-center justify-center">
-              <div className={cn(
-                "absolute inset-0 blur-[60px] rounded-full scale-150 opacity-40 animate-pulse",
-                tier === 'legendary' ? "bg-yellow-400" : tier === 'epic' ? "bg-purple-500" : "bg-cyan-400"
-              )} />
               
               {lottieData ? (
                 <div className="w-[280px] h-[280px]">
@@ -810,22 +610,17 @@ export function GiftAnimationOverlay({
                   exit={{ opacity: 0, scale: 1.1 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="fixed inset-0 w-screen h-screen flex items-center justify-center z-[2000] pointer-events-none"
-                  style={{
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)',
-                    maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 30%, rgba(0,0,0,1) 70%, transparent 100%)'
-                  }}
                 >
-                  {/* Loading state while video buffers */}
                   {isVideoLoading && !isVideoReady && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className={cn(
                         "h-16 w-16 rounded-full border-4 border-t-transparent animate-spin",
-                        tier === 'legendary' ? "border-yellow-400" : tier === 'epic' ? "border-purple-500" : "border-cyan-400"
+                        tier === 'legendary' ? "border-yellow-400" : 
+                        tier === 'epic' ? "border-purple-500" : "border-cyan-400"
                       )} />
                     </div>
                   )}
                   
-                  {/* Hidden original video (for audio + timing reference) */}
                   <video 
                     ref={videoRef}
                     src={videoUrl} 
@@ -840,27 +635,15 @@ export function GiftAnimationOverlay({
                     onEnded={handleCleanup} 
                     className={useCanvasProcessing ? "hidden" : "w-full h-full object-contain"}
                     crossOrigin="anonymous"
-                    style={{
-                      filter: useCanvasProcessing ? 'none' : 'none',
-                      imageRendering: 'crisp-edges',
-                      backfaceVisibility: 'hidden',
-                      WebkitBackfaceVisibility: 'hidden'
-                    }}
                   />
                   
-                  {/* Enhanced Canvas showing perfectly clean black-removed video */}
                   {useCanvasProcessing && (
                     <canvas 
                       ref={canvasRef}
                       className="w-full h-full object-contain"
                       style={{ 
                         display: isVideoReady ? 'block' : 'none',
-                        background: 'transparent',
-                        imageRendering: 'auto',
-                        mixBlendMode: 'normal',
-                        isolation: 'isolate',
-                        filter: 'none',
-                        opacity: 1
+                        background: 'transparent'
                       }}
                     />
                   )}
@@ -868,23 +651,21 @@ export function GiftAnimationOverlay({
               ) : imageUrl ? (
                 <motion.img 
                   src={processedImageUrl || imageUrl}
-                  alt={giftName || 'Gift'} 
+                  alt="Gift" 
                   className="max-h-[280px] object-contain drop-shadow-2xl"
-                  initial={{ scale: 0, rotateZ: -20, x: 0, y: 0, opacity: 1 }}
+                  initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
                   animate={flyCoordinates ? {
                     scale: 0.05,
-                    rotateZ: 360,
                     x: flyCoordinates.x,
                     y: flyCoordinates.y,
                     opacity: 0
                   } : {
                     scale: 1,
-                    rotateZ: 0,
                     x: 0,
                     y: 0,
                     opacity: 1
                   }}
-                  exit={{ scale: 0, rotateZ: 20, opacity: 0 }}
+                  exit={{ scale: 0, opacity: 0 }}
                   transition={flyCoordinates ? {
                     duration: 0.8,
                     ease: [0.25, 1, 0.5, 1]
@@ -893,11 +674,6 @@ export function GiftAnimationOverlay({
                     stiffness: 200,
                     damping: 18
                   }}
-                  style={{
-                    background: 'transparent',
-                    mixBlendMode: 'normal',
-                    isolation: 'isolate'
-                  }}
                 />
               ) : null} 
             </div>
@@ -905,7 +681,6 @@ export function GiftAnimationOverlay({
         )}
       </AnimatePresence>
 
-      {/* FULL SCREEN AMBIANCE */}
       <AnimatePresence>
         {activeGift && tier === 'legendary' && (
           <motion.div
@@ -917,63 +692,6 @@ export function GiftAnimationOverlay({
           />
         )}
       </AnimatePresence>
-
-      {/* Scroll Banner Animations Scoped Styles */}
-      <style>{`
-        .scroll-stage {
-          width: 100%; max-width: 900px;
-          perspective: 1200px;
-          filter: drop-shadow(0 40px 60px rgba(0,0,0,.55));
-        }
-        .scroll-stage .svg-wrap {
-          position: relative; transform-style: preserve-3d;
-        }
-        .scroll-stage svg {
-          width: 100%; height: auto; display: block; overflow: visible;
-          transform: rotateX(12deg);
-          transform-origin: 50% 45%;
-        }
-        .scroll-stage .leftRod, .scroll-stage .rightRod, .scroll-stage .bannerGroup, .scroll-stage .floatGroup {
-          will-change: transform; transform-box: view-box;
-        }
-        .scroll-stage .bannerGroup { transform-origin: 500px 180px; }
-        
-        .scroll-stage.playing .leftRod { animation: leftOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-        .scroll-stage.playing .rightRod { animation: rightOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-        .scroll-stage.playing .bannerGroup { animation: bannerOpen 3.6s cubic-bezier(.68,-.55,.265,1.55) infinite; }
-        .scroll-stage.playing .floatGroup { animation: floatY 3.6s ease-in-out infinite; }
-
-        @keyframes leftOpen {
-          0%, 7% { transform: translate3d(380px, 0, 0); }
-          22%, 78% { transform: translate3d(0, 0, 0); }
-          93%, 100% { transform: translate3d(380px, 0, 0); }
-        }
-        @keyframes rightOpen {
-          0%, 7% { transform: translate3d(-380px, 0, 0); }
-          22%, 78% { transform: translate3d(0, 0, 0); }
-          93%, 100% { transform: translate3d(-380px, 0, 0); }
-        }
-        @keyframes bannerOpen {
-          0%, 7% { transform: scaleX(.04); opacity: 0; }
-          12% { opacity: 1; }
-          22%, 78% { transform: scaleX(1); opacity: 1; }
-          86% { opacity: 1; }
-          93%, 100% { transform: scaleX(.04); opacity: 0; }
-        }
-        @keyframes floatY {
-          0%, 7% { transform: translateY(10px); }
-          20% { transform: translateY(0); }
-          35% { transform: translateY(-4px); }
-          50% { transform: translateY(2px); }
-          65% { transform: translateY(-3px); }
-          80%, 86% { transform: translateY(0); }
-          100% { transform: translateY(10px); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .scroll-stage.playing .leftRod, .scroll-stage.playing .rightRod, 
-          .scroll-stage.playing .bannerGroup, .scroll-stage.playing .floatGroup { animation: none; }
-        }
-      `}</style>
     </div>
   );
-}
+      }
