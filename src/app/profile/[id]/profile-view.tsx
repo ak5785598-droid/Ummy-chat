@@ -75,7 +75,7 @@ import { ActiveIDBadge } from '@/components/id-badge';
 // ============================================================
 
 // ✅ BAS YAHI CHANGE KIYA HAI - Height 18px se 20px, ml-1 se ml-0.5
-const SVGA_OfficialTag = () => (
+const SVGA_OfficialTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[20px] rounded-full p-[2px] ml-0.5" style={{
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
     boxShadow: 'inset 0 1px 0 #fff5d6, inset 0 -1px 1px #a66a1e, 0 2px 6px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.15)'
@@ -185,10 +185,11 @@ const SVGA_OfficialTag = () => (
       </span>
     </div>
   </div>
-);
+));
+SVGA_OfficialTag.displayName = 'SVGA_OfficialTag';
 // ✅ OFFICIAL TAG CHANGE ENDS HERE - BAKI SAB EXACTLY SAME HAI
 
-const SVGA_SellerTag = () => (
+const SVGA_SellerTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
@@ -209,9 +210,10 @@ const SVGA_SellerTag = () => (
       Seller
     </span>
   </div>
-);
+));
+SVGA_SellerTag.displayName = 'SVGA_SellerTag';
 
-const SVGA_ServiceTag = () => (
+const SVGA_ServiceTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#17CFB8] via-[#10B9A4] to-[#0D9482] shadow-[0_2px_8px_rgba(23,207,184,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#A7FFF1] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
@@ -230,9 +232,10 @@ const SVGA_ServiceTag = () => (
       Service
     </span>
   </div>
-);
+));
+SVGA_ServiceTag.displayName = 'SVGA_ServiceTag';
 
-const SVGA_HostTag = () => (
+const SVGA_HostTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#B57AFF] via-[#9E60FA] to-[#803AF5] shadow-[0_2px_8px_rgba(158,96,250,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#E0C6FF] ml-1 overflow-hidden">
     <div className="absolute top-[1px] left-[5%] right-[5%] h-[45%] bg-gradient-to-b from-white/70 to-transparent rounded-full blur-[0.5px]" />
     <div className="relative z-10 -ml-1 mr-1 flex items-center justify-center w-[14px] h-[14px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
@@ -254,9 +257,10 @@ const SVGA_HostTag = () => (
       Host
     </span>
   </div>
-);
+));
+SVGA_HostTag.displayName = 'SVGA_HostTag';
 
-const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
+const SVGA_VIPBanner = React.memo(({ onClick }: { onClick: () => void }) => (
   <div
     onClick={onClick}
     className="relative w-full h-[75px] rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-all duration-300 shadow-lg group mt-3 flex items-center px-4"
@@ -329,9 +333,10 @@ const SVGA_VIPBanner = ({ onClick }: { onClick: () => void }) => (
       <Sparkles className="h-4 w-4 text-white" />
     </div>
   </div>
-);
+));
+SVGA_VIPBanner.displayName = 'SVGA_VIPBanner';
 
-const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) => {
+const SVGA_GlossyID = React.memo(({ variant, label }: { variant: string, label: string }) => {
   const idNum = label? label.replace('ID: ', '').trim() : '000000';
 
   return (
@@ -392,16 +397,18 @@ const SVGA_GlossyID = ({ variant, label }: { variant: string, label: string }) =
       </span>
     </div>
   );
-};
+});
+SVGA_GlossyID.displayName = 'SVGA_GlossyID';
 
-const SVGA_GoldDollar = () => (
+const SVGA_GoldDollar = React.memo(() => (
   <div className="relative h-7 w-7 flex items-center justify-center rounded-full bg-gradient-to-b from-[#FFE770] via-[#FDB931] to-[#9E7302] shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_2px_6px_rgba(0,0,0,0.15)]">
     <DollarSign className="h-4 w-4 text-[#5C4000] drop-shadow-sm" strokeWidth={3} />
     <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
-);
+));
+SVGA_GoldDollar.displayName = 'SVGA_GoldDollar';
 
-const SVGA_LevelCrown = ({ className }: { className?: string }) => (
+const SVGA_LevelCrown = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
@@ -419,9 +426,10 @@ const SVGA_LevelCrown = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-1 right-2 w-1.5 h-1 bg-white/60 rounded-full blur-[1px] rotate-[20deg]" />
   </div>
-);
+));
+SVGA_LevelCrown.displayName = 'SVGA_LevelCrown';
 
-const SVGA_StoreCart = ({ className }: { className?: string }) => (
+const SVGA_StoreCart = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-8 w-8 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
@@ -437,9 +445,10 @@ const SVGA_StoreCart = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-2 left-2 w-2 h-1 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
-);
+));
+SVGA_StoreCart.displayName = 'SVGA_StoreCart';
 
-const SVGA_MedalStar = ({ className }: { className?: string }) => (
+const SVGA_MedalStar = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-lg">
       <defs>
@@ -466,9 +475,10 @@ const SVGA_MedalStar = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-3 left-3 w-3 h-1.5 bg-white/30 rounded-full blur-[2px] rotate-[-25deg]" />
   </div>
-);
+));
+SVGA_MedalStar.displayName = 'SVGA_MedalStar';
 
-const SVGA_BonusGift = ({ className }: { className?: string }) => (
+const SVGA_BonusGift = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
@@ -491,9 +501,10 @@ const SVGA_BonusGift = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-2 left-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-25deg]" />
   </div>
-);
+));
+SVGA_BonusGift.displayName = 'SVGA_BonusGift';
 
-const SVGA_InviteHeart = ({ className }: { className?: string }) => (
+const SVGA_InviteHeart = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -512,9 +523,10 @@ const SVGA_InviteHeart = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-2 right-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[25deg]" />
   </div>
-);
+));
+SVGA_InviteHeart.displayName = 'SVGA_InviteHeart';
 
-const SVGA_FamilyShield = ({ className }: { className?: string }) => (
+const SVGA_FamilyShield = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -537,9 +549,10 @@ const SVGA_FamilyShield = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-8 left-10 w-2 h-1 bg-white/30 rounded-full blur-[1px]" />
   </div>
-);
+));
+SVGA_FamilyShield.displayName = 'SVGA_FamilyShield';
 
-const SVGA_BagShirt = ({ className }: { className?: string }) => (
+const SVGA_BagShirt = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -560,9 +573,10 @@ const SVGA_BagShirt = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-2 left-3 w-4 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-15deg]" />
   </div>
-);
+));
+SVGA_BagShirt.displayName = 'SVGA_BagShirt';
 
-const SVGA_CpHeart = ({ className }: { className?: string }) => (
+const SVGA_CpHeart = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -587,9 +601,10 @@ const SVGA_CpHeart = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-3 right-4 w-4 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[30deg]" />
   </div>
-);
+));
+SVGA_CpHeart.displayName = 'SVGA_CpHeart';
 
-const SVGA_SellerBag = ({ className }: { className?: string }) => (
+const SVGA_SellerBag = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-xl">
       <defs>
@@ -615,9 +630,10 @@ const SVGA_SellerBag = ({ className }: { className?: string }) => (
       <ellipse cx="14" cy="22" rx="4" ry="2" fill="url(#bagGloss)" transform="rotate(-20, 14, 22)" />
     </svg>
   </div>
-);
+));
+SVGA_SellerBag.displayName = 'SVGA_SellerBag';
 
-const SVGA_Settings = ({ className }: { className?: string }) => (
+const SVGA_Settings = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-lg">
       <defs>
@@ -641,9 +657,10 @@ const SVGA_Settings = ({ className }: { className?: string }) => (
       />
     </svg>
   </div>
-);
+));
+SVGA_Settings.displayName = 'SVGA_Settings';
 
-const SVGA_HelpCenter = ({ className }: { className?: string }) => (
+const SVGA_HelpCenter = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -668,9 +685,10 @@ const SVGA_HelpCenter = ({ className }: { className?: string }) => (
       />
     </svg>
   </div>
-);
+));
+SVGA_HelpCenter.displayName = 'SVGA_HelpCenter';
 
-const SVGA_OfficialUser = ({ className }: { className?: string }) => (
+const SVGA_OfficialUser = React.memo(({ className }: { className?: string }) => (
   <div className={cn("relative h-11 w-11 flex items-center justify-center", className)}>
     <svg viewBox="0 0 40 40" className="h-full w-full drop-shadow-md">
       <defs>
@@ -687,7 +705,8 @@ const SVGA_OfficialUser = ({ className }: { className?: string }) => (
     </svg>
     <div className="absolute top-3 left-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-20deg]" />
   </div>
-);
+));
+SVGA_OfficialUser.displayName = 'SVGA_OfficialUser';
 
 // ============================================================
 // ⚡ HELPER FUNCTIONS & CONSTANTS ⚡
@@ -717,7 +736,7 @@ const calculateAge = (birthday: string) => {
   return age;
 };
 
-const GenderAgeTag = ({ gender, birthday }: { gender: string | null | undefined, birthday?: string }) => {
+const GenderAgeTag = React.memo(({ gender, birthday }: { gender: string | null | undefined, birthday?: string }) => {
   const age = calculateAge(birthday || '');
   return (
     <div className={cn(
@@ -728,16 +747,18 @@ const GenderAgeTag = ({ gender, birthday }: { gender: string | null | undefined,
       {age !== null && <span className="text-[10px] font-bold text-white leading-none">{age}</span>}
     </div>
   );
-};
+});
+GenderAgeTag.displayName = 'GenderAgeTag';
 
-const StatItem = ({ label, value, onClick }: { label: string, value: number, onClick?: () => void }) => (
+const StatItem = React.memo(({ label, value, onClick }: { label: string, value: number, onClick?: () => void }) => (
   <button onClick={onClick} className="flex flex-col items-center justify-center py-1 active:scale-95 transition-transform min-w-[60px] group">
     <span className="text-[20px] font-semibold text-slate-800 leading-none mb-1 group-hover:text-slate-900 transition">{formatCompactNumber(value)}</span>
     <span className="text-[9px] font-black text-slate-400 tracking-wider uppercase group-hover:text-slate-500">{label}</span>
   </button>
-);
+));
+StatItem.displayName = 'StatItem';
 
-const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomIcon }: { icon?: any, label: string, iconColor?: string, onClick: () => void, customIcon?: any }) => (
+const IconButton = React.memo(({ icon: Icon, label, iconColor, onClick, customIcon: CustomIcon }: { icon?: any, label: string, iconColor?: string, onClick: () => void, customIcon?: any }) => (
   <button onClick={onClick} className="flex flex-col items-center gap-1.5 transition-transform active:scale-95 group">
     <div className="flex items-center justify-center p-1 transition-all">
       {CustomIcon ? (
@@ -748,9 +769,10 @@ const IconButton = ({ icon: Icon, label, iconColor, onClick, customIcon: CustomI
     </div>
     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-700">{label}</span>
   </button>
-);
+));
+IconButton.displayName = 'IconButton';
 
-const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor, customIcon: CustomIcon }: { icon?: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string, customIcon?: any }) => (
+const ProfileMenuItem = React.memo(({ icon: Icon, label, extra, iconColor, onClick, destructive, extraColor, customIcon: CustomIcon }: { icon?: any, label: string, extra?: string, iconColor?: string, onClick: () => void, destructive?: boolean, extraColor?: string, customIcon?: any }) => (
   <button onClick={onClick} className="w-full flex items-center justify-between py-4 pl-4 pr-3 hover:bg-slate-50/80 active:bg-slate-100/50 transition-all text-left group border-b border-slate-50 last:border-0">
     <div className="flex items-center gap-4">
       <div className={cn("p-1.5 rounded-xl transition-colors shrink-0", iconColor || "bg-slate-100 text-slate-500 group-hover:scale-105")}>
@@ -763,12 +785,13 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
       <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-0.5 transition-transform" />
     </div>
   </button>
-);
+));
+ProfileMenuItem.displayName = 'ProfileMenuItem';
 
 // ============================================================
 // ⚡ MEDAL MODAL ⚡
 // ============================================================
-const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => void, profile: any }) => {
+const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onClose: () => void, profile: any }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
   const firestore = useFirestore();
 
@@ -821,7 +844,7 @@ const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => 
                   medal.imageUrl && (medal.imageUrl.includes('.mp4') || medal.imageUrl.includes('video') || medal.imageUrl.includes('.webm')) ? (
                     <video src={medal.imageUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                   ) : (
-                    <img src={medal.imageUrl} alt={medal.name} className="w-full h-full object-cover" />
+                    <img src={medal.imageUrl} alt={medal.name} className="w-full h-full object-cover" loading="lazy" />
                   )
                 ) : (
                   <span className="text-[#cfb284]/50 text-xl font-light">+</span>
@@ -883,11 +906,12 @@ const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => 
                             className="w-full h-full object-cover scale-105" 
                           />
                         ) : (
-                          <img 
-                            src={medal.imageUrl} 
-                            alt={medal.name} 
-                            className="w-full h-full object-cover scale-105" 
-                          />
+                            <img 
+                              src={medal.imageUrl} 
+                              alt={medal.name} 
+                              className="w-full h-full object-cover scale-105" 
+                              loading="lazy"
+                            />
                         )
                       ) : (
                         <div className="flex flex-col items-center text-white/50">
@@ -917,7 +941,8 @@ const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => 
       </div>
     </div>
   );
-};
+});
+MedalModal.displayName = 'MedalModal';
 
 
 // ============================================================
