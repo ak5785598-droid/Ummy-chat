@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f43f5e;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#881337;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fda4af;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#fda4af;stop-opacity:0" />
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="300" fill="url(#bg)" rx="16"/>
+  
+  <!-- Glow effect -->
+  <circle cx="100" cy="120" r="60" fill="url(#glow)" opacity="0.5"/>
+  
+  <!-- Spinning wheel icon -->
+  <g transform="translate(100, 110)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="35" fill="none" stroke="#fda4af" stroke-width="3"/>
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#fda4af" stroke-width="2" opacity="0.5"/>
+    <circle cx="0" cy="0" r="8" fill="#fda4af"/>
+    
+    <!-- Wheel segments -->
+    <line x1="0" y1="-35" x2="0" y2="35" stroke="#fda4af" stroke-width="2"/>
+    <line x1="-35" y1="0" x2="35" y2="0" stroke="#fda4af" stroke-width="2"/>
+    <line x1="-25" y1="-25" x2="25" y2="25" stroke="#fda4af" stroke-width="2"/>
+    <line x1="-25" y1="25" x2="25" y2="-25" stroke="#fda4af" stroke-width="2"/>
+    
+    <!-- Center pointer -->
+    <path d="M0,-40 L-5,-30 L5,-30 Z" fill="#fbbf24"/>
+  </g>
+  
+  <!-- Confetti -->
+  <circle cx="50" cy="70" r="3" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="150" cy="80" r="2.5" fill="#fbbf24" opacity="0.7"/>
+  <circle cx="60" cy="160" r="2" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="140" cy="150" r="3" fill="#fbbf24" opacity="0.6"/>
+  <rect x="45" y="100" width="4" height="4" fill="#fbbf24" opacity="0.7" transform="rotate(45 47 102)"/>
+  <rect x="145" y="110" width="4" height="4" fill="#fbbf24" opacity="0.6" transform="rotate(45 147 112)"/>
+  
+  <!-- Text -->
+  <text x="100" y="200" font-family="Arial, sans-serif" font-size="18" font-weight="bold" 
+        fill="white" text-anchor="middle" letter-spacing="1">LUCKY SPIN</text>
+  
+  <!-- Subtitle -->
+  <text x="100" y="240" font-family="Arial, sans-serif" font-size="13" font-weight="bold" 
+        fill="#fda4af" text-anchor="middle">Try Your Luck</text>
+  
+  <!-- Decorative line -->
+  <line x1="60" y1="220" x2="140" y2="220" stroke="#fda4af" stroke-width="1" opacity="0.5"/>
+</svg>

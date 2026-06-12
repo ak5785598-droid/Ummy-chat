@@ -35,13 +35,15 @@ const BANNERS: BannerSlide[] = [
     subtitle: '1:1.000.000',
     color: 'from-purple-600/80 via-indigo-600/80 to-purple-900/80',
     icon: Sparkles,
+    imageUrl: '/banners/weekly-star.svg',
   },
   {
-    id: 'aristocracy',
+    id: 'merge-aristocracy',
     title: 'Merge Aristocracy',
     subtitle: 'Exclusive Perks',
     color: 'from-blue-600/80 via-slate-800/80 to-blue-900/80',
     icon: Rocket,
+    imageUrl: '/banners/merge-aristocracy.svg',
   },
   {
     id: 'room-support',
@@ -63,6 +65,7 @@ const BANNERS: BannerSlide[] = [
     subtitle: 'Try Your Luck',
     color: 'from-rose-500/80 via-red-600/80 to-rose-900/80',
     icon: Gift,
+    imageUrl: '/banners/lucky-spin.svg',
   }
 ];
 

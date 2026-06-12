@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" width="200" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0" />
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="300" fill="url(#bg)" rx="16"/>
+  
+  <!-- Glow effect -->
+  <circle cx="100" cy="120" r="60" fill="url(#glow)" opacity="0.5"/>
+  
+  <!-- Crown icon -->
+  <g transform="translate(100, 100)" filter="url(#shadow)">
+    <path d="M-25,10 L-20,-15 L-10,-5 L0,-20 L10,-5 L20,-15 L25,10 Z" 
+          fill="#60a5fa" stroke="#3b82f6" stroke-width="2"/>
+    <rect x="-25" y="10" width="50" height="8" fill="#60a5fa" rx="2"/>
+    <circle cx="-15" cy="-10" r="3" fill="#fbbf24"/>
+    <circle cx="0" cy="-15" r="3" fill="#fbbf24"/>
+    <circle cx="15" cy="-10" r="3" fill="#fbbf24"/>
+  </g>
+  
+  <!-- Rocket icon -->
+  <g transform="translate(100, 140)" filter="url(#shadow)">
+    <path d="M0,-20 L8,-5 L8,10 L0,15 L-8,10 L-8,-5 Z" 
+          fill="#93c5fd" stroke="#60a5fa" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="4" fill="#1e40af"/>
+    <path d="M-8,10 L-12,18 L-4,15 Z" fill="#f97316"/>
+    <path d="M8,10 L12,18 L4,15 Z" fill="#f97316"/>
+  </g>
+  
+  <!-- Stars -->
+  <circle cx="50" cy="80" r="2" fill="#60a5fa" opacity="0.8"/>
+  <circle cx="150" cy="90" r="1.5" fill="#60a5fa" opacity="0.6"/>
+  <circle cx="60" cy="160" r="2" fill="#60a5fa" opacity="0.7"/>
+  <circle cx="140" cy="150" r="1.5" fill="#60a5fa" opacity="0.5"/>
+  
+  <!-- Text -->
+  <text x="100" y="200" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="white" text-anchor="middle" letter-spacing="0.5">MERGE</text>
+  <text x="100" y="220" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="white" text-anchor="middle" letter-spacing="0.5">ARISTOCRACY</text>
+  
+  <!-- Subtitle -->
+  <text x="100" y="250" font-family="Arial, sans-serif" font-size="12" font-weight="bold" 
+        fill="#60a5fa" text-anchor="middle">Exclusive Perks</text>
+  
+  <!-- Decorative line -->
+  <line x1="60" y1="230" x2="140" y2="230" stroke="#60a5fa" stroke-width="1" opacity="0.5"/>
+</svg>
