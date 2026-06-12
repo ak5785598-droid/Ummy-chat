@@ -26,14 +26,8 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isBlackBg, setIsBlackBg] = useState(false);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const [useCanvas, setUseCanvas] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const processingRef = useRef(false);
-  const lastProcessedSrc = useRef('');
-  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
@@ -44,226 +38,59 @@ const SmartBlackRemover = ({
     if (!ctx) return false;
 
     ctx.drawImage(media, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+    try {
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
 
-    const STRICT_BLACK = 30;
-    const EDGE_CHECK = 0.08;
-    const SOLID_THRESHOLD = 0.85;
+      const STRICT_BLACK = 30;
+      const EDGE_CHECK = 0.08;
+      const SOLID_THRESHOLD = 0.85;
 
-    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-      let blackCount = 0, total = 0;
-      for (let y = yStart; y < yEnd; y++) {
-        for (let x = xStart; x < xEnd; x++) {
-          const i = (y * width + x) * 4;
-          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-            blackCount++;
-          }
-          total++;
-        }
-      }
-      return blackCount / total >= SOLID_THRESHOLD;
-    };
-
-    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
-    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
-    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
-    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
-
-    return topSolid && bottomSolid && leftSolid && rightSolid;
-  };
-
-  const processFrame = (video?: HTMLVideoElement) => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-
-    const canvas = canvasRef.current;
-    const media = video || mediaRef.current;
-    if (!canvas || !media) {
-      processingRef.current = false;
-      return;
-    }
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-      processingRef.current = false;
-      return;
-    }
-
-    const width = 'videoWidth' in media ? media.videoWidth : media.width;
-    const height = 'videoHeight' in media ? media.videoHeight : media.height;
-
-    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
-      processingRef.current = false;
-      return;
-    }
-
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(media, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    const STRICT_BLACK = 25;
-    const scale = 4;
-    const scaledW = Math.ceil(width / scale);
-    const scaledH = Math.ceil(height / scale);
-    const visited = new Uint8Array(scaledW * scaledH);
-
-    const isBlack = (sx: number, sy: number) => {
-      const x = Math.min(sx * scale, width - 1);
-      const y = Math.min(sy * scale, height - 1);
-      const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
-    };
-
-    const queue: [number, number][] = [];
-    
-    for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
-    }
-    for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
-    }
-
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
-    }
-
-    let head = 0;
-    while (head < queue.length) {
-      const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
-          const nidx = ny * scaledW + nx;
-          if (!visited[nidx] && isBlack(nx, ny)) {
-            visited[nidx] = 1;
-            queue.push([nx, ny]);
-          }
-        }
-      }
-    }
-
-    for (let sy = 0; sy < scaledH; sy++) {
-      for (let sx = 0; sx < scaledW; sx++) {
-        if (visited[sy * scaledW + sx]) {
-          for (let dy = 0; dy < scale; dy++) {
-            for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
-              if (x < width && y < height) {
-                const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i] = 0;
-                  data[i+1] = 0;
-                  data[i+2] = 0;
-                  data[i+3] = 0;
-                }
-              }
+      const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+        let blackCount = 0, total = 0;
+        for (let y = yStart; y < yEnd; y++) {
+          for (let x = xStart; x < xEnd; x++) {
+            const i = (y * width + x) * 4;
+            if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+              blackCount++;
             }
+            total++;
           }
         }
-      }
-    }
+        return blackCount / total >= SOLID_THRESHOLD;
+      };
 
-    ctx.putImageData(imageData, 0, 0);
-    processingRef.current = false;
+      const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+      const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+      const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+      const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
 
-    if (type === 'video' && video) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+      return topSolid && bottomSolid && leftSolid && rightSolid;
+    } catch (e) {
+      return false;
     }
   };
-
-  useEffect(() => {
-    if (src !== lastProcessedSrc.current) {
-      setUseCanvas(false);
-      setIsReady(false);
-      lastProcessedSrc.current = src;
-    }
-
-    if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
-    }
-
-    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
-      const img = mediaRef.current as HTMLImageElement;
-      if (img.complete && img.naturalWidth > 0 && !isReady) {
-        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-        setUseCanvas(hasBlackBg);
-        setIsReady(true);
-        if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
-        }
-      }
-    }
-
-    loadTimeoutRef.current = setTimeout(() => {
-      if (!isReady && mediaRef.current) {
-        setIsReady(true);
-        setUseCanvas(false);
-      }
-    }, 5000);
-
-    return () => {
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-    };
-  }, [src, type, isReady]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     if (img.naturalWidth > 0) {
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(), 50);
-      }
+      setIsBlackBg(hasBlackBg);
     }
-  };
-
-  const handleImageError = () => {
-    setIsReady(true);
-    setUseCanvas(false);
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(video), 150);
-      }
+      setIsBlackBg(hasBlackBg);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      processingRef.current = false;
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-    };
-  }, []);
+  const finalStyle: React.CSSProperties = {
+    ...style,
+    ...(isBlackBg ? { mixBlendMode: 'screen' } : {})
+  };
 
   if (type === 'video') {
     return (
@@ -276,32 +103,10 @@ const SmartBlackRemover = ({
           loop
           playsInline
           onLoadedData={handleVideoReady}
-          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
-          style={{ display: useCanvas ? 'none' : 'block' }}
+          className="w-full h-full object-cover"
+          style={finalStyle}
           crossOrigin="anonymous"
         />
-        {useCanvas && (
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full object-cover"
-            style={{ 
-              display: isReady ? 'block' : 'none', 
-              background: 'transparent',
-              backgroundColor: 'transparent'
-            }}
-          />
-        )}
-        {!isReady && !useCanvas && (
-          <video
-            src={src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
-        )}
       </div>
     );
   }
@@ -313,30 +118,10 @@ const SmartBlackRemover = ({
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        onError={handleImageError}
-        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
-        style={{ display: useCanvas ? 'none' : 'block' }}
+        className="w-full h-full object-cover"
+        style={finalStyle}
         crossOrigin="anonymous"
       />
-      {useCanvas && (
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-cover"
-          style={{ 
-            display: isReady ? 'block' : 'none', 
-            background: 'transparent',
-            backgroundColor: 'transparent'
-          }}
-        />
-      )}
-      {!isReady && !useCanvas && (
-        <img
-          src={src}
-          alt=""
-          className="w-full h-full object-cover"
-          crossOrigin="anonymous"
-        />
-      )}
     </div>
   );
 };

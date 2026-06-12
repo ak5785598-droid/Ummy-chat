@@ -53,6 +53,7 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
 };
 
 // --- Canvas Frame Overlay Component - SQUARE ASPECT RATIO (1:1) ---
+// --- GPU-Accelerated Frame Overlay Component - SQUARE ASPECT RATIO (1:1) ---
 const FrameOverlayCanvas = ({ 
   frameUrl, 
   isVideo = false,
@@ -62,194 +63,45 @@ const FrameOverlayCanvas = ({
   isVideo?: boolean;
   containerSize?: number;
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { 
-      alpha: true,
-      willReadFrequently: true
-    });
-    
-    if (!ctx) return;
-
-    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
-      
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        if (r < 30 && g < 30 && b < 30) {
-          data[i + 3] = 0;
-        }
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-    };
-
-    if (isVideo) {
-      const video = document.createElement('video');
-      videoRef.current = video;
-      video.src = frameUrl;
-      video.autoplay = true;
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.crossOrigin = 'anonymous';
-      video.preload = 'auto';
-
-      video.addEventListener('loadedmetadata', () => {
-        setIsFrameLoaded(true);
-      });
-
-      video.addEventListener('loadeddata', () => {
-        setIsFrameLoaded(true);
-      });
-
-      video.play().catch(console.error);
-
-      return () => {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        if (videoRef.current) {
-          videoRef.current.pause();
-          videoRef.current.remove();
-          videoRef.current = null;
-        }
-      };
-    } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = frameUrl;
-
-      img.onload = () => {
-        setIsFrameLoaded(true);
-      };
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [frameUrl, isVideo]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !isFrameLoaded) return;
-
-    const ctx = canvas.getContext('2d', { 
-      alpha: true,
-      willReadFrequently: true
-    });
-    
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    
-    const canvasWidth = containerSize;
-    const canvasHeight = containerSize;
-    
-    canvas.width = Math.round(canvasWidth * dpr);
-    canvas.height = Math.round(canvasHeight * dpr);
-    
-    canvas.style.width = Math.round(canvasWidth) + 'px';
-    canvas.style.height = Math.round(canvasHeight) + 'px';
-    
-    ctx.scale(dpr, dpr);
-
-    const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
-      
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        if (r < 30 && g < 30 && b < 30) {
-          data[i + 3] = 0;
-        }
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-    };
-
-    if (isVideo && videoRef.current) {
-      const drawFrame = () => {
-        if (!ctx || !canvas || videoRef.current!.readyState < 2) {
-          animationFrameRef.current = requestAnimationFrame(drawFrame);
-          return;
-        }
-        
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        const videoRatio = videoRef.current!.videoWidth / videoRef.current!.videoHeight;
-        let sx = 0, sy = 0, sWidth = videoRef.current!.videoWidth, sHeight = videoRef.current!.videoHeight;
-        
-        if (videoRatio > 1) {
-          sWidth = sHeight;
-          sx = (videoRef.current!.videoWidth - sWidth) / 2;
-        } else if (videoRatio < 1) {
-          sHeight = sWidth;
-          sy = (videoRef.current!.videoHeight - sHeight) / 2;
-        }
-        
-        ctx.drawImage(videoRef.current!, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
-        removeBlackPixels(ctx, canvas.width, canvas.height);
-        
-        animationFrameRef.current = requestAnimationFrame(drawFrame);
-      };
-      
-      drawFrame();
-    } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = frameUrl;
-
-      img.onload = () => {
-        if (!ctx || !canvas) return;
-        
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
-        
-        if (imgRatio > 1) {
-          sWidth = sHeight;
-          sx = (img.naturalWidth - sWidth) / 2;
-        } else if (imgRatio < 1) {
-          sHeight = sWidth;
-          sy = (img.naturalHeight - sHeight) / 2;
-        }
-        
-        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
-        removeBlackPixels(ctx, canvas.width, canvas.height);
-      };
-    }
-  }, [containerSize, frameUrl, isVideo, isFrameLoaded]);
+  if (isVideo) {
+    return (
+      <div 
+        className="absolute inset-0 z-10 pointer-events-none m-auto overflow-hidden rounded-full"
+        style={{ 
+          width: containerSize + 'px',
+          height: containerSize + 'px',
+          mixBlendMode: 'screen'
+        }}
+      >
+        <video
+          src={frameUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          crossOrigin="anonymous"
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
 
   return (
-    <canvas 
-      ref={canvasRef}
-      className="absolute inset-0 z-10 pointer-events-none m-auto"
+    <div 
+      className="absolute inset-0 z-10 pointer-events-none m-auto overflow-hidden rounded-full"
       style={{ 
-        maxWidth: containerSize + 'px',
-        maxHeight: containerSize + 'px'
+        width: containerSize + 'px',
+        height: containerSize + 'px',
+        mixBlendMode: 'screen'
       }}
-    />
+    >
+      <img
+        src={frameUrl}
+        alt=""
+        crossOrigin="anonymous"
+        className="w-full h-full object-cover"
+      />
+    </div>
   );
 };
 

@@ -767,11 +767,26 @@ const ProfileMenuItem = ({ icon: Icon, label, extra, iconColor, onClick, destruc
 // ============================================================
 // ⚡ MEDAL MODAL ⚡
 // ============================================================
-
-const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) => {
+const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => void, profile: any }) => {
   const [activeTab, setActiveTab] = useState<'Achievement' | 'Gift' | 'Activity'>('Achievement');
+  const firestore = useFirestore();
+
+  const medalsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, "medals"), orderBy("updatedAt", "desc"));
+  }, [firestore]);
+
+  const { data: medals, isLoading } = useCollection(medalsQuery);
 
   if (!open) return null;
+
+  const currentTabLower = activeTab.toLowerCase();
+  const filteredMedals = (medals || []).filter((m: any) => m.category === currentTabLower);
+  const userMedalIds = profile?.medals || [];
+
+  // Map obtained medals to full objects for the top grid
+  const obtainedMedals = (medals || []).filter((m: any) => userMedalIds.includes(m.id));
+
   return (
     <div className="fixed inset-0 z-[999] bg-[#0A0217] text-white flex flex-col font-outfit overflow-hidden animate-in fade-in duration-200 pt-6">
       
@@ -788,145 +803,107 @@ const MedalModal = ({ open, onClose }: { open: boolean, onClose: () => void }) =
         </div>
 
         <div className="grid grid-cols-5 gap-3 px-6 mt-6">
-          {Array.from({length: 10}).map((_, i) => (
-            <div key={i} className="aspect-square rounded-xl bg-white/[0.02] border border-white/[0.08] border-dashed flex items-center justify-center shadow-inner">
-              <span className="text-[#cfb284]/50 text-xl font-light">+</span>
-            </div>
-          ))}
+          {Array.from({length: 10}).map((_, i) => {
+            const medal = obtainedMedals[i];
+            return (
+              <div key={i} className="aspect-square rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center shadow-inner overflow-hidden relative">
+                {medal ? (
+                  medal.imageUrl && (medal.imageUrl.includes('.mp4') || medal.imageUrl.includes('video') || medal.imageUrl.includes('.webm')) ? (
+                    <video src={medal.imageUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={medal.imageUrl} alt={medal.name} className="w-full h-full object-cover" />
+                  )
+                ) : (
+                  <span className="text-[#cfb284]/50 text-xl font-light">+</span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div className="mt-8 mb-4 flex justify-center">
           <div className="relative overflow-hidden group px-6 py-1.5 rounded-full border border-blue-500/30 bg-gradient-to-r from-blue-900/20 via-blue-800/20 to-blue-900/20 shadow-[0_0_15px_rgba(30,58,138,0.3)]">
-            <span className="text-sm text-indigo-200/90 font-medium">Obtained Medal(s): 0 </span>
-            <span className="text-[#e2c594] ml-1 cursor-pointer font-bold active:opacity-70 transition-opacity">Check &gt;</span>
+            <span className="text-sm text-indigo-200/90 font-medium">Obtained Medal(s): {userMedalIds.length} </span>
             <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
           </div>
         </div>
 
         <div className="flex justify-around mt-6 border-b border-white/10 px-4">
-          <button 
-            onClick={() => setActiveTab('Achievement')} 
-            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Achievement' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
-          >
-            Achievement
-          </button>
-          <button 
-            onClick={() => setActiveTab('Gift')} 
-            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Gift' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
-          >
-            Gift
-          </button>
-          <button 
-            onClick={() => setActiveTab('Activity')} 
-            className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === 'Activity' ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
-          >
-            Activity
-          </button>
+          {['Achievement', 'Gift', 'Activity'].map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab as any)} 
+              className={`pb-3 font-semibold text-[15px] tracking-wide transition-colors ${activeTab === tab ? 'border-b-2 border-[#fcd34d] text-[#fcd34d]' : 'text-white/50 hover:text-white/80'}`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 p-4 mt-2">
-          
-          {activeTab === 'Achievement' && (
-            <>
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
-                      <ShieldAlert className="h-10 w-10 text-white drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Decabillionaire</span>
-              </div>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader className="h-8 w-8 animate-spin text-[#fcd34d]" />
+            <p className="text-xs text-white/40 uppercase tracking-widest font-black">Syncing Medals...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 p-4 mt-2">
+            {filteredMedals.map((medal: any) => {
+              const isOwned = userMedalIds.includes(medal.id);
+              const isVideo = medal.imageUrl && (medal.imageUrl.includes('.mp4') || medal.imageUrl.includes('video') || medal.imageUrl.includes('.webm') || medal.imageUrl.includes('.mov') || medal.imageUrl.includes('m3u8'));
 
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-slate-300 to-slate-500">
-                      <Crown className="h-10 w-10 text-white drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Charm Legend</span>
-              </div>
+              return (
+                <div 
+                  key={medal.id} 
+                  className={cn(
+                    "bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden transition-all",
+                    !isOwned && "opacity-30 grayscale"
+                  )}
+                >
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
+                  <div className="h-24 w-24 bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.15)] p-1 overflow-hidden relative">
+                    <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-[#0d041c] overflow-hidden relative">
+                      {medal.imageUrl ? (
+                        isVideo ? (
+                          <video 
+                            src={medal.imageUrl} 
+                            autoPlay 
+                            loop 
+                            muted 
+                            playsInline 
+                            className="w-full h-full object-cover scale-105" 
+                          />
+                        ) : (
+                          <img 
+                            src={medal.imageUrl} 
+                            alt={medal.name} 
+                            className="w-full h-full object-cover scale-105" 
+                          />
+                        )
+                      ) : (
+                        <div className="flex flex-col items-center text-white/50">
+                          {activeTab === 'Achievement' ? <Crown className="h-10 w-10 text-yellow-400" /> :
+                           activeTab === 'Gift' ? <Gift className="h-10 w-10 text-pink-400" /> :
+                           <ActivityIcon className="h-10 w-10 text-green-400" />}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">
+                    {medal.tier === 'legendary' ? '★★★★★' : medal.tier === 'epic' ? '★★★★' : medal.tier === 'rare' ? '★★★' : '★★'}
+                  </div>
+                  <span className="text-[13px] font-bold text-white tracking-wide text-center truncate w-full">{medal.name}</span>
+                  {medal.description && <span className="text-[9px] text-white/40 mt-1 text-center line-clamp-1 w-full">{medal.description}</span>}
+                </div>
+              );
+            })}
 
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
-                      <ShieldAlert className="h-10 w-10 text-white/90 drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Billionaire</span>
+            {filteredMedals.length === 0 && (
+              <div className="col-span-2 text-center py-20 text-white/40">
+                <p className="text-xs uppercase tracking-widest font-black">No medals available yet</p>
               </div>
-
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,255,255,0.1)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-slate-400 to-slate-600">
-                      <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Charm Luminary</span>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'Gift' && (
-            <>
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-pink-200 via-pink-400 to-pink-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.15)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-pink-300 to-pink-500">
-                      <Gift className="h-10 w-10 text-white drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Top Gifter</span>
-              </div>
-
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-pink-300 via-pink-500 to-pink-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(255,192,203,0.1)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-pink-400 to-pink-600">
-                      <Heart className="h-10 w-10 text-white/90 drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Generous Soul</span>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'Activity' && (
-            <>
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-green-200 via-green-400 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.15)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/40 flex items-center justify-center bg-gradient-to-b from-green-300 to-green-500">
-                      <ActivityIcon className="h-10 w-10 text-white drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Event Master</span>
-              </div>
-
-              <div className="bg-[#150a24] rounded-2xl p-4 flex flex-col items-center border border-white/5 shadow-lg relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-green-400/30 to-transparent" />
-                 <div className="h-24 w-24 bg-gradient-to-br from-green-300 via-green-500 to-green-700 rounded-full flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(74,222,128,0.1)] p-1">
-                   <div className="h-full w-full rounded-full border border-white/30 flex items-center justify-center bg-gradient-to-b from-green-400 to-green-600">
-                      <Ticket className="h-10 w-10 text-white/90 drop-shadow-md" />
-                   </div>
-                 </div>
-                 <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">★★★★</div>
-                 <span className="text-[14px] font-medium text-white tracking-wide">Active Player</span>
-              </div>
-            </>
-          )}
-
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1363,7 +1340,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           </div>
         </div>
 
-        <MedalModal open={medalModalOpen} onClose={() => setMedalModalOpen(false)} />
+        <MedalModal open={medalModalOpen} onClose={() => setMedalModalOpen(false)} profile={profile} />
         <SocialRelationsDialog open={socialOpen} onOpenChange={setSocialOpen} userId={profileId} initialTab={socialTab} username={profile.username} />
         <FullProfileDialog open={fullViewOpen} onOpenChange={setFullViewOpen} profile={profile} stats={stats} followData={followData} onFollow={handleFollow} isProcessingFollow={isProcessingFollow} isOwnProfile={isOwnProfile} displayId={displayID} />
         <ReportUserDialog
