@@ -259,6 +259,24 @@ export default function UserLevelPage() {
     });
   }, [levels]);
 
+  const currentBudgetImage = React.useMemo(() => {
+    if (!budgetLevels || budgetLevels.length === 0) return null;
+    
+    const isLevelInRange = (level: number, rangeStr: string): boolean => {
+      if (!rangeStr) return false;
+      const numbers = rangeStr.match(/\d+/g)?.map(Number);
+      if (!numbers || numbers.length === 0) return false;
+      if (numbers.length === 1) {
+        return level === numbers[0];
+      }
+      const [start, end] = numbers;
+      return level >= start && level <= end;
+    };
+    
+    const matched = budgetLevels.find((d: any) => isLevelInRange(stats.currentLevel, d.range));
+    return matched?.imageUrl || matched?.image || null;
+  }, [budgetLevels, stats.currentLevel]);
+
   return (
     <AppLayout>
       <div className="relative min-h-screen bg-gray-50 font-sans pb-20 overflow-hidden text-gray-900">
@@ -283,8 +301,17 @@ export default function UserLevelPage() {
         <div className="relative z-10 p-6 space-y-8">
           
           {/* User Profile Card */}
-          <div className="relative bg-gradient-to-br from-purple-600 via-fuchsia-500 to-purple-700 backdrop-blur-2xl border border-purple-400/50 rounded-2xl p-5 shadow-lg overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+          <div 
+            className="relative border border-purple-400/50 rounded-2xl p-5 shadow-lg overflow-hidden transition-all duration-500"
+            style={{
+              background: currentBudgetImage 
+                ? `url(${currentBudgetImage}) no-repeat center/cover`
+                : 'linear-gradient(to bottom right, #9333ea, #d946ef, #7e22ce)',
+              minHeight: '130px'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+            <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
             
             <div className="relative flex items-center gap-4 mb-5">

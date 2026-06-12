@@ -38,22 +38,39 @@ export default function TasksPage() {
  const firestore = useFirestore();
  const { toast } = useToast();
  
- const [isSigningIn, setIsSigningIn] = useState(false);
- const [isCheckedIn, setIsCheckedIn] = useState(false);
- const [isCollecting, setIsCollecting] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [isCollecting, setIsCollecting] = useState<string | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
- useEffect(() => {
-  if (userProfile) {
-   const lastSignInAt = userProfile.lastSignInAt;
-   const lastSignIn = lastSignInAt?.toDate ? lastSignInAt.toDate() : (lastSignInAt?.seconds ? new Date(lastSignInAt.seconds * 1000) : null);
-   const today = new Date();
-   const alreadySignedIn = lastSignIn && 
-    lastSignIn.getDate() === today.getDate() && 
-    lastSignIn.getMonth() === today.getMonth() && 
-    lastSignIn.getFullYear() === today.getFullYear();
-   setIsCheckedIn(!!alreadySignedIn);
-  }
- }, [userProfile]);
+  useEffect(() => {
+   if (userProfile) {
+    const lastSignInAt = userProfile.lastSignInAt;
+    const lastSignIn = lastSignInAt?.toDate ? lastSignInAt.toDate() : (lastSignInAt?.seconds ? new Date(lastSignInAt.seconds * 1000) : null);
+    const today = new Date();
+    
+    if (lastSignIn) {
+      const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const lastSignInDate = new Date(lastSignIn.getFullYear(), lastSignIn.getMonth(), lastSignIn.getDate());
+      const diffTime = todayDate.getTime() - lastSignInDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+        setIsCheckedIn(true);
+        setCurrentStreak(userProfile.signInStreak || 1);
+      } else if (diffDays === 1) {
+        setIsCheckedIn(false);
+        setCurrentStreak(userProfile.signInStreak || 0);
+      } else {
+        setIsCheckedIn(false);
+        setCurrentStreak(0);
+      }
+    } else {
+      setIsCheckedIn(false);
+      setCurrentStreak(0);
+    }
+   }
+  }, [userProfile]);
 
  const globalTasksQuery = useMemoFirebase(() => {
   if (!firestore || !user) return null;
@@ -82,36 +99,51 @@ export default function TasksPage() {
   }));
  }, [globalTasks, completedTasks, collectedTasks]);
 
- const handleSignIn = async () => {
-  if (!user || !firestore || !userProfile || isCheckedIn) return;
-  setIsSigningIn(true);
+  const handleSignIn = async () => {
+   if (!user || !firestore || !userProfile || isCheckedIn) return;
+   setIsSigningIn(true);
 
-  try {
-   const rewardAmount = 5000;
-   const userRef = doc(firestore, 'users', user.uid);
-   const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+   try {
+    const nextStreak = (currentStreak % 7) + 1;
+    
+    const rewards: Record<number, number> = {
+      1: 5000,
+      2: 5000,
+      3: 7500,
+      4: 10000,
+      5: 12000,
+      6: 15000,
+      7: 20000
+    };
+    
+    const rewardAmount = rewards[nextStreak] || 5000;
+    
+    const userRef = doc(firestore, 'users', user.uid);
+    const profileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
 
-   const updateData = {
-    'wallet.coins': increment(rewardAmount),
-    'lastSignInAt': serverTimestamp(),
-    'updatedAt': serverTimestamp()
-   };
+    const updateData = {
+     'wallet.coins': increment(rewardAmount),
+     'signInStreak': nextStreak,
+     'lastSignInAt': serverTimestamp(),
+     'updatedAt': serverTimestamp()
+    };
 
-   updateDocumentNonBlocking(userRef, updateData);
-   updateDocumentNonBlocking(profileRef, updateData);
+    updateDocumentNonBlocking(userRef, updateData);
+    updateDocumentNonBlocking(profileRef, updateData);
 
-   setIsCheckedIn(true); // Instant local state sync
-   
-   toast({
-    title: 'Check-In Successful!',
-    description: `Synced ${rewardAmount.toLocaleString()} Gold Coins to your vault.`,
-   });
-  } catch (e: any) {
-   toast({ variant: 'destructive', title: 'Check-In Failed' });
-  } finally {
-   setIsSigningIn(false);
-  }
- };
+    setIsCheckedIn(true);
+    setCurrentStreak(nextStreak);
+    
+    toast({
+     title: 'Check-In Successful!',
+     description: `Synced ${rewardAmount.toLocaleString()} Gold Coins to your vault (Day ${nextStreak}).`,
+    });
+   } catch (e: any) {
+    toast({ variant: 'destructive', title: 'Check-In Failed' });
+   } finally {
+    setIsSigningIn(false);
+   }
+  };
 
  const handleCollect = async (task: any) => {
   if (!user || !firestore || isCollecting) return;
@@ -159,27 +191,32 @@ export default function TasksPage() {
   toast({ title: 'Simulation Sync: Task Marked Completed' });
  };
 
- const AttendanceCard = ({ day, amount, label, icon: Icon, isBig = false }: any) => (
-  <div className={cn(
-   "relative p-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all bg-white shadow-sm",
-   day === 1 && !isCheckedIn ? "border-primary bg-primary/5" : "border-gray-100",
-   isBig ? "col-span-2 sm:col-span-1 bg-orange-50 border-orange-100" : ""
-  )}>
-   <span className="text-[8px] font-bold uppercase text-muted-foreground">Day {day}</span>
-   <div className="py-2">
-    {Icon ? <Icon className={cn("h-6 w-6", isBig ? "text-orange-500" : "text-blue-400")} /> : <GoldCoinIcon className="h-6 w-6" />}
-   </div>
-   <div className="flex items-center gap-1">
-    {!Icon && <GoldCoinIcon className="h-2.5 w-2.5" />}
-    <span className="text-[10px] font-bold text-gray-700">{amount || label}</span>
-   </div>
-   {day === 1 && isCheckedIn && (
-    <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
-     <CheckCircle className="h-6 w-6 text-green-500 fill-white" />
+  const AttendanceCard = ({ day, amount, label, icon: Icon, isBig = false, activeDay, checkedIn }: any) => {
+   const isCompleted = day <= activeDay;
+   const nextDayToClaim = checkedIn ? false : (day === (activeDay % 7) + 1 || (activeDay === 0 && day === 1));
+
+   return (
+    <div className={cn(
+     "relative p-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all bg-white shadow-sm",
+     nextDayToClaim ? "border-primary bg-primary/5 scale-105 shadow-md z-10 animate-pulse" : "border-gray-100",
+     isBig ? "col-span-2 sm:col-span-1 bg-orange-50 border-orange-100" : ""
+    )}>
+     <span className="text-[8px] font-bold uppercase text-muted-foreground">Day {day}</span>
+     <div className="py-2">
+      {Icon ? <Icon className={cn("h-6 w-6", isBig ? "text-orange-500" : "text-blue-400")} /> : <GoldCoinIcon className="h-6 w-6" />}
+     </div>
+     <div className="flex items-center gap-1">
+      {!Icon && <GoldCoinIcon className="h-2.5 w-2.5" />}
+      <span className="text-[10px] font-bold text-gray-700">{amount || label}</span>
+     </div>
+     {isCompleted && (
+      <div className="absolute inset-0 bg-white/60 flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
+       <CheckCircle className="h-6 w-6 text-green-500 fill-white" />
+      </div>
+     )}
     </div>
-   )}
-  </div>
- );
+   );
+  };
 
  return (
   <AppLayout>
@@ -206,18 +243,18 @@ export default function TasksPage() {
          <CalendarCheck className="h-6 w-6 text-orange-500" />
          <CardTitle className="text-2xl uppercase ">Daily Attendance</CardTitle>
         </div>
-        <Badge variant="outline" className="border-orange-200 text-orange-600 font-bold ">7-Day Streak</Badge>
+        <Badge variant="outline" className="border-orange-200 text-orange-600 font-bold ">{currentStreak}-Day Streak</Badge>
       </div>
      </CardHeader>
      <CardContent className="space-y-6">
       <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
-       <AttendanceCard day={1} amount="5000" />
-       <AttendanceCard day={2} amount="5000" />
-       <AttendanceCard day={3} label="x1 Day" icon={Award} />
-       <AttendanceCard day={4} amount="10000" />
-       <AttendanceCard day={5} label="x1 Day" icon={Bike} />
-       <AttendanceCard day={6} label="x3 Days" icon={ImageIcon} />
-       <AttendanceCard day={7} amount="10000" isBig label="Elite" icon={Rocket} />
+       <AttendanceCard day={1} amount="5000" activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={2} amount="5000" activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={3} label="x1 Day" icon={Award} activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={4} amount="10000" activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={5} label="x1 Day" icon={Bike} activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={6} label="x3 Days" icon={ImageIcon} activeDay={currentStreak} checkedIn={isCheckedIn} />
+       <AttendanceCard day={7} amount="20000" isBig label="Elite" icon={Rocket} activeDay={currentStreak} checkedIn={isCheckedIn} />
       </div>
       
       <Button 

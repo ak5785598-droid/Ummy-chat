@@ -131,9 +131,12 @@ export default function FamilyHQPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen pb-32 animate-in fade-in duration-1000">
+      <div className="min-h-screen bg-[#F8FAFC] pb-32 animate-in fade-in duration-1000 relative text-slate-800">
+        {/* Top 30vh Purple Gradient Overlay */}
+        <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-purple-500/15 via-purple-400/5 to-transparent pointer-events-none z-0" />
+
         {/* HERO BANNER SECTION */}
-        <section className="relative h-80 w-full overflow-hidden">
+        <section className="relative h-80 w-full overflow-hidden z-10">
            {isVideoBanner(family.bannerUrl) ? (
              <video 
                src={family.bannerUrl} 
@@ -151,11 +154,11 @@ export default function FamilyHQPage() {
                unoptimized
              />
            )}
-           <div className="absolute inset-0 bg-gradient-to-t from-ummy-gradient to-transparent" />
+           <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAFC] to-transparent" />
            
            <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
               <div className="flex items-center gap-6">
-                 <div className="h-24 w-24 rounded-[2rem] border-4 border-white/20 overflow-hidden shadow-2xl relative bg-slate-900 flex items-center justify-center">
+                 <div className="h-24 w-24 rounded-[2rem] border-4 border-white overflow-shadow shadow-2xl relative bg-slate-900 flex items-center justify-center">
                     {isVideoBanner(family.bannerUrl) ? (
                       <video src={getOptimizedMediaUrl(family.bannerUrl)} className="w-full h-full object-cover" muted autoPlay loop />
                     ) : (
@@ -164,22 +167,22 @@ export default function FamilyHQPage() {
                  </div>
                  <div className="mb-2">
                     <div className="flex items-center gap-2">
-                       <h1 className="text-3xl font-black text-white uppercase tracking-tight">{family.name}</h1>
-                       {family.isVerified && <ShieldCheck className="h-5 w-5 text-emerald-400" />}
+                       <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">{family.name}</h1>
+                       {family.isVerified && <ShieldCheck className="h-5 w-5 text-emerald-500" />}
                     </div>
-                    <p className="text-white/60 text-xs font-bold uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
-                       <Crown className="h-3.5 w-3.5 text-yellow-500" /> Founder: {family.ownerName}
+                    <p className="text-slate-600 text-xs font-bold uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                       <Crown className="h-3.5 w-3.5 text-yellow-600" /> Founder: {family.ownerName}
                     </p>
                  </div>
               </div>
               <div className="flex items-center gap-3 mb-2">
-                 <button className="h-12 w-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-white active:scale-90 transition-transform"><Share2 className="h-5 w-5" /></button>
+                 <button className="h-12 w-12 rounded-full bg-white backdrop-blur-md border border-slate-200/80 flex items-center justify-center text-slate-800 shadow-sm active:scale-90 transition-transform"><Share2 className="h-5 w-5" /></button>
                  {isMember ? (
                    !isOwner && <Button onClick={handleLeave} variant="outline" className="rounded-full border-red-500/30 text-red-500 hover:bg-red-500/10 font-bold uppercase text-xs h-12 px-6">Leave</Button>
                  ) : (
                    <Button 
                      onClick={handleJoin}
-                     className="rounded-full bg-primary text-black font-black uppercase text-xs h-12 px-8 shadow-xl shadow-primary/20"
+                     className="rounded-full bg-purple-600 hover:bg-purple-700 text-white font-black uppercase text-xs h-12 px-8 shadow-xl shadow-purple-500/20"
                    >
                      Join Family
                    </Button>
@@ -189,38 +192,38 @@ export default function FamilyHQPage() {
         </section>
 
         {/* STATS & PROGRESS SECTION */}
-        <main className="px-6 space-y-8 mt-6">
+        <main className="px-6 space-y-8 mt-6 relative z-10">
            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex flex-col items-center gap-2 text-center group transition-all hover:border-primary/20">
+              <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col items-center gap-2 text-center group transition-all hover:border-purple-200">
                  <Flame className="h-7 w-7 text-orange-500 animate-pulse" />
-                 <span className="text-2xl font-black text-white">{(family.totalWealth || 0).toLocaleString()}</span>
-                 <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Total Power</p>
+                 <span className="text-2xl font-black text-slate-800">{(family.totalWealth || 0).toLocaleString()}</span>
+                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Power</p>
               </div>
-              <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex flex-col items-center gap-2 text-center group transition-all hover:border-primary/20">
+              <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col items-center gap-2 text-center group transition-all hover:border-purple-200">
                  <Users className="h-7 w-7 text-emerald-500" />
-                 <span className="text-2xl font-black text-white">{family.memberCount || 0}</span>
-                 <p className="text-[9px] font-black uppercase tracking-widest text-white/30">Active Members</p>
+                 <span className="text-2xl font-black text-slate-800">{family.memberCount || 0}</span>
+                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Active Members</p>
               </div>
            </div>
 
            {/* Experience Progress */}
-           <div className="bg-white/5 rounded-[2.5rem] p-8 border border-white/5 space-y-6">
+           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
                  <div className="flex items-center gap-3">
                     <Trophy className="h-6 w-6 text-yellow-500" />
                     <div>
-                       <h3 className="text-white font-bold text-lg uppercase tracking-tight">Family Reputation</h3>
-                       <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mt-0.5">Level {family.level || 1} Elite Clan</p>
+                       <h3 className="text-slate-800 font-bold text-lg uppercase tracking-tight">Family Reputation</h3>
+                       <p className="text-slate-400 text-[9px] font-black uppercase tracking-widest mt-0.5">Level {family.level || 1} Elite Clan</p>
                     </div>
                  </div>
-                 {isOwner && <Badge className="bg-yellow-500/10 text-yellow-500 border-none font-bold uppercase text-[9px] tracking-widest">Management</Badge>}
+                 {isOwner && <Badge className="bg-yellow-500/10 text-yellow-600 border-none font-bold uppercase text-[9px] tracking-widest">Management</Badge>}
               </div>
               <div className="space-y-3">
                  <div className="flex justify-between items-end px-1">
-                    <span className="text-[10px] font-bold text-white/40">EXP Progress</span>
-                    <span className="text-[14px] font-black text-white">65% <span className="text-[9px] text-white/30 ml-1">to Lv.{ (family.level || 1) + 1 }</span></span>
+                    <span className="text-[10px] font-bold text-slate-400">EXP Progress</span>
+                    <span className="text-[14px] font-black text-slate-700">65% <span className="text-[9px] text-slate-400 ml-1">to Lv.{ (family.level || 1) + 1 }</span></span>
                  </div>
-                 <Progress value={65} className="h-2.5 bg-white/5" />
+                 <Progress value={65} className="h-2.5 bg-slate-100" />
               </div>
            </div>
 
@@ -228,10 +231,10 @@ export default function FamilyHQPage() {
            <div className="space-y-6">
               <div className="flex items-center justify-between px-2">
                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    <h2 className="text-sm font-black text-white/90 uppercase tracking-widest">Elite Roster</h2>
+                    <Users className="h-5 w-5 text-purple-600" />
+                    <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Elite Roster</h2>
                  </div>
-                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Showing Top 10</span>
+                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Showing Top 10</span>
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -239,29 +242,29 @@ export default function FamilyHQPage() {
                     <div 
                       key={profile.uid} 
                       onClick={() => router.push(`/profile/${profile.uid}`)}
-                      className="flex items-center p-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/[0.08] transition-all cursor-pointer group"
+                      className="flex items-center p-3 bg-white border border-slate-100 shadow-sm rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group"
                     >
-                       <Avatar className="h-10 w-10 border border-white/10 shadow-lg shrink-0">
+                       <Avatar className="h-10 w-10 border border-slate-200 shadow-sm shrink-0">
                           <AvatarImage src={profile.avatarUrl} />
                           <AvatarFallback className="text-[10px]">{profile.username?.charAt(0)}</AvatarFallback>
                        </Avatar>
                        <div className="flex-1 ml-3 min-w-0">
                           <div className="flex items-center gap-1.5">
-                             <p className="text-sm font-bold text-white truncate uppercase tracking-tight">{profile.username}</p>
+                             <p className="text-sm font-bold text-slate-800 truncate uppercase tracking-tight">{profile.username}</p>
                              {profile.uid === family.ownerId && <Crown className="h-3 w-3 text-yellow-500 fill-yellow-500" />}
                           </div>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Lv.{profile.level || 1} Warrior</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Lv.{profile.level || 1} Warrior</span>
                        </div>
                        <div className="flex items-center gap-1.5 px-3">
                           <Flame className="h-3.5 w-3.5 text-orange-500" />
-                          <span className="text-white font-black text-sm">{ (profile.wealthValue || 0).toLocaleString() }</span>
+                          <span className="text-slate-800 font-black text-sm">{ (profile.wealthValue || 0).toLocaleString() }</span>
                        </div>
                     </div>
                  ))}
                  
                  {isMembersLoading && (
                     <div className="flex items-center justify-center py-10">
-                       <Loader className="animate-spin text-white/20 h-5 w-5" />
+                       <Loader className="animate-spin text-purple-600 h-5 w-5" />
                     </div>
                  )}
               </div>

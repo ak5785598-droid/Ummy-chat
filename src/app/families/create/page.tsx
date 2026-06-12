@@ -155,16 +155,19 @@ export default function CreateFamilyPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen pb-32 animate-in fade-in slide-in-from-bottom-5 duration-700">
-        <header className="px-6 pt-10 pb-6 flex items-center gap-4">
-           <button onClick={() => router.back()} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white transition-colors">
+      <div className="min-h-screen bg-[#F8FAFC] pb-32 animate-in fade-in slide-in-from-bottom-5 duration-700 relative text-slate-800">
+        {/* Top 30vh Purple Gradient Overlay */}
+        <div className="absolute top-0 left-0 w-full h-[30vh] bg-gradient-to-b from-purple-500/15 via-purple-400/5 to-transparent pointer-events-none z-0" />
+
+        <header className="px-6 pt-10 pb-6 flex items-center gap-4 relative z-10">
+           <button onClick={() => router.back()} className="p-2 bg-white border border-slate-200 shadow-sm rounded-full hover:bg-slate-50 text-slate-700 transition-colors">
               <ChevronLeft className="h-6 w-6" />
            </button>
-           <h1 className="text-2xl font-black text-white uppercase tracking-tight">Found a Legacy</h1>
+           <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Found a Legacy</h1>
         </header>
 
-        <main className="px-6 space-y-8">
-           <Card className="bg-white/5 border-white/10 overflow-hidden rounded-[2.5rem]">
+        <main className="px-6 space-y-8 relative z-10">
+           <Card className="bg-white border-slate-100 overflow-hidden rounded-[2.5rem] shadow-sm">
               <CardContent className="p-8 space-y-6">
                   <div className="flex flex-col items-center text-center gap-4">
                      <input 
@@ -176,14 +179,14 @@ export default function CreateFamilyPage() {
                      />
                      <div 
                         onClick={() => !isUploading && fileInputRef.current?.click()}
-                        className="h-24 w-24 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center relative group overflow-hidden cursor-pointer active:scale-95 transition-transform"
+                        className="h-24 w-24 rounded-3xl bg-purple-50 border-2 border-purple-100 flex items-center justify-center relative group overflow-hidden cursor-pointer active:scale-95 transition-transform"
                      >
                         {isUploading ? (
-                           <Loader className="animate-spin h-8 w-8 text-primary" />
+                           <Loader className="animate-spin h-8 w-8 text-purple-600" />
                         ) : formData.bannerUrl ? (
                            <Image src={formData.bannerUrl} fill className="object-cover" alt="Banner" unoptimized />
                         ) : (
-                           <Plus className="h-10 w-10 text-primary" />
+                           <Plus className="h-10 w-10 text-purple-600" />
                         )}
                         {!isUploading && (
                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -191,47 +194,47 @@ export default function CreateFamilyPage() {
                            </div>
                         )}
                      </div>
-                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Upload Family Insignia</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Upload Family Insignia</p>
                   </div>
 
                  <form className="space-y-6" onSubmit={handleCreate}>
                     <div className="space-y-2">
-                       <label className="text-[11px] font-black uppercase text-white/40 ml-2">Family Name</label>
+                       <label className="text-[11px] font-black uppercase text-slate-500 ml-2">Family Name</label>
                        <Input 
                          required
                          value={formData.name}
                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                          placeholder="e.g. The Immortals"
-                         className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-primary/50"
+                         className="h-14 bg-slate-50 border-slate-200/80 rounded-2xl text-slate-800 placeholder:text-slate-400 focus:ring-purple-500/50"
                        />
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-[11px] font-black uppercase text-white/40 ml-2">Legacy Motto</label>
+                       <label className="text-[11px] font-black uppercase text-slate-500 ml-2">Legacy Motto</label>
                        <Input 
                          value={formData.description}
                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                          placeholder="What defines your family?"
-                         className="h-14 bg-white/5 border-white/10 rounded-2xl text-white placeholder:text-white/20 focus:ring-primary/50"
+                         className="h-14 bg-slate-50 border-slate-200/80 rounded-2xl text-slate-800 placeholder:text-slate-400 focus:ring-purple-500/50"
                        />
                     </div>
 
-                    <div className="pt-6 border-t border-white/5">
+                    <div className="pt-6 border-t border-slate-100">
                        <div className="flex items-center justify-between mb-8 px-2">
                           <div>
-                             <p className="text-white font-bold">Creation Protocol</p>
-                             <p className="text-white/40 text-[10px] font-medium font-body mt-1 uppercase tracking-wider">Establishing a global identity cost</p>
+                             <p className="text-slate-800 font-bold">Creation Protocol</p>
+                             <p className="text-slate-400 text-[10px] font-medium font-body mt-1 uppercase tracking-wider">Establishing a global identity cost</p>
                           </div>
-                          <div className="bg-primary/20 p-4 py-2 rounded-2xl border border-primary/20 flex items-center gap-2 shadow-[0_0_15px_rgba(0,229,255,0.1)]">
+                          <div className="bg-purple-100/50 p-4 py-2 rounded-2xl border border-purple-200/80 flex items-center gap-2">
                              <GoldCoinIcon className="h-6 w-6" />
-                             <span className="text-primary font-black text-xl">{CREATE_COST.toLocaleString()}</span>
+                             <span className="text-purple-700 font-black text-xl">{CREATE_COST.toLocaleString()}</span>
                           </div>
                        </div>
 
                        <Button 
                          type="submit"
                          disabled={isSubmitting || (userProfile?.wallet?.coins || 0) < CREATE_COST}
-                         className="w-full h-16 rounded-[2rem] bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase tracking-widest text-sm shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                         className="w-full h-16 rounded-[2rem] bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase tracking-widest text-sm shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
                        >
                           {isSubmitting ? <Loader className="animate-spin h-6 w-6" /> : 'Protocolized Creation'}
                        </Button>
@@ -242,13 +245,13 @@ export default function CreateFamilyPage() {
 
            {/* Rewards Legend */}
            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/5 p-5 rounded-3xl border border-white/5 text-center flex flex-col items-center gap-3">
-                 <ShieldCheck className="h-6 w-6 text-emerald-400" />
-                 <p className="text-[10px] font-black text-white uppercase tracking-tighter">Verified Badge</p>
+              <div className="bg-white p-5 rounded-3xl border border-slate-100 text-center flex flex-col items-center gap-3 shadow-sm">
+                 <ShieldCheck className="h-6 w-6 text-emerald-500" />
+                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Verified Badge</p>
               </div>
-              <div className="bg-white/5 p-5 rounded-3xl border border-white/5 text-center flex flex-col items-center gap-3">
+              <div className="bg-white p-5 rounded-3xl border border-slate-100 text-center flex flex-col items-center gap-3 shadow-sm">
                  <Trophy className="h-6 w-6 text-yellow-500" />
-                 <p className="text-[10px] font-black text-white uppercase tracking-tighter">Global Leaderboard</p>
+                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Global Leaderboard</p>
               </div>
            </div>
         </main>

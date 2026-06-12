@@ -468,27 +468,28 @@ const SVGA_MedalStar = ({ className }: { className?: string }) => (
   </div>
 );
 
-const SVGA_TaskClipboard = ({ className }: { className?: string }) => (
+const SVGA_BonusGift = ({ className }: { className?: string }) => (
   <div className={cn("relative h-9 w-9 flex items-center justify-center", className)}>
     <svg viewBox="0 0 24 24" className="h-full w-full drop-shadow-md">
       <defs>
-        <linearGradient id="boardGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id="giftBg" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FB923C" />
+          <stop offset="100%" stopColor="#EA580C" />
+        </linearGradient>
+        <linearGradient id="ribbonBg" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="100%" stopColor="#EAB308" />
+          <stop offset="100%" stopColor="#CA8A04" />
         </linearGradient>
       </defs>
-      <rect x="5" y="4" width="12" height="16" rx="2" fill="url(#boardGradient)" stroke="#CA8A04" strokeWidth="0.5" />
-      <rect x="7" y="6" width="8" height="12" rx="1" fill="white" />
-      <rect x="9" y="3" width="4" height="2" rx="0.5" fill="#94A3B8" />
-      <path d="M8,9 L9,10 L11,8" fill="none" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8,13 L9,14 L11,12" fill="none" stroke="#EAB308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <g transform="translate(14, 10) rotate(15)">
-        <rect x="0" y="0" width="3" height="10" rx="1.5" fill="#334155" />
-        <rect x="0" y="4" width="3" height="1" fill="#FDE047" />
-        <path d="M0,0 L1.5,-2 L3,0 Z" fill="#334155" />
-      </g>
+      <rect x="4" y="9" width="16" height="11" rx="2" fill="url(#giftBg)" stroke="#C2410C" strokeWidth="0.5" />
+      <rect x="3" y="6" width="18" height="3" rx="1.5" fill="url(#giftBg)" stroke="#C2410C" strokeWidth="0.5" />
+      <rect x="11" y="6" width="2" height="14" fill="url(#ribbonBg)" />
+      <rect x="3" y="7" width="18" height="1" fill="url(#ribbonBg)" />
+      <path d="M12,6 C10,3 10,1 12,3 C14,1 14,3 12,6 Z" fill="url(#ribbonBg)" stroke="#CA8A04" strokeWidth="0.5" />
+      <path d="M12,6 C9,5 7,6 9,8 C11,10 11,8 12,6 Z" fill="url(#ribbonBg)" stroke="#CA8A04" strokeWidth="0.5" />
+      <path d="M12,6 C15,5 17,6 15,8 C13,10 13,8 12,6 Z" fill="url(#ribbonBg)" stroke="#CA8A04" strokeWidth="0.5" />
     </svg>
-    <div className="absolute top-5 left-6 w-3 h-1.5 bg-white/50 rounded-full blur-[1px] rotate-[-10deg]" />
+    <div className="absolute top-2 left-3 w-3 h-1.5 bg-white/40 rounded-full blur-[1px] rotate-[-25deg]" />
   </div>
 );
 
@@ -1270,7 +1271,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
               <IconButton customIcon={SVGA_LevelCrown} label="Level" onClick={() => router.push('/level')} />
               <IconButton customIcon={SVGA_StoreCart} label="Store" onClick={() => router.push('/store')} />
               <IconButton customIcon={SVGA_MedalStar} label="Medal" onClick={() => setMedalModalOpen(true)} />
-              <IconButton customIcon={SVGA_TaskClipboard} label="Task" onClick={() => router.push('/room-tasks')} />
+              <IconButton customIcon={SVGA_BonusGift} label="Bonus" onClick={() => router.push('/bonus')} />
             </div>
 
             <div className="space-y-3 pt-6 pb-32">

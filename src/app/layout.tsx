@@ -27,6 +27,15 @@ export const metadata: Metadata = {
  description: 'Welcome to Ummy Chat Official. The ultimate voice chat platform to meet new people, play Ludo and Carrom, and join live audio rooms. Download the Ummy Chat app now!',
  keywords: ['ummy chat official', 'ummy chat app', 'ummy chat india', 'voice chat rooms', 'social audio', 'carrom game', 'ludo game', 'live audio chat', 'make friends online'],
  authors: [{ name: 'Ummy Chat Official Team' }],
+ icons: {
+  icon: [
+   { url: '/images/ummy-logon.png', sizes: 'any' },
+   { url: '/images/ummy-logon.png', sizes: '192x192', type: 'image/png' },
+   { url: '/images/ummy-logon.png', sizes: '512x512', type: 'image/png' },
+  ],
+  shortcut: '/images/ummy-logon.png',
+  apple: '/images/ummy-logon.png',
+ },
  openGraph: {
   title: 'Ummy Chat Official - Voice Rooms & Games',
   description: 'Welcome to Ummy Chat Official. Join lively audio rooms, play interactive games, and make friends on the best voice chat app.',
