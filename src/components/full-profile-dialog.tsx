@@ -892,24 +892,24 @@ export function FullProfileDialog({
   const ownedVehicles = ownedItems.filter((id: string) => VEHICLE_REGISTRY[id]);
   const ownedFrames = ownedItems.filter((id: string) => AVATAR_FRAMES[id]);
 
-  const calculatedLevelStats = calculateLevelProgress(profile.wallet?.totalExp || 0);
-  const budgetLevel = calculatedLevelStats.currentLevel;
+  const calculatedLevelStats = calculateLevelProgress(profile.wallet?.totalExp || profile.wallet?.totalSpent || 0);
+  const budgetLevel = profile.level?.rich || calculatedLevelStats.currentLevel || 1;
   
   const budgetImageUrl = useMemo(() => {
     if (!budgetLevelsData) return null;
-    let rangeStr = 'Lv.0';
-    if (budgetLevel > 0 && budgetLevel <= 10) rangeStr = 'Lv.1~Lv.10';
-    else if (budgetLevel > 10 && budgetLevel <= 20) rangeStr = 'Lv.11~Lv.20';
-    else if (budgetLevel > 20 && budgetLevel <= 30) rangeStr = 'Lv.21~Lv.30';
-    else if (budgetLevel > 30 && budgetLevel <= 40) rangeStr = 'Lv.31~Lv.40';
-    else if (budgetLevel > 40 && budgetLevel <= 50) rangeStr = 'Lv.41~Lv.50';
-    else if (budgetLevel > 50 && budgetLevel <= 60) rangeStr = 'Lv.51~Lv.60';
-    else if (budgetLevel > 60 && budgetLevel <= 70) rangeStr = 'Lv.61~Lv.70';
-    else if (budgetLevel > 70 && budgetLevel <= 80) rangeStr = 'Lv.71~Lv.80';
-    else if (budgetLevel > 80 && budgetLevel <= 90) rangeStr = 'Lv.81~Lv.90';
-    else if (budgetLevel > 90) rangeStr = 'Lv.91~Lv.100';
+
+    const isLevelInRange = (level: number, rangeStr: string): boolean => {
+      if (!rangeStr) return false;
+      const numbers = rangeStr.match(/\d+/g)?.map(Number);
+      if (!numbers || numbers.length === 0) return false;
+      if (numbers.length === 1) {
+        return level === numbers[0];
+      }
+      const [start, end] = numbers;
+      return level >= start && level <= end;
+    };
     
-    const docData = budgetLevelsData.find((d: any) => d.range === rangeStr);
+    const docData = budgetLevelsData.find((d: any) => isLevelInRange(budgetLevel, d.range));
     return docData?.imageUrl || docData?.image || null;
   }, [budgetLevelsData, budgetLevel]);
   
