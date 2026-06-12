@@ -140,7 +140,7 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme, isEmpty = false
       <div className="relative inline-flex items-center justify-center">
         {frame && (
           <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
-            <FrameOverlayCanvas 
+            <LeaderboardFrame 
               frameUrl={frame.type === 'image' ? frame.imageUrl! : frame.videoUrl!}
               isVideo={frame.type === 'video'}
               containerSize={containerPixelSizes[size]}
@@ -156,7 +156,7 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme, isEmpty = false
     <div className="relative inline-flex items-center justify-center">
       {frame && (
         <div className={cn("absolute z-10 pointer-events-none", frameSizes[size])}>
-          <FrameOverlayCanvas 
+          <LeaderboardFrame 
             frameUrl={frame.type === 'image' ? frame.imageUrl! : frame.videoUrl!}
             isVideo={frame.type === 'video'}
             containerSize={containerPixelSizes[size]}
