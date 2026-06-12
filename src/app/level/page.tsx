@@ -380,22 +380,28 @@ export default function UserLevelPage() {
                   return (
                     <div 
                       key={uniqueKey}
-                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl flex flex-col items-center justify-between p-3.5 hover:border-purple-400 hover:shadow-md transition-all duration-300"
                     >
-                      {level.imageUrl ? (
-                        <LevelMedia 
-                          mediaUrl={level.imageUrl} 
-                          alt={level.name || `Level ${idx}`}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <span className="text-[9px] text-gray-300">No Media</span>
-                        </div>
-                      )}
+                      <div className="w-full flex-1 flex items-center justify-center min-h-0">
+                        {level.imageUrl ? (
+                          <div className="w-full h-full max-h-[48px] flex items-center justify-center">
+                            <LevelMedia 
+                              mediaUrl={level.imageUrl} 
+                              alt={level.name || `Level ${idx}`}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-transparent">
+                            <span className="text-[9px] text-gray-300">No Media</span>
+                          </div>
+                        )}
+                      </div>
                       
-                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
-                        {level.range || `Lv.${idx}`}
-                      </span>
+                      <div className="mt-2 shrink-0">
+                        <span className="text-[9px] font-bold text-white tracking-wider bg-gray-500/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                          {level.range || `Lv.${idx}`}
+                        </span>
+                      </div>
                     </div>
                   );
                 })
@@ -420,22 +426,28 @@ export default function UserLevelPage() {
                   return (
                     <div 
                       key={uniqueKey}
-                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl flex flex-col items-center justify-between p-3.5 hover:border-purple-400 hover:shadow-md transition-all duration-300"
                     >
-                      {level.imageUrl ? (
-                        <LevelMedia 
-                          mediaUrl={level.imageUrl} 
-                          alt={level.name || `Level ${idx}`}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <span className="text-[9px] text-gray-300">No Media</span>
-                        </div>
-                      )}
+                      <div className="w-full flex-1 flex items-center justify-center min-h-0">
+                        {level.imageUrl ? (
+                          <div className="w-full h-full max-h-[48px] flex items-center justify-center">
+                            <LevelMedia 
+                              mediaUrl={level.imageUrl} 
+                              alt={level.name || `Level ${idx}`}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-transparent">
+                            <span className="text-[9px] text-gray-300">No Media</span>
+                          </div>
+                        )}
+                      </div>
                       
-                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
-                        {level.range || `Lv.${idx}`}
-                      </span>
+                      <div className="mt-2 shrink-0">
+                        <span className="text-[9px] font-bold text-white tracking-wider bg-gray-500/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                          {level.range || `Lv.${idx}`}
+                        </span>
+                      </div>
                       {level.reward && (
                         <div className="absolute top-2 right-2 bg-purple-600/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded animate-pulse">
                           {level.reward}
@@ -465,22 +477,28 @@ export default function UserLevelPage() {
                   return (
                     <div 
                       key={uniqueKey}
-                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden hover:border-purple-400 hover:shadow-md transition-all duration-300"
+                      className="relative h-28 bg-white border border-gray-200 shadow-sm rounded-xl flex flex-col items-center justify-between p-3.5 hover:border-purple-400 hover:shadow-md transition-all duration-300"
                     >
-                      {level.imageUrl ? (
-                        <LevelMedia 
-                          mediaUrl={level.imageUrl} 
-                          alt={level.name || `Level ${idx}`}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-transparent">
-                          <span className="text-[9px] text-gray-300">No Media</span>
-                        </div>
-                      )}
+                      <div className="w-full flex-1 flex items-center justify-center min-h-0">
+                        {level.imageUrl ? (
+                          <div className="w-full h-full max-h-[48px] flex items-center justify-center">
+                            <LevelMedia 
+                              mediaUrl={level.imageUrl} 
+                              alt={level.name || `Level ${idx}`}
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-transparent">
+                            <span className="text-[9px] text-gray-300">No Media</span>
+                          </div>
+                        )}
+                      </div>
                       
-                      <span className="absolute bottom-2 left-2 text-[10px] font-bold text-white tracking-wider bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full z-10">
-                        {level.range || `Lv.${idx}`}
-                      </span>
+                      <div className="mt-2 shrink-0">
+                        <span className="text-[9px] font-bold text-white tracking-wider bg-gray-500/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                          {level.range || `Lv.${idx}`}
+                        </span>
+                      </div>
                     </div>
                   );
                 })
