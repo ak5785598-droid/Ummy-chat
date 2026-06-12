@@ -294,7 +294,7 @@ export function GiftAnimationOverlay({
                     crossOrigin="anonymous"
                     style={{
                       imageRendering: 'auto',
-                      mixBlendMode: useScreenBlend ? 'screen' : 'normal',
+                      filter: useScreenBlend ? 'url(#remove-black-background)' : 'none',
                       backfaceVisibility: 'hidden',
                       WebkitBackfaceVisibility: 'hidden'
                     }}
@@ -308,7 +308,7 @@ export function GiftAnimationOverlay({
                   onLoad={handleImageLoad}
                   crossOrigin="anonymous"
                   style={{
-                    mixBlendMode: useScreenBlend ? 'screen' : 'normal'
+                    filter: useScreenBlend ? 'url(#remove-black-background)' : 'none'
                   }}
                   initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
                   animate={flyCoordinates ? {

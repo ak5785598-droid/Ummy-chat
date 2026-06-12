@@ -81,6 +81,19 @@ export default function RootLayout({
    >
     <Providers>{children}</Providers>
     <Toaster />
+    {/* Global GPU-Accelerated Black Background Removal (Chroma Keying) SVG Filter */}
+    <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
+     <defs>
+      <filter id="remove-black-background">
+       <feColorMatrix type="matrix" values="
+         1.2 0 0 0 0  
+         0 1.2 0 0 0  
+         0 0 1.2 0 0  
+         1.5 1.5 1.5 0 -0.6" 
+       />
+      </filter>
+     </defs>
+    </svg>
    </body>
   </html>
  );

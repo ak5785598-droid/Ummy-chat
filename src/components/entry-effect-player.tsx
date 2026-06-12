@@ -53,7 +53,7 @@ export function EntryEffectPlayer({ effect, onComplete }: EntryEffectProps) {
           className="pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
         >
           {/* Main Effect Media */}
-          <div className="relative h-[80vh] w-full max-w-[600px] flex items-center justify-center mix-blend-screen">
+          <div className="relative h-[80vh] w-full max-w-[600px] flex items-center justify-center">
             {isVideo ? (
               <video
                 src={effect.mediaUrl}
@@ -62,13 +62,14 @@ export function EntryEffectPlayer({ effect, onComplete }: EntryEffectProps) {
                 playsInline
                 onEnded={handleVideoEnd}
                 className="h-full w-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
-                style={{ mixBlendMode: 'screen' }} // Ensure black background becomes transparent
+                style={{ filter: 'url(#remove-black-background)' }} // Ensure black background becomes transparent
               />
             ) : (
               <img
                 src={effect.mediaUrl}
                 alt="Entry Effect"
                 className="h-full w-full object-contain drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]"
+                style={{ filter: 'url(#remove-black-background)' }}
               />
             )}
             

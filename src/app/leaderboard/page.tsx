@@ -54,9 +54,9 @@ const DynamicThemeBackground = ({ theme }: { theme: LeaderboardThemeConfig | nul
 
 // --- Canvas Frame Overlay Component - SQUARE ASPECT RATIO (1:1) ---
 // --- GPU-Accelerated Frame Overlay Component - SQUARE ASPECT RATIO (1:1) ---
-const FrameOverlayCanvas = ({ 
+const LeaderboardFrame = ({ 
   frameUrl, 
-  isVideo = false,
+  isVideo = false, 
   containerSize = 96 
 }: { 
   frameUrl: string; 
@@ -66,11 +66,11 @@ const FrameOverlayCanvas = ({
   if (isVideo) {
     return (
       <div 
-        className="absolute inset-0 z-10 pointer-events-none m-auto overflow-hidden rounded-full"
+        className="absolute inset-0 z-10 pointer-events-none m-auto overflow-visible"
         style={{ 
           width: containerSize + 'px',
           height: containerSize + 'px',
-          mixBlendMode: 'screen'
+          filter: 'url(#remove-black-background)'
         }}
       >
         <video
@@ -88,11 +88,11 @@ const FrameOverlayCanvas = ({
 
   return (
     <div 
-      className="absolute inset-0 z-10 pointer-events-none m-auto overflow-hidden rounded-full"
+      className="absolute inset-0 z-10 pointer-events-none m-auto overflow-visible"
       style={{ 
         width: containerSize + 'px',
         height: containerSize + 'px',
-        mixBlendMode: 'screen'
+        filter: 'url(#remove-black-background)'
       }}
     >
       <img

@@ -26,10 +26,12 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const [isBlackBg, setIsBlackBg] = useState(false);
+  const isVideoUrl = type === 'video' || src?.includes('.mp4') || src?.includes('.webm') || src?.includes('.mov') || src?.includes('video');
+  const [isBlackBg, setIsBlackBg] = useState(isVideoUrl);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    if (isVideoUrl) return true;
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -80,6 +82,10 @@ const SmartBlackRemover = ({
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (isVideoUrl) {
+      setIsBlackBg(true);
+      return;
+    }
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
@@ -89,7 +95,7 @@ const SmartBlackRemover = ({
 
   const finalStyle: React.CSSProperties = {
     ...style,
-    ...(isBlackBg ? { mixBlendMode: 'screen' } : {})
+    ...((isBlackBg || isVideoUrl) ? { filter: 'url(#remove-black-background)' } : {})
   };
 
   if (type === 'video') {

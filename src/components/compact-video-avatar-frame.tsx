@@ -18,10 +18,12 @@ export const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const [isBlackBg, setIsBlackBg] = useState(false);
+  const isVideoUrl = type === 'video' || src?.includes('.mp4') || src?.includes('.webm') || src?.includes('.mov') || src?.includes('video');
+  const [isBlackBg, setIsBlackBg] = useState(isVideoUrl);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    if (isVideoUrl) return true;
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -70,6 +72,10 @@ export const SmartBlackRemover = ({
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (isVideoUrl) {
+      setIsBlackBg(true);
+      return;
+    }
     const video = e.currentTarget;
     if (video.readyState >= 2) {
       try {
@@ -83,36 +89,36 @@ export const SmartBlackRemover = ({
 
   const finalStyle: React.CSSProperties = {
     ...style,
-    ...(isBlackBg ? { mixBlendMode: 'screen' } : {})
+    ...((isBlackBg || isVideoUrl) ? { filter: 'url(#remove-black-background)' } : {})
   };
 
-  if (type === 'video') {
-    return (
-      <video
-        ref={mediaRef as React.RefObject<HTMLVideoElement>}
-        src={src}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className={cn("w-full h-full object-cover", className)}
-        style={finalStyle}
-        onLoadedData={handleVideoReady}
-        crossOrigin="anonymous"
-      />
-    );
-  }
-
   return (
-    <img
-      ref={mediaRef as React.RefObject<HTMLImageElement>}
-      src={src}
-      alt=""
-      className={cn("w-full h-full object-cover", className)}
-      style={finalStyle}
-      onLoad={handleImageLoad}
-      crossOrigin="anonymous"
-    />
+    <div className="w-full h-full relative">
+      {type === 'video' || isVideoUrl ? (
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className={cn("w-full h-full object-cover", className)}
+          style={finalStyle}
+          onLoadedData={handleVideoReady}
+          crossOrigin="anonymous"
+        />
+      ) : (
+        <img
+          ref={mediaRef as React.RefObject<HTMLImageElement>}
+          src={src}
+          alt=""
+          className={cn("w-full h-full object-cover", className)}
+          style={finalStyle}
+          onLoad={handleImageLoad}
+          crossOrigin="anonymous"
+        />
+      )}
+    </div>
   );
 };
 
