@@ -26,21 +26,30 @@ export function SeatTimingTab() {
     try {
       let userData = null;
 
-      // First try as User ID
-      const userDocRef = doc(firestore, "userProfiles", searchQuery.trim());
+      // Try searching by exact document ID first
+      const userDocRef = doc(firestore, "users", searchQuery.trim());
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         userData = { id: userDocSnap.id, ...userDocSnap.data() };
       } else {
-        // Try searching by exact Username
-        const usersRef = collection(firestore, "userProfiles");
-        const q = query(usersRef, where("username", "==", searchQuery.trim()));
-        const querySnapshot = await getDocs(q);
+        // Try searching by accountNumber
+        const usersRef = collection(firestore, "users");
+        const accountQ = query(usersRef, where("accountNumber", "==", searchQuery.trim()));
+        const accountSnapshot = await getDocs(accountQ);
 
-        if (!querySnapshot.empty) {
-          const docSnap = querySnapshot.docs[0];
+        if (!accountSnapshot.empty) {
+          const docSnap = accountSnapshot.docs[0];
           userData = { id: docSnap.id, ...docSnap.data() };
+        } else {
+          // Try searching by exact Username
+          const usernameQ = query(usersRef, where("username", "==", searchQuery.trim()));
+          const usernameSnapshot = await getDocs(usernameQ);
+
+          if (!usernameSnapshot.empty) {
+            const docSnap = usernameSnapshot.docs[0];
+            userData = { id: docSnap.id, ...docSnap.data() };
+          }
         }
       }
 
