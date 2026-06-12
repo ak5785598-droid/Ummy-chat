@@ -26,7 +26,6 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
         <stop offset="100%" stopColor="#0277BD" />
       </radialGradient>
 
-      {/* Yeh naya gradient Glossy 3D effect ke liye add kiya hai */}
       <linearGradient id="glossyHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
         <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
         <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
@@ -41,7 +40,6 @@ const Emoji3DRenderer = ({ type }: { type: string }) => {
   const FaceBase = ({ fill = "url(#emojiHDGrad)", anger = false }) => (
     <g filter="url(#3dShadow)">
       <circle cx="50" cy="50" r="47" fill={fill} stroke={anger ? "#B71C1C" : "#E65100"} strokeWidth="0.5" />
-      {/* Ye glossy ellipse ek premium 3D shine dega bina ajeeb lage */}
       <ellipse cx="50" cy="18" rx="28" ry="10" fill="url(#glossyHighlight)" />
     </g>
   );
@@ -240,6 +238,14 @@ export function EmojiReactionOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
 
+  // Canvas size mapping for video URL square
+  const canvasSizeClasses: Record<string, string> = {
+    sm: 'w-48 h-48',   // 192px
+    md: 'w-64 h-64',   // 256px
+    lg: 'w-80 h-80',   // 320px
+    xl: 'w-96 h-96'    // 384px
+  };
+
   // Black color removal function using canvas
   const removeBlackBackground = (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
     const ctx = canvas.getContext('2d');
@@ -251,26 +257,22 @@ export function EmojiReactionOverlay({
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      // Draw video frame to canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Get image data
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       
-      // Remove black/solid black pixels from all sides
+      // Remove solid black pixels from all sides (top, right, left, bottom)
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         
-        // Remove solid black and near-black pixels
         if (r < 30 && g < 30 && b < 30) {
-          data[i + 3] = 0; // Make transparent
+          data[i + 3] = 0; // Transparent
         }
       }
       
-      // Put processed image data back
       ctx.putImageData(imageData, 0, 0);
       
       animationFrameRef.current = requestAnimationFrame(drawFrame);
@@ -278,7 +280,6 @@ export function EmojiReactionOverlay({
 
     video.addEventListener('play', drawFrame);
     
-    // If video is already playing
     if (!video.paused) {
       drawFrame();
     }
@@ -316,7 +317,6 @@ export function EmojiReactionOverlay({
     };
   }, [emoji, customEmojiData]);
 
-  // Handle video playback and black removal
   useEffect(() => {
     if (activeEmoji?.data?.animationUrl && videoRef.current) {
       const video = videoRef.current;
@@ -337,7 +337,6 @@ export function EmojiReactionOverlay({
       video.addEventListener('canplay', handleCanPlay);
       video.addEventListener('loadedmetadata', handleLoadedMetadata);
       
-      // Start loading the video
       video.load();
 
       return () => {
@@ -351,12 +350,8 @@ export function EmojiReactionOverlay({
   }, [activeEmoji]);
 
   if (!activeEmoji) return null;
-  
-  const sizeClasses: Record<string, string> = { 
-    sm: 'w-16 h-16', 
-    md: 'w-24 h-24', 
-    lg: 'w-32 h-32' 
-  };
+
+  const sizeClasses: Record<string, string> = { sm: 'w-16 h-16', md: 'w-24 h-24', lg: 'w-32 h-32' };
 
   const isCustomEmoji = activeEmoji.data?.isCustom || activeEmoji.data?.imageUrl || activeEmoji.data?.animationUrl;
 
@@ -375,10 +370,9 @@ export function EmojiReactionOverlay({
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           {isCustomEmoji ? (
-            // Custom emoji: show video in square with black removed
             activeEmoji.data?.animationUrl ? (
               <div className="relative w-full h-full flex items-center justify-center bg-transparent rounded-lg overflow-hidden">
-                {/* Hidden video element for processing */}
+                {/* Hidden video for processing */}
                 <video
                   ref={videoRef}
                   src={activeEmoji.data.animationUrl}
@@ -392,10 +386,10 @@ export function EmojiReactionOverlay({
                   controlsList="nodownload nofullscreen noremoteplayback"
                   style={{ display: 'none' }}
                 />
-                {/* Canvas where video will be rendered without black background */}
+                {/* Canvas with increased size - Square mein video without black background */}
                 <canvas
                   ref={canvasRef}
-                  className="w-full h-full object-contain"
+                  className={`${canvasSizeClasses[size] || canvasSizeClasses.md} object-contain`}
                   style={{
                     mixBlendMode: 'normal',
                     filter: 'none',
@@ -425,11 +419,10 @@ export function EmojiReactionOverlay({
               </motion.div>
             ) : null
           ) : (
-            // Built-in SVG emoji
             <Emoji3DRenderer type={activeEmoji.type} />
           )}
         </motion.div>
       </AnimatePresence>
     </div>
   );
-          }
+}
