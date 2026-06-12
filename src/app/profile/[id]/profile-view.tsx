@@ -773,10 +773,19 @@ const MedalModal = ({ open, onClose, profile }: { open: boolean, onClose: () => 
 
   const medalsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, "medals"), orderBy("updatedAt", "desc"));
+    return query(collection(firestore, "medals"));
   }, [firestore]);
 
-  const { data: medals, isLoading } = useCollection(medalsQuery);
+  const { data: medalsData, isLoading } = useCollection(medalsQuery);
+
+  const medals = useMemo(() => {
+    if (!medalsData) return [];
+    return [...medalsData].sort((a: any, b: any) => {
+      const timeA = a.updatedAt?.toDate?.()?.getTime() || a.updatedAt?.seconds || 0;
+      const timeB = b.updatedAt?.toDate?.()?.getTime() || b.updatedAt?.seconds || 0;
+      return timeB - timeA;
+    });
+  }, [medalsData]);
 
   if (!open) return null;
 
