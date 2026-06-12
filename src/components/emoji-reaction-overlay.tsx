@@ -8,7 +8,6 @@ import Image from 'next/image';
 const Emoji3DRenderer = ({ type }: { type: string }) => {
   const defs = (
     <defs>
-      {/* Shining hata di gayi hai, ab smooth 3D base hai */}
       <radialGradient id="emojiHDGrad" cx="30%" cy="30%" r="70%">
         <stop offset="0%" stopColor="#FFC107" />
         <stop offset="40%" stopColor="#FF9800" />
@@ -238,12 +237,12 @@ export function EmojiReactionOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
 
-  // Canvas size mapping for video URL square
+  // Canvas size mapping for video URL square - BADA SIZE
   const canvasSizeClasses: Record<string, string> = {
-    sm: 'w-48 h-48',   // 192px
-    md: 'w-64 h-64',   // 256px
-    lg: 'w-80 h-80',   // 320px
-    xl: 'w-96 h-96'    // 384px
+    sm: 'w-64 h-64',    // 256px
+    md: 'w-96 h-96',    // 384px
+    lg: 'w-128 h-128',  // 512px
+    xl: 'w-160 h-160'   // 640px
   };
 
   // Black color removal function using canvas
@@ -386,7 +385,7 @@ export function EmojiReactionOverlay({
                   controlsList="nodownload nofullscreen noremoteplayback"
                   style={{ display: 'none' }}
                 />
-                {/* Canvas with increased size - Square mein video without black background */}
+                {/* Canvas with BADA size - Square mein video without black background */}
                 <canvas
                   ref={canvasRef}
                   className={`${canvasSizeClasses[size] || canvasSizeClasses.md} object-contain`}
@@ -425,4 +424,4 @@ export function EmojiReactionOverlay({
       </AnimatePresence>
     </div>
   );
-}
+        }
