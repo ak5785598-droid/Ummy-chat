@@ -237,7 +237,7 @@ export function EmojiReactionOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
 
-  // Canvas size mapping for video URL square - BADA SIZE
+  // Canvas size mapping for video URL square - BADA SIZE, SHARP SQUARE
   const canvasSizeClasses: Record<string, string> = {
     sm: 'w-64 h-64',    // 256px
     md: 'w-96 h-96',    // 384px
@@ -355,7 +355,7 @@ export function EmojiReactionOverlay({
   const isCustomEmoji = activeEmoji.data?.isCustom || activeEmoji.data?.imageUrl || activeEmoji.data?.animationUrl;
 
   return (
-    <div className="absolute inset-0 z-[200] flex items-center justify-center pointer-events-none rounded-full">
+    <div className="absolute inset-0 z-[200] flex items-center justify-center pointer-events-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeEmoji.id}
@@ -370,7 +370,8 @@ export function EmojiReactionOverlay({
         >
           {isCustomEmoji ? (
             activeEmoji.data?.animationUrl ? (
-              <div className="relative w-full h-full flex items-center justify-center bg-transparent rounded-lg overflow-hidden">
+              // SHARP SQUARE - No rounded corners, no rounded-full
+              <div className="relative w-full h-full flex items-center justify-center bg-transparent overflow-hidden">
                 {/* Hidden video for processing */}
                 <video
                   ref={videoRef}
@@ -385,7 +386,7 @@ export function EmojiReactionOverlay({
                   controlsList="nodownload nofullscreen noremoteplayback"
                   style={{ display: 'none' }}
                 />
-                {/* Canvas with BADA size - Square mein video without black background */}
+                {/* Canvas with BADA size - SHARP SQUARE, no curves */}
                 <canvas
                   ref={canvasRef}
                   className={`${canvasSizeClasses[size] || canvasSizeClasses.md} object-contain`}
@@ -393,7 +394,8 @@ export function EmojiReactionOverlay({
                     mixBlendMode: 'normal',
                     filter: 'none',
                     opacity: videoLoaded ? 1 : 0,
-                    transition: 'opacity 0.3s ease-in-out'
+                    transition: 'opacity 0.3s ease-in-out',
+                    borderRadius: '0px'
                   }}
                 />
               </div>
@@ -424,4 +426,4 @@ export function EmojiReactionOverlay({
       </AnimatePresence>
     </div>
   );
-        }
+                        }
