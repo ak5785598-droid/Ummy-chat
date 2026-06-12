@@ -1750,6 +1750,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
         accountNumber: userProfile?.accountNumber || '',
         gender: userProfile?.gender || 'male',
+        activeFrame: userProfile?.inventory?.activeFrame || 'None',
+        activeFrameMediaUrl: userProfile?.inventory?.activeFrameMediaUrl || '',
       }, { merge: true });
     };
 
@@ -1759,7 +1761,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
     // Then every 30 seconds
     const heartbeat = setInterval(updateHeartbeat, 30000);
     return () => clearInterval(heartbeat);
-  }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
+  }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl, userProfile?.inventory?.activeFrame, userProfile?.inventory?.activeFrameMediaUrl]);
 
   // SEAT TIME TRACKING: Update daily seat time in minutes when user is on a seat
   useEffect(() => {
@@ -3057,6 +3059,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || null,
       accountNumber: userProfile?.accountNumber || '',
       gender: userProfile?.gender || 'male',
+      activeFrame: userProfile?.inventory?.activeFrame || 'None',
+      activeFrameMediaUrl: userProfile?.inventory?.activeFrameMediaUrl || '',
       uid: currentUser.uid,
       updatedAt: serverTimestamp()
     }, { merge: true });

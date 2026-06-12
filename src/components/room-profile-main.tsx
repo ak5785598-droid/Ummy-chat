@@ -461,10 +461,6 @@ export function RoomOwnerProfile({
                   handleViewFullProfile();
                 }}
               >
-                <CompactVideoAvatarFrame 
-                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
-                  avatarSize={80}
-                >
                   <AvatarFrame 
                     frameId={profile.inventory?.activeFrame || 'None'} 
                     frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
@@ -477,7 +473,6 @@ export function RoomOwnerProfile({
                       </AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
-                </CompactVideoAvatarFrame>
               </div>
             </div>
 
@@ -724,10 +719,6 @@ export function RoomProfileMain({
                 handleViewFullProfile();
               }}
             >
-              <CompactVideoAvatarFrame 
-                frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
-                avatarSize={80}
-              >
                 <AvatarFrame 
                   frameId={profile.inventory?.activeFrame || 'None'} 
                   frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
@@ -740,7 +731,6 @@ export function RoomProfileMain({
                     </AvatarFallback>
                   </Avatar>
                 </AvatarFrame>
-              </CompactVideoAvatarFrame>
             </div>
 
             {/* Name + Gender + Country */}

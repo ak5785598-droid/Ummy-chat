@@ -151,7 +151,7 @@ export const CompactVideoAvatarFrame = ({
   return (
     <div className="relative flex items-center justify-center" style={{ width: frameSize, height: frameSize }}>
       <div 
-        className="absolute inset-0 z-[110] pointer-events-none rounded-full overflow-hidden"
+        className="absolute inset-0 z-[110] pointer-events-none overflow-visible"
         style={{ 
           opacity: frameReady ? 1 : 0,
           transition: 'opacity 0.3s ease-in-out',

@@ -1178,10 +1178,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
-                <CompactVideoAvatarFrame 
-                  frameMediaUrl={activeFrameMediaUrl} 
-                  avatarSize={88}
-                >
                   <AvatarFrame 
                     frameId={profile.inventory?.activeFrame} 
                     frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
@@ -1192,7 +1188,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                   </AvatarFrame>
-                </CompactVideoAvatarFrame>
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">

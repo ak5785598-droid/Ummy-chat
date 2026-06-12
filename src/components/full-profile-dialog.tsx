@@ -1036,21 +1036,16 @@ export function FullProfileDialog({
 
             <div className="flex flex-col items-center">
               <div className="relative -mt-10 mb-1 z-30">
-                <CompactVideoAvatarFrame 
-                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
-                  avatarSize={88}
+                <AvatarFrame 
+                  frameId={profile.inventory?.activeFrame} 
+                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                  size="xl"
                 >
-                  <AvatarFrame 
-                    frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                    size="xl"
-                  >
-                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
-                </CompactVideoAvatarFrame>
+                  <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                    <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                    <AvatarFallback className="text-3xl font-bold bg-slate-100 text-slate-400">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </AvatarFrame>
               </div>
 
               <div className="text-center space-y-1.5 w-full">

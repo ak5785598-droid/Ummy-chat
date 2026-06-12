@@ -222,21 +222,16 @@ const PublicProfileView = ({
                
                <div className="flex items-center gap-7 relative z-10">
                   <div className="shrink-0 relative">
-                    <CompactVideoAvatarFrame 
-                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl} 
-                      avatarSize={88}
+                    <AvatarFrame 
+                      frameId={profile.inventory?.activeFrame} 
+                      frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                      size="xl"
                     >
-                      <AvatarFrame 
-                        frameId={profile.inventory?.activeFrame} 
-                        frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-                        size="xl"
-                      >
-                        <Avatar className="h-[88px] w-[88px] border-[6px] border-white shadow-2xl rounded-[2.2rem]">
-                          <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                          <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      </AvatarFrame>
-                    </CompactVideoAvatarFrame>
+                      <Avatar className="h-[88px] w-[88px] border-[6px] border-white shadow-2xl rounded-[2.2rem]">
+                        <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="text-3xl bg-slate-100 font-black text-slate-300">{profile.username?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </AvatarFrame>
                   </div>
 
                   <div className="flex-1 flex flex-col gap-2.5 min-w-0">
