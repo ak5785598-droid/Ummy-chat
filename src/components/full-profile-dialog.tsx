@@ -395,13 +395,13 @@ const DirectMedia = ({
 };
 
 // ============================================================
-// ⚡ LEVEL BADGE WITH BLACK REMOVER + SIZE INCREASE ⚡
+// ⚡ LEVEL BADGE WITH BLACK REMOVER - NICHE + CHOTA ⚡
 // ============================================================
 const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: string | null }) => {
   if (imageUrl) {
     const isVideo = imageUrl.includes('.mp4') || imageUrl.includes('video') || imageUrl.includes('.webm');
     return (
-      <div className={cn("relative inline-flex items-center justify-center shrink-0", level < 1 && "grayscale opacity-75")} style={{ width: '80px', height: '40px' }}>
+      <div className={cn("relative inline-flex items-center justify-center shrink-0", level < 1 && "grayscale opacity-75")} style={{ width: '60px', height: '30px' }}>
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'transparent' }}>
           <DirectMedia 
             src={imageUrl} 
@@ -410,7 +410,7 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
             style={{ background: 'transparent' }}
           />
         </div>
-        <span className="relative z-10 text-[13px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5 ml-2" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)' }}>
+        <span className="relative z-10 text-[10px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)', marginTop: '4px', marginLeft: '1px' }}>
           Lv.{level}
         </span>
       </div>
@@ -430,7 +430,7 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 };
 
 // ==========================================
-// 2. GLOSSY 3D ROLE TAGS (OFFICIAL TAG - AUR CHOTA 75x20)
+// 2. GLOSSY 3D ROLE TAGS (OFFICIAL TAG)
 // ==========================================
 
 export const SVGA_OfficialTag = () => (
@@ -454,7 +454,6 @@ export const SVGA_OfficialTag = () => (
       alignItems: 'center',
       paddingLeft: '19px',
     }}>
-      {/* Top Gloss */}
       <div style={{
         content: '""',
         position: 'absolute',
@@ -466,7 +465,6 @@ export const SVGA_OfficialTag = () => (
         borderRadius: '15px 15px 60px 60px / 8px 8px 20px 20px',
         pointerEvents: 'none',
       }} />
-      {/* Bottom Shadow Line */}
       <div style={{
         content: '""',
         position: 'absolute',
@@ -478,7 +476,6 @@ export const SVGA_OfficialTag = () => (
         opacity: 0.6,
       }} />
       
-      {/* Medallion with U */}
       <div style={{
         position: 'absolute',
         left: '1.5px',
@@ -494,7 +491,6 @@ export const SVGA_OfficialTag = () => (
         placeItems: 'center',
         zIndex: 3,
       }}>
-        {/* Medallion Inner Gloss */}
         <div style={{
           content: '""',
           position: 'absolute',
@@ -521,7 +517,6 @@ export const SVGA_OfficialTag = () => (
         </span>
       </div>
       
-      {/* Official Label */}
       <span style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
@@ -565,7 +560,7 @@ export const SVGA_SellerTag = () => (
 );
 
 // ==========================================
-// 3. IDENTIFICATION BADGES (SILENT COPY - NO ICONS)
+// 3. IDENTIFICATION BADGES
 // ==========================================
 
 export const SVGA_GlossyID = ({ variant, label }: { variant?: string, label: string }) => {
@@ -800,30 +795,15 @@ const getDeterministicFallbackId = (userId: string) => {
 };
 
 // ==========================================
-// VIDEO FRAME COMPONENT
+// VIDEO FRAME COMPONENT WITH BLACK REMOVER
 // ==========================================
 const VideoFrame = ({ videoUrl }: { videoUrl: string }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
-    }
-  }, [videoUrl]);
-
   return (
     <div className="relative w-full h-full bg-transparent">
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        className="absolute inset-0 w-full h-full object-cover"
-        autoPlay
-        loop
-        muted
-        playsInline
-        controls={false}
-        disablePictureInPicture
-        controlsList="nodownload nofullscreen noremoteplayback"
+      <DirectMedia 
+        src={videoUrl} 
+        type="video" 
+        className="absolute inset-0 w-full h-full"
         style={{ background: 'transparent' }}
       />
     </div>
@@ -939,191 +919,31 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
 </svg>`;
 
   const styles = `
-    * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  body {
-    background: #0F0F12;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    padding: 24px;
-  }
-  .wrapper {
-    width: 720px;
-    max-width: 92vw;
-    aspect-ratio: 720 / 300;
-    position: relative;
-    filter: drop-shadow(0 24px 48px rgba(0,0,0,0.55));
-  }
-  .card {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-  .card-bg {
-    position: absolute;
-    inset: 0;
-    border-radius: 26px;
-    overflow: hidden;
-    background: 
-      linear-gradient(180deg, rgba(142,29,76,0.88) 0%, rgba(196,59,108,0.72) 100%),
-      radial-gradient(ellipse 90% 75% at 50% 0%, #D44C7A 0%, #B53163 38%, #9A1F50 62%, #7A1741 100%);
-    box-shadow: 
-      inset 0 0 30px rgba(0,0,0,0.25),
-      inset 0 1px 0 rgba(255,255,255,0.14),
-      inset 0 -1px 2px rgba(0,0,0,0.25);
-    z-index: 1;
-  }
-  .card::before {
-    content: "";
-    position: absolute;
-    inset: -3px;
-    border-radius: 29px;
-    padding: 3px;
-    background: linear-gradient(90deg, #F7C49F, #E99B8E);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-    z-index: 5;
-  }
-  .bokeh {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-  }
-  .icon-container {
-    position: absolute;
-    top: 50%;
-    width: 19.44%;
-    max-width: 140px;
-    aspect-ratio: 1;
-    z-index: 3;
-    transform: translate(-50%, -58%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .icon-container.left {
-    left: 18%;
-  }
-  .icon-container.center {
-    left: 50%;
-  }
-  .icon-container.right {
-    left: 82%;
-  }
-  .icon-container svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-  }
-  .plus-icon circle {
-    fill: rgba(255,255,255,0.06);
-    stroke: rgba(255,255,255,0.95);
-    stroke-width: 2.8;
-    backdrop-filter: blur(2px);
-  }
-  .plus-icon rect {
-    fill: #FFFFFF;
-  }
-  .heart-icon svg {
-    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));
-    transition: transform 0.2s ease;
-  }
-  .heart-icon:hover svg {
-    transform: scale(1.05);
-  }
-  .tab {
-    position: absolute;
-    top: -1px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 25%;
-    max-width: 180px;
-    aspect-ratio: 180 / 42;
-    z-index: 6;
-    pointer-events: none;
-  }
-  .tab svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35));
-  }
-  .avatar-overlay {
-    position: absolute;
-    top: 50%;
-    left: 18%;
-    transform: translate(-50%, -58%);
-    z-index: 10;
-    width: 19.44%;
-    max-width: 140px;
-    aspect-ratio: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .avatar-circle {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 2.8px solid rgba(255,255,255,0.95);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-    backdrop-filter: blur(2px);
-    background: rgba(255,255,255,0.06);
-  }
-  .avatar-circle img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .avatar-circle .avatar-fallback {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.15);
-    color: white;
-    font-weight: 700;
-    font-size: clamp(1.2rem, 3vw, 2.2rem);
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  }
-  .avatar-name {
-    position: absolute;
-    bottom: -28px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: white;
-    font-size: clamp(0.55rem, 1.5vw, 0.85rem);
-    font-weight: 700;
-    text-align: center;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.5);
-    white-space: nowrap;
-    max-width: 140px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    letter-spacing: 0.02em;
-  }
-  @media (max-width: 480px) {
-    body { padding: 16px; }
-    .avatar-name { bottom: -22px; font-size: 0.55rem; }
-  }
-`;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0F0F12; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 24px; }
+    .wrapper { width: 720px; max-width: 92vw; aspect-ratio: 720 / 300; position: relative; filter: drop-shadow(0 24px 48px rgba(0,0,0,0.55)); }
+    .card { position: relative; width: 100%; height: 100%; }
+    .card-bg { position: absolute; inset: 0; border-radius: 26px; overflow: hidden; background: linear-gradient(180deg, rgba(142,29,76,0.88) 0%, rgba(196,59,108,0.72) 100%), radial-gradient(ellipse 90% 75% at 50% 0%, #D44C7A 0%, #B53163 38%, #9A1F50 62%, #7A1741 100%); box-shadow: inset 0 0 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.25); z-index: 1; }
+    .card::before { content: ""; position: absolute; inset: -3px; border-radius: 29px; padding: 3px; background: linear-gradient(90deg, #F7C49F, #E99B8E); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; pointer-events: none; z-index: 5; }
+    .bokeh { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .icon-container { position: absolute; top: 50%; width: 19.44%; max-width: 140px; aspect-ratio: 1; z-index: 3; transform: translate(-50%, -58%); display: flex; align-items: center; justify-content: center; }
+    .icon-container.left { left: 18%; }
+    .icon-container.center { left: 50%; }
+    .icon-container.right { left: 82%; }
+    .icon-container svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .plus-icon circle { fill: rgba(255,255,255,0.06); stroke: rgba(255,255,255,0.95); stroke-width: 2.8; backdrop-filter: blur(2px); }
+    .plus-icon rect { fill: #FFFFFF; }
+    .heart-icon svg { filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4)); transition: transform 0.2s ease; }
+    .heart-icon:hover svg { transform: scale(1.05); }
+    .tab { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 25%; max-width: 180px; aspect-ratio: 180 / 42; z-index: 6; pointer-events: none; }
+    .tab svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35)); }
+    .avatar-overlay { position: absolute; top: 50%; left: 18%; transform: translate(-50%, -58%); z-index: 10; width: 19.44%; max-width: 140px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .avatar-circle { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 2.8px solid rgba(255,255,255,0.95); box-shadow: 0 4px 14px rgba(0,0,0,0.35); backdrop-filter: blur(2px); background: rgba(255,255,255,0.06); }
+    .avatar-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar-circle .avatar-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); color: white; font-weight: 700; font-size: clamp(1.2rem, 3vw, 2.2rem); text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    .avatar-name { position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%); color: white; font-size: clamp(0.55rem, 1.5vw, 0.85rem); font-weight: 700; text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.02em; }
+    @media (max-width: 480px) { body { padding: 16px; } .avatar-name { bottom: -22px; font-size: 0.55rem; } }
+  `;
 
   return (
     <div className="mt-2 mb-4">
@@ -1141,20 +961,16 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                 </g>
               </svg>
             </div>
-
             <div className="avatar-overlay">
               <div className="avatar-circle">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={username || 'User'} />
                 ) : (
-                  <div className="avatar-fallback">
-                    {(username || 'U').charAt(0).toUpperCase()}
-                  </div>
+                  <div className="avatar-fallback">{(username || 'U').charAt(0).toUpperCase()}</div>
                 )}
               </div>
               <span className="avatar-name">{username || 'User'}</span>
             </div>
-
             <div className="icon-container left">
               <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
                 <circle cx="70" cy="70" r="68" />
@@ -1162,11 +978,9 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                 <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
               </svg>
             </div>
-
             <div className="icon-container center heart-icon">
               <div dangerouslySetInnerHTML={{ __html: heartGemSVG }} />
             </div>
-
             <div className="icon-container right">
               <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
                 <circle cx="70" cy="70" r="68" />
@@ -1174,18 +988,14 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                 <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
               </svg>
             </div>
-
             <div className="tab">
               <svg viewBox="0 0 180 42" fill="none">
                 <defs>
                   <linearGradient id="gold" x1="0" y1="0" x2="0" y2="42" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#FDE6A8" />
-                    <stop offset="0.5" stopColor="#E9B96A" />
-                    <stop offset="1" stopColor="#D68A32" />
+                    <stop stopColor="#FDE6A8" /><stop offset="0.5" stopColor="#E9B96A" /><stop offset="1" stopColor="#D68A32" />
                   </linearGradient>
                   <linearGradient id="goldStroke" x1="0" y1="0" x2="0" y2="28" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#FFF3D1" stopOpacity="0.9" />
-                    <stop offset="1" stopColor="#D68A32" stopOpacity="0.2" />
+                    <stop stopColor="#FFF3D1" stopOpacity="0.9" /><stop offset="1" stopColor="#D68A32" stopOpacity="0.2" />
                   </linearGradient>
                 </defs>
                 <path d="M10 0 H170 L158 28 Q90 38 22 28 L10 0 Z" fill="url(#gold)" stroke="url(#goldStroke)" strokeWidth="1" />
@@ -1256,23 +1066,18 @@ export function FullProfileDialog({
   
   const budgetImageUrl = useMemo(() => {
     if (!budgetLevelsData) return null;
-
     const isLevelInRange = (level: number, rangeStr: string): boolean => {
       if (!rangeStr) return false;
       const numbers = rangeStr.match(/\d+/g)?.map(Number);
       if (!numbers || numbers.length === 0) return false;
-      if (numbers.length === 1) {
-        return level === numbers[0];
-      }
+      if (numbers.length === 1) return level === numbers[0];
       const [start, end] = numbers;
       return level >= start && level <= end;
     };
-    
     const budgetDocs = budgetLevelsData.filter((level: any) => {
       if (level.type) return level.type === "budget";
       return ("budget" in level) || (!("reward" in level) && !("frameId" in level));
     });
-    
     const docData = budgetDocs.find((d: any) => isLevelInRange(budgetLevel, d.range));
     return docData?.imageUrl || docData?.image || null;
   }, [budgetLevelsData, budgetLevel]);
@@ -1285,6 +1090,7 @@ export function FullProfileDialog({
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
   const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
+  // ✅ Background carousel images - VIDEO KE LIYE BHI BLACK REMOVE
   const resolvedBackground = useMemo(() => {
     if (images.filter(Boolean).length > 0) {
       const firstImage = images[0];
@@ -1296,7 +1102,6 @@ export function FullProfileDialog({
     return { type: 'fallback', data: profile.avatarUrl };
   }, [images, profile.avatarUrl]);
 
-  // Active frame media URL for black removal
   const activeFrameMediaUrl = useMemo(() => {
     const inv = profile?.inventory as any;
     if (!inv?.activeFrameMediaUrl) return null;
@@ -1308,7 +1113,7 @@ export function FullProfileDialog({
       <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white p-0 border-none m-0 rounded-none z-[150] overflow-hidden">
         <div className="w-full h-full overflow-y-auto no-scrollbar relative flex flex-col font-outfit">
 
-          {/* Top Section - Background */}
+          {/* ✅ Top Section - Background WITH BLACK REMOVER FOR VIDEO */}
           <div className="relative h-[35vh] w-full shrink-0 bg-slate-900 overflow-hidden">
             {resolvedBackground.type === 'video' ? (
               <VideoFrame videoUrl={resolvedBackground.data as string} />
@@ -1328,11 +1133,7 @@ export function FullProfileDialog({
               </Carousel>
             ) : resolvedBackground.type === 'family' ? (
               <div className="h-full w-full relative">
-                <img
-                  src={resolvedBackground.data as string}
-                  className="h-full w-full object-cover"
-                  alt="family-banner"
-                />
+                <img src={resolvedBackground.data as string} className="h-full w-full object-cover" alt="family-banner" />
               </div>
             ) : resolvedBackground.type === 'cp' ? (
               <div className="h-full w-full bg-gradient-to-br from-pink-500 via-red-400 to-rose-500 flex items-center justify-center relative overflow-hidden">
@@ -1375,11 +1176,7 @@ export function FullProfileDialog({
               </div>
             ) : (
               <div className="h-full w-full relative">
-                 <img
-                   src={resolvedBackground.data as string}
-                   className="h-full w-full object-cover"
-                   alt="background-avatar"
-                 />
+                <img src={resolvedBackground.data as string} className="h-full w-full object-cover" alt="background-avatar" />
               </div>
             )}
 
@@ -1406,7 +1203,7 @@ export function FullProfileDialog({
           <div className="relative z-20 bg-white/98 backdrop-blur-2xl rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-white/80 min-h-[70vh]">
 
             <div className="flex flex-col items-center">
-              {/* ✅ AVATAR WITH FRAME - BLACK REMOVE via DirectMedia in AvatarFrame */}
+              {/* ✅ AVATAR WITH FRAME */}
               <div className="relative -mt-10 mb-1 z-30">
                 <AvatarFrame 
                   frameId={profile.inventory?.activeFrame} 
@@ -1431,7 +1228,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ID - Silent click to copy */}
+                {/* ID */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-1">
                   {hasOfficialTag ? (
                     <SVGA_GlossyID label={`ID: ${displayId}`} />
@@ -1442,7 +1239,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* Tags */}
+                {/* ✅ Tags - Level badge NICHE + CHOTA */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
                   <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
                   {hasOfficialTag && <SVGA_OfficialTag />}
@@ -1469,7 +1266,7 @@ export function FullProfileDialog({
                 <span className="text-xl font-bold text-slate-900 leading-none">{stats.friends}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Friend</span>
               </div>
-               <div className="flex flex-col items-center text-slate-200 text-2xl font-thin">|</div>
+              <div className="flex flex-col items-center text-slate-200 text-2xl font-thin">|</div>
               <div className="flex flex-col items-center flex-1">
                 <span className="text-xl font-bold text-slate-900 leading-none">{stats.visitors}</span>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Visitors</span>
@@ -1487,18 +1284,17 @@ export function FullProfileDialog({
             <div className="mt-2 mb-4">
               <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2">Signature Bio</h3>
               <div className="px-1">
-                 <p className="text-[13px] font-medium text-slate-600 leading-relaxed">
-                   {profile.bio || "Synchronized with the Ummy frequency."}
-                 </p>
+                <p className="text-[13px] font-medium text-slate-600 leading-relaxed">
+                  {profile.bio || "Synchronized with the Ummy frequency."}
+                </p>
               </div>
-
               <div className="flex flex-wrap gap-4 px-1 mt-6">
-                 {(profile.showBirthday !== false && !!profile.birthday) && (
-                   <div className="flex items-center gap-1.5">
-                     <Calendar className="h-3 w-3 text-slate-300" />
-                     <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight">{profile.birthday}</span>
-                   </div>
-                 )}
+                {(profile.showBirthday !== false && !!profile.birthday) && (
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3 w-3 text-slate-300" />
+                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight">{profile.birthday}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1623,42 +1419,33 @@ export function FullProfileDialog({
         {/* Footer */}
         {!isOwnProfile && (
           <footer className="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-white/95 backdrop-blur-md border-t border-slate-100 flex gap-4 z-[160]">
-             <button
-               onClick={onFollow}
-               disabled={isProcessingFollow}
-               className="flex-1 h-14 border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm active:scale-95 transition-all"
-             >
-               {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin" /> : (
-                 <>
-                   <Heart className={cn("h-5 w-5", followData && "fill-current")} />
-                   {followData ? "Joined" : "Follow"}
-                 </>
-               )}
-             </button>
-             <button
-               onClick={() => {
-                 if (onChat) {
-                   onChat(profile);
-                   onOpenChange(false);
-                 } else {
-                   router.push(`/messages?userId=${profile?.id || profile?.uid}`);
-                 }
-               }}
-               className="flex-1 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all"
-             >
-               <MessageCircle className="h-5 w-5" />
-               Chat
-             </button>
+            <button
+              onClick={onFollow}
+              disabled={isProcessingFollow}
+              className="flex-1 h-14 border-2 border-pink-500 text-pink-500 rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm active:scale-95 transition-all"
+            >
+              {isProcessingFollow ? <Loader className="h-5 w-5 animate-spin" /> : (
+                <>
+                  <Heart className={cn("h-5 w-5", followData && "fill-current")} />
+                  {followData ? "Joined" : "Follow"}
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                if (onChat) { onChat(profile); onOpenChange(false); }
+                else { router.push(`/messages?userId=${profile?.id || profile?.uid}`); }
+              }}
+              className="flex-1 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center gap-3 font-black uppercase text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all"
+            >
+              <MessageCircle className="h-5 w-5" />
+              Chat
+            </button>
           </footer>
         )}
 
-        {/* Edit Profile Dialog */}
-        <EditProfileDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          profile={profile}
-        />
+        <EditProfileDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} profile={profile} />
       </DialogContent>
     </Dialog>
   );
-                        }
+                                }
