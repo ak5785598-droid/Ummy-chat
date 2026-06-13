@@ -71,10 +71,393 @@ import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame
 import { ActiveIDBadge } from '@/components/id-badge';
 
 // ============================================================
+// ⚡ SMART BLACK BACKGROUND REMOVER (Avatar Frame ke liye) ⚡
+// ============================================================
+const SmartBlackRemover = React.memo(({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+  const lastProcessedSrc = useRef('');
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
+      processingRef.current = false;
+      return;
+    }
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    processingRef.current = false;
+
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+    }
+  };
+
+  useEffect(() => {
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+
+    loadTimeoutRef.current = setTimeout(() => {
+      if (!isReady && mediaRef.current) {
+        setIsReady(true);
+        setUseCanvas(false);
+      }
+    }, 5000);
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [src, type, isReady]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
+    }
+  };
+
+  const handleImageError = () => {
+    setIsReady(true);
+    setUseCanvas(false);
+  };
+
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (type === 'video') {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
+        />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-cover"
+            style={{ 
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              backgroundColor: 'transparent'
+            }}
+          />
+        )}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
+      />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+      )}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      )}
+    </div>
+  );
+});
+SmartBlackRemover.displayName = 'SmartBlackRemover';
+
+// ============================================================
+// ⚡ AVATAR FRAME WITH BLACK REMOVER (Wrapper Component) ⚡
+// ============================================================
+const AvatarFrameWithBlackRemover = React.memo(({ 
+  frameId, 
+  frameMediaUrl, 
+  size, 
+  children 
+}: { 
+  frameId: string | undefined; 
+  frameMediaUrl: string | undefined; 
+  size: string; 
+  children: React.ReactNode;
+}) => {
+  // Agar frameMediaUrl hai toh SmartBlackRemover use karo, nahi toh normal AvatarFrame
+  if (frameMediaUrl) {
+    const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov') || frameMediaUrl.includes('video');
+    
+    return (
+      <div className="relative inline-block" style={{ background: 'transparent' }}>
+        {/* Avatar pehle render karo */}
+        <div className="relative z-10">
+          {children}
+        </div>
+        {/* Frame ko overlay ki tarah upar lagao with black remover */}
+        <div 
+          className="absolute inset-0 z-20 pointer-events-none" 
+          style={{ 
+            background: 'transparent',
+            // Frame ko avatar se thoda bada karo taaki overlap ho
+            transform: 'scale(1.35)',
+            transformOrigin: 'center center'
+          }}
+        >
+          <SmartBlackRemover 
+            src={frameMediaUrl} 
+            type={isVideo ? 'video' : 'image'} 
+            className="w-full h-full"
+            style={{ background: 'transparent' }}
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  // Agar frameMediaUrl nahi hai toh normal AvatarFrame
+  return (
+    <AvatarFrame frameId={frameId} frameMediaUrl={frameMediaUrl} size={size}>
+      {children}
+    </AvatarFrame>
+  );
+});
+AvatarFrameWithBlackRemover.displayName = 'AvatarFrameWithBlackRemover';
+
+// ============================================================
 // ⚡ SAARE SVG COMPONENTS ⚡
 // ============================================================
 
-// ✅ BAS YAHI CHANGE KIYA HAI - Height 18px se 20px, ml-1 se ml-0.5
 const SVGA_OfficialTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[20px] rounded-full p-[2px] ml-0.5" style={{
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
@@ -84,9 +467,7 @@ const SVGA_OfficialTag = React.memo(() => (
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
       boxShadow: 'inset 0 1px 2px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)'
     }}>
-      {/* Top glossy shine */}
       <div style={{
-        content: '""',
         position: 'absolute',
         top: '1px',
         left: '8%',
@@ -97,9 +478,7 @@ const SVGA_OfficialTag = React.memo(() => (
         pointerEvents: 'none'
       }} />
       
-      {/* Bottom shadow line */}
       <div style={{
-        content: '""',
         position: 'absolute',
         left: '14%',
         right: '14%',
@@ -109,7 +488,6 @@ const SVGA_OfficialTag = React.memo(() => (
         opacity: 0.6
       }} />
 
-      {/* U Medallion */}
       <div className="absolute left-[2px] top-1/2 -translate-y-1/2 z-[3]" style={{
         width: '20px',
         height: '20px',
@@ -121,7 +499,6 @@ const SVGA_OfficialTag = React.memo(() => (
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        {/* Medallion inner shine */}
         <div style={{
           position: 'absolute',
           inset: '2px',
@@ -143,7 +520,6 @@ const SVGA_OfficialTag = React.memo(() => (
           textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
         }}>
           U
-          {/* Letter top shine */}
           <span style={{
             position: 'absolute',
             inset: 0,
@@ -156,7 +532,6 @@ const SVGA_OfficialTag = React.memo(() => (
         </span>
       </div>
 
-      {/* Official Text */}
       <span className="relative z-10" style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
@@ -172,7 +547,6 @@ const SVGA_OfficialTag = React.memo(() => (
         textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
       }}>
         Official
-        {/* Text top shine */}
         <span style={{
           position: 'absolute',
           inset: 0,
@@ -187,7 +561,6 @@ const SVGA_OfficialTag = React.memo(() => (
   </div>
 ));
 SVGA_OfficialTag.displayName = 'SVGA_OfficialTag';
-// ✅ OFFICIAL TAG CHANGE ENDS HERE - BAKI SAB EXACTLY SAME HAI
 
 const SVGA_SellerTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
@@ -817,7 +1190,6 @@ const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onCl
   const filteredMedals = (medals || []).filter((m: any) => m.category === currentTabLower);
   const userMedalIds = profile?.medals || [];
 
-  // Map obtained medals to full objects for the top grid
   const obtainedMedals = (medals || []).filter((m: any) => userMedalIds.includes(m.id));
 
   return (
@@ -1154,25 +1526,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
-  // ⚡ YAHI CHANGE KIYA HAI - Active frame media URL ke liye smart black removal ⚡
   const activeFrameMediaUrl = useMemo(() => {
     const inv = profile?.inventory as any;
     if (!inv?.activeFrameMediaUrl) return null;
-    
-    // CANVA wale parameter ko remove karo aur smart black removal add karo
-    let url = inv.activeFrameMediaUrl;
-    
-    // Agar URL mein 'canva' parameter hai toh usse saaf karo
-    try {
-      const urlObj = new URL(url);
-      urlObj.searchParams.delete('canva');
-      url = urlObj.toString();
-    } catch (e) {
-      // Agar URL parse nahi ho raha toh direct string replace
-      url = url.replace(/[?&]canva=[^&]*/g, '');
-    }
-    
-    return url;
+    return inv.activeFrameMediaUrl;
   }, [profile?.inventory]);
 
   const handleBagClick = () => {
@@ -1227,18 +1584,18 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
+              {/* ✅ YAHI CHANGE KIYA - AvatarFrame ki jagah AvatarFrameWithBlackRemover use karo */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
-                  {/* ⚡ YAHI PAR BHI SMART BLACK REMOVAL APPLY HOGA ⚡ */}
-                  <AvatarFrame 
+                  <AvatarFrameWithBlackRemover 
                     frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={activeFrameMediaUrl}
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
                     size="xl"
                   >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
-                  </AvatarFrame>
+                  </AvatarFrameWithBlackRemover>
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1401,4 +1758,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-    }
+            }
