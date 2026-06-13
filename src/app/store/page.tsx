@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef, Suspense } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,10 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // ============================================
-// SMART BLACK BACKGROUND REMOVER (ENHANCED)
+// SMART BLACK BACKGROUND REMOVER
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
@@ -26,14 +26,17 @@ const SmartBlackRemover = ({
   className?: string; 
   style?: React.CSSProperties;
 }) => {
-  const isVideoUrl = type === 'video' || src?.includes('.mp4') || src?.includes('.webm') || src?.includes('.mov') || src?.includes('video');
-  const [isBlackBg, setIsBlackBg] = useState(false);
-  const [hasChecked, setHasChecked] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+  const lastProcessedSrc = useRef('');
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
-    
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -41,109 +44,230 @@ const SmartBlackRemover = ({
     if (!ctx) return false;
 
     ctx.drawImage(media, 0, 0, width, height);
-    
-    try {
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const data = imageData.data;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
 
-      // Strict black detection - RGB all less than 25
-      const BLACK_THRESHOLD = 25;
-      
-      // Check edges (top, bottom, left, right) and center
-      const edgeThickness = Math.max(5, Math.floor(Math.min(width, height) * 0.08));
-      
-      const checkRegion = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-        let blackCount = 0;
-        let totalPixels = 0;
-        
-        for (let y = yStart; y < yEnd; y++) {
-          for (let x = xStart; x < xEnd; x++) {
-            const i = (y * width + x) * 4;
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
-            if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
-              blackCount++;
-            }
-            totalPixels++;
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
+      processingRef.current = false;
+      return;
+    }
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
           }
         }
-        return totalPixels > 0 ? blackCount / totalPixels : 0;
-      };
-
-      // Check all 4 edges
-      const topRatio = checkRegion(0, width, 0, edgeThickness);
-      const bottomRatio = checkRegion(0, width, height - edgeThickness, height);
-      const leftRatio = checkRegion(0, edgeThickness, 0, height);
-      const rightRatio = checkRegion(width - edgeThickness, width, 0, height);
-      
-      // Check center region
-      const centerXStart = Math.floor(width * 0.3);
-      const centerXEnd = Math.floor(width * 0.7);
-      const centerYStart = Math.floor(height * 0.3);
-      const centerYEnd = Math.floor(height * 0.7);
-      const centerRatio = checkRegion(centerXStart, centerXEnd, centerYStart, centerYEnd);
-
-      // Also check corners
-      const cornerSize = Math.floor(Math.min(width, height) * 0.1);
-      const topLeftRatio = checkRegion(0, cornerSize, 0, cornerSize);
-      const topRightRatio = checkRegion(width - cornerSize, width, 0, cornerSize);
-      const bottomLeftRatio = checkRegion(0, cornerSize, height - cornerSize, height);
-      const bottomRightRatio = checkRegion(width - cornerSize, width, height - cornerSize, height);
-
-      // If ALL regions are predominantly black, it's a black background
-      const THRESHOLD = 0.80;
-      const allRegionsBlack = 
-        topRatio >= THRESHOLD && 
-        bottomRatio >= THRESHOLD && 
-        leftRatio >= THRESHOLD && 
-        rightRatio >= THRESHOLD && 
-        topLeftRatio >= THRESHOLD &&
-        topRightRatio >= THRESHOLD &&
-        bottomLeftRatio >= THRESHOLD &&
-        bottomRightRatio >= THRESHOLD;
-
-      // For videos, if center has non-black content but edges are black, still apply screen
-      // For images, require all regions including center to be black
-      if (isVideoUrl) {
-        return allRegionsBlack;
-      } else {
-        return allRegionsBlack && centerRatio >= THRESHOLD;
       }
-    } catch (e) {
-      return false;
+    }
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    processingRef.current = false;
+
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
     }
   };
 
+  useEffect(() => {
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+
+    loadTimeoutRef.current = setTimeout(() => {
+      if (!isReady && mediaRef.current) {
+        setIsReady(true);
+        setUseCanvas(false);
+      }
+    }, 5000);
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [src, type, isReady]);
+
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+    if (img.naturalWidth > 0) {
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-      setIsBlackBg(hasBlackBg);
-      setHasChecked(true);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
     }
+  };
+
+  const handleImageError = () => {
+    setIsReady(true);
+    setUseCanvas(false);
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
-      setIsBlackBg(hasBlackBg);
-      setHasChecked(true);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
     }
   };
 
-  // Apply mix-blend-mode: screen to remove black background
-  const blendStyle: React.CSSProperties = {
-    ...style,
-    mixBlendMode: isBlackBg ? 'screen' : 'normal',
-    background: 'transparent',
-  };
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (type === 'video') {
     return (
-      <div className={cn("relative overflow-hidden", className)} style={{ background: 'transparent' }}>
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -152,32 +276,73 @@ const SmartBlackRemover = ({
           loop
           playsInline
           onLoadedData={handleVideoReady}
-          onCanPlay={handleVideoReady}
-          className="w-full h-full object-contain"
-          style={blendStyle}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
           crossOrigin="anonymous"
         />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-cover"
+            style={{ 
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              backgroundColor: 'transparent'
+            }}
+          />
+        )}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+        )}
       </div>
     );
   }
 
   return (
-    <div className={cn("relative overflow-hidden", className)} style={{ background: 'transparent' }}>
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        className="w-full h-full object-contain"
-        style={blendStyle}
+        onError={handleImageError}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
         crossOrigin="anonymous"
       />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+      )}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      )}
     </div>
   );
 };
 
 // ============================================
-// DIRECT MEDIA WRAPPER (ENHANCED)
+// DIRECT MEDIA WRAPPER
 // ============================================
 const DirectMedia = ({ 
   src, 
@@ -247,7 +412,98 @@ const WaveCircleIcon = ({ colorClass, size = "h-20 w-20", isLovelyShine = false 
   );
 };
 
-import { ActiveIDBadge, IDBadgeIcon, PinkDiamondIDBadgeIcon, SilverBlueIDBadgeIcon } from '@/components/id-badge';
+const PinkDiamondIDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
+    <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#9D174D] to-[#DB2777] rounded-r-full border-[1px] border-t-[#F472B6] border-b-[#831843] border-r-[#F472B6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+    </div>
+    <div className="absolute left-[-20px] z-10 w-[65px] h-[65px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
+        <defs>
+          <linearGradient id="roseSilverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="30%" stopColor="#FCE7F3" />
+            <stop offset="50%" stopColor="#F9A8D4" />
+            <stop offset="70%" stopColor="#F472B6" />
+            <stop offset="100%" stopColor="#DB2777" />
+          </linearGradient>
+          <linearGradient id="pinkGemInnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F472B6" />
+            <stop offset="50%" stopColor="#EC4899" />
+            <stop offset="100%" stopColor="#9D174D" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,2 96,28 86,78 50,96 14,78 4,28" fill="url(#roseSilverGrad)" stroke="#FFF1F2" strokeWidth="2.5" />
+        <polygon points="50,14 84,34 76,72 50,84 24,72 16,34" fill="url(#pinkGemInnerGrad)" stroke="#FBCFE8" strokeWidth="1" />
+        <path d="M50,14 L84,34 L50,50 Z" fill="rgba(255,255,255,0.3)" />
+        <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
+        <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#roseSilverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
+        <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
+        <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
+      </svg>
+    </div>
+  </div>
+);
+
+const IDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
+    <div className="h-[32px] pl-[42px] pr-[20px] bg-gradient-to-r from-[#D91B10] to-[#F13A24] rounded-r-full border-[1.5px] border-t-[#FF6B55] border-b-[#9D1109] border-r-[#FF6B55] flex items-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+    </div>
+    <div className="absolute left-[-15px] z-10 w-[54px] h-[54px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_8px_rgba(0,0,0,0.5)]">
+        <defs>
+          <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF1AA" />
+            <stop offset="25%" stopColor="#FFD335" />
+            <stop offset="50%" stopColor="#C98B13" />
+            <stop offset="75%" stopColor="#FFD335" />
+            <stop offset="100%" stopColor="#9E6100" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,5 90,25 90,75 50,95 10,75 10,25" fill="url(#goldGrad)" stroke="#FFE373" strokeWidth="3" />
+        <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill="#750600" />
+        <text x="50" y="58" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="42" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 2px 2px rgba(0,0,0,0.8))">ID</text>
+        <text x="50" y="80" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="18" fill="url(#goldGrad)" textAnchor="middle" filter="drop-shadow(1px 1px 1px rgba(0,0,0,0.8))">SSS</text>
+      </svg>
+    </div>
+  </div>
+);
+
+const SilverBlueIDBadgeIcon = ({ number }: { number: string }) => (
+  <div className="relative flex items-center drop-shadow-xl scale-[0.8] md:scale-100 sm:translate-x-[-2px] translate-x-[2px]">
+    <div className="h-[36px] pl-[48px] pr-[20px] bg-gradient-to-r from-[#0C3E8A] to-[#1D5DC2] rounded-r-full border-[1px] border-t-[#4A85E6] border-b-[#072456] border-r-[#4A85E6] flex items-center shadow-[inset_0_2px_5px_rgba(255,255,255,0.3)] z-0">
+      <span className="text-white font-bold text-xl tracking-[0.15em] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none pt-[2px]">{number}</span>
+    </div>
+    <div className="absolute left-[-20px] z-10 w-[65px] h-[65px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_5px_10px_rgba(0,0,0,0.6)]">
+        <defs>
+          <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="30%" stopColor="#E2E8F0" />
+            <stop offset="50%" stopColor="#94A3B8" />
+            <stop offset="70%" stopColor="#CBD5E1" />
+            <stop offset="100%" stopColor="#64748B" />
+          </linearGradient>
+          <linearGradient id="gemInnerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#60A5FA" />
+            <stop offset="50%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1E3A8A" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,2 96,28 86,78 50,96 14,78 4,28" fill="url(#silverGrad)" stroke="#F8FAFC" strokeWidth="2.5" />
+        <polygon points="50,14 84,34 76,72 50,84 24,72 16,34" fill="url(#gemInnerGrad)" stroke="#93C5FD" strokeWidth="1" />
+        <path d="M50,14 L84,34 L50,50 Z" fill="rgba(255,255,255,0.3)" />
+        <path d="M16,34 L50,14 L50,50 Z" fill="rgba(255,255,255,0.5)" />
+        <text x="50" y="66" fontFamily="Impact, Arial Black, sans-serif" fontWeight="900" fontSize="46" fill="url(#silverGrad)" textAnchor="middle" filter="drop-shadow(2px 2px 3px rgba(0,0,0,0.8))">ID</text>
+        <path d="M15,20 L18,10 L21,20 L31,23 L21,26 L18,36 L15,26 L5,23 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.8" />
+        <path d="M80,75 L82,68 L84,75 L91,77 L84,79 L82,86 L80,79 L73,77 Z" fill="#FFFFFF" className="animate-pulse" opacity="0.6" />
+        <circle cx="85" cy="25" r="2.5" fill="#FFFFFF" className="animate-ping" opacity="0.7" />
+      </svg>
+    </div>
+  </div>
+);
 
 const FramePlaceholderIcon = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center justify-center", className)}>
@@ -281,10 +537,8 @@ const STATIC_STORE_ITEMS = [
 // ============================================
 // MAIN STORE PAGE COMPONENT
 // ============================================
-function StoreContent() {
+export default function StorePage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const filter = searchParams ? searchParams.get('filter') : null;
   const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile(user?.uid);
   const firestore = useFirestore();
@@ -293,13 +547,7 @@ function StoreContent() {
   const [previewItem, setPreviewItem] = useState<any>(null);
   const [selectedDuration, setSelectedDuration] = useState<number>(7);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>(filter === 'purchased' ? 'Mine' : 'Store');
-
-  useEffect(() => {
-    if (filter === 'purchased') {
-      setActiveTab('Mine');
-    }
-  }, [filter]);
+  const [activeTab, setActiveTab] = useState<string>('Store');
 
   useEffect(() => {
     if (previewItem) {
@@ -407,19 +655,15 @@ function StoreContent() {
     { id: 'id-112223', name: 'sss', type: 'ID', price: 9900000, durationDays: 7, description: 'Exclusive VIP ID Number 112223 Badge.', displayId: '112223', variant: 'red' },
   ], []);
 
-  // Entry items restored from boutiqueItems
-  const entryItems = useMemo(() => {
-    return boutiqueItems.filter(item => item.type === 'Entry' || item.category === 'Entry');
-  }, [boutiqueItems]);
+  // Entry items completely removed
+  const entryItems = useMemo(() => [], []);
 
   const nonFrameBoutiqueItems = useMemo(() => {
     return boutiqueItems.filter(item => 
       item.type !== 'Frame' && 
       item.category !== 'Frame' && 
       item.type !== 'Bubble' && 
-      item.category !== 'Bubble' &&
-      item.type !== 'Entry' &&
-      item.category !== 'Entry'
+      item.category !== 'Bubble'
     );
   }, [boutiqueItems]);
 
@@ -595,28 +839,6 @@ function StoreContent() {
           updateData['inventory.activeBubbleMediaUrl'] = item.videoUrl || item.imageUrl || null;
         } else if (isActive) {
           updateData['inventory.activeBubbleMediaUrl'] = null;
-        }
-      }
-
-      if (item.type === 'Entry') {
-        if (!isActive && (item.videoUrl || item.imageUrl)) {
-          updateData['inventory.activeEntryMediaUrl'] = item.videoUrl || item.imageUrl || null;
-        } else if (isActive) {
-          updateData['inventory.activeEntryMediaUrl'] = null;
-        }
-      }
-
-      if (item.type === 'ID') {
-        if (!isActive) {
-          updateData['inventory.activeIdBadge'] = {
-            id: item.id,
-            displayId: item.displayId,
-            isPinkDiamond: !!item.isPinkDiamond,
-            isSilver: !!item.isSilver,
-            variant: item.variant || null
-          };
-        } else if (isActive) {
-          updateData['inventory.activeIdBadge'] = null;
         }
       }
       
@@ -1126,16 +1348,4 @@ function StoreContent() {
       </div>
     </div>
   );
-}
-
-export default function StorePage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#121A1F] via-[#0A0E12] to-[#050709] flex items-center justify-center">
-        <Loader className="animate-spin h-8 w-8 text-[#FCD535]" />
-      </div>
-    }>
-      <StoreContent />
-    </Suspense>
-  );
-          }
+  }
