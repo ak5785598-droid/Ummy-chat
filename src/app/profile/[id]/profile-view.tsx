@@ -74,7 +74,6 @@ import { ActiveIDBadge } from '@/components/id-badge';
 // ⚡ SAARE SVG COMPONENTS ⚡
 // ============================================================
 
-// ✅ BAS YAHI CHANGE KIYA HAI - Height 18px se 20px, ml-1 se ml-0.5
 const SVGA_OfficialTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[20px] rounded-full p-[2px] ml-0.5" style={{
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
@@ -84,7 +83,6 @@ const SVGA_OfficialTag = React.memo(() => (
       background: 'linear-gradient(180deg, #b82340 0%, #a81835 20%, #98142f 50%, #8a102b 85%, #7f0e27 100%)',
       boxShadow: 'inset 0 1px 2px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)'
     }}>
-      {/* Top glossy shine */}
       <div style={{
         content: '""',
         position: 'absolute',
@@ -97,7 +95,6 @@ const SVGA_OfficialTag = React.memo(() => (
         pointerEvents: 'none'
       }} />
       
-      {/* Bottom shadow line */}
       <div style={{
         content: '""',
         position: 'absolute',
@@ -109,7 +106,6 @@ const SVGA_OfficialTag = React.memo(() => (
         opacity: 0.6
       }} />
 
-      {/* U Medallion */}
       <div className="absolute left-[2px] top-1/2 -translate-y-1/2 z-[3]" style={{
         width: '20px',
         height: '20px',
@@ -121,7 +117,6 @@ const SVGA_OfficialTag = React.memo(() => (
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        {/* Medallion inner shine */}
         <div style={{
           position: 'absolute',
           inset: '2px',
@@ -143,7 +138,6 @@ const SVGA_OfficialTag = React.memo(() => (
           textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
         }}>
           U
-          {/* Letter top shine */}
           <span style={{
             position: 'absolute',
             inset: 0,
@@ -156,7 +150,6 @@ const SVGA_OfficialTag = React.memo(() => (
         </span>
       </div>
 
-      {/* Official Text */}
       <span className="relative z-10" style={{
         fontFamily: "Georgia, 'Times New Roman', Times, serif",
         fontWeight: 900,
@@ -172,7 +165,6 @@ const SVGA_OfficialTag = React.memo(() => (
         textShadow: '0 1px 0 #fff7c8, 0 1.5px 0 #d9a43a, 0 2px 1.5px rgba(90,42,0,0.6), 0 2.5px 2px rgba(0,0,0,0.7)'
       }}>
         Official
-        {/* Text top shine */}
         <span style={{
           position: 'absolute',
           inset: 0,
@@ -187,7 +179,6 @@ const SVGA_OfficialTag = React.memo(() => (
   </div>
 ));
 SVGA_OfficialTag.displayName = 'SVGA_OfficialTag';
-// ✅ OFFICIAL TAG CHANGE ENDS HERE - BAKI SAB EXACTLY SAME HAI
 
 const SVGA_SellerTag = React.memo(() => (
   <div className="relative inline-flex items-center h-[18px] rounded-full bg-gradient-to-r from-[#FFAE00] via-[#FFC300] to-[#FF9500] shadow-[0_2px_8px_rgba(255,149,0,0.3),inset_0_1px_2px_rgba(255,255,255,0.7)] px-2 border border-[#FFE1A8] ml-1 overflow-hidden">
@@ -709,188 +700,27 @@ const SVGA_OfficialUser = React.memo(({ className }: { className?: string }) => 
 SVGA_OfficialUser.displayName = 'SVGA_OfficialUser';
 
 // ============================================================
-// ⚡ CANVAS FRAME OVERLAY COMPONENT - BLACK PIXELS HATAO ⚡
+// 🔥 BLACK PIXEL REMOVE LOGIC - YAHI ADD KIYA HAI
 // ============================================================
-const FrameOverlayCanvas = ({ 
-  frameUrl, 
-  isVideo = false,
-  containerSize = 96 
-}: { 
-  frameUrl: string; 
-  isVideo?: boolean;
-  containerSize?: number;
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
-
-  // ============================================
-  // 🔥 BLACK PIXEL REMOVE LOGIC - YAHI HAI BHAI
-  // ============================================
-  const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
+const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+  if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
+  
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
     
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      if (r < 30 && g < 30 && b < 30) {
-        data[i + 3] = 0;
-      }
+    if (r < 30 && g < 30 && b < 30) {
+      data[i + 3] = 0;
     }
-    
-    ctx.putImageData(imageData, 0, 0);
-  };
-  // ============================================
-  // 🔥 BLACK PIXEL REMOVE LOGIC KHATAM
-  // ============================================
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { 
-      alpha: true,
-      willReadFrequently: true
-    });
-    
-    if (!ctx) return;
-
-    if (isVideo) {
-      const video = document.createElement('video');
-      videoRef.current = video;
-      video.src = frameUrl;
-      video.autoplay = true;
-      video.loop = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.crossOrigin = 'anonymous';
-      video.preload = 'auto';
-
-      video.addEventListener('loadedmetadata', () => setIsFrameLoaded(true));
-      video.addEventListener('loadeddata', () => setIsFrameLoaded(true));
-      video.play().catch(console.error);
-
-      return () => {
-        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-        if (videoRef.current) {
-          videoRef.current.pause();
-          videoRef.current.remove();
-          videoRef.current = null;
-        }
-      };
-    } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = frameUrl;
-      img.onload = () => setIsFrameLoaded(true);
-    }
-
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-    };
-  }, [frameUrl, isVideo]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !isFrameLoaded) return;
-
-    const ctx = canvas.getContext('2d', { 
-      alpha: true,
-      willReadFrequently: true
-    });
-    
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    
-    const canvasWidth = containerSize;
-    const canvasHeight = containerSize;
-    
-    canvas.width = Math.round(canvasWidth * dpr);
-    canvas.height = Math.round(canvasHeight * dpr);
-    
-    canvas.style.width = Math.round(canvasWidth) + 'px';
-    canvas.style.height = Math.round(canvasHeight) + 'px';
-    
-    ctx.scale(dpr, dpr);
-
-    if (isVideo && videoRef.current) {
-      const drawFrame = () => {
-        if (!ctx || !canvas || videoRef.current!.readyState < 2) {
-          animationFrameRef.current = requestAnimationFrame(drawFrame);
-          return;
-        }
-        
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        
-        const videoRatio = videoRef.current!.videoWidth / videoRef.current!.videoHeight;
-        let sx = 0, sy = 0, sWidth = videoRef.current!.videoWidth, sHeight = videoRef.current!.videoHeight;
-        
-        if (videoRatio > 1) {
-          sWidth = sHeight;
-          sx = (videoRef.current!.videoWidth - sWidth) / 2;
-        } else if (videoRatio < 1) {
-          sHeight = sWidth;
-          sy = (videoRef.current!.videoHeight - sHeight) / 2;
-        }
-        
-        ctx.drawImage(videoRef.current!, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
-        
-        // 🔥 BLACK PIXELS HATAO (har frame pe video ke liye)
-        removeBlackPixels(ctx, canvas.width, canvas.height);
-        
-        animationFrameRef.current = requestAnimationFrame(drawFrame);
-      };
-      
-      drawFrame();
-    } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = frameUrl;
-
-      img.onload = () => {
-        if (!ctx || !canvas) return;
-        
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        const imgRatio = img.naturalWidth / img.naturalHeight;
-        let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
-        
-        if (imgRatio > 1) {
-          sWidth = sHeight;
-          sx = (img.naturalWidth - sWidth) / 2;
-        } else if (imgRatio < 1) {
-          sHeight = sWidth;
-          sy = (img.naturalHeight - sHeight) / 2;
-        }
-        
-        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
-        
-        // 🔥 BLACK PIXELS HATAO (sirf ek baar image ke liye)
-        removeBlackPixels(ctx, canvas.width, canvas.height);
-      };
-    }
-  }, [containerSize, frameUrl, isVideo, isFrameLoaded]);
-
-  return (
-    <canvas 
-      ref={canvasRef}
-      className="absolute inset-0 z-10 pointer-events-none m-auto"
-      style={{ 
-        maxWidth: containerSize + 'px',
-        maxHeight: containerSize + 'px'
-      }}
-    />
-  );
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
 };
+// ============================================================
 
 // ============================================================
 // ⚡ HELPER FUNCTIONS & CONSTANTS ⚡
@@ -971,56 +801,6 @@ const ProfileMenuItem = React.memo(({ icon: Icon, label, extra, iconColor, onCli
   </button>
 ));
 ProfileMenuItem.displayName = 'ProfileMenuItem';
-
-// ============================================================
-// ⚡ AVATAR WITH CANVAS FRAME COMPONENT ⚡
-// ============================================================
-const AvatarWithCanvasFrame = React.memo(({ 
-  profile, 
-  onAvatarClick 
-}: { 
-  profile: any; 
-  onAvatarClick: () => void;
-}) => {
-  const activeFrameMediaUrl = useMemo(() => {
-    const inv = profile?.inventory as any;
-    if (!inv?.activeFrameMediaUrl) return null;
-    return inv.activeFrameMediaUrl;
-  }, [profile?.inventory]);
-
-  const isFrameVideo = useMemo(() => {
-    if (!activeFrameMediaUrl) return false;
-    const lower = activeFrameMediaUrl.toLowerCase();
-    return lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('video') || lower.includes('m3u8');
-  }, [activeFrameMediaUrl]);
-
-  return (
-    <div onClick={onAvatarClick} className="shrink-0 cursor-pointer active:scale-95 transition-transform relative" style={{ marginLeft: '-6px' }}>
-      <div className="relative inline-block">
-        <AvatarFrame 
-          frameId={profile.inventory?.activeFrame} 
-          frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
-          size="xl"
-        >
-          <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
-            <AvatarImage src={profile.avatarUrl} className="object-cover" />
-            <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-          </Avatar>
-        </AvatarFrame>
-
-        {/* 🔥 CANVAS FRAME OVERLAY - BLACK PIXELS HATAO */}
-        {activeFrameMediaUrl && (
-          <FrameOverlayCanvas 
-            frameUrl={activeFrameMediaUrl} 
-            isVideo={isFrameVideo}
-            containerSize={88}
-          />
-        )}
-      </div>
-    </div>
-  );
-});
-AvatarWithCanvasFrame.displayName = 'AvatarWithCanvasFrame';
 
 // ============================================================
 // ⚡ MEDAL MODAL ⚡
@@ -1387,6 +1167,12 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
+  const activeFrameMediaUrl = useMemo(() => {
+    const inv = profile?.inventory as any;
+    if (!inv?.activeFrameMediaUrl) return null;
+    return inv.activeFrameMediaUrl;
+  }, [profile?.inventory]);
+
   const handleBagClick = () => {
     router.push('/store?filter=purchased');
   };
@@ -1439,11 +1225,18 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* 🔥 AVATAR + CANVAS FRAME OVERLAY - BLACK PIXELS HATAO */}
-              <AvatarWithCanvasFrame 
-                profile={profile} 
-                onAvatarClick={() => setFullViewOpen(true)} 
-              />
+              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
+                  <AvatarFrame 
+                    frameId={profile.inventory?.activeFrame} 
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  >
+                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </AvatarFrame>
+              </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h2 className="text-[22px] font-bold text-slate-800 tracking-tighter leading-none truncate">{profile.username}</h2>
