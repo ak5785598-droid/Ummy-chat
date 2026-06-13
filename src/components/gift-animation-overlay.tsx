@@ -459,10 +459,10 @@ export function GiftAnimationOverlay({
     animationFrameRef.current = requestAnimationFrame(processBlackFade);
   };
 
-  // Skip canvas processing for normal-tier gifts to save CPU
+  // Always use canvas processing for ALL gifts to properly remove black backgrounds
   useEffect(() => {
     if (activeGift && videoUrl && isVideoReady) {
-      setUseCanvasProcessing(tier === 'epic' || tier === 'legendary');
+      setUseCanvasProcessing(true);
     }
   }, [activeGift, videoUrl, isVideoReady, tier]);
 
