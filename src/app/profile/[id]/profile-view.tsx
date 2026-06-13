@@ -426,7 +426,7 @@ const DirectMedia = ({
 };
 
 // ============================================================
-// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME OVERLAP KAREGA, AVATAR NAHI HILEGA ⚡
+// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME SIZE BADA, OVERLAP KAREGA ⚡
 // ============================================================
 const AvatarFrameWithBlackRemover = React.memo(({ 
   frameId, 
@@ -439,16 +439,15 @@ const AvatarFrameWithBlackRemover = React.memo(({
   size?: 'xl' | 'lg' | 'md'; 
   children: React.ReactNode 
 }) => {
-  // Frame size avatar se thoda bada taaki overlap acha dikhe
+  // CHANGE 1: Frame size bohot bada kar diya - 160px
   const sizeMap = {
-    xl: { frame: 'h-[120px] w-[120px]' },
-    lg: { frame: 'h-[108px] w-[108px]' },
-    md: { frame: 'h-[90px] w-[90px]' },
+    xl: { frame: 'h-[160px] w-[160px]' },
+    lg: { frame: 'h-[140px] w-[140px]' },
+    md: { frame: 'h-[120px] w-[120px]' },
   };
   
   const s = sizeMap[size] || sizeMap.xl;
 
-  // Agar frame media nahi hai toh normal AvatarFrame use karo
   if (!frameMediaUrl) {
     return (
       <AvatarFrame frameId={frameId} frameMediaUrl={null} size={size}>
@@ -457,21 +456,16 @@ const AvatarFrameWithBlackRemover = React.memo(({
     );
   }
 
-  const isVideo = frameMediaUrl && (
-    frameMediaUrl.includes('.mp4') || 
-    frameMediaUrl.includes('video') || 
-    frameMediaUrl.includes('.webm') || 
-    frameMediaUrl.includes('.mov')
-  );
+  const isVideo = frameMediaUrl && (frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('video') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov'));
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      {/* Avatar apni jagah fixed, koi shift nahi */}
-      <div className="relative z-10">
+      {/* Avatar center mein */}
+      <div className="z-10">
         {children}
       </div>
       
-      {/* Frame avatar ke upar overlap, bilkul center mein, black remove hoga */}
+      {/* Frame upar overlap karega, center aligned */}
       <div 
         className="absolute pointer-events-none z-20 flex items-center justify-center"
         style={{ 
@@ -1630,7 +1624,7 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* ✅ FRAME AVATAR KE UPAR OVERLAP KAREGA, BLACK REMOVE HOGA, AVATAR LEFT SHIFT NAHI HOGA */}
+              {/* CHANGE 2: marginLeft hata diya - ab avatar left shift nahi hoga */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform">
                   <AvatarFrameWithBlackRemover 
                     frameId={profile.inventory?.activeFrame} 
@@ -1804,4 +1798,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-}
+           }
