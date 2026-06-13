@@ -1154,10 +1154,25 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
+  // ⚡ YAHI CHANGE KIYA HAI - Active frame media URL ke liye smart black removal ⚡
   const activeFrameMediaUrl = useMemo(() => {
     const inv = profile?.inventory as any;
     if (!inv?.activeFrameMediaUrl) return null;
-    return inv.activeFrameMediaUrl;
+    
+    // CANVA wale parameter ko remove karo aur smart black removal add karo
+    let url = inv.activeFrameMediaUrl;
+    
+    // Agar URL mein 'canva' parameter hai toh usse saaf karo
+    try {
+      const urlObj = new URL(url);
+      urlObj.searchParams.delete('canva');
+      url = urlObj.toString();
+    } catch (e) {
+      // Agar URL parse nahi ho raha toh direct string replace
+      url = url.replace(/[?&]canva=[^&]*/g, '');
+    }
+    
+    return url;
   }, [profile?.inventory]);
 
   const handleBagClick = () => {
@@ -1213,9 +1228,10 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
+                  {/* ⚡ YAHI PAR BHI SMART BLACK REMOVAL APPLY HOGA ⚡ */}
                   <AvatarFrame 
                     frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    frameMediaUrl={activeFrameMediaUrl}
                     size="xl"
                   >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
@@ -1385,4 +1401,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-          }
+    }
