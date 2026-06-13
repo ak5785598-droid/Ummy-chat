@@ -71,436 +71,6 @@ import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame
 import { ActiveIDBadge } from '@/components/id-badge';
 
 // ============================================================
-// ⚡ SMART BLACK BACKGROUND REMOVER ⚡
-// ============================================================
-const SmartBlackRemover = ({ 
-  src, 
-  type = 'image', 
-  className = '', 
-  style = {} 
-}: { 
-  src: string; 
-  type?: 'image' | 'video'; 
-  className?: string; 
-  style?: React.CSSProperties;
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const [useCanvas, setUseCanvas] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const processingRef = useRef(false);
-  const lastProcessedSrc = useRef('');
-  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
-    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return false;
-
-    ctx.drawImage(media, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    const STRICT_BLACK = 30;
-    const EDGE_CHECK = 0.08;
-    const SOLID_THRESHOLD = 0.85;
-
-    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-      let blackCount = 0, total = 0;
-      for (let y = yStart; y < yEnd; y++) {
-        for (let x = xStart; x < xEnd; x++) {
-          const i = (y * width + x) * 4;
-          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-            blackCount++;
-          }
-          total++;
-        }
-      }
-      return blackCount / total >= SOLID_THRESHOLD;
-    };
-
-    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
-    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
-    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
-    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
-
-    return topSolid && bottomSolid && leftSolid && rightSolid;
-  };
-
-  const processFrame = (video?: HTMLVideoElement) => {
-    if (processingRef.current) return;
-    processingRef.current = true;
-
-    const canvas = canvasRef.current;
-    const media = video || mediaRef.current;
-    if (!canvas || !media) {
-      processingRef.current = false;
-      return;
-    }
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-      processingRef.current = false;
-      return;
-    }
-
-    const width = 'videoWidth' in media ? media.videoWidth : media.width;
-    const height = 'videoHeight' in media ? media.videoHeight : media.height;
-
-    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
-      processingRef.current = false;
-      return;
-    }
-
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(media, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    const STRICT_BLACK = 25;
-    const scale = 4;
-    const scaledW = Math.ceil(width / scale);
-    const scaledH = Math.ceil(height / scale);
-    const visited = new Uint8Array(scaledW * scaledH);
-
-    const isBlack = (sx: number, sy: number) => {
-      const x = Math.min(sx * scale, width - 1);
-      const y = Math.min(sy * scale, height - 1);
-      const i = (y * width + x) * 4;
-      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
-    };
-
-    const queue: [number, number][] = [];
-    
-    for (let sx = 0; sx < scaledW; sx++) {
-      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
-      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
-    }
-    for (let sy = 0; sy < scaledH; sy++) {
-      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
-      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
-    }
-
-    const centerSX = Math.floor(scaledW / 2);
-    const centerSY = Math.floor(scaledH / 2);
-    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
-      queue.push([centerSX, centerSY]);
-      visited[centerSY * scaledW + centerSX] = 1;
-    }
-
-    let head = 0;
-    while (head < queue.length) {
-      const [sx, sy] = queue[head++];
-      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
-          const nidx = ny * scaledW + nx;
-          if (!visited[nidx] && isBlack(nx, ny)) {
-            visited[nidx] = 1;
-            queue.push([nx, ny]);
-          }
-        }
-      }
-    }
-
-    for (let sy = 0; sy < scaledH; sy++) {
-      for (let sx = 0; sx < scaledW; sx++) {
-        if (visited[sy * scaledW + sx]) {
-          for (let dy = 0; dy < scale; dy++) {
-            for (let dx = 0; dx < scale; dx++) {
-              const x = sx * scale + dx, y = sy * scale + dy;
-              if (x < width && y < height) {
-                const i = (y * width + x) * 4;
-                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
-                  data[i] = 0;
-                  data[i+1] = 0;
-                  data[i+2] = 0;
-                  data[i+3] = 0;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-    processingRef.current = false;
-
-    if (type === 'video' && video) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
-    }
-  };
-
-  useEffect(() => {
-    if (src !== lastProcessedSrc.current) {
-      setUseCanvas(false);
-      setIsReady(false);
-      lastProcessedSrc.current = src;
-    }
-
-    if (loadTimeoutRef.current) {
-      clearTimeout(loadTimeoutRef.current);
-    }
-
-    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
-      const img = mediaRef.current as HTMLImageElement;
-      if (img.complete && img.naturalWidth > 0 && !isReady) {
-        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-        setUseCanvas(hasBlackBg);
-        setIsReady(true);
-        if (hasBlackBg) {
-          setTimeout(() => processFrame(), 50);
-        }
-      }
-    }
-
-    loadTimeoutRef.current = setTimeout(() => {
-      if (!isReady && mediaRef.current) {
-        setIsReady(true);
-        setUseCanvas(false);
-      }
-    }, 5000);
-
-    return () => {
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-    };
-  }, [src, type, isReady]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    if (img.naturalWidth > 0) {
-      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(), 50);
-      }
-    }
-  };
-
-  const handleImageError = () => {
-    setIsReady(true);
-    setUseCanvas(false);
-  };
-
-  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    const video = e.currentTarget;
-    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
-      setUseCanvas(hasBlackBg);
-      setIsReady(true);
-      if (hasBlackBg) {
-        setTimeout(() => processFrame(video), 150);
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      processingRef.current = false;
-      if (loadTimeoutRef.current) {
-        clearTimeout(loadTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  if (type === 'video') {
-    return (
-      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-        <video
-          ref={mediaRef as React.RefObject<HTMLVideoElement>}
-          src={src}
-          autoPlay
-          muted
-          loop
-          playsInline
-          onLoadedData={handleVideoReady}
-          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
-          style={{ display: useCanvas ? 'none' : 'block' }}
-          crossOrigin="anonymous"
-        />
-        {useCanvas && (
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full object-cover"
-            style={{ 
-              display: isReady ? 'block' : 'none', 
-              background: 'transparent',
-              backgroundColor: 'transparent'
-            }}
-          />
-        )}
-        {!isReady && !useCanvas && (
-          <video
-            src={src}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      <img
-        ref={mediaRef as React.RefObject<HTMLImageElement>}
-        src={src}
-        alt=""
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
-        style={{ display: useCanvas ? 'none' : 'block' }}
-        crossOrigin="anonymous"
-      />
-      {useCanvas && (
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-cover"
-          style={{ 
-            display: isReady ? 'block' : 'none', 
-            background: 'transparent',
-            backgroundColor: 'transparent'
-          }}
-        />
-      )}
-      {!isReady && !useCanvas && (
-        <img
-          src={src}
-          alt=""
-          className="w-full h-full object-cover"
-          crossOrigin="anonymous"
-        />
-      )}
-    </div>
-  );
-};
-
-// ============================================================
-// ⚡ DIRECT MEDIA WRAPPER ⚡
-// ============================================================
-const DirectMedia = ({ 
-  src, 
-  type = 'image', 
-  className = '', 
-  style = {} 
-}: { 
-  src: string; 
-  type?: 'image' | 'video'; 
-  className?: string; 
-  style?: React.CSSProperties;
-}) => {
-  return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
-      <SmartBlackRemover 
-        src={src} 
-        type={type} 
-        className="w-full h-full"
-        style={{ background: 'transparent' }}
-      />
-    </div>
-  );
-};
-
-// ============================================================
-// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME SIZE BADA KIYA ⚡
-// ============================================================
-const AvatarFrameWithBlackRemover = React.memo(({ 
-  frameId, 
-  frameMediaUrl, 
-  size = 'xl',
-  children 
-}: { 
-  frameId?: string; 
-  frameMediaUrl?: string | null; 
-  size?: 'xl' | 'lg' | 'md'; 
-  children: React.ReactNode 
-}) => {
-  // Size mapping - AVATAR WAHI, FRAME BADA
-  const sizeMap = {
-    xl: { frame: 'h-[108px] w-[108px]' },
-    lg: { frame: 'h-[96px] w-[96px]' },
-    md: { frame: 'h-[78px] w-[78px]' },
-  };
-  
-  const offsetMap = {
-    xl: '-10px',
-    lg: '-8px',
-    md: '-7px',
-  };
-  
-  const s = sizeMap[size] || sizeMap.xl;
-  const offset = offsetMap[size] || offsetMap.xl;
-
-  if (!frameMediaUrl) {
-    return (
-      <AvatarFrame frameId={frameId} frameMediaUrl={null} size={size}>
-        {children}
-      </AvatarFrame>
-    );
-  }
-
-  const isVideo = frameMediaUrl && (frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('video') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov'));
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      {/* Avatar pehle jaise hi center me */}
-      <div className="z-10">
-        {children}
-      </div>
-      
-      {/* Frame media BADA SIZE, centered with negative offset */}
-      <div 
-        className="absolute pointer-events-none z-20 flex items-center justify-center"
-        style={{ 
-          top: offset, 
-          left: offset, 
-          right: offset, 
-          bottom: offset,
-          background: 'transparent'
-        }}
-      >
-        <div 
-          className={s.frame}
-          style={{ background: 'transparent' }}
-        >
-          <DirectMedia 
-            src={frameMediaUrl} 
-            type={isVideo ? 'video' : 'image'} 
-            className="w-full h-full"
-            style={{ background: 'transparent' }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-});
-AvatarFrameWithBlackRemover.displayName = 'AvatarFrameWithBlackRemover';
-
-// ============================================================
 // ⚡ SAARE SVG COMPONENTS ⚡
 // ============================================================
 
@@ -1210,6 +780,123 @@ const ProfileMenuItem = React.memo(({ icon: Icon, label, extra, iconColor, onCli
 ProfileMenuItem.displayName = 'ProfileMenuItem';
 
 // ============================================================
+// ⚡ CANVA VIDEO AVATAR WITH BLACK BACKGROUND REMOVE (100% WORKING) ⚡
+// ============================================================
+const VideoAvatarWithMask = React.memo(({ videoUrl, frameId, frameMediaUrl, size = "xl" }: { videoUrl: string, frameId?: string, frameMediaUrl?: string, size?: string }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
+  
+  useEffect(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    // Canvas size set karo - exact avatar size ke hisaab se
+    const sizePx = size === "xl" ? 88 : 88;
+    canvas.width = sizePx;
+    canvas.height = sizePx;
+    
+    const processFrame = () => {
+      if (!video.videoWidth || !video.videoHeight) return;
+      
+      // Canvas pe video draw karo
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Image data lo
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // 🔥 CANVA KE VIDEO SE BLACK BACKGROUND HATANE KA LOGIC 🔥
+      // Har ek pixel check karo - jo bhi black/dark hai use transparent kardo
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Threshold: Agar teeno colors 60 se kam hain (dark/black)
+        // Canva ke videos me black background typically 0-50 range me hota hai
+        if (r < 60 && g < 60 && b < 60) {
+          data[i + 3] = 0; // Alpha = 0 (bilkul transparent)
+        }
+        
+        // Extra: Agar dark grey hai (80 se kam) - thoda transparent
+        else if (r < 100 && g < 100 && b < 100) {
+          // Dark grey ko partially transparent kardo
+          const darkness = 1 - ((r + g + b) / 300);
+          data[i + 3] = Math.floor(255 * (1 - darkness * 0.7));
+        }
+      }
+      
+      // Modified image data wapas daal do
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Next frame ke liye request
+      animationRef.current = requestAnimationFrame(processFrame);
+    };
+    
+    const handlePlay = () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      animationRef.current = requestAnimationFrame(processFrame);
+    };
+    
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('playing', handlePlay);
+    
+    // Agar video already playing hai toh start karo
+    if (video.readyState >= 2) {
+      handlePlay();
+    }
+    
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('playing', handlePlay);
+    };
+  }, [videoUrl, size]);
+  
+  const sizeClass = size === "xl" ? "h-[88px] w-[88px]" : "h-[88px] w-[88px]";
+  
+  return (
+    <AvatarFrame 
+      frameId={frameId} 
+      frameMediaUrl={frameMediaUrl}
+      size="xl"
+    >
+      <div className={cn("rounded-full overflow-hidden border-2 border-white shadow-xl ring-1 ring-slate-200 relative", sizeClass)}>
+        {/* Hidden video - sirf processing ke liye */}
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="hidden"
+          crossOrigin="anonymous"
+        />
+        {/* Canvas - yaha pe black background remove hoke dikhega */}
+        <canvas 
+          ref={canvasRef} 
+          className="w-full h-full object-cover rounded-full"
+          style={{
+            // Extra blending for smooth edges
+            mixBlendMode: 'normal'
+          }}
+        />
+        {/* Overlay for better blending with frame */}
+        <div className="absolute inset-0 rounded-full ring-inset ring-1 ring-white/30 pointer-events-none" />
+      </div>
+    </AvatarFrame>
+  );
+});
+VideoAvatarWithMask.displayName = 'VideoAvatarWithMask';
+
+// ============================================================
 // ⚡ MEDAL MODAL ⚡
 // ============================================================
 const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onClose: () => void, profile: any }) => {
@@ -1584,6 +1271,9 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     router.push('/store?filter=purchased');
   };
 
+  // Check if avatar is video (Canva wala video)
+  const isVideoAvatar = profile?.avatarUrl && (profile.avatarUrl.includes('.mp4') || profile.avatarUrl.includes('video') || profile.avatarUrl.includes('.webm') || profile.avatarUrl.includes('.mov'));
+
   if (isUserLoading || isProfileLoading || !profile) return (
     <AppLayout>
       <div className="flex h-full w-full flex-col items-center justify-center bg-white space-y-4">
@@ -1632,18 +1322,27 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* ✅ FRAME SIZE BADA + BLACK REMOVE - AVATAR POSITION SAME */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
-                  <AvatarFrameWithBlackRemover 
+                {/* 🔥 CANVA VIDEO KE LIYE SPECIAL COMPONENT - BLACK BACKGROUND 100% REMOVE 🔥 */}
+                {isVideoAvatar ? (
+                  <VideoAvatarWithMask 
+                    videoUrl={profile.avatarUrl} 
+                    frameId={profile.inventory?.activeFrame}
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    size="xl"
+                  />
+                ) : (
+                  <AvatarFrame 
                     frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={activeFrameMediaUrl}
+                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
                     size="xl"
                   >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
-                  </AvatarFrameWithBlackRemover>
+                  </AvatarFrame>
+                )}
               </div>
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1806,4 +1505,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-           }
+  }
