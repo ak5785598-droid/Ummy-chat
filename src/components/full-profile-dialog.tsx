@@ -294,7 +294,7 @@ const SmartBlackRemover = ({
 
   if (type === 'video') {
     return (
-      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent', backgroundColor: 'transparent' }}>
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -334,7 +334,7 @@ const SmartBlackRemover = ({
   }
 
   return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent', backgroundColor: 'transparent' }}>
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
@@ -383,34 +383,34 @@ const DirectMedia = ({
   style?: React.CSSProperties;
 }) => {
   return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent', backgroundColor: 'transparent' }}>
       <SmartBlackRemover 
         src={src} 
         type={type} 
         className="w-full h-full"
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', backgroundColor: 'transparent' }}
       />
     </div>
   );
 };
 
 // ============================================================
-// ⚡ LEVEL BADGE WITH BLACK REMOVER - NICHE + CHOTA ⚡
+// ⚡ LEVEL BADGE WITH BLACK REMOVER - NICHE + CHOTA + RIGHT + UPAR ⚡
 // ============================================================
 const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: string | null }) => {
   if (imageUrl) {
     const isVideo = imageUrl.includes('.mp4') || imageUrl.includes('video') || imageUrl.includes('.webm');
     return (
       <div className={cn("relative inline-flex items-center justify-center shrink-0", level < 1 && "grayscale opacity-75")} style={{ width: '60px', height: '30px' }}>
-        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'transparent' }}>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'transparent', backgroundColor: 'transparent' }}>
           <DirectMedia 
             src={imageUrl} 
             type={isVideo ? 'video' : 'image'} 
             className="w-full h-full"
-            style={{ background: 'transparent' }}
+            style={{ background: 'transparent', backgroundColor: 'transparent' }}
           />
         </div>
-        <span className="relative z-10 text-[10px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)', marginTop: '4px', marginLeft: '1px' }}>
+        <span className="relative z-10 text-[7px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ WebkitTextStroke: '0.4px rgba(0,0,0,0.5)', marginTop: '2px', marginLeft: '6px' }}>
           Lv.{level}
         </span>
       </div>
@@ -797,14 +797,14 @@ const getDeterministicFallbackId = (userId: string) => {
 // ==========================================
 // VIDEO FRAME COMPONENT WITH BLACK REMOVER
 // ==========================================
-const VideoFrame = ({ videoUrl }: { videoUrl: string }) => {
+const VideoFrame = ({ videoUrl, className = '' }: { videoUrl: string; className?: string }) => {
   return (
-    <div className="relative w-full h-full bg-transparent">
-      <DirectMedia 
+    <div className={cn("relative w-full h-full", className)} style={{ background: 'transparent', backgroundColor: 'transparent' }}>
+      <SmartBlackRemover 
         src={videoUrl} 
         type="video" 
         className="absolute inset-0 w-full h-full"
-        style={{ background: 'transparent' }}
+        style={{ background: 'transparent', backgroundColor: 'transparent' }}
       />
     </div>
   );
@@ -1090,7 +1090,6 @@ export function FullProfileDialog({
   const hasOfficialTag = profile.isOfficial || profile.tags?.includes('Official');
   const isSeller = profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t));
 
-  // ✅ Background carousel images - VIDEO KE LIYE BHI BLACK REMOVE
   const resolvedBackground = useMemo(() => {
     if (images.filter(Boolean).length > 0) {
       const firstImage = images[0];
@@ -1113,17 +1112,31 @@ export function FullProfileDialog({
       <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white p-0 border-none m-0 rounded-none z-[150] overflow-hidden">
         <div className="w-full h-full overflow-y-auto no-scrollbar relative flex flex-col font-outfit">
 
-          {/* ✅ Top Section - Background WITH BLACK REMOVER FOR VIDEO */}
+          {/* Top Section - Background */}
           <div className="relative h-[35vh] w-full shrink-0 bg-slate-900 overflow-hidden">
             {resolvedBackground.type === 'video' ? (
-              <VideoFrame videoUrl={resolvedBackground.data as string} />
+              <div className="h-full w-full relative" style={{ background: 'transparent', backgroundColor: 'transparent' }}>
+                <SmartBlackRemover 
+                  src={resolvedBackground.data as string} 
+                  type="video" 
+                  className="absolute inset-0 w-full h-full"
+                  style={{ background: 'transparent', backgroundColor: 'transparent' }}
+                />
+              </div>
             ) : resolvedBackground.type === 'carousel' ? (
               <Carousel setApi={setApi} className="h-full w-full" opts={{ loop: true }}>
                 <CarouselContent className="h-full ml-0">
                   {(resolvedBackground.data as string[]).map((url: string, i: number) => (
                     <CarouselItem key={i} className="h-full pl-0 basis-full">
                       {url.endsWith('.mp4') || url.endsWith('.webm') || url.includes('video') ? (
-                        <VideoFrame videoUrl={url} />
+                        <div className="h-full w-full relative" style={{ background: 'transparent', backgroundColor: 'transparent' }}>
+                          <SmartBlackRemover 
+                            src={url} 
+                            type="video" 
+                            className="absolute inset-0 w-full h-full"
+                            style={{ background: 'transparent', backgroundColor: 'transparent' }}
+                          />
+                        </div>
                       ) : (
                         <img src={url} className="h-full w-full object-cover" alt="" />
                       )}
@@ -1203,7 +1216,7 @@ export function FullProfileDialog({
           <div className="relative z-20 bg-white/98 backdrop-blur-2xl rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-white/80 min-h-[70vh]">
 
             <div className="flex flex-col items-center">
-              {/* ✅ AVATAR WITH FRAME */}
+              {/* Avatar with Frame */}
               <div className="relative -mt-10 mb-1 z-30">
                 <AvatarFrame 
                   frameId={profile.inventory?.activeFrame} 
@@ -1239,7 +1252,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* ✅ Tags - Level badge NICHE + CHOTA */}
+                {/* Tags - Level badge NICHE + CHOTA + RIGHT + UPAR */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
                   <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
                   {hasOfficialTag && <SVGA_OfficialTag />}
@@ -1448,4 +1461,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-                                }
+        }
