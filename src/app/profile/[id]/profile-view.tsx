@@ -71,9 +71,9 @@ import { CompactVideoAvatarFrame } from '@/components/compact-video-avatar-frame
 import { ActiveIDBadge } from '@/components/id-badge';
 
 // ============================================================
-// ⚡ SMART BLACK BACKGROUND REMOVER (Avatar Frame ke liye) ⚡
+// ⚡ SMART BLACK BACKGROUND REMOVER ⚡
 // ============================================================
-const SmartBlackRemover = React.memo(({ 
+const SmartBlackRemover = ({ 
   src, 
   type = 'image', 
   className = '', 
@@ -397,44 +397,97 @@ const SmartBlackRemover = React.memo(({
       )}
     </div>
   );
-});
-SmartBlackRemover.displayName = 'SmartBlackRemover';
+};
 
 // ============================================================
-// ⚡ AVATAR FRAME WITH BLACK REMOVER (Wrapper Component) ⚡
+// ⚡ DIRECT MEDIA WRAPPER ⚡
+// ============================================================
+const DirectMedia = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <SmartBlackRemover 
+        src={src} 
+        type={type} 
+        className="w-full h-full"
+        style={{ background: 'transparent' }}
+      />
+    </div>
+  );
+};
+
+// ============================================================
+// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME SIZE BADA KIYA ⚡
 // ============================================================
 const AvatarFrameWithBlackRemover = React.memo(({ 
   frameId, 
   frameMediaUrl, 
-  size, 
+  size = 'xl',
   children 
 }: { 
-  frameId: string | undefined; 
-  frameMediaUrl: string | undefined; 
-  size: string; 
-  children: React.ReactNode;
+  frameId?: string; 
+  frameMediaUrl?: string | null; 
+  size?: 'xl' | 'lg' | 'md'; 
+  children: React.ReactNode 
 }) => {
-  // Agar frameMediaUrl hai toh SmartBlackRemover use karo, nahi toh normal AvatarFrame
-  if (frameMediaUrl) {
-    const isVideo = frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov') || frameMediaUrl.includes('video');
-    
+  // Size mapping - AVATAR WAHI, FRAME BADA
+  const sizeMap = {
+    xl: { frame: 'h-[108px] w-[108px]' },
+    lg: { frame: 'h-[96px] w-[96px]' },
+    md: { frame: 'h-[78px] w-[78px]' },
+  };
+  
+  const offsetMap = {
+    xl: '-10px',
+    lg: '-8px',
+    md: '-7px',
+  };
+  
+  const s = sizeMap[size] || sizeMap.xl;
+  const offset = offsetMap[size] || offsetMap.xl;
+
+  if (!frameMediaUrl) {
     return (
-      <div className="relative inline-block" style={{ background: 'transparent' }}>
-        {/* Avatar pehle render karo */}
-        <div className="relative z-10">
-          {children}
-        </div>
-        {/* Frame ko overlay ki tarah upar lagao with black remover */}
+      <AvatarFrame frameId={frameId} frameMediaUrl={null} size={size}>
+        {children}
+      </AvatarFrame>
+    );
+  }
+
+  const isVideo = frameMediaUrl && (frameMediaUrl.includes('.mp4') || frameMediaUrl.includes('video') || frameMediaUrl.includes('.webm') || frameMediaUrl.includes('.mov'));
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      {/* Avatar pehle jaise hi center me */}
+      <div className="z-10">
+        {children}
+      </div>
+      
+      {/* Frame media BADA SIZE, centered with negative offset */}
+      <div 
+        className="absolute pointer-events-none z-20 flex items-center justify-center"
+        style={{ 
+          top: offset, 
+          left: offset, 
+          right: offset, 
+          bottom: offset,
+          background: 'transparent'
+        }}
+      >
         <div 
-          className="absolute inset-0 z-20 pointer-events-none" 
-          style={{ 
-            background: 'transparent',
-            // Frame ko avatar se thoda bada karo taaki overlap ho
-            transform: 'scale(1.35)',
-            transformOrigin: 'center center'
-          }}
+          className={s.frame}
+          style={{ background: 'transparent' }}
         >
-          <SmartBlackRemover 
+          <DirectMedia 
             src={frameMediaUrl} 
             type={isVideo ? 'video' : 'image'} 
             className="w-full h-full"
@@ -442,14 +495,7 @@ const AvatarFrameWithBlackRemover = React.memo(({
           />
         </div>
       </div>
-    );
-  }
-  
-  // Agar frameMediaUrl nahi hai toh normal AvatarFrame
-  return (
-    <AvatarFrame frameId={frameId} frameMediaUrl={frameMediaUrl} size={size}>
-      {children}
-    </AvatarFrame>
+    </div>
   );
 });
 AvatarFrameWithBlackRemover.displayName = 'AvatarFrameWithBlackRemover';
@@ -468,6 +514,7 @@ const SVGA_OfficialTag = React.memo(() => (
       boxShadow: 'inset 0 1px 2px rgba(255,200,210,0.22), inset 0 -2px 3px rgba(0,0,0,0.45)'
     }}>
       <div style={{
+        content: '""',
         position: 'absolute',
         top: '1px',
         left: '8%',
@@ -479,6 +526,7 @@ const SVGA_OfficialTag = React.memo(() => (
       }} />
       
       <div style={{
+        content: '""',
         position: 'absolute',
         left: '14%',
         right: '14%',
@@ -1584,11 +1632,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* ✅ YAHI CHANGE KIYA - AvatarFrame ki jagah AvatarFrameWithBlackRemover use karo */}
+              {/* ✅ FRAME SIZE BADA + BLACK REMOVE - AVATAR POSITION SAME */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
                   <AvatarFrameWithBlackRemover 
                     frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    frameMediaUrl={activeFrameMediaUrl}
                     size="xl"
                   >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
@@ -1758,4 +1806,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-            }
+           }
