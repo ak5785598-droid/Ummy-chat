@@ -22,12 +22,49 @@ const GoldenDollar = () => (
   </div>
 );
 
-// GIFT IMAGE COMPONENT (Without Black Border Processing - Simple)
+// GIFT IMAGE COMPONENT
 const GiftImage = ({ gift }: { gift: any }) => {
+  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const cachedUrl = useCachedMedia(gift.imageUrl);
-  
+
+  useEffect(() => {
+    if (!cachedUrl) { setProcessedUrl(null); return; }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = cachedUrl;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) { setProcessedUrl(null); return; }
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const width = canvas.width;
+      const height = canvas.height;
+      const BLACK_THRESHOLD = 45;
+      const BLACK_PIXEL_RATIO = 0.95;
+      let topBlackCount = 0;
+      for (let x = 0; x < width; x++) { const index = x * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) topBlackCount++; }
+      const isTopBlack = topBlackCount / width >= BLACK_PIXEL_RATIO;
+      let bottomBlackCount = 0;
+      for (let x = 0; x < width; x++) { const index = ((height - 1) * width + x) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) bottomBlackCount++; }
+      const isBottomBlack = bottomBlackCount / width >= BLACK_PIXEL_RATIO;
+      let leftBlackCount = 0;
+      for (let y = 0; y < height; y++) { const index = (y * width) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) leftBlackCount++; }
+      const isLeftBlack = leftBlackCount / height >= BLACK_PIXEL_RATIO;
+      let rightBlackCount = 0;
+      for (let y = 0; y < height; y++) { const index = (y * width + (width - 1)) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) rightBlackCount++; }
+      const isRightBlack = rightBlackCount / height >= BLACK_PIXEL_RATIO;
+      const hasBlackBorders = isTopBlack || isBottomBlack || isLeftBlack || isRightBlack;
+      if (hasBlackBorders) { for (let i = 0; i < data.length; i += 4) { const r = data[i]; const gVal = data[i + 1]; const b = data[i + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) { data[i + 3] = 0; } } ctx.putImageData(imageData, 0, 0); setProcessedUrl(canvas.toDataURL('image/png')); } else { setProcessedUrl(null); }
+    };
+    img.onerror = () => { setProcessedUrl(null); };
+  }, [cachedUrl]);
+
   if (!gift.imageUrl) return <span className="text-4xl">🎁</span>;
-  return <img src={cachedUrl || ''} alt={gift.name} className="h-20 w-20 rounded-xl object-contain" />;
+  return <img src={processedUrl || cachedUrl} alt={gift.name} className="h-20 w-20 rounded-xl object-contain" />;
 };
 
 const QUANTITY_OPTIONS = ['1', '10', '99', '520', '1314'];
