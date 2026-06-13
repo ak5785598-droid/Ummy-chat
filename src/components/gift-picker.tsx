@@ -22,49 +22,12 @@ const GoldenDollar = () => (
   </div>
 );
 
-// GIFT IMAGE COMPONENT
+// GIFT IMAGE COMPONENT (Without Black Border Processing - Simple)
 const GiftImage = ({ gift }: { gift: any }) => {
-  const [processedUrl, setProcessedUrl] = useState<string | null>(null);
   const cachedUrl = useCachedMedia(gift.imageUrl);
-
-  useEffect(() => {
-    if (!cachedUrl) { setProcessedUrl(null); return; }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = cachedUrl;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx || canvas.width <= 0 || canvas.height <= 0 || isNaN(canvas.width) || isNaN(canvas.height)) { setProcessedUrl(null); return; }
-      ctx.drawImage(img, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      const width = canvas.width;
-      const height = canvas.height;
-      const BLACK_THRESHOLD = 45;
-      const BLACK_PIXEL_RATIO = 0.95;
-      let topBlackCount = 0;
-      for (let x = 0; x < width; x++) { const index = x * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) topBlackCount++; }
-      const isTopBlack = topBlackCount / width >= BLACK_PIXEL_RATIO;
-      let bottomBlackCount = 0;
-      for (let x = 0; x < width; x++) { const index = ((height - 1) * width + x) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) bottomBlackCount++; }
-      const isBottomBlack = bottomBlackCount / width >= BLACK_PIXEL_RATIO;
-      let leftBlackCount = 0;
-      for (let y = 0; y < height; y++) { const index = (y * width) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) leftBlackCount++; }
-      const isLeftBlack = leftBlackCount / height >= BLACK_PIXEL_RATIO;
-      let rightBlackCount = 0;
-      for (let y = 0; y < height; y++) { const index = (y * width + (width - 1)) * 4; const r = data[index]; const gVal = data[index + 1]; const b = data[index + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) rightBlackCount++; }
-      const isRightBlack = rightBlackCount / height >= BLACK_PIXEL_RATIO;
-      const hasBlackBorders = isTopBlack || isBottomBlack || isLeftBlack || isRightBlack;
-      if (hasBlackBorders) { for (let i = 0; i < data.length; i += 4) { const r = data[i]; const gVal = data[i + 1]; const b = data[i + 2]; if (r < BLACK_THRESHOLD && gVal < BLACK_THRESHOLD && b < BLACK_THRESHOLD) { data[i + 3] = 0; } } ctx.putImageData(imageData, 0, 0); setProcessedUrl(canvas.toDataURL('image/png')); } else { setProcessedUrl(null); }
-    };
-    img.onerror = () => { setProcessedUrl(null); };
-  }, [cachedUrl]);
-
+  
   if (!gift.imageUrl) return <span className="text-4xl">🎁</span>;
-  return <img src={processedUrl || cachedUrl} alt={gift.name} className="h-20 w-20 rounded-xl object-contain" />;
+  return <img src={cachedUrl || ''} alt={gift.name} className="h-20 w-20 rounded-xl object-contain" />;
 };
 
 const QUANTITY_OPTIONS = ['1', '10', '99', '520', '1314'];
@@ -74,6 +37,47 @@ const getTodayString = () => {
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
   return istDate.toISOString().split('T')[0];
+};
+
+// ============ SMART REWARD LOGIC HELPER ============
+const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean => {
+  // Combo click count: 1 = pehla send, 2 = pehla combo, 3 = dusra combo...
+  
+  if (comboClickCount === 1) {
+    // Pehla send: Kabhi kabhi do (30% chance)
+    return Math.random() < 0.30;
+  }
+  
+  if (comboClickCount === 2) {
+    // Dusra click: Kabhi kabhi do (25% chance)
+    return Math.random() < 0.25;
+  }
+  
+  if (comboClickCount === 3 || comboClickCount === 4) {
+    // 3rd aur 4th time: Mat do
+    return false;
+  }
+  
+  if (comboClickCount >= 5 && comboClickCount <= 10) {
+    // 5 se 10 bar: Do (80% chance)
+    return Math.random() < 0.80;
+  }
+  
+  if (comboClickCount > 10) {
+    // 11+ bar: High chance (90%)
+    return Math.random() < 0.90;
+  }
+  
+  // High gift price bonus (gift price > 5000)
+  if (giftPrice > 5000) {
+    if (comboClickCount >= 3 && comboClickCount <= 6) {
+      // 3 se 6 bar tak do for high gifts (70% chance)
+      return Math.random() < 0.70;
+    }
+  }
+  
+  // Default: Kabhi kabhi bahut kam (10% chance)
+  return Math.random() < 0.10;
 };
 
 // ============ COMBO PATTI (Non-Lucky: TOP RIGHT) ============
@@ -136,7 +140,7 @@ const ComboPatti = ({
   );
 };
 
-// ============ LUCKY PATTI (LEFT side, HALF visible, NICHE position, +Amount ACCUMULATE) ============
+// ============ LUCKY PATTI (LEFT HALF, ACCUMULATE, Names visible) ============
 const LuckyPatti = ({ 
   avatarUrl, 
   username,
@@ -164,21 +168,26 @@ const LuckyPatti = ({
       <div className="relative w-[340px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden">
         <div className="absolute top-1 left-4 right-4 h-[1px] bg-white/40 rounded-full" />
         <div className="relative z-10 flex items-center gap-2 px-3 h-full">
+          {/* User Avatar */}
           <div className="shrink-0">
             <Avatar className="h-7 w-7 border border-yellow-600/30">
               <AvatarImage src={avatarUrl} />
             </Avatar>
           </div>
+          {/* Sender Name */}
           <div className="shrink-0 min-w-[40px] max-w-[55px]">
             <span className="text-[10px] font-black text-[#5C3D0E] truncate block leading-tight">{username}</span>
           </div>
+          {/* Gift Image (No black border processing) */}
           <div className="shrink-0 h-7 w-7 rounded-md bg-white/15 flex items-center justify-center overflow-hidden border border-yellow-400/20">
             {giftImageUrl ? <img src={giftImageUrl} alt="gift" className="h-5 w-5 object-contain" /> : <span className="text-sm">🎁</span>}
           </div>
+          {/* Arrow + Receiver Name */}
           <div className="flex items-center gap-1 shrink-0">
             <span className="text-[#5C3D0E] text-xs">→</span>
             <span className="text-[10px] font-black text-[#5C3D0E] truncate max-w-[55px] block leading-tight">{receiverName}</span>
           </div>
+          {/* Multiplier */}
           <div className="flex items-center justify-center min-w-[30px]">
             <motion.span 
               key={multiplier}
@@ -190,6 +199,7 @@ const LuckyPatti = ({
               x{multiplier}
             </motion.span>
           </div>
+          {/* Accumulated Win Amount */}
           <div className="shrink-0 flex items-center gap-1 bg-[#3D2000]/15 rounded-full px-2 py-0.5">
             <GoldenDollar />
             <motion.span 
@@ -321,6 +331,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     finally { setIsProcessingCustom(false); }
   };
 
+  // ============ CORE SEND LOGIC WITH SMART REWARD SYSTEM ============
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
     if (!user || !firestore || !userProfile || uids.length === 0) return null;
     const totalCost = gift.price * qty * uids.length;
@@ -331,22 +342,50 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       let winAmount = 0;
       let selectedMult = comboMultiplier;
       const isLuckyGift = gift.category === 'Lucky';
+      
       if (isLuckyGift) {
-        if (comboMultiplier <= 1) {
-          const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-          if (rand < 0.80) selectedMult = 1; else if (rand < 0.92) selectedMult = 2; else if (rand < 0.97) selectedMult = 3; else if (rand < 0.99) selectedMult = 5; else selectedMult = 10;
+        // SMART REWARD SYSTEM
+        const shouldReward = shouldGiveReward(comboMultiplier, gift.price);
+        
+        if (shouldReward) {
+          if (comboMultiplier <= 1) {
+            // Pehla send: chota multiplier
+            const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
+            if (rand < 0.85) selectedMult = 1;
+            else if (rand < 0.93) selectedMult = 2;
+            else if (rand < 0.98) selectedMult = 3;
+            else selectedMult = 5;
+          }
+          // Combo clicks: comboMultiplier jo hai wahi use hoga
+          
+          if (selectedMult > 1) {
+            const rawWin = gift.price * qty * selectedMult;
+            winAmount = Math.min(rawWin, totalCost * 2);
+          }
         }
-        if (selectedMult > 1) { const rawWin = gift.price * qty * selectedMult; winAmount = Math.min(rawWin, totalCost * 2); }
+        // Agar shouldReward false hai toh winAmount 0 hi rahega
       }
+
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
       const senderUserRef = doc(firestore, 'users', user.uid);
       const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
       const coinAdjustment = winAmount - totalCost;
       const expAdjustment = Math.floor(totalCost / 5);
-      batch.update(senderProfileRef, { 'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost), 'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost), 'wallet.lastDailyResetDate': today, updatedAt: serverTimestamp() });
-      batch.update(senderUserRef, { 'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost), 'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost), 'wallet.lastDailyResetDate': today });
+      
+      batch.update(senderProfileRef, { 
+        'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
+        'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+        'wallet.lastDailyResetDate': today, updatedAt: serverTimestamp() 
+      });
+      batch.update(senderUserRef, { 
+        'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
+        'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+        'wallet.lastDailyResetDate': today
+      });
+      
       const diamondPerRecipient = Math.floor((gift.price * qty) * 0.4);
       uids.forEach(uid => { const recProfileRef = doc(firestore, 'users', uid, 'profile', uid); batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient), 'stats.dailyGiftsReceived': increment(diamondPerRecipient) }); });
+      
       const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
       let dailyAmountVal: any = increment(totalCost);
       let weeklyAmountVal: any = increment(totalCost);
@@ -364,8 +403,10 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         }
       } catch (e) { console.warn("Supporter lazy reset check failed:", e); }
       batch.set(supporterRef, { uid: user.uid, username: userProfile.username || 'Tribe Member', avatarUrl: userProfile.avatarUrl || null, amount: increment(totalCost), dailyAmount: dailyAmountVal, weeklyAmount: weeklyAmountVal, updatedAt: serverTimestamp() }, { merge: true });
+      
       const roomRef = doc(firestore, 'chatRooms', roomId);
       batch.update(roomRef, { 'stats.totalGifts': increment(totalCost), 'stats.dailyGifts': increment(totalCost), 'rocket.progress': increment(totalCost) });
+      
       try {
         const battleRef = doc(firestore, 'chatRooms', roomId, 'features', 'giftBattle');
         const battleSnap = await getDoc(battleRef);
@@ -385,6 +426,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
           }
         }
       } catch (err) { console.warn("Failed to update Gift Battle scores:", err); }
+      
       const firstRecipientUid = uids[0];
       const recipientObj = participants.find((p: any) => p.uid === firstRecipientUid);
       const recipientSeat = recipientObj?.seatIndex || 1;
@@ -555,4 +597,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-        }
+  }
