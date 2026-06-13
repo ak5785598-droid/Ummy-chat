@@ -709,7 +709,7 @@ const SVGA_OfficialUser = React.memo(({ className }: { className?: string }) => 
 SVGA_OfficialUser.displayName = 'SVGA_OfficialUser';
 
 // ============================================================
-// ⚡ CANVAS FRAME OVERLAY COMPONENT - SQUARE ASPECT RATIO (1:1) ⚡
+// ⚡ CANVAS FRAME OVERLAY COMPONENT - BLACK PIXELS HATAO ⚡
 // ============================================================
 const FrameOverlayCanvas = ({ 
   frameUrl, 
@@ -729,48 +729,39 @@ const FrameOverlayCanvas = ({
   // 🔥 BLACK PIXEL REMOVE LOGIC - YAHI HAI BHAI
   // ============================================
   const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    // Safety check - agar width/height invalid hai toh return
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
     
-    // Canvas ka pixel data nikaalo
     const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data; // Yeh Uint8ClampedArray hai [R,G,B,A, R,G,B,A, ...]
+    const data = imageData.data;
     
-    // Har pixel check karo (4 bytes per pixel: R, G, B, A)
     for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];     // Red (0-255)
-      const g = data[i + 1]; // Green (0-255)
-      const b = data[i + 2]; // Blue (0-255)
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
       
-      // Agar pixel kaafi dark hai (black ke close)
-      // R < 30 AND G < 30 AND B < 30 = almost black
       if (r < 30 && g < 30 && b < 30) {
-        data[i + 3] = 0; // Alpha = 0 (fully transparent)
-        // Isse black pixels invisible ho jayenge
+        data[i + 3] = 0;
       }
     }
     
-    // Modified pixel data wapas canvas pe daalo
     ctx.putImageData(imageData, 0, 0);
   };
   // ============================================
   // 🔥 BLACK PIXEL REMOVE LOGIC KHATAM
   // ============================================
 
-  // Initialize - image ya video load karo
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d', { 
-      alpha: true,              // Transparency support
-      willReadFrequently: true  // Performance optimization for getImageData
+      alpha: true,
+      willReadFrequently: true
     });
     
     if (!ctx) return;
 
     if (isVideo) {
-      // VIDEO CASE
       const video = document.createElement('video');
       videoRef.current = video;
       video.src = frameUrl;
@@ -794,7 +785,6 @@ const FrameOverlayCanvas = ({
         }
       };
     } else {
-      // IMAGE CASE
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = frameUrl;
@@ -806,36 +796,31 @@ const FrameOverlayCanvas = ({
     };
   }, [frameUrl, isVideo]);
 
-  // Frame load hone ke baad canvas pe draw karo + black pixels hatao
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !isFrameLoaded) return;
 
     const ctx = canvas.getContext('2d', { 
       alpha: true,
-      willReadFrequently: true  // ⚡ getImageData fast hoga
+      willReadFrequently: true
     });
     
     if (!ctx) return;
 
-    // Device Pixel Ratio handle karo (Retina displays)
     const dpr = window.devicePixelRatio || 1;
     
     const canvasWidth = containerSize;
     const canvasHeight = containerSize;
     
-    // Canvas ko high-res banao
     canvas.width = Math.round(canvasWidth * dpr);
     canvas.height = Math.round(canvasHeight * dpr);
     
-    // CSS size normal rakho
     canvas.style.width = Math.round(canvasWidth) + 'px';
     canvas.style.height = Math.round(canvasHeight) + 'px';
     
     ctx.scale(dpr, dpr);
 
     if (isVideo && videoRef.current) {
-      // VIDEO FRAME LOOP
       const drawFrame = () => {
         if (!ctx || !canvas || videoRef.current!.readyState < 2) {
           animationFrameRef.current = requestAnimationFrame(drawFrame);
@@ -844,7 +829,6 @@ const FrameOverlayCanvas = ({
         
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
         
-        // Video ko square crop karo (center se)
         const videoRatio = videoRef.current!.videoWidth / videoRef.current!.videoHeight;
         let sx = 0, sy = 0, sWidth = videoRef.current!.videoWidth, sHeight = videoRef.current!.videoHeight;
         
@@ -856,7 +840,6 @@ const FrameOverlayCanvas = ({
           sy = (videoRef.current!.videoHeight - sHeight) / 2;
         }
         
-        // Video frame draw karo
         ctx.drawImage(videoRef.current!, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
         
         // 🔥 BLACK PIXELS HATAO (har frame pe video ke liye)
@@ -867,7 +850,6 @@ const FrameOverlayCanvas = ({
       
       drawFrame();
     } else {
-      // IMAGE CASE
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = frameUrl;
@@ -879,7 +861,6 @@ const FrameOverlayCanvas = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         
-        // Image ko square crop karo (center se)
         const imgRatio = img.naturalWidth / img.naturalHeight;
         let sx = 0, sy = 0, sWidth = img.naturalWidth, sHeight = img.naturalHeight;
         
@@ -891,7 +872,6 @@ const FrameOverlayCanvas = ({
           sy = (img.naturalHeight - sHeight) / 2;
         }
         
-        // Image draw karo
         ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvasWidth, canvasHeight);
         
         // 🔥 BLACK PIXELS HATAO (sirf ek baar image ke liye)
@@ -993,6 +973,56 @@ const ProfileMenuItem = React.memo(({ icon: Icon, label, extra, iconColor, onCli
 ProfileMenuItem.displayName = 'ProfileMenuItem';
 
 // ============================================================
+// ⚡ AVATAR WITH CANVAS FRAME COMPONENT ⚡
+// ============================================================
+const AvatarWithCanvasFrame = React.memo(({ 
+  profile, 
+  onAvatarClick 
+}: { 
+  profile: any; 
+  onAvatarClick: () => void;
+}) => {
+  const activeFrameMediaUrl = useMemo(() => {
+    const inv = profile?.inventory as any;
+    if (!inv?.activeFrameMediaUrl) return null;
+    return inv.activeFrameMediaUrl;
+  }, [profile?.inventory]);
+
+  const isFrameVideo = useMemo(() => {
+    if (!activeFrameMediaUrl) return false;
+    const lower = activeFrameMediaUrl.toLowerCase();
+    return lower.includes('.mp4') || lower.includes('.webm') || lower.includes('.mov') || lower.includes('video') || lower.includes('m3u8');
+  }, [activeFrameMediaUrl]);
+
+  return (
+    <div onClick={onAvatarClick} className="shrink-0 cursor-pointer active:scale-95 transition-transform relative" style={{ marginLeft: '-6px' }}>
+      <div className="relative inline-block">
+        <AvatarFrame 
+          frameId={profile.inventory?.activeFrame} 
+          frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+          size="xl"
+        >
+          <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+            <AvatarImage src={profile.avatarUrl} className="object-cover" />
+            <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
+          </Avatar>
+        </AvatarFrame>
+
+        {/* 🔥 CANVAS FRAME OVERLAY - BLACK PIXELS HATAO */}
+        {activeFrameMediaUrl && (
+          <FrameOverlayCanvas 
+            frameUrl={activeFrameMediaUrl} 
+            isVideo={isFrameVideo}
+            containerSize={88}
+          />
+        )}
+      </div>
+    </div>
+  );
+});
+AvatarWithCanvasFrame.displayName = 'AvatarWithCanvasFrame';
+
+// ============================================================
 // ⚡ MEDAL MODAL ⚡
 // ============================================================
 const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onClose: () => void, profile: any }) => {
@@ -1021,7 +1051,6 @@ const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onCl
   const filteredMedals = (medals || []).filter((m: any) => m.category === currentTabLower);
   const userMedalIds = profile?.medals || [];
 
-  // Map obtained medals to full objects for the top grid
   const obtainedMedals = (medals || []).filter((m: any) => userMedalIds.includes(m.id));
 
   return (
@@ -1358,24 +1387,6 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     window.open(`https://wa.me/?text=${inviteMessage}`, '_blank');
   };
 
-  const activeFrameMediaUrl = useMemo(() => {
-    const inv = profile?.inventory as any;
-    if (!inv?.activeFrameMediaUrl) return null;
-    return inv.activeFrameMediaUrl;
-  }, [profile?.inventory]);
-
-  // Check if active frame is video
-  const isFrameVideo = useMemo(() => {
-    if (!activeFrameMediaUrl) return false;
-    return (
-      activeFrameMediaUrl.includes('.mp4') || 
-      activeFrameMediaUrl.includes('.webm') || 
-      activeFrameMediaUrl.includes('.mov') ||
-      activeFrameMediaUrl.includes('video') ||
-      activeFrameMediaUrl.includes('m3u8')
-    );
-  }, [activeFrameMediaUrl]);
-
   const handleBagClick = () => {
     router.push('/store?filter=purchased');
   };
@@ -1428,26 +1439,11 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform relative" style={{ marginLeft: '-6px', width: '96px', height: '96px' }}>
-                  {/* Canvas Frame Overlay - Yahi naya logic hai jo merge kiya hai */}
-                  {activeFrameMediaUrl && (
-                    <FrameOverlayCanvas 
-                      frameUrl={activeFrameMediaUrl} 
-                      isVideo={isFrameVideo}
-                      containerSize={104} // Thoda bada kiya taki avatar ke around properly fit ho
-                    />
-                  )}
-                  <AvatarFrame 
-                    frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={undefined} // Canvas use kar rahe hain toh yahan null kardo
-                    size="xl"
-                  >
-                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
-                      <AvatarImage src={profile.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </AvatarFrame>
-              </div>
+              {/* 🔥 AVATAR + CANVAS FRAME OVERLAY - BLACK PIXELS HATAO */}
+              <AvatarWithCanvasFrame 
+                profile={profile} 
+                onAvatarClick={() => setFullViewOpen(true)} 
+              />
               <div className="flex-1 min-w-0 -ml-1 pt-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h2 className="text-[22px] font-bold text-slate-800 tracking-tighter leading-none truncate">{profile.username}</h2>
