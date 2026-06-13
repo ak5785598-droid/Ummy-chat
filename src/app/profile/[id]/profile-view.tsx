@@ -700,27 +700,136 @@ const SVGA_OfficialUser = React.memo(({ className }: { className?: string }) => 
 SVGA_OfficialUser.displayName = 'SVGA_OfficialUser';
 
 // ============================================================
-// 🔥 BLACK PIXEL REMOVE LOGIC - YAHI ADD KIYA HAI
+// ⚡ FRAME OVERLAY — BLACK REMOVE + SIMPLE OVERLAP ⚡
 // ============================================================
-const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
-  
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    
-    if (r < 30 && g < 30 && b < 30) {
-      data[i + 3] = 0;
+const FrameOverlayCanvas = ({ 
+  frameUrl, 
+  isVideo = false,
+  containerSize = 96 
+}: { 
+  frameUrl: string; 
+  isVideo?: boolean;
+  containerSize?: number;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
+
+  // Black pixel remove
+  const removeBlackPixels = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r < 30 && g < 30 && b < 30) {
+        data[i + 3] = 0;
+      }
     }
-  }
-  
-  ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  // Video / Image load
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
+    if (!ctx) return;
+
+    if (isVideo) {
+      const video = document.createElement('video');
+      videoRef.current = video;
+      video.src = frameUrl;
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.crossOrigin = 'anonymous';
+      video.preload = 'auto';
+      video.addEventListener('loadedmetadata', () => setIsFrameLoaded(true));
+      video.addEventListener('loadeddata', () => setIsFrameLoaded(true));
+      video.play().catch(console.error);
+      return () => {
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+        if (videoRef.current) {
+          videoRef.current.pause();
+          videoRef.current.remove();
+          videoRef.current = null;
+        }
+      };
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = frameUrl;
+      img.onload = () => setIsFrameLoaded(true);
+    }
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [frameUrl, isVideo]);
+
+  // Draw + Black remove
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !isFrameLoaded) return;
+
+    const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    
+    canvas.width = Math.round(containerSize * dpr);
+    canvas.height = Math.round(containerSize * dpr);
+    canvas.style.width = containerSize + 'px';
+    canvas.style.height = containerSize + 'px';
+    
+    ctx.scale(dpr, dpr);
+
+    if (isVideo && videoRef.current) {
+      const drawFrame = () => {
+        if (!ctx || !canvas || videoRef.current!.readyState < 2) {
+          animationFrameRef.current = requestAnimationFrame(drawFrame);
+          return;
+        }
+        
+        ctx.clearRect(0, 0, containerSize, containerSize);
+        ctx.drawImage(videoRef.current!, 0, 0, containerSize, containerSize);
+        removeBlackPixels(ctx, canvas.width, canvas.height);
+        
+        animationFrameRef.current = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = frameUrl;
+      img.onload = () => {
+        if (!ctx || !canvas) return;
+        ctx.clearRect(0, 0, containerSize, containerSize);
+        ctx.drawImage(img, 0, 0, containerSize, containerSize);
+        removeBlackPixels(ctx, canvas.width, canvas.height);
+      };
+    }
+  }, [containerSize, frameUrl, isVideo, isFrameLoaded]);
+
+  return (
+    <canvas 
+      ref={canvasRef}
+      style={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: containerSize + 'px',
+        height: containerSize + 'px',
+        zIndex: 10,
+        pointerEvents: 'none'
+      }}
+    />
+  );
 };
-// ============================================================
 
 // ============================================================
 // ⚡ HELPER FUNCTIONS & CONSTANTS ⚡
@@ -830,7 +939,6 @@ const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onCl
   const currentTabLower = activeTab.toLowerCase();
   const filteredMedals = (medals || []).filter((m: any) => m.category === currentTabLower);
   const userMedalIds = profile?.medals || [];
-
   const obtainedMedals = (medals || []).filter((m: any) => userMedalIds.includes(m.id));
 
   return (
@@ -1173,6 +1281,17 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
     return inv.activeFrameMediaUrl;
   }, [profile?.inventory]);
 
+  const isFrameVideo = useMemo(() => {
+    if (!activeFrameMediaUrl) return false;
+    return (
+      activeFrameMediaUrl.includes('.mp4') || 
+      activeFrameMediaUrl.includes('.webm') || 
+      activeFrameMediaUrl.includes('.mov') ||
+      activeFrameMediaUrl.includes('video') ||
+      activeFrameMediaUrl.includes('m3u8')
+    );
+  }, [activeFrameMediaUrl]);
+
   const handleBagClick = () => {
     router.push('/store?filter=purchased');
   };
@@ -1225,10 +1344,17 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
+              <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform relative" style={{ marginLeft: '-6px', width: '96px', height: '96px' }}>
+                  {activeFrameMediaUrl && (
+                    <FrameOverlayCanvas 
+                      frameUrl={activeFrameMediaUrl} 
+                      isVideo={isFrameVideo}
+                      containerSize={96}
+                    />
+                  )}
                   <AvatarFrame 
                     frameId={profile.inventory?.activeFrame} 
-                    frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                    frameMediaUrl={undefined}
                     size="xl"
                   >
                     <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
@@ -1398,4 +1524,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-    }
+            }
