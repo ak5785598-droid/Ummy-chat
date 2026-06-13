@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AppLayout } from '@/components/layout/app-layout';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, where, getDocs, onSnapshot } from 'firebase/firestore';
-import { TrendingUp, Loader, ChevronLeft, HelpCircle, X, User, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
+import { TrendingUp, Loader, ChevronLeft, HelpCircle, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { GoldCoinIcon } from '@/components/icons';
@@ -283,6 +283,7 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme, isEmpty = false
 
   const frame = getRankFrame();
 
+  // Agar empty hai toh placeholder dikhao
   if (isEmpty) {
     return (
       <div className="relative inline-flex items-center justify-center">
@@ -328,12 +329,15 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
+      {/* Card */}
       <div className="relative z-10 bg-white rounded-2xl w-[90%] max-w-sm p-6 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+        {/* Close Button */}
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -341,11 +345,14 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           <X className="h-4 w-4 text-gray-500" />
         </button>
 
+        {/* Title */}
         <h3 className="text-lg font-black text-gray-900 mb-4 text-center">
           Ranking Info
         </h3>
 
+        {/* Content */}
         <div className="space-y-4 text-sm text-gray-700">
+          {/* Honor */}
           <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
             <p className="font-black text-amber-600 mb-1">🏆 Honor Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -356,6 +363,7 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             </p>
           </div>
 
+          {/* Charm */}
           <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
             <p className="font-black text-pink-600 mb-1">💖 Charm Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -366,6 +374,7 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             </p>
           </div>
 
+          {/* Room */}
           <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
             <p className="font-black text-purple-600 mb-1">🏠 Room Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -377,6 +386,7 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           </div>
         </div>
 
+        {/* OK Button */}
         <button
           onClick={onClose}
           className="mt-6 w-full py-3 bg-gray-900 text-white font-black rounded-xl hover:bg-gray-800 transition-colors active:scale-[0.98]"
@@ -388,39 +398,6 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
   );
 };
 
-// --- Period Tabs Component (Vertical) ---
-const PeriodTabs = ({ period, onChange }: { period: 'daily' | 'weekly' | 'monthly'; onChange: (p: 'daily' | 'weekly' | 'monthly') => void }) => {
-  const tabs = [
-    { key: 'daily' as const, label: 'Daily', icon: Calendar },
-    { key: 'weekly' as const, label: 'Weekly', icon: CalendarDays },
-    { key: 'monthly' as const, label: 'Monthly', icon: CalendarRange },
-  ];
-
-  return (
-    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-1.5 border border-white/10 shadow-lg">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        const isActive = period === tab.key;
-        return (
-          <button
-            key={tab.key}
-            onClick={() => onChange(tab.key)}
-            className={cn(
-              'w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200',
-              isActive
-                ? 'bg-gradient-to-r from-amber-400/20 to-orange-400/20 text-amber-300 shadow-inner border border-amber-400/30'
-                : 'text-white/50 hover:text-white/70 hover:bg-white/5'
-            )}
-          >
-            <Icon className={cn('h-3.5 w-3.5', isActive ? 'text-amber-400' : 'text-white/40')} />
-            <span className="tracking-wider uppercase">{tab.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
 // --- Helper: Check if current time is midnight reset window (12:00:00 - 12:00:05) ---
 const isMidnightResetWindow = (): boolean => {
   const now = new Date();
@@ -428,6 +405,7 @@ const isMidnightResetWindow = (): boolean => {
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
   
+  // Midnight reset window: 00:00:00 se 00:00:10 tak
   return hours === 0 && minutes === 0 && seconds < 10;
 };
 
@@ -437,21 +415,44 @@ const getTodayDateString = (): string => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
-const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null; period: 'daily' | 'weekly' | 'monthly' }) => {
+// --- Helper: Get current week number ---
+const getWeekNumber = (date: Date): number => {
+  const startOfYear = new Date(date.getFullYear(), 0, 1);
+  const days = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+};
+
+// --- Helper: Get week identifier string ---
+const getWeekString = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-W${getWeekNumber(now)}`;
+};
+
+// --- Helper: Get month identifier string ---
+const getMonthString = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${now.getMonth() + 1}`;
+};
+
+const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null; timeFilter: 'daily' | 'weekly' | 'monthly' }) => {
+  // Midnight reset ke time sab kuch clear dikhega
   const [isResetWindow, setIsResetWindow] = useState(false);
   const [todayDate, setTodayDate] = useState(getTodayDateString());
 
   useEffect(() => {
+    // Har second check karo ki midnight window hai ya nahi
     const interval = setInterval(() => {
       const resetNow = isMidnightResetWindow();
       setIsResetWindow(resetNow);
       
+      // Naya din start hua toh date update karo
       const newDate = getTodayDateString();
       if (newDate !== todayDate) {
         setTodayDate(newDate);
       }
     }, 1000);
 
+    // Initial check
     setIsResetWindow(isMidnightResetWindow());
     setTodayDate(getTodayDateString());
 
@@ -462,24 +463,40 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
     return (
       <div className="flex flex-col items-center py-40 gap-4 relative z-10">
         <Loader className="animate-spin text-white h-10 w-10" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 animate-pulse">Syncing {period.charAt(0).toUpperCase() + period.slice(1)} Data...</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 animate-pulse">Syncing Data...</p>
       </div>
     );
 
   const getValue = (item: any) => {
+    const prefix = timeFilter;
+    // Daily fields
+    if (timeFilter === 'daily') {
+      const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
+      if (type === 'rich') return item.wallet?.[`daily${fieldSuffix}`] || 0;
+      return item.stats?.[`daily${fieldSuffix}`] || 0;
+    }
+    // Weekly fields
+    if (timeFilter === 'weekly') {
+      const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
+      if (type === 'rich') return item.wallet?.[`weekly${fieldSuffix}`] || 0;
+      return item.stats?.[`weekly${fieldSuffix}`] || 0;
+    }
+    // Monthly fields
     const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-    const prefix = period === 'daily' ? 'daily' : period === 'weekly' ? 'weekly' : 'monthly';
-    
-    if (type === 'rich') return item.wallet?.[`${prefix}${fieldSuffix}`] || 0;
-    return item.stats?.[`${prefix}${fieldSuffix}`] || 0;
+    if (type === 'rich') return item.wallet?.[`monthly${fieldSuffix}`] || 0;
+    return item.stats?.[`monthly${fieldSuffix}`] || 0;
   };
 
-  // Sirf daily period ke liye midnight reset
-  if (period === 'daily' && isResetWindow) {
+  // Only show reset window for daily
+  if (isResetWindow && timeFilter === 'daily') {
+    // Top 3 empty + No Data in list
     return (
       <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+        {/* Fixed Section — Empty Top 3 */}
         <div className="flex-shrink-0">
+          {/* Top 3 in One Row - Empty State with ? avatar */}
           <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+            {/* Top 2 - Left side (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
@@ -491,6 +508,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
               </div>
             </div>
 
+            {/* Top 1 - Center (Empty) */}
             <div className="flex-1 flex justify-center relative -top-16">
               <div className="flex flex-col items-center gap-1 -mt-12">
                 <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
@@ -502,6 +520,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
               </div>
             </div>
 
+            {/* Top 3 - Right side (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
@@ -514,9 +533,11 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
             </div>
           </div>
 
+          {/* 10vh Space */}
           <div className="h-[10vh]" />
         </div>
 
+        {/* Scrollable Section — No Data message */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
           <div className="text-center py-20 opacity-60">
             <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
@@ -528,13 +549,17 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
     );
   }
 
+  // Normal flow - filter active players
   const activePlayers = (items || []).filter((item) => getValue(item) > 0);
 
+  // Agar active players hi nahi hai (0 players with value > 0)
   if (activePlayers.length === 0)
     return (
       <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+        {/* Fixed Section — Empty Top 3 with ? */}
         <div className="flex-shrink-0">
           <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+            {/* Top 2 - Left (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
@@ -546,6 +571,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
               </div>
             </div>
 
+            {/* Top 1 - Center (Empty) */}
             <div className="flex-1 flex justify-center relative -top-16">
               <div className="flex flex-col items-center gap-1 -mt-12">
                 <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
@@ -557,6 +583,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
               </div>
             </div>
 
+            {/* Top 3 - Right (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
@@ -572,24 +599,23 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
           <div className="h-[10vh]" />
         </div>
 
+        {/* No Data for list */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
           <div className="text-center py-20 opacity-60">
             <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
             <p className="font-bold uppercase text-sm text-white/50">No Data</p>
-            <p className="text-xs text-white/30 mt-2">
-              {period === 'daily' ? 'Be the first to rank today!' : 
-               period === 'weekly' ? 'No rankings this week yet!' : 
-               'No rankings this month yet!'}
-            </p>
+            <p className="text-xs text-white/30 mt-2">Be the first to rank!</p>
           </div>
         </div>
       </div>
     );
 
+  // Normal case - players exist
   const top1 = activePlayers[0];
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
   
+  // Rank 4 se baaki sab scrollable
   const scrollablePlayers = activePlayers.slice(3);
 
   const formatValue = (val: number) => {
@@ -600,8 +626,11 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
 
   return (
     <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
+      {/* Fixed Section — Top 3 + 10vh space */}
       <div className="flex-shrink-0">
+        {/* Top 3 in One Row */}
         <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
+          {/* Top 2 - Left side */}
           <div className="flex-1 flex justify-center">
             {top2 ? (
               <Link 
@@ -627,6 +656,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
             )}
           </div>
 
+          {/* Top 1 - Center */}
           <div className="flex-1 flex justify-center relative -top-16">
             {top1 ? (
               <Link 
@@ -652,6 +682,7 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
             )}
           </div>
 
+          {/* Top 3 - Right side */}
           <div className="flex-1 flex justify-center">
             {top3 ? (
               <Link 
@@ -678,9 +709,11 @@ const RankingList = ({ items, type, isLoading, theme, period }: { items: any[] |
           </div>
         </div>
 
+        {/* 10vh Space — Fixed gap between Top 3 and scrollable list */}
         <div className="h-[10vh]" />
       </div>
 
+      {/* Scrollable Section — Rank 4 se baaki sab */}
       {scrollablePlayers.length > 0 ? (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1 pb-20">
           {scrollablePlayers.map((item, index) => {
@@ -725,7 +758,7 @@ function LeaderboardContent() {
   const { userProfile: me } = useUserProfile(user?.uid);
 
   const [rankingType, setRankingMode] = useState<'rich' | 'charm' | 'rooms' | 'games'>(initialType);
-  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [timeFilter, setTimeFilter] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [mounted, setMounted] = useState(false);
   const [activeTheme, setActiveTheme] = useState<LeaderboardThemeConfig | null>(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -753,166 +786,96 @@ function LeaderboardContent() {
     return () => unsubscribe();
   }, [firestore]);
 
-  // --- Daily Queries ---
-  const dailyRichQuery = useMemoFirebase(
+  // Helper to get field name based on ranking type and time filter
+  const getFieldName = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
+    const prefix = timeFilter;
+    const suffix = category === 'rich' ? 'Spent' : category === 'charm' ? 'GiftsReceived' : category === 'rooms' ? 'Gifts' : 'GameWins';
+    return `${prefix}${suffix}`;
+  };
+
+  // Helper to get collection path
+  const getCollectionPath = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
+    return category === 'rooms' ? 'chatRooms' : 'users';
+  };
+
+  // Helper to get field path (wallet or stats)
+  const getFieldPath = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
+    const fieldName = getFieldName(category);
+    if (category === 'rich') return `wallet.${fieldName}`;
+    if (category === 'rooms') return `stats.${fieldName}`;
+    return `stats.${fieldName}`;
+  };
+
+  const richQuery = useMemoFirebase(
     () => {
-      if (!firestore || rankingType !== 'rich' || period !== 'daily') return null;
-      return query(collection(firestore, 'users'), where('wallet.dailySpent', '>', 0), orderBy('wallet.dailySpent', 'desc'), limit(50));
+      if (!firestore || rankingType !== 'rich') return null;
+      const fieldPath = getFieldPath('rich');
+      return query(
+        collection(firestore, getCollectionPath('rich')), 
+        where(fieldPath, '>', 0), 
+        orderBy(fieldPath, 'desc'), 
+        limit(50)
+      );
     },
-    [firestore, rankingType, period]
+    [firestore, rankingType, timeFilter]
   );
 
-  const dailyCharmQuery = useMemoFirebase(
+  const charmQuery = useMemoFirebase(
     () => {
-      if (!firestore || rankingType !== 'charm' || period !== 'daily') return null;
-      return query(collection(firestore, 'users'), where('stats.dailyGiftsReceived', '>', 0), orderBy('stats.dailyGiftsReceived', 'desc'), limit(50));
+      if (!firestore || rankingType !== 'charm') return null;
+      const fieldPath = getFieldPath('charm');
+      return query(
+        collection(firestore, getCollectionPath('charm')), 
+        where(fieldPath, '>', 0), 
+        orderBy(fieldPath, 'desc'), 
+        limit(50)
+      );
     },
-    [firestore, rankingType, period]
+    [firestore, rankingType, timeFilter]
   );
 
-  const dailyRoomsQuery = useMemoFirebase(
+  const roomsQuery = useMemoFirebase(
     () => {
-      if (!firestore || rankingType !== 'rooms' || period !== 'daily') return null;
-      return query(collection(firestore, 'chatRooms'), where('stats.dailyGifts', '>', 0), orderBy('stats.dailyGifts', 'desc'), limit(50));
+      if (!firestore || rankingType !== 'rooms') return null;
+      const fieldPath = getFieldPath('rooms');
+      return query(
+        collection(firestore, getCollectionPath('rooms')), 
+        where(fieldPath, '>', 0), 
+        orderBy(fieldPath, 'desc'), 
+        limit(50)
+      );
     },
-    [firestore, rankingType, period]
+    [firestore, rankingType, timeFilter]
   );
 
-  const dailyGamesQuery = useMemoFirebase(
+  const gamesQuery = useMemoFirebase(
     () => {
-      if (!firestore || rankingType !== 'games' || period !== 'daily') return null;
-      return query(collection(firestore, 'users'), where('stats.dailyGameWins', '>', 0), orderBy('stats.dailyGameWins', 'desc'), limit(50));
+      if (!firestore || rankingType !== 'games') return null;
+      const fieldPath = getFieldPath('games');
+      return query(
+        collection(firestore, getCollectionPath('games')), 
+        where(fieldPath, '>', 0), 
+        orderBy(fieldPath, 'desc'), 
+        limit(50)
+      );
     },
-    [firestore, rankingType, period]
+    [firestore, rankingType, timeFilter]
   );
 
-  // --- Weekly Queries ---
-  const weeklyRichQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'rich' || period !== 'weekly') return null;
-      return query(collection(firestore, 'users'), where('wallet.weeklySpent', '>', 0), orderBy('wallet.weeklySpent', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
+  const { data: richUsers, isLoading: isLoadingRich } = useCollection(richQuery);
+  const { data: charmUsers, isLoading: isLoadingCharm } = useCollection(charmQuery);
+  const { data: rankedRooms, isLoading: isLoadingRooms } = useCollection(roomsQuery);
+  const { data: gameUsers, isLoading: isLoadingGames } = useCollection(gamesQuery);
 
-  const weeklyCharmQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'charm' || period !== 'weekly') return null;
-      return query(collection(firestore, 'users'), where('stats.weeklyGiftsReceived', '>', 0), orderBy('stats.weeklyGiftsReceived', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  const weeklyRoomsQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'rooms' || period !== 'weekly') return null;
-      return query(collection(firestore, 'chatRooms'), where('stats.weeklyGifts', '>', 0), orderBy('stats.weeklyGifts', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  const weeklyGamesQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'games' || period !== 'weekly') return null;
-      return query(collection(firestore, 'users'), where('stats.weeklyGameWins', '>', 0), orderBy('stats.weeklyGameWins', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  // --- Monthly Queries ---
-  const monthlyRichQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'rich' || period !== 'monthly') return null;
-      return query(collection(firestore, 'users'), where('wallet.monthlySpent', '>', 0), orderBy('wallet.monthlySpent', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  const monthlyCharmQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'charm' || period !== 'monthly') return null;
-      return query(collection(firestore, 'users'), where('stats.monthlyGiftsReceived', '>', 0), orderBy('stats.monthlyGiftsReceived', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  const monthlyRoomsQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'rooms' || period !== 'monthly') return null;
-      return query(collection(firestore, 'chatRooms'), where('stats.monthlyGifts', '>', 0), orderBy('stats.monthlyGifts', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  const monthlyGamesQuery = useMemoFirebase(
-    () => {
-      if (!firestore || rankingType !== 'games' || period !== 'monthly') return null;
-      return query(collection(firestore, 'users'), where('stats.monthlyGameWins', '>', 0), orderBy('stats.monthlyGameWins', 'desc'), limit(50));
-    },
-    [firestore, rankingType, period]
-  );
-
-  // --- Collection Hooks ---
-  const { data: dailyRichUsers, isLoading: isLoadingDailyRich } = useCollection(dailyRichQuery);
-  const { data: dailyCharmUsers, isLoading: isLoadingDailyCharm } = useCollection(dailyCharmQuery);
-  const { data: dailyRankedRooms, isLoading: isLoadingDailyRooms } = useCollection(dailyRoomsQuery);
-  const { data: dailyGameUsers, isLoading: isLoadingDailyGames } = useCollection(dailyGamesQuery);
-
-  const { data: weeklyRichUsers, isLoading: isLoadingWeeklyRich } = useCollection(weeklyRichQuery);
-  const { data: weeklyCharmUsers, isLoading: isLoadingWeeklyCharm } = useCollection(weeklyCharmQuery);
-  const { data: weeklyRankedRooms, isLoading: isLoadingWeeklyRooms } = useCollection(weeklyRoomsQuery);
-  const { data: weeklyGameUsers, isLoading: isLoadingWeeklyGames } = useCollection(weeklyGamesQuery);
-
-  const { data: monthlyRichUsers, isLoading: isLoadingMonthlyRich } = useCollection(monthlyRichQuery);
-  const { data: monthlyCharmUsers, isLoading: isLoadingMonthlyCharm } = useCollection(monthlyCharmQuery);
-  const { data: monthlyRankedRooms, isLoading: isLoadingMonthlyRooms } = useCollection(monthlyRoomsQuery);
-  const { data: monthlyGameUsers, isLoading: isLoadingMonthlyGames } = useCollection(monthlyGamesQuery);
-
-  // --- Active Items based on period & type ---
   const activeItems = useMemo(() => {
-    if (period === 'daily') {
-      if (rankingType === 'rich') return dailyRichUsers;
-      if (rankingType === 'charm') return dailyCharmUsers;
-      if (rankingType === 'rooms') return dailyRankedRooms;
-      if (rankingType === 'games') return dailyGameUsers;
-    }
-    if (period === 'weekly') {
-      if (rankingType === 'rich') return weeklyRichUsers;
-      if (rankingType === 'charm') return weeklyCharmUsers;
-      if (rankingType === 'rooms') return weeklyRankedRooms;
-      if (rankingType === 'games') return weeklyGameUsers;
-    }
-    if (period === 'monthly') {
-      if (rankingType === 'rich') return monthlyRichUsers;
-      if (rankingType === 'charm') return monthlyCharmUsers;
-      if (rankingType === 'rooms') return monthlyRankedRooms;
-      if (rankingType === 'games') return monthlyGameUsers;
-    }
+    if (rankingType === 'rich') return richUsers;
+    if (rankingType === 'charm') return charmUsers;
+    if (rankingType === 'rooms') return rankedRooms;
+    if (rankingType === 'games') return gameUsers;
     return null;
-  }, [period, rankingType, dailyRichUsers, dailyCharmUsers, dailyRankedRooms, dailyGameUsers, weeklyRichUsers, weeklyCharmUsers, weeklyRankedRooms, weeklyGameUsers, monthlyRichUsers, monthlyCharmUsers, monthlyRankedRooms, monthlyGameUsers]);
+  }, [rankingType, richUsers, charmUsers, rankedRooms, gameUsers]);
 
-  // --- Active Loading ---
-  const isActiveLoading = useMemo(() => {
-    if (period === 'daily') {
-      if (rankingType === 'rich') return isLoadingDailyRich;
-      if (rankingType === 'charm') return isLoadingDailyCharm;
-      if (rankingType === 'rooms') return isLoadingDailyRooms;
-      if (rankingType === 'games') return isLoadingDailyGames;
-    }
-    if (period === 'weekly') {
-      if (rankingType === 'rich') return isLoadingWeeklyRich;
-      if (rankingType === 'charm') return isLoadingWeeklyCharm;
-      if (rankingType === 'rooms') return isLoadingWeeklyRooms;
-      if (rankingType === 'games') return isLoadingWeeklyGames;
-    }
-    if (period === 'monthly') {
-      if (rankingType === 'rich') return isLoadingMonthlyRich;
-      if (rankingType === 'charm') return isLoadingMonthlyCharm;
-      if (rankingType === 'rooms') return isLoadingMonthlyRooms;
-      if (rankingType === 'games') return isLoadingMonthlyGames;
-    }
-    return false;
-  }, [period, rankingType, isLoadingDailyRich, isLoadingDailyCharm, isLoadingDailyRooms, isLoadingDailyGames, isLoadingWeeklyRich, isLoadingWeeklyCharm, isLoadingWeeklyRooms, isLoadingWeeklyGames, isLoadingMonthlyRich, isLoadingMonthlyCharm, isLoadingMonthlyRooms, isLoadingMonthlyGames]);
+  const isActiveLoading = rankingType === 'rich' ? isLoadingRich : rankingType === 'charm' ? isLoadingCharm : rankingType === 'rooms' ? isLoadingRooms : isLoadingGames;
 
   if (!mounted) return null;
 
@@ -941,6 +904,7 @@ function LeaderboardContent() {
           ))}
         </div>
 
+        {/* HelpCircle Icon - Click pe info modal open hoga */}
         <button 
           onClick={() => setShowInfo(true)}
           className="flex items-center justify-center w-10 h-10"
@@ -949,15 +913,26 @@ function LeaderboardContent() {
         </button>
       </header>
 
-      {/* Period Tabs - Left side, Back icon ke neeche */}
-      <div className="relative z-50 px-4 pb-2">
-        <div className="w-40">
-          <PeriodTabs period={period} onChange={setPeriod} />
-        </div>
+      {/* Time Filter Tabs - Daily, Weekly, Monthly - Chote tabs niche */}
+      <div className="relative z-50 flex justify-center gap-2 px-4 pb-2 flex-shrink-0">
+        {(['daily', 'weekly', 'monthly'] as const).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setTimeFilter(filter)}
+            className={cn(
+              'px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border',
+              timeFilter === filter 
+                ? 'bg-white/20 border-white/30 text-white shadow-lg scale-105' 
+                : 'bg-transparent border-white/10 text-white/50 hover:border-white/20 hover:text-white/70'
+            )}
+          >
+            {filter === 'daily' ? 'Daily' : filter === 'weekly' ? 'Weekly' : 'Monthly'}
+          </button>
+        ))}
       </div>
 
       <main className="relative z-10 flex-1 overflow-hidden">
-        <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} period={period} />
+        <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} timeFilter={timeFilter} />
       </main>
 
       {/* Info Modal */}
@@ -974,4 +949,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-  }
+      }
