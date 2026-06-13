@@ -596,7 +596,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             </div>
           </div>
 
-          <div className="h-[10vh]" />
+          <div className="h-[7vh]" />
         </div>
 
         {/* No Data for list */}
