@@ -597,4 +597,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-  }
+                            }
