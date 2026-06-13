@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // ============================================
-// SMART BLACK BACKGROUND REMOVER
+// SMART BLACK BACKGROUND REMOVER (ENHANCED)
 // ============================================
 const SmartBlackRemover = ({ 
   src, 
@@ -27,12 +27,13 @@ const SmartBlackRemover = ({
   style?: React.CSSProperties;
 }) => {
   const isVideoUrl = type === 'video' || src?.includes('.mp4') || src?.includes('.webm') || src?.includes('.mov') || src?.includes('video');
-  const [isBlackBg, setIsBlackBg] = useState(isVideoUrl);
+  const [isBlackBg, setIsBlackBg] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
 
   const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
-    if (isVideoUrl) return true;
     if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
+    
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -40,34 +41,76 @@ const SmartBlackRemover = ({
     if (!ctx) return false;
 
     ctx.drawImage(media, 0, 0, width, height);
+    
     try {
       const imageData = ctx.getImageData(0, 0, width, height);
       const data = imageData.data;
 
-      const STRICT_BLACK = 30;
-      const EDGE_CHECK = 0.08;
-      const SOLID_THRESHOLD = 0.85;
-
-      const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
-        let blackCount = 0, total = 0;
+      // Strict black detection - RGB all less than 25
+      const BLACK_THRESHOLD = 25;
+      
+      // Check edges (top, bottom, left, right) and center
+      const edgeThickness = Math.max(5, Math.floor(Math.min(width, height) * 0.08));
+      
+      const checkRegion = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+        let blackCount = 0;
+        let totalPixels = 0;
+        
         for (let y = yStart; y < yEnd; y++) {
           for (let x = xStart; x < xEnd; x++) {
             const i = (y * width + x) * 4;
-            if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            if (r < BLACK_THRESHOLD && g < BLACK_THRESHOLD && b < BLACK_THRESHOLD) {
               blackCount++;
             }
-            total++;
+            totalPixels++;
           }
         }
-        return blackCount / total >= SOLID_THRESHOLD;
+        return totalPixels > 0 ? blackCount / totalPixels : 0;
       };
 
-      const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
-      const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
-      const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
-      const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+      // Check all 4 edges
+      const topRatio = checkRegion(0, width, 0, edgeThickness);
+      const bottomRatio = checkRegion(0, width, height - edgeThickness, height);
+      const leftRatio = checkRegion(0, edgeThickness, 0, height);
+      const rightRatio = checkRegion(width - edgeThickness, width, 0, height);
+      
+      // Check center region
+      const centerXStart = Math.floor(width * 0.3);
+      const centerXEnd = Math.floor(width * 0.7);
+      const centerYStart = Math.floor(height * 0.3);
+      const centerYEnd = Math.floor(height * 0.7);
+      const centerRatio = checkRegion(centerXStart, centerXEnd, centerYStart, centerYEnd);
 
-      return topSolid && bottomSolid && leftSolid && rightSolid;
+      // Also check corners
+      const cornerSize = Math.floor(Math.min(width, height) * 0.1);
+      const topLeftRatio = checkRegion(0, cornerSize, 0, cornerSize);
+      const topRightRatio = checkRegion(width - cornerSize, width, 0, cornerSize);
+      const bottomLeftRatio = checkRegion(0, cornerSize, height - cornerSize, height);
+      const bottomRightRatio = checkRegion(width - cornerSize, width, height - cornerSize, height);
+
+      // If ALL regions are predominantly black, it's a black background
+      const THRESHOLD = 0.80;
+      const allRegionsBlack = 
+        topRatio >= THRESHOLD && 
+        bottomRatio >= THRESHOLD && 
+        leftRatio >= THRESHOLD && 
+        rightRatio >= THRESHOLD && 
+        topLeftRatio >= THRESHOLD &&
+        topRightRatio >= THRESHOLD &&
+        bottomLeftRatio >= THRESHOLD &&
+        bottomRightRatio >= THRESHOLD;
+
+      // For videos, if center has non-black content but edges are black, still apply screen
+      // For images, require all regions including center to be black
+      if (isVideoUrl) {
+        return allRegionsBlack;
+      } else {
+        return allRegionsBlack && centerRatio >= THRESHOLD;
+      }
     } catch (e) {
       return false;
     }
@@ -75,32 +118,32 @@ const SmartBlackRemover = ({
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    if (img.naturalWidth > 0) {
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
       setIsBlackBg(hasBlackBg);
+      setHasChecked(true);
     }
   };
 
   const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    if (isVideoUrl) {
-      setIsBlackBg(true);
-      return;
-    }
     const video = e.currentTarget;
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
       const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
       setIsBlackBg(hasBlackBg);
+      setHasChecked(true);
     }
   };
 
-  const finalStyle: React.CSSProperties = {
+  // Apply mix-blend-mode: screen to remove black background
+  const blendStyle: React.CSSProperties = {
     ...style,
-    ...((isBlackBg || isVideoUrl) ? { mixBlendMode: 'screen' } : {})
+    mixBlendMode: isBlackBg ? 'screen' : 'normal',
+    background: 'transparent',
   };
 
   if (type === 'video') {
     return (
-      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <div className={cn("relative overflow-hidden", className)} style={{ background: 'transparent' }}>
         <video
           ref={mediaRef as React.RefObject<HTMLVideoElement>}
           src={src}
@@ -109,8 +152,9 @@ const SmartBlackRemover = ({
           loop
           playsInline
           onLoadedData={handleVideoReady}
-          className="w-full h-full object-cover"
-          style={finalStyle}
+          onCanPlay={handleVideoReady}
+          className="w-full h-full object-contain"
+          style={blendStyle}
           crossOrigin="anonymous"
         />
       </div>
@@ -118,14 +162,14 @@ const SmartBlackRemover = ({
   }
 
   return (
-    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+    <div className={cn("relative overflow-hidden", className)} style={{ background: 'transparent' }}>
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={src}
         alt=""
         onLoad={handleImageLoad}
-        className="w-full h-full object-cover"
-        style={finalStyle}
+        className="w-full h-full object-contain"
+        style={blendStyle}
         crossOrigin="anonymous"
       />
     </div>
@@ -133,7 +177,7 @@ const SmartBlackRemover = ({
 };
 
 // ============================================
-// DIRECT MEDIA WRAPPER
+// DIRECT MEDIA WRAPPER (ENHANCED)
 // ============================================
 const DirectMedia = ({ 
   src, 
@@ -1094,4 +1138,4 @@ export default function StorePage() {
       <StoreContent />
     </Suspense>
   );
-}
+          }
