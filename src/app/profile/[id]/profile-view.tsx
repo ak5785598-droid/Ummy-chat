@@ -426,7 +426,7 @@ const DirectMedia = ({
 };
 
 // ============================================================
-// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME SIZE BADA KIYA ⚡
+// ⚡ AVATAR FRAME WITH BLACK REMOVER - FRAME SIZE BADA, POSITION SAME ⚡
 // ============================================================
 const AvatarFrameWithBlackRemover = React.memo(({ 
   frameId, 
@@ -439,21 +439,14 @@ const AvatarFrameWithBlackRemover = React.memo(({
   size?: 'xl' | 'lg' | 'md'; 
   children: React.ReactNode 
 }) => {
-  // Size mapping - AVATAR WAHI, FRAME BADA
+  // Frame size sirf bada kiya, offset ZERO rakha taaki avatar shift na ho
   const sizeMap = {
     xl: { frame: 'h-[120px] w-[120px]' },
     lg: { frame: 'h-[108px] w-[108px]' },
     md: { frame: 'h-[90px] w-[90px]' },
   };
   
-  const offsetMap = {
-    xl: '-16px',
-    lg: '-14px',
-    md: '-12px',
-  };
-  
   const s = sizeMap[size] || sizeMap.xl;
-  const offset = offsetMap[size] || offsetMap.xl;
 
   if (!frameMediaUrl) {
     return (
@@ -467,19 +460,18 @@ const AvatarFrameWithBlackRemover = React.memo(({
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      {/* Avatar apni original jagah pe hi rahega, left shift nahi hoga */}
+      {/* Avatar pehle jaise hi center mein */}
       <div className="z-10">
         {children}
       </div>
       
-      {/* Frame media BADA SIZE, centered with negative offset */}
+      {/* Frame media sirf bada hua, position bilkul center mein, offset 0 */}
       <div 
         className="absolute pointer-events-none z-20 flex items-center justify-center"
         style={{ 
-          top: offset, 
-          left: offset, 
-          right: offset, 
-          bottom: offset,
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
           background: 'transparent'
         }}
       >
@@ -1806,4 +1798,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-                     }
+      }
