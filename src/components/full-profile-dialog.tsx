@@ -39,19 +39,378 @@ import { MEDAL_REGISTRY, MedalConfig } from '@/constants/medals';
 import { AVATAR_FRAMES } from '@/constants/avatar-frames';
 import { VEHICLE_REGISTRY } from '@/constants/vehicles';
 
-// ==========================================
-// 1. BUDGET LEVEL BADGE
-// ==========================================
+// ============================================================
+// ⚡ SMART BLACK BACKGROUND REMOVER ⚡
+// ============================================================
+const SmartBlackRemover = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRef = useRef<HTMLVideoElement | HTMLImageElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [useCanvas, setUseCanvas] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const processingRef = useRef(false);
+  const lastProcessedSrc = useRef('');
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const detectSolidBlackBg = (media: HTMLVideoElement | HTMLImageElement, width: number, height: number) => {
+    if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return false;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return false;
+
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 30;
+    const EDGE_CHECK = 0.08;
+    const SOLID_THRESHOLD = 0.85;
+
+    const checkEdge = (xStart: number, xEnd: number, yStart: number, yEnd: number) => {
+      let blackCount = 0, total = 0;
+      for (let y = yStart; y < yEnd; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = (y * width + x) * 4;
+          if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+            blackCount++;
+          }
+          total++;
+        }
+      }
+      return blackCount / total >= SOLID_THRESHOLD;
+    };
+
+    const topSolid = checkEdge(0, width, 0, Math.floor(height * EDGE_CHECK));
+    const bottomSolid = checkEdge(0, width, Math.floor(height * (1 - EDGE_CHECK)), height);
+    const leftSolid = checkEdge(0, Math.floor(width * EDGE_CHECK), 0, height);
+    const rightSolid = checkEdge(Math.floor(width * (1 - EDGE_CHECK)), width, 0, height);
+
+    return topSolid && bottomSolid && leftSolid && rightSolid;
+  };
+
+  const processFrame = (video?: HTMLVideoElement) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    const canvas = canvasRef.current;
+    const media = video || mediaRef.current;
+    if (!canvas || !media) {
+      processingRef.current = false;
+      return;
+    }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      processingRef.current = false;
+      return;
+    }
+
+    const width = 'videoWidth' in media ? media.videoWidth : media.width;
+    const height = 'videoHeight' in media ? media.videoHeight : media.height;
+
+    if (!width || !height || width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) {
+      processingRef.current = false;
+      return;
+    }
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(media, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const STRICT_BLACK = 25;
+    const scale = 4;
+    const scaledW = Math.ceil(width / scale);
+    const scaledH = Math.ceil(height / scale);
+    const visited = new Uint8Array(scaledW * scaledH);
+
+    const isBlack = (sx: number, sy: number) => {
+      const x = Math.min(sx * scale, width - 1);
+      const y = Math.min(sy * scale, height - 1);
+      const i = (y * width + x) * 4;
+      return data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK;
+    };
+
+    const queue: [number, number][] = [];
+    
+    for (let sx = 0; sx < scaledW; sx++) {
+      if (isBlack(sx, 0)) { queue.push([sx, 0]); visited[0 * scaledW + sx] = 1; }
+      if (isBlack(sx, scaledH - 1)) { queue.push([sx, scaledH - 1]); visited[(scaledH - 1) * scaledW + sx] = 1; }
+    }
+    for (let sy = 0; sy < scaledH; sy++) {
+      if (isBlack(0, sy)) { queue.push([0, sy]); visited[sy * scaledW + 0] = 1; }
+      if (isBlack(scaledW - 1, sy)) { queue.push([scaledW - 1, sy]); visited[sy * scaledW + (scaledW - 1)] = 1; }
+    }
+
+    const centerSX = Math.floor(scaledW / 2);
+    const centerSY = Math.floor(scaledH / 2);
+    if (isBlack(centerSX, centerSY) && !visited[centerSY * scaledW + centerSX]) {
+      queue.push([centerSX, centerSY]);
+      visited[centerSY * scaledW + centerSX] = 1;
+    }
+
+    let head = 0;
+    while (head < queue.length) {
+      const [sx, sy] = queue[head++];
+      const neighbors: [number, number][] = [[sx-1, sy], [sx+1, sy], [sx, sy-1], [sx, sy+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < scaledW && ny >= 0 && ny < scaledH) {
+          const nidx = ny * scaledW + nx;
+          if (!visited[nidx] && isBlack(nx, ny)) {
+            visited[nidx] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+      }
+    }
+
+    for (let sy = 0; sy < scaledH; sy++) {
+      for (let sx = 0; sx < scaledW; sx++) {
+        if (visited[sy * scaledW + sx]) {
+          for (let dy = 0; dy < scale; dy++) {
+            for (let dx = 0; dx < scale; dx++) {
+              const x = sx * scale + dx, y = sy * scale + dy;
+              if (x < width && y < height) {
+                const i = (y * width + x) * 4;
+                if (data[i] < STRICT_BLACK && data[i+1] < STRICT_BLACK && data[i+2] < STRICT_BLACK) {
+                  data[i] = 0;
+                  data[i+1] = 0;
+                  data[i+2] = 0;
+                  data[i+3] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    processingRef.current = false;
+
+    if (type === 'video' && video) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = requestAnimationFrame(() => processFrame(video));
+    }
+  };
+
+  useEffect(() => {
+    if (src !== lastProcessedSrc.current) {
+      setUseCanvas(false);
+      setIsReady(false);
+      lastProcessedSrc.current = src;
+    }
+
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+
+    if (type === 'image' && mediaRef.current && 'complete' in mediaRef.current) {
+      const img = mediaRef.current as HTMLImageElement;
+      if (img.complete && img.naturalWidth > 0 && !isReady) {
+        const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+        setUseCanvas(hasBlackBg);
+        setIsReady(true);
+        if (hasBlackBg) {
+          setTimeout(() => processFrame(), 50);
+        }
+      }
+    }
+
+    loadTimeoutRef.current = setTimeout(() => {
+      if (!isReady && mediaRef.current) {
+        setIsReady(true);
+        setUseCanvas(false);
+      }
+    }, 5000);
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [src, type, isReady]);
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.naturalWidth > 0) {
+      const hasBlackBg = detectSolidBlackBg(img, img.naturalWidth, img.naturalHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(), 50);
+      }
+    }
+  };
+
+  const handleImageError = () => {
+    setIsReady(true);
+    setUseCanvas(false);
+  };
+
+  const handleVideoReady = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+      const hasBlackBg = detectSolidBlackBg(video, video.videoWidth, video.videoHeight);
+      setUseCanvas(hasBlackBg);
+      setIsReady(true);
+      if (hasBlackBg) {
+        setTimeout(() => processFrame(video), 150);
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      processingRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  if (type === 'video') {
+    return (
+      <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+        <video
+          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+          src={src}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onLoadedData={handleVideoReady}
+          className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+          style={{ display: useCanvas ? 'none' : 'block' }}
+          crossOrigin="anonymous"
+        />
+        {useCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-cover"
+            style={{ 
+              display: isReady ? 'block' : 'none', 
+              background: 'transparent',
+              backgroundColor: 'transparent'
+            }}
+          />
+        )}
+        {!isReady && !useCanvas && (
+          <video
+            src={src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            crossOrigin="anonymous"
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={src}
+        alt=""
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        className={useCanvas ? 'hidden' : 'w-full h-full object-cover'}
+        style={{ display: useCanvas ? 'none' : 'block' }}
+        crossOrigin="anonymous"
+      />
+      {useCanvas && (
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full object-cover"
+          style={{ 
+            display: isReady ? 'block' : 'none', 
+            background: 'transparent',
+            backgroundColor: 'transparent'
+          }}
+        />
+      )}
+      {!isReady && !useCanvas && (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          crossOrigin="anonymous"
+        />
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// ⚡ DIRECT MEDIA WRAPPER ⚡
+// ============================================================
+const DirectMedia = ({ 
+  src, 
+  type = 'image', 
+  className = '', 
+  style = {} 
+}: { 
+  src: string; 
+  type?: 'image' | 'video'; 
+  className?: string; 
+  style?: React.CSSProperties;
+}) => {
+  return (
+    <div className={cn("relative", className)} style={{ ...style, background: 'transparent' }}>
+      <SmartBlackRemover 
+        src={src} 
+        type={type} 
+        className="w-full h-full"
+        style={{ background: 'transparent' }}
+      />
+    </div>
+  );
+};
+
+// ============================================================
+// ⚡ LEVEL BADGE WITH BLACK REMOVER + SIZE INCREASE ⚡
+// ============================================================
 const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: string | null }) => {
   if (imageUrl) {
+    const isVideo = imageUrl.includes('.mp4') || imageUrl.includes('video') || imageUrl.includes('.webm');
     return (
-      <div className={cn("relative inline-flex items-center justify-center shrink-0 w-16 h-8", level < 1 && "grayscale opacity-75")}>
-        <img 
-          src={imageUrl} 
-          alt={`Level ${level}`} 
-          className="absolute inset-0 w-full h-full object-contain filter drop-shadow-md"
-        />
-        <span className="relative z-10 text-[11px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5 ml-2" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)' }}>
+      <div className={cn("relative inline-flex items-center justify-center shrink-0", level < 1 && "grayscale opacity-75")} style={{ width: '80px', height: '40px' }}>
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'transparent' }}>
+          <DirectMedia 
+            src={imageUrl} 
+            type={isVideo ? 'video' : 'image'} 
+            className="w-full h-full"
+            style={{ background: 'transparent' }}
+          />
+        </div>
+        <span className="relative z-10 text-[13px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] mt-0.5 ml-2" style={{ WebkitTextStroke: '0.5px rgba(0,0,0,0.5)' }}>
           Lv.{level}
         </span>
       </div>
@@ -76,8 +435,8 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
 
 export const SVGA_OfficialTag = () => (
   <div className="v-badge shrink-0" role="img" aria-label="U Official" style={{
-    width: '75px',      // Final chota size
-    height: '20px',     // Final chota size
+    width: '75px',
+    height: '20px',
     borderRadius: '10px',
     padding: '1px',
     background: 'linear-gradient(180deg, #ffe8b8 0%, #f5c57a 30%, #e4a95a 70%, #d08c3a 100%)',
@@ -937,6 +1296,13 @@ export function FullProfileDialog({
     return { type: 'fallback', data: profile.avatarUrl };
   }, [images, profile.avatarUrl]);
 
+  // Active frame media URL for black removal
+  const activeFrameMediaUrl = useMemo(() => {
+    const inv = profile?.inventory as any;
+    if (!inv?.activeFrameMediaUrl) return null;
+    return inv.activeFrameMediaUrl;
+  }, [profile?.inventory]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent hideClose className="fixed inset-0 translate-x-0 translate-y-0 left-0 top-0 w-full h-full max-w-none bg-white p-0 border-none m-0 rounded-none z-[150] overflow-hidden">
@@ -1040,10 +1406,11 @@ export function FullProfileDialog({
           <div className="relative z-20 bg-white/98 backdrop-blur-2xl rounded-none px-6 pt-0 pb-32 mt-[-20px] shadow-[0_-10px_40px_rgba(0,0,0,0.12)] border-t border-white/80 min-h-[70vh]">
 
             <div className="flex flex-col items-center">
+              {/* ✅ AVATAR WITH FRAME - BLACK REMOVE via DirectMedia in AvatarFrame */}
               <div className="relative -mt-10 mb-1 z-30">
                 <AvatarFrame 
                   frameId={profile.inventory?.activeFrame} 
-                  frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
+                  frameMediaUrl={activeFrameMediaUrl}
                   size="xl"
                 >
                   <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
@@ -1294,4 +1661,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-        }
+                        }
