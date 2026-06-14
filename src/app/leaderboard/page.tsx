@@ -283,7 +283,6 @@ const CircleAvatar = ({ src, fallback, size = "md", rank, theme, isEmpty = false
 
   const frame = getRankFrame();
 
-  // Agar empty hai toh placeholder dikhao
   if (isEmpty) {
     return (
       <div className="relative inline-flex items-center justify-center">
@@ -329,15 +328,12 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Card */}
       <div className="relative z-10 bg-white rounded-2xl w-[90%] max-w-sm p-6 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
-        {/* Close Button */}
         <button 
           onClick={onClose}
           className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -345,14 +341,11 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           <X className="h-4 w-4 text-gray-500" />
         </button>
 
-        {/* Title */}
         <h3 className="text-lg font-black text-gray-900 mb-4 text-center">
           Ranking Info
         </h3>
 
-        {/* Content */}
         <div className="space-y-4 text-sm text-gray-700">
-          {/* Honor */}
           <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
             <p className="font-black text-amber-600 mb-1">🏆 Honor Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -363,7 +356,6 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             </p>
           </div>
 
-          {/* Charm */}
           <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
             <p className="font-black text-pink-600 mb-1">💖 Charm Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -374,7 +366,6 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             </p>
           </div>
 
-          {/* Room */}
           <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
             <p className="font-black text-purple-600 mb-1">🏠 Room Ranking</p>
             <p className="text-xs leading-relaxed text-gray-600">
@@ -386,7 +377,6 @@ const InfoModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
           </div>
         </div>
 
-        {/* OK Button */}
         <button
           onClick={onClose}
           className="mt-6 w-full py-3 bg-gray-900 text-white font-black rounded-xl hover:bg-gray-800 transition-colors active:scale-[0.98]"
@@ -405,7 +395,6 @@ const isMidnightResetWindow = (): boolean => {
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
   
-  // Midnight reset window: 00:00:00 se 00:00:10 tak
   return hours === 0 && minutes === 0 && seconds < 10;
 };
 
@@ -435,24 +424,20 @@ const getMonthString = (): string => {
 };
 
 const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any[] | null; type: string; isLoading: boolean; theme: LeaderboardThemeConfig | null; timeFilter: 'daily' | 'weekly' | 'monthly' }) => {
-  // Midnight reset ke time sab kuch clear dikhega
   const [isResetWindow, setIsResetWindow] = useState(false);
   const [todayDate, setTodayDate] = useState(getTodayDateString());
 
   useEffect(() => {
-    // Har second check karo ki midnight window hai ya nahi
     const interval = setInterval(() => {
       const resetNow = isMidnightResetWindow();
       setIsResetWindow(resetNow);
       
-      // Naya din start hua toh date update karo
       const newDate = getTodayDateString();
       if (newDate !== todayDate) {
         setTodayDate(newDate);
       }
     }, 1000);
 
-    // Initial check
     setIsResetWindow(isMidnightResetWindow());
     setTodayDate(getTodayDateString());
 
@@ -469,34 +454,18 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
 
   const getValue = (item: any) => {
     const prefix = timeFilter;
-    // Daily fields
-    if (timeFilter === 'daily') {
-      const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-      if (type === 'rich') return item.wallet?.[`daily${fieldSuffix}`] || 0;
-      return item.stats?.[`daily${fieldSuffix}`] || 0;
-    }
-    // Weekly fields
-    if (timeFilter === 'weekly') {
-      const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-      if (type === 'rich') return item.wallet?.[`weekly${fieldSuffix}`] || 0;
-      return item.stats?.[`weekly${fieldSuffix}`] || 0;
-    }
-    // Monthly fields
     const fieldSuffix = type === 'rich' ? 'Spent' : type === 'charm' ? 'GiftsReceived' : type === 'rooms' ? 'Gifts' : 'GameWins';
-    if (type === 'rich') return item.wallet?.[`monthly${fieldSuffix}`] || 0;
-    return item.stats?.[`monthly${fieldSuffix}`] || 0;
+    const fieldName = `${prefix}${fieldSuffix}`;
+    
+    if (type === 'rich') return item.wallet?.[fieldName] || 0;
+    return item.stats?.[fieldName] || 0;
   };
 
-  // Only show reset window for daily
   if (isResetWindow && timeFilter === 'daily') {
-    // Top 3 empty + No Data in list
     return (
       <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
-        {/* Fixed Section — Empty Top 3 */}
         <div className="flex-shrink-0">
-          {/* Top 3 in One Row - Empty State with ? avatar */}
           <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
-            {/* Top 2 - Left side (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
@@ -508,7 +477,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
               </div>
             </div>
 
-            {/* Top 1 - Center (Empty) */}
             <div className="flex-1 flex justify-center relative -top-16">
               <div className="flex flex-col items-center gap-1 -mt-12">
                 <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
@@ -520,7 +488,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
               </div>
             </div>
 
-            {/* Top 3 - Right side (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
@@ -533,11 +500,9 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             </div>
           </div>
 
-          {/* 10vh Space */}
           <div className="h-[10vh]" />
         </div>
 
-        {/* Scrollable Section — No Data message */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
           <div className="text-center py-20 opacity-60">
             <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
@@ -549,17 +514,13 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
     );
   }
 
-  // Normal flow - filter active players
   const activePlayers = (items || []).filter((item) => getValue(item) > 0);
 
-  // Agar active players hi nahi hai (0 players with value > 0)
   if (activePlayers.length === 0)
     return (
       <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
-        {/* Fixed Section — Empty Top 3 with ? */}
         <div className="flex-shrink-0">
           <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
-            {/* Top 2 - Left (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 translate-x-3">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={2} theme={theme} />
@@ -571,7 +532,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
               </div>
             </div>
 
-            {/* Top 1 - Center (Empty) */}
             <div className="flex-1 flex justify-center relative -top-16">
               <div className="flex flex-col items-center gap-1 -mt-12">
                 <CircleAvatar isEmpty={true} fallback="?" size="lg" rank={1} theme={theme} />
@@ -583,7 +543,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
               </div>
             </div>
 
-            {/* Top 3 - Right (Empty) */}
             <div className="flex-1 flex justify-center">
               <div className="flex flex-col items-center gap-1 mt-16 -translate-x-4">
                 <CircleAvatar isEmpty={true} fallback="?" size="md" rank={3} theme={theme} />
@@ -599,7 +558,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
           <div className="h-[10vh]" />
         </div>
 
-        {/* No Data for list */}
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
           <div className="text-center py-20 opacity-60">
             <TrendingUp className="mx-auto mb-4 h-10 w-10 text-white/40" />
@@ -610,12 +568,10 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
       </div>
     );
 
-  // Normal case - players exist
   const top1 = activePlayers[0];
   const top2 = activePlayers[1];
   const top3 = activePlayers[2];
   
-  // Rank 4 se baaki sab scrollable
   const scrollablePlayers = activePlayers.slice(3);
 
   const formatValue = (val: number) => {
@@ -626,11 +582,8 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
 
   return (
     <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-700">
-      {/* Fixed Section — Top 3 + 10vh space */}
       <div className="flex-shrink-0">
-        {/* Top 3 in One Row */}
         <div className="flex items-end justify-center gap-4 px-4 pt-20 pb-8">
-          {/* Top 2 - Left side */}
           <div className="flex-1 flex justify-center">
             {top2 ? (
               <Link 
@@ -656,7 +609,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             )}
           </div>
 
-          {/* Top 1 - Center */}
           <div className="flex-1 flex justify-center relative -top-16">
             {top1 ? (
               <Link 
@@ -682,7 +634,6 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             )}
           </div>
 
-          {/* Top 3 - Right side */}
           <div className="flex-1 flex justify-center">
             {top3 ? (
               <Link 
@@ -709,11 +660,9 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
           </div>
         </div>
 
-        {/* 10vh Space — Fixed gap between Top 3 and scrollable list */}
         <div className="h-[10vh]" />
       </div>
 
-      {/* Scrollable Section — Rank 4 se baaki sab */}
       {scrollablePlayers.length > 0 ? (
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 space-y-1 pb-20">
           {scrollablePlayers.map((item, index) => {
@@ -786,19 +735,16 @@ function LeaderboardContent() {
     return () => unsubscribe();
   }, [firestore]);
 
-  // Helper to get field name based on ranking type and time filter
   const getFieldName = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
     const prefix = timeFilter;
     const suffix = category === 'rich' ? 'Spent' : category === 'charm' ? 'GiftsReceived' : category === 'rooms' ? 'Gifts' : 'GameWins';
     return `${prefix}${suffix}`;
   };
 
-  // Helper to get collection path
   const getCollectionPath = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
     return category === 'rooms' ? 'chatRooms' : 'users';
   };
 
-  // Helper to get field path (wallet or stats)
   const getFieldPath = (category: 'rich' | 'charm' | 'rooms' | 'games') => {
     const fieldName = getFieldName(category);
     if (category === 'rich') return `wallet.${fieldName}`;
@@ -884,52 +830,54 @@ function LeaderboardContent() {
       <DynamicThemeBackground theme={activeTheme} />
 
       {/* Header */}
-      <header className="relative z-50 p-4 pt-safe flex items-center justify-between flex-shrink-0">
-        <Link href="/rooms" className="flex items-center justify-center w-10 h-10">
-          <ChevronLeft className="h-6 w-6 text-white" />
-        </Link>
+      <header className="relative z-50 p-3 pt-safe flex flex-col gap-1.5 flex-shrink-0">
+        {/* Row 1: Left Arrow + Category Tabs + Help Icon */}
+        <div className="flex items-center justify-between">
+          <Link href="/rooms" className="flex items-center justify-center w-8 h-8">
+            <ChevronLeft className="h-5 w-5 text-white" />
+          </Link>
 
-        <div className="flex items-center gap-6">
-          {['rich', 'charm', 'rooms'].map((tab) => (
+          <div className="flex items-center gap-5">
+            {['rich', 'charm', 'rooms'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setRankingMode(tab as any)}
+                className={cn(
+                  'text-xs font-black uppercase tracking-widest transition-all',
+                  rankingType === tab ? 'text-white' : 'text-white/40'
+                )}
+              >
+                {tab === 'rich' ? 'Honor' : tab === 'charm' ? 'Charm' : 'Room'}
+              </button>
+            ))}
+          </div>
+
+          <button 
+            onClick={() => setShowInfo(true)}
+            className="flex items-center justify-center w-8 h-8"
+          >
+            <HelpCircle className="h-5 w-5 text-white" />
+          </button>
+        </div>
+
+        {/* Row 2: Daily, Weekly, Monthly - Chote Tabs */}
+        <div className="flex justify-center gap-1.5">
+          {(['daily', 'weekly', 'monthly'] as const).map((filter) => (
             <button
-              key={tab}
-              onClick={() => setRankingMode(tab as any)}
+              key={filter}
+              onClick={() => setTimeFilter(filter)}
               className={cn(
-                'text-xs font-black uppercase tracking-widest transition-all',
-                rankingType === tab ? 'text-white' : 'text-white/40'
+                'px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all border',
+                timeFilter === filter 
+                  ? 'bg-white/20 border-white/30 text-white shadow-lg' 
+                  : 'bg-transparent border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
               )}
             >
-              {tab === 'rich' ? 'Honor' : tab === 'charm' ? 'Charm' : 'Room'}
+              {filter}
             </button>
           ))}
         </div>
-
-        {/* HelpCircle Icon - Click pe info modal open hoga */}
-        <button 
-          onClick={() => setShowInfo(true)}
-          className="flex items-center justify-center w-10 h-10"
-        >
-          <HelpCircle className="h-5 w-5 text-white" />
-        </button>
       </header>
-
-      {/* Time Filter Tabs - Daily, Weekly, Monthly - Chote tabs niche */}
-      <div className="relative z-50 flex justify-center gap-2 px-4 pb-2 flex-shrink-0">
-        {(['daily', 'weekly', 'monthly'] as const).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setTimeFilter(filter)}
-            className={cn(
-              'px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border',
-              timeFilter === filter 
-                ? 'bg-white/20 border-white/30 text-white shadow-lg scale-105' 
-                : 'bg-transparent border-white/10 text-white/50 hover:border-white/20 hover:text-white/70'
-            )}
-          >
-            {filter === 'daily' ? 'Daily' : filter === 'weekly' ? 'Weekly' : 'Monthly'}
-          </button>
-        ))}
-      </div>
 
       <main className="relative z-10 flex-1 overflow-hidden">
         <RankingList items={activeItems} type={rankingType} isLoading={isActiveLoading} theme={activeTheme} timeFilter={timeFilter} />
@@ -949,4 +897,4 @@ export default function LeaderboardPage() {
       </Suspense>
     </AppLayout>
   );
-      }
+    }
