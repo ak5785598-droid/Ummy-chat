@@ -534,7 +534,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
           </div>
 
           {/* 10vh Space */}
-          <div className="h-[6vh]" />
+          <div className="h-[10vh]" />
         </div>
 
         {/* Scrollable Section — No Data message */}
@@ -596,7 +596,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             </div>
           </div>
 
-          <div className="h-[7vh]" />
+          <div className="h-[10vh]" />
         </div>
 
         {/* No Data for list */}
