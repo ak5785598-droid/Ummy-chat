@@ -445,4 +445,4 @@ export default function CpHousePage() {
       </div>
     </AppLayout>
   );
-          }
+}
