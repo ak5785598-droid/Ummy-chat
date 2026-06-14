@@ -842,7 +842,8 @@ const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onCl
               <div key={i} className="aspect-square rounded-xl bg-white/[0.02] border border-white/[0.08] flex items-center justify-center shadow-inner overflow-hidden relative">
                 {medal ? (
                   medal.imageUrl && (medal.imageUrl.includes('.mp4') || medal.imageUrl.includes('video') || medal.imageUrl.includes('.webm')) ? (
-                    <video src={medal.imageUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                    // ✅ Frame video size increased - scale-105 se scale-125
+                    <video src={medal.imageUrl} autoPlay loop muted playsInline className="w-full h-full object-cover scale-125" />
                   ) : (
                     <img src={medal.imageUrl} alt={medal.name} className="w-full h-full object-cover" loading="lazy" />
                   )
@@ -894,37 +895,37 @@ const MedalModal = React.memo(({ open, onClose, profile }: { open: boolean, onCl
                 >
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-slate-400/30 to-transparent" />
                   
-                  {/* ✅ YEH WALA CHANGE - Grey circle border hata diya, ab seedha image show hogi bina kisi background ke */}
-                  <div className="h-24 w-24 flex items-center justify-center mb-3 overflow-hidden relative">
-                    <div className="h-full w-full flex items-center justify-center overflow-hidden relative">
-                      {medal.imageUrl ? (
-                        isVideo ? (
-                          <video 
-                            src={medal.imageUrl} 
-                            autoPlay 
-                            loop 
-                            muted 
-                            playsInline 
-                            className="w-full h-full object-cover scale-105" 
-                          />
-                        ) : (
-                            <img 
-                              src={medal.imageUrl} 
-                              alt={medal.name} 
-                              className="w-full h-full object-contain" 
-                              loading="lazy"
-                            />
-                        )
+                  {/* ✅ Medal image - Grey circle border aur black background completely hataya, seedha original image */}
+                  <div className="h-24 w-24 flex items-center justify-center mb-3 relative">
+                    {medal.imageUrl ? (
+                      isVideo ? (
+                        <video 
+                          src={medal.imageUrl} 
+                          autoPlay 
+                          loop 
+                          muted 
+                          playsInline 
+                          className="w-full h-full object-contain"
+                          style={{ background: 'transparent' }}
+                        />
                       ) : (
-                        <div className="flex flex-col items-center text-white/50">
-                          {activeTab === 'Achievement' ? <Crown className="h-10 w-10 text-yellow-400" /> :
-                           activeTab === 'Gift' ? <Gift className="h-10 w-10 text-pink-400" /> :
-                           <ActivityIcon className="h-10 w-10 text-green-400" />}
-                        </div>
-                      )}
-                    </div>
+                        <img 
+                          src={medal.imageUrl} 
+                          alt={medal.name} 
+                          className="w-full h-full object-contain"
+                          style={{ background: 'transparent' }}
+                          loading="lazy"
+                        />
+                      )
+                    ) : (
+                      <div className="flex flex-col items-center text-white/50">
+                        {activeTab === 'Achievement' ? <Crown className="h-10 w-10 text-yellow-400" /> :
+                         activeTab === 'Gift' ? <Gift className="h-10 w-10 text-pink-400" /> :
+                         <ActivityIcon className="h-10 w-10 text-green-400" />}
+                      </div>
+                    )}
                   </div>
-
+                  
                   <div className="flex text-[#fcd34d] text-[10px] mb-1.5 tracking-widest drop-shadow-sm">
                     {medal.tier === 'legendary' ? '★★★★★' : medal.tier === 'epic' ? '★★★★' : medal.tier === 'rare' ? '★★★' : '★★'}
                   </div>
@@ -1215,14 +1216,13 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
         <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth pt-14 z-10 relative mt-2">
           <div className="max-w-[440px] mx-auto px-5">
             <div className="flex items-center gap-1 mb-0 pt-0">
-              {/* ✅ YEH WALA CHANGE - CompactVideoAvatarFrame ka size 88px se badhakar 120px kar diya */}
               <div onClick={() => setFullViewOpen(true)} className="shrink-0 cursor-pointer active:scale-95 transition-transform" style={{ marginLeft: '-6px' }}>
                   <AvatarFrame 
                     frameId={profile.inventory?.activeFrame} 
                     frameMediaUrl={profile.inventory?.activeFrameMediaUrl}
                     size="xl"
                   >
-                    <Avatar className="h-[120px] w-[120px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
+                    <Avatar className="h-[88px] w-[88px] border-2 border-white shadow-xl rounded-full ring-1 ring-slate-200">
                       <AvatarImage src={profile.avatarUrl} className="object-cover" />
                       <AvatarFallback className="text-3xl font-bold bg-slate-50 text-slate-300">{(profile.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
@@ -1389,4 +1389,4 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       </div>
     </AppLayout>
   );
-  }
+    }
