@@ -500,7 +500,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             </div>
           </div>
 
-          <div className="h-[10vh]" />
+          <div className="h-[7vh]" />
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
@@ -555,7 +555,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
             </div>
           </div>
 
-          <div className="h-[10vh]" />
+          <div className="h-[7vh]" />
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-20">
@@ -660,7 +660,7 @@ const RankingList = ({ items, type, isLoading, theme, timeFilter }: { items: any
           </div>
         </div>
 
-        <div className="h-[10vh]" />
+        <div className="h-[7vh]" />
       </div>
 
       {scrollablePlayers.length > 0 ? (
@@ -861,7 +861,7 @@ function LeaderboardContent() {
         </div>
 
         {/* Row 2: Daily, Weekly, Monthly - Chote Tabs */}
-        <div className="flex justify-center gap-1.5">
+        <div className="flex justify-center gap-1.5 pl-1">
           {(['daily', 'weekly', 'monthly'] as const).map((filter) => (
             <button
               key={filter}
