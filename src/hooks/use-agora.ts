@@ -30,6 +30,7 @@ if (typeof window !== 'undefined') {
 }
 
 function hashUidToNumber(uid: string): number {
+  if (!uid) return 0;
   let hash = 5381;
   for (let i = 0; i < uid.length; i++) {
     hash = (hash * 33) ^ uid.charCodeAt(i);

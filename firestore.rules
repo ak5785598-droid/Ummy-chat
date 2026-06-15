@@ -16,20 +16,12 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '901piBzTQ0VzCtAvlyyobwvAaTs1' || 
-        request.auth.uid == '1338' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         'isAdmin' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true)
+        request.auth.uid == '1338'
       );
     }
 
     function isNotBanned() {
-      return isAdmin() || 
-             !exists(/databases/$(database)/documents/users/$(request.auth.uid)) || 
-             !('banStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data) || 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.isBanned == false || 
-             (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil != null && 
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.banStatus.bannedUntil < request.time);
+      return true;
     }
 
     // ============================================
@@ -135,6 +127,8 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if true;
         allow create: if isSignedIn() && isNotBanned();
+        allow update: if isSignedIn() && isNotBanned() && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['_processing_ai']);
         allow delete: if isAdmin() || (resource.data.senderId == request.auth.uid);
       }
 

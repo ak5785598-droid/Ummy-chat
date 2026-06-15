@@ -185,6 +185,7 @@ const getTodayString = () => {
 
 // --- HASH UTILITY (Must match use-agora.ts) ---
 function hashUidToNumber(uid: string): number {
+  if (!uid) return 0;
   let hash = 5381;
   for (let i = 0; i < uid.length; i++) {
     hash = (hash * 33) ^ uid.charCodeAt(i);
@@ -1162,9 +1163,9 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
       
       const isLeader = currentUser?.uid === electedLeaderUid;
 
-      if (isLeader && roomMusicLibrary.length > 0) {
+      if (isLeader && roomMusicLibrary?.length > 0) {
         handleNextMusic();
-      } else if (!isLeader && roomMusicLibrary.length > 0) {
+      } else if (!isLeader && roomMusicLibrary?.length > 0) {
       } else {
         setIsMusicPlaying(false);
       }
@@ -1441,10 +1442,10 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   // Auto-route voice to earbuds when connected
   useEffect(() => {
-    if ((hasBluetooth || hasWired) && isVoiceSpeaker && remoteUsers.length > 0) {
+    if ((hasBluetooth || hasWired) && isVoiceSpeaker && remoteUsers && remoteUsers.length > 0) {
       forceEarbudsOutput();
     }
-  }, [hasBluetooth, hasWired, isVoiceSpeaker, remoteUsers.length, forceEarbudsOutput]);
+  }, [hasBluetooth, hasWired, isVoiceSpeaker, remoteUsers?.length, forceEarbudsOutput]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !room.id) return null;
@@ -2103,7 +2104,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const handleNextMusic = async () => {
     if (!firestore || !room.id) return;
-    if (roomMusicLibrary.length === 0) {
+    if (!roomMusicLibrary || roomMusicLibrary.length === 0) {
       toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
       return;
     }
@@ -2131,7 +2132,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
 
   const handlePreviousMusic = async () => {
     if (!firestore || !room.id) return;
-    if (roomMusicLibrary.length === 0) {
+    if (!roomMusicLibrary || roomMusicLibrary.length === 0) {
       toast({ title: 'Library Empty', description: 'Upload songs to the Room Library first.', variant: 'destructive' });
       return;
     }

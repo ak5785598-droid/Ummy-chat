@@ -370,8 +370,9 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
   // ============ CORE SEND LOGIC WITH SMART REWARD SYSTEM ============
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
-    if (!user || !firestore || !userProfile || uids.length === 0) return null;
-    const totalCost = gift.price * qty * uids.length;
+    const validUids = (uids || []).filter(uid => typeof uid === 'string' && uid.trim() !== '');
+    if (!user || !firestore || !userProfile || validUids.length === 0) return null;
+    const totalCost = gift.price * qty * validUids.length;
     if ((userProfile.wallet?.coins || 0) < totalCost) return null;
     try {
       const batch = writeBatch(firestore);
@@ -421,7 +422,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       });
       
       const diamondPerRecipient = Math.floor((gift.price * qty) * 0.4);
-      uids.forEach(uid => { const recProfileRef = doc(firestore, 'users', uid, 'profile', uid); batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient), 'stats.dailyGiftsReceived': increment(diamondPerRecipient) }); });
+      validUids.forEach(uid => { const recProfileRef = doc(firestore, 'users', uid, 'profile', uid); batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient), 'stats.dailyGiftsReceived': increment(diamondPerRecipient) }); });
       
       const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
       let dailyAmountVal: any = increment(totalCost);
@@ -451,8 +452,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
           const battleData = battleSnap.data();
           if (battleData.isActive) {
             let scoreLeftInc = 0, scoreRightInc = 0;
-            if (battleData.leftUser?.uid && uids.includes(battleData.leftUser.uid)) scoreLeftInc += totalCost;
-            if (battleData.rightUser?.uid && uids.includes(battleData.rightUser.uid)) scoreRightInc += totalCost;
+            if (battleData.leftUser?.uid && validUids.includes(battleData.leftUser.uid)) scoreLeftInc += totalCost;
+            if (battleData.rightUser?.uid && validUids.includes(battleData.rightUser.uid)) scoreRightInc += totalCost;
             if (scoreLeftInc > 0 || scoreRightInc > 0) {
               const updates: Record<string, any> = {};
               if (scoreLeftInc > 0) updates.scoreLeft = increment(scoreLeftInc);
@@ -464,7 +465,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         }
       } catch (err) { console.warn("Failed to update Gift Battle scores:", err); }
       
-      const firstRecipientUid = uids[0];
+      const firstRecipientUid = validUids[0];
       const recipientObj = participants.find((p: any) => p.uid === firstRecipientUid);
       const recipientSeat = recipientObj?.seatIndex || 1;
       const recipientName = recipientObj?.name || 'Someone';
