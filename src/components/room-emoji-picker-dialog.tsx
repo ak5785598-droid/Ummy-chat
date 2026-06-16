@@ -47,12 +47,8 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
   if (emojis.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
+        <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-none overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 [&>button]:hidden">
           <div className="flex flex-col h-full">
-            <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
-            <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-              <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
-            </DialogHeader>
             <div className="h-[340px] flex items-center justify-center text-white/40">
               No custom emojis yet
             </div>
@@ -64,14 +60,8 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-t-[2.5rem] overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300">
+      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black border-t border-yellow-500/30 p-0 rounded-none overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 [&>button]:hidden">
         <div className="flex flex-col h-full">
-          <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mt-4 mb-2 flex-shrink-0" />
-          
-          <DialogHeader className="p-4 pb-0 text-center flex-shrink-0">
-            <DialogTitle className="text-2xl font-black italic tracking-widest text-yellow-500 uppercase">Emojis</DialogTitle>
-          </DialogHeader>
-
           <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
             <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
               {emojis.map((item: any) => (
@@ -101,7 +91,7 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
                       />
                     ) : (
                       <div className="w-full h-full bg-yellow-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">😊</span>
+                        <span className="text-2xl"></span>
                       </div>
                     )}
                   </div>

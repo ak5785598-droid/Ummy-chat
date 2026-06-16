@@ -1011,6 +1011,20 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
 };
 
 // ==========================================
+// ⚡ BLACK BACKGROUND REMOVER FOR TAB ITEMS ⚡
+// ==========================================
+const TabItemMedia = ({ src, className = '' }: { src: string; className?: string }) => {
+  return (
+    <DirectMedia 
+      src={src} 
+      type="image" 
+      className={className}
+      style={{ background: 'transparent', backgroundColor: 'transparent' }}
+    />
+  );
+};
+
+// ==========================================
 // MAIN COMPONENT
 // ==========================================
 export function FullProfileDialog({
@@ -1252,9 +1266,11 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* Tags - Level badge NICHE + CHOTA + RIGHT + UPAR */}
-                <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
-                  <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
+                {/* Tags - Level badge NICHE + CHOTA + RIGHT + UPAR - All in same row with vertical alignment fix */}
+                <div className="flex items-center justify-center gap-2 flex-wrap mt-2" style={{ alignItems: 'center' }}>
+                  <div style={{ transform: 'translateY(2px)' }}>
+                    <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
+                  </div>
                   {hasOfficialTag && <SVGA_OfficialTag />}
                   {(profile.isSeller || profile.tags?.some((t: string) => ['Seller', 'Seller center', 'Coin Seller'].includes(t))) && (
                     <SVGA_SellerTag />
@@ -1345,7 +1361,7 @@ export function FullProfileDialog({
                     if (!medal) return null;
                     return (
                       <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group">
-                        <img src={medal.imageUrl} alt={medal.name} className="h-12 w-12 object-contain group-hover:scale-110 transition-transform" />
+                        <TabItemMedia src={medal.imageUrl} className="h-12 w-12 object-contain group-hover:scale-110 transition-transform" />
                         <span className="text-[8px] font-bold text-slate-500 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
                       </div>
                     );
@@ -1387,7 +1403,7 @@ export function FullProfileDialog({
                       <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
                         <div className="h-12 w-12 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden relative shadow-sm">
                           {frame.imageUrl ? (
-                            <img src={frame.imageUrl} className="w-full h-full object-cover scale-150" alt="" />
+                            <TabItemMedia src={frame.imageUrl} className="w-full h-full object-cover scale-150" />
                           ) : (
                             <div className="w-full h-full opacity-50" style={{ background: frame.gradient }} />
                           )}
@@ -1461,4 +1477,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-        }
+                                                          }
