@@ -1,18 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { query, collection, where } from 'firebase/firestore';
+import { useUser, useFirestore } from '@/firebase';
+import { query, collection, where, getDocs } from 'firebase/firestore';
 
 interface UnreadBadgeProps {
   className?: string;
   size?: 'sm' | 'md';
 }
 
-/**
- * ATOMIC STABILIZED UNREAD BADGE.
- * Prevents hydration crashes by deferring ALL Firebase hooks until after client mount.
- */
 export const UnreadBadge = React.memo(({ className, size = 'md' }: UnreadBadgeProps) => {
   const [isHydrated, setIsHydrated] = React.useState(false);
   
@@ -20,33 +16,34 @@ export const UnreadBadge = React.memo(({ className, size = 'md' }: UnreadBadgePr
     setIsHydrated(true);
   }, []);
 
-  // Strict Mount Guard: Return null before checking hooks
   if (!isHydrated) return null;
 
   return <UnreadBadgeContent className={className} size={size} />;
 });
 
-/**
- * Internal logic component that only executes on the client.
- */
 function UnreadBadgeContent({ className, size = 'md' }: UnreadBadgeProps) {
   const { user } = useUser();
   const firestore = useFirestore();
+  const [hasUnread, setHasUnread] = React.useState(false);
 
-  const unreadChatsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(collection(firestore, "privateChats"), where("participantIds", "array-contains", user.uid));
+  React.useEffect(() => {
+    if (!firestore || !user) return;
+    const checkUnread = async () => {
+      try {
+        const q = query(collection(firestore, "privateChats"), where("participantIds", "array-contains", user.uid));
+        const snap = await getDocs(q);
+        const unread = snap.docs.some(docSnap => {
+          const chat = docSnap.data();
+          const readBy = Array.isArray(chat?.lastMessageReadBy) ? chat.lastMessageReadBy : [];
+          return chat.lastSenderId !== user.uid && !readBy.includes(user.uid);
+        });
+        setHasUnread(unread);
+      } catch (e) {}
+    };
+    checkUnread();
+    const interval = setInterval(checkUnread, 60000); // 1 min poll (was realtime)
+    return () => clearInterval(interval);
   }, [firestore, user?.uid]);
-
-  const { data: chatsForUnread } = useCollection(unreadChatsQuery);
-
-  const hasUnread = React.useMemo(() => {
-    if (!chatsForUnread || !user) return false;
-    return chatsForUnread.filter(Boolean).some((chat: any) => {
-      const readBy = Array.isArray(chat?.lastMessageReadBy) ? chat.lastMessageReadBy : [];
-      return chat.lastSenderId !== user.uid && !readBy.includes(user.uid);
-    });
-  }, [chatsForUnread, user?.uid]);
 
   if (!hasUnread) return null;
 

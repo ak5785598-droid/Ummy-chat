@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, serverTimestamp, increment, writeBatch, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, collection, query, where, serverTimestamp, increment, writeBatch, getDoc, getDocs } from 'firebase/firestore';
 import { ROOM_TASKS, RoomTask } from '@/constants/room-tasks';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,36 +24,41 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
   const micTimerRef = useRef<NodeJS.Timeout | null>(null);
   const simMicTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Fetch persistent progress for today
+  // 1. COST FIX: One-time fetch + 5min poll instead of realtime listener
   useEffect(() => {
     if (!firestore || !user?.uid) return;
 
     const today = new Date().toISOString().split('T')[0];
-    const questsRef = collection(firestore, 'users', user.uid, 'roomQuests');
     
-    const unsub = onSnapshot(questsRef, (snap) => {
-      const data: Record<string, number> = {};
-      const achieved: string[] = [];
-      const claimed: string[] = [];
-      
-      snap.docs.forEach(doc => {
-        const d = doc.data();
-        const updatedAt = d.updatedAt?.toDate() || new Date();
-        const updatedAtKey = updatedAt.toISOString().split('T')[0];
+    const fetchQuests = async () => {
+      try {
+        const questsRef = collection(firestore, 'users', user.uid, 'roomQuests');
+        const snap = await getDocs(questsRef);
+        const data: Record<string, number> = {};
+        const achieved: string[] = [];
+        const claimed: string[] = [];
         
-        if (updatedAtKey === today) {
-          data[doc.id] = d.current || 0;
-          if (d.isCompleted) achieved.push(doc.id);
-          if (d.isClaimed) claimed.push(doc.id);
-        }
-      });
-      
-      setTaskProgress(data);
-      setAchievedTasks(achieved);
-      setClaimedTasks(claimed);
-    });
+        snap.docs.forEach(doc => {
+          const d = doc.data();
+          const updatedAt = d.updatedAt?.toDate() || new Date();
+          const updatedAtKey = updatedAt.toISOString().split('T')[0];
+          
+          if (updatedAtKey === today) {
+            data[doc.id] = d.current || 0;
+            if (d.isCompleted) achieved.push(doc.id);
+            if (d.isClaimed) claimed.push(doc.id);
+          }
+        });
+        
+        setTaskProgress(data);
+        setAchievedTasks(achieved);
+        setClaimedTasks(claimed);
+      } catch (e) { console.warn('Quests fetch failed', e); }
+    };
 
-    return () => unsub();
+    fetchQuests();
+    const interval = setInterval(fetchQuests, 300000); // 5 min
+    return () => clearInterval(interval);
   }, [firestore, user?.uid]);
 
   // 2. Helper to increment task progress (NO AUTO-AWARD)
@@ -134,7 +139,7 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
         updateTask('mic_10', 1);
         updateTask('mic_30', 1);
         updateTask('mic_60', 1);
-      }, 60000); // Check every minute
+      }, 300000); // Check every 5 minutes (was 60s — reduces writes 5x)
     } else if (!isMeOnMic && micTimerRef.current) {
       clearInterval(micTimerRef.current);
       micTimerRef.current = null;
@@ -166,7 +171,7 @@ export function useRoomTasks(roomId: string, participants: any[], roomOwnerId: s
           updateTask('sim_mic_new_5', 1);
         }
 
-      }, 60000);
+      }, 300000); // Every 5 minutes (was 60s — reduces writes 5x)
     } else if (!hasThreeOnMic && simMicTimerRef.current) {
       clearInterval(simMicTimerRef.current);
       simMicTimerRef.current = null;

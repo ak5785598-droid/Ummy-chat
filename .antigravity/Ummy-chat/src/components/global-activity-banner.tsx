@@ -1,37 +1,53 @@
 'use client';
 
 import { 
-  useFirestore, 
-  useCollection,
+  useFirestore,
   useMemoFirebase
 } from '@/firebase';
 import { 
   collection, 
   query, 
   orderBy, 
-  limit 
+  limit,
+  getDocs
 } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
 import { Sparkles, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * GlobalActivityBanner - A scrolling system-wide announcement for premium events.
- * Listens to the 'globalActivity' collection for legendary gifts and wins.
+ * GlobalActivityBanner - COST FIX: Uses getDocs with 30s poll instead of realtime listener.
  */
 export function GlobalActivityBanner() {
   const firestore = useFirestore();
+  const [activeEvent, setActiveEvent] = useState<any>(null);
 
-  const activityQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(
-      collection(firestore, 'globalActivity'),
-      orderBy('timestamp', 'desc'),
-      limit(1)
-    );
+  useEffect(() => {
+    if (!firestore) return;
+
+    const fetchActivity = async () => {
+      try {
+        const q = query(
+          collection(firestore, 'globalActivity'),
+          orderBy('timestamp', 'desc'),
+          limit(1)
+        );
+        const snap = await getDocs(q);
+        const doc = snap.docs[0];
+        if (doc) {
+          setActiveEvent({ id: doc.id, ...doc.data() });
+        } else {
+          setActiveEvent(null);
+        }
+      } catch (err) {
+        console.warn("GlobalActivityBanner: fetch failed", err);
+      }
+    };
+
+    fetchActivity();
+    const interval = setInterval(fetchActivity, 30000); // Poll every 30s
+    return () => clearInterval(interval);
   }, [firestore]);
-
-  const { data: activities } = useCollection<any>(activityQuery, { silent: true });
-  const activeEvent = activities?.[0];
 
   if (!activeEvent) return null;
 

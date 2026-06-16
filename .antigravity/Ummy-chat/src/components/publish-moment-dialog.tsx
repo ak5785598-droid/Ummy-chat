@@ -62,7 +62,7 @@ export function PublishMomentDialog({ open, onOpenChange }: PublishMomentDialogP
      const timestamp = Date.now();
      const storagePath = `moments/${user.uid}/${timestamp}_${selectedImage.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
      const sRef = ref(storage, storagePath);
-     const result = await uploadBytes(sRef, selectedImage);
+      const result = await uploadBytes(sRef, selectedImage, { cacheControl: 'public, max-age=2592000, immutable' });
      imageUrl = await getDownloadURL(result.ref);
     }
 

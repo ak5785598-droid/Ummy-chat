@@ -3,22 +3,41 @@
 
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useState, useEffect } from 'react';
+
+// Global cache — shared across all UmmyLogoIcon instances
+let logoCache: { url: string; timestamp: number } | null = null;
+const LOGO_CACHE_TTL = 300000; // 5 min
 
 /**
- * Official Ummy Brand Signature.
- * Synchronized with the high-fidelity mascot visual.
- * Upgraded to a Reactive Observer: Swaps the brand signature in real-time when the Admin dispatches a new logo.
+ * Official Ummy Brand Signature — COST FIX: Shared global cache, no per-instance listener.
  */
 export const UmmyLogoIcon = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
  const firestore = useFirestore();
- const configRef = useMemoFirebase(() => !firestore ? null : doc(firestore, 'appConfig', 'global'), [firestore]);
- const { data: config } = useDoc(configRef);
-
  const fallbackLogo = PlaceHolderImages.find(img => img.id === 'ummy-official-logo');
- const src = config?.customLogoUrl || fallbackLogo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
+ const fallbackUrl = fallbackLogo?.imageUrl || "https://storage.googleapis.com/fetch-and-generate-images/ummy-logo-v3.png";
+ const [src, setSrc] = useState(logoCache?.url || fallbackUrl);
+
+ useEffect(() => {
+  if (!firestore) return;
+  // Check if cache is still valid
+  if (logoCache && Date.now() - logoCache.timestamp < LOGO_CACHE_TTL) {
+   setSrc(logoCache.url);
+   return;
+  }
+  // Fetch once
+  getDoc(doc(firestore, 'appConfig', 'global')).then(snap => {
+   if (snap.exists()) {
+    const data = snap.data();
+    const url = data.customLogoUrl || fallbackUrl;
+    logoCache = { url, timestamp: Date.now() };
+    setSrc(url);
+   }
+  }).catch(() => {});
+ }, [firestore]);
  
  return (
   <div className={cn("relative shrink-0 flex items-center justify-center overflow-hidden", className)} {...props}>

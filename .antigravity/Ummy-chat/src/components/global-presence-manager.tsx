@@ -37,22 +37,22 @@ export function GlobalPresenceManager() {
   setPresence(true);
 
   if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-  heartbeatTimer.current = setInterval(() => {
-   setPresence(true);
-  }, 20000);
-
-  const handleVisibilityChange = () => {
-   if (document.visibilityState === 'hidden') {
-    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-    setPresence(false);
-   } else {
+   heartbeatTimer.current = setInterval(() => {
     setPresence(true);
-    if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
-    heartbeatTimer.current = setInterval(() => {
+   }, 60000);
+
+   const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+     if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
+     setPresence(false);
+    } else {
      setPresence(true);
-    }, 20000);
-   }
-  };
+     if (heartbeatTimer.current) clearInterval(heartbeatTimer.current);
+     heartbeatTimer.current = setInterval(() => {
+      setPresence(true);
+     }, 60000);
+    }
+   };
 
   const handleBeforeUnload = () => {
    setPresence(false);

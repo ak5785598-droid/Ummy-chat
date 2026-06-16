@@ -1,24 +1,30 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFirestore, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { usePathname } from 'next/navigation';
 
 /**
- * DYNAMIC THEME SYNC ENGINE 🏁
- * 
- * This component listens to the global app configuration and applies
- * theme-level CSS variable overrides in real-time across the entire application.
- * 
- * UPDATED: Now includes Path-Aware Isolation to restrict designs to Social areas.
+ * DYNAMIC THEME SYNC ENGINE — COST FIX: One-time getDoc instead of realtime useDoc.
  */
 export function DynamicThemeSync() {
   const firestore = useFirestore();
   const pathname = usePathname();
-  
-  const configRef = firestore ? doc(firestore, 'appConfig', 'global') : null;
-  const { data: config } = useDoc(configRef);
+  const [config, setConfig] = useState<any>(null);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchConfig = async () => {
+      try {
+        const snap = await getDoc(doc(firestore, 'appConfig', 'global'));
+        if (snap.exists()) setConfig(snap.data());
+      } catch (e) { console.warn('Theme config fetch failed', e); }
+    };
+    fetchConfig();
+    const interval = setInterval(fetchConfig, 300000); // 5 min refresh
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   useEffect(() => {
     if (!config) return;

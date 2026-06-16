@@ -84,7 +84,8 @@ export function useRoomImageUpload(roomId: string) {
    const storageRef = ref(storage, storagePath);
    
    const metadata = {
-    contentType: 'image/jpeg'
+    contentType: 'image/jpeg',
+    cacheControl: 'public, max-age=2592000, immutable'
    };
 
    const result = await uploadBytes(storageRef, compressedBlob, metadata);

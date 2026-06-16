@@ -99,23 +99,20 @@ export function RoomPlayDialog({
  const canManage = isOwner || isMod;
  const isChatMuted = room?.isChatMuted || false;
 
- // Load room music library from Firestore
- useEffect(() => {
-  if (!firestore || !roomId) return;
-  
-  const musicRef = collection(firestore, 'chatRooms', roomId, 'music');
-  const q = query(musicRef, orderBy('createdAt', 'desc'));
-  
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-   const tracks = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-   }));
-   setRoomMusicLibrary(tracks);
-  });
-  
-  return () => unsubscribe();
- }, [firestore, roomId]);
+  // COST FIX: One-time fetch instead of realtime listener (music library changes rarely)
+  useEffect(() => {
+   if (!firestore || !roomId || !open) return;
+   
+   const fetchMusic = async () => {
+    try {
+     const musicRef = collection(firestore, 'chatRooms', roomId, 'music');
+     const q = query(musicRef, orderBy('createdAt', 'desc'));
+     const snap = await getDocs(q);
+     setRoomMusicLibrary(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (e) { console.warn('Music fetch failed', e); }
+   };
+   fetchMusic();
+  }, [firestore, roomId, open]);
 
  const handleClearChat = async () => {
   if (!firestore || !roomId || !user) return;
@@ -225,7 +222,7 @@ export function RoomPlayDialog({
    const timestamp = Date.now();
    const storagePath = `rooms/${roomId}/music/${timestamp}_${file.name}`;
    const storageRef = ref(storage, storagePath);
-   const uploadResult = await uploadBytes(storageRef, file);
+    const uploadResult = await uploadBytes(storageRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const downloadUrl = await getDownloadURL(uploadResult.ref);
    
    // Save to room music library in Firestore

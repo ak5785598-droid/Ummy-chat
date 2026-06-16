@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  useCollection, 
   useFirestore, 
   useMemoFirebase 
 } from '@/firebase';
@@ -11,31 +10,38 @@ import {
   collection, 
   query, 
   orderBy, 
-  limit 
+  limit,
+  getDocs
 } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Crown, Users, Heart, Loader } from 'lucide-react';
+import { Crown, Users, Heart } from 'lucide-react';
 
 /**
- * Premium Feature Cards (Hook-Stable Version).
- * Uses internal hydration guards to keep hook counts consistent (#310).
+ * Premium Feature Cards — COST FIX: One-time fetch + 5min refresh instead of realtime listeners.
  */
-
 
 // 1. RANKING CARD
 export function RankingCard() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [topUsers, setTopUsers] = useState<any[]>([]);
   useEffect(() => { setIsHydrated(true); }, []);
   
   const router = useRouter();
   const firestore = useFirestore();
-  const richQuery = useMemoFirebase(() => !firestore ? null : query(
-    collection(firestore, 'users'), 
-    orderBy('wallet.dailySpent', 'desc'), 
-    limit(3)
-  ), [firestore]);
-  
-  const { data: topUsers } = useCollection(richQuery);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchData = async () => {
+      try {
+        const q = query(collection(firestore, 'users'), orderBy('wallet.dailySpent', 'desc'), limit(3));
+        const snap = await getDocs(q);
+        setTopUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.warn('RankingCard fetch failed', e); }
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 300000); // 5 min refresh
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   return (
     <button 
@@ -59,17 +65,25 @@ export function RankingCard() {
 // 2. FAMILY CARD
 export function FamilyCard() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [topFamilies, setTopFamilies] = useState<any[]>([]);
   useEffect(() => { setIsHydrated(true); }, []);
   
   const router = useRouter();
   const firestore = useFirestore();
-  const familiesQuery = useMemoFirebase(() => !firestore ? null : query(
-    collection(firestore, 'families'), 
-    orderBy('totalWealth', 'desc'), 
-    limit(2)
-  ), [firestore]);
-  
-  const { data: topFamilies } = useCollection(familiesQuery);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchData = async () => {
+      try {
+        const q = query(collection(firestore, 'families'), orderBy('totalWealth', 'desc'), limit(2));
+        const snap = await getDocs(q);
+        setTopFamilies(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.warn('FamilyCard fetch failed', e); }
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 300000);
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   return (
     <button 
@@ -94,17 +108,25 @@ export function FamilyCard() {
 // 3. CP CARD
 export function CpCard() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [topCp, setTopCp] = useState<any[]>([]);
   useEffect(() => { setIsHydrated(true); }, []);
   
   const router = useRouter();
   const firestore = useFirestore();
-  const cpQuery = useMemoFirebase(() => !firestore ? null : query(
-    collection(firestore, 'cpPairs'), 
-    orderBy('cpValue', 'desc'), 
-    limit(1)
-  ), [firestore]);
-  
-  const { data: topCp } = useCollection(cpQuery);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchData = async () => {
+      try {
+        const q = query(collection(firestore, 'cpPairs'), orderBy('cpValue', 'desc'), limit(1));
+        const snap = await getDocs(q);
+        setTopCp(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.warn('CpCard fetch failed', e); }
+    };
+    fetchData();
+    const interval = setInterval(fetchData, 300000);
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   return (
     <button 

@@ -107,7 +107,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
      
      // ⚡ QUEST TRACKING: Stay 15 Mins
      if (!hasStayAwarded.current) {
-       stayTimeRef.current += 10;
+        stayTimeRef.current += 30;
        if (stayTimeRef.current >= 900) { // 15 minutes
          console.log('[Missions] Stay time reached! Awarding progress...');
          const questRef = doc(firestore, 'users', uid, 'quests', 'stay_15');
@@ -115,7 +115,7 @@ import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDo
          hasStayAwarded.current = true;
        }
      }
-    }, 10000);
+     }, 30000);
 
     // CLEANUP: Admin-only task to purge stale sessions
     // Re-engineered for mobile resilience (Seated users get 5 min grace)

@@ -1479,7 +1479,7 @@ export default function AdminPage() {
     setIsUploadingBanner(index);
     try {
       const sRef = ref(storage, `banners/slide_${index}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
       const newSlides = [...currentSlides];
@@ -1505,7 +1505,7 @@ export default function AdminPage() {
     setUploadingRankingKey(key);
     try {
       const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(rankingConfigRef, { [key]: url }, { merge: true })
         .then(() => toast({ title: `${key.toUpperCase()} Background Updated` }))
@@ -1590,7 +1590,7 @@ export default function AdminPage() {
     setIsUploadingStore(true);
     try {
       const sRef = ref(storage, `store/item_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       const itemRef = doc(collection(firestore, "storeItems"));
       const itemData = {
@@ -1626,7 +1626,7 @@ export default function AdminPage() {
     setIsUploadingLoginBG(true);
     try {
       const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { loginBackgroundUrl: url }, { merge: true })
         .then(() => toast({ title: "Login Background Synchronized" }))
@@ -1649,7 +1649,7 @@ export default function AdminPage() {
     setIsUploadingLoadingBG(true);
     try {
       const sRef = ref(storage, `branding/loading_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { appLoadingBackgroundUrl: url }, { merge: true })
         .then(() => toast({ title: "App Loading Sync Complete" }))
@@ -1675,7 +1675,7 @@ export default function AdminPage() {
         storage,
         `games/${selectedGameForSync.slug}/loading_bg_${Date.now()}.jpg`,
       );
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       const gameRef = doc(firestore, "games", selectedGameForSync.slug);
       updateDoc(gameRef, {
@@ -1695,7 +1695,7 @@ export default function AdminPage() {
     setIsUploadingSplashBG(true);
     try {
       const sRef = ref(storage, `branding/splash_bg_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { splashScreenUrl: url }, { merge: true })
         .then(() => toast({ title: "Splash Background Synchronized" }))
@@ -1788,7 +1788,7 @@ export default function AdminPage() {
     setIsUploadingPaymentQr(true);
     try {
       const sRef = ref(storage, `branding/payment_qr_${Date.now()}.jpg`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       await updateDoc(configRef, {
         paymentQrUrl: url,
@@ -1805,7 +1805,7 @@ export default function AdminPage() {
     setIsUploadingLogo(true);
     try {
       const sRef = ref(storage, `branding/logo_${Date.now()}.png`);
-      const result = await uploadBytes(sRef, f);
+      const result = await uploadBytes(sRef, f, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       setDoc(configRef, { customLogoUrl: url }, { merge: true })
         .then(() =>

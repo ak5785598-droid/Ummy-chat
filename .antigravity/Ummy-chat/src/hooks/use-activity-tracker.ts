@@ -22,6 +22,9 @@ export function useActivityTracker(roomId: string | null, userId: string | null)
     const HEARTBEAT_INTERVAL = 300000;
 
     const interval = setInterval(() => {
+      // COST FIX: Skip if tab is hidden (background tab = no writes)
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+
       const now = Date.now();
       const elapsed = now - lastHeartbeat.current;
 

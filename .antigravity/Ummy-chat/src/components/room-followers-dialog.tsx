@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
  Dialog, 
  DialogContent, 
@@ -11,8 +11,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader, User as UserIcon, Star, Sparkles, ChevronLeft, Home } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useRouter } from 'next/navigation';
@@ -113,13 +113,21 @@ interface RoomFollowersDialogProps {
  */
 export function RoomFollowersDialog({ open, onOpenChange, room }: RoomFollowersDialogProps) {
  const firestore = useFirestore();
+ const [followers, setFollowers] = useState<any[]>([]);
+ const [isLoading, setIsLoading] = useState(true);
 
- const followersQuery = useMemoFirebase(() => {
-  if (!firestore || !room.id) return null;
-  return query(collection(firestore, 'chatRooms', room.id, 'followers'), orderBy('followedAt', 'desc'), limit(100));
- }, [firestore, room.id]);
-
- const { data: followers, isLoading } = useCollection(followersQuery);
+ useEffect(() => {
+  if (!firestore || !room.id || !open) return;
+  const fetchFollowers = async () => {
+   try {
+    const q = query(collection(firestore, 'chatRooms', room.id, 'followers'), orderBy('followedAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    setFollowers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+   } catch (e) {}
+   setIsLoading(false);
+  };
+  fetchFollowers();
+ }, [firestore, room.id, open]);
 
  const filteredFollowers = useMemo(() => {
   if (!followers) return [];

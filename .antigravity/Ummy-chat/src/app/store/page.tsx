@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { ShoppingBag, Sparkles, MessageSquare, Mic2, Star, Loader, ChevronLeft, 
 import { GoldCoinIcon } from '@/components/icons';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { doc, arrayUnion, increment, serverTimestamp, collection, query, orderBy, Timestamp, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -115,12 +115,21 @@ export default function StorePage() {
   const { toast } = useToast();
   const [previewItem, setPreviewItem] = useState<any>(null);
 
-  const themesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  const [dbThemes, setDbThemes] = useState<any[]>([]);
 
-  const { data: dbThemes } = useCollection(themesQuery);
+  useEffect(() => {
+    if (!firestore) return;
+    const fetchThemes = async () => {
+      try {
+        const q = query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        setDbThemes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.warn('Store themes fetch failed', e); }
+    };
+    fetchThemes();
+    const interval = setInterval(fetchThemes, 300000); // 5 min
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   const dynamicThemes = useMemo(() => {
     return (dbThemes || []).filter(t => (t.price || 0) > 0).map(t => ({

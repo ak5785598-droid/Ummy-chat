@@ -538,7 +538,7 @@ export default function AdminPage() {
   setIsUploadingBanner(index);
   try {
    const sRef = ref(storage, `banners/slide_${index}_${Date.now()}.jpg`);
-   const result = await uploadBytes(sRef, file);
+    const result = await uploadBytes(sRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const url = await getDownloadURL(result.ref);
    const currentSlides = bannerConfig?.slides || DEFAULT_SLIDES;
    const newSlides = [...currentSlides];
@@ -555,7 +555,7 @@ export default function AdminPage() {
   setUploadingRankingKey(key);
   try {
    const sRef = ref(storage, `rankings/bg_${key}_${Date.now()}.jpg`);
-   const result = await uploadBytes(sRef, file);
+    const result = await uploadBytes(sRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const url = await getDownloadURL(result.ref);
    await setDoc(rankingConfigRef, { [key]: url }, { merge: true });
    toast({ title: `${key.toUpperCase()} Background Updated` });
@@ -610,7 +610,7 @@ export default function AdminPage() {
   try {
    const timestamp = Date.now();
    const sRef = ref(storage, `roomThemes/theme_${timestamp}.jpg`);
-   const result = await uploadBytes(sRef, file);
+    const result = await uploadBytes(sRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const url = await getDownloadURL(result.ref);
    
    const themeRef = doc(collection(firestore, 'roomThemes'));
@@ -647,7 +647,7 @@ export default function AdminPage() {
   setIsUploadingLoginBG(true);
   try {
    const sRef = ref(storage, `branding/login_bg_${Date.now()}.jpg`);
-   const result = await uploadBytes(sRef, file);
+    const result = await uploadBytes(sRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const url = await getDownloadURL(result.ref);
    await setDoc(configRef, { loginBackgroundUrl: url }, { merge: true });
    toast({ title: 'Login Background Synchronized' });

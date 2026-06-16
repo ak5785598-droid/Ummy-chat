@@ -1,7 +1,8 @@
 'use client';
 
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader, Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
@@ -9,20 +10,27 @@ import { format } from 'date-fns';
 import Image from 'next/image';
 
 /**
- * High-Fidelity Moments Feed.
- * Displays the latest status updates and broadcasts from the social graph.
- * Features safe date formatting to prevent hydration sync errors.
+ * High-Fidelity Moments Feed — COST FIX: One-time fetch + manual refresh instead of realtime.
  */
 export function MomentsFeed() {
  const firestore = useFirestore();
  const { user } = useUser();
+ const [moments, setMoments] = useState<any[]>([]);
+ const [isLoading, setIsLoading] = useState(true);
 
- const momentsQuery = useMemoFirebase(() => {
-  if (!firestore || !user) return null;
-  return query(collection(firestore, 'moments'), orderBy('createdAt', 'desc'), limit(20));
+ const fetchMoments = useCallback(async () => {
+  if (!firestore || !user) return;
+  try {
+   const q = query(collection(firestore, 'moments'), orderBy('createdAt', 'desc'), limit(20));
+   const snap = await getDocs(q);
+   setMoments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  } catch (e) { console.warn('Moments fetch failed', e); }
+  setIsLoading(false);
  }, [firestore, user]);
 
- const { data: moments, isLoading } = useCollection(momentsQuery);
+ useEffect(() => {
+  fetchMoments();
+ }, [fetchMoments]);
 
  if (isLoading) {
   return (

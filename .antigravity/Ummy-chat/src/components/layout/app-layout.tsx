@@ -21,7 +21,7 @@ import {
  Compass,
  Loader
 } from 'lucide-react';
-import { useFirebase, useUser } from '@/firebase';
+import { useFirebase, useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/use-translation';
@@ -30,8 +30,7 @@ import { ActiveRoomManager } from '@/components/active-room-manager';
 import { UnreadBadge } from '@/components/unread-badge';
 import { DESIGN_TOKENS } from '@/lib/design-tokens';
 import { DynamicThemeSync } from '@/components/dynamic-theme-sync';
-import { useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { AppLayoutGlossy } from './app-layout-glossy';
 
 /**
@@ -53,9 +52,21 @@ export function AppLayout(props: {
   const [mounted, setMounted] = useState(false);
   
   const firestore = useFirestore();
-  const configRef = useMemo(() => firestore ? doc(firestore, 'appConfig', 'global') : null, [firestore]);
-  const { data: config } = useDoc(configRef);
-  const theme = config?.appTheme || 'CLASSIC';
+  const [theme, setTheme] = useState('CLASSIC');
+
+  useEffect(() => {
+    if (!firestore) return;
+    // Reuse the global logo cache for theme too
+    const fetchTheme = async () => {
+      try {
+        const snap = await getDoc(doc(firestore, 'appConfig', 'global'));
+        if (snap.exists()) setTheme(snap.data().appTheme || 'CLASSIC');
+      } catch (e) {}
+    };
+    fetchTheme();
+    const interval = setInterval(fetchTheme, 300000);
+    return () => clearInterval(interval);
+  }, [firestore]);
 
   useEffect(() => {
     setMounted(true);

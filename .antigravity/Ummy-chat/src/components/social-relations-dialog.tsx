@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader, User as UserIcon, Star, Sparkles, ChevronLeft, Search, Eye } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, getDocs, doc, limit, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -102,24 +102,32 @@ export function SocialRelationsDialog({ open, onOpenChange, userId, initialTab =
  const firestore = useFirestore();
  const router = useRouter();
 
- const followersQuery = useMemoFirebase(() => {
-  if (!firestore || !userId) return null;
-  return query(collection(firestore, 'followers'), where('followingId', '==', userId));
- }, [firestore, userId]);
+ const [followers, setFollowers] = useState<any[]>([]);
+ const [following, setFollowing] = useState<any[]>([]);
+ const [visitors, setVisitors] = useState<any[]>([]);
+ const [isFollowersLoading, setIsFollowersLoading] = useState(true);
+ const [isFollowingLoading, setIsFollowingLoading] = useState(true);
+ const [isVisitorsLoading, setIsVisitorsLoading] = useState(true);
 
- const followingQuery = useMemoFirebase(() => {
-  if (!firestore || !userId) return null;
-  return query(collection(firestore, 'followers'), where('followerId', '==', userId));
- }, [firestore, userId]);
-
- const visitorsQuery = useMemoFirebase(() => {
-  if (!firestore || !userId) return null;
-  return query(collection(firestore, 'users', userId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50));
- }, [firestore, userId]);
-
- const { data: followers, isLoading: isFollowersLoading } = useCollection(followersQuery);
- const { data: following, isLoading: isFollowingLoading } = useCollection(followingQuery);
- const { data: visitors, isLoading: isVisitorsLoading } = useCollection(visitorsQuery);
+ useEffect(() => {
+  if (!firestore || !userId || !open) return;
+  const fetchAll = async () => {
+   try {
+    const [fSnap, foSnap, vSnap] = await Promise.all([
+     getDocs(query(collection(firestore, 'followers'), where('followingId', '==', userId))),
+     getDocs(query(collection(firestore, 'followers'), where('followerId', '==', userId))),
+     getDocs(query(collection(firestore, 'users', userId, 'profileVisitors'), orderBy('timestamp', 'desc'), limit(50)))
+    ]);
+    setFollowers(fSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setFollowing(foSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setVisitors(vSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+   } catch (e) {}
+   setIsFollowersLoading(false);
+   setIsFollowingLoading(false);
+   setIsVisitorsLoading(false);
+  };
+  fetchAll();
+ }, [firestore, userId, open]);
 
  const friends = useMemo(() => {
   if (!followers || !following) return [];

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -18,13 +18,14 @@ import {
   CheckCircle2,
   Loader
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { 
   doc, 
   updateDoc, 
   increment,
-  collection
+  collection,
+  getDocs
 } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { GoldCoinIcon } from '@/components/icons';
@@ -62,12 +63,22 @@ export function DailyQuestsDialog({ isOpen, onClose }: DailyQuestsDialogProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const questsQuery = useMemo(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'quests');
-  }, [firestore, user]);
+  const [questDocs, setQuestDocs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: questDocs, isLoading } = useCollection(questsQuery);
+  useEffect(() => {
+    if (!firestore || !user || !isOpen) return;
+    const fetchQuests = async () => {
+      try {
+        const snap = await getDocs(collection(firestore, 'users', user.uid, 'quests'));
+        setQuestDocs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) { console.warn('Quests fetch failed', e); }
+      setIsLoading(false);
+    };
+    fetchQuests();
+    const interval = setInterval(fetchQuests, 60000); // 1 min
+    return () => clearInterval(interval);
+  }, [firestore, user, isOpen]);
 
   const quests = useMemo(() => {
     if (!questDocs) return [];

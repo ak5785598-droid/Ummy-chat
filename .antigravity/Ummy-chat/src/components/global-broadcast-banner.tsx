@@ -19,7 +19,7 @@ export function GlobalBroadcastBanner() {
 
  useEffect(() => {
   setNow(new Date());
-  const timer = setInterval(() => setNow(new Date()), 1000);
+   const timer = setInterval(() => setNow(new Date()), 60000);
   return () => clearInterval(timer);
  }, []);
 

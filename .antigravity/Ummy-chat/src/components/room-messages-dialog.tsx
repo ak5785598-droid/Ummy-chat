@@ -152,7 +152,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
   try {
    const timestamp = Date.now();
    const storageRef = ref(storage, `chats/${chatId}/${timestamp}_${file.name}`);
-   const result = await uploadBytes(storageRef, file);
+    const result = await uploadBytes(storageRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
    const url = await getDownloadURL(result.ref);
    await handleSend(undefined, url);
   } catch (error) {

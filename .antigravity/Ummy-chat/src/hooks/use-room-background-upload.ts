@@ -63,7 +63,7 @@ export function useRoomBackgroundUpload(roomId: string) {
    const storagePath = `chatRooms/${roomId}/background_${timestamp}.jpg`;
    const storageRef = ref(storage, storagePath);
    
-   const result = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/jpeg' });
+   const result = await uploadBytes(storageRef, compressedBlob, { contentType: 'image/jpeg', cacheControl: 'public, max-age=2592000, immutable' });
    const downloadURL = await getDownloadURL(result.ref);
 
    const roomRef = doc(firestore, 'chatRooms', roomId);

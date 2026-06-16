@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
  Dialog, 
  DialogContent, 
@@ -26,8 +26,6 @@ import {
 } from 'lucide-react';
 import { 
  useFirestore, 
- useCollection, 
- useMemoFirebase, 
  updateDocumentNonBlocking 
 } from '@/firebase';
 import { 
@@ -37,7 +35,8 @@ import {
  limit, 
  doc, 
  arrayUnion, 
- arrayRemove 
+ arrayRemove,
+ getDocs
 } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -135,12 +134,21 @@ export function RoomInfoDialog({ open, onOpenChange, room, isOwner, isAdmin }: R
  const prevLevelExp = Math.pow(currentLevel - 1, 2) * 100;
  const progress = ((currentExp - prevLevelExp) / (nextLevelExp - prevLevelExp)) * 100;
 
- const followersQuery = useMemoFirebase(() => {
-  if (!firestore || !room.id) return null;
-  return query(collection(firestore, 'chatRooms', room.id, 'followers'), orderBy('followedAt', 'desc'), limit(100));
- }, [firestore, room.id]);
+ const [followers, setFollowers] = useState<any[]>([]);
+ const [isLoading, setIsLoading] = useState(true);
 
- const { data: followers, isLoading } = useCollection(followersQuery);
+ useEffect(() => {
+  if (!firestore || !room.id || !open) return;
+  const fetchFollowers = async () => {
+   try {
+    const q = query(collection(firestore, 'chatRooms', room.id, 'followers'), orderBy('followedAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    setFollowers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+   } catch (e) {}
+   setIsLoading(false);
+  };
+  fetchFollowers();
+ }, [firestore, room.id, open]);
 
  const handleToggleAdmin = (uid: string, isCurrentlyAdmin: boolean) => {
   if (!firestore || !room.id || !isOwner) return;

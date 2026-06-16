@@ -27,9 +27,9 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { doc, serverTimestamp, query, collection, arrayUnion, arrayRemove, orderBy, getDocs } from 'firebase/firestore';
 import { useRoomImageUpload } from '@/hooks/use-room-image-upload';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -120,19 +120,23 @@ export function RoomSettingsDialog({ room, trigger, open: controlledOpen, onOpen
  const isSupremeCreator = user?.uid === '901piBzTQ0VzCtAvlyyobwvAaTs1';
  const canUseOfficialThemes = isOfficialHelpRoom || userIsOfficial || isOwner || isSupremeCreator;
 
- const participantsQuery = useMemoFirebase(() => {
-  if (!firestore || !room.id) return null;
-  return query(collection(firestore, 'chatRooms', room.id, 'participants'));
- }, [firestore, room.id]);
+ const [participants, setParticipants] = useState<any[]>([]);
+ const [customThemes, setCustomThemes] = useState<any[]>([]);
 
- const { data: participants } = useCollection(participantsQuery);
-
- const customThemesQuery = useMemoFirebase(() => {
-  if (!firestore) return null;
-  return query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc'));
- }, [firestore]);
-
- const { data: customThemes } = useCollection(customThemesQuery);
+ useEffect(() => {
+  if (!firestore || !room.id || !open) return;
+  const fetchAll = async () => {
+   try {
+    const [pSnap, tSnap] = await Promise.all([
+     getDocs(query(collection(firestore, 'chatRooms', room.id, 'participants'))),
+     getDocs(query(collection(firestore, 'roomThemes'), orderBy('createdAt', 'desc')))
+    ]);
+    setParticipants(pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    setCustomThemes(tSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+   } catch (e) {}
+  };
+  fetchAll();
+ }, [firestore, room.id, open]);
 
  const filteredThemes = useMemo(() => {
   const baseline = ROOM_THEMES.filter(theme => {

@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { GoldCoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 
 export interface GameWinner {
  name: string;
@@ -27,18 +27,21 @@ interface GameResultOverlayProps {
  */
 export function GameResultOverlay({ gameId, winningSymbol, winAmount, winners: propWinners }: GameResultOverlayProps) {
  const firestore = useFirestore();
+ const [dbWinners, setDbWinners] = useState<any[]>([]);
 
- const winsQuery = useMemoFirebase(() => {
-  if (!firestore || !gameId) return null;
-  // PROTOCOL OPTIMIZATION: Single-field query prevents "Missing Index" permission errors
-  return query(
-   collection(firestore, 'globalGameWins'),
-   orderBy('timestamp', 'desc'),
-   limit(20) // Fetch a pool to filter from
-  );
+ useEffect(() => {
+  if (!firestore || !gameId) return;
+  const fetchWins = async () => {
+   try {
+    const q = query(collection(firestore, 'globalGameWins'), orderBy('timestamp', 'desc'), limit(20));
+    const snap = await getDocs(q);
+    setDbWinners(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+   } catch (e) { console.warn('GameWins fetch failed', e); }
+  };
+  fetchWins();
+  const interval = setInterval(fetchWins, 60000); // 1 min refresh
+  return () => clearInterval(interval);
  }, [firestore, gameId]);
-
- const { data: dbWinners } = useCollection(winsQuery);
 
  const displayWinners = useMemo(() => {
   if (propWinners && propWinners.length > 0) return propWinners;

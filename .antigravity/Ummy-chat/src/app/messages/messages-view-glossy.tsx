@@ -182,13 +182,15 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
   const { data: messages } = useCollection(messagesQuery);
 
   useEffect(() => {
-   if (open && chatId && currentUser?.uid && firestore && (messages?.length ?? 0) > 0) {
+   if (!open || !chatId || !currentUser?.uid || !firestore || (messages?.length ?? 0) === 0) return;
+   const timer = setTimeout(() => {
     const chatRef = doc(firestore, 'privateChats', chatId);
     updateDocumentNonBlocking(chatRef, {
      lastMessageReadBy: arrayUnion(currentUser.uid)
     });
-   }
-  }, [open, chatId, messages, currentUser?.uid, firestore]);
+   }, 3000);
+   return () => clearTimeout(timer);
+  }, [open, chatId, messages?.length, currentUser?.uid, firestore]);
 
   useEffect(() => {
    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -225,7 +227,7 @@ function ChatRoomDialog({ open, onOpenChange, chatId, otherUser, currentUser }: 
    try {
     const timestamp = Date.now();
     const storageRef = ref(storage, `chats/${chatId}/${timestamp}_${file.name}`);
-    const result = await uploadBytes(storageRef, file);
+     const result = await uploadBytes(storageRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
     const url = await getDownloadURL(result.ref);
     await handleSend(undefined, url);
    } catch (error) {

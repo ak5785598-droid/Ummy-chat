@@ -41,7 +41,8 @@ export function useGameLogoUpload() {
    const storageRef = ref(storage, storagePath);
    
    const metadata = {
-    contentType: file.type || 'image/jpeg'
+    contentType: file.type || 'image/jpeg',
+    cacheControl: 'public, max-age=2592000, immutable'
    };
    
    const result = await uploadBytes(storageRef, file, metadata);

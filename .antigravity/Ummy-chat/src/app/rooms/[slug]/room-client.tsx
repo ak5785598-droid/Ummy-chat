@@ -566,26 +566,7 @@ export function RoomClient({ room }: { room: Room }) {
     return () => clearInterval(timer);
   }, []);
 
-  // HEARTBEAT: Update lastSeen every 30 seconds to stay online in room count
-  useEffect(() => {
-    if (!firestore || !room.id || !currentUser?.uid) return;
-
-    const updateHeartbeat = () => {
-      const pRef = doc(firestore, 'chatRooms', room.id, 'participants', currentUser.uid);
-      updateDocumentNonBlocking(pRef, {
-        lastSeen: serverTimestamp(),
-        name: userProfile?.username || currentUser.displayName || 'User',
-        avatarUrl: userProfile?.avatarUrl || currentUser.photoURL || '',
-      });
-    };
-
-    // Update immediately on mount
-    updateHeartbeat();
-
-    // Then every 30 seconds
-    const heartbeat = setInterval(updateHeartbeat, 30000);
-    return () => clearInterval(heartbeat);
-  }, [firestore, room.id, currentUser?.uid, currentUser?.displayName, currentUser?.photoURL, userProfile?.username, userProfile?.avatarUrl]);
+  // HEARTBEAT: Removed — room-presence-manager handles lastSeen at 10s intervals
 
   // Online participants logic moved higher for engine dependencies
 
@@ -733,7 +714,7 @@ export function RoomClient({ room }: { room: Room }) {
           console.error('[Room Engine] Batch update failed:', e);
         }
       }
-    }, 3000); // Efficient 3-second sync
+    }, 30000); // 30s sync (was 3s — reduces owner writes 10x)
 
     return () => clearInterval(engineInterval);
   }, [isOwner, room.id, room.stats?.lastWealthResetDate, room.rocket?.level, room.rocket?.progress, room.rocket?.open, room.rocket?.lastLaunchTime, room.rocket?.lastResetDate, firestore]);
@@ -1443,7 +1424,7 @@ export function RoomClient({ room }: { room: Room }) {
       const timestamp = Date.now();
       const storagePath = `rooms/${room.id}/chat/${timestamp}_${file.name}`;
       const storageRef = ref(storage, storagePath);
-      const result = await uploadBytes(storageRef, file);
+      const result = await uploadBytes(storageRef, file, { cacheControl: 'public, max-age=2592000, immutable' });
       const url = await getDownloadURL(result.ref);
       await handleSendMessage(undefined, url);
       setShowInput(false);
@@ -2110,7 +2091,7 @@ export function RoomClient({ room }: { room: Room }) {
         }}
         style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', height: 0, width: 0 }}
         crossOrigin="anonymous"
-        preload="auto"
+         preload="metadata"
         playsInline
       />
 

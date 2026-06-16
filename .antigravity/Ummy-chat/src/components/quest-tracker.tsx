@@ -60,7 +60,7 @@ export function QuestTracker() {
     // 2. Incremental "Stay in Room" Progress
     const interval = setInterval(() => {
       const now = Date.now();
-      if (now - lastUpdateRef.current >= 60000) { // Every 1 minute
+      if (now - lastUpdateRef.current >= 120000) { // Every 2 minutes (was 1 min — reduces writes 2x)
         const questRef = doc(firestore, 'users', user.uid, 'quests', 'stay_15');
         
         // Atomic increment of progress
@@ -75,7 +75,7 @@ export function QuestTracker() {
         
         lastUpdateRef.current = now;
       }
-    }, 30000); // Check every 30s
+    }, 60000); // Check every 60s (was 30s — reduces reads 2x)
 
     return () => clearInterval(interval);
   }, [user, firestore, activeRoom]);
