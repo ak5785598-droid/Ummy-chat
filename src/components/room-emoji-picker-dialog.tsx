@@ -60,7 +60,7 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-t border-yellow-500/30 p-0 rounded-none overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 [&>button]:hidden">
+      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black border-t border-yellow-500/30 p-0 rounded-none overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 [&>button]:hidden">
         <div className="flex flex-col h-full">
           <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
             <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
@@ -110,4 +110,4 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
       </DialogContent>
     </Dialog>
   );
-                    }
+}
