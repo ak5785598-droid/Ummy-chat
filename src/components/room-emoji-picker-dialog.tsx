@@ -4,8 +4,6 @@ import React, { useMemo } from 'react';
 import { 
   Dialog, 
   DialogContent, 
-  DialogHeader, 
-  DialogTitle 
 } from '@/components/ui/dialog';
 import { useUser, useFirestore, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp, collection, query, orderBy } from 'firebase/firestore';
@@ -47,9 +45,11 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
   if (emojis.length === 0) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-0 p-0 overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] rounded-none [&>button]:hidden">
+        <DialogContent 
+          className="fixed bottom-0 sm:max-w-[400px] bg-black/95 p-0 overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 rounded-none [&>button]:hidden"
+        >
           <div className="flex flex-col h-full">
-            <div className="h-[340px] flex items-center justify-center text-white/40">
+            <div className="h-[280px] flex items-center justify-center text-white/40">
               No custom emojis yet
             </div>
           </div>
@@ -60,9 +60,11 @@ export function RoomEmojiPickerDialog({ open, onOpenChange, roomId }: { open: bo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed bottom-0 sm:max-w-[400px] bg-black/95 border-0 p-0 overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] rounded-none [&>button]:hidden">
+      <DialogContent 
+        className="fixed bottom-0 sm:max-w-[400px] bg-black/95 p-0 overflow-hidden text-white outline-none shadow-[0_-10px_40px_-15px_rgba(234,179,8,0.3)] translate-y-0 duration-300 rounded-none [&>button]:hidden"
+      >
         <div className="flex flex-col h-full">
-          <div className="h-[340px] overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="h-[280px] overflow-y-auto px-6 py-4 custom-scrollbar">
             <div className="grid grid-cols-3 gap-y-10 gap-x-6 pt-4 pb-12">
               {emojis.map((item: any) => (
                 <button 
