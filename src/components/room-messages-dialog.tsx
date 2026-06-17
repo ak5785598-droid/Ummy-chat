@@ -16,7 +16,8 @@ import {
  Send,
  MessageSquare,
  ImageIcon,
- X
+ X,
+ ArrowLeft
 } from 'lucide-react';
 import { useUser, useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useStorage } from '@/firebase';
 import { collection, query, orderBy, where, serverTimestamp, doc, limitToLast } from 'firebase/firestore';
@@ -38,10 +39,10 @@ const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
 
  if (isLoading) return (
   <div className="px-6 py-4 flex gap-4 animate-pulse">
-   <div className="h-12 w-12 bg-white/5 rounded-full" />
+   <div className="h-12 w-12 bg-gray-100 rounded-full" />
    <div className="flex-1 space-y-3 pt-2">
-    <div className="h-3 bg-white/5 rounded w-1/3" />
-    <div className="h-2 bg-white/5 rounded w-1/2" />
+    <div className="h-3 bg-gray-100 rounded w-1/3" />
+    <div className="h-2 bg-gray-100 rounded w-1/2" />
    </div>
   </div>
  );
@@ -62,36 +63,36 @@ const ChatListItem = ({ chat, currentUid, onSelect, router }: any) => {
  return (
   <div 
    onClick={() => onSelect(chat.id, otherUser)}
-   className="px-6 py-4 flex gap-4 hover:bg-white/5 active:bg-white/10 transition-colors cursor-pointer group border-b border-white/5 last:border-0"
+   className="px-6 py-4 flex gap-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer group border-b border-gray-100 last:border-0"
   >
    <div className="relative shrink-0">
     <Avatar 
       onClick={(e) => {
         e.stopPropagation();
-        onSelect(null, { id: otherUser.id }); // Using null to signal close/navigation
+        onSelect(null, { id: otherUser.id });
         router.push(`/profile/${otherUser.id}`);
       }}
-      className="h-12 w-12 border border-white/10 shadow-sm cursor-pointer active:scale-95 transition-transform"
+      className="h-12 w-12 border border-gray-200 shadow-sm cursor-pointer active:scale-95 transition-transform"
     >
      <AvatarImage src={otherUser.avatarUrl || undefined} />
-     <AvatarFallback>{otherUser.username?.charAt(0) || 'U'}</AvatarFallback>
+     <AvatarFallback className="bg-gray-200 text-gray-600">{otherUser.username?.charAt(0) || 'U'}</AvatarFallback>
     </Avatar>
     {isOfficial && (
      <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm">
-       <CheckCircle className="h-3 w-3 text-green-500 fill-green-500 text-white" strokeWidth={3} />
+       <CheckCircle className="h-3 w-3 text-green-500 fill-green-500" strokeWidth={3} />
      </div>
     )}
    </div>
    <div className="flex-1 min-w-0 pt-1">
     <div className="flex items-center justify-between mb-0.5">
-     <h3 className="font-bold text-sm text-white truncate tracking-tight">
+     <h3 className="font-bold text-sm text-gray-900 truncate tracking-tight">
       {otherUser.username}
      </h3>
-     <span className="text-[10px] font-medium text-white/40">
+     <span className="text-[10px] font-medium text-gray-400">
       {getDisplayTime(chat.updatedAt)}
      </span>
     </div>
-    <p className="text-xs text-white/60 truncate">
+    <p className="text-xs text-gray-500 truncate">
      {chat.lastMessage || 'Sent a vibe'}
     </p>
    </div>
@@ -169,28 +170,28 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
  };
 
  return (
-  <div className="flex flex-col h-full animate-in slide-in-from-right duration-300">
-   <header className="p-4 border-b border-white/10 flex items-center gap-3 bg-black/40 shrink-0">
-     <button onClick={onBack} className="p-1 hover:bg-white/10 rounded-full transition-colors">
-      <ChevronLeft className="h-5 w-5 text-white" />
+  <div className="flex flex-col h-full animate-in slide-in-from-right duration-300 bg-white">
+   <header className="p-4 border-b border-gray-200 flex items-center gap-3 bg-white shrink-0">
+     <button onClick={onBack} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+      <ChevronLeft className="h-5 w-5 text-gray-700" />
      </button>
      <Avatar 
        onClick={() => {
          onClose();
          router.push(`/profile/${otherUser.id}`);
        }}
-       className="h-8 w-8 border border-white/10 cursor-pointer active:scale-95 transition-transform"
+       className="h-8 w-8 border border-gray-200 cursor-pointer active:scale-95 transition-transform"
      >
       <AvatarImage src={otherUser.avatarUrl} />
-      <AvatarFallback>{otherUser.username?.charAt(0)}</AvatarFallback>
+      <AvatarFallback className="bg-gray-200 text-gray-600">{otherUser.username?.charAt(0)}</AvatarFallback>
      </Avatar>
      <div className="flex-1">
-      <h4 className="text-sm font-bold uppercase tracking-tight">{otherUser.username}</h4>
+      <h4 className="text-sm font-bold text-gray-900 uppercase tracking-tight">{otherUser.username}</h4>
       <p className="text-[8px] font-bold text-green-500 uppercase tracking-wider">Active Sync</p>
      </div>
    </header>
 
-   <ScrollArea className="flex-1 px-4 py-4">
+   <ScrollArea className="flex-1 px-4 py-4 bg-white">
      <div className="flex flex-col gap-3 pb-4">
        {messages?.map((msg: any) => {
         const isMe = msg.senderId === currentUser?.uid;
@@ -201,24 +202,24 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
                 onClose();
                 router.push(`/profile/${msg.senderId}`);
               }}
-              className="h-6 w-6 border border-white/10 cursor-pointer active:scale-90 transition-transform flex-shrink-0 mb-4"
+              className="h-6 w-6 border border-gray-200 cursor-pointer active:scale-90 transition-transform flex-shrink-0 mb-4"
             >
               <AvatarImage src={isMe ? currentUser?.photoURL : otherUser.avatarUrl} />
-              <AvatarFallback className="text-[10px]">{(isMe ? currentUser?.displayName : otherUser.username)?.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-[10px] bg-gray-200 text-gray-600">{(isMe ? currentUser?.displayName : otherUser.username)?.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className={cn("flex flex-col max-w-[200px]", isMe ? "items-end" : "items-start")}>
               <ChatMessageBubble bubbleId={msg.senderBubble} isMe={isMe} bubbleMediaUrl={msg.senderBubbleMediaUrl || null} className="text-xs">
                {msg.imageUrl && (
                 <div 
                  onClick={() => setPreviewImage(msg.imageUrl)}
-                 className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-black/20 border border-white/10 cursor-pointer active:scale-[0.98] transition-transform"
+                 className="mb-2 relative aspect-square w-48 max-w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200 cursor-pointer active:scale-[0.98] transition-transform"
                 >
                   <Image src={msg.imageUrl} fill className="object-cover" alt="Sent image" unoptimized />
                 </div>
                )}
                {msg.text && <p className="leading-relaxed">{msg.text}</p>}
               </ChatMessageBubble>
-              <span className="text-[7px] font-bold text-white/20 uppercase mt-1 px-1">
+              <span className="text-[7px] font-bold text-gray-400 uppercase mt-1 px-1">
                {msg.timestamp ? format(msg.timestamp.toDate(), 'HH:mm') : '...'}
               </span>
             </div>
@@ -229,7 +230,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
      </div>
    </ScrollArea>
 
-   <footer className="p-3 bg-black/60 border-t border-white/10 shrink-0">
+   <footer className="p-3 bg-white border-t border-gray-200 shrink-0">
      <div className="flex gap-2">
       <input 
        type="file" 
@@ -242,7 +243,7 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
        type="button"
        disabled={isUploadingImage}
        onClick={() => imageInputRef.current?.click()}
-       className="bg-white/5 text-white/60 h-10 w-10 rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform disabled:opacity-50"
+       className="bg-gray-100 text-gray-600 h-10 w-10 rounded-full flex items-center justify-center border border-gray-200 active:scale-90 transition-transform disabled:opacity-50"
       >
         {isUploadingImage ? <Loader className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
       </button>
@@ -251,12 +252,12 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
          value={text}
          onChange={(e) => setText(e.target.value)}
          placeholder="Vibe text..."
-         className="flex-1 h-10 rounded-full bg-white/5 border-white/10 focus:border-primary px-4 text-xs placeholder:text-white/20"
+         className="flex-1 h-10 rounded-full bg-gray-100 border-gray-200 focus:border-gray-400 px-4 text-xs placeholder:text-gray-400 text-gray-900"
         />
         <button 
          type="submit" 
          disabled={!text.trim() && !isUploadingImage}
-         className="bg-primary text-black h-10 w-10 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 shadow-lg"
+         className="bg-gray-900 text-white h-10 w-10 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50 shadow-lg"
         >
          <Send className="h-4 w-4" />
         </button>
@@ -264,7 +265,6 @@ function ConversationView({ chatId, otherUser, currentUser, onBack, router, onCl
      </div>
    </footer>
 
-   {/* Full Screen Image Preview Dialog */}
    <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
     <DialogContent className="w-screen h-screen max-w-none m-0 rounded-none border-none bg-black/95 p-0 flex flex-col items-center justify-center z-[400]">
      <DialogHeader className="sr-only">
@@ -301,7 +301,6 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
  const [activeChatId, setActiveChatId] = useState<string | null>(null);
  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
 
- // Identity Chat Sync: Automatically initialize chat when provided with a direct recipient
  useEffect(() => {
   if (open && initialRecipient && user) {
    const recipientId = initialRecipient.id || initialRecipient.uid;
@@ -339,12 +338,20 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
 
  return (
   <Dialog open={open} onOpenChange={handleClose}>
-   <DialogContent className="sm:max-w-md h-[65vh] bg-[#121212]/95 backdrop-blur-2xl border-none p-0 rounded-t-[3rem] overflow-hidden text-white font-sans shadow-2xl animate-in slide-in-from-bottom-full duration-500">
-    <DialogHeader className="p-6 pb-2 border-b border-white/5 shrink-0">
-      <DialogTitle className="text-xl font-bold uppercase tracking-tight text-white/90 flex items-center gap-2">
-       <MessageSquare className="h-5 w-5 text-primary" /> Messages
+   <DialogContent className="sm:max-w-md h-[50vh] bg-white border-none p-0 rounded-t-[3rem] overflow-hidden text-gray-900 font-sans shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+    <DialogHeader className="p-6 pb-2 border-b border-gray-100 shrink-0 relative">
+      <div className="absolute left-6 top-6">
+        <button 
+          onClick={() => handleClose(false)}
+          className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 text-gray-700" />
+        </button>
+      </div>
+      <DialogTitle className="text-xl font-bold text-center text-gray-900 flex items-center justify-center gap-2">
+       <MessageSquare className="h-5 w-5 text-gray-700" /> Messages
       </DialogTitle>
-      <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-white/20 mt-1">
+      <DialogDescription className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-1 text-center">
        Your social graph frequencies.
       </DialogDescription>
     </DialogHeader>
@@ -364,8 +371,8 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
         <div className="pb-10">
          {isLoading ? (
           <div className="py-20 flex flex-col items-center gap-4">
-            <Loader className="animate-spin text-primary h-8 w-8" />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-white/20">Syncing Identity...</p>
+            <Loader className="animate-spin text-gray-400 h-8 w-8" />
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Syncing Identity...</p>
           </div>
          ) : chats && chats.length > 0 ? (
           chats.map(chat => (
@@ -385,9 +392,9 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
            />
           ))
          ) : (
-          <div className="py-20 text-center opacity-20 space-y-2">
-            <MessageSquare className="h-10 w-10 mx-auto opacity-20" />
-            <p className="text-sm font-bold">No social frequencies detected.</p>
+          <div className="py-20 text-center space-y-2">
+            <MessageSquare className="h-10 w-10 mx-auto text-gray-300" />
+            <p className="text-sm text-gray-400 font-bold">No social frequencies detected.</p>
           </div>
          )}
         </div>
@@ -397,4 +404,4 @@ export function RoomMessagesDialog({ open, onOpenChange, initialRecipient }: { o
    </DialogContent>
   </Dialog>
  );
-}
+ }
