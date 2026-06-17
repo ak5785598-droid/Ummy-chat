@@ -1348,4 +1348,4 @@ export default function StorePage() {
       </div>
     </div>
   );
-  }
+      }
