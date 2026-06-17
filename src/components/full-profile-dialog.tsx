@@ -395,7 +395,7 @@ const DirectMedia = ({
 };
 
 // ============================================================
-// ⚡ LEVEL BADGE WITH BLACK REMOVER - NICHE + CHOTA + RIGHT + UPAR ⚡
+// ⚡ LEVEL BADGE - TEXT UPAR + RIGHT + CHOTA ⚡
 // ============================================================
 const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: string | null }) => {
   if (imageUrl) {
@@ -410,7 +410,13 @@ const BudgetLevelBadge = ({ level, imageUrl }: { level: number, imageUrl?: strin
             style={{ background: 'transparent', backgroundColor: 'transparent' }}
           />
         </div>
-        <span className="relative z-10 text-[7px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ WebkitTextStroke: '0.4px rgba(0,0,0,0.5)', marginTop: '2px', marginLeft: '6px' }}>
+        {/* ⚡ TEXT UPAR + RIGHT + CHOTA ⚡ */}
+        <span className="absolute z-10 text-[6px] font-black italic tracking-wider text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" 
+          style={{ 
+            WebkitTextStroke: '0.4px rgba(0,0,0,0.5)', 
+            top: '-2px', 
+            right: '2px',
+          }}>
           Lv.{level}
         </span>
       </div>
@@ -1011,7 +1017,7 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
 };
 
 // ==========================================
-// ⚡ BLACK BACKGROUND REMOVER FOR TAB ITEMS ⚡
+// ⚡ BLACK BACKGROUND REMOVER FOR ALL TAB ITEMS ⚡
 // ==========================================
 const TabItemMedia = ({ src, className = '' }: { src: string; className?: string }) => {
   return (
@@ -1266,7 +1272,7 @@ export function FullProfileDialog({
                   )}
                 </div>
 
-                {/* Tags - Level badge NICHE + CHOTA + RIGHT + UPAR - All in same row with vertical alignment fix */}
+                {/* Tags - Level badge + Official + Seller - All in same row */}
                 <div className="flex items-center justify-center gap-2 flex-wrap mt-2" style={{ alignItems: 'center' }}>
                   <div style={{ transform: 'translateY(2px)' }}>
                     <BudgetLevelBadge level={budgetLevel} imageUrl={budgetImageUrl} />
@@ -1361,6 +1367,7 @@ export function FullProfileDialog({
                     if (!medal) return null;
                     return (
                       <div key={medalId} className="flex flex-col items-center gap-1.5 p-1 group">
+                        {/* ⚡ BLACK REMOVER FOR MEDAL ⚡ */}
                         <TabItemMedia src={medal.imageUrl} className="h-12 w-12 object-contain group-hover:scale-110 transition-transform" />
                         <span className="text-[8px] font-bold text-slate-500 uppercase truncate w-full text-center tracking-tighter">{medal.name}</span>
                       </div>
@@ -1377,7 +1384,12 @@ export function FullProfileDialog({
                     const isActive = profile.inventory?.activeVehicle === id;
                     return (
                       <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
-                        <div className="text-4xl py-1 animate-float">{vehicle.icon}</div>
+                        {/* ⚡ VEHICLE - image URL ho toh black remover, nahi toh emoji ⚡ */}
+                        {vehicle.imageUrl ? (
+                          <TabItemMedia src={vehicle.imageUrl} className="h-12 w-12 object-contain" />
+                        ) : (
+                          <div className="text-4xl py-1 animate-float">{vehicle.icon}</div>
+                        )}
                         <div className="flex flex-col items-center gap-1 w-full">
                           <span className="text-[8px] font-black text-slate-700 truncate uppercase tracking-tighter">{vehicle.name}</span>
                           <button className={cn(
@@ -1403,6 +1415,7 @@ export function FullProfileDialog({
                       <div key={id} className="flex flex-col items-center gap-2 p-1 relative">
                         <div className="h-12 w-12 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden relative shadow-sm">
                           {frame.imageUrl ? (
+                            /* ⚡ BLACK REMOVER FOR FRAME ⚡ */
                             <TabItemMedia src={frame.imageUrl} className="w-full h-full object-cover scale-150" />
                           ) : (
                             <div className="w-full h-full opacity-50" style={{ background: frame.gradient }} />
@@ -1431,7 +1444,12 @@ export function FullProfileDialog({
                     return (
                       <div key={giftId} className="flex flex-col items-center gap-1 p-1 relative">
                         <div className="absolute top-1 right-2 text-[10px] font-black text-pink-500 italic">x{count}</div>
-                        <div className="text-3xl py-1">{gift.emoji}</div>
+                        {/* ⚡ GIFT - image URL ho toh black remover, nahi toh emoji ⚡ */}
+                        {gift.imageUrl ? (
+                          <TabItemMedia src={gift.imageUrl} className="h-10 w-10 object-contain" />
+                        ) : (
+                          <div className="text-3xl py-1">{gift.emoji}</div>
+                        )}
                         <div className="flex items-center gap-0.5 bg-slate-50 px-2 rounded-full border border-slate-100">
                           <GoldCoinIcon className="h-2 w-2" />
                           <span className="text-[9px] font-black text-slate-600">{gift.price}</span>
@@ -1477,4 +1495,4 @@ export function FullProfileDialog({
       </DialogContent>
     </Dialog>
   );
-                                                          }
+              }
