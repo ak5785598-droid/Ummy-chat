@@ -76,44 +76,34 @@ const getTodayString = () => {
   return istDate.toISOString().split('T')[0];
 };
 
-// ============ SMART REWARD LOGIC HELPER (CHANCES KAM KAR DIYE) ============
+// ============ SMART REWARD LOGIC HELPER (CHANCES KAM) ============
 const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean => {
-  // Combo click count: 1 = pehla send, 2 = pehla combo, 3 = dusra combo...
-  
   if (comboClickCount === 1) {
-    // Pehla send: Bahut kam chance (10%)
     return Math.random() < 0.10;
   }
   
   if (comboClickCount === 2) {
-    // Dusra click: Bahut kam chance (8%)
     return Math.random() < 0.08;
   }
   
   if (comboClickCount === 3 || comboClickCount === 4) {
-    // 3rd aur 4th time: Mat do
     return false;
   }
   
   if (comboClickCount >= 5 && comboClickCount <= 10) {
-    // 5 se 10 bar: Thoda chance (20%)
     return Math.random() < 0.20;
   }
   
   if (comboClickCount > 10) {
-    // 11+ bar: Medium chance (35%)
     return Math.random() < 0.35;
   }
   
-  // High gift price bonus (gift price > 5000)
   if (giftPrice > 5000) {
     if (comboClickCount >= 3 && comboClickCount <= 6) {
-      // 3 se 6 bar tak for high gifts (25% chance)
       return Math.random() < 0.25;
     }
   }
   
-  // Default: Bahut kam (3% chance)
   return Math.random() < 0.03;
 };
 
@@ -177,7 +167,7 @@ const ComboPatti = ({
   );
 };
 
-// ============ LUCKY PATTI (LEFT SIDE FULL PATTI WITH ACCUMULATE & 1x COINS RETURN) ============
+// ============ LUCKY PATTI (LEFT SIDE FULL PATTI) ============
 const LuckyPatti = ({ 
   avatarUrl, 
   username,
@@ -202,30 +192,24 @@ const LuckyPatti = ({
       className="fixed left-0 z-[1100] pointer-events-none"
       style={{ top: '65vh' }}
     >
-      {/* Full Patti dikhegi - Left se right tak full width, choti width ke saath */}
       <div className="relative w-[240px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden shadow-lg">
         <div className="absolute top-1 left-4 right-4 h-[1px] bg-white/40 rounded-full" />
         <div className="relative z-10 flex items-center gap-1.5 px-2 h-full">
-          {/* User Avatar */}
           <div className="shrink-0">
             <Avatar className="h-6 w-6 border border-yellow-600/30">
               <AvatarImage src={avatarUrl} />
             </Avatar>
           </div>
-          {/* Sender Name */}
           <div className="shrink-0 min-w-[35px] max-w-[50px]">
             <span className="text-[9px] font-black text-[#5C3D0E] truncate block leading-tight">{username}</span>
           </div>
-          {/* Gift Image */}
           <div className="shrink-0 h-6 w-6 rounded-md bg-white/15 flex items-center justify-center overflow-hidden border border-yellow-400/20">
             {giftImageUrl ? <img src={giftImageUrl} alt="gift" className="h-4 w-4 object-contain" /> : <span className="text-xs">🎁</span>}
           </div>
-          {/* Arrow + Receiver Name */}
           <div className="flex items-center gap-0.5 shrink-0">
             <span className="text-[#5C3D0E] text-[10px]">→</span>
             <span className="text-[9px] font-black text-[#5C3D0E] truncate max-w-[45px] block leading-tight">{receiverName}</span>
           </div>
-          {/* Multiplier - 1x bhi show hoga ab */}
           <div className="flex items-center justify-center min-w-[25px]">
             <motion.span 
               key={multiplier}
@@ -237,7 +221,6 @@ const LuckyPatti = ({
               x{multiplier}
             </motion.span>
           </div>
-          {/* Accumulated Win Amount - Sirf tab dikhega jab winAmount > 0 ho */}
           {totalWinAmount > 0 && (
             <div className="shrink-0 flex items-center gap-0.5 bg-[#3D2000]/15 rounded-full px-1.5 py-0.5">
               <GoldenDollar />
@@ -371,7 +354,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     finally { setIsProcessingCustom(false); }
   };
 
-  // ============ CORE SEND LOGIC WITH SMART REWARD SYSTEM (CHANCES KAM) ============
+  // ============ CORE SEND LOGIC (Math.random FIX) ============
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
     const validUids = (uids || []).filter(uid => typeof uid === 'string' && uid.trim() !== '');
     if (!user || !firestore || !userProfile || validUids.length === 0) return null;
@@ -385,27 +368,23 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const isLuckyGift = gift.category === 'Lucky';
       
       if (isLuckyGift) {
-        // SMART REWARD SYSTEM with 1x coins return option (CHANCES BAHUT KAM)
         const shouldReward = shouldGiveReward(comboMultiplier, gift.price);
         
         if (shouldReward) {
           if (comboMultiplier <= 1) {
-            // Pehla send: chota multiplier (1x bhi include hai)
-            const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-            if (rand < 0.60) selectedMult = 1;      // 1x return 60% chance (zyada tar 1x hi milega)
-            else if (rand < 0.85) selectedMult = 2;   // 2x
-            else if (rand < 0.95) selectedMult = 3;   // 3x
-            else selectedMult = 5;                     // 5x (bahut kam)
+            // ✅ Math.random() - Vercel SSR safe
+            const rand = Math.random();
+            if (rand < 0.60) selectedMult = 1;
+            else if (rand < 0.85) selectedMult = 2;
+            else if (rand < 0.95) selectedMult = 3;
+            else selectedMult = 5;
           }
-          // Combo clicks: comboMultiplier jo hai wahi use hoga
           
-          // 1x multiplier ke liye bhi winAmount calculate karo
           if (selectedMult >= 1) {
             const rawWin = gift.price * qty * selectedMult;
             winAmount = Math.min(rawWin, totalCost * 2);
           }
         }
-        // Agar shouldReward false hai toh winAmount 0 hi rahega
       }
 
       const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
@@ -544,7 +523,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
 
  return (
   <>
-   {/* ============ COMBO NOTIFICATION ============ */}
    <AnimatePresence mode="wait">
      {comboState?.show && (
        comboState.isLucky ? (
@@ -571,7 +549,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      )}
    </AnimatePresence>
 
-   {/* ============ COMBO CIRCLE BUTTON ============ */}
    <AnimatePresence mode="wait">
      {comboState?.show && (
        <motion.button key="combo-btn" initial={{ scale: 0, opacity: 0, rotate: -180 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0, opacity: 0, rotate: 180 }} transition={{ type: "spring", stiffness: 400, damping: 15 }}
@@ -583,7 +560,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      )}
    </AnimatePresence>
 
-   {/* ============ MAIN GIFT PICKER SHEET ============ */}
    <Sheet open={sheetOpen} onOpenChange={(val) => { setSheetOpen(val); if (!val) onOpenChange(false); }}>
     <SheetContent side="bottom" hideOverlay={true} className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-2xl overflow-hidden text-white shadow-2xl pb-10 [&>button]:hidden">
      <AnimatePresence mode="wait">
@@ -639,4 +615,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-        }
+         }
