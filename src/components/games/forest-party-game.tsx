@@ -229,6 +229,171 @@ const getGameDay = () => {
   return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 };
 
+// ========== 🔥 NEW: User ke bet history ko track karne ke liye helper ==========
+// Yeh localStorage mein store karega ki user ne kitne round mein bet lagaya aur kitne mein jeeta
+const USER_BET_STORAGE_KEY = 'fp_user_bet_stats';
+
+interface UserBetStats {
+  totalRounds: number;      // Total rounds jisme user ne bet lagaya
+  totalWins: number;        // Total rounds jisme user jeeta
+  roundHistory: Record<number, boolean>; // roundId -> jeeta ya nahi
+}
+
+const getUserBetStats = (): UserBetStats => {
+  if (typeof window === 'undefined') return { totalRounds: 0, totalWins: 0, roundHistory: {} };
+  try {
+    const saved = localStorage.getItem(USER_BET_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Purane round history ko clean karo (last 200 rounds se zyada mat rakho)
+      const roundIds = Object.keys(parsed.roundHistory || {}).map(Number);
+      if (roundIds.length > 200) {
+        const sortedIds = roundIds.sort((a, b) => b - a);
+        const keepIds = sortedIds.slice(0, 200);
+        const newHistory: Record<number, boolean> = {};
+        keepIds.forEach(id => { newHistory[id] = parsed.roundHistory[id]; });
+        parsed.roundHistory = newHistory;
+        parsed.totalRounds = Object.values(newHistory).length;
+        parsed.totalWins = Object.values(newHistory).filter(Boolean).length;
+      }
+      return parsed;
+    }
+  } catch (e) {}
+  return { totalRounds: 0, totalWins: 0, roundHistory: {} };
+};
+
+const saveUserBetStats = (stats: UserBetStats) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(USER_BET_STORAGE_KEY, JSON.stringify(stats));
+  } catch (e) {}
+};
+
+// 🔥 TARGET WIN RATIO: 30% wins
+const TARGET_WIN_RATIO = 0.30; // 30% = 10 rounds mein 3 jeet, 20 mein 6, 100 mein 30
+
+const shouldUserWinThisRound = (): boolean => {
+  const stats = getUserBetStats();
+  const totalRounds = stats.totalRounds;
+  const totalWins = stats.totalWins;
+  
+  // Agar abhi tak kuch nahi khela ya 3 se kam rounds, toh mostly haarna chahiye (20% chance jeetne ka)
+  if (totalRounds < 3) {
+    return Math.random() < 0.20; // 20% chance - pehle 3 rounds mein mostly haaro
+  }
+  
+  // Current win ratio calculate karo
+  const currentWinRatio = totalWins / totalRounds;
+  
+  // Agar current win ratio target se zyada hai, toh pakka haaro
+  if (currentWinRatio >= TARGET_WIN_RATIO + 0.05) {
+    return false; // Already zyada jeet liye, ab haaro
+  }
+  
+  // Agar current win ratio target ke aas-paas hai, toh probability adjust karo
+  if (currentWinRatio >= TARGET_WIN_RATIO - 0.03 && currentWinRatio < TARGET_WIN_RATIO + 0.05) {
+    // Target ke aas-paas hai, 25% chance jeetne ka
+    return Math.random() < 0.25;
+  }
+  
+  // Agar win ratio target se kaafi kam hai, toh jeetne ka chance badhao (35-40%)
+  if (currentWinRatio < TARGET_WIN_RATIO - 0.05) {
+    const deficit = TARGET_WIN_RATIO - currentWinRatio;
+    // Jitna zyada deficit, utna zyada chance jeetne ka (max 45%)
+    const winChance = Math.min(0.45, 0.30 + deficit * 1.5);
+    return Math.random() < winChance;
+  }
+  
+  // Default: mostly haaro (15% chance)
+  return Math.random() < 0.15;
+};
+
+// 🔥 Naya computeOutcomeForRound - user ke bets ke hisaab se winner decide karega
+const computeOutcomeForRoundWithUserBets = (
+  roundId: number, 
+  userBetAnimalIds: string[] // User ne jin animals pe bet lagaya hai
+): { groupType: 'none' | 'left' | 'right'; winningAnimalId: string; finalIdx: number } => {
+  
+  // Pehle normal seeded random se outcome nikalo (yeh global winner hai)
+  const seededRandom = (seed: number): number => {
+    let x = (seed >>> 0) || 1;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return (x >>> 0) / 4294967296;
+  };
+  
+  let groupType: 'none' | 'left' | 'right' = 'none';
+  const chance = seededRandom(roundId + 1000);
+  if (chance < 0.025) groupType = 'left';
+  else if (chance < 0.05) groupType = 'right';
+  
+  let winningAnimalId = ANIMALS[0].id;
+  let finalIdx = 0;
+  
+  const shouldWin = shouldUserWinThisRound();
+  
+  if (userBetAnimalIds.length === 0) {
+    // User ne kuch bet nahi lagaya, normal random winner
+    const animalRand = seededRandom(roundId + 2000);
+    finalIdx = Math.floor(animalRand * ANIMALS.length);
+    winningAnimalId = ANIMALS[finalIdx].id;
+  } else if (!shouldWin) {
+    // 🔥 USER KO HARANA HAI - aisa animal choose karo jo user ke bet mein na ho
+    const nonBetAnimals = ANIMALS.filter(a => !userBetAnimalIds.includes(a.id));
+    
+    if (nonBetAnimals.length > 0) {
+      // Non-bet animals mein se random choose karo
+      const animalRand = seededRandom(roundId + 5000);
+      finalIdx = Math.floor(animalRand * nonBetAnimals.length);
+      winningAnimalId = nonBetAnimals[finalIdx].id;
+      // ANIMALS array mein actual index dhundho
+      finalIdx = ANIMALS.findIndex(a => a.id === winningAnimalId);
+    } else {
+      // User ne saare animals pe bet laga diya (rare case), toh kisi bhi pe haaro
+      const animalRand = seededRandom(roundId + 2000);
+      finalIdx = Math.floor(animalRand * ANIMALS.length);
+      winningAnimalId = ANIMALS[finalIdx].id;
+    }
+    
+    // Agar group win hai (left/right) toh ensure karo ki user ke bet wale group mein na ho
+    if (groupType === 'left') {
+      const leftAnimals = ['lion', 'tiger', 'fox', 'bear'];
+      // Agar user ne left group ke kisi animal pe bet lagaya hai, toh left group win mat hone do
+      const userHasLeftBet = leftAnimals.some(id => userBetAnimalIds.includes(id));
+      if (userHasLeftBet) {
+        groupType = 'none'; // Group win cancel, single winner hi rahega
+      }
+    } else if (groupType === 'right') {
+      const rightAnimals = ['panda', 'rabbit', 'cow', 'dog'];
+      const userHasRightBet = rightAnimals.some(id => userBetAnimalIds.includes(id));
+      if (userHasRightBet) {
+        groupType = 'none'; // Group win cancel
+      }
+    }
+  } else {
+    // 🔥 USER KO JEETANA HAI - user ke bet wale animals mein se hi winner choose karo
+    const betAnimals = ANIMALS.filter(a => userBetAnimalIds.includes(a.id));
+    const animalRand = seededRandom(roundId + 7000);
+    finalIdx = Math.floor(animalRand * betAnimals.length);
+    winningAnimalId = betAnimals[finalIdx].id;
+    finalIdx = ANIMALS.findIndex(a => a.id === winningAnimalId);
+    
+    // Kabhi kabhi group win bhi do agar user ne uss group mein bet lagaya ho
+    if (groupType === 'left') {
+      const leftAnimals = ['lion', 'tiger', 'fox', 'bear'];
+      const userHasLeftBet = leftAnimals.some(id => userBetAnimalIds.includes(id));
+      if (!userHasLeftBet) groupType = 'none';
+    } else if (groupType === 'right') {
+      const rightAnimals = ['panda', 'rabbit', 'cow', 'dog'];
+      const userHasRightBet = rightAnimals.some(id => userBetAnimalIds.includes(id));
+      if (!userHasRightBet) groupType = 'none';
+    }
+  }
+  
+  return { groupType, winningAnimalId, finalIdx };
+};
+
 export default function ForestPartyGame({ onBack, isOverlay, roomId }: { onBack?: () => void; isOverlay?: boolean; roomId?: string } = {}) {
  const [isLoading, setIsLoading] = useState(true);
  
@@ -281,6 +446,9 @@ export default function ForestPartyGame({ onBack, isOverlay, roomId }: { onBack?
  const precomputedGroupType = useRef<'none' | 'left' | 'right'>('none');
  const precomputedFinalIdx = useRef<number>(0);
  const lastProcessedRoundId = useRef<number | null>(null);
+ 
+ // 🔥 NEW REF: Track karega ki user ne current round mein bet lagaya ya nahi
+ const userBetInCurrentRound = useRef<boolean>(false);
  
   // Refs for main loop
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -560,8 +728,6 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
  // ---- FIXED: Sync localCoins from profile ONLY when allowed ----
  useEffect(() => {
   if (userProfile?.wallet?.coins !== undefined && isMountedRef.current && shouldSyncProfileRef.current) {
-      // Only sync if we are not in an active betting round where user has placed bets
-      // Prevents overwriting local optimism
       if (gameState !== 'betting' || Object.keys(myBets).length === 0) {
         setLocalCoins(userProfile.wallet.coins);
       }
@@ -592,32 +758,9 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
   } catch (error) {}
  }, [isMuted]);
 
- const seededRandom = (seed: number): number => {
-     let x = (seed >>> 0) || 1;
-     x ^= x << 13;
-     x ^= x >> 17;
-     x ^= x << 5;
-     return (x >>> 0) / 4294967296;
- };
-
- const computeOutcomeForRound = useCallback((roundId: number) => {
-    let groupType: 'none' | 'left' | 'right' = 'none';
-    const chance = seededRandom(roundId + 1000);
-    if (chance < 0.025) groupType = 'left';
-    else if (chance < 0.05) groupType = 'right';
-    
-    let winningAnimalId = ANIMALS[0].id;
-    let finalIdx = 0;
-    if (groupType === 'none') {
-        const animalRand = seededRandom(roundId + 2000);
-        finalIdx = Math.floor(animalRand * ANIMALS.length);
-        winningAnimalId = ANIMALS[finalIdx].id;
-    } else {
-        const animalRand = seededRandom(roundId + 3000);
-        finalIdx = Math.floor(animalRand * ANIMALS.length);
-        winningAnimalId = ANIMALS[finalIdx].id;
-    }
-    return { groupType, winningAnimalId, finalIdx };
+ // 🔥 Naya computeOutcomeForRound jo user bets ke according winner decide kare
+ const computeOutcomeForRound = useCallback((roundId: number, userBetAnimalIds: string[]) => {
+    return computeOutcomeForRoundWithUserBets(roundId, userBetAnimalIds);
  }, []);
 
  const finalizeResult = useCallback((winningId: string, groupType: 'none' | 'left' | 'right', finalHighlightIdx?: number) => {
@@ -625,14 +768,16 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
   
   hasFinalizedRef.current = true;
   
-  setDroppedChips([]);
+  // 🔥 User ke bet stats update karo
+  const currentBets = myBetsRef.current;
+  const userBetIds = Object.keys(currentBets);
+  const totalBetAmount = Object.values(currentBets).reduce((a, b) => a + b, 0);
+  
   let winningIds = [winningId];
   if (groupType === 'left') winningIds = ['lion', 'tiger', 'fox', 'bear'];
   else if (groupType === 'right') winningIds = ['panda', 'rabbit', 'cow', 'dog'];
   
   let winAmount = 0;
-  const currentBets = myBetsRef.current;
-  
   winningIds.forEach(wId => {
       const winItem = ANIMALS.find(i => i.id === wId);
       winAmount += (currentBets[wId] || 0) * (winItem?.multiplier || 0);
@@ -640,7 +785,23 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
   
   if (isNaN(winAmount) || winAmount < 0) winAmount = 0;
   
-  const totalBetAmount = Object.values(currentBets).reduce((a, b) => a + b, 0);
+  // 🔥🔥 STATS UPDATE: User ne bet lagaya tha toh stats mein add karo
+  if (userBetIds.length > 0 && totalBetAmount > 0) {
+    const stats = getUserBetStats();
+    const currentRoundId = Math.floor(Date.now() / 65000);
+    
+    // Agar yeh round already recorded nahi hai
+    if (!stats.roundHistory[currentRoundId]) {
+      stats.totalRounds++;
+      stats.roundHistory[currentRoundId] = winAmount > 0;
+      if (winAmount > 0) {
+        stats.totalWins++;
+      }
+      saveUserBetStats(stats);
+    }
+  }
+  
+  setDroppedChips([]);
   
   if (winAmount > 0) {
      playSound('win'); 
@@ -717,7 +878,7 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
    computeOutcomeForRoundRef.current = computeOutcomeForRound;
  }, [finalizeResult, computeOutcomeForRound]);
 
- // Main game loop - FIXED: smooth highlighting and round reset
+ // Main game loop - UPDATED: user bets ke hisaab se precompute karega
  useEffect(() => {
   const ROUND_DUR = 65000;
   const BET_DUR = 45000;   
@@ -735,18 +896,42 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
       const elapsed = roundStartTime ? ((now - roundStartTime) % ROUND_DUR + ROUND_DUR) % ROUND_DUR : now % ROUND_DUR;
       const currentRoundIdCalc = roundStartTime ? Math.floor((now - roundStartTime) / ROUND_DUR) : Math.floor(now / ROUND_DUR);
       
+      // 🔥 Har naye round mein user bets ke hisaab se winner precompute karo
       if (lastProcessedRoundId.current !== currentRoundIdCalc) {
+          const userBetIds = Object.keys(myBetsRef.current);
+          
           const docOutcome = roundDataRef.current?.outcome as { groupType: 'none' | 'left' | 'right'; winningAnimalId: string; finalIdx: number } | undefined;
-          if (docOutcome) {
-              precomputedGroupType.current = docOutcome.groupType;
-              precomputedWinnerId.current = docOutcome.winningAnimalId;
-              precomputedFinalIdx.current = docOutcome.finalIdx;
+          
+          // 🔥 Agar user ne bet lagaya hai toh user-based outcome use karo, nahi toh doc outcome ya random
+          if (userBetIds.length > 0) {
+            const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRoundRef.current(currentRoundIdCalc, userBetIds);
+            precomputedGroupType.current = groupType;
+            precomputedWinnerId.current = winningAnimalId;
+            precomputedFinalIdx.current = finalIdx;
+          } else if (docOutcome) {
+            precomputedGroupType.current = docOutcome.groupType;
+            precomputedWinnerId.current = docOutcome.winningAnimalId;
+            precomputedFinalIdx.current = docOutcome.finalIdx;
           } else {
-              const { groupType, winningAnimalId, finalIdx } = computeOutcomeForRoundRef.current(currentRoundIdCalc);
-              precomputedGroupType.current = groupType;
-              precomputedWinnerId.current = winningAnimalId;
-              precomputedFinalIdx.current = finalIdx;
+            // Fallback random
+            const seededRandom = (seed: number): number => {
+              let x = (seed >>> 0) || 1;
+              x ^= x << 13;
+              x ^= x >> 17;
+              x ^= x << 5;
+              return (x >>> 0) / 4294967296;
+            };
+            let groupType: 'none' | 'left' | 'right' = 'none';
+            const chance = seededRandom(currentRoundIdCalc + 1000);
+            if (chance < 0.025) groupType = 'left';
+            else if (chance < 0.05) groupType = 'right';
+            const animalRand = seededRandom(currentRoundIdCalc + 2000);
+            const finalIdx = Math.floor(animalRand * ANIMALS.length);
+            precomputedGroupType.current = groupType;
+            precomputedWinnerId.current = ANIMALS[finalIdx].id;
+            precomputedFinalIdx.current = finalIdx;
           }
+          
           lastProcessedRoundId.current = currentRoundIdCalc;
       }
       
@@ -763,8 +948,8 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
               hasFinalizedRef.current = false;
               resolvedResultRef.current = null;
               isPopupVisibleRef.current = false;
+              userBetInCurrentRound.current = false; // 🔥 Reset user bet flag
               
-              // 🔥 Re-enable profile sync for new round
               shouldSyncProfileRef.current = true;
               
               if (winnerTimeoutRef.current) {
@@ -777,7 +962,7 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
                   spinAudio.current.currentTime = 0;
               }
               
-              // Update round doc for cross-client sync + unpredictable outcome
+              // Update round doc for cross-client sync
               if (roundDocRef && firestore && lastRoundUpdateRef.current !== currentRoundIdCalc) {
                   const seedArr = new Uint32Array(1);
                   crypto.getRandomValues(seedArr);
@@ -842,22 +1027,21 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
   };
  }, []); 
 
- // 🔥 FIXED: Robust betting logic with localCoinsRef and lock
+ // 🔥 FIXED: Robust betting logic with user bet tracking
  const handlePlaceBet = (animal: typeof ANIMALS[0]) => {
   if (gameStateRef.current !== 'betting' || !currentUser) return;
   if (isBettingLockRef.current) return;
   
   if (selectedChip <= 0 || isNaN(selectedChip)) return;
   
-  // Use ref to avoid stale state
   if (localCoinsRef.current < selectedChip) {
    toast({ title: 'You do not have enough Coins!', variant: 'destructive' });
    return;
   }
   
   isBettingLockRef.current = true;
-  // Block profile sync after first bet of the round
   shouldSyncProfileRef.current = false;
+  userBetInCurrentRound.current = true; // 🔥 Mark karo ki user ne bet lagaya
   
   playSound('bet');
   const chipInfo = CHIPS_DATA.find(c => c.value === selectedChip);
@@ -873,11 +1057,37 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
   
   setDroppedChips(prev => [...prev, newChip]);
   
-  // Safe deduction using functional update
   setLocalCoins(prev => {
     const newCoins = prev - selectedChip;
     if (newCoins < 0) return prev;
     return newCoins;
+  });
+  
+  setMyBets(prev => {
+    const newBets = { ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip };
+    
+    // 🔥🔥 IMPORTANT: Jab bhi bets update ho, winner re-compute karo
+    const currentRoundId = Math.floor(Date.now() / 65000);
+    const betIds = Object.keys(newBets);
+    if (betIds.length > 0) {
+      const outcome = computeOutcomeForRoundRef.current(currentRoundId, betIds);
+      precomputedGroupType.current = outcome.groupType;
+      precomputedWinnerId.current = outcome.winningAnimalId;
+      precomputedFinalIdx.current = outcome.finalIdx;
+      
+      // Round doc bhi update karo
+      if (roundDocRef) {
+        setDoc(roundDocRef, {
+          outcome: {
+            groupType: outcome.groupType,
+            winningAnimalId: outcome.winningAnimalId,
+            finalIdx: outcome.finalIdx,
+          },
+        }, { merge: true }).catch(() => {});
+      }
+    }
+    
+    return newBets;
   });
   
   if (firestore) {
@@ -896,11 +1106,10 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
         timestamp: serverTimestamp()
     });
   }
-  setMyBets(prev => ({ ...prev, [animal.id]: (prev[animal.id] || 0) + selectedChip }));
   
   setTimeout(() => {
     isBettingLockRef.current = false;
-  }, 300); // increased to 300ms for safety
+  }, 300);
  };
 
  const isWinningAnimal = useCallback((idx: number, itemId: string) => {
@@ -1426,4 +1635,4 @@ useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
    </motion.div>
   </motion.div>
  );
-  }
+        }
