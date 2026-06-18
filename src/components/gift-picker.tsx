@@ -82,12 +82,12 @@ const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean =
   
   if (comboClickCount === 1) {
     // Pehla send: Kabhi kabhi do (30% chance)
-    return Math.random() < 0.30;
+    return Math.random() < 0.29;
   }
   
   if (comboClickCount === 2) {
     // Dusra click: Kabhi kabhi do (25% chance)
-    return Math.random() < 0.25;
+    return Math.random() < 0.5;
   }
   
   if (comboClickCount === 3 || comboClickCount === 4) {
@@ -97,19 +97,19 @@ const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean =
   
   if (comboClickCount >= 5 && comboClickCount <= 10) {
     // 5 se 10 bar: Do (80% chance)
-    return Math.random() < 0.80;
+    return Math.random() < 0.44;
   }
   
   if (comboClickCount > 10) {
     // 11+ bar: High chance (90%)
-    return Math.random() < 0.90;
+    return Math.random() < 0.24;
   }
   
   // High gift price bonus (gift price > 5000)
   if (giftPrice > 5000) {
     if (comboClickCount >= 3 && comboClickCount <= 6) {
       // 3 se 6 bar tak do for high gifts (70% chance)
-      return Math.random() < 0.70;
+      return Math.random() < 0.32;
     }
   }
   
@@ -177,7 +177,7 @@ const ComboPatti = ({
   );
 };
 
-// ============ LUCKY PATTI (LEFT HALF, ACCUMULATE, Names visible) ============
+// ============ LUCKY PATTI (LEFT SIDE FULL PATTI WITH ACCUMULATE & 1x COINS RETURN) ============
 const LuckyPatti = ({ 
   avatarUrl, 
   username,
@@ -196,59 +196,62 @@ const LuckyPatti = ({
   return (
     <motion.div
       initial={{ x: -400, opacity: 0 }}
-      animate={{ x: -160, opacity: 1 }}
+      animate={{ x: 0, opacity: 1 }}
       exit={{ x: -400, opacity: 0 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className="fixed left-0 z-[1100] pointer-events-none"
       style={{ top: '65vh' }}
     >
-      <div className="relative w-[340px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden">
+      {/* Full Patti dikhegi - Left se right tak full width, choti width ke saath */}
+      <div className="relative w-[240px] h-[48px] rounded-r-full bg-gradient-to-r from-[#FFF0A0] via-[#E6C14A] to-[#C99A2E] border border-[#B8860B] border-l-0 overflow-hidden shadow-lg">
         <div className="absolute top-1 left-4 right-4 h-[1px] bg-white/40 rounded-full" />
-        <div className="relative z-10 flex items-center gap-2 px-3 h-full">
+        <div className="relative z-10 flex items-center gap-1.5 px-2 h-full">
           {/* User Avatar */}
           <div className="shrink-0">
-            <Avatar className="h-7 w-7 border border-yellow-600/30">
+            <Avatar className="h-6 w-6 border border-yellow-600/30">
               <AvatarImage src={avatarUrl} />
             </Avatar>
           </div>
           {/* Sender Name */}
-          <div className="shrink-0 min-w-[40px] max-w-[55px]">
-            <span className="text-[10px] font-black text-[#5C3D0E] truncate block leading-tight">{username}</span>
+          <div className="shrink-0 min-w-[35px] max-w-[50px]">
+            <span className="text-[9px] font-black text-[#5C3D0E] truncate block leading-tight">{username}</span>
           </div>
-          {/* Gift Image (No black border processing) */}
-          <div className="shrink-0 h-7 w-7 rounded-md bg-white/15 flex items-center justify-center overflow-hidden border border-yellow-400/20">
-            {giftImageUrl ? <img src={giftImageUrl} alt="gift" className="h-5 w-5 object-contain" /> : <span className="text-sm">🎁</span>}
+          {/* Gift Image */}
+          <div className="shrink-0 h-6 w-6 rounded-md bg-white/15 flex items-center justify-center overflow-hidden border border-yellow-400/20">
+            {giftImageUrl ? <img src={giftImageUrl} alt="gift" className="h-4 w-4 object-contain" /> : <span className="text-xs">🎁</span>}
           </div>
           {/* Arrow + Receiver Name */}
-          <div className="flex items-center gap-1 shrink-0">
-            <span className="text-[#5C3D0E] text-xs">→</span>
-            <span className="text-[10px] font-black text-[#5C3D0E] truncate max-w-[55px] block leading-tight">{receiverName}</span>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <span className="text-[#5C3D0E] text-[10px]">→</span>
+            <span className="text-[9px] font-black text-[#5C3D0E] truncate max-w-[45px] block leading-tight">{receiverName}</span>
           </div>
-          {/* Multiplier */}
-          <div className="flex items-center justify-center min-w-[30px]">
+          {/* Multiplier - 1x bhi show hoga ab */}
+          <div className="flex items-center justify-center min-w-[25px]">
             <motion.span 
               key={multiplier}
               initial={{ scale: 1.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 12 }}
-              className="text-base font-black text-[#3D2000] leading-none"
+              className="text-sm font-black text-[#3D2000] leading-none"
             >
               x{multiplier}
             </motion.span>
           </div>
-          {/* Accumulated Win Amount */}
-          <div className="shrink-0 flex items-center gap-1 bg-[#3D2000]/15 rounded-full px-2 py-0.5">
-            <GoldenDollar />
-            <motion.span 
-              key={totalWinAmount}
-              initial={{ scale: 1.3, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="text-[11px] font-black text-[#3D2000]"
-            >
-              +{totalWinAmount.toLocaleString()}
-            </motion.span>
-          </div>
+          {/* Accumulated Win Amount - Sirf tab dikhega jab winAmount > 0 ho */}
+          {totalWinAmount > 0 && (
+            <div className="shrink-0 flex items-center gap-0.5 bg-[#3D2000]/15 rounded-full px-1.5 py-0.5">
+              <GoldenDollar />
+              <motion.span 
+                key={totalWinAmount}
+                initial={{ scale: 1.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                className="text-[10px] font-black text-[#3D2000]"
+              >
+                +{totalWinAmount.toLocaleString()}
+              </motion.span>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -382,21 +385,23 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const isLuckyGift = gift.category === 'Lucky';
       
       if (isLuckyGift) {
-        // SMART REWARD SYSTEM
+        // SMART REWARD SYSTEM with 1x coins return option
         const shouldReward = shouldGiveReward(comboMultiplier, gift.price);
         
         if (shouldReward) {
           if (comboMultiplier <= 1) {
-            // Pehla send: chota multiplier
+            // Pehla send: chota multiplier (1x bhi include hai)
             const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-            if (rand < 0.85) selectedMult = 1;
-            else if (rand < 0.93) selectedMult = 2;
-            else if (rand < 0.98) selectedMult = 3;
-            else selectedMult = 5;
+            if (rand < 0.30) selectedMult = 1;      // 1x return bhi milega 40% chance
+            else if (rand < 0.20) selectedMult = 2;   // 2x
+            else if (rand < 0.30) selectedMult = 3;   // 3x
+            else if (rand < 0.32) selectedMult = 5;   // 5x
+            else selectedMult = 10;                    // 10x jackpot
           }
           // Combo clicks: comboMultiplier jo hai wahi use hoga
           
-          if (selectedMult > 1) {
+          // 1x multiplier ke liye bhi winAmount calculate karo
+          if (selectedMult >= 1) {
             const rawWin = gift.price * qty * selectedMult;
             winAmount = Math.min(rawWin, totalCost * 2);
           }
@@ -602,12 +607,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       <TabsList className="mx-4 bg-transparent p-1 flex justify-between gap-1">
        {['Hot', 'Lucky', 'Luxury', 'Event', 'Customized'].map(id => (<TabsTrigger key={id} value={id} className="text-white/60 text-sm font-bold px-3 py-1.5 rounded-none transition-all data-[state=active]:text-cyan-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-cyan-400 bg-transparent border-b-2 border-transparent hover:text-white/80">{id}</TabsTrigger>))}
       </TabsList>
-       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-4 pb-20 grid grid-cols-4 gap-x-3 gap-y-5 content-start">
+       <div className="h-[340px] overflow-y-auto no-scrollbar px-4 pt-2 pb-20 grid grid-cols-4 gap-x-3 gap-y-2 content-start">
         {isGiftsLoading ? (<div className="col-span-4 flex flex-col items-center justify-center py-10 gap-2"><Loader className="animate-spin text-cyan-400 h-6 w-6" /><span className="text-[11px] font-black text-white/20 uppercase tracking-widest">Loading Gifts...</span></div>) : (
           Object.entries(GIFTS).map(([cat, items]) => (
             <TabsContent key={cat} value={cat} className="contents">
               {cat === 'Customized' && (<button onClick={handleCustomGiftClick} disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000} className="flex flex-col items-center justify-center gap-2 p-3 w-full rounded-2xl border border-dashed border-blue-500/40 bg-blue-500/5 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed select-none text-left" style={{ gridColumn: 'span 1' }}><Plus className="h-6 w-6 text-blue-400 shrink-0" /><div className="text-center space-y-0.5"><span className="text-[11px] font-black text-blue-400 block uppercase tracking-wider">Request Custom Gift</span><span className="text-[9px] text-blue-300/80 block font-semibold">50,000 Coins / 7 Days</span></div></button>)}
-              {items.length === 0 && cat !== 'Customized' ? (<div className="col-span-4 py-10 text-center opacity-30 font-bold uppercase tracking-widest">No Gifts in {cat}</div>) : (items.map(gift => (<button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-2 rounded-xl", selectedGift?.id === gift.id ? "brightness-125 bg-white/10 scale-105" : "opacity-70 hover:opacity-100")}><div className="h-20 w-20 flex items-center justify-center mb-2 filter drop-shadow-lg"><GiftImage gift={gift} /></div><span className="text-[12px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span><div className="flex items-center gap-1.5 mt-1"><GoldenDollar /><span className="text-[11px] text-yellow-500 font-black leading-none">{gift.price.toLocaleString()}</span></div>{selectedGift?.id === gift.id && <div className="absolute -bottom-1 h-1.5 w-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)]" />}</button>)))}
+              {items.length === 0 && cat !== 'Customized' ? (<div className="col-span-4 py-10 text-center opacity-30 font-bold uppercase tracking-widest">No Gifts in {cat}</div>) : (items.map(gift => (<button key={gift.id} onClick={() => setSelectedGift(gift)} className={cn("flex flex-col items-center transition-all duration-300 relative py-1 rounded-xl", selectedGift?.id === gift.id ? "bg-white/10 scale-105" : "hover:bg-white/5")}><div className="h-20 w-20 flex items-center justify-center mb-1 filter drop-shadow-lg"><GiftImage gift={gift} /></div><span className="text-[12px] font-bold text-white/90 truncate w-full text-center">{gift.name}</span><div className="flex items-center gap-1.5 mt-0.5"><GoldenDollar /><span className="text-[11px] text-yellow-500 font-black leading-none">{gift.price.toLocaleString()}</span></div>{selectedGift?.id === gift.id && <div className="absolute -bottom-0.5 h-1.5 w-6 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.8)]" />}</button>)))}
             </TabsContent>
           ))
         )}
@@ -631,8 +636,8 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </Sheet>
 
    <AnimatePresence mode="wait">
-     {showCustomLink && (<motion.div key="custom-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[2000] bg-black/95 flex flex-col"><div className="flex items-center justify-between p-4 border-b border-white/10"><span className="text-white font-bold text-lg">Customize Your Gift</span><button onClick={() => setShowCustomLink(false)} className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"><X className="h-5 w-5 text-white" /></button></div><div className="flex-1"><iframe src="https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh" className="w-full h-full border-0" title="Custom Gift Form" /></div></motion.div>)}
+     {showCustomLink && (<motion.div key="custom-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[2000] bg-black/95 flex flex-col"><div className="flex items-center justify-between p-4 border-b border-white/10"><span className="text-white font-bold text-lg">Customize Your Gift</span><button onClick={() => setShowCustomLink(false)} className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"><X className="h-5 w-5 text-white" /></button></div><div className="flex-1"><iframe src="https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh" className="w-full h-full border-0" title="Custom Gift Form" /></iframe></div></motion.div>)}
    </AnimatePresence>
   </>
  );
-                            }
+}
