@@ -76,18 +76,18 @@ const getTodayString = () => {
   return istDate.toISOString().split('T')[0];
 };
 
-// ============ SMART REWARD LOGIC HELPER ============
+// ============ SMART REWARD LOGIC HELPER (CHANCES KAM KAR DIYE) ============
 const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean => {
   // Combo click count: 1 = pehla send, 2 = pehla combo, 3 = dusra combo...
   
   if (comboClickCount === 1) {
-    // Pehla send: Kabhi kabhi do (30% chance)
-    return Math.random() < 0.29;
+    // Pehla send: Bahut kam chance (10%)
+    return Math.random() < 0.10;
   }
   
   if (comboClickCount === 2) {
-    // Dusra click: Kabhi kabhi do (25% chance)
-    return Math.random() < 0.5;
+    // Dusra click: Bahut kam chance (8%)
+    return Math.random() < 0.08;
   }
   
   if (comboClickCount === 3 || comboClickCount === 4) {
@@ -96,25 +96,25 @@ const shouldGiveReward = (comboClickCount: number, giftPrice: number): boolean =
   }
   
   if (comboClickCount >= 5 && comboClickCount <= 10) {
-    // 5 se 10 bar: Do (80% chance)
-    return Math.random() < 0.44;
+    // 5 se 10 bar: Thoda chance (20%)
+    return Math.random() < 0.20;
   }
   
   if (comboClickCount > 10) {
-    // 11+ bar: High chance (90%)
-    return Math.random() < 0.24;
+    // 11+ bar: Medium chance (35%)
+    return Math.random() < 0.35;
   }
   
   // High gift price bonus (gift price > 5000)
   if (giftPrice > 5000) {
     if (comboClickCount >= 3 && comboClickCount <= 6) {
-      // 3 se 6 bar tak do for high gifts (70% chance)
-      return Math.random() < 0.32;
+      // 3 se 6 bar tak for high gifts (25% chance)
+      return Math.random() < 0.25;
     }
   }
   
-  // Default: Kabhi kabhi bahut kam (10% chance)
-  return Math.random() < 0.10;
+  // Default: Bahut kam (3% chance)
+  return Math.random() < 0.03;
 };
 
 // ============ COMBO PATTI (Non-Lucky: TOP RIGHT) ============
@@ -371,7 +371,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     finally { setIsProcessingCustom(false); }
   };
 
-  // ============ CORE SEND LOGIC WITH SMART REWARD SYSTEM ============
+  // ============ CORE SEND LOGIC WITH SMART REWARD SYSTEM (CHANCES KAM) ============
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
     const validUids = (uids || []).filter(uid => typeof uid === 'string' && uid.trim() !== '');
     if (!user || !firestore || !userProfile || validUids.length === 0) return null;
@@ -385,18 +385,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       const isLuckyGift = gift.category === 'Lucky';
       
       if (isLuckyGift) {
-        // SMART REWARD SYSTEM with 1x coins return option
+        // SMART REWARD SYSTEM with 1x coins return option (CHANCES BAHUT KAM)
         const shouldReward = shouldGiveReward(comboMultiplier, gift.price);
         
         if (shouldReward) {
           if (comboMultiplier <= 1) {
             // Pehla send: chota multiplier (1x bhi include hai)
             const rand = crypto.getRandomValues(new Uint8Array(1))[0] / 256;
-            if (rand < 0.30) selectedMult = 1;      // 1x return bhi milega 40% chance
-            else if (rand < 0.20) selectedMult = 2;   // 2x
-            else if (rand < 0.30) selectedMult = 3;   // 3x
-            else if (rand < 0.32) selectedMult = 5;   // 5x
-            else selectedMult = 10;                    // 10x jackpot
+            if (rand < 0.60) selectedMult = 1;      // 1x return 60% chance (zyada tar 1x hi milega)
+            else if (rand < 0.85) selectedMult = 2;   // 2x
+            else if (rand < 0.95) selectedMult = 3;   // 3x
+            else selectedMult = 5;                     // 5x (bahut kam)
           }
           // Combo clicks: comboMultiplier jo hai wahi use hoga
           
@@ -640,4 +639,4 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
    </AnimatePresence>
   </>
  );
-}
+        }
