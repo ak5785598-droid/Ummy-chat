@@ -976,7 +976,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               } else if (msg.type === 'lucky-rain') {
                 setIsLuckyRainActive(true);
               } else if (msg.type === 'entrance') {
-                if (isAIProcessor) {
+                if (msg.senderId === currentUser?.uid) {
                   // High-Priority: Use direct call to avoid idle callback latency
                   handleAIWelcome(msg.senderName);
                 }
@@ -989,9 +989,11 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 }
               } else if (msg.type === 'emoji' && (msg as any).isSfx) {
                 playLocalSfx((msg as any).sfxId);
-              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT' && isAIProcessor) {
-                // High-Priority: Use direct call to avoid idle callback latency
-                handleAIEngine(msg);
+              } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT') {
+                if (msg.senderId === currentUser?.uid) {
+                  // High-Priority: Use direct call to avoid idle callback latency
+                  handleAIEngine(msg);
+                }
               } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {
                 // Show invitation dialog to the invited user
                 setMicInviteData({
