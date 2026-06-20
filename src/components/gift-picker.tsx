@@ -524,7 +524,7 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
  return (
   <>
    <AnimatePresence mode="wait">
-     {comboState?.show && (
+     {comboState?.show ? (
        comboState.isLucky ? (
          <LuckyPatti 
            key="lucky-combo"
@@ -546,18 +546,18 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
            isTopPosition={true}
          />
        )
-     )}
+     ) : null}
    </AnimatePresence>
 
    <AnimatePresence mode="wait">
-     {comboState?.show && (
+     {comboState?.show ? (
        <motion.button key="combo-btn" initial={{ scale: 0, opacity: 0, rotate: -180 }} animate={{ scale: 1, opacity: 1, rotate: 0 }} exit={{ scale: 0, opacity: 0, rotate: 180 }} transition={{ type: "spring", stiffness: 400, damping: 15 }}
          onClick={handleComboPress} disabled={isSending}
          className="fixed right-6 bottom-32 z-[1000] h-20 w-20 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-700 shadow-[0_0_40px_rgba(255,215,0,0.7)] border-[3px] border-yellow-200 flex items-center justify-center disabled:opacity-50 active:scale-90 transition-transform cursor-pointer">
          <motion.span key={`mult-${comboState.multiplier}`} initial={{ scale: 1.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 500, damping: 10 }} className="text-2xl font-black text-[#3D2000] drop-shadow-[0_2px_4px_rgba(255,240,160,0.8)]">x{comboState.multiplier}</motion.span>
          <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }} className="absolute inset-0 rounded-full border-2 border-yellow-300/50" />
        </motion.button>
-     )}
+     ) : null}
    </AnimatePresence>
 
    <Sheet open={sheetOpen} onOpenChange={(val) => { setSheetOpen(val); if (!val) onOpenChange(false); }}>
@@ -606,12 +606,12 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
      <SheetContent side="bottom" className="sm:max-w-none w-full bg-[#0b0e14] border-t border-white/10 p-0 rounded-t-2xl overflow-hidden text-white shadow-2xl max-h-[70vh] [&>button]:hidden">
        <div className="flex items-center gap-3 p-4 border-b border-white/10 sticky top-0 bg-[#0b0e14] z-10"><button onClick={() => setShowRulesSheet(false)} className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all shrink-0"><ArrowLeft className="h-5 w-5 text-white" /></button><span className="text-lg font-bold text-white">Rules</span></div>
        <div className="overflow-y-auto p-5 space-y-6 text-white/90" style={{ maxHeight: 'calc(70vh - 70px - 80px)' }}><div className="space-y-4">{['Upload Your Imagination into Real World', 'Upload Image for Display Gifts, Also Video for Animation', 'Click on the Confirm & Pay and Then Upload Your Gifts', "Make Sure Don't Exit the Gift Uploading Page. You Can Only Exit When Your Uploading is Complete and Click on the Submit Button for Submission", 'Display Time 7 Days. In Case if Rejected, Your Coins Will Be Returned to Your Coins Wallet Within 24 to 48 Hrs (Also Official Preview Time is 24 to 48 Hrs)'].map((text, i) => (<div key={i} className="flex gap-3"><span className="text-cyan-400 font-black text-lg shrink-0">{i+1}.</span><p className="text-sm font-medium leading-relaxed">{text}</p></div>))}</div></div>
-       <div className="p-4 border-t border-white/10 bg-[#0b0e14] sticky bottom-0"><button onClick={handleConfirmAndPay} disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000} className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 flex items-center justify-center gap-2">{isProcessingCustom ? <Loader className="h-5 w-5 animate-spin" /> : <><>Confirm & Pay</><div className="flex items-center gap-1"><GoldenDollar /><span className="text-yellow-200">50,000</span></div></>}</button></div>
+       <div className="p-4 border-t border-white/10 bg-[#0b0e14] sticky bottom-0"><button onClick={handleConfirmAndPay} disabled={isProcessingCustom || (userProfile?.wallet?.coins || 0) < 50000} className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 font-black text-sm shadow-lg active:scale-95 disabled:opacity-30 transition-all uppercase tracking-widest border-b-4 border-black/20 flex items-center justify-center gap-2">{isProcessingCustom ? <Loader className="h-5 w-5 animate-spin" /> : <>Confirm & Pay <div className="flex items-center gap-1"><GoldenDollar /><span className="text-yellow-200">50,000</span></div></>}</button></div>
      </SheetContent>
    </Sheet>
 
    <AnimatePresence mode="wait">
-     {showCustomLink && (<motion.div key="custom-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[2000] bg-black/95 flex flex-col"><div className="flex items-center justify-between p-4 border-b border-white/10"><span className="text-white font-bold text-lg">Customize Your Gift</span><button onClick={() => setShowCustomLink(false)} className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"><X className="h-5 w-5 text-white" /></button></div><div className="flex-1"><iframe src="https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh" className="w-full h-full border-0" title="Custom Gift Form" /></iframe></div></motion.div>)}
+     {showCustomLink && (<motion.div key="custom-link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[2000] bg-black/95 flex flex-col"><div className="flex items-center justify-between p-4 border-b border-white/10"><span className="text-white font-bold text-lg">Customize Your Gift</span><button onClick={() => setShowCustomLink(false)} className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"><X className="h-5 w-5 text-white" /></button></div><div className="flex-1"><iframe src="https://ajpep8qoykzh.jp.larksuite.com/share/base/form/shrjp2Z1VRCOBZBHRrYsBj2voGh" className="w-full h-full border-0" title="Custom Gift Form"></iframe></div></motion.div>)}
    </AnimatePresence>
   </>
  );
