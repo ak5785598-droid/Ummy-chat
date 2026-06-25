@@ -30,18 +30,25 @@ service cloud.firestore {
         match /users/{userId} {
       allow read: if true;
       allow write: if isAdmin() || (isOwner(userId) && isNotBanned());
-      
+
       match /profile/{profileId} {
         allow read: if isSignedIn();
         // Allow owner to update their own profile
         allow update: if isOwner(userId) && isNotBanned();
         // Special permission for Gifting: Allow others to ONLY increment diamonds and received stats
         // This is a temporary measure because gifting is client-side.
-        allow update: if isSignedIn() && isNotBanned() && 
+        allow update: if isSignedIn() && isNotBanned() &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'updatedAt']) &&
           !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']);
-        
+
         allow create: if isOwner(userId) && isNotBanned();
+      }
+
+      // Allow any signed-in user to create their own assigned numeric ID record during signup
+      match /{document=**} {
+        allow read, write: if isSignedIn() && isNotBanned() && (
+          (resource == null) || (request.auth.uid == resource.data.uid)
+        );
       }
       
       match /profileVisitors/{visitorId} {
@@ -129,7 +136,9 @@ service cloud.firestore {
         allow create: if isSignedIn() && isNotBanned();
         allow update: if isSignedIn() && isNotBanned() && 
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['_processing_ai']);
-        allow delete: if isAdmin() || (resource.data.senderId == request.auth.uid);
+        allow delete: if isAdmin() || (resource.data.senderId == request.auth.uid) ||
+          get(/databases/$(database)/documents/chatRooms/$(roomId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.moderatorIds;
       }
 
       // YouTube sync state — host only
@@ -159,6 +168,12 @@ service cloud.firestore {
           isAdmin() ||
           request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.moderatorIds
         );
+      }
+
+      // Followers — anyone can read, owner of the follow doc can write
+      match /followers/{followerId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned() && followerId == request.auth.uid;
       }
 
       match /{allSub=**} {
@@ -257,7 +272,17 @@ service cloud.firestore {
     // ============================================
     match /cpPairs/{cpId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSignedIn() && isNotBanned();
+    }
+
+    // ============================================
+    // CP PROPOSALS
+    // ============================================
+    match /proposals/{proposalId} {
+      allow read: if isSignedIn() && isNotBanned();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update: if isSignedIn() && isNotBanned();
+      allow delete: if isSignedIn() && isNotBanned();
     }
 
     // ============================================
@@ -266,6 +291,16 @@ service cloud.firestore {
     match /families/{familyId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // ============================================
+    // ASSIGNED IDS (New user registration numeric IDs)
+    // ============================================
+    match /assigned_ids/{id} {
+      allow read: if true;
+      allow create: if isSignedIn() && isNotBanned()
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
     // ============================================
@@ -388,6 +423,11 @@ service cloud.firestore {
     }
 
     // --- GIFTS ---
+    match /gifts/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /giftList/{id} {
       allow read: if true;
       allow write: if isAdmin();
@@ -424,6 +464,15 @@ service cloud.firestore {
     match /leaderboardThemes/{themeId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // ============================================
+    // SUPPORTERS (Top Supporters)
+    // ============================================
+    match /supporters/{supportId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isNotBanned() && request.resource.data.supporterId == request.auth.uid;
+      allow update: if isSignedIn() && isNotBanned() && resource.data.supporterId == request.auth.uid;
     }
   }
 }

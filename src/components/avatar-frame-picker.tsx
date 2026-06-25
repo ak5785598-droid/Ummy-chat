@@ -39,7 +39,9 @@ export function AvatarFramePicker({
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const frames = Object.values(AVATAR_FRAMES);
+  const frames = Object.entries(AVATAR_FRAMES)
+    .filter(([key]) => !key.endsWith('_frame'))
+    .map(([_, val]) => val);
 
   const handleEquip = async () => {
     if (!firestore || !userId) return;

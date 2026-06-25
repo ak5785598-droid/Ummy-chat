@@ -121,6 +121,33 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
           0%, 100% { transform: translate(-50%, -3px); }
           50% { transform: translate(-50%, 3px); }
         }
+        @keyframes custom-orbit-1 {
+          0% { transform: rotate(0deg) translateX(${pixelSize * 0.7}px) rotate(0deg); }
+          100% { transform: rotate(360deg) translateX(${pixelSize * 0.7}px) rotate(-360deg); }
+        }
+        @keyframes custom-orbit-2 {
+          0% { transform: rotate(180deg) translateX(${pixelSize * 0.7}px) rotate(-180deg); }
+          100% { transform: rotate(540deg) translateX(${pixelSize * 0.7}px) rotate(-540deg); }
+        }
+        @keyframes custom-butterfly-float-1 {
+          0% { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 0; }
+          50% { transform: translate(-12px, -25px) scale(0.8) rotate(15deg); opacity: 0.7; }
+          100% { transform: translate(6px, -50px) scale(0.4) rotate(-10deg); opacity: 0; }
+        }
+        @keyframes custom-butterfly-float-2 {
+          0% { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 0; }
+          50% { transform: translate(12px, -30px) scale(0.8) rotate(-15deg); opacity: 0.7; }
+          100% { transform: translate(-6px, -55px) scale(0.4) rotate(10deg); opacity: 0; }
+        }
+        @keyframes custom-bubble-float {
+          0% { transform: translateY(15px) scale(0.4); opacity: 0; }
+          50% { transform: translateY(-15px) scale(0.9); opacity: 0.6; }
+          100% { transform: translateY(-40px) scale(0.4); opacity: 0; }
+        }
+        @keyframes custom-gold-sparkle {
+          0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.2; }
+          50% { transform: scale(1) rotate(180deg); opacity: 0.9; }
+        }
       `}} />
 
       {/* Background Extras */}
@@ -150,7 +177,7 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
             WebkitMaskImage: 'none',
             animation: 
               config.animationType === 'rotate' ? 'custom-spin 12s linear infinite' : 
-              config.animationType === 'pulse' || config.id === 'imperial-blue' ? 'custom-float-frame 4s ease-in-out infinite' : 
+              config.animationType === 'pulse' || config.animationType === 'float' || config.animationType === 'flow' || config.id === 'imperial-blue' ? 'custom-float-frame 4s ease-in-out infinite' : 
               'none',
           }}
         >
@@ -173,12 +200,12 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
               alt={config.name} 
               className={cn(
                 "w-full h-full object-contain",
-                (id === 'electro-red' || id === 'imperial-blue') && "brightness-125 contrast-150"
+                (id === 'electro-red' || id === 'imperial-blue' || id.includes('fuffy') || id.includes('butterflies') || id.includes('basra') || id.includes('sea_sands') || id.includes('family')) && "brightness-125 contrast-110"
               )}
               style={{
                  filter: (id === 'electro-red' || id === 'imperial-blue') 
                    ? `url(#remove-black-background) drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 5px ${glowColor})` 
-                   : 'none'
+                   : (glowColor !== 'transparent' ? `drop-shadow(0 0 8px ${glowColor})` : 'none')
               }}
             />
           )}
@@ -204,6 +231,35 @@ const EliteFrameRenderer = ({ config, pixelSize }: { config: AvatarFrameConfig, 
         >
           {/* Shine Highlight */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/40 to-transparent pointer-events-none opacity-60 shadow-inner" />
+        </div>
+      )}
+
+      {/* Custom High-Fidelity Interactive Overlay Effects per Frame ID */}
+      {id.includes('fuffy') && (
+        <div className="absolute inset-0 z-[110] pointer-events-none flex items-center justify-center">
+          <div className="absolute w-2.5 h-2.5 bg-pink-300 rounded-full blur-[0.5px]" style={{ animation: 'custom-orbit-1 5s linear infinite' }} />
+          <div className="absolute w-2 h-2 bg-purple-300 rounded-full blur-[0.5px]" style={{ animation: 'custom-orbit-2 6s linear infinite' }} />
+        </div>
+      )}
+
+      {id.includes('butterflies') && (
+        <div className="absolute inset-0 z-[110] pointer-events-none">
+          <div className="absolute bottom-[20%] left-[10%] text-sm" style={{ animation: 'custom-butterfly-float-1 4s ease-in-out infinite' }}>🦋</div>
+          <div className="absolute bottom-[15%] right-[10%] text-xs" style={{ animation: 'custom-butterfly-float-2 4.5s ease-in-out infinite', animationDelay: '1.5s' }}>🦋</div>
+        </div>
+      )}
+
+      {id.includes('sea_sands') && (
+        <div className="absolute inset-x-0 bottom-0 top-[20%] z-[110] pointer-events-none overflow-hidden">
+          <div className="absolute bottom-1 left-[25%] w-1.5 h-1.5 rounded-full border border-sky-300 bg-sky-200/20" style={{ animation: 'custom-bubble-float 3.5s ease-in-out infinite' }} />
+          <div className="absolute bottom-2 right-[25%] w-2 h-2 rounded-full border border-sky-300 bg-sky-200/20" style={{ animation: 'custom-bubble-float 4.2s ease-in-out infinite', animationDelay: '1.2s' }} />
+        </div>
+      )}
+
+      {id.includes('basra') && (
+        <div className="absolute inset-0 z-[110] pointer-events-none">
+          <div className="absolute top-[10%] left-[20%] text-[8px]" style={{ animation: 'custom-gold-sparkle 2.5s infinite ease-in-out' }}>✨</div>
+          <div className="absolute bottom-[15%] right-[20%] text-[9px]" style={{ animation: 'custom-gold-sparkle 3s infinite ease-in-out', animationDelay: '0.8s' }}>✨</div>
         </div>
       )}
 
@@ -274,7 +330,7 @@ export const AvatarFrame = memo(({ frameId, frameMediaUrl, dynamicConfig, childr
   }, [frameId, frameMediaUrl, dynamicConfig]);
 
   // Completely ignore default/transparent frames unless they are active store items
-  const isElite = !!config && (!!dynamicConfig);
+  const isElite = !!config;
 
   const innerAvatarContent = (
     <div className={cn(

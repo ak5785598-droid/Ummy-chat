@@ -65,3 +65,18 @@ ummy documnets/
 /jdk17/
 /jdk21/
 
+# Local scratch/notes
+scratch/
+untitled.txt
+sha1_output.txt
+
+# Local frame images (on Firebase Storage)
+public/images/frames/
+
+# android_app_module build output
+android_app_module/build/
+
+# Native app (has its own repo)
+ummy-native/
+cloudflare-expo-updates-server/
+

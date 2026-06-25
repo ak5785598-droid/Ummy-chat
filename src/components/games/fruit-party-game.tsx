@@ -1113,7 +1113,7 @@ export default function CarnivalFoodParty({ onClose, isOverlay, roomId }: { onCl
         </div>
 
         {/* Result History Bar */}
-        <div className="px-4 pb-4 z-20 -mt-1">
+        <div className="px-4 pb-4 z-20 -mt-16">
           <div className="bg-gradient-to-r from-purple-900/80 to-purple-700/80 rounded-lg border border-white/10 py-1 px-2">
             <div className="flex items-center gap-2">
               <span className="text-white text-[9px] font-bold tracking-wider whitespace-nowrap">Result</span>

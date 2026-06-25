@@ -977,7 +977,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
                 setIsLuckyRainActive(true);
               } else if (msg.type === 'entrance') {
                 if (msg.senderId === currentUser?.uid) {
-                  // High-Priority: Use direct call to avoid idle callback latency
+                  // Joiner's own device sends the welcome — ensures it always happens
                   handleAIWelcome(msg.senderName);
                 }
                 if (msg.mediaUrl) {
@@ -990,8 +990,8 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
               } else if (msg.type === 'emoji' && (msg as any).isSfx) {
                 playLocalSfx((msg as any).sfxId);
               } else if (msg.type === 'text' && msg.senderId !== 'SYSTEM_BOT') {
-                if (msg.senderId === currentUser?.uid) {
-                  // High-Priority: Use direct call to avoid idle callback latency
+                if (isAIProcessor) {
+                  // ELECTED LEADER processes AI replies for ALL messages
                   handleAIEngine(msg);
                 }
               } else if (msg.type === 'mic_invite' && msg.targetUid === currentUser?.uid) {

@@ -22,5 +22,8 @@
     },
     "workbench.editor.closeOnFileDelete": true,
     "workbench.editor.centeredLayoutFixedWidth": true,
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "chat.agent.maxRequests": 80000,
+    "editor.accessibilityPageSize": 600,
+    "chat.tools.autoExpandFailures": true
 }

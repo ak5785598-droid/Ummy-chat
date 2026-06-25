@@ -9,7 +9,9 @@ import { Search } from 'lucide-react';
 
 export default function FrameShowcasePage() {
   const [search, setSearch] = useState('');
-  const frames = Object.values(AVATAR_FRAMES);
+  const frames = Object.entries(AVATAR_FRAMES)
+    .filter(([key]) => !key.endsWith('_frame'))
+    .map(([_, val]) => val);
   
   const filteredFrames = frames.filter(f => 
     f.name.toLowerCase().includes(search.toLowerCase()) || 
