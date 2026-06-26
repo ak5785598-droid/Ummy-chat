@@ -29,14 +29,19 @@ service cloud.firestore {
     // ============================================
         match /users/{userId} {
       allow read: if true;
-      allow write: if isAdmin() || (isOwner(userId) && isNotBanned());
+      allow write: if isAdmin() || (isOwner(userId) && isNotBanned() && (
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet']) ||
+        request.resource.data.wallet.coins >= 0
+      ));
 
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        // Allow owner to update their own profile
-        allow update: if isOwner(userId) && isNotBanned();
+        // Allow owner to update their own profile — coins must stay >= 0
+        allow update: if isOwner(userId) && isNotBanned() && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet']) ||
+          request.resource.data.wallet.coins >= 0
+        );
         // Special permission for Gifting: Allow others to ONLY increment diamonds and received stats
-        // This is a temporary measure because gifting is client-side.
         allow update: if isSignedIn() && isNotBanned() &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'updatedAt']) &&
           !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']);

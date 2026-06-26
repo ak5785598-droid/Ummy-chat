@@ -1,0 +1,17 @@
+{
+  "name": "ummy-wallet-monitor",
+  "version": "1.0.0",
+  "description": "Monitors wallet.coins changes and sends Telegram alerts",
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.0"
+  }
+}
