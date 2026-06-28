@@ -1044,84 +1044,25 @@ export default function ProfileView({ profileId, mode = 'public' }: { profileId:
       if (!isOwnProfile || !profile || !firestore || !profileId) return;
       
       const currentID = profile.accountNumber;
-      const isStrictlySixDigits = /^\d{6}$/.test(String(currentID));
       const isCreator = profileId === CREATOR_ID;
+      const hasValidID = currentID && String(currentID).trim().length > 0;
 
-      if (isCreator && currentID === '0000') {
+      if (isCreator && currentID === '0000') return;
+
+      // If has valid ID, just lock it — don't regenerate
+      if (hasValidID) {
+        const uRef = doc(firestore, 'users', profileId);
+        const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
+        try {
+          await setDoc(uRef, { accountNumberLocked: true }, { merge: true });
+          await setDoc(pRef, { accountNumberLocked: true }, { merge: true });
+        } catch {}
         return;
       }
-
-      if (!isCreator && currentID && isStrictlySixDigits) {
-        return;
-      }
-
-      let finalNumber = '';
-      try {
-        await runTransaction(firestore, async (transaction) => {
-          const uRef = doc(firestore, 'users', profileId);
-          const userSnap = await transaction.get(uRef);
-
-          if (userSnap.exists()) {
-            const dbID = userSnap.data().accountNumber;
-            const isDbIdValid = /^\d{6}$/.test(String(dbID));
-
-            if ((isCreator && dbID === '0000') || (!isCreator && dbID && isDbIdValid)) {
-              return;
-            }
-          }
-
-          finalNumber = '';
-
-          if (isCreator) {
-            finalNumber = '0000';
-          } else {
-            let isUnique = false;
-            let attempts = 0;
-            const maxAttempts = 10;
-            
-            while (!isUnique && attempts < maxAttempts) {
-              const randomID = Math.floor(100000 + Math.random() * 900000).toString();
-              const idRef = doc(firestore, 'assigned_ids', randomID);
-              const idSnap = await transaction.get(idRef);
-
-              if (!idSnap.exists()) {
-                transaction.set(idRef, { 
-                  uid: profileId, 
-                  createdAt: serverTimestamp(),
-                  lockedPermanently: true
-                });
-                finalNumber = randomID;
-                isUnique = true;
-              }
-              attempts++;
-            }
-
-            if (!isUnique) {
-              const fallbackRandom = Math.floor(100000 + Math.random() * 900000).toString();
-              finalNumber = fallbackRandom;
-            }
-          }
-
-          const pRef = doc(firestore, 'users', profileId, 'profile', profileId);
-          transaction.update(uRef, { 
-            accountNumber: finalNumber,
-            accountNumberLocked: true,
-            accountNumberLockedAt: serverTimestamp()
-          });
-          transaction.update(pRef, { 
-            accountNumber: finalNumber,
-            accountNumberLocked: true
-          });
-        });
-        
-        console.log('✅ ID permanently locked:', finalNumber);
-      } catch (err: any) {
-        console.warn("❌ ID Generation mein error: ", err);
-      }
+      // If no valid ID, let profile-initializer handle it — do NOT generate here
     };
-
     syncUserID();
-  }, [isOwnProfile, profile, firestore, profileId]);
+  }, [isOwnProfile, profile?.accountNumber, profileId]);
 
   const followRef = useMemoFirebase(() => {
     if (!firestore || !currentUser || !profileId || currentUser.uid === profileId) return null;
