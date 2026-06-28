@@ -58,7 +58,7 @@ export default function CreateFamilyPage() {
     bannerUrl: ''
   });
 
-  const CREATE_COST = 100000;
+  const CREATE_COST = 500000;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

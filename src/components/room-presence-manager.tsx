@@ -111,8 +111,8 @@ import { App } from '@capacitor/app';
           accountNumber: userMetadata.accountNumber || null,
          }, { merge: true });
         } else {
-          // If they exist, just update lastSeen to keep them alive
-          batch.update(participantRef, { lastSeen: serverTimestamp() });
+          // Always sync accountNumber in case it changed since last join
+          batch.update(participantRef, { lastSeen: serverTimestamp(), accountNumber: userMetadata.accountNumber || null });
         }
 
         batch.update(userRef, { currentRoomId: roomId, isOnline: true, updatedAt: serverTimestamp() });
@@ -125,8 +125,8 @@ import { App } from '@capacitor/app';
 
     // HEARTBEAT: Standardized at 15s for mobile data efficiency
     if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
-    heartbeatInterval.current = setInterval(() => {
-     setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp() }, { merge: true });
+     heartbeatInterval.current = setInterval(() => {
+     setDocumentNonBlocking(participantRef, { lastSeen: serverTimestamp(), accountNumber: userMetadata.accountNumber || null }, { merge: true });
      
       // ⚡ QUEST TRACKING: Stay 15 Mins
       if (!hasStayAwarded.current) {
