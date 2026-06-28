@@ -19,6 +19,7 @@ import {
   doc, 
   limit, 
   getDocs,
+  getDoc,
 } from 'firebase/firestore';
 import { getDatabase, ref as dbRef, onValue } from 'firebase/database';
 import { 
@@ -124,20 +125,33 @@ export function RoomsExplorerGlossy() {
  useEffect(() => {
    if (!firestore || !isHydrated) return;
 
-   const fetchRooms = async () => {
-     try {
-       const q = query(collection(firestore, 'chatRooms'), orderBy('participantCount', 'desc'), limit(50));
-       const snap = await getDocs(q);
-       const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-       
-       // DEDUPLICATE: Remove duplicate rooms by ID
-       const uniqueRooms = rooms.filter((room, index, self) => 
-         index === self.findIndex(r => r.id === room.id)
-       );
-       
-        setRoomsData(uniqueRooms);
-        setIsRoomsLoading(false);
-      } catch (e) {
+    const fetchRooms = async () => {
+      try {
+        const ORIGINAL_HELP_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
+        const q = query(collection(firestore, 'chatRooms'), orderBy('participantCount', 'desc'), limit(50));
+        const [snap, helpDocSnap] = await Promise.all([
+          getDocs(q),
+          getDoc(doc(firestore, 'chatRooms', ORIGINAL_HELP_ID)).catch(() => null)
+        ]);
+
+        const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Append help doc if not already present
+        if (helpDocSnap && helpDocSnap.exists()) {
+          const alreadyExists = rooms.some(r => r.id === ORIGINAL_HELP_ID);
+          if (!alreadyExists) {
+            rooms.unshift({ id: helpDocSnap.id, ...helpDocSnap.data() });
+          }
+        }
+        
+        // DEDUPLICATE: Remove duplicate rooms by ID
+        const uniqueRooms = rooms.filter((room, index, self) => 
+          index === self.findIndex(r => r.id === room.id)
+        );
+        
+         setRoomsData(uniqueRooms);
+         setIsRoomsLoading(false);
+       } catch (e) {
        console.error('[Rooms] Fetch failed:', e);
      } finally {
        setIsRoomsLoading(false);

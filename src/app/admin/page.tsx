@@ -1332,37 +1332,48 @@ function AdminPageContent() {
 
       for (const d of usersSnap.docs) {
         const data = d.data();
-        const isStrictlySixDigits = /^\d{6}$/.test(data.accountNumber || '');
-        const needsSync =
-          !data.accountNumber ||
-          (!isStrictlySixDigits && !(d.id === CREATOR_ID && data.accountNumber === "0000")) ||
-          (d.id === CREATOR_ID && data.accountNumber !== "0000");
+        let baseId = data.accountNumber;
+        let isBaseValid = /^\d{6}$/.test(baseId || '');
 
-        if (needsSync) {
-          let paddedId;
-          if (d.id === CREATOR_ID) {
-            paddedId = "0000";
+        let finalId = baseId;
+
+        // Fetch profile doc to check for mismatch
+        const profileSnap = await getDoc(doc(firestore, "users", d.id, "profile", d.id));
+        const profileData = profileSnap.exists() ? profileSnap.data() : null;
+        const profileId = profileData?.accountNumber;
+        const isProfileValid = /^\d{6}$/.test(profileId || '');
+
+        if (d.id === CREATOR_ID) {
+          finalId = "0000";
+        } else {
+          if (isBaseValid && isProfileValid && baseId === profileId) {
+            continue; // Perfectly synced
+          } else if (isBaseValid) {
+            finalId = baseId;
+          } else if (isProfileValid) {
+            finalId = profileId;
           } else {
-            // Random 6-digit generator for Admin Sync
-            paddedId = Math.floor(100000 + Math.random() * 900000).toString();
+            finalId = Math.floor(100000 + Math.random() * 900000).toString();
           }
+        }
 
-          batch.update(doc(firestore, "users", d.id), {
-            accountNumber: paddedId,
-            updatedAt: serverTimestamp(),
-          });
-          batch.update(doc(firestore, "users", d.id, "profile", d.id), {
-            accountNumber: paddedId,
-            updatedAt: serverTimestamp(),
-          });
-          totalOps += 2;
-          changedCount++;
+        batch.set(doc(firestore, "users", d.id), {
+          accountNumber: finalId,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        
+        batch.set(doc(firestore, "users", d.id, "profile", d.id), {
+          accountNumber: finalId,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
 
-          if (totalOps >= 400) {
-            batchesToWait.push(batch.commit());
-            batch = writeBatch(firestore);
-            totalOps = 0;
-          }
+        totalOps += 2;
+        changedCount++;
+
+        if (totalOps >= 400) {
+          batchesToWait.push(batch.commit());
+          batch = writeBatch(firestore);
+          totalOps = 0;
         }
       }
 
