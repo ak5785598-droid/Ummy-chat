@@ -405,7 +405,21 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       });
       
       const diamondPerRecipient = Math.floor((gift.price * qty) * 0.4);
-      validUids.forEach(uid => { const recProfileRef = doc(firestore, 'users', uid, 'profile', uid); batch.update(recProfileRef, { 'wallet.diamonds': increment(diamondPerRecipient), 'stats.dailyGiftsReceived': increment(diamondPerRecipient) }); });
+      validUids.forEach(uid => {
+        const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
+        batch.update(recProfileRef, {
+          'wallet.diamonds': increment(diamondPerRecipient),
+          'stats.dailyGiftsReceived': increment(diamondPerRecipient),
+          'stats.weeklyGiftsReceived': increment(diamondPerRecipient),
+          'stats.monthlyGiftsReceived': increment(diamondPerRecipient)
+        });
+        const recUserRef = doc(firestore, 'users', uid);
+        batch.update(recUserRef, {
+          'stats.dailyGiftsReceived': increment(diamondPerRecipient),
+          'stats.weeklyGiftsReceived': increment(diamondPerRecipient),
+          'stats.monthlyGiftsReceived': increment(diamondPerRecipient)
+        });
+      });
       
       const supporterRef = doc(firestore, 'chatRooms', roomId, 'topSupporters', user.uid);
       let dailyAmountVal: any = increment(totalCost);
