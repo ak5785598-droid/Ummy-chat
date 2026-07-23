@@ -270,7 +270,7 @@ function RoomsExplorerClassic() {
    const fetchRooms = async () => {
      try {
        const ORIGINAL_HELP_ID = '901piBzTQ0VzCtAvlyyobwvAaTs1';
-       const q = query(collection(firestore, 'chatRooms'), orderBy('participantCount', 'desc'), limit(50));
+       const q = query(collection(firestore, 'chatRooms'), limit(100));
        const [snap, helpDocSnap] = await Promise.all([
          getDocs(q),
          getDoc(doc(firestore, 'chatRooms', ORIGINAL_HELP_ID)).catch(() => null)
