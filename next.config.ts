@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     // Ensuring the cloud build frequency is not interrupted by minor type mismatches
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['lucide-react'],
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
   eslint: {
     // Permissive linting for high-speed cloud rollout
     ignoreDuringBuilds: true,

@@ -575,6 +575,181 @@ function ResultOverlay({ finalWinAmount, totalBet, winnerId }: { finalWinAmount:
                   <div className="ring-container">
                     {rank === 1 && isWinner && <><div className="sparkle s1"></div><div className="sparkle s2"></div><div className="sparkle s3"></div></>}
                     <svg viewBox="0 0 140 160">
+                      <circle cx="70" cy="90" r={rank === 1 ? 50 : rank === 2 ? 48 : 46} fill="none" stroke="#2f333a" strokeWidth="14" opacity=".45"/>
+                      <circle cx="70" cy="90" r={rank === 1 ? 50 : rank === 2 ? 48 : 46} fill="none" stroke={isWinner ? "#ffc73a" : rank === 2 ? "#b6bcc6" : "#c76d46"} strokeWidth="12"/>
+                      <g transform="translate(104,124)"><circle r="16" fill={isWinner ? "#ffc73a" : rank === 2 ? "#b6bcc6" : "#c76d46"} /><text x="0" y="5" textAnchor="middle" fontSize="15" fontWeight="800" fill="white">{rank}</text></g>
+                    </svg>
+                  </div>
+                  <div className="player-name">{f.label}</div>
+                  <div className="player-prize">
+                    <svg className="coin-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="url(#coinGold)" stroke="#b26a00" strokeWidth="1"/><text x="16" y="21.5" textAnchor="middle" fontSize="15" fontWeight="900" fill="#8a4a00" fontFamily="Arial">$</text></svg>
+                    <span>{formatCoins(prizes[f.id] || 0)}</span>
+                  </div>
+                  <div className="player-bet">{isWinner ? 'WINNER' : ''}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// MAIN COMPONENT
+interface TeenPattiGameContentProps {
+  isOverlay?: boolean;
+  onClose?: () => void;
+}
+
+export function TeenPattiGameContent({ isOverlay = false, onClose }: TeenPattiGameContentProps) {
+  const router = useRouter();
+  const dragControls = useDragControls();
+  const { user: currentUser } = useUser();
+  const { userProfile } = useUserProfile(currentUser?.uid);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const [gameState, setGameState] = useState<'betting' | 'reveal' | 'result'>('betting');
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [selectedChip, setSelectedChip] = useState(100); 
+  const [myBets, setMyBets] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
+  const [totalPots, setTotalPots] = useState<Record<string, number>>({ WOLF: 0, LION: 0, FISH: 0 });
+  const [history, setHistory] = useState<string[]>(['WOLF', 'LION', 'FISH', 'WOLF', 'LION']);
+  const [isMuted, setIsMuted] = useState(false);
+  const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [isLaunching, setIsLaunching] = useState(true);
+  const [cardReveal, setCardReveal] = useState<Record<string, string[]>>({});
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isHistorySheetOpen, setIsHistorySheetOpen] = useState(false); // Naya state sheet ke liye
+  
+  const [revealedCardsCount, setRevealedCardsCount] = useState<number>(0);
+
+  const [currentRoundNumber, setCurrentRoundNumber] = useState(Math.floor(Date.now() / 1000) % 1000000); 
+  const [detailedHistory, setDetailedHistory] = useState<{round: number, winner: string}[]>([]);
+
+  const [floatingChips, setFloatingChips] = useState<{
+    id: string;
+    factionId: string;
+    chipDef: typeof CHIPS[0];
+    offsetX: number;
+    offsetY: number;
+    rotation: number;
+  }[]>([]);
+
+  const winnersQuery = useMemoFirebase(() => {
+     if (!firestore) return null;
+     return query(
+       collection(firestore, 'globalGameWins'),
+       where('gameId', '==', 'teen-patti'),
+       orderBy('timestamp', 'desc'),
+       limit(5)
+     );
+   }, [firestore]);
+
+   const { data: liveWins } = useCollection(winnersQuery);
+
+  // NAYA: 5:30 AM Clear Logic (IST Time Check)
+  useEffect(() => {
+    const checkReset = setInterval(() => {
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const istDate = new Date(utc + (3600000 * 5.5)); // GMT +5:30
+      if (istDate.getHours() === 5 && istDate.getMinutes() === 30) {
+        setDetailedHistory([]);
+        setHistory([]);
+      }
+    }, 60000);
+    return () => clearInterval(checkReset);
+  }, []);
+
+  useEffect(() => { setTimeout(() => setIsLaunching(false), 1500); }, []);
+
+  useEffect(() => {
+   if (isLaunching) return;
+   const interval = setInterval(() => {
+    if (gameState === 'betting') {
+     if (timeLeft > 0) setTimeLeft(prev => prev - 1);
+     else startReveal();
+    }
+   }, 1000);
+   return () => clearInterval(interval);
+  }, [gameState, timeLeft, isLaunching]);
+
+
+
+  const spawnChip = (factionId: string, chipDef: typeof CHIPS[0]) => {
+    const newChip = {
+      id: Math.floor(100000 + Math.random() * 900000).toString(),
+      factionId,
+      chipDef,
+      offsetX: (Math.random() - 0.5) * 20, 
+      offsetY: (Math.random() - 0.5) * 12, 
+      rotation: (Math.random() - 0.5) * 60,
+    };
+    
+    setFloatingChips(prev => {
+      const next = [...prev, newChip];
+      if (next.length > 40) return next.slice(next.length - 40); 
+      return next;
+    });
+
+  };
+
+  const startReveal = async () => {
+   setGameState('reveal');
+   setRevealedCardsCount(0); 
+
+   // Deal 3 unique cards per faction from shuffled deck
+   const deck = shuffleDeck();
+   const newCards: Record<string, string[]> = {};
+   FACTIONS.forEach((f, idx) => {
+       newCards[f.id] = [deck[idx * 3], deck[idx * 3 + 1], deck[idx * 3 + 2]];
+   });
+   setCardReveal(newCards);
+
+   // Determine winner by comparing hands
+   const results = FACTIONS.map(f => ({ id: f.id, hand: evaluateHand(newCards[f.id]) }));
+   let best = results[0];
+   for (let i = 1; i < results.length; i++) {
+     if (compareHands(results[i].hand, best.hand) > 0) best = results[i];
+   }
+   let winId = best.id;
+
+   // Oracle override (admin forced result)
+   if (firestore) {
+    try {
+     const oracleSnap = await getDoc(doc(firestore, 'gameOracle', 'teen-patti'));
+     if (oracleSnap.exists() && oracleSnap.data().isActive) {
+      winId = oracleSnap.data().forcedResult;
+     }
+    } catch (e) {}
+   }
+
+   let currentFlip = 0;
+   const flipInterval = setInterval(() => {
+       currentFlip++;
+       setRevealedCardsCount(currentFlip);
+       if(currentFlip >= 9) clearInterval(flipInterval);
+   }, 1000);
+
+   setTimeout(() => { finalizeRound(winId); }, 10000);
+  };
+
+  const finalizeRound = (winId: string) => {
+   setWinnerId(winId); 
+   setHistory(prev => [winId,...prev.slice(0, 10)]); 
+   
+   // NAYA: Append to detailed history and increment 6-digit round
+   setDetailedHistory(prev => [{ round: currentRoundNumber, winner: winId }, ...prev]);
+   setCurrentRoundNumber(prev => prev + 1);
+
+   setGameState('result');
+   setRevealedCardsCount(9); 
+
+   const winAmount = (myBets[winId] || 0) * 1.95;
+
+   if (winAmount > 0 && currentUser && firestore && userProfile) {
     runTransaction(firestore as any, async (tx: any) => {
       const userRef = doc(firestore, 'users', currentUser.uid);
       const profileRef = doc(firestore, 'users', currentUser.uid, 'profile', currentUser.uid);

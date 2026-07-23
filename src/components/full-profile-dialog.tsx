@@ -809,6 +809,11 @@ const VideoFrame = ({ videoUrl, className = '' }: { videoUrl: string; className?
       <SmartBlackRemover 
         src={videoUrl} 
         type="video" 
+        className="w-full h-full object-contain pointer-events-none"
+      />
+    </div>
+  );
+};
 // ==========================================
 // CP CARD COMPONENT
 // ==========================================
@@ -1054,15 +1059,6 @@ const CPCard = ({ profile }: { profile: any }) => {
                 </defs>
                 <path d="M10 0 H170 L158 28 Q90 38 22 28 L10 0 Z" fill="url(#gold)" stroke="url(#goldStroke)" strokeWidth="1" />
                 <text x="90" y="20" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="18" fill="#5A2105" letterSpacing="0.5">CP Lv.{cpLevel}</text>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-      <style>{styles}</style>
-    </div>
-  );
-};pacing="0.5">CP</text>
               </svg>
             </div>
           </div>

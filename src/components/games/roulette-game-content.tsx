@@ -416,6 +416,43 @@ export function RouletteGameContent({ isOverlay = false, onClose, roomId }: Roul
          <circle cx="50" cy="50" r="15" fill="#b88a44" />
          <circle cx="50" cy="50" r="12" fill="#3d2b1f" opacity="0.2" />
          <path d="M 50 35 L 50 65 M 35 50 L 65 50" stroke="#b88a44" strokeWidth="3" strokeLinecap="round" />
+         <circle cx="50" cy="35" r="2" fill="#b88a44" />
+         <circle cx="50" cy="65" r="2" fill="#b88a44" />
+         <circle cx="35" cy="50" r="2" fill="#b88a44" />
+         <circle cx="65" cy="50" r="2" fill="#b88a44" />
+         <circle cx="50" cy="50" r="4" fill="#fcd34d" />
+       </svg>
+      </div>
+
+      <div className="absolute top-[calc(50%-132px)] left-1/2 -translate-x-1/2 z-20">
+       <div className="w-4 h-6 bg-yellow-400 clip-path-triangle" />
+      </div>
+
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-30">
+       <div className="bg-black/60 backdrop-blur-md rounded-xl p-2 border border-white/10 flex flex-col items-center">
+         <span className="text-[8px] font-bold text-white/40 uppercase">NEW</span>
+          <div className={cn(
+           "h-10 w-10 rounded-lg flex items-center justify-center text-xl font-bold shadow-lg",
+            RED_NUMBERS.includes(syncedHistory[0]) ? "bg-red-600" : syncedHistory[0] === 0 ? "bg-emerald-600" : "bg-slate-900"
+           )}>
+            {syncedHistory[0]}
+          </div>
+         <ChevronDown className="h-3 w-3 text-white/40 mt-1" />
+       </div>
+       <div className="relative">
+         <div className="h-12 w-12 rounded-full border-2 border-white/20 bg-black/40 flex items-center justify-center shadow-xl">
+          <span className="text-xl font-bold text-yellow-400">{gameState === 'betting' ? timeLeft : '🎲'}</span>
+         </div>
+         <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5">
+          <HelpCircle className="h-2 w-2 text-black" />
+         </div>
+       </div>
+      </div>
+
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30">
+       <button className="bg-emerald-500/80 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-2 border border-white/20 shadow-xl active:scale-95 transition-transform text-white">
+         <Users className="h-4 w-4" />
+         <span className="text-xs font-bold uppercase ">Player</span>
        </button>
       </div>
     </div>

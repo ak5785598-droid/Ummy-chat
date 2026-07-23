@@ -472,12 +472,6 @@ const { data: roundData } = useDoc(roundDocRef);
 const roundDataRef = useRef(roundData);
 useEffect(() => { roundDataRef.current = roundData; }, [roundData]);
 
-useEffect(() => {
-  if (Array.isArray(roundData?.history) && roundData.history.length > 0) {
-    setHistory(roundData.history);
-  }
-}, [roundData?.history]);
-
  const winnersQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -836,15 +830,7 @@ useEffect(() => {
   if (newRoundRecords.length > 0) setGameRecords(prev => [...newRoundRecords, ...prev]);
   
   const historyItem = { id: winningId, type: groupType === 'none' ? 'single' as const : groupType as 'left' | 'right' };
-  const updatedHistory = [historyItem, ...(Array.isArray(roundData?.history) ? roundData.history : [])].slice(0, 20);
-  setHistory(updatedHistory); 
-
-  if (firestore && roundDocRef) {
-    setDoc(roundDocRef, {
-      history: updatedHistory,
-      updatedAt: serverTimestamp()
-    }, { merge: true }).catch(() => {});
-  }
+  setHistory(prev => [historyItem, ...prev].slice(0, 20)); 
 
   let displayEmoji = ANIMALS.find(i => i.id === winningId)?.emoji || '🏆';
   if (groupType === 'left') displayEmoji = '🦁🐯🦊🐻';
@@ -1324,7 +1310,7 @@ useEffect(() => {
                   const animal = ANIMALS.find(a => a.id === h.id);
                   return (
                     <div key={`${h.id}-${i}`} className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to-black/20 border border-white/40 shadow-md">
+                      <div className="relative h-7 w-7 rounded-full flex items-center justify-center bg-gradient-to-b from-white/20 to black/20 border border-white/40 shadow-md">
                          <div className="absolute inset-x-1 top-0.5 h-1/2 bg-gradient-to-b from-white/40 to-transparent rounded-full opacity-60" />
                          <span className="text-base z-10 filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]">{animal?.emoji}</span>
                       </div>
