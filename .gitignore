@@ -80,3 +80,9 @@ android_app_module/build/
 ummy-native/
 cloudflare-expo-updates-server/
 
+# Secrets
+serviceAccountKey.json
+functions/serviceAccountKey.json
+*.keystore
+
+
