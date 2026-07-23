@@ -34,10 +34,22 @@ service firebase.storage {
       allow write: if request.auth != null;
     }
 
+    // Private Direct Message chat images: Authenticated users access
+    match /chats/{chatId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
     // Moments / Social Graph images: Owner only write access
     match /moments/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Family banners: Authenticated users write access (owner/admin enforced in app code)
+    match /families/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
     // Admin Managed Assets (Gifts, Boutique, Banners, RoomBanners)
@@ -83,6 +95,12 @@ service firebase.storage {
     match /medals/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Private chat attachments (e.g. voice notes, images)
+    match /privateChats/{chatId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
     // Global fallback for supreme creator or standard read

@@ -30,26 +30,22 @@ service cloud.firestore {
     // ============================================
         match /users/{userId} {
       allow read: if true;
-      allow write: if isAdmin() || (isOwner(userId) && isNotBanned() && (
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet']) ||
-        request.resource.data.wallet.coins >= 0
-      ));
-      // Special permission for Gifting: Allow others to ONLY increment diamonds and received stats
+      allow write: if (isAdmin() || (isOwner(userId) && isNotBanned())) &&
+        (!('wallet' in request.resource.data) || !('coins' in request.resource.data.wallet) || request.resource.data.wallet.coins >= 0);
+      // Special permission for Gifting: Allow others to ONLY increment diamonds, received stats, inventory
       allow update: if isSignedIn() && isNotBanned() &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'updatedAt']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'inventory', 'updatedAt']) &&
         !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']);
 
       match /profile/{profileId} {
         allow read: if isSignedIn();
-        // Allow owner to update their own profile — coins must stay >= 0
-        allow update: if isOwner(userId) && isNotBanned() && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet']) ||
-          request.resource.data.wallet.coins >= 0
-        );
-        // Special permission for Gifting: Allow others to ONLY increment diamonds and received stats
+        // Allow owner to update their own profile
+        allow update: if isOwner(userId) && isNotBanned() &&
+          (!('wallet' in request.resource.data) || !('coins' in request.resource.data.wallet) || request.resource.data.wallet.coins >= 0);
+        // Special permission for Gifting: Allow others to ONLY increment diamonds, activityPoints, received stats, inventory
         allow update: if isSignedIn() && isNotBanned() &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'updatedAt']) &&
-          !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']);
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['wallet', 'stats', 'activityPoints', 'dailyActivityPoints', 'inventory', 'updatedAt']) &&
+          (!('wallet' in request.resource.data) || !request.resource.data.wallet.diff(resource.data.wallet).affectedKeys().hasAny(['coins']));
 
         allow create: if isOwner(userId) && isNotBanned();
       }
@@ -138,7 +134,7 @@ service cloud.firestore {
 
       match /topSupporters/{supporterId} {
         allow read: if true;
-        allow write: if isOwner(supporterId);
+        allow write: if isSignedIn() && isNotBanned();
       }
       
       match /messages/{messageId} {
@@ -301,7 +297,12 @@ service cloud.firestore {
     match /families/{familyId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow update: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberCount', 'totalWealth', 'updatedAt', 'admins', 'contributions', 'level']) ||
+        isAdmin()
+      );
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
     // ============================================
@@ -310,7 +311,16 @@ service cloud.firestore {
     match /assigned_ids/{id} {
       allow read: if true;
       allow create: if isSignedIn() && isNotBanned()
-        && request.resource.data.uid == request.auth.uid;
+        && (request.resource.data.uid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // GLOBAL BROADCASTS (Room Patti/Marquee Notification)
+    // ============================================
+    match /globalBroadcasts/{broadcastId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isNotBanned();
       allow update, delete: if isAdmin();
     }
 
@@ -353,6 +363,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /medalsList/{medalId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /customEmojis/{emojiId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -373,6 +388,23 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && isNotBanned();
       allow update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // JACKPOT POOL (daily prize pool accumulator)
+    // ============================================
+    match /jackpots/{docId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isNotBanned();
+    }
+
+    // ============================================
+    // GAME DAILY WAGERS (per-user daily wager logs)
+    // ============================================
+    match /gameDailyWagers/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update: if isSignedIn() && isNotBanned();
     }
 
     // ============================================
@@ -484,6 +516,15 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isSignedIn() && isNotBanned() && request.resource.data.supporterId == request.auth.uid;
       allow update: if isSignedIn() && isNotBanned() && resource.data.supporterId == request.auth.uid;
+    }
+
+    // ============================================
+    // TAKEN IDS (Special ID Boutique checks)
+    // ============================================
+    match /taken_ids/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isNotBanned();
+      allow update, delete: if isAdmin();
     }
   }
 }

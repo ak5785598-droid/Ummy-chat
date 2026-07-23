@@ -10,6 +10,7 @@ import {
   useCollection, 
   useMemoFirebase, 
   useFirestore, 
+  useDatabase,
   useDoc,
   useFirebase
 } from '@/firebase';
@@ -23,7 +24,7 @@ import {
   getDocs,
   getDoc,
 } from 'firebase/firestore';
-import { getDatabase, ref as dbRef, onValue } from 'firebase/database';
+import { ref as dbRef, onValue } from 'firebase/database';
 import { 
   Trophy, 
   Ghost,
@@ -204,6 +205,7 @@ export default function RoomsExplorer() {
  */
 function RoomsExplorerClassic() {
   const firestore = useFirestore();
+  const database = useDatabase();
 
  const { user } = useUser();
  const { userProfile: userDoc } = useUserProfile(user?.uid);
@@ -305,11 +307,10 @@ function RoomsExplorerClassic() {
 
    // REALTIME DATABASE PRESENCE: Track which rooms have online users
    useEffect(() => {
-     if (!isHydrated) return;
+     if (!isHydrated || !database) return;
      
      try {
-       const db = getDatabase();
-       const presenceRef = dbRef(db, 'roomPresence');
+       const presenceRef = dbRef(database, 'roomPresence');
        
        const unsubscribe = onValue(presenceRef, (snapshot) => {
          const allPresence = snapshot.val() || {};
@@ -329,7 +330,7 @@ function RoomsExplorerClassic() {
      } catch (e) {
        console.warn('[Rooms] Realtime DB presence listener failed:', e);
      }
-   }, [isHydrated]);
+   }, [isHydrated, database]);
 
  const myRoomQuery = useMemoFirebase(() => {
    if (!firestore || !user?.uid || !isHydrated) return null;

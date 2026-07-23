@@ -7,7 +7,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Loader, Check, X, Plus, ArrowLeft } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc } from 'firebase/firestore';
+import { doc, increment, serverTimestamp, collection, writeBatch, query, orderBy, getDoc, runTransaction } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCachedMedia } from '@/hooks/use-cached-media';
@@ -354,14 +354,17 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
     finally { setIsProcessingCustom(false); }
   };
 
-  // ============ CORE SEND LOGIC (Math.random FIX) ============
+  // ============ CORE SEND LOGIC — Atomic transaction to prevent negative coins ============
   const executeSend = useCallback(async (gift: any, qty: number, uids: string[], comboMultiplier: number = 1) => {
     const validUids = (uids || []).filter(uid => typeof uid === 'string' && uid.trim() !== '');
     if (!user || !firestore || !userProfile || validUids.length === 0) return null;
     const totalCost = gift.price * qty * validUids.length;
-    if ((userProfile.wallet?.coins || 0) < totalCost) return null;
+    // Quick client-side guard (avoids unnecessary Firestore calls when balance is clearly too low)
+    if ((userProfile.wallet?.coins || 0) < totalCost) {
+      toast({ variant: 'destructive', title: 'Insufficient Coins', description: `You need ${totalCost.toLocaleString()} coins.` });
+      return null;
+    }
     try {
-      const batch = writeBatch(firestore);
       const today = getTodayString();
       let winAmount = 0;
       let selectedMult = comboMultiplier;
@@ -369,7 +372,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       
       if (isLuckyGift) {
         const shouldReward = shouldGiveReward(comboMultiplier, gift.price);
-        
         if (shouldReward) {
           if (comboMultiplier <= 1) {
             // ✅ Math.random() - Vercel SSR safe
@@ -379,7 +381,6 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
             else if (rand < 0.95) selectedMult = 3;
             else selectedMult = 5;
           }
-          
           if (selectedMult >= 1) {
             const rawWin = gift.price * qty * selectedMult;
             winAmount = Math.min(rawWin, totalCost * 2);
@@ -387,23 +388,32 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
         }
       }
 
-      const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
-      const senderUserRef = doc(firestore, 'users', user.uid);
-      const isSenderNewDay = (userProfile.wallet as any)?.lastDailyResetDate !== today;
       const coinAdjustment = winAmount - totalCost;
       const expAdjustment = Math.floor(totalCost / 5);
-      
-      batch.update(senderProfileRef, { 
-        'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
-        'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
-        'wallet.lastDailyResetDate': today, updatedAt: serverTimestamp() 
+      const senderProfileRef = doc(firestore, 'users', user.uid, 'profile', user.uid);
+      const senderUserRef = doc(firestore, 'users', user.uid);
+
+      // ✅ ATOMIC TRANSACTION — reads actual server balance before deducting.
+      // This prevents coins going negative even with rapid combo taps (stale client state bypassed).
+      await runTransaction(firestore, async (tx) => {
+        const profileSnap = await tx.get(senderProfileRef);
+        const currentCoins: number = profileSnap.exists() ? (profileSnap.data()?.wallet?.coins ?? 0) : 0;
+        if (currentCoins < totalCost) throw new Error('INSUFFICIENT_COINS');
+        const isSenderNewDay = profileSnap.data()?.wallet?.lastDailyResetDate !== today;
+        tx.update(senderProfileRef, {
+          'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
+          'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+          'wallet.lastDailyResetDate': today, updatedAt: serverTimestamp()
+        });
+        tx.update(senderUserRef, {
+          'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
+          'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
+          'wallet.lastDailyResetDate': today
+        });
       });
-      batch.update(senderUserRef, { 
-        'wallet.coins': increment(coinAdjustment), 'wallet.totalSpent': increment(totalCost),
-        'wallet.totalExp': increment(expAdjustment), 'wallet.dailySpent': isSenderNewDay ? totalCost : increment(totalCost),
-        'wallet.lastDailyResetDate': today
-      });
-      
+
+      // Non-critical writes (recipients, room stats, battle, message) via batch after transaction succeeds
+      const batch = writeBatch(firestore);
       const diamondPerRecipient = Math.floor((gift.price * qty) * 0.4);
       validUids.forEach(uid => {
         const recProfileRef = doc(firestore, 'users', uid, 'profile', uid);
@@ -470,8 +480,15 @@ export function GiftPicker({ open, onOpenChange, roomId, recipient: initialRecip
       batch.set(msgRef, { type: 'gift', senderId: user.uid, senderName: userProfile.username, giftId: gift.id, giftName: gift.name, giftValue: totalCost, animationId: gift.animationId, imageUrl: gift.imageUrl || null, animationUrl: gift.animationUrl || null, videoUrl: gift.videoUrl || null, soundUrl: gift.soundUrl || null, tier: gift.tier || 'normal', recipientId: firstRecipientUid, receiverName: recipientName, recipientSeat: recipientSeat, text: `sent ${gift.name} x${qty} to ${recipientName}`, timestamp: serverTimestamp() });
       await batch.commit();
       return { winAmount, selectedMult, totalCost, isLuckyGift };
-    } catch (e) { console.error("Send gift error:", e); throw e; }
-  }, [user, firestore, userProfile, roomId, participants]);
+    } catch (e: any) {
+      if (e?.message === 'INSUFFICIENT_COINS') {
+        toast({ variant: 'destructive', title: 'Insufficient Coins', description: 'Aapke paas enough coins nahi hain.' });
+        return null;
+      }
+      console.error("Send gift error:", e);
+      throw e;
+    }
+  }, [user, firestore, userProfile, roomId, participants, toast]);
 
   const startComboTimer = useCallback((gift: any, multiplier: number, totalWinAmount: number, isLucky: boolean, receiverName: string) => {
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);

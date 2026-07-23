@@ -5,11 +5,5 @@
   "installCommand": "pnpm install",
   "github": {
     "silent": true
-  },
-  "crons": [
-    {
-      "path": "/api/cron/reset-leaderboard",
-      "schedule": "30 18 * * *"
-    }
-  ]
+  }
 }

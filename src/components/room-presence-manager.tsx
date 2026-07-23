@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useMemo } from 'react';
 import { useRoomContext } from './room-provider';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDatabase, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useScreenWakeLock } from '@/hooks/use-screen-wake-lock';
 import { doc, serverTimestamp, collection, increment, writeBatch, getDocs, getDoc } from 'firebase/firestore';
-import { getDatabase, ref as dbRef, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
+import { ref as dbRef, onDisconnect, set, serverTimestamp as dbServerTimestamp } from 'firebase/database';
 import { App } from '@capacitor/app';
 
 /**
@@ -19,6 +19,7 @@ import { App } from '@capacitor/app';
   const { user } = useUser();
   const { userProfile } = useUserProfile(user?.uid);
   const firestore = useFirestore();
+  const database = useDatabase();
   useScreenWakeLock(!!(activeRoom || minimizedRoom));
   
   const lastRoomId = useRef<string | null>(null);
@@ -221,10 +222,9 @@ import { App } from '@capacitor/app';
     performJoin();
 
     // REALTIME DATABASE PRESENCE: Instant removal on disconnect
-    if (user && roomId) {
-      const db = getDatabase();
+    if (user && roomId && database) {
       const presencePath = `roomPresence/${roomId}/${user.uid}`;
-      presenceRef.current = dbRef(db, presencePath);
+      presenceRef.current = dbRef(database, presencePath);
       
       onDisconnect(presenceRef.current).remove();
       
@@ -313,7 +313,7 @@ import { App } from '@capacitor/app';
      cleanupInterval.current = null;
      heartbeatInterval.current = null;
     };
-  }, [firestore, activeRoom?.id, minimizedRoom?.id, user?.uid]); 
+  }, [firestore, database, activeRoom?.id, minimizedRoom?.id, user?.uid]); 
 
   const lastSyncMetadata = useRef<string>('');
 

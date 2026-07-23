@@ -30,10 +30,18 @@ export function ActiveRoomManager() {
   const sessionRoom = activeRoom || minimizedRoom;
   const roomId = sessionRoom?.id;
 
+  // Password Lock Guard: Prevent audio subscription if room is locked and user is unauthorized
+  const isOwner = user?.uid && sessionRoom?.ownerId === user.uid;
+  const isMod = user?.uid && sessionRoom?.moderatorIds?.includes(user.uid);
+  const isPasswordUnlocked = (sessionRoom as any)?.isPasswordUnlocked === true;
+  const isLockedAndUnauthorized = sessionRoom?.password && !isOwner && !isMod && !isPasswordUnlocked;
+
+  const effectiveRoomId = isLockedAndUnauthorized ? '' : roomId;
+
   const participantsQuery = useMemoFirebase(() => {
-    if (!firestore || !roomId) return null;
-    return query(collection(firestore, 'chatRooms', roomId, 'participants'));
-  }, [firestore, roomId]);
+    if (!firestore || !effectiveRoomId) return null;
+    return query(collection(firestore, 'chatRooms', effectiveRoomId, 'participants'));
+  }, [firestore, effectiveRoomId]);
 
   const { data: participants } = useCollection<RoomParticipant>(participantsQuery);
   const currentUserParticipant = useMemo(() => {
@@ -63,7 +71,7 @@ export function ActiveRoomManager() {
     }, [setVolumes]);
 
     // AGORA CORE - Professional Voice Engine (New System)
-    const { client } = useAgora(roomId || '', isInSeat, isMuted, user?.uid, isSpeakerMuted, handleVolume);
+    const { client } = useAgora(effectiveRoomId || '', isInSeat, isMuted, user?.uid, isSpeakerMuted, handleVolume);
 
   if (!sessionRoom) return null;
 

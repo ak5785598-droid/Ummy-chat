@@ -129,3 +129,9 @@
 .animate-gradient-x {
   animation: gradient-x 3s ease infinite;
 }
+
+@keyframes gift-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(34,211,238,0.35); }
+  50% { transform: scale(1.06); box-shadow: 0 0 24px rgba(34,211,238,0.6); }
+}
+.animate-gift-pulse { animation: gift-pulse 1s ease-in-out infinite; }

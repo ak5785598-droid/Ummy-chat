@@ -1,0 +1,49 @@
+{
+  "themes": {
+    "owl": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_owl_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_owl_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_owl_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_owl_wave.png?alt=media"
+    },
+    "wolf": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_wolf_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_wolf_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_wolf_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_wolf_wave.png?alt=media"
+    },
+    "scorpion": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_scorpion_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_scorpion_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_scorpion_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_scorpion_wave.png?alt=media"
+    },
+    "lion": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_lion_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_lion_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_lion_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_lion_wave.png?alt=media"
+    },
+    "tiger": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_tiger_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_tiger_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_tiger_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_tiger_wave.png?alt=media"
+    },
+    "dragon": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_dragon_frame.png?alt=media",
+      "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_dragon_bubble.png?alt=media",
+      "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_dragon_entrance.png?alt=media",
+      "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_dragon_wave.png?alt=media"
+    }
+  },
+  "backdrops": {
+    "owl": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_owl_bg.png?alt=media",
+    "wolf": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_wolf_bg.png?alt=media",
+    "scorpion": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_scorpion_bg.png?alt=media",
+    "lion": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_lion_bg.png?alt=media",
+    "tiger": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_tiger_bg.png?alt=media",
+    "dragon": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_dragon_bg.png?alt=media"
+  },
+  "uploadedAt": "2026-07-10T21:10:25.572Z"
+}

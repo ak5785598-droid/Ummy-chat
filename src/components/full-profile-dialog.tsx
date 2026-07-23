@@ -809,17 +809,49 @@ const VideoFrame = ({ videoUrl, className = '' }: { videoUrl: string; className?
       <SmartBlackRemover 
         src={videoUrl} 
         type="video" 
-        className="absolute inset-0 w-full h-full"
-        style={{ background: 'transparent', backgroundColor: 'transparent' }}
-      />
-    </div>
-  );
-};
-
 // ==========================================
 // CP CARD COMPONENT
 // ==========================================
-const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string }) => {
+const CPCard = ({ profile }: { profile: any }) => {
+  const firestore = useFirestore();
+  const targetUid = profile?.id || profile?.uid;
+
+  // Query active CP Pair from Firestore
+  const cpPairQuery = useMemoFirebase(() => {
+    if (!firestore || !targetUid) return null;
+    return query(collection(firestore, 'cpPairs'), where('participantIds', 'array-contains', targetUid), limit(1));
+  }, [firestore, targetUid]);
+
+  const { data: cpPairData } = useCollection(cpPairQuery);
+  const activeCpPair = cpPairData?.[0];
+
+  const resolvedPartnerUid = useMemo(() => {
+    if (profile?.relationship?.partnerUid) return profile.relationship.partnerUid;
+    if (activeCpPair?.participantIds) {
+      return activeCpPair.participantIds.find((id: string) => id !== targetUid);
+    }
+    return null;
+  }, [profile?.relationship?.partnerUid, activeCpPair, targetUid]);
+
+  const { userProfile: partnerProfile } = useUserProfile(resolvedPartnerUid || undefined);
+
+  const partnerAvatarUrl = useMemo(() => {
+    return profile?.relationship?.partnerAvatar || 
+      partnerProfile?.avatarUrl || 
+      (activeCpPair?.user1Uid === targetUid ? activeCpPair?.user2Avatar : activeCpPair?.user1Avatar) || 
+      '';
+  }, [profile?.relationship?.partnerAvatar, partnerProfile?.avatarUrl, activeCpPair, targetUid]);
+
+  const partnerUsername = useMemo(() => {
+    return profile?.relationship?.partnerName || 
+      partnerProfile?.username || 
+      (activeCpPair?.user1Uid === targetUid ? activeCpPair?.user2Name : activeCpPair?.user1Name) || 
+      'Partner';
+  }, [profile?.relationship?.partnerName, partnerProfile?.username, activeCpPair, targetUid]);
+
+  const cpLevel = activeCpPair?.level || profile?.relationship?.level || 1;
+  const hasPartner = Boolean(resolvedPartnerUid || partnerAvatarUrl || (profile?.relationship && profile.relationship.type !== 'None'));
+
   const heartGemSVG = `<svg viewBox="0 0 600 550" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Faceted Rose-Gold Heart Gem">
   <defs>
     <radialGradient id="rimGold" cx="0.28" cy="0.22" r="0.85">
@@ -943,7 +975,9 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
     .heart-icon:hover svg { transform: scale(1.05); }
     .tab { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 25%; max-width: 180px; aspect-ratio: 180 / 42; z-index: 6; pointer-events: none; }
     .tab svg { width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35)); }
-    .avatar-overlay { position: absolute; top: 50%; left: 18%; transform: translate(-50%, -58%); z-index: 10; width: 19.44%; max-width: 140px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .avatar-overlay { position: absolute; top: 50%; transform: translate(-50%, -58%); z-index: 10; width: 19.44%; max-width: 140px; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .avatar-overlay.left { left: 18%; }
+    .avatar-overlay.right { left: 82%; }
     .avatar-circle { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 2.8px solid rgba(255,255,255,0.95); box-shadow: 0 4px 14px rgba(0,0,0,0.35); backdrop-filter: blur(2px); background: rgba(255,255,255,0.06); }
     .avatar-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .avatar-circle .avatar-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); color: white; font-weight: 700; font-size: clamp(1.2rem, 3vw, 2.2rem); text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
@@ -967,33 +1001,47 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                 </g>
               </svg>
             </div>
-            <div className="avatar-overlay">
+
+            {/* Left Slot: User Avatar */}
+            <div className="avatar-overlay left">
               <div className="avatar-circle">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={username || 'User'} />
+                {profile?.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt={profile.username || 'User'} />
                 ) : (
-                  <div className="avatar-fallback">{(username || 'U').charAt(0).toUpperCase()}</div>
+                  <div className="avatar-fallback">{(profile?.username || 'U').charAt(0).toUpperCase()}</div>
                 )}
               </div>
-              <span className="avatar-name">{username || 'User'}</span>
+              <span className="avatar-name">{profile?.username || 'User'}</span>
             </div>
-            <div className="icon-container left">
-              <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
-                <circle cx="70" cy="70" r="68" />
-                <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
-                <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
-              </svg>
-            </div>
+
+            {/* Center Slot: Heart Gem */}
             <div className="icon-container center heart-icon">
               <div dangerouslySetInnerHTML={{ __html: heartGemSVG }} />
             </div>
-            <div className="icon-container right">
-              <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
-                <circle cx="70" cy="70" r="68" />
-                <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
-                <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
-              </svg>
-            </div>
+
+            {/* Right Slot: CP Partner Avatar or Plus Icon */}
+            {hasPartner ? (
+              <div className="avatar-overlay right">
+                <div className="avatar-circle">
+                  {partnerAvatarUrl ? (
+                    <img src={partnerAvatarUrl} alt={partnerUsername} />
+                  ) : (
+                    <div className="avatar-fallback">{partnerUsername.charAt(0).toUpperCase()}</div>
+                  )}
+                </div>
+                <span className="avatar-name">{partnerUsername}</span>
+              </div>
+            ) : (
+              <div className="icon-container right">
+                <svg viewBox="0 0 140 140" fill="none" className="plus-icon">
+                  <circle cx="70" cy="70" r="68" />
+                  <rect x="51" y="67.75" width="38" height="4.5" rx="2" />
+                  <rect x="67.75" y="51" width="4.5" height="38" rx="2" />
+                </svg>
+              </div>
+            )}
+
+            {/* Top Ribbon Tab */}
             <div className="tab">
               <svg viewBox="0 0 180 42" fill="none">
                 <defs>
@@ -1005,7 +1053,16 @@ const CPCard = ({ avatarUrl, username }: { avatarUrl?: string; username?: string
                   </linearGradient>
                 </defs>
                 <path d="M10 0 H170 L158 28 Q90 38 22 28 L10 0 Z" fill="url(#gold)" stroke="url(#goldStroke)" strokeWidth="1" />
-                <text x="90" y="20" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="20" fill="#5A2105" letterSpacing="0.5">CP</text>
+                <text x="90" y="20" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontWeight="700" fontSize="18" fill="#5A2105" letterSpacing="0.5">CP Lv.{cpLevel}</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>{styles}</style>
+    </div>
+  );
+};pacing="0.5">CP</text>
               </svg>
             </div>
           </div>
@@ -1311,7 +1368,7 @@ export function FullProfileDialog({
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 
             {/* CP Card */}
-            <CPCard avatarUrl={profile.avatarUrl} username={profile.username} />
+            <CPCard profile={profile} />
 
             <div className="h-[1px] w-full bg-slate-100 my-2" />
 

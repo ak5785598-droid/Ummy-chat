@@ -11,12 +11,11 @@ import {
   orderBy, 
   limit 
 } from 'firebase/firestore';
-import { Sparkles, Trophy } from 'lucide-react';
+import { Sparkles, Crown, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * GlobalActivityBanner - A scrolling system-wide announcement for premium events.
- * Listens to the 'globalActivity' collection for legendary gifts and wins.
+ * GlobalActivityBanner - Ultra Premium System Announcement for Gifts & Wins
  */
 export function GlobalActivityBanner() {
   const firestore = useFirestore();
@@ -35,7 +34,6 @@ export function GlobalActivityBanner() {
 
   if (!activeEvent) return null;
 
-  // Extremely defensive check for timestamp to prevent crashes
   let isRecent = false;
   try {
     const timestamp = activeEvent.timestamp;
@@ -52,39 +50,62 @@ export function GlobalActivityBanner() {
   return (
     <AnimatePresence>
       <motion.div 
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -100, opacity: 0 }}
-        className="fixed top-0 left-0 right-0 z-[600] pointer-events-none"
+        initial={{ y: -100, opacity: 0, scale: 0.9 }}
+        animate={{ y: 12, opacity: 1, scale: 1 }}
+        exit={{ x: -800, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none flex justify-center"
       >
-        <div className="w-full max-w-[500px] mx-auto px-4 mt-2">
-           <div className="relative overflow-hidden bg-gradient-to-r from-purple-900/80 via-indigo-900/80 to-purple-900/80 backdrop-blur-2xl h-4 rounded-full border border-yellow-500/30 flex items-center shadow-[0_0_30px_rgba(251,191,36,0.2)]">
-              {/* Animated Shine */}
+        <div className="w-[94%] max-w-[480px]">
+          {/* Metallic Gold 3D Border Wrapper */}
+          <div className="p-[1.8px] rounded-[24px] bg-gradient-to-r from-[#FFE89C] via-[#F5C57A] to-[#D08C3A] shadow-[0_4px_25px_rgba(245,197,122,0.45)]">
+            <div className="h-[42px] rounded-[22px] bg-gradient-to-r from-[#1E1B4B] via-[#31103F] to-[#0F172A] px-3 flex items-center justify-between overflow-hidden relative backdrop-blur-xl">
+              
+              {/* Light Sweep Reflection Shine */}
               <motion.div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-full skew-x-[45deg]"
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full skew-x-[-30deg]"
                 animate={{ x: ['-200%', '200%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               />
               
-              <div className="shrink-0 px-3 flex items-center gap-1.5 z-10 border-r border-white/10">
-                 <Trophy className="h-3 w-3 text-yellow-400 animate-pulse" />
-                 <span className="text-[10px] font-black uppercase text-yellow-400 tracking-tighter">System</span>
+              {/* Left Group: Avatar & Badge */}
+              <div className="shrink-0 flex items-center gap-1.5 z-10">
+                <div className="h-8 w-8 rounded-full border-[1.5px] border-[#FFE566] bg-[#3b1800] flex items-center justify-center overflow-hidden shadow-inner shrink-0">
+                  {activeEvent?.userAvatar ? (
+                    <img src={activeEvent.userAvatar} alt="user" className="h-full w-full object-cover" />
+                  ) : (
+                    <Crown className="h-4 w-4 text-[#FFE566] animate-pulse" />
+                  )}
+                </div>
+                <div className="px-2 py-0.5 rounded-full bg-amber-400/20 border border-[#F5C57A]">
+                  <span className="text-[8px] font-black uppercase text-[#FFE566] tracking-wider">ROYAL</span>
+                </div>
               </div>
 
-              <div className="flex-1 px-4 overflow-hidden relative z-10">
-                 <motion.div 
-                   className="whitespace-nowrap flex items-center gap-2"
-                   animate={{ x: [400, -800] }}
-                   transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                 >
-                    <Sparkles className="h-3 w-3 text-white/40" />
-                    <p className="text-[10px] font-bold text-white tracking-tight">
-                       WOW! <span className="text-yellow-400">{activeEvent.userName}</span> sent a <span className="text-primary uppercase tracking-tighter">{activeEvent.giftName}</span> in Room <span className="text-emerald-400">#{activeEvent.roomNumber}</span>
-                    </p>
-                    <Sparkles className="h-2 w-2 text-white/40" />
-                 </motion.div>
+              {/* Center Text Message */}
+              <div className="flex-1 px-3 overflow-hidden relative z-10 min-w-0">
+                <p className="text-[11px] font-bold text-white tracking-tight truncate">
+                  <span className="text-[#FFE566] font-black">{activeEvent.userName}</span>
+                  {' sent '}
+                  <span className="text-[#FF3B81] font-black uppercase tracking-wider">{activeEvent.giftName}</span>
+                  {' in '}
+                  <span className="text-[#34D399] font-black">#{activeEvent.roomNumber || activeEvent.roomName || 'Room'}</span>
+                </p>
               </div>
-           </div>
+
+              {/* Right Gift Icon */}
+              <div className="shrink-0 z-10 pl-1">
+                {activeEvent?.giftIcon ? (
+                  <img src={activeEvent.giftIcon} alt="gift" className="h-8 w-8 object-contain animate-bounce" />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+                    <Gift className="h-4.5 w-4.5 text-[#FF3B81]" />
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

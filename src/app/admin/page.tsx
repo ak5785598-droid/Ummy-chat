@@ -51,6 +51,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   Shield,
+  ShieldAlert,
   Loader,
   Gift,
   UserCheck,
@@ -157,36 +158,12 @@ const ADMIN_STATIC_STORE_ITEMS = [
 
 const AUTHORITY_ROLES = [
   { id: "Super Admin", label: "Super Admin", icon: Zap, color: "text-red-500" },
-  {
-    id: "Admin Management",
-    label: "Admin Management",
-    icon: Shield,
-    color: "text-blue-500",
-  },
-  {
-    id: "App Manager",
-    label: "App Manager",
-    icon: Star,
-    color: "text-purple-500",
-  },
-  {
-    id: "Customer Service",
-    label: "Customer Service",
-    icon: MessageSquare,
-    color: "text-cyan-500",
-  },
-  {
-    id: "Coin Seller",
-    label: "Coin Seller",
-    icon: Heart,
-    color: "text-pink-500",
-  },
-  {
-    id: "Assistant",
-    label: "Assistant",
-    icon: UserCheck,
-    color: "text-green-500",
-  },
+  { id: "Manager", label: "Manager", icon: Star, color: "text-purple-500" },
+  { id: "Auditor", label: "Auditor", icon: ShieldAlert, color: "text-yellow-500" },
+  { id: "Admin", label: "Admin", icon: Shield, color: "text-blue-500" },
+  { id: "CS Leader", label: "CS Leader", icon: Sparkles, color: "text-amber-500" },
+  { id: "Customer Service", label: "Customer Service", icon: MessageSquare, color: "text-cyan-500" },
+  { id: "Coin Seller", label: "Coin Seller", icon: Heart, color: "text-pink-500" },
 ];
 
 const ELITE_TAGS = [
@@ -554,8 +531,8 @@ function AdminPageContent() {
 
   const { userProfile: currentUserProfile } = useUserProfile(user?.uid || undefined);
   const isCreator = user?.uid === CREATOR_ID;
-  const isAdminDelegated = currentUserProfile?.isAdmin === true;
-  const isAuthorized = isCreator || isAdminDelegated;
+  const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+  const isAuthorized = isCreator || executorLevel >= 6;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -627,6 +604,8 @@ function AdminPageContent() {
   const [isSovereignAdmin, setIsSovereignAdmin] = useState(false);
   const [isSovereignBudget, setIsSovereignBudget] = useState(false);
   const [isUpdatingSovereign, setIsUpdatingSovereign] = useState(false);
+  const [selectedBadgeTheme, setSelectedBadgeTheme] = useState<string>("none");
+  const [selectedBadgeDuration, setSelectedBadgeDuration] = useState<number>(30);
 
   const [dmSearchId, setDmSearchId] = useState("");
   const [targetUserForDm, setTargetUserForDm] = useState<any>(null);
@@ -1797,7 +1776,30 @@ function AdminPageContent() {
   };
 
   const handleBanUser = () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
+    if (!firestore || !targetUserForBan) return;
+
+    // Hierarchy Level Validation for Banning
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetLevel = getUserLevel(targetUserForBan.tags, targetUserForBan.isAdmin, targetUserForBan.id);
+
+    if (executorLevel < 3 && !isCreator) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Banning features are restricted to Admins and above.",
+      });
+      return;
+    }
+
+    if (executorLevel <= targetLevel && !isCreator) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko ban nahi kar sakte.",
+      });
+      return;
+    }
+
     setIsBanning(true);
     const days = parseInt(banDays) || 0;
     const hours = parseInt(banHours) || 0;
@@ -1850,7 +1852,30 @@ function AdminPageContent() {
   };
 
   const handleUnbanUser = () => {
-    if (!firestore || !targetUserForBan || !isCreator) return;
+    if (!firestore || !targetUserForBan) return;
+
+    // Hierarchy Level Validation for Unbanning
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetLevel = getUserLevel(targetUserForBan.tags, targetUserForBan.isAdmin, targetUserForBan.id);
+
+    if (executorLevel < 3 && !isCreator) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Unbanning features are restricted to Admins and above.",
+      });
+      return;
+    }
+
+    if (executorLevel <= targetLevel && !isCreator) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko unban nahi kar sakte.",
+      });
+      return;
+    }
+
     setIsBanning(true);
     const uRef = doc(firestore, "users", targetUserForBan.id);
     const pRef = doc(
@@ -1913,14 +1938,42 @@ function AdminPageContent() {
     toast({ title: "Balance Adjusted" });
   };
 
+  const getUserLevel = (tags: string[] = [], isAdmin: boolean = false, uid: string = "") => {
+    if (uid === CREATOR_ID) return 7;
+    if (tags.includes("Official") || tags.includes("Official center") || isAdmin) return 6;
+    if (tags.includes("Super Admin")) return 5;
+    if (tags.includes("Manager")) return 4;
+    if (tags.includes("Auditor")) return 3;
+    if (tags.includes("Admin")) return 2;
+    if (tags.includes("CS Leader")) return 1;
+    if (tags.includes("Customer Service")) return 0;
+    return -1;
+  };
+
   const toggleUserRole = (
     targetUid: string,
     roleId: string,
     currentTags: string[] = [],
   ) => {
     if (!firestore) return;
+
+    // Hierarchy Level Validation
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetUser = foundUsers.find(u => u.id === targetUid) || targetUserForTags || targetUserForCenter;
+    const targetLevel = getUserLevel(targetUser?.tags, targetUser?.isAdmin, targetUid);
+
+    const isSelf = targetUid === user?.uid;
+    if (executorLevel <= targetLevel && !isCreator && !isSelf) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko edit nahi kar sakte.",
+      });
+      return;
+    }
+
     const hasRole = (currentTags || []).includes(roleId);
-    const userRef = doc(firestore, "targetUserId", targetUid);
+    const userRef = doc(firestore, "users", targetUid);
     const profileRef = doc(firestore, "users", targetUid, "profile", targetUid);
     const updateData = {
       tags: hasRole ? arrayRemove(roleId) : arrayUnion(roleId),
@@ -1943,6 +1996,20 @@ function AdminPageContent() {
 
   const handleToggleSellerCenter = () => {
     if (!firestore || !targetUserForCenter) return;
+
+    // Hierarchy Level Validation
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetLevel = getUserLevel(targetUserForCenter.tags, targetUserForCenter.isAdmin, targetUserForCenter.id);
+    const isSelf = targetUserForCenter.id === user?.uid;
+    if (executorLevel <= targetLevel && !isCreator && !isSelf) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko edit nahi kar sakte.",
+      });
+      return;
+    }
+
     const tags = targetUserForCenter.tags || [];
     const sellerTags = ["Seller", "Seller center", "Coin Seller"];
     const isCurrentlyActive = tags.some((t: string) => sellerTags.includes(t));
@@ -1980,6 +2047,20 @@ function AdminPageContent() {
 
   const handleToggleOfficialCenter = () => {
     if (!firestore || !targetUserForCenter) return;
+
+    // Hierarchy Level Validation
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetLevel = getUserLevel(targetUserForCenter.tags, targetUserForCenter.isAdmin, targetUserForCenter.id);
+    const isSelf = targetUserForCenter.id === user?.uid;
+    if (executorLevel <= targetLevel && !isCreator && !isSelf) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko edit nahi kar sakte.",
+      });
+      return;
+    }
+
     const tags = targetUserForCenter.tags || [];
     const adminTags = ["Official center", "Admin"];
     const isCurrentlyActive = tags.some((t: string) => adminTags.includes(t));
@@ -2024,6 +2105,21 @@ function AdminPageContent() {
 
   const handleRemoveAllTags = (targetUid: string) => {
     if (!firestore) return;
+
+    // Hierarchy Level Validation
+    const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
+    const targetUser = foundUsers.find(u => u.id === targetUid) || targetUserForTags || targetUserForCenter;
+    const targetLevel = getUserLevel(targetUser?.tags, targetUser?.isAdmin, targetUid);
+    const isSelf = targetUid === user?.uid;
+    if (executorLevel <= targetLevel && !isCreator && !isSelf) {
+      toast({
+        variant: "destructive",
+        title: "Unauthorized Action",
+        description: "Aap apne se barabar ya upar ke rank wale user ko edit nahi kar sakte.",
+      });
+      return;
+    }
+
     const userRef = doc(firestore, "users", targetUid);
     const profileRef = doc(firestore, "users", targetUid, "profile", targetUid);
     const updateData = { tags: [], updatedAt: serverTimestamp() };
@@ -2050,6 +2146,23 @@ function AdminPageContent() {
           setSelectedIdColor(u.idColor || "none");
           setIsSovereignAdmin(u.isAdmin || false);
           setIsSovereignBudget(u.isBudgetId || false);
+          setSelectedBadgeTheme(u.activeIdBadge?.badgeTheme || "none");
+          if (u.activeIdBadge?.expiry) {
+            const exp = new Date(u.activeIdBadge.expiry);
+            const now = new Date();
+            const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 3600 * 24));
+            if (diffDays > 365 * 5) {
+              setSelectedBadgeDuration(9999);
+            } else if (diffDays > 90) {
+              setSelectedBadgeDuration(365);
+            } else if (diffDays > 15) {
+              setSelectedBadgeDuration(30);
+            } else {
+              setSelectedBadgeDuration(7);
+            }
+          } else {
+            setSelectedBadgeDuration(30);
+          }
         }
       },
       setIsSearchingSovereign,
@@ -2069,12 +2182,28 @@ function AdminPageContent() {
         targetUserForSovereign.id,
       );
 
+      let activeIdBadge = null;
+      if (selectedBadgeTheme !== "none") {
+        const expiryDate = new Date();
+        if (selectedBadgeDuration === 9999) {
+          expiryDate.setFullYear(expiryDate.getFullYear() + 99); // permanent
+        } else {
+          expiryDate.setDate(expiryDate.getDate() + selectedBadgeDuration);
+        }
+        activeIdBadge = {
+          badgeTheme: selectedBadgeTheme,
+          expiry: expiryDate.toISOString(),
+          assignedAt: new Date().toISOString(),
+        };
+      }
+
       const updateData: any = {
         updatedAt: serverTimestamp(),
         accountNumber: newSovereignId,
         idColor: selectedIdColor,
         isAdmin: isSovereignAdmin,
         isBudgetId: isSovereignBudget,
+        activeIdBadge: activeIdBadge,
       };
 
       const batch = writeBatch(firestore);
@@ -2090,7 +2219,7 @@ function AdminPageContent() {
       );
       toast({
         title: "Sovereign Identity Updated",
-        description: "Permanent changes applied to user frequencies.",
+        description: "Permanent changes applied to user frequencies and badges.",
       });
     } catch (err: any) {
       console.error(err);

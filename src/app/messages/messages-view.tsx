@@ -345,9 +345,42 @@ function RequestsPage({ open, onOpenChange }: any) {
           type: request.type,
           cpValue: 0,
           level: 1,
+          user1Uid: user.uid,
+          user1Name: user.displayName || 'User',
+          user1Avatar: user.photoURL || '',
+          user2Uid: request.fromUid,
+          user2Name: request.fromUsername || 'Partner',
+          user2Avatar: request.fromAvatarUrl || request.fromAvatar || '',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
+
+        // Update relationship object on both user documents for instant profile sync
+        try {
+          await updateDoc(doc(firestore, 'users', user.uid), {
+            relationship: {
+              type: request.type,
+              partnerUid: request.fromUid,
+              partnerName: request.fromUsername || 'Partner',
+              partnerAvatar: request.fromAvatarUrl || request.fromAvatar || '',
+              level: 1,
+              startDate: serverTimestamp()
+            }
+          });
+          await updateDoc(doc(firestore, 'users', request.fromUid), {
+            relationship: {
+              type: request.type,
+              partnerUid: user.uid,
+              partnerName: user.displayName || 'User',
+              partnerAvatar: user.photoURL || '',
+              level: 1,
+              startDate: serverTimestamp()
+            }
+          });
+        } catch (updateErr) {
+          console.warn('Non-critical: Relationship user doc update error', updateErr);
+        }
+
         await updateDoc(proposalRef, { status: 'accepted' });
         toast({ title: 'Relationship Established!' });
       } else {

@@ -1,0 +1,82 @@
+ffmpeg version 8.1.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+  built with gcc 16.1.0 (Rev2, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-cairo --enable-fontconfig --enable-iconv --enable-gnutls --enable-lcms2 --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-libsnappy --enable-zlib --enable-librist --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-libbluray --enable-libcaca --enable-libdvdnav --enable-libdvdread --enable-sdl2 --enable-libaribb24 --enable-libaribcaption --enable-libdav1d --enable-libdavs2 --enable-libopenjpeg --enable-libquirc --enable-libuavs3d --enable-libxevd --enable-libzvbi --enable-liboapv --enable-libqrencode --enable-librav1e --enable-libsvtav1 --enable-libvvenc --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs2 --enable-libxeve --enable-libxvid --enable-libaom --enable-libjxl --enable-libsvtjpegxs --enable-libvpx --enable-mediafoundation --enable-libass --enable-frei0r --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-liblensfun --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-libshaderc --enable-vulkan --enable-libplacebo --enable-opencl --enable-libcdio --enable-openal --enable-libgme --enable-libmodplug --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libshine --enable-libtheora --enable-libtwolame --enable-libvo-amrwbenc --enable-libcodec2 --enable-libilbc --enable-libgsm --enable-liblc3 --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-ladspa --enable-libbs2b --enable-libflite --enable-libmysofa --enable-librubberband --enable-libsoxr --enable-chromaprint --enable-whisper
+  libavutil      60. 26.102 / 60. 26.102
+  libavcodec     62. 28.102 / 62. 28.102
+  libavformat    62. 12.102 / 62. 12.102
+  libavdevice    62.  3.102 / 62.  3.102
+  libavfilter    11. 14.102 / 11. 14.102
+  libswscale      9.  5.102 /  9.  5.102
+  libswresample   6.  3.102 /  6.  3.102
+[in#0/mov,mp4,m4a,3gp,3g2,mj2 @ 0000020639ca1400] Packet corrupt (stream = 0, dts = 25500).
+[in#0/mov,mp4,m4a,3gp,3g2,mj2 @ 0000020639ca1400] stream 0, offset 0x7f541: partial file
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'D:\Ummy_Dev_Live\assets\images\gifts\anim_1778574936401_1000118684.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 131072
+    compatible_brands: isomiso2mp41
+    creation_time   : 2026-05-12T08:08:28.000000Z
+  Duration: 00:00:05.23, start: 0.000000, bitrate: 775 kb/s
+  Stream #0:0[0x1](eng): Video: hevc (Main) (hvc1 / 0x31637668), yuv420p(tv, bt709), 1080x1920, 11693 kb/s, SAR 1:1 DAR 9:16, 59.42 fps, 60 tbr, 90k tbn (default)
+    Metadata:
+      creation_time   : 2026-05-12T08:08:28.000000Z
+      handler_name    : VideoHandle
+  Stream #0:1[0x2](eng): Audio: aac (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 127 kb/s (default)
+    Metadata:
+      creation_time   : 2026-05-12T08:08:28.000000Z
+      handler_name    : SoundHandle
+Stream mapping:
+  Stream #0:0 -> #0:0 (hevc (native) -> hevc (libx265))
+  Stream #0:1 -> #0:1 (aac (native) -> aac (native))
+Press [q] to stop, [?] for help
+x265 [info]: HEVC encoder version 4.2+37-b81f650
+x265 [info]: build info [Windows][GCC 16.1.0][64 bit] 8bit+10bit+12bit
+x265 [info]: using cpu capabilities: MMX2 SSE2Fast LZCNT SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
+x265 [info]: Main profile, Level-4.1 (Main tier)
+x265 [info]: Thread pool created using 8 threads
+x265 [info]: Slices                              : 1
+x265 [info]: frame threads / pool features       : 3 / wpp(30 rows)
+[in#0/mov,mp4,m4a,3gp,3g2,mj2 @ 0000020639d2b700] corrupt input packet in stream 0
+[in#0/mov,mp4,m4a,3gp,3g2,mj2 @ 0000020639ca1400] stream 0, offset 0x7fb53: partial file
+[af#0:1 @ 000002063b7d1000] No filtered frames for output stream, trying to initialize anyway.
+x265 [info]: Coding QT: max CU size, min CU size : 64 / 8
+x265 [info]: Residual QT: max TU size, max depth : 32 / 1 inter / 1 intra
+x265 [info]: ME / range / subpel / merge         : hex / 57 / 2 / 2
+x265 [info]: Keyframe min / max / scenecut / bias  : 25 / 250 / 40 / 5.00 
+x265 [info]: Lookahead / bframes / badapt        : 15 / 4 / 0
+x265 [info]: b-pyramid / weightp / weightb       : 1 / 1 / 0
+x265 [info]: References / ref-limit  cu / depth  : 3 / on / on
+x265 [info]: AQ: mode / str / qg-size / cu-tree  : 2 / 1.0 / 32 / 1
+x265 [info]: Rate Control / qCompress            : CRF-28.0 / 0.60
+x265 [info]: tools: rd=2 psy-rd=2.00 rskip mode=1 signhide tmvp fast-intra
+x265 [info]: tools: strong-intra-smoothing lslices=8 deblock sao dhdr10-info
+Output #0, mp4, to 'D:\Ummy_Dev_Live\assets\images\gifts\anim_1778574936401_1000118684_hevc.mp4':
+  Metadata:
+    major_brand     : isom
+    minor_version   : 131072
+    compatible_brands: isomiso2mp41
+    encoder         : Lavf62.12.102
+  Stream #0:0(eng): Video: hevc (hev1 / 0x31766568), yuv420p(tv, bt709, progressive), 1080x1920 [SAR 1:1 DAR 9:16], q=2-31, 60 fps, 15360 tbn (default)
+    Metadata:
+      encoder         : Lavc62.28.102 libx265
+      creation_time   : 2026-05-12T08:08:28.000000Z
+      handler_name    : VideoHandle
+    Side data:
+      CPB properties: bitrate max/min/avg: 0/0/0 buffer size: 0 vbv_delay: N/A
+  Stream #0:1(eng): Audio: aac (LC) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 128 kb/s (default)
+    Metadata:
+      encoder         : Lavc62.28.102 aac
+      creation_time   : 2026-05-12T08:08:28.000000Z
+      handler_name    : SoundHandle
+[hevc @ 000002063b7c6200] Invalid NAL unit size (3427 > 2591).
+[hevc @ 000002063b7c6200] Error splitting the input into NAL units.
+[vist#0:0/hevc @ 0000020639d464c0] [dec:hevc @ 0000020639d80180] Decoding error: Invalid data found when processing input
+frame=    0 fps=0.0 q=0.0 size=       0KiB time=N/A bitrate=N/A speed=N/A elapsed=0:00:00.50    [out#0/mp4 @ 0000020639cc0880] video:39KiB audio:0KiB subtitle:0KiB other streams:0KiB global headers:2KiB muxing overhead: 8.901363%
+frame=   17 fps=0.0 q=35.6 Lsize=      42KiB time=N/A bitrate=N/A speed=N/A elapsed=0:00:00.95    
+x265 [info]: frame I:      1, Avg QP:29.02  kb/s: 12080.64
+x265 [info]: frame P:      4, Avg QP:33.99  kb/s: 1017.60 
+x265 [info]: frame B:     12, Avg QP:38.74  kb/s: 247.52  
+x265 [info]: Weighted P-Frames: Y:0.0% UV:0.0%
+
+encoded 17 frames in 0.92s (18.52 fps), 1124.78 kb/s, Avg QP:37.05
+[aac @ 000002063b7d0c80] Qavg: nan

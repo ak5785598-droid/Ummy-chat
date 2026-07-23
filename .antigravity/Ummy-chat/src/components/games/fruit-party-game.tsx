@@ -39,6 +39,49 @@ const ANIMALS = [
   { id: 'lion', emoji: '🦁', multiplier: 45, label: 'x45', pos: 'top-left', color: 'from-yellow-400 to-red-600', border: 'border-yellow-400', index: 7 },
 ];
 
+const EMOJI_MAP: Record<string, string> = {
+  pineapple: '🍍',
+  cherry: '🍒',
+  cherries: '🍒',
+  banana: '🍌',
+  watermelon: '🍉',
+  kebab: '🍢',
+  burrito: '🌯',
+  pizza: '🍕',
+  chicken: '🍗',
+  leg: '🍗',
+  panda: '🐼',
+  rabbit: '🐰',
+  cow: '🐮',
+  dog: '🐶',
+  fox: '🦊',
+  bear: '🐻',
+  tiger: '🐯',
+  lion: '🦁',
+  broccoli: '🥐',
+  lettuce: '🍔',
+  carrot: '🍦',
+  corn: '🍿',
+  tomato: '🍪',
+  coconut: '🍮',
+  grapes: '🥩',
+  orange: '🍟',
+};
+
+const getItemEmoji = (val: any): string => {
+  if (!val) return '🍍';
+  if (typeof val === 'object' && val.emoji) return val.emoji;
+  if (typeof val === 'object' && val.icon) return val.icon;
+  if (typeof val === 'string') {
+    const key = val.toLowerCase();
+    if (EMOJI_MAP[key]) return EMOJI_MAP[key];
+    const matched = ANIMALS.find(a => a.id === val || a.emoji === val);
+    if (matched) return matched.emoji;
+    return val;
+  }
+  return '🍍';
+};
+
 const CHIPS_DATA = [
  { value: 100, label: '100', color: 'from-blue-400 to-cyan-500' },
  { value: 1000, label: '1K', color: 'from-green-400 to-emerald-500' },
@@ -552,6 +595,32 @@ export default function ForestPartyGame({ onBack }: { onBack?: () => void }) {
          Repeat
         </button>
       </div>
+
+       {/* WINNING HISTORY BAR */}
+       <div className="bg-black/60 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 flex items-center gap-3 shadow-2xl relative z-10 mt-3">
+         <div className="flex flex-col items-center justify-center border-r border-white/20 pr-3 shrink-0">
+           <Trophy className="h-4 w-4 text-yellow-400 mb-0.5" />
+           <span className="text-[7px] text-white/70 uppercase font-black tracking-widest leading-none">Winning</span>
+           <span className="text-[9px] text-yellow-400 font-black tracking-tighter leading-none">History</span>
+         </div>
+         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+           {(history.length > 0 ? history : ['pineapple', 'cherry', 'banana', 'watermelon', 'kebab', 'burrito', 'pizza', 'chicken']).map((id, i) => {
+             const emoji = getItemEmoji(id);
+             return (
+               <div key={i} className="relative shrink-0 flex flex-col items-center">
+                 <div className={cn(
+                   "h-9 w-9 rounded-full flex items-center justify-center text-xl bg-gradient-to-b from-white/20 to-black/40 border border-white/30 shadow-md",
+                   i === 0 && "border-yellow-400 ring-2 ring-yellow-400/50 scale-105"
+                 )}>
+                   {emoji}
+                 </div>
+                 {i === 0 && <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-rose-600 text-[6px] text-white font-black px-1 rounded-full shadow">NEW</span>}
+               </div>
+             );
+           })}
+         </div>
+       </div>
+
      </div>
    </footer>
 

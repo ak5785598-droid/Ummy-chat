@@ -33,8 +33,8 @@ export function RoomGameOverlay({ activeGame, roomId, onClose }: RoomGameOverlay
       {activeGame === 'ludo' && <LudoGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
       {activeGame === 'carrom' && <CarromGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
       {activeGame === 'chess' && <ChessGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
-      {activeGame === 'roulette' && <RouletteGameContent isOverlay={true} onClose={onClose} />}
-      {activeGame === 'teen-patti' && <TeenPattiGameContent isOverlay={true} onClose={onClose} />}
+      {activeGame === 'roulette' && <RouletteGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
+      {activeGame === 'teen-patti' && <TeenPattiGameContent isOverlay={true} roomId={roomId} onClose={onClose} />}
       
       {!['fruit-party', 'forest-party', 'ludo', 'carrom', 'chess', 'roulette', 'teen-patti'].includes(activeGame) && (
        <div className="h-full flex flex-col items-center justify-center p-12 text-center bg-black/80 backdrop-blur-xl rounded-t-[3rem] border-t border-white/10 space-y-4 shadow-2xl">

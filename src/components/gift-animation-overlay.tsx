@@ -32,7 +32,7 @@ export function GiftAnimationOverlay({
   animationUrl,
   videoUrl,
   soundUrl,
-  tier = 'normal',
+  tier = 'legendary',
   onComplete, 
   targetSeat,
   isLuckyGift = false,
@@ -589,7 +589,7 @@ export function GiftAnimationOverlay({
             key={activeGift.id}
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0 }} 
+            exit={{ opacity: 0, x: -800, y: 0, scale: 0.1 }} 
             transition={{ duration: 0.4, ease: "easeInOut" }} 
             className="absolute flex flex-col items-center justify-center z-[1001]"
           >

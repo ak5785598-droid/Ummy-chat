@@ -26,7 +26,7 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
   'pegasus', 'kraken', 'world-tree', 'excalibur', 'holy-grail', 'crown_gift_premium'
  ];
 
- const isPremium = giftId ? premiumTier.includes(giftId) : false;
+ const isPremium = true; // All gifts are treated as premium
 
  useEffect(() => {
   if (giftId && typeof giftId === 'string') {
@@ -145,7 +145,7 @@ export function GiftAnimationOverlay({ giftId, onComplete, senderName }: GiftAni
   const isActionItem = ['popcorn', 'money-gun', 'love-bomb'].includes(giftId);
 
   const times = [0, 0.15, 0.5, 0.85, 1];
-  const exitPos = { y: 600, x: -180, scale: 0.1 }; 
+  const exitPos = { y: 0, x: -800, scale: 0.1 }; // Slide left on exit 
 
   if (isClap) {
    return { scale: [0, 2, 2, 2, exitPos.scale], y: [500, -50, 0, 0, exitPos.y], x: [0, 0, 0, 0, exitPos.x], rotateZ: [0, -35, 35, -35, 0], opacity: [0, 1, 1, 1, 0], times };

@@ -755,14 +755,7 @@ export function RoomProfileMain({
                 {isSeller && <SVGA_SellerTag />}
                 {isCS && <SVGA_ServiceTag />}
 
-                {profile.relationship && profile.relationship.type !== 'None' && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-500/10 border border-rose-500/20 rounded-full animate-in zoom-in duration-300">
-                    <Heart className="h-3 w-3 text-rose-500 fill-current" />
-                    <span className="text-[9px] font-black uppercase text-rose-500 tracking-tight">
-                      {profile.relationship.type}: {profile.relationship.partnerName}
-                    </span>
-                  </div>
-                )}
+
               </div>
             </div>
 

@@ -38,6 +38,7 @@ async function resetAll() {
       'wallet.dailySpent':          0,
       'wallet.weeklySpent':         0,
       'wallet.monthlySpent':        0,
+      'wallet.monthlyReceived':     0,
       'stats.dailyGiftsReceived':   0,
       'stats.weeklyGiftsReceived':  0,
       'stats.monthlyGiftsReceived': 0,

@@ -450,6 +450,49 @@ const ITEMS = [
   { id: 'orange', icon: '🍟', multiplier: 5 },
 ];
 
+const EMOJI_MAP: Record<string, string> = {
+  pineapple: '🍍',
+  cherry: '🍒',
+  cherries: '🍒',
+  banana: '🍌',
+  watermelon: '🍉',
+  kebab: '🍢',
+  burrito: '🌯',
+  pizza: '🍕',
+  chicken: '🍗',
+  leg: '🍗',
+  panda: '🐼',
+  rabbit: '🐰',
+  cow: '🐮',
+  dog: '🐶',
+  fox: '🦊',
+  bear: '🐻',
+  tiger: '🐯',
+  lion: '🦁',
+  broccoli: '🥐',
+  lettuce: '🍔',
+  carrot: '🍦',
+  corn: '🍿',
+  tomato: '🍪',
+  coconut: '🍮',
+  grapes: '🥩',
+  orange: '🍟',
+};
+
+const getItemEmoji = (val: any): string => {
+  if (!val) return '🍍';
+  if (typeof val === 'object' && val.emoji) return val.emoji;
+  if (typeof val === 'object' && val.icon) return val.icon;
+  if (typeof val === 'string') {
+    const key = val.toLowerCase();
+    if (EMOJI_MAP[key]) return EMOJI_MAP[key];
+    const matched = ITEMS.find(a => a.id === val || a.icon === val);
+    if (matched) return matched.icon;
+    return val;
+  }
+  return '🍍';
+};
+
 const CHIPS = [
   { value: 100, label: '100' },
   { value: 1000, label: '1K' },
@@ -720,6 +763,16 @@ export default function CarnivalFoodParty({ onClose, isOverlay, roomId }: { onCl
     audio.play().catch(() => {});
   };
 
+  // Sync history from Firestore roundData
+  useEffect(() => {
+    if (Array.isArray(roundData?.history)) {
+      const itemsList = roundData.history
+        .map((id: string) => ITEMS.find(item => item.id === id))
+        .filter(Boolean) as typeof ITEMS[0][];
+      setHistory(itemsList);
+    }
+  }, [roundData?.history]);
+
   useEffect(() => {
     if (userProfile?.wallet?.coins !== undefined && !isCoinsLoaded) {
       setLocalCoins(userProfile.wallet.coins);
@@ -891,11 +944,14 @@ export default function CarnivalFoodParty({ onClose, isOverlay, roomId }: { onCl
     
     setWinnerData({ emoji: winningItem.icon, win: totalWinAmount, bet: betOnItem });
 
-    // Update round doc status to result
+    // Update round doc status and history in Firestore
     if (firestore && roundDocRef) {
+      const existingHistory: string[] = Array.isArray(roundData?.history) ? roundData.history : [];
+      const updatedHistoryIds = [winningItem.id, ...existingHistory.filter(id => id !== winningItem.id || existingHistory.indexOf(id) !== existingHistory.lastIndexOf(id))].slice(0, 10);
       setDoc(roundDocRef, {
         status: 'result',
         winningItemId: winningItem.id,
+        history: [winningItem.id, ...existingHistory].slice(0, 10),
         updatedAt: serverTimestamp()
       }, { merge: true }).catch(() => {});
     }
@@ -1113,21 +1169,25 @@ export default function CarnivalFoodParty({ onClose, isOverlay, roomId }: { onCl
         </div>
 
         {/* Result History Bar */}
-        <div className="px-4 pb-4 z-20 -mt-16">
-          <div className="bg-gradient-to-r from-purple-900/80 to-purple-700/80 rounded-lg border border-white/10 py-1 px-2">
-            <div className="flex items-center gap-2">
-              <span className="text-white text-[9px] font-bold tracking-wider whitespace-nowrap">Result</span>
-              <div className="flex gap-1 overflow-hidden">
-                {history.length > 0 ? (
-                  history.map((item, i) => (
-                    <div key={i} className="w-6 h-6 bg-black/30 rounded flex items-center justify-center text-sm border border-white/10">
-                      {item.icon}
+        <div className="px-4 py-2 z-30 relative mt-2">
+          <div className="bg-black/60 backdrop-blur-md rounded-xl border border-yellow-500/30 py-1.5 px-3 flex items-center gap-3 shadow-lg">
+            <div className="flex flex-col items-center justify-center border-r border-white/20 pr-2 shrink-0">
+              <span className="text-yellow-400 text-xs">🏆</span>
+              <span className="text-white text-[8px] font-black uppercase tracking-tighter leading-none mt-0.5">Winning</span>
+              <span className="text-yellow-400 text-[8px] font-black uppercase tracking-tighter leading-none">History</span>
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+              {(history.length > 0 ? history : ['pineapple', 'cherry', 'banana', 'watermelon', 'kebab', 'burrito', 'pizza', 'chicken']).map((item, i) => {
+                const emoji = getItemEmoji(item);
+                return (
+                  <div key={i} className="relative shrink-0 flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-b from-yellow-400/20 to-purple-950/80 border border-yellow-400/40 shadow-md flex items-center justify-center text-lg">
+                      {emoji}
                     </div>
-                  ))
-                ) : (
-                  <div className="w-6 h-6 flex items-center justify-center text-white/30 text-[10px]">-</div>
-                )}
-              </div>
+                    {i === 0 && <span className="absolute -top-1 -right-1 bg-green-500 text-[6px] text-white px-1 rounded-full font-bold animate-pulse shadow">NEW</span>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -4614,7 +4614,7 @@ export function RoomClient({ room, onExit }: RoomClientProps) {
         animationUrl={activeGift?.animationUrl}
         videoUrl={activeGift?.videoUrl}
         soundUrl={activeGift?.soundUrl}
-        tier={activeGift?.tier}
+        tier="legendary"
         targetSeat={activeGift?.targetSeat} 
         onComplete={() => setActiveGift(null)} 
       />
