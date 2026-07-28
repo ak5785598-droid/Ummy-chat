@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agora Voice Test — Ummy</title>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0f0f1a;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 20px;
+      padding: 20px;
+    }
+    h1 { color: #a78bfa; font-size: 1.8rem; }
+    .card {
+      background: #1e1e2e;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+    }
+    label { display: block; margin-bottom: 6px; color: #aaa; font-size: 0.9rem; }
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #2a2a3e;
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #joinBtn  { background: #7c3aed; color: #fff; }
+    #joinBtn:hover  { background: #6d28d9; }
+    #leaveBtn { background: #dc2626; color: #fff; margin-top: 10px; display: none; }
+    #muteBtn  { background: #d97706; color: #fff; margin-top: 10px; display: none; }
+    #status {
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: #2a2a3e;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #333;
+    }
+    .dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #555;
+      margin-right: 8px;
+    }
+    .dot.green { background: #22c55e; animation: pulse 1s infinite; }
+    .dot.red   { background: #ef4444; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    #volumeBar {
+      height: 20px;
+      background: #2a2a3e;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 10px;
+      display: none;
+    }
+    #volumeFill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e, #a3e635);
+      width: 0%;
+      transition: width 0.1s;
+    }
+    .hint { color: #666; font-size: 0.8rem; margin-top: -10px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🎙️ Agora Voice Test</h1>
+  <div class="card">
+    <label>Channel (Room ID)</label>
+    <input id="channelId" value="901piBzTQ0VzCtAvlyyobwvAaTs1" />
+    <p class="hint">👆 Yahi room ID daalo jisme phone se ho</p>
+
+    <label>Token Server URL</label>
+    <input id="tokenServer" value="https://ummy-ota.ak5785598.workers.dev/api/agora-token" />
+
+    <button id="joinBtn" onclick="joinChannel()">Join Channel as Browser User</button>
+    <button id="muteBtn" onclick="toggleMute()">🔇 Mute My Mic</button>
+    <button id="leaveBtn" onclick="leaveChannel()">❌ Leave</button>
+  </div>
+
+  <div class="card">
+    <span class="dot" id="dot"></span><strong id="statusTitle">Not Connected</strong>
+    <div id="volumeBar"><div id="volumeFill"></div></div>
+    <br><br>
+    <div id="status">Waiting to join...</div>
+  </div>
+
+<script>
+const APP_ID = 'cd76c7f91f144d4681e2002dc15db9ff';
+let client, localTrack, isMuted = false;
+let volumeInterval;
+
+function log(msg) {
+  const el = document.getElementById('status');
+  const ts = new Date().toLocaleTimeString();
+  el.textContent = `[${ts}] ${msg}\n` + el.textContent;
+}
+
+async function joinChannel() {
+  const channelId = document.getElementById('channelId').value.trim();
+  const tokenServer = document.getElementById('tokenServer').value.trim();
+  const uid = Math.floor(Math.random() * 100000) + 9000000; // random browser UID
+
+  try {
+    log('Fetching token from server...');
+    const res = await fetch(`${tokenServer}?channel=${channelId}&uid=${uid}&role=publisher`);
+    const data = await res.json();
+    const token = data.token;
+    log('Token received ✓ (first 15): ' + token.substring(0, 15));
+
+    log('Creating Agora client...');
+    client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' });
+    await client.setClientRole('host');
+
+    client.on('user-published', async (user, mediaType) => {
+      await client.subscribe(user, mediaType);
+      if (mediaType === 'audio') {
+        user.audioTrack.play();
+        log(`🔊 Remote audio received from UID: ${user.uid}`);
+      }
+    });
+
+    client.on('user-joined', (user) => {
+      log(`👤 User joined: UID ${user.uid}`);
+    });
+
+    client.on('user-left', (user) => {
+      log(`👋 User left: UID ${user.uid}`);
+    });
+
+    log('Joining channel: ' + channelId);
+    await client.join(APP_ID, channelId, token, uid);
+    log(`✅ JOINED as UID: ${uid}`);
+
+    log('Creating microphone track...');
+    localTrack = await AgoraRTC.createMicrophoneAudioTrack();
+    await client.publish([localTrack]);
+    log('🎙️ Mic PUBLISHED — phone pe aapki awaaz sunai de!');
+
+    // Update UI
+    document.getElementById('dot').className = 'dot green';
+    document.getElementById('statusTitle').textContent = 'Connected ✓';
+    document.getElementById('joinBtn').style.display = 'none';
+    document.getElementById('leaveBtn').style.display = 'block';
+    document.getElementById('muteBtn').style.display = 'block';
+    document.getElementById('volumeBar').style.display = 'block';
+
+    // Volume indicator
+    volumeInterval = setInterval(() => {
+      if (localTrack) {
+        const vol = localTrack.getVolumeLevel() * 100;
+        document.getElementById('volumeFill').style.width = vol + '%';
+      }
+    }, 100);
+
+  } catch (e) {
+    log('❌ Error: ' + e.message);
+    console.error(e);
+  }
+}
+
+async function toggleMute() {
+  if (!localTrack) return;
+  isMuted = !isMuted;
+  await localTrack.setEnabled(!isMuted);
+  document.getElementById('muteBtn').textContent = isMuted ? '🎙️ Unmute' : '🔇 Mute My Mic';
+  log(isMuted ? 'Mic MUTED' : 'Mic UNMUTED');
+}
+
+async function leaveChannel() {
+  clearInterval(volumeInterval);
+  if (localTrack) { localTrack.close(); }
+  if (client) { await client.leave(); }
+  log('Left channel');
+  document.getElementById('dot').className = 'dot red';
+  document.getElementById('statusTitle').textContent = 'Disconnected';
+  document.getElementById('joinBtn').style.display = 'block';
+  document.getElementById('leaveBtn').style.display = 'none';
+  document.getElementById('muteBtn').style.display = 'none';
+  document.getElementById('volumeBar').style.display = 'none';
+}
+</script>
+</body>
+</html>

@@ -97,18 +97,32 @@ export interface UserProfile {
 export function useUserProfile(userId: string | undefined, options?: { suppressGlobalError?: boolean }) {
   const { isHydrated, firestore } = useFirebase();
 
-  // Guard the reference itself with useMemo to keep it stable.
+  const userRef = useMemo(() => {
+    if (!firestore || !userId || !isHydrated) return null;
+    return doc(firestore, 'users', userId);
+  }, [firestore, userId, isHydrated]);
+
   const userProfileRef = useMemo(() => {
     if (!firestore || !userId || !isHydrated) return null;
     return doc(firestore, 'users', userId, 'profile', userId);
   }, [firestore, userId, isHydrated]);
-  
-  const { data, isLoading, error } = useDoc<UserProfile>(userProfileRef, options);
 
-  // Memoize the final return object to prevent downstream re-render loops.
+  const { data: baseData, isLoading: isBaseLoading, error: baseError } = useDoc<UserProfile>(userRef, options);
+  const { data: subData, isLoading: isSubLoading, error: subError } = useDoc<UserProfile>(userProfileRef, options);
+
+  const mergedProfile = useMemo(() => {
+    if (!baseData && !subData) return null;
+    return {
+      ...(subData || {}),
+      ...(baseData || {}),
+      id: userId || '',
+      accountNumber: baseData?.accountNumber || subData?.accountNumber || '000000',
+    } as UserProfile;
+  }, [baseData, subData, userId]);
+
   return useMemo(() => ({ 
-    userProfile: isHydrated ? data : null, 
-    isLoading: !isHydrated || isLoading, 
-    error 
-  }), [data, isLoading, error, isHydrated]);
+    userProfile: isHydrated ? mergedProfile : null, 
+    isLoading: !isHydrated || (isBaseLoading && isSubLoading), 
+    error: baseError || subError 
+  }), [mergedProfile, isBaseLoading, isSubLoading, baseError, subError, isHydrated]);
 }

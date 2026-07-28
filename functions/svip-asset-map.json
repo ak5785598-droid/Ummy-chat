@@ -1,37 +1,87 @@
 {
+  "levels": {
+    "1": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_1_frame.png?alt=media"
+    },
+    "2": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_2_frame.png?alt=media"
+    },
+    "3": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_3_frame.png?alt=media"
+    },
+    "4": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_4_frame.png?alt=media"
+    },
+    "5": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_5_frame.png?alt=media"
+    },
+    "6": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_6_frame.png?alt=media"
+    },
+    "7": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_7_frame.png?alt=media"
+    },
+    "8": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_8_frame.png?alt=media"
+    },
+    "9": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_9_frame.png?alt=media"
+    },
+    "10": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_10_frame.png?alt=media"
+    },
+    "11": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_11_frame.png?alt=media"
+    },
+    "12": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_12_frame.png?alt=media"
+    },
+    "13": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_13_frame.png?alt=media"
+    },
+    "14": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_14_frame.png?alt=media"
+    },
+    "15": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_15_frame.png?alt=media"
+    },
+    "16": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_16_frame.png?alt=media"
+    },
+    "17": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_17_frame.png?alt=media"
+    },
+    "18": {
+      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_18_frame.png?alt=media"
+    }
+  },
   "themes": {
     "owl": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_owl_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_owl_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_owl_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_owl_wave.png?alt=media"
     },
     "wolf": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_wolf_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_wolf_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_wolf_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_wolf_wave.png?alt=media"
     },
     "scorpion": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_scorpion_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_scorpion_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_scorpion_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_scorpion_wave.png?alt=media"
     },
     "lion": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_lion_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_lion_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_lion_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_lion_wave.png?alt=media"
     },
     "tiger": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_tiger_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_tiger_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_tiger_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_tiger_wave.png?alt=media"
     },
     "dragon": {
-      "frame": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_dragon_frame.png?alt=media",
       "bubble": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_dragon_bubble.png?alt=media",
       "entrance": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fentrance%2Fsvip_dragon_entrance.png?alt=media",
       "wave": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fwave%2Fsvip_dragon_wave.png?alt=media"
@@ -45,5 +95,5 @@
     "tiger": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_tiger_bg.png?alt=media",
     "dragon": "https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbackdrop%2Fdangerous_dragon_bg.png?alt=media"
   },
-  "uploadedAt": "2026-07-10T21:10:25.572Z"
+  "uploadedAt": "2026-07-26T10:30:00.000Z"
 }

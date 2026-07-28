@@ -29,11 +29,16 @@ const SVIP_LEVELS = [
   { level: 18, threshold: 680000000000,  pointsBack: 520000000000 },
 ];
 
+// ── SVIP Monthly Coins Reward (level² × 400,000) ─────────────────────────────
+const SVIP_MONTHLY_COINS = {};
+for (let lvl = 1; lvl <= 18; lvl++) {
+  SVIP_MONTHLY_COINS[lvl] = lvl * lvl * 400000;
+}
+
 // ── SVIP Privilege Assets (Firebase Storage URLs) ───────────────────────────
 // Auto-assigned when user reaches a new SVIP level
 const SVIP_PRIVILEGES = {
   owl: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_owl_frame.png?alt=media',
     bubble: 'svip-owl-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_owl_bubble.png?alt=media',
     entrance: 'slide',
@@ -41,7 +46,6 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-owl-wave',
   },
   wolf: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_wolf_frame.png?alt=media',
     bubble: 'svip-wolf-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_wolf_bubble.png?alt=media',
     entrance: 'slide',
@@ -49,7 +53,6 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-wolf-wave',
   },
   scorpion: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_scorpion_frame.png?alt=media',
     bubble: 'svip-scorpion-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_scorpion_bubble.png?alt=media',
     entrance: 'slide',
@@ -57,7 +60,6 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-scorpion-wave',
   },
   lion: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_lion_frame.png?alt=media',
     bubble: 'svip-lion-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_lion_bubble.png?alt=media',
     entrance: 'slide',
@@ -65,7 +67,6 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-lion-wave',
   },
   tiger: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_tiger_frame.png?alt=media',
     bubble: 'svip-tiger-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_tiger_bubble.png?alt=media',
     entrance: 'slide',
@@ -73,7 +74,6 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-tiger-wave',
   },
   dragon: {
-    frame: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_dragon_frame.png?alt=media',
     bubble: 'svip-dragon-bubble',
     bubbleUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fbubble%2Fsvip_dragon_bubble.png?alt=media',
     entrance: 'slide',
@@ -81,6 +81,12 @@ const SVIP_PRIVILEGES = {
     wave: 'svip-dragon-wave',
   },
 };
+
+// Per-level frame URLs (each SVIP level has its own unique frame)
+const SVIP_LEVEL_FRAMES = {};
+for (let lvl = 1; lvl <= 18; lvl++) {
+  SVIP_LEVEL_FRAMES[lvl] = `https://firebasestorage.googleapis.com/v0/b/studio-7826224327-e0efc.firebasestorage.app/o/svip-privileges%2Fframe%2Fsvip_level_${lvl}_frame.png?alt=media`;
+}
 
 // Level → Theme mapping
 function getSvipTheme(level) {
@@ -209,11 +215,11 @@ exports.autoPromoteSvip = onDocumentWritten(
     const theme = getSvipTheme(newLevel);
     const privileges = SVIP_PRIVILEGES[theme];
 
-    // Privilege fields to set
+    // Privilege fields to set (frame is per-level, rest is theme-based)
     const privilegeUpdate = {
       'svipPrivileges.level': newLevel,
       'svipPrivileges.theme': theme,
-      'svipPrivileges.frameUrl': privileges.frame,
+      'svipPrivileges.frameUrl': SVIP_LEVEL_FRAMES[newLevel] || privileges.frame,
       'svipPrivileges.bubbleId': privileges.bubble,
       'svipPrivileges.bubbleUrl': privileges.bubbleUrl,
       'svipPrivileges.entranceType': privileges.entrance,
@@ -259,6 +265,63 @@ exports.autoPromoteSvip = onDocumentWritten(
     });
 
     console.log(`[autoPromoteSvip] ${userId}: SVIP ${currentSvip} → ${newLevel} (points: ${svipPoints}) — ${theme} privileges assigned`);
+  }
+);
+
+// ── Scheduled SVIP Monthly Coins Distribution ────────────────────────────────
+// Runs on 1st of every month at 00:05 IST — auto-distributes coins to all SVIP users
+exports.distributeSvipMonthlyCoins = onSchedule(
+  {
+    schedule: '5 0 1 * *',       // ← 1st of every month at 00:05 IST
+    timeZone: 'Asia/Kolkata',
+    region: 'us-central1',
+  },
+  async () => {
+    const db = admin.firestore();
+    console.log('[distributeSvipMonthlyCoins] Starting monthly SVIP coin distribution...');
+
+    const usersSnapshot = await db.collection('users').get();
+    let distributed = 0;
+    let skipped = 0;
+    let totalCoins = 0;
+
+    const batch = db.batch();
+    let batchCount = 0;
+
+    for (const userDoc of usersSnapshot.docs) {
+      const userData = userDoc.data();
+      const svip = userData.svip || 0;
+      if (svip <= 0) { skipped++; continue; }
+
+      const coins = SVIP_MONTHLY_COINS[svip] || 0;
+      if (coins <= 0) { skipped++; continue; }
+
+      const userId = userDoc.id;
+      const profileRef = db.doc(`users/${userId}/profile/${userId}`);
+
+      batch.update(profileRef, {
+        'wallet.coins': admin.firestore.FieldValue.increment(coins),
+        svipMonthlyClaimedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      batch.update(userDoc.ref, {
+        'wallet.coins': admin.firestore.FieldValue.increment(coins),
+      });
+
+      distributed++;
+      totalCoins += coins;
+      batchCount++;
+
+      // Firestore batch limit is 500
+      if (batchCount >= 500) {
+        await batch.commit();
+        batch = db.batch();
+        batchCount = 0;
+      }
+    }
+
+    if (batchCount > 0) await batch.commit();
+
+    console.log(`[distributeSvipMonthlyCoins] Done! Distributed: ${distributed} users, Total: ${totalCoins.toLocaleString('en-IN')} coins`);
   }
 );
 
