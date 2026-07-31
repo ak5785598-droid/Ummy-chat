@@ -8,26 +8,27 @@ export const emotionDetectorFlow = ai.defineFlow(
       text: z.string(),
     }),
     outputSchema: z.object({
-      emotion: z.enum(['happy', 'angry', 'sad', 'surprised', 'normal']),
+      emotion: z.string(),
       emoji: z.string(),
+      confidence: z.number().optional(),
     }),
   },
   async (input) => {
-    const { text } = input;
-
     const response = await ai.generate({
-      prompt: `Analyze the emotional tone of this chat message: "${text}". 
-      Categorize it into one of these: happy, angry, sad, surprised, or normal.
-      
-      Return ONLY a JSON object: {"emotion": "category", "emoji": "one_matching_emoji"}.`,
+      prompt: `Detect the emotional tone of this message.
+Return JSON: { "emotion": "happy|angry|sad|surprised|normal", "emoji": "single emoji", "confidence": 0.0-1.0 }
+Message: "${input.text}"`,
     });
 
     try {
-      // Clean up potential markdown blocks from AI response
-      const cleanText = response.text.replace(/```json|```/g, '').trim();
-      return JSON.parse(cleanText);
-    } catch (e) {
-      return { emotion: 'normal', emoji: '💬' };
+      const parsed = JSON.parse(response.text);
+      return {
+        emotion: parsed.emotion || 'normal',
+        emoji: parsed.emoji || '😐',
+        confidence: parsed.confidence ?? 0.5,
+      };
+    } catch {
+      return { emotion: 'normal', emoji: '😐', confidence: 0.5 };
     }
   }
 );

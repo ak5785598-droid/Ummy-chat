@@ -182,6 +182,18 @@ service cloud.firestore {
         allow write: if isSignedIn() && isNotBanned() && followerId == request.auth.uid;
       }
 
+      // Entry Logs — any signed-in user can write (entry/kick/ban logs)
+      match /entryLogs/{logId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
+      }
+
+      // Loot Entries — any signed-in user can write (loot gate queue tracking)
+      match /lootEntries/{entryId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isNotBanned();
+      }
+
       match /{allSub=**} {
         allow read: if true;
         allow write: if false;

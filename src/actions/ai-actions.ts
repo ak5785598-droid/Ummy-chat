@@ -95,4 +95,3 @@ export async function translateMessage(text: string, targetLanguage: string = 'H
     return null;
   }
 }
-
