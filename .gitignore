@@ -85,4 +85,11 @@ serviceAccountKey.json
 functions/serviceAccountKey.json
 *.keystore
 
+# Android Studio & Gradle local files
+.idea/
+*.hprof
+local.properties
+.gradle/
+**/build/
+
 
