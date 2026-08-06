@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.vercel.ummy_chat.twa.data.repository.LiveRoomModel
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun RowScope.ChatRoomCard(
@@ -27,12 +28,28 @@ fun RowScope.ChatRoomCard(
     onPress: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // React Native chat-room-card.tsx L14-18: useUserProfile(room.ownerId) live resolution
+    var ownerName by remember { mutableStateOf(room.ownerName) }
+    var ownerAvatar by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(room.ownerUid) {
+        if (room.ownerUid.isEmpty()) return@DisposableEffect onDispose {}
+        val listener = FirebaseFirestore.getInstance()
+            .collection("users").document(room.ownerUid)
+            .addSnapshotListener { snap, _ ->
+                val data = snap?.data
+                if (data != null) {
+                    ownerName = data["username"] as? String ?: room.ownerName
+                    ownerAvatar = data["avatarUrl"] as? String
+                }
+            }
+        onDispose { listener.remove() }
+    }
+
     val liveCount = maxOf(0, room.participantCount)
     val roomTitle = room.title.takeIf { it.isNotBlank() } ?: "Frequency"
-    val ownerName = room.ownerName.takeIf { it.isNotBlank() } ?: "Tribe Member"
+    val ownerDisplayName = ownerName.takeIf { it.isNotBlank() } ?: "Tribe Member"
     val roomNumber = room.roomNumber.takeIf { it.isNotBlank() } ?: "0000"
-    
-    val ownerAvatar: String? = null // Handled with fallback if null
 
     Box(
         modifier = modifier
@@ -52,6 +69,7 @@ fun RowScope.ChatRoomCard(
                 contentScale = ContentScale.Crop
             )
         } else {
+            // React Native L32-34: LinearGradient [rgba(139,92,246,0.15), rgba(139,92,246,0.05)] + 🏠 text-3xl text-purple-600/30
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -74,7 +92,7 @@ fun RowScope.ChatRoomCard(
         }
 
         // Cinematic Gradients for Text Legibility
-        // Top Gradient
+        // Top Gradient (React Native L38-41): h-10 rgba(0,0,0,0.5)->rgba(0,0,0,0.1)->transparent
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,8 +108,8 @@ fun RowScope.ChatRoomCard(
                     )
                 )
         )
-        
-        // Bottom Gradient
+
+        // Bottom Gradient (React Native L43-46): h-20 transparent->rgba(0,0,0,0.4)->rgba(0,0,0,0.8)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -108,7 +126,7 @@ fun RowScope.ChatRoomCard(
                 )
         )
 
-        // Top Left: ID Tag
+        // Top Left: ID Tag (React Native L49-51): top-2 left-2 bg-black/40 rounded-full px-1.5 py-0.5 border-white/10
         Box(
             modifier = Modifier
                 .padding(8.dp)
@@ -122,11 +140,11 @@ fun RowScope.ChatRoomCard(
                 fontSize = 7.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
-                letterSpacing = (-0.5).sp
+                letterSpacing = (-0.5).sp // tracking-tighter
             )
         }
 
-        // Top Right: Live Viewers
+        // Top Right: Live Viewers (React Native L54-57): dot h-1 w-1 bg-[#00E5FF] w/ glow if live
         Row(
             modifier = Modifier
                 .padding(8.dp)
@@ -141,7 +159,7 @@ fun RowScope.ChatRoomCard(
                 modifier = Modifier
                     .size(4.dp)
                     .background(
-                        color = if (liveCount > 0) Color(0xFF00E5FF) else Color(0xFF94A3B8), // cyan #00E5FF or slate-400
+                        color = if (liveCount > 0) Color(0xFF00E5FF) else Color(0xFF94A3B8), // #00E5FF or slate-400
                         shape = CircleShape
                     )
             )
@@ -154,7 +172,7 @@ fun RowScope.ChatRoomCard(
             )
         }
 
-        // Bottom Content: Title & Host
+        // Bottom Content: Title & Host (React Native L60-79)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -175,17 +193,18 @@ fun RowScope.ChatRoomCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (ownerAvatar != null) {
+                if (ownerAvatar?.isNotBlank() == true) {
                     AsyncImage(
                         model = ownerAvatar,
                         contentDescription = "Host Avatar",
                         modifier = Modifier
-                            .size(14.dp)
+                            .size(14.dp) // w-3.5 h-3.5
                             .clip(CircleShape)
                             .border(1.dp, Color(0x4DFFFFFF), CircleShape), // border-white/30
                         contentScale = ContentScale.Crop
                     )
                 } else {
+                    // React Native L71-74: bg-slate-800 rounded-full with "U"
                     Box(
                         modifier = Modifier
                             .size(14.dp)
@@ -194,7 +213,7 @@ fun RowScope.ChatRoomCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = ownerName.take(1).uppercase(),
+                            text = "U",
                             fontSize = 5.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -203,13 +222,13 @@ fun RowScope.ChatRoomCard(
                 }
 
                 Text(
-                    text = ownerName.uppercase(),
+                    text = ownerDisplayName.uppercase(),
                     fontSize = 7.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White.copy(alpha = 0.8f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    letterSpacing = 1.sp,
+                    letterSpacing = 1.sp, // tracking-widest
                     modifier = Modifier.weight(1f)
                 )
             }

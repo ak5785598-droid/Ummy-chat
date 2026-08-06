@@ -31,10 +31,10 @@ import kotlinx.coroutines.tasks.await
 data class RoomCategory(val id: String, val name: String, val icon: String)
 
 private val categories = listOf(
-    RoomCategory("chat", "Chat", "💬"),
-    RoomCategory("music", "Music", "🎵"),
-    RoomCategory("game", "Game", "🎮"),
-    RoomCategory("party", "Party", "🎉")
+    RoomCategory("Chat", "Chat", "💬"),
+    RoomCategory("Music", "Music", "🎵"),
+    RoomCategory("Game", "Game", "🎮"),
+    RoomCategory("Party", "Party", "🎉")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -211,20 +211,24 @@ fun CreateRoomSheet(
                                         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
                                         val db = FirebaseFirestore.getInstance()
                                         
-                                        var roomNumber = 1L
+                                        // React Native create-room-sheet.tsx: roomCounter default 100
+                                        var roomCounter = 100L
                                         db.runTransaction { transaction ->
                                             val counterRef = db.collection("appConfig").document("counters")
                                             val snapshot = transaction.get(counterRef)
-                                            roomNumber = if (snapshot.exists()) {
-                                                val current = snapshot.getLong("roomCounter") ?: 0L
+                                            roomCounter = if (snapshot.exists()) {
+                                                val current = snapshot.getLong("roomCounter") ?: 100L
                                                 transaction.update(counterRef, "roomCounter", current + 1)
                                                 current + 1
                                             } else {
-                                                transaction.set(counterRef, mapOf("roomCounter" to 1L))
-                                                1L
+                                                transaction.set(counterRef, mapOf("roomCounter" to 101L))
+                                                101L
                                             }
                                             null
                                         }.await()
+
+                                        // React Native: String(roomNumber).padStart(4, '0')
+                                        val roomNumber = roomCounter.toString().padStart(4, '0')
 
                                         val roomData = hashMapOf(
                                             "id" to userId,
@@ -232,7 +236,7 @@ fun CreateRoomSheet(
                                             "title" to roomName,
                                             "roomNumber" to roomNumber,
                                             "ownerId" to userId,
-                                            "moderatorIds" to emptyList<String>(),
+                                            "moderatorIds" to listOf(userId),
                                             "category" to selectedCategory,
                                             "createdAt" to FieldValue.serverTimestamp(),
                                             "stats" to mapOf(
@@ -241,7 +245,12 @@ fun CreateRoomSheet(
                                             ),
                                             "participantCount" to 0,
                                             "roomThemeId" to "misty",
-                                            "isPinned" to false
+                                            "isPinned" to false,
+                                            "description" to "",
+                                            "lockedSeats" to emptyList<String>(),
+                                            "announcement" to "",
+                                            "participantUids" to listOf(userId),
+                                            "slug" to userId
                                         )
 
                                         db.collection("chatRooms").document(userId).set(roomData).await()
