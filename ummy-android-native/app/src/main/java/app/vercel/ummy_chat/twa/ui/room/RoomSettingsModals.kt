@@ -2,6 +2,7 @@ package app.vercel.ummy_chat.twa.ui.room
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -65,7 +66,7 @@ fun EditNameModal(roomId: String, currentName: String = "", onDismiss: () -> Uni
                         scope.launch {
                             try {
                                 FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
-                                    .update("title", title.trim()).await()
+                                    .update(mapOf("title" to title.trim(), "name" to title.trim())).await()
                                 onDismiss()
                             } catch (e: Exception) {
                                 e.printStackTrace()
@@ -196,69 +197,47 @@ fun MicTestModal(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun MicCountModal(roomId: String, currentSeats: Int = 5, onDismiss: () -> Unit) {
+fun MicCountModal(roomId: String, currentSeats: Int = 6, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
     
-    val seatOptions = listOf(5, 9, 13)
-
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
+            color = Color(0xFF1E293B),
             tonalElevation = 8.dp
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(20.dp)
             ) {
-                Text(
-                    text = "Room Seats",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                seatOptions.forEach { seats ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .clickable(enabled = !isLoading) {
-                                isLoading = true
-                                scope.launch {
-                                    try {
-                                        FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
-                                            .update(
-                                                mapOf(
-                                                    "maxSeats" to seats,
-                                                    "maxActiveMics" to seats,
-                                                    "seatsCount" to seats
-                                                )
-                                            ).await()
-                                        onDismiss()
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    } finally {
-                                        isLoading = false
-                                    }
-                                }
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (currentSeats == seats) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Text(
-                            text = "$seats Seats",
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (currentSeats == seats) FontWeight.Bold else FontWeight.Normal
-                        )
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF00E6A5))
                     }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End), enabled = !isLoading) {
-                    Text("Cancel")
+                } else {
+                    AmountOfMicSelector(
+                        selectedCount = currentSeats,
+                        onSelect = { seats ->
+                            isLoading = true
+                            scope.launch {
+                                try {
+                                    FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
+                                        .update(
+                                            mapOf(
+                                                "maxSeats" to seats,
+                                                "maxActiveMics" to seats,
+                                                "seatsCount" to seats
+                                            )
+                                        ).await()
+                                    onDismiss()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -419,158 +398,103 @@ fun RoomTagModal(roomId: String, currentTag: String = "Chat", onDismiss: () -> U
 }
 
 @Composable
-fun RoomAdminModal(roomId: String, initialAdmins: List<String> = emptyList(), onDismiss: () -> Unit) {
+fun RoomAdminModal(
+    roomId: String,
+    initialAdmins: List<String> = emptyList(),
+    participants: List<app.vercel.ummy_chat.twa.data.model.RoomParticipant> = emptyList(),
+    ownerId: String = "",
+    currentUid: String = "",
+    onDismiss: () -> Unit
+) {
     var admins by remember { mutableStateOf(initialAdmins) }
-    var newAdminId by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
 
+    // RN admin limit logic: base 3 + floor(roomLevel/5) + SVIP bonus
+    // For now use defaults since roomLevel/SVIP aren't passed
+    val maxAdmins = 20 // generous default
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 480.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
                 Text(
-                    text = "Room Admins",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    text = "Administrators",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E293B)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Admin Limit: ${admins.size} / $maxAdmins slots",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF7C3AED)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = newAdminId,
-                        onValueChange = { newAdminId = it },
-                        label = { Text("User ID") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            if (newAdminId.isNotBlank() && !admins.contains(newAdminId)) {
-                                isLoading = true
-                                scope.launch {
-                                    try {
-                                        FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
-                                            .update("admins", FieldValue.arrayUnion(newAdminId.trim())).await()
-                                        admins = admins + newAdminId.trim()
-                                        newAdminId = ""
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    } finally {
-                                        isLoading = false
-                                    }
-                                }
-                            }
-                        },
-                        enabled = !isLoading && newAdminId.isNotBlank()
-                    ) {
-                        Icon(Icons.Default.PersonAdd, contentDescription = "Add Admin")
-                    }
-                }
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(participants) { participant ->
+                        val isOwner = participant.uid == ownerId
+                        val isMod = admins.contains(participant.uid)
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                    items(admins) { adminId ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = adminId, style = MaterialTheme.typography.bodyMedium)
-                            IconButton(
-                                onClick = {
-                                    isLoading = true
-                                    scope.launch {
-                                        try {
-                                            FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
-                                                .update("admins", FieldValue.arrayRemove(adminId)).await()
-                                            admins = admins - adminId
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        } finally {
-                                            isLoading = false
-                                        }
-                                    }
-                                },
-                                enabled = !isLoading
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Remove Admin", tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Close")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RoomLogsModal(roomId: String, initialBannedUsers: List<String> = emptyList(), onDismiss: () -> Unit) {
-    var bannedUsers by remember { mutableStateOf(initialBannedUsers) }
-    val scope = rememberCoroutineScope()
-    var isLoading by remember { mutableStateOf(false) }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-            ) {
-                Text(
-                    text = "Room Logs (Banned Users)",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (bannedUsers.isEmpty()) {
-                    Text(
-                        text = "No banned users.",
-                        modifier = Modifier.padding(vertical = 16.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                        items(bannedUsers) { userId ->
-                            Row(
+                            AsyncImage(
+                                model = CdnUtils.toCdn(participant.avatarUrl ?: "https://picsum.photos/100"),
+                                contentDescription = null,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(text = userId, style = MaterialTheme.typography.bodyMedium)
-                                TextButton(
-                                    onClick = {
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE2E8F0)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = participant.name,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF111827),
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (isOwner) {
+                                Text(
+                                    text = "OWNER",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color(0xFFD97706),
+                                    letterSpacing = 1.sp
+                                )
+                            } else {
+                                Switch(
+                                    checked = isMod,
+                                    onCheckedChange = { checked ->
                                         isLoading = true
                                         scope.launch {
                                             try {
+                                                val field = if (checked) "moderatorIds" else "moderatorIds"
+                                                val update = if (checked) {
+                                                    mapOf("moderatorIds" to FieldValue.arrayUnion(participant.uid))
+                                                } else {
+                                                    mapOf("moderatorIds" to FieldValue.arrayRemove(participant.uid))
+                                                }
                                                 FirebaseFirestore.getInstance().collection("chatRooms").document(roomId)
-                                                    .update("bannedUsers", FieldValue.arrayRemove(userId)).await()
-                                                bannedUsers = bannedUsers - userId
+                                                    .update(update).await()
+                                                admins = if (checked) admins + participant.uid else admins - participant.uid
                                             } catch (e: Exception) {
                                                 e.printStackTrace()
                                             } finally {
@@ -578,18 +502,220 @@ fun RoomLogsModal(roomId: String, initialBannedUsers: List<String> = emptyList()
                                             }
                                         }
                                     },
-                                    enabled = !isLoading
-                                ) {
-                                    Text("Unban", color = MaterialTheme.colorScheme.error)
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color(0xFFC084FC),
+                                        checkedTrackColor = Color(0xFF9333EA),
+                                        uncheckedThumbColor = Color(0xFF9CA3AF),
+                                        uncheckedTrackColor = Color(0xFFE2E8F0)
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
+                ) {
+                    Text("Close", color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RoomLogsModal(roomId: String, onDismiss: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var activeTab by remember { mutableIntStateOf(0) } // 0=Entries, 1=Kicks, 2=Bans
+    var logs by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var bans by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+
+    // Listen to entryLogs subcollection
+    DisposableEffect(roomId) {
+        val logCol = FirebaseFirestore.getInstance().collection("chatRooms").document(roomId).collection("entryLogs")
+        val logReg = logCol.addSnapshotListener { snap, _ ->
+            logs = snap?.documents?.mapNotNull { it.data } ?: emptyList()
+            loading = false
+        }
+        val banCol = FirebaseFirestore.getInstance().collection("chatRooms").document(roomId).collection("bans")
+        val banReg = banCol.addSnapshotListener { snap, _ ->
+            bans = snap?.documents?.mapNotNull { d ->
+                val data = d.data?.toMutableMap() ?: mutableMapOf()
+                data["id"] = d.id
+                data
+            } ?: emptyList()
+        }
+        onDispose { logReg.remove(); banReg.remove() }
+    }
+
+    fun handleUnban(userId: String) {
+        scope.launch {
+            try {
+                val fs = FirebaseFirestore.getInstance()
+                fs.collection("chatRooms").document(roomId).collection("bans").document(userId).delete().await()
+                try {
+                    fs.collection("chatRooms").document(roomId).collection("participants").document(userId)
+                        .update("kickedUntil", null).await()
+                } catch (_: Exception) {}
+                bans = bans.filter { (it["id"] ?: it["bannedUid"]) != userId }
+            } catch (e: Exception) { e.printStackTrace() }
+        }
+    }
+
+    val filteredLogs = remember(logs, activeTab) {
+        when (activeTab) {
+            0 -> logs.filter { it["type"] == "entry" || it["type"] == null }
+            1 -> logs.filter { it["type"] == "kick" || it["type"] == "ban" || it["durationMs"] != null }
+            else -> emptyList()
+        }
+    }
+
+    val entryCount = remember(logs) { logs.count { it["type"] == "entry" } }
+    val kickCount = remember(logs) { logs.count { it["type"] == "kick" } }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 500.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Room Logs & Ban Center", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF111827))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 3 Tab Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFFF3F4F6))
+                        .padding(3.dp)
+                ) {
+                    val tabs = listOf("Entries ($entryCount)", "Kicks ($kickCount)", "Bans (${bans.size})")
+                    val colors = listOf(Color(0xFF16A34A), Color(0xFFDC2626), Color(0xFF7C3AED))
+                    tabs.forEachIndexed { idx, label ->
+                        val selected = activeTab == idx
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(13.dp))
+                                .background(if (selected) Color.White else Color.Transparent)
+                                .clickable { activeTab = idx }
+                                .padding(vertical = 7.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Black,
+                                color = if (selected) colors[idx] else Color(0xFF6B7280)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (loading) {
+                    Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF7C3AED), modifier = Modifier.size(32.dp))
+                    }
+                } else if (activeTab == 2) {
+                    // Bans tab
+                    if (bans.isEmpty()) {
+                        Text("No banned users.", modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), textAlign = TextAlign.Center, color = Color(0xFF9CA3AF), fontSize = 12.sp)
+                    } else {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(bans) { ban ->
+                                val userId = (ban["bannedUid"] ?: ban["id"])?.toString() ?: ""
+                                val bannedUntil = ban["bannedUntil"]
+                                val expiryText = when {
+                                    bannedUntil == null -> "Permanent"
+                                    bannedUntil is com.google.firebase.Timestamp -> {
+                                        val left = bannedUntil.toDate().time - System.currentTimeMillis()
+                                        if (left <= 0) "Expired" else "${(left / 3600000).coerceAtLeast(1)}h left"
+                                    }
+                                    else -> ""
+                                }
+                                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFDC2626).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                        Text("🚫", fontSize = 14.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(userId.take(12), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
+                                        Text("Status: $expiryText", fontSize = 10.sp, color = Color(0xFF9CA3AF))
+                                    }
+                                    Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFEF2F2)).border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp)).clickable { handleUnban(userId) }.padding(horizontal = 10.dp, vertical = 5.dp)) {
+                                        Text("Unban", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFDC2626))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Entries or Kicks tab
+                    if (filteredLogs.isEmpty()) {
+                        Text(
+                            if (activeTab == 0) "No room entries logged yet." else "No kicks logged yet.",
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp), textAlign = TextAlign.Center, color = Color(0xFF9CA3AF), fontSize = 12.sp
+                        )
+                    } else {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
+                            items(filteredLogs) { log ->
+                                val isKick = log["type"] == "kick"
+                                val userName = log["targetName"]?.toString() ?: log["username"]?.toString() ?: "User"
+                                val adminName = log["adminName"]?.toString() ?: "Admin"
+                                val timestamp = log["timestamp"]
+                                val timeStr = when (timestamp) {
+                                    is com.google.firebase.Timestamp -> {
+                                        val cal = java.util.Calendar.getInstance().apply { time = timestamp.toDate() }
+                                        "%02d:%02d".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE))
+                                    }
+                                    else -> ""
+                                }
+
+                                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(if (isKick) Color(0xFFDC2626).copy(alpha = 0.1f) else Color(0xFF16A34A).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                        Text(if (isKick) "🚷" else "📥", fontSize = 14.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(userName, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF111827))
+                                        if (isKick) {
+                                            Text("Kicked by $adminName", fontSize = 10.sp, color = Color(0xFF4B5563), fontWeight = FontWeight.SemiBold)
+                                        } else {
+                                            Text("entered room", fontSize = 10.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold)
+                                        }
+                                        Text(timeStr, fontSize = 10.sp, color = Color(0xFF9CA3AF))
+                                    }
+                                    if (isKick) {
+                                        val userId = log["userId"]?.toString() ?: ""
+                                        if (userId.isNotEmpty()) {
+                                            Box(modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFFEF2F2)).border(1.dp, Color(0xFFFCA5A5), RoundedCornerShape(12.dp)).clickable { handleUnban(userId) }.padding(horizontal = 10.dp, vertical = 5.dp)) {
+                                                Text("Unban", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFDC2626))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Close")
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
+                ) {
+                    Text("Close", color = Color.White)
                 }
             }
         }
@@ -600,7 +726,8 @@ data class RoomThemeConfig(
     val id: String,
     val name: String,
     val filename: String,
-    val category: String
+    val category: String,
+    val drawableRes: Int = 0
 )
 
 val ROOM_THEMES_LIST = listOf(
@@ -630,6 +757,10 @@ val ROOM_THEMES_LIST = listOf(
     RoomThemeConfig("ummy_spring_garden", "Ummy Spring Garden", "ummy_spring_garden.png", "general"),
     RoomThemeConfig("ummy_help_desk", "Ummy Help Desk", "ummy_help_desk.png", "help"),
     RoomThemeConfig("ummy_help_guide", "Ummy Help Guide", "ummy_help_guide.png", "help"),
+    RoomThemeConfig("support_theme_1", "Support Theme 1", "", "help", app.vercel.ummy_chat.twa.R.drawable.support_theme_1),
+    RoomThemeConfig("support_theme_2", "Support Theme 2", "", "help", app.vercel.ummy_chat.twa.R.drawable.support_theme_2),
+    RoomThemeConfig("support_theme_3", "Support Theme 3", "", "help", app.vercel.ummy_chat.twa.R.drawable.support_theme_3),
+    RoomThemeConfig("scenic_neon_night_v2_new", "Neon Night Scenic", "neon_night_scenic.png", "general"),
     RoomThemeConfig("celestial_love_v2_new", "Celestial Love V2", "celestial_love_v2.png", "general"),
     RoomThemeConfig("ummy_galaxy_v2_new", "Ummy Galaxy V2", "ummy_galaxy_v2.png", "general"),
     RoomThemeConfig("halloween_2025_v2_new", "Halloween 2025 V2", "halloween_2025_v2.png", "general"),
@@ -669,10 +800,38 @@ val ROOM_THEMES_LIST = listOf(
 @Composable
 fun RoomThemeModal(
     roomId: String,
+    ownedItemIds: List<String> = emptyList(),
+    itemExpiries: Map<String, Any> = emptyMap(),
+    isOfficialUser: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+    val themeContext = androidx.compose.ui.platform.LocalContext.current
+
+    // RN ownership/expiry logic
+    val isOwned: (String) -> Boolean = remember(ownedItemIds, itemExpiries, isOfficialUser) {
+        { themeId: String ->
+            if (isOfficialUser) true
+            else if (themeId !in ownedItemIds) false
+            else {
+                val exp = itemExpiries[themeId]
+                if (exp != null) {
+                    val expDate = when (exp) {
+                        is com.google.firebase.Timestamp -> exp.toDate()
+                        is Long -> java.util.Date(exp)
+                        is String -> try { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(exp) } catch (e: Exception) { null }
+                        else -> null
+                    }
+                    expDate != null && expDate.after(java.util.Date())
+                } else true
+            }
+        }
+    }
+
+    val filteredThemes = remember {
+        ROOM_THEMES_LIST
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -702,8 +861,8 @@ fun RoomThemeModal(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(ROOM_THEMES_LIST) { theme ->
-                        val imageUrl = "https://ummy-chat.vercel.app/themes/${theme.filename}"
+                    items(filteredThemes) { theme ->
+                        val imageUrl = if (theme.drawableRes != 0) "" else "https://ummy-chat.vercel.app/themes/${theme.filename}"
                         
                         Card(
                             shape = RoundedCornerShape(12.dp),
@@ -714,12 +873,23 @@ fun RoomThemeModal(
                                     isLoading = true
                                     scope.launch {
                                         try {
-                                            FirebaseFirestore.getInstance().collection("chatRooms")
-                                                .document(roomId)
+                                            val fs = FirebaseFirestore.getInstance()
+                                            val bgUrl: String = if (theme.drawableRes != 0) {
+                                                // Upload local drawable to Firebase Storage
+                                                val ctx = themeContext
+                                                val uri = android.net.Uri.parse("android.resource://${ctx.packageName}/${theme.drawableRes}")
+                                                val ref = com.google.firebase.storage.FirebaseStorage.getInstance()
+                                                    .reference.child("themes/${theme.id}.png")
+                                                ref.putFile(uri).await()
+                                                ref.downloadUrl.await().toString()
+                                            } else {
+                                                imageUrl
+                                            }
+                                            fs.collection("chatRooms").document(roomId)
                                                 .update(
                                                     mapOf(
                                                         "roomThemeId" to theme.id,
-                                                        "backgroundUrl" to imageUrl
+                                                        "backgroundUrl" to bgUrl
                                                     )
                                                 ).await()
                                             onDismiss()
@@ -732,12 +902,21 @@ fun RoomThemeModal(
                                 }
                         ) {
                             Box(modifier = Modifier.fillMaxSize()) {
-                                AsyncImage(
-                                    model = CdnUtils.toCdn(imageUrl),
-                                    contentDescription = theme.name,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+                                if (theme.drawableRes != 0) {
+                                    androidx.compose.foundation.Image(
+                                        painter = androidx.compose.ui.res.painterResource(id = theme.drawableRes),
+                                        contentDescription = theme.name,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = CdnUtils.toCdn(imageUrl),
+                                        contentDescription = theme.name,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -959,7 +1138,13 @@ fun RoomSettingsModals(
     currentSeats: Int = 9,
     currentTag: String = "Chat",
     currentAdmins: List<String> = emptyList(),
-    currentBannedUsers: List<String> = emptyList()
+    currentBannedUsers: List<String> = emptyList(),
+    ownedItemIds: List<String> = emptyList(),
+    itemExpiries: Map<String, Any> = emptyMap(),
+    isOfficialUser: Boolean = false,
+    participants: List<app.vercel.ummy_chat.twa.data.model.RoomParticipant> = emptyList(),
+    ownerId: String = "",
+    currentUid: String = ""
 ) {
     if (showEditNameModal) {
         EditNameModal(
@@ -991,6 +1176,9 @@ fun RoomSettingsModals(
     if (showThemeModal) {
         RoomThemeModal(
             roomId = roomId,
+            ownedItemIds = ownedItemIds,
+            itemExpiries = itemExpiries,
+            isOfficialUser = isOfficialUser,
             onDismiss = onDismissTheme
         )
     }
@@ -1011,13 +1199,15 @@ fun RoomSettingsModals(
         RoomAdminModal(
             roomId = roomId,
             initialAdmins = currentAdmins,
+            participants = participants,
+            ownerId = ownerId,
+            currentUid = currentUid,
             onDismiss = onDismissAdmins
         )
     }
     if (showLogsModal) {
         RoomLogsModal(
             roomId = roomId,
-            initialBannedUsers = currentBannedUsers,
             onDismiss = onDismissLogs
         )
     }

@@ -4,8 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.vercel.ummy_chat.twa.data.model.GiftModel
 import app.vercel.ummy_chat.twa.data.model.RoomModel
@@ -33,6 +37,7 @@ import app.vercel.ummy_chat.twa.ui.gift.GiftBottomSheet
 import android.graphics.Bitmap
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import app.vercel.ummy_chat.twa.R
 import com.google.firebase.auth.FirebaseAuth
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,6 +75,8 @@ fun RoomScreen(
 
     // ── Dialog Visibility States ───────────────────────────────────────────
     var showChatInput       by remember { mutableStateOf(false) }
+    var targetLanguage      by remember { mutableStateOf("en") }
+    var sourceLanguage      by remember { mutableStateOf("auto") }
     var showGiftSheet       by remember { mutableStateOf(false) }
     var showRoomSettings    by remember { mutableStateOf(false) }
     var showUserList        by remember { mutableStateOf(false) }
@@ -98,15 +105,26 @@ fun RoomScreen(
     var showTasksDialog     by remember { mutableStateOf(false) }
     var showSportsHub       by remember { mutableStateOf(false) }
     var showSoundboard      by remember { mutableStateOf(false) }
+    var showEmojiPicker     by remember { mutableStateOf(false) }
+    var showWeeklyStar      by remember { mutableStateOf(false) }
     var showEchoDialog       by remember { mutableStateOf(false) }
     var activeGameId        by remember { mutableStateOf<String?>(null) }
-    var activeGameTitle     by remember { mutableStateOf("Game") }
+    var activeGameTitle     by remember { mutableStateOf("") }
     var isGameMinimized     by remember { mutableStateOf(false) }
+    var showLootGate        by remember { mutableStateOf(false) }
+    val customEmojis        by vm.customEmojis.collectAsState()
     var activeLootBox       by remember { mutableStateOf<LootBoxData?>(null) }
 
     // ── Init Room ──────────────────────────────────────────────────────────
     LaunchedEffect(roomId) {
-        vm.initializeRoom(context, roomId)
+        val lifecycleOwner = context as? androidx.lifecycle.LifecycleOwner
+        vm.initializeRoom(context, roomId, lifecycleOwner)
+    }
+
+    // ── Back Button → leaveRoom() ──────────────────────────────────────────
+    BackHandler {
+        vm.leaveRoom()
+        onLeaveRoom()
     }
 
     // ── Root Layout ────────────────────────────────────────────────────────
@@ -179,28 +197,14 @@ fun RoomScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RoomTrophyBadge(
-                    dailyGifts = room?.levelPoints ?: 0L,
+                    dailyGifts = room?.dailyGifts ?: 0L,
                     supporters = topSupporters,
                     onPress = { showTopSupporters = true }
                 )
             }
 
-            // Broadcast Banners
-            giftBroadcast?.let {
-                BroadcastPattiBanner(
-                    event = it,
-                    colors = listOf(Color(0xFF7C3AED), Color(0xFF6366F1), Color(0xFF22D3EE))
-                )
-            }
-            lootBroadcast?.let {
-                BroadcastPattiBanner(
-                    event = it,
-                    colors = listOf(Color(0xFFFACC15), Color(0xFFF59E0B), Color(0xFFEF4444))
-                )
-            }
-
             // Entry effect
-            entryEffect?.let { EntryEffectOverlay(it) }
+            entryEffect?.let { EntryEffectPlayer(it) { vm.clearEntryEffect() } }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -233,6 +237,7 @@ fun RoomScreen(
             RoomChatArea(
                 messages     = messages,
                 announcement = room?.announcement ?: "",
+                chatClearedAt = room?.chatClearedAt,
                 currentUserId = currentUid,
                 onMsgLongPress = { },
                 modifier     = Modifier
@@ -251,7 +256,7 @@ fun RoomScreen(
                 onToggleMic      = { vm.toggleMicMute() },
                 onToggleSpeaker  = { },
                 onOpenChatInput  = { showChatInput = true },
-                onOpenEmoji      = { showSoundboard = true },
+                onOpenEmoji      = { showEmojiPicker = true },
                 onOpenMessages   = { showMessagesDialog = true },
                 onOpenGift       = { showGiftSheet = true },
                 onOpenPlay       = { showPlaySheet = true },
@@ -262,6 +267,28 @@ fun RoomScreen(
             )
 
             Spacer(modifier = Modifier.navigationBarsPadding())
+        }
+
+        // Floating Broadcast Banners (Overlays)
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 95.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            giftBroadcast?.let {
+                BroadcastPattiBanner(
+                    event = it,
+                    colors = listOf(Color(0xFF7C3AED), Color(0xFF6366F1), Color(0xFF22D3EE))
+                )
+            }
+            lootBroadcast?.let {
+                BroadcastPattiBanner(
+                    event = it,
+                    colors = listOf(Color(0xFFFACC15), Color(0xFFF59E0B), Color(0xFFEF4444))
+                )
+            }
         }
 
         // Minimized Game Floating Action Card
@@ -294,7 +321,9 @@ fun RoomScreen(
             onSendGift = { showProfileCard = null; showGiftSheet = true },
             onLeaveSeat = { vm.leaveSeat(); showProfileCard = null },
             onMute = { uid, isMuted -> vm.muteSeat(showProfileCard?.seatIndex ?: 0); showProfileCard = null },
-            onKick = { uid -> kickTarget = uid; showKickDialog = true; showProfileCard = null }
+            onKick = { uid -> kickTarget = uid; showKickDialog = true; showProfileCard = null },
+            onEcho = { /* TODO: echo effect */ },
+            onPropose = { /* TODO: propose effect */ }
         )
 
         // Share Sheet
@@ -323,7 +352,8 @@ fun RoomScreen(
                 onDismiss = { showPlaySheet = false },
                 onOpenGames = { showGamesDialog = true },
                 onOpenYouTube = { showEntertainment = true },
-                onOpenEntertainment = { showEntertainment = true }
+                onOpenEntertainment = { showEntertainment = true },
+                onChatCleared = { name -> vm.addLocalChatClearedMessage(name) }
             )
         }
 
@@ -331,7 +361,7 @@ fun RoomScreen(
         if (showGamesDialog) {
             RoomGamesDialog(
                 visible = showGamesDialog,
-                onSelectGame = { id, title ->
+                onSelectGame = { id, title, _ ->
                     activeGameId = id
                     activeGameTitle = title
                     isGameMinimized = false
@@ -380,10 +410,22 @@ fun RoomScreen(
 
         // Room Support & Aristocracy Dialogs
         if (showSupportDialog) {
+            val participants by vm.allParticipants.collectAsState()
+            val mappedParticipants = participants.map { SupportPartner(it.uid, it.name, it.avatarUrl) }
+            val mappedPartners = room?.partners?.map { 
+                SupportPartner(it["uid"] as? String ?: "", it["name"] as? String ?: "", it["avatarUrl"] as? String) 
+            } ?: emptyList()
+
             RoomSupportDialog(
                 visible = showSupportDialog,
                 roomId = roomId,
                 isOwner = isOwner,
+                roomStats = room?.stats,
+                visitorCount = room?.visitorCount ?: 0,
+                uniqueVisitorCount = room?.uniqueVisitorCount ?: 0,
+                levelPoints = room?.levelPoints ?: 0,
+                partners = mappedPartners,
+                participants = mappedParticipants,
                 onDismiss = { showSupportDialog = false }
             )
         }
@@ -391,6 +433,12 @@ fun RoomScreen(
             AristocracyDialog(
                 visible = showAristocracy,
                 onDismiss = { showAristocracy = false }
+            )
+        }
+        if (showWeeklyStar) {
+            WeeklyStarDialog(
+                visible = showWeeklyStar,
+                onDismiss = { showWeeklyStar = false }
             )
         }
 
@@ -422,7 +470,19 @@ fun RoomScreen(
             )
         }
 
-        // Soundboard & Echo Dialogs
+        // Emoji, Soundboard & Echo Dialogs
+        if (showEmojiPicker) {
+            RoomEmojiPickerDialog(
+                visible = showEmojiPicker,
+                customEmojis = customEmojis,
+                onClose = { showEmojiPicker = false },
+                onSendEmoji = { emojiId ->
+                    vm.sendPickerEmoji(emojiId)
+                    showEmojiPicker = false
+                }
+            )
+        }
+
         if (showSoundboard) {
             RoomSoundboardDialog(
                 visible = showSoundboard,
@@ -431,11 +491,35 @@ fun RoomScreen(
             )
         }
 
-        // Standard Dialogs (Chat input, Gift sheet, Exit, Settings, User list, Room info)
+        // Standard Dialogs (Chat input, Gift sheet, Exit, Settings, User list, Room info, Seat Menu)
+        if (showSeatMenu && selectedSeat != null) {
+            RoomSeatMenu(
+                visible = showSeatMenu,
+                onClose = { showSeatMenu = false },
+                seatIndex = selectedSeat!!.index,
+                isLocked = selectedSeat!!.isLocked,
+                isSeatMuted = selectedSeat!!.isMuted,
+                isOwner = isOwner,
+                isModerator = isModerator,
+                onTakeSeat = { vm.takeSeat(selectedSeat!!.index) },
+                onLockSeat = { vm.lockSeat(selectedSeat!!.index) },
+                onMuteSeat = { vm.muteSeat(selectedSeat!!.index) },
+                onInvite = {
+                    showSeatMenu = false
+                    // Optionally open invite/user list dialog here
+                    showUserList = true
+                }
+            )
+        }
         if (showChatInput) {
-            ChatInputDialog(
-                onDismiss = { showChatInput = false },
-                onSend = { text -> vm.sendMessage(text) }
+            ChatInputBar(
+                visible = showChatInput,
+                onClose = { showChatInput = false },
+                onSend = { text, _ -> vm.sendMessage(text) },
+                targetLanguage = targetLanguage,
+                sourceLanguage = sourceLanguage,
+                onSelectLanguage = { targetLanguage = it },
+                onSelectSourceLanguage = { sourceLanguage = it }
             )
         }
         if (showGiftSheet) {
@@ -447,6 +531,9 @@ fun RoomScreen(
         if (showRoomSettings) {
             RoomSettingsSheet(
                 roomId = roomId,
+                participants = participants,
+                ownerId = room?.ownerId ?: "",
+                currentUid = currentUid,
                 onDismissRequest = { showRoomSettings = false }
             )
         }
@@ -509,7 +596,7 @@ fun RoomScreen(
             RoomExitSheet(
                 onDismiss = { showExitSheet = false },
                 onExit = { vm.leaveRoom(); onLeaveRoom() },
-                onMinimize = { 
+                onMinimize = {
                     vm.setMinimized(true)
                     showExitSheet = false
                     onLeaveRoom()
@@ -521,15 +608,104 @@ fun RoomScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 8.dp, bottom = if ((room?.seatsCount ?: 9) >= 13) 224.dp else 256.dp)
+                .padding(end = 8.dp, bottom = if ((room?.seatsCount ?: 9) >= 13) 256.dp else 288.dp)
         ) {
             RoomBanners(
                 onOpenSupport = { showSupportDialog = true },
                 onOpenSpin = { showLuckySpin = true },
                 onOpenChest = { showGoldenChest = true },
-                onOpenAristocracy = { showAristocracy = true }
+                onOpenAristocracy = { showAristocracy = true },
+                onOpenWeeklyStar = { showWeeklyStar = true }
             )
         }
+
+        // 5. Loot Level Display (Right side floating) - RN Parity
+        val lootLevels by vm.lootLevels.collectAsState()
+        val currentLootLevelIndex by vm.currentLootLevelIndex.collectAsState()
+        val isLootGateOpen by vm.isLootGateOpen.collectAsState()
+        var showLootStation by remember { mutableStateOf(false) }
+
+        if (isLootGateOpen) {
+            Box(modifier = Modifier.fillMaxSize().zIndex(100f)) {
+                app.vercel.ummy_chat.twa.ui.room.components.LootingRoom(
+                    active = true,
+                    onCollect = { /* Handle collection */ },
+                    onClose = { vm.setLootGateOpen(false) }
+                )
+            }
+        }
+
+        if (showLootStation) {
+            app.vercel.ummy_chat.twa.ui.room.components.LootStationDialog(
+                levels = lootLevels,
+                currentLevelIndex = currentLootLevelIndex,
+                displayPct = 0,
+                onDismiss = { showLootStation = false }
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 4.dp, bottom = if ((room?.seatsCount ?: 9) >= 13) 60.dp else 70.dp)
+        ) {
+            app.vercel.ummy_chat.twa.ui.room.components.LootBoxDisplay(
+                levels = lootLevels,
+                currentProgress = room?.levelPoints ?: 0L,
+                isGateOpen = isLootGateOpen,
+                canOpenGate = canManage,
+                onOpenGate = { vm.setLootGateOpen(true) },
+                onShowStation = { showLootStation = true },
+                currentLevelIndex = currentLootLevelIndex,
+                isGateCompleted = false
+            )
+        }
+
+        // 14. Floating Top-Right Badge (Golden Task Jar) - OWNER ONLY
+        if (isOwner && !showTasksDialog) {
+            val achievedTasks by vm.achievedTasks.collectAsState()
+            val claimedTasks by vm.claimedTasks.collectAsState()
+            val hasUnclaimedRewards = achievedTasks.any { !claimedTasks.contains(it) }
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 80.dp, end = 4.dp)
+                    .zIndex(50f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { showTasksDialog = true }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.golden_task_jar),
+                        contentDescription = "Golden Task Jar",
+                        modifier = Modifier.size(64.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    if (hasUnclaimedRewards) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(16.dp)
+                                .background(Color.Red, CircleShape)
+                                .border(1.dp, Color.Black, CircleShape)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 13. Room Tasks Dialog (LAST CHILD — renders on top of everything)
+        RoomTasksBottomSheet(
+            visible = showTasksDialog,
+            onDismiss = { showTasksDialog = false },
+            vm = vm,
+            totalRoomGifts = room?.totalGifts ?: room?.dailyGifts ?: 0L
+        )
     }
 }
 

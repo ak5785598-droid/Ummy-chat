@@ -1,14 +1,13 @@
 package app.vercel.ummy_chat.twa.ui.room
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,21 +16,57 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import app.vercel.ummy_chat.twa.R
 import app.vercel.ummy_chat.twa.data.model.TopSupporter
+import app.vercel.ummy_chat.twa.ui.home.GoldenCoin
 import coil.compose.AsyncImage
+import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Calendar
+import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoomTopSupportersDialog — mirrors RN room-top-supporters-dialog.tsx
 // Top givers sheet with 3 tabs (Daily, Weekly, All Time), Top-3 Podium view,
 // Rank 4+ list view, and supporter details popup modal.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// RN L224: >= 1M ? (x/1e6).toFixed(1)+'M' : toLocaleString()
+private fun formatCoins(amount: Long): String {
+    return if (amount >= 1_000_000) {
+        String.format(Locale.US, "%.1f", amount / 1_000_000.0).replace(",", ".") + "M"
+    } else {
+        String.format(Locale.US, "%,d", amount)
+    }
+}
+
+private fun tsIsToday(millis: Long): Boolean {
+    val d1 = Calendar.getInstance().apply { timeInMillis = millis }
+    val d2 = Calendar.getInstance()
+    return d1.get(Calendar.YEAR) == d2.get(Calendar.YEAR) &&
+            d1.get(Calendar.MONTH) == d2.get(Calendar.MONTH) &&
+            d1.get(Calendar.DAY_OF_MONTH) == d2.get(Calendar.DAY_OF_MONTH)
+}
+
+private fun tsIsThisWeek(millis: Long): Boolean {
+    val d1 = Calendar.getInstance().apply { timeInMillis = millis }
+    val d2 = Calendar.getInstance()
+    val getWeek: (Calendar) -> Int = { d ->
+        val oneJan = Calendar.getInstance().apply { clear(); set(d.get(Calendar.YEAR), 0, 1) }
+        val daysSinceJan1 = ((d.timeInMillis - oneJan.timeInMillis) / 86400000).toDouble()
+        val jan1DayOfWeek0 = oneJan.get(Calendar.DAY_OF_WEEK) - 1
+        Math.ceil((daysSinceJan1 + jan1DayOfWeek0 + 1) / 7.0).toInt()
+    }
+    return d1.get(Calendar.YEAR) == d2.get(Calendar.YEAR) && getWeek(d1) == getWeek(d2)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,26 +77,55 @@ fun RoomTopSupportersDialog(
 ) {
     if (!visible) return
 
-    var activeTab by remember { mutableStateOf("daily") } // "daily" | "weekly" | "total"
+    var activeTab by remember { mutableStateOf("daily") }
     var selectedSupporter by remember { mutableStateOf<TopSupporter?>(null) }
     var selectedRank by remember { mutableIntStateOf(0) }
 
-    // Filter and sort according to activeTab
-    val sortedSupporters = remember(supporters, activeTab) {
-        val filtered = when (activeTab) {
-            "daily" -> supporters.filter { it.dailyAmount > 0 }
-            "weekly" -> supporters.filter { it.totalAmount > 0 } // use total/weekly
-            else -> supporters.filter { it.totalAmount > 0 }
-        }
-        filtered.sortedByDescending {
-            if (activeTab == "daily") it.dailyAmount else it.totalAmount
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    val liveProfiles = remember(supporters) { mutableStateMapOf<String, Pair<String?, String?>>() }
+
+    LaunchedEffect(supporters) {
+        supporters.forEach { s ->
+            if (s.uid.isNotBlank() && !liveProfiles.containsKey(s.uid)) {
+                val uid = s.uid
+                firestore.collection("users").document(uid).get()
+                    .addOnSuccessListener { doc ->
+                        if (doc.exists()) {
+                            liveProfiles[uid] =
+                                (doc.getString("username") ?: doc.getString("name")) to doc.getString("avatarUrl")
+                        }
+                    }
+            }
         }
     }
 
-    val top1 = sortedSupporters.getOrNull(0)
-    val top2 = sortedSupporters.getOrNull(1)
-    val top3 = sortedSupporters.getOrNull(2)
-    val restSupporters = if (sortedSupporters.size > 3) sortedSupporters.subList(3, sortedSupporters.size) else emptyList()
+    val usernameOf: (TopSupporter) -> String = { s ->
+        liveProfiles[s.uid]?.first?.takeIf { it.isNotBlank() } ?: s.name.ifBlank { "User" }
+    }
+    val avatarOf: (TopSupporter) -> String? = { s ->
+        liveProfiles[s.uid]?.second ?: s.avatarUrl
+    }
+
+    // RN L121-140: getSortedSupporters — exact RN match
+    val sorted = remember(supporters, activeTab) {
+        supporters
+            .map { s ->
+                val millis = s.updatedAt?.toDate()?.time ?: System.currentTimeMillis()
+                val display = when (activeTab) {
+                    "daily" -> if (tsIsToday(millis)) (s.dailyAmount.takeIf { it > 0 } ?: s.amount) else 0L
+                    "weekly" -> if (tsIsThisWeek(millis)) (s.weeklyAmount.takeIf { it > 0 } ?: s.amount) else 0L
+                    else -> s.amount.takeIf { it > 0 } ?: s.totalAmount.takeIf { it > 0 } ?: s.dailyAmount
+                }
+                s to display
+            }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+    }
+
+    val top1 = sorted.getOrNull(0)
+    val top2 = sorted.getOrNull(1)
+    val top3 = sorted.getOrNull(2)
+    val rest = sorted.drop(3)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -75,16 +139,12 @@ fun RoomTopSupportersDialog(
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f)
         ) {
-            // Header Section
+            // Header — RN L166-178
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color(0xFF1A2540), Color(0xFF0F1929))
-                        )
-                    )
-                    .padding(20.dp),
+                    .background(Brush.verticalGradient(listOf(Color(0xFF1A2540), Color(0xFF0F1929))))
+                    .padding(top = 28.dp, bottom = 20.dp, start = 16.dp, end = 16.dp),
                 contentAlignment = Alignment.Center
             ) {
                 IconButton(
@@ -92,13 +152,13 @@ fun RoomTopSupportersDialog(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.05f))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White.copy(alpha = 0.1f))
                 ) {
                     Icon(
                         Icons.Default.Close,
                         contentDescription = "Close",
-                        tint = Color.White.copy(alpha = 0.6f),
+                        tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -108,156 +168,158 @@ fun RoomTopSupportersDialog(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFBBF24).copy(alpha = 0.15f)),
+                            .background(Color(0xFFFBBF24).copy(alpha = 0.15f))
+                            .border(1.dp, Color(0xFFFBBF24).copy(alpha = 0.3f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("👑", fontSize = 28.sp)
+                        Icon(
+                            painterResource(R.drawable.ic_crown),
+                            contentDescription = null,
+                            tint = Color(0xFFFBBF24),
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text(
                         "ROOM SUPPORTERS",
-                        color = Color.White,
-                        fontSize = 16.sp,
+                        color = Color(0xFFFBBF24),
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp
+                        letterSpacing = 2.sp
                     )
                     Text(
                         "TOP GIVERS OF THE ROOM",
-                        color = Color(0xFFFBBF24),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
+                        color = Color.White.copy(alpha = 0.4f),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
                     )
                 }
             }
 
-            // Tab Bar
+            // Tabs — RN L181-196
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 16.dp, bottom = 8.dp)
+                    .clip(RoundedCornerShape(30.dp))
                     .background(Color.White.copy(alpha = 0.05f))
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(4.dp)
             ) {
-                TabPill(
-                    label = "DAILY",
-                    isSelected = activeTab == "daily",
-                    onClick = { activeTab = "daily" },
-                    modifier = Modifier.weight(1f)
-                )
-                TabPill(
-                    label = "WEEKLY",
-                    isSelected = activeTab == "weekly",
-                    onClick = { activeTab = "weekly" },
-                    modifier = Modifier.weight(1f)
-                )
-                TabPill(
-                    label = "ALL TIME",
-                    isSelected = activeTab == "total",
-                    onClick = { activeTab = "total" },
-                    modifier = Modifier.weight(1f)
-                )
+                listOf("daily", "weekly", "total").forEach { tab ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(if (activeTab == tab) Color(0xFF1E3A5F) else Color.Transparent)
+                            .clickable { activeTab = tab }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            if (tab == "total") "ALL TIME" else tab.uppercase(Locale.US),
+                            color = if (activeTab == tab) Color(0xFFFBBF24) else Color.White.copy(alpha = 0.4f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                }
             }
 
-            // Scrollable Podium & List
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 20.dp)
             ) {
-                // Podium Item
-                item {
-                    PodiumView(
-                        top1 = top1,
-                        top2 = top2,
-                        top3 = top3,
-                        activeTab = activeTab,
-                        onSupporterClick = { sup, rank ->
-                            selectedSupporter = sup
-                            selectedRank = rank
-                        }
-                    )
-                    Spacer(Modifier.height(20.dp))
-                }
+                if (sorted.isNotEmpty()) {
+                    item {
+                        PodiumRow(
+                            top1 = top1,
+                            top2 = top2,
+                            top3 = top3,
+                            usernameOf = usernameOf,
+                            avatarOf = avatarOf,
+                            onSupporterClick = { sup, rank ->
+                                selectedSupporter = sup
+                                selectedRank = rank
+                            }
+                        )
+                    }
 
-                // Rank 4+ Items
-                if (restSupporters.isNotEmpty()) {
-                    itemsIndexed(restSupporters) { idx, supporter ->
+                    items(rest.size) { idx ->
+                        val pair = rest[idx]
                         val rank = idx + 4
-                        val amount = if (activeTab == "daily") supporter.dailyAmount else supporter.totalAmount
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.03f))
+                                .padding(vertical = 12.dp)
                                 .clickable {
-                                    selectedSupporter = supporter
+                                    selectedSupporter = pair.first
                                     selectedRank = rank
                                 }
-                                .padding(12.dp),
+                                .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "#$rank",
-                                color = Color.White.copy(alpha = 0.5f),
+                                "$rank",
+                                color = Color.White.copy(alpha = 0.3f),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.width(36.dp)
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.width(32.dp)
                             )
-
                             AsyncImage(
-                                model = supporter.avatarUrl ?: "https://picsum.photos/200",
-                                contentDescription = supporter.name,
+                                model = avatarOf(pair.first) ?: "https://picsum.photos/100",
+                                contentDescription = usernameOf(pair.first),
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
+                                    .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
                             )
-
                             Spacer(Modifier.width(12.dp))
-
                             Text(
-                                supporter.name.ifBlank { "Supporter" },
+                                usernameOf(pair.first),
                                 color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Black,
                                 modifier = Modifier.weight(1f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color(0xFFFCA5A5).copy(alpha = 0.15f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color.White.copy(alpha = 0.05f))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("🪙 ", fontSize = 10.sp)
+                                GoldenCoin(size = 10.dp)
+                                Spacer(Modifier.width(4.dp))
                                 Text(
-                                    formatCoins(amount),
+                                    formatCoins(pair.second),
                                     color = Color(0xFFFCA5A5),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Black
                                 )
                             }
                         }
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
                     }
-                } else if (sortedSupporters.isEmpty()) {
+                } else {
                     item {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(40.dp),
+                                .padding(vertical = 80.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 "No contributions found",
-                                color = Color.White.copy(alpha = 0.4f),
-                                fontSize = 13.sp
+                                color = Color.White.copy(alpha = 0.3f),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -266,16 +328,23 @@ fun RoomTopSupportersDialog(
         }
     }
 
-    // Selected Supporter Details Dialog Popup
+    // Supporter Profile Popup — RN L57-114
     selectedSupporter?.let { supporter ->
         Dialog(
             onDismissRequest = { selectedSupporter = null },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
+            val cfg = when (selectedRank) {
+                1 -> Triple(Color(0xFFFBBF24), Color(0xFFD97706), Color(0xFFFBBF24))
+                2 -> Triple(Color(0xFFCBD5E1), Color(0xFF94A3B8), Color(0xFFCBD5E1))
+                3 -> Triple(Color(0xFFD97706), Color(0xFF92400E), Color(0xFFD97706))
+                else -> Triple(Color(0xFF475569), Color(0xFF334155), Color(0xFF94A3B8))
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)),
+                    .background(Color.Black.copy(alpha = 0.75f))
+                    .clickable { selectedSupporter = null },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -283,84 +352,121 @@ fun RoomTopSupportersDialog(
                         .fillMaxWidth(0.85f)
                         .clip(RoundedCornerShape(24.dp))
                         .background(Color(0xFF0F172A))
-                        .border(1.dp, Color(0xFF1E293B), RoundedCornerShape(24.dp))
-                        .padding(24.dp),
+                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp)),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val crownColor = when (selectedRank) {
-                        1 -> Color(0xFFFBBF24)
-                        2 -> Color(0xFFCBD5E1)
-                        else -> Color(0xFFD97706)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Brush.verticalGradient(listOf(Color(0xFF1E293B), Color(0xFF0F172A))))
+                            .padding(top = 32.dp, bottom = 24.dp, start = 24.dp, end = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (selectedRank <= 3) {
+                            Icon(
+                                painterResource(R.drawable.ic_crown),
+                                contentDescription = null,
+                                tint = cfg.third,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        Box(modifier = Modifier.border(3.dp, cfg.first, CircleShape)) {
+                            AsyncImage(
+                                model = avatarOf(supporter) ?: "https://picsum.photos/100",
+                                contentDescription = usernameOf(supporter),
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            usernameOf(supporter),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        Box(
+                            modifier = Modifier
+                                .background(cfg.second, RoundedCornerShape(20.dp))
+                                .padding(horizontal = 10.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                "#$selectedRank Contributor",
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
                     }
 
-                    Text(
-                        when (selectedRank) {
-                            1 -> "👑 1st Rank Contributor"
-                            2 -> "🥈 2nd Rank Contributor"
-                            3 -> "🥉 3rd Rank Contributor"
-                            else -> "#$selectedRank Contributor"
-                        },
-                        color = crownColor,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Black
-                    )
-
-                    Spacer(Modifier.height(16.dp))
-
-                    AsyncImage(
-                        model = supporter.avatarUrl ?: "https://picsum.photos/200",
-                        contentDescription = supporter.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, crownColor, CircleShape)
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(
-                        supporter.name.ifBlank { "User" },
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black
-                    )
-
-                    Spacer(Modifier.height(16.dp))
-
-                    // Stats Grid
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.White.copy(alpha = 0.05f))
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceAround
+                            .border(width = 1.dp, color = Color.White.copy(alpha = 0.1f))
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("TODAY", color = Color.White.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(2.dp))
-                            Text(formatCoins(supporter.dailyAmount), color = Color(0xFFFBBF24), fontSize = 14.sp, fontWeight = FontWeight.Black)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(width = 1.dp, color = Color.White.copy(alpha = 0.1f))
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                String.format(Locale.US, "%,d", supporter.dailyAmount),
+                                color = Color(0xFFFBBF24),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                "TODAY",
+                                color = Color(0xFF475569),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
                         }
-                        Box(modifier = Modifier.width(1.dp).height(30.dp).background(Color.White.copy(alpha = 0.1f)))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("ALL TIME", color = Color.White.copy(alpha = 0.5f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(2.dp))
-                            Text(formatCoins(supporter.totalAmount), color = Color(0xFF38BDF8), fontSize = 14.sp, fontWeight = FontWeight.Black)
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                String.format(Locale.US, "%,d", supporter.weeklyAmount),
+                                color = Color(0xFF22D3EE),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                "THIS WEEK",
+                                color = Color(0xFF475569),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
                         }
                     }
 
-                    Spacer(Modifier.height(20.dp))
-
-                    Button(
-                        onClick = { selectedSupporter = null },
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
-                        shape = RoundedCornerShape(14.dp)
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.05f))
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
+                            .clickable { selectedSupporter = null }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Close",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -368,112 +474,195 @@ fun RoomTopSupportersDialog(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Podium — RN L200-295 (2nd left, 1st center raised, 3rd right)
+// ─────────────────────────────────────────────────────────────────────────────
 @Composable
-private fun PodiumView(
-    top1: TopSupporter?,
-    top2: TopSupporter?,
-    top3: TopSupporter?,
-    activeTab: String,
+private fun PodiumRow(
+    top1: Pair<TopSupporter, Long>?,
+    top2: Pair<TopSupporter, Long>?,
+    top3: Pair<TopSupporter, Long>?,
+    usernameOf: (TopSupporter) -> String,
+    avatarOf: (TopSupporter) -> String?,
     onSupporterClick: (TopSupporter, Int) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            .padding(horizontal = 16.dp)
+            .padding(top = 24.dp, bottom = 32.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.Bottom
     ) {
-        // 2nd Place (Left)
         PodiumSpot(
-            supporter = top2,
+            pair = top2,
             rank = 2,
+            crownSize = 18,
+            avatarSize = 56,
+            borderWidth = 2.5.dp,
+            avatarRadius = 30.dp,
+            borderColor = Color(0xFF94A3B8),
             crownColor = Color(0xFFCBD5E1),
-            avatarSize = 56,
-            activeTab = activeTab,
-            onClick = { top2?.let { onSupporterClick(it, 2) } }
+            nameColor = Color(0xFFCBD5E1),
+            amountColor = Color(0xFF94A3B8),
+            pillBg = Color.White.copy(alpha = 0.05f),
+            nameFontSize = 11,
+            amountFontSize = 10,
+            usernameOf = usernameOf,
+            avatarOf = avatarOf,
+            onClick = { top2?.let { onSupporterClick(it.first, 2) } },
+            modifier = Modifier.weight(1f)
         )
-
-        // 1st Place (Center, Raised)
         PodiumSpot(
-            supporter = top1,
+            pair = top1,
             rank = 1,
-            crownColor = Color(0xFFFBBF24),
+            crownSize = 22,
             avatarSize = 68,
-            activeTab = activeTab,
-            modifier = Modifier.offset(y = (-16).dp),
-            onClick = { top1?.let { onSupporterClick(it, 1) } }
+            borderWidth = 3.dp,
+            avatarRadius = 34.dp,
+            borderColor = Color(0xFFFBBF24),
+            crownColor = Color(0xFFFBBF24),
+            nameColor = Color(0xFFFBBF24),
+            amountColor = Color(0xFFFBBF24),
+            pillBg = Color(0xFFFBBF24).copy(alpha = 0.1f),
+            nameFontSize = 12,
+            amountFontSize = 11,
+            usernameOf = usernameOf,
+            avatarOf = avatarOf,
+            modifier = Modifier
+                .weight(1f)
+                .offset(y = (-12).dp),
+            showGlow = true,
+            badgeSize = 22,
+            onClick = { top1?.let { onSupporterClick(it.first, 1) } }
         )
-
-        // 3rd Place (Right)
         PodiumSpot(
-            supporter = top3,
+            pair = top3,
             rank = 3,
-            crownColor = Color(0xFFD97706),
+            crownSize = 18,
             avatarSize = 56,
-            activeTab = activeTab,
-            onClick = { top3?.let { onSupporterClick(it, 3) } }
+            borderWidth = 2.5.dp,
+            avatarRadius = 28.dp,
+            borderColor = Color(0xFFD97706),
+            crownColor = Color(0xFFD97706),
+            nameColor = Color(0xFFD97706),
+            amountColor = Color(0xFFD97706),
+            pillBg = Color(0xFFD97706).copy(alpha = 0.1f),
+            nameFontSize = 11,
+            amountFontSize = 10,
+            usernameOf = usernameOf,
+            avatarOf = avatarOf,
+            onClick = { top3?.let { onSupporterClick(it.first, 3) } },
+            modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Composable
 private fun PodiumSpot(
-    supporter: TopSupporter?,
+    pair: Pair<TopSupporter, Long>?,
     rank: Int,
-    crownColor: Color,
+    crownSize: Int,
     avatarSize: Int,
-    activeTab: String,
+    borderWidth: Dp,
+    avatarRadius: Dp,
+    borderColor: Color,
+    crownColor: Color,
+    nameColor: Color,
+    amountColor: Color,
+    pillBg: Color,
+    nameFontSize: Int,
+    amountFontSize: Int,
+    usernameOf: (TopSupporter) -> String,
+    avatarOf: (TopSupporter) -> String?,
     modifier: Modifier = Modifier,
+    showGlow: Boolean = false,
+    badgeSize: Int = 20,
     onClick: () -> Unit
 ) {
+    val supporter = pair?.first
     Column(
-        modifier = modifier.clickable(enabled = supporter != null, onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier
+            .clickable(enabled = supporter != null, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Bottom
     ) {
         if (supporter != null) {
-            Text(if (rank == 1) "👑" else if (rank == 2) "🥈" else "🥉", fontSize = 16.sp)
-            Spacer(Modifier.height(2.dp))
+            Icon(
+                painterResource(R.drawable.ic_crown),
+                contentDescription = null,
+                tint = crownColor,
+                modifier = Modifier
+                    .size(crownSize.dp)
+                    .padding(bottom = 4.dp)
+            )
+            Spacer(Modifier.height(4.dp))
 
-            Box(contentAlignment = Alignment.BottomCenter) {
-                AsyncImage(
-                    model = supporter.avatarUrl ?: "https://picsum.photos/200",
-                    contentDescription = supporter.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(avatarSize.dp)
-                        .clip(CircleShape)
-                        .border(2.5.dp, crownColor, CircleShape)
-                )
+            Box(contentAlignment = Alignment.Center) {
+                if (showGlow) {
+                    Box(
+                        modifier = Modifier
+                            .size((avatarSize + 12).dp)
+                            .border(2.dp, Color(0xFFFBBF24).copy(alpha = 0.3f), CircleShape)
+                    )
+                }
                 Box(
                     modifier = Modifier
-                        .offset(y = 8.dp)
-                        .size(18.dp)
+                        .border(borderWidth, borderColor, CircleShape)
+                        .padding(2.dp)
+                ) {
+                    AsyncImage(
+                        model = avatarOf(supporter) ?: "https://picsum.photos/100",
+                        contentDescription = usernameOf(supporter),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(avatarSize.dp)
+                            .clip(RoundedCornerShape(avatarRadius))
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 4.dp, y = 4.dp)
+                        .size(badgeSize.dp)
                         .clip(CircleShape)
-                        .background(crownColor),
+                        .background(borderColor)
+                        .border(1.5.dp, Color(0xFF0F1929), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("$rank", color = Color.Black, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Text(
+                        "$rank",
+                        color = Color(0xFF0F172A),
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Black
+                    )
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-
+            Spacer(Modifier.height(10.dp))
             Text(
-                supporter.name.ifBlank { "User" },
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
+                usernameOf(supporter),
+                color = nameColor,
+                fontSize = nameFontSize.sp,
+                fontWeight = FontWeight.Black,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
             )
-
-            val amount = if (activeTab == "daily") supporter.dailyAmount else supporter.totalAmount
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("🪙 ", fontSize = 8.sp)
+            Row(
+                modifier = Modifier
+                    .padding(top = 3.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(pillBg)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GoldenCoin(size = 10.dp)
+                Spacer(Modifier.width(3.dp))
                 Text(
-                    formatCoins(amount),
-                    color = crownColor,
-                    fontSize = 11.sp,
+                    formatCoins(pair?.second ?: 0L),
+                    color = amountColor,
+                    fontSize = amountFontSize.sp,
                     fontWeight = FontWeight.Black
                 )
             }
@@ -482,43 +671,9 @@ private fun PodiumSpot(
                 modifier = Modifier
                     .size(avatarSize.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("$rank", color = Color.White.copy(alpha = 0.3f), fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(2.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+            )
         }
-    }
-}
-
-@Composable
-private fun TabPill(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Color(0xFF1E3A5F) else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            label,
-            color = if (isSelected) Color(0xFFFBBF24) else Color.White.copy(alpha = 0.5f),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black
-        )
-    }
-}
-
-private fun formatCoins(amount: Long): String {
-    return when {
-        amount >= 1_000_000 -> "${"%.1f".format(amount / 1_000_000f)}M"
-        amount >= 1_000 -> "${"%.1f".format(amount / 1_000f)}K"
-        else -> amount.toString()
     }
 }

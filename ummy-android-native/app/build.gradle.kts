@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("com.google.android.gms:play-services-auth:21.0.0")
+    implementation("com.google.android.gms:play-services-basement:18.3.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -94,6 +95,13 @@ dependencies {
     // Coroutines & Coil
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
+    
+    // Video Playback
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+    
+    // In-App WebView (Custom Tabs)
+    implementation("androidx.browser:browser:1.8.0")
 
     // Native Agora RTC C++ Voice Engine
     implementation("io.agora.rtc:full-sdk:4.3.0")

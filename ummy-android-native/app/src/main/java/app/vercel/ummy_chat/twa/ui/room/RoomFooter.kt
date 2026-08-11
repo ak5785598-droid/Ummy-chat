@@ -12,13 +12,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.vercel.ummy_chat.twa.R
 
 data class RoomFooterState(
     val isMicMuted: Boolean = true,
@@ -128,48 +133,85 @@ fun RoomFooter(
             onClick = onOpenMessages
         )
 
-        // 6. Gift — RN: LinearGradient purple→pink, w-[38px] h-[38px] rounded-full border-white/20
-        //    FontAwesome5 gift size=18
+// 6. Gift — RN: LinearGradient #A020F0→#FF69B4, FontAwesome5 gift size=18,
+//    w 38 h 38 rounded-full border-white/20 shadow-lg
         FooterIconBtn(
-            icon = Icons.Default.CardGiftcard,
+            iconPainter = painterResource(R.drawable.ic_fa_gift),
             bgBrush = Brush.linearGradient(listOf(Color(0xFFA020F0), Color(0xFFFF69B4))),
             borderColor = Color.White.copy(alpha = 0.2f),
             onClick = onOpenGift
         )
 
-        // 7. Play — RN: Ionicons grid size=20
-        FooterIconBtn(
-            icon = Icons.Default.GridOn,
+        // 7. Play — RN: Ionicons grid size=20 (custom drawable, same 4 rounded squares)
+        SimpleFooterBtn(
+            icon = painterResource(R.drawable.ic_play_grid),
+            iconSize = 20.dp,
             onClick = onOpenPlay
         )
     }
 }
 
 @Composable
+private fun SimpleFooterBtn(
+    icon: Painter,
+    iconSize: Dp = 18.dp,
+    tint: Color = Color.White,
+    onClick: () -> Unit
+) {
+    val mod = Modifier
+        .size(38.dp)
+        .shadow(elevation = 6.dp, shape = CircleShape)
+        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+        .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape)
+        .clip(CircleShape)
+        .clickable { onClick() }
+
+    Box(modifier = mod, contentAlignment = Alignment.Center) {
+        Icon(
+            painter = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(iconSize)
+        )
+    }
+}
+
+@Composable
 private fun FooterIconBtn(
-    icon: ImageVector,
+    icon: ImageVector = Icons.Default.PlayArrow,
+    iconPainter: Painter? = null,
     bgBrush: Brush? = null,
     borderColor: Color = Color.White.copy(alpha = 0.1f),
     tint: Color = Color.White,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    // RN: w-[38px] h-[38px] rounded-full bg-black/40 border-white/10
+    // RN: w-[38px] h-[38px] rounded-full bg-black/40 border-white/10 shadow-lg
     val mod = Modifier
         .size(38.dp)
-        .clip(CircleShape)
+        .shadow(elevation = 6.dp, shape = CircleShape)
         .then(
-            if (bgBrush != null) Modifier.background(bgBrush)
-            else Modifier.background(Color.Black.copy(alpha = 0.4f))
+            if (bgBrush != null) Modifier.background(bgBrush, CircleShape)
+            else Modifier.background(Color.Black.copy(alpha = 0.4f), CircleShape)
         )
         .border(1.dp, borderColor, CircleShape)
+        .clip(CircleShape)
         .clickable(enabled = enabled) { onClick() }
 
     Box(modifier = mod, contentAlignment = Alignment.Center) {
-        Icon(
-            icon, null,
-            tint = tint.copy(alpha = if (enabled) 1f else 0.35f),
-            modifier = Modifier.size(18.dp)
-        )
+        if (iconPainter != null) {
+            Icon(
+                painter = iconPainter,
+                contentDescription = null,
+                tint = tint.copy(alpha = if (enabled) 1f else 0.35f),
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Icon(
+                icon, null,
+                tint = tint.copy(alpha = if (enabled) 1f else 0.35f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }

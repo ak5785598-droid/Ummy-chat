@@ -30,9 +30,9 @@ import kotlinx.coroutines.tasks.await
 // Full-screen with menu + 30 tab components, level-based access
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1"
+private const val CREATOR_ID = "901piBzTQ0VzCtAvlyyobwvAaTs1"
 
-private fun getUserLevel(tags: List<String>, isAdmin: Boolean, uid: String): Int {
+internal fun getUserLevel(tags: List<String>, isAdmin: Boolean, uid: String): Int {
     if (uid == CREATOR_ID) return 7
     if (tags.contains("Official") || tags.contains("Official center") || isAdmin) return 6
     if (tags.contains("Super Admin")) return 5
@@ -53,7 +53,7 @@ enum class AdminTab {
     SOVEREIGN_IDS, LEVEL_MANAGEMENT, MEDAL_MANAGEMENT, EMOJI_MANAGEMENT,
     SYSTEM_CONTROL, GAME_SYNC, SEAT_TIMING, LOADING_SCREEN, GAME_LOADING,
     VISUAL_IDENTITY, ASSIGN_CENTER, SPLASH_SCREEN, RANKING_THEMES,
-    BOUTIQUE_HUB, GIFT_MANAGEMENT, CUSTOM_GIFTS
+    BOUTIQUE_HUB, GIFT_MANAGEMENT, CUSTOM_GIFTS, AGENCY_APPLICATIONS
 }
 
 @Composable
@@ -141,44 +141,45 @@ fun AdminScreen(
         when (activeTab) {
             AdminTab.MENU -> AdminMenu(userLevel = userLevel, onTabSelect = { activeTab = it }, onNavigate = onNavigate)
             // Core Operations
-            AdminTab.RECHARGE_REQUESTS -> RechargeRequestsTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.FINANCIAL_AUDIT -> FinancialAuditTab(onBack = { activeTab = AdminTab.MENU })
+            AdminTab.RECHARGE_REQUESTS -> RechargeRequestsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.FINANCIAL_AUDIT -> FinancialAuditTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
             AdminTab.FINANCIAL_SETTINGS -> FinancialSettingsTab(onBack = { activeTab = AdminTab.MENU })
             AdminTab.APP_LEDGER -> AppLedgerTab(onBack = { activeTab = AdminTab.MENU })
             // Moderator
-            AdminTab.ID_BAN -> IdBanTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.MODERATION_REPORTS -> ModerationReportsTab(onBack = { activeTab = AdminTab.MENU })
+            AdminTab.ID_BAN -> IdBanTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.MODERATION_REPORTS -> ModerationReportsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
             AdminTab.MEMBER_DIRECTORY -> MemberDirectoryTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.USER_RECORDS -> UserRecordsTab(onBack = { activeTab = AdminTab.MENU })
+            AdminTab.USER_RECORDS -> UserRecordsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
             // Management
-            AdminTab.AUTHORITY_HUB -> AuthorityHubTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.VIP_MANAGEMENT -> VipManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.CP_MANAGEMENT -> CpManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.FAMILY_MANAGEMENT -> FamilyManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.PIN_CONTROL -> PinControlTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.TAGS -> TagsTab(onBack = { activeTab = AdminTab.MENU })
+            AdminTab.AUTHORITY_HUB -> AuthorityHubTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.VIP_MANAGEMENT -> VipManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.CP_MANAGEMENT -> CpManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.FAMILY_MANAGEMENT -> FamilyManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.PIN_CONTROL -> PinControlTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.TAGS -> TagsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.AGENCY_APPLICATIONS -> AgencyApplicationsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
             // System Config
-            AdminTab.BROADCASTER -> BroadcasterTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.LOOT_CONFIG -> LootConfigTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.REWARDS_CENTER -> RewardsCenterTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.DIRECT_MESSENGER -> DirectMessengerTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.BANNERS -> BannersTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.SOVEREIGN_IDS -> SovereignIdsTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.LEVEL_MANAGEMENT -> LevelManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.MEDAL_MANAGEMENT -> MedalManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.EMOJI_MANAGEMENT -> EmojiManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.SYSTEM_CONTROL -> SystemControlTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.GAME_SYNC -> GameSyncTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.SEAT_TIMING -> SeatTimingTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.LOADING_SCREEN -> LoadingScreenTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.GAME_LOADING -> GameLoadingTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.VISUAL_IDENTITY -> VisualIdentityTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.ASSIGN_CENTER -> AssignCenterTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.SPLASH_SCREEN -> SplashScreenTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.RANKING_THEMES -> RankingThemesTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.BOUTIQUE_HUB -> BoutiqueHubTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.GIFT_MANAGEMENT -> GiftManagementTab(onBack = { activeTab = AdminTab.MENU })
-            AdminTab.CUSTOM_GIFTS -> CustomGiftsTab(onBack = { activeTab = AdminTab.MENU })
+            AdminTab.BROADCASTER -> BroadcasterTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.LOOT_CONFIG -> LootConfigTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.REWARDS_CENTER -> RewardsCenterTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.DIRECT_MESSENGER -> DirectMessengerTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.BANNERS -> BannersTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.SOVEREIGN_IDS -> SovereignIdsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.LEVEL_MANAGEMENT -> LevelManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.MEDAL_MANAGEMENT -> MedalManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.EMOJI_MANAGEMENT -> EmojiManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.SYSTEM_CONTROL -> SystemControlTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.GAME_SYNC -> GameSyncTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.SEAT_TIMING -> SeatTimingTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.LOADING_SCREEN -> LoadingScreenTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.GAME_LOADING -> GameLoadingTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.VISUAL_IDENTITY -> VisualIdentityTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.ASSIGN_CENTER -> AssignCenterTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.SPLASH_SCREEN -> SplashScreenTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.RANKING_THEMES -> RankingThemesTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.BOUTIQUE_HUB -> BoutiqueHubTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.GIFT_MANAGEMENT -> GiftManagementTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
+            AdminTab.CUSTOM_GIFTS -> CustomGiftsTab(userLevel = userLevel, onBack = { activeTab = AdminTab.MENU })
         }
     }
 }
@@ -215,6 +216,7 @@ private fun AdminMenu(userLevel: Int, onTabSelect: (AdminTab) -> Unit, onNavigat
             AdminMenuItem(Icons.Default.Groups, "Family Management", Color(0xFF10B981)) { onTabSelect(AdminTab.FAMILY_MANAGEMENT) }
             AdminMenuItem(Icons.Default.PushPin, "Pin Control", Color(0xFF10B981)) { onTabSelect(AdminTab.PIN_CONTROL) }
             AdminMenuItem(Icons.Default.Badge, "Assign Tags", Color(0xFF7C3AED)) { onTabSelect(AdminTab.TAGS) }
+            AdminMenuItem(Icons.Default.BusinessCenter, "Agency Applications", Color(0xFF6366F1)) { onTabSelect(AdminTab.AGENCY_APPLICATIONS) }
         }
 
         // System Config (Level 6+)

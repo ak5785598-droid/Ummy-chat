@@ -24,24 +24,28 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
 
 @Composable
-fun RechargeRequestsTab(onBack: () -> Unit) {
+fun RechargeRequestsTab(userLevel: Int, onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
     val scope = rememberCoroutineScope()
     var requests by remember { mutableStateOf(listOf<Map<String, Any?>>()) }
     var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var success by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val snap = db.collection("recharge_requests")
-                .whereEqualTo("status", "pending")
-                .get().await()
-            requests = snap.documents.mapNotNull { it.data?.plus("docId" to it.id) }
-        } catch (e: Exception) {
-            error = e.message
-        }
-        isLoading = false
+    DisposableEffect(Unit) {
+        val listener = db.collection("rechargeRequests")
+            .whereEqualTo("status", "pending")
+            .addSnapshotListener { snap, error ->
+                if (error != null) {
+                    message = "Error: ${error.message}"
+                    isLoading = false
+                    return@addSnapshotListener
+                }
+                if (snap != null) {
+                    requests = snap.documents.mapNotNull { it.data?.plus("id" to it.id) }
+                }
+                isLoading = false
+            }
+        onDispose { listener.remove() }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
@@ -58,54 +62,77 @@ fun RechargeRequestsTab(onBack: () -> Unit) {
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF7C3AED))
+                CircularProgressIndicator(color = Color(0xFF22C55E))
             }
         } else if (requests.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No pending recharge requests", color = Color(0xFF94A3B8))
+                Text("NO PENDING RECHARGE REQUESTS", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFCBD5E1))
             }
         } else {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
                 requests.forEach { req ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), shape = RoundedCornerShape(12.dp)) {
+                    val reqId = req["id"] as? String ?: return@forEach
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))
+                    ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Person, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(req["userName"] as? String ?: "Unknown", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                val timestamp = req["createdAt"] as? com.google.firebase.Timestamp
+                                val dateStr = timestamp?.toDate()?.toString() ?: "Pending..."
+                                Text(dateStr, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
                                 Spacer(modifier = Modifier.weight(1f))
-                                Text("₹${req["amount"] ?: 0}", fontWeight = FontWeight.Black, color = Color(0xFF22C55E), fontSize = 14.sp)
+                                Text("₹${req["amount"] ?: 0}", fontWeight = FontWeight.Black, color = Color(0xFF1E293B), fontSize = 16.sp)
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("Method: ${req["method"] ?: "N/A"}", fontSize = 12.sp, color = Color(0xFF64748B))
-                            Text("Time: ${req["timestamp"] ?: "N/A"}", fontSize = 12.sp, color = Color(0xFF64748B))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("User: ${req["username"] ?: "Unknown"} (ID: ${req["accountNumber"] ?: "N/A"})", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF334155))
+                            Text("Method: ${req["paymentMethod"] ?: "UPI"}", fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(top = 2.dp))
+                            if (req["utr"] != null) {
+                                Text("UTR/Txn ID: ${req["utr"]}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF475569), modifier = Modifier.padding(top = 2.dp))
+                            }
 
                             Spacer(modifier = Modifier.height(12.dp))
-                            Row {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 // Approve
-                                Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF22C55E)).clickable {
+                                Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(Color(0xFF22C55E)).clickable {
+                                    if (userLevel < 5) {
+                                        message = "Error: Unauthorized."
+                                        return@clickable
+                                    }
                                     scope.launch {
                                         try {
-                                            db.collection("recharge_requests").document(req["docId"] as String).update("status", "approved").await()
-                                            requests = requests.filter { it["docId"] != req["docId"] }
-                                            success = "Approved!"
-                                        } catch (e: Exception) { error = e.message }
+                                            db.collection("rechargeRequests").document(reqId).update(
+                                                mapOf(
+                                                    "status" to "approved",
+                                                    "processedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                                                )
+                                            ).await()
+                                            message = "Success: Request has been approved."
+                                        } catch (e: Exception) { message = "Error: ${e.message}" }
                                     }
-                                }.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                    Text("Approve", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    Text("APPROVE", color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp)
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
                                 // Reject
-                                Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFFEF4444)).clickable {
+                                Box(modifier = Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(Color(0xFFEF4444)).clickable {
+                                    if (userLevel < 5) {
+                                        message = "Error: Unauthorized."
+                                        return@clickable
+                                    }
                                     scope.launch {
                                         try {
-                                            db.collection("recharge_requests").document(req["docId"] as String).update("status", "rejected").await()
-                                            requests = requests.filter { it["docId"] != req["docId"] }
-                                            success = "Rejected"
-                                        } catch (e: Exception) { error = e.message }
+                                            db.collection("rechargeRequests").document(reqId).update(
+                                                mapOf(
+                                                    "status" to "rejected",
+                                                    "processedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                                                )
+                                            ).await()
+                                            message = "Success: Request has been rejected."
+                                        } catch (e: Exception) { message = "Error: ${e.message}" }
                                     }
-                                }.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                    Text("Reject", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    Text("REJECT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp)
                                 }
                             }
                         }
@@ -114,14 +141,16 @@ fun RechargeRequestsTab(onBack: () -> Unit) {
             }
         }
 
-        // Toasts
-        success?.let {
-            LaunchedEffect(it) { kotlinx.coroutines.delay(3000); success = null }
-            Text(it, color = Color(0xFF22C55E), modifier = Modifier.padding(16.dp), fontWeight = FontWeight.Bold)
-        }
-        error?.let {
-            LaunchedEffect(it) { kotlinx.coroutines.delay(5000); error = null }
-            Text(it, color = Color(0xFFEF4444), modifier = Modifier.padding(16.dp), fontSize = 12.sp)
+        message?.let {
+            LaunchedEffect(it) { kotlinx.coroutines.delay(4000); message = null }
+            val isError = it.startsWith("Error")
+            Text(
+                text = it,
+                color = if (isError) Color(0xFFEF4444) else Color(0xFF22C55E),
+                modifier = Modifier.padding(16.dp),
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
         }
     }
 }
@@ -129,19 +158,26 @@ fun RechargeRequestsTab(onBack: () -> Unit) {
 // ─── Financial Audit ─────────────────────────────────────────────────────────
 
 @Composable
-fun FinancialAuditTab(onBack: () -> Unit) {
+fun FinancialAuditTab(userLevel: Int, onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
     var auditLogs by remember { mutableStateOf(listOf<Map<String, Any?>>()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val snap = db.collection("transactions")
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .limit(100).get().await()
-            auditLogs = snap.documents.mapNotNull { it.data?.plus("docId" to it.id) }
-        } catch (_: Exception) {}
-        isLoading = false
+    DisposableEffect(Unit) {
+        val listener = db.collection("coin_audit_logs")
+            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .limit(100)
+            .addSnapshotListener { snap, error ->
+                if (error != null) {
+                    isLoading = false
+                    return@addSnapshotListener
+                }
+                if (snap != null) {
+                    auditLogs = snap.documents.mapNotNull { it.data?.plus("id" to it.id) }
+                }
+                isLoading = false
+            }
+        onDispose { listener.remove() }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
@@ -154,24 +190,35 @@ fun FinancialAuditTab(onBack: () -> Unit) {
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF7C3AED))
+                CircularProgressIndicator(color = Color(0xFF3B82F6))
+            }
+        } else if (auditLogs.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("NO AUDIT LOGS FOUND", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFCBD5E1))
             }
         } else {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
                 auditLogs.forEach { log ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), shape = RoundedCornerShape(12.dp)) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Receipt, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(log["type"] as? String ?: "Transaction", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("User: ${log["userName"] ?: "N/A"}", fontSize = 12.sp, color = Color(0xFF64748B))
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val timestamp = log["timestamp"] as? com.google.firebase.Timestamp
+                                val dateStr = timestamp?.toDate()?.toString() ?: "Pending..."
+                                Text(dateStr, fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
+                                Spacer(modifier = Modifier.weight(1f))
+                                Text("+${log["amount"] ?: 0} Coins", fontWeight = FontWeight.Black, color = Color(0xFF22C55E), fontSize = 14.sp)
                             }
-                            Text("₹${log["amount"] ?: 0}", fontWeight = FontWeight.Black, color = Color(0xFF3B82F6), fontSize = 14.sp)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("From: ${log["adminName"] ?: "Admin"}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                            Text("To Account: ${log["targetAccount"] ?: "N/A"} (UID: ${log["targetName"] ?: "User"})", fontSize = 11.sp, color = Color(0xFF64748B), modifier = Modifier.padding(top = 2.dp))
                         }
                     }
                 }
-                if (auditLogs.isEmpty()) Text("No transaction records found", color = Color(0xFF94A3B8), modifier = Modifier.padding(16.dp))
             }
         }
     }

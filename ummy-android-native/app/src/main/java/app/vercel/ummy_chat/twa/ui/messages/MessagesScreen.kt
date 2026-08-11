@@ -39,7 +39,9 @@ fun MessagesScreen(
     onOpenChatRoom: (chatId: String, recipientId: String, recipientName: String, recipientAvatar: String) -> Unit,
     onOpenOfficial: () -> Unit = {},
     onOpenSystem: () -> Unit = {},
-    onOpenRequests: () -> Unit = {}
+    onOpenRequests: () -> Unit = {},
+    onOpenSearch: () -> Unit = {},
+    onOpenRoom: (roomId: String) -> Unit = {}
 ) {
     val uid = FirebaseAuth.getInstance().currentUser?.uid
     val fs = FirebaseFirestore.getInstance()
@@ -164,7 +166,8 @@ fun MessagesScreen(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.8f)),
+                        .background(Color.White.copy(alpha = 0.8f))
+                        .clickable { onOpenSearch() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Search, null, tint = Color(0xFF64748B), modifier = Modifier.size(20.dp))
@@ -286,7 +289,8 @@ fun MessagesScreen(
                                 },
                                 onLongClick = {
                                     selectedChatOptions = chat
-                                }
+                                },
+                                onOpenRoom = onOpenRoom
                             )
                         }
                     }
@@ -339,12 +343,8 @@ fun OfficialSectionCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         iconContent()

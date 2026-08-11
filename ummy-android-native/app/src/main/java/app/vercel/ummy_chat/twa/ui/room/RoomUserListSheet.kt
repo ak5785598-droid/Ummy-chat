@@ -262,6 +262,7 @@ fun UserListRow(
 ) {
     var avatarUrl by remember { mutableStateOf(p.avatarUrl) }
     var username by remember { mutableStateOf(p.name) }
+    var displayId by remember { mutableStateOf("") }
 
     DisposableEffect(p.uid) {
         if (p.uid.isBlank()) {
@@ -280,6 +281,10 @@ fun UserListRow(
                     val name = data?.get("username") as? String
                         ?: data?.get("name") as? String
                     if (name != null) username = name
+                    
+                    val accNum = data?.get("accountNumber") as? String
+                        ?: data?.get("id") as? String
+                    if (accNum != null) displayId = accNum
                 }
             }
 
@@ -292,6 +297,10 @@ fun UserListRow(
                     val name = data?.get("username") as? String
                         ?: data?.get("name") as? String
                     if (name != null) username = name
+                    
+                    val accNum = data?.get("accountNumber") as? String
+                        ?: data?.get("id") as? String
+                    if (accNum != null) displayId = accNum
                 }
             }
 
@@ -342,12 +351,21 @@ fun UserListRow(
                     Text("🛡️", fontSize = 12.sp)
                 }
             }
-            Text(
-                text = if (p.seatIndex > 0) "Seat ${p.seatIndex}" else "Audience",
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 10.sp,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = if (displayId.isNotBlank()) "ID: $displayId" else "ID: ...",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 2.dp, end = 6.dp)
+                )
+                Text(
+                    text = if (p.seatIndex > 0) "• Seat ${p.seatIndex}" else "• Audience",
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
         }
 
         if (p.seatIndex > 0) {

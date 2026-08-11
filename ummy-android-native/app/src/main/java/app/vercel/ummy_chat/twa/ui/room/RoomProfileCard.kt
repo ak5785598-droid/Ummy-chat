@@ -2,6 +2,7 @@ package app.vercel.ummy_chat.twa.ui.room
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,6 +27,23 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import app.vercel.ummy_chat.twa.ui.components.SvipPillBadge
+import app.vercel.ummy_chat.twa.ui.profile.UserLevelBadge
+import app.vercel.ummy_chat.twa.ui.profile.OfficialTag
+import app.vercel.ummy_chat.twa.ui.profile.SuperAdminTag
+import app.vercel.ummy_chat.twa.ui.profile.ManagerTag
+import app.vercel.ummy_chat.twa.ui.profile.AuditorTag
+import app.vercel.ummy_chat.twa.ui.profile.AdminTag
+import app.vercel.ummy_chat.twa.ui.profile.SellerTag
+import app.vercel.ummy_chat.twa.ui.profile.ServiceTag
+import app.vercel.ummy_chat.twa.ui.profile.HostTag
+import app.vercel.ummy_chat.twa.ui.profile.CSLeaderTag
+import app.vercel.ummy_chat.twa.ui.profile.CustomerServiceTag
+import app.vercel.ummy_chat.twa.ui.profile.SVGA_GlossyID
+import app.vercel.ummy_chat.twa.ui.profile.ActiveIDBadge
+import app.vercel.ummy_chat.twa.ui.profile.SovereignIDBadge
+import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.FirebaseFirestore
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoomProfileCard — mirrors RN room-profile-card.tsx
@@ -120,12 +140,74 @@ fun RoomProfileCard(
     onMention: ((String) -> Unit)? = null,
     onLockSeat: ((Int) -> Unit)? = null,
     onBan: ((String) -> Unit)? = null,
-    onViewProfile: ((String) -> Unit)? = null
+    onViewProfile: ((String) -> Unit)? = null,
+    onEcho: ((String) -> Unit)? = null,
+    onPropose: ((String) -> Unit)? = null
 ) {
     if (user == null) return
 
     val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
     var showMoreMenu by remember { mutableStateOf(false) }
+    var fullProfile by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var realTimeFans by remember { mutableIntStateOf(0) }
+    var firestoreMedals by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+
+    // Fetch full profile from Firestore
+    LaunchedEffect(user.uid) {
+        try {
+            val snap = FirebaseFirestore.getInstance()
+                .collection("users").document(user.uid).get().await()
+            fullProfile = snap?.data
+        } catch (_: Exception) {}
+    }
+
+    // Real-time fans count from followers collection
+    LaunchedEffect(user.uid) {
+        try {
+            val followersRef = FirebaseFirestore.getInstance()
+                .collection("followers")
+                .whereEqualTo("followingId", user.uid)
+            followersRef.addSnapshotListener { snap, _ ->
+                realTimeFans = snap?.size() ?: 0
+            }
+        } catch (_: Exception) {}
+    }
+
+    // Fetch medals list from medalsList collection
+    LaunchedEffect(Unit) {
+        try {
+            val snap = FirebaseFirestore.getInstance()
+                .collection("medalsList").get().await()
+            firestoreMedals = snap.documents.mapNotNull { it.data?.plus("id" to it.id) }
+        } catch (_: Exception) {}
+    }
+
+    val profileTags = remember(fullProfile) {
+        (fullProfile?.get("tags") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+    }
+    val profileSvip = remember(fullProfile) {
+        (fullProfile?.get("svip") as? Number)?.toInt() ?: 0
+    }
+    val profileMedals = remember(fullProfile) {
+        (fullProfile?.get("medals") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+    }
+    val profileCountry = remember(fullProfile) {
+        fullProfile?.get("country") as? String
+    }
+    val profileAccountNumber = remember(fullProfile) {
+        (fullProfile?.get("accountNumber") as? Number)?.toString()
+            ?: fullProfile?.get("accountNumber") as? String ?: ""
+    }
+    val profileIdColor = remember(fullProfile) {
+        fullProfile?.get("idColor") as? String
+    }
+    val profileIsActiveId = remember(fullProfile) {
+        fullProfile?.get("activeIdBadge") as? Map<*, *>
+    }
+    val profileIsAdmin = remember(fullProfile) {
+        fullProfile?.get("isAdmin") as? Boolean ?: false
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -306,7 +388,8 @@ fun RoomProfileCard(
                         )
                     }
                     // Country
-                    if (user.country != null) {
+                    val displayCountry = profileCountry ?: user.country
+                    if (displayCountry != null) {
                         Spacer(Modifier.width(6.dp))
                         Row(
                             modifier = Modifier
@@ -315,38 +398,127 @@ fun RoomProfileCard(
                                 .padding(horizontal = 8.dp, vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(COUNTRY_FLAGS[user.country] ?: "🌍", fontSize = 12.sp)
+                            Text(COUNTRY_FLAGS[displayCountry] ?: "🌍", fontSize = 12.sp)
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                COUNTRY_CODES[user.country] ?: user.country.uppercase(),
+                                COUNTRY_CODES[displayCountry] ?: displayCountry.uppercase(),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF64748B)
                             )
                         }
                     }
+                    // User Level Badge
+                    if (user.level > 0) {
+                        Spacer(Modifier.width(6.dp))
+                        UserLevelBadge(level = user.level, scale = 1.1f)
+                    }
                 }
 
                 Spacer(Modifier.height(4.dp))
 
-                // ── ID badge (copyable) ───────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFF1F5F9))
-                        .clickable {
-                            clipboard.setText(AnnotatedString(user.accountNumber))
-                        }
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // ── Tags row ──────────────────────────────────────────────
+                val hasAnyTag = profileTags.any { tag ->
+                    tag in listOf("Official", "Super Admin", "Manager", "Auditor", "Admin",
+                        "Seller", "Seller center", "Coin Seller", "CS Leader",
+                        "Customer Service", "Service", "Host")
+                }
+                if (hasAnyTag) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        if (profileTags.any { it.contains("Official", true) }) OfficialTag()
+                        if ("Super Admin" in profileTags) SuperAdminTag()
+                        if ("Manager" in profileTags) ManagerTag()
+                        if ("Auditor" in profileTags) AuditorTag()
+                        if ("Admin" in profileTags) AdminTag()
+                        if (profileTags.any { it in listOf("Seller", "Seller center", "Coin Seller") }) SellerTag()
+                        if ("CS Leader" in profileTags) CSLeaderTag()
+                        if ("Customer Service" in profileTags) CustomerServiceTag()
+                        if ("Service" in profileTags) ServiceTag()
+                        if ("Host" in profileTags) HostTag()
+                    }
+                }
+
+                // ── ID badge (copyable) — SVG badges like RN ─────────────
+                val displayId = profileAccountNumber.ifEmpty { user.accountNumber }
+                val hasOfficialTag = profileTags.any { it.contains("Official", true) }
+                val isBudgetId = fullProfile?.get("isBudgetId") as? Boolean ?: false
+                val idColor = profileIdColor
+
+                Box(
+                    modifier = Modifier.clickable {
+                        clipboard.setText(AnnotatedString(displayId))
+                    },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "ID: ${user.accountNumber}",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF475569)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy",
-                        tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                    if (hasOfficialTag) {
+                        SVGA_GlossyID(label = "ID: $displayId")
+                    } else if (profileIsActiveId != null) {
+                        ActiveIDBadge(badgeData = profileIsActiveId, fallbackNumber = displayId)
+                    } else if (profileIsAdmin || (isBudgetId && idColor != null && idColor != "none")) {
+                        SovereignIDBadge(
+                            color = if (profileIsAdmin) "gold" else idColor ?: "gold",
+                            number = displayId
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF1F5F9))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "ID: $displayId",
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF475569)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy",
+                                tint = Color(0xFF94A3B8), modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+
+                // ── SVIP Badge + Medals Row ──────────────────────────────
+                val displaySvip = if (profileSvip > 0) profileSvip else user.svip
+                val displayMedals = if (profileMedals.isNotEmpty()) profileMedals else user.medals
+
+                if (displaySvip > 0 || displayMedals.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (displaySvip > 0) {
+                            SvipPillBadge(level = displaySvip)
+                        }
+                        // Medals (show max 5)
+                        displayMedals.take(5).forEach { medalId ->
+                            val medalData = firestoreMedals.find { it["id"] == medalId }
+                            val medalImageUrl = medalData?.get("imageUrl") as? String
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF1F5F9))
+                                    .border(1.dp, Color(0xFFE2E8F0), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (medalImageUrl != null) {
+                                    AsyncImage(
+                                        model = medalImageUrl,
+                                        contentDescription = "Medal",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                } else {
+                                    Text("\uD83C\uDFC5", fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(6.dp))
@@ -357,7 +529,7 @@ fun RoomProfileCard(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        "${user.fansCount} FANS",
+                        "$realTimeFans FANS",
                         fontSize = 11.sp, fontWeight = FontWeight.Black,
                         color = Color(0xFF94A3B8)
                     )
@@ -412,6 +584,24 @@ fun RoomProfileCard(
                                 bg = Color(0xFFF1F5F9),
                                 tint = Color(0xFF475569),
                                 onClick = { onDismiss(); onMention(user.name) }
+                            )
+                        }
+                        // Echo
+                        if (onEcho != null) {
+                            IconActionCircle(
+                                icon = Icons.Default.AutoAwesome,
+                                bg = Color(0xFFFAF5FF),
+                                tint = Color(0xFF8B5CF6),
+                                onClick = { onDismiss(); onEcho(user.uid) }
+                            )
+                        }
+                        // Propose
+                        if (onPropose != null) {
+                            IconActionCircle(
+                                icon = Icons.Default.Bolt,
+                                bg = Color(0xFFFFF1F2),
+                                tint = Color(0xFFEC4899),
+                                onClick = { onDismiss(); onPropose(user.uid) }
                             )
                         }
                     }

@@ -45,32 +45,7 @@ private val bannerIconMap = mapOf(
     "Gift" to "🎁"
 )
 
-val defaultBanners = listOf(
-    BannerData(
-        id = "weekly-star",
-        title = "Weekly Star",
-        subtitle = "1:1,000,000",
-        colors = listOf(Color(0xFF7C3AED), Color(0xFF4F46E5), Color(0xFF312E81)),
-        icon = "⭐",
-        link = "/leaderboard?type=rich"
-    ),
-    BannerData(
-        id = "merge-aristocracy",
-        title = "Merge Aristocracy",
-        subtitle = "EXCLUSIVE PERKS",
-        colors = listOf(Color(0xFF1E40AF), Color(0xFF1E293B), Color(0xFF1E3A8A)),
-        icon = "👑",
-        link = "/families"
-    ),
-    BannerData(
-        id = "lucky-spin",
-        title = "Lucky Spin",
-        subtitle = "TRY YOUR LUCK",
-        colors = listOf(Color(0xFFF43F5E), Color(0xFFDC2626), Color(0xFF881337)),
-        icon = "🎁",
-        link = "/cp-house"
-    )
-)
+val defaultBanners = emptyList<BannerData>()
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -105,10 +80,14 @@ fun BannerCarousel(
                             link = s["link"] as? String
                         )
                     }
+                } else {
+                    displaySlides = emptyList()
                 }
             }
         onDispose { listener.remove() }
     }
+
+    if (displaySlides.isEmpty()) return
 
     val pagerState = rememberPagerState(pageCount = { displaySlides.size })
 

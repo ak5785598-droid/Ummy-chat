@@ -140,11 +140,11 @@ fun DiscoverScreen() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Discover", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                Text("Post a Day with Ummy", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
                 Box(
                     modifier = Modifier
                         .size(38.dp)
@@ -161,7 +161,7 @@ fun DiscoverScreen() {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 listOf("recommend" to "Recommend", "following" to "Following").forEach { (tab, label) ->
@@ -176,10 +176,47 @@ fun DiscoverScreen() {
                 }
             }
 
-            // ── Section Toggle ──
+            // ── Moments Feed Grid ──
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF8B5CF6))
+                    }
+                } else if (filteredMoments.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text("\u2728", fontSize = 36.sp)
+                        Text("No moments yet", color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+                        Text("Be the first to share!", color = Color(0xFFCBD5E1), fontSize = 12.sp)
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                    ) {
+                        itemsIndexed(filteredMoments) { index, moment ->
+                            MomentCard(
+                                moment = moment,
+                                onPress = { fullscreenIndex = index },
+                                onCommentPress = { commentsMomentId = moment.id }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── Section Toggle (Photos / Reels) ──
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 76.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(50))
                     .background(Color(0xFFF1F5F9))
@@ -201,37 +238,6 @@ fun DiscoverScreen() {
                             color = if (isSelected) Color(0xFF1E293B) else Color(0xFF94A3B8),
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-
-            // ── Moments Feed Grid ──
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF8B5CF6))
-                }
-            } else if (filteredMoments.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("\u2728", fontSize = 36.sp)
-                    Text("No moments yet", color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
-                    Text("Be the first to share!", color = Color(0xFFCBD5E1), fontSize = 12.sp)
-                }
-            } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 80.dp)
-                ) {
-                    itemsIndexed(filteredMoments) { index, moment ->
-                        MomentCard(
-                            moment = moment,
-                            onPress = { fullscreenIndex = index },
-                            onCommentPress = { commentsMomentId = moment.id }
                         )
                     }
                 }

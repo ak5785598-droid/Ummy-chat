@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -69,6 +70,10 @@ fun ProfileScreen(
     var showBirthday by remember { mutableStateOf(true) }
     var showWhatsapp by remember { mutableStateOf(true) }
     var spaceImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    var activeIdBadge by remember { mutableStateOf<Map<*, *>?>(null) }
+    var isBudgetId by remember { mutableStateOf(false) }
+    var idColor by remember { mutableStateOf("") }
+    var userSvip by remember { mutableIntStateOf(0) }
 
     var fansCount by remember { mutableIntStateOf(0) }
     var followingCount by remember { mutableIntStateOf(0) }
@@ -104,6 +109,7 @@ fun ProfileScreen(
                     coins = (wallet?.get("coins") as? Number)?.toLong() ?: 0L
                     diamonds = (wallet?.get("diamonds") as? Number)?.toLong() ?: 0L
                     totalSpent = (wallet?.get("totalSpent") as? Number)?.toLong() ?: 0L
+                    userSvip = (snapshot.get("svip") as? Number)?.toInt() ?: 0
                 }
             }
 
@@ -146,6 +152,9 @@ fun ProfileScreen(
                     snapshot.get("medals")?.let { m ->
                         userMedalIds = (m as? List<String>)?.toSet() ?: emptySet()
                     }
+                    activeIdBadge = snapshot.get("activeIdBadge") as? Map<*, *>
+                    isBudgetId = snapshot.getBoolean("isBudgetId") ?: false
+                    idColor = snapshot.getString("idColor") ?: ""
                 }
             }
 
@@ -257,14 +266,12 @@ fun ProfileScreen(
             // ══════════════════════════════════════════
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 20.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
                 // Avatar
                 Box(
                     modifier = Modifier
-                        .offset(x = (-6).dp)
                         .size(88.dp)
                         .shadow(8.dp, CircleShape)
                         .clip(CircleShape)
@@ -313,6 +320,7 @@ fun ProfileScreen(
                     // Row 2: ID Badge + Role Tags (wrapping)
                     @OptIn(ExperimentalLayoutApi::class)
                     FlowRow(
+                        modifier = Modifier.offset(x = (-4).dp, y = (-6).dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -324,7 +332,14 @@ fun ProfileScreen(
                                 }
                         ) {
                             if (tags.contains("Official")) {
-                                GlossyIDTag(label = "ID: $displayID")
+                                SVGA_GlossyID(label = "ID: $displayID")
+                            } else if (activeIdBadge != null) {
+                                ActiveIDBadge(badgeData = activeIdBadge, fallbackNumber = displayID)
+                            } else if (isAdmin || (isBudgetId && !idColor.isNullOrBlank() && idColor != "none")) {
+                                SovereignIDBadge(
+                                    color = if (isAdmin) "gold" else idColor,
+                                    number = displayID
+                                )
                             } else {
                                 // Default ID badge
                                 Box(
@@ -363,15 +378,16 @@ fun ProfileScreen(
             val screenWidth = LocalConfiguration.current.screenWidthDp.dp
             Row(
                 modifier = Modifier
-                    .width(screenWidth)
-                    .offset(x = (-20).dp) // Breaks parent padding to use full screen width
-                    .padding(vertical = 12.dp)
+                    .requiredWidth(screenWidth)
+                    .offset(x = (-8).dp)
+                    .padding(top = 4.dp, bottom = 12.dp)
                     .drawBehind {
                         val strokeWidth = 1.dp.toPx()
+                        val lineY = size.height - 6.dp.toPx()
                         drawLine(
-                            color = Color(0xFFF1F5F9),
-                            start = Offset(0f, size.height),
-                            end = Offset(size.width, size.height),
+                            color = Color(0xFFF1F5F9).copy(alpha = 0.4f),
+                            start = Offset(0f, lineY),
+                            end = Offset(size.width, lineY),
                             strokeWidth = strokeWidth
                         )
                     },
@@ -386,7 +402,7 @@ fun ProfileScreen(
                 ProfileStatItem(count = friendsCount, label = "FRIENDS", modifier = Modifier.weight(1f)) {
                     activeSocialTab = "friends"; showSocialDialog = true
                 }
-                ProfileStatItem(count = visitorsCount, label = "VISITORS", modifier = Modifier.weight(1f)) {
+                ProfileStatItem(count = visitorsCount, label = "VISITORS", modifier = Modifier.weight(1f).offset(x = 6.dp)) {
                     activeSocialTab = "visitors"; showSocialDialog = true
                 }
             }
@@ -430,9 +446,16 @@ fun ProfileScreen(
                         )
                     }
                     // Bottom: Value
+                    val coinsStr = formatWalletNumber(coins)
+                    val coinsFontSize = when {
+                        coinsStr.length <= 9 -> 30.sp
+                        coinsStr.length <= 11 -> 24.sp
+                        coinsStr.length <= 13 -> 20.sp
+                        else -> 16.sp
+                    }
                     Text(
-                        text = formatWalletNumber(coins),
-                        fontSize = 18.sp,
+                        text = coinsStr,
+                        fontSize = coinsFontSize,
                         fontWeight = FontWeight.Black,
                         color = Color(0xFF422E00),
                         letterSpacing = (-0.5).sp,
@@ -472,9 +495,16 @@ fun ProfileScreen(
                         )
                     }
                     // Bottom: Value
+                    val diamondsStr = formatWalletNumber(diamonds)
+                    val diamondsFontSize = when {
+                        diamondsStr.length <= 9 -> 30.sp
+                        diamondsStr.length <= 11 -> 24.sp
+                        diamondsStr.length <= 13 -> 20.sp
+                        else -> 16.sp
+                    }
                     Text(
-                        text = formatWalletNumber(diamonds),
-                        fontSize = 18.sp,
+                        text = diamondsStr,
+                        fontSize = diamondsFontSize,
                         fontWeight = FontWeight.Black,
                         color = Color.White,
                         letterSpacing = (-0.5).sp,
@@ -488,37 +518,33 @@ fun ProfileScreen(
             // ══════════════════════════════════════════
             // VIP BANNER — marginTop: -8 (overlap)
             // ══════════════════════════════════════════
-            Spacer(modifier = Modifier.height((-8).dp))
-            VIPBanner(onClick = { onNavigate("/vips") })
+            Box(modifier = Modifier.offset(y = (-12).dp)) {
+                VIPBanner(onClick = { onNavigate("/vips") })
+            }
 
             // ══════════════════════════════════════════
             // QUICK ACTIONS (4-column) — extends -mx-7 beyond parent
             // ══════════════════════════════════════════
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(x = (-8).dp)
+                    .requiredWidth(screenWidth - 32.dp)
+                    .offset(x = (-4).dp, y = (-22).dp)
                     .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 QuickActionColumn(icon = { LevelCrownIcon() }, label = "LEVEL") { onNavigate("/level") }
                 QuickActionColumn(icon = { StoreCartIcon() }, label = "STORE") { onNavigate("/store") }
                 QuickActionColumn(icon = { MedalStarIcon() }, label = "MEDAL") { showMedalDialog = true }
                 QuickActionColumn(icon = { BonusGiftIcon() }, label = "BONUS") { onNavigate("/bonus") }
-                QuickActionColumn(icon = { TasksIcon() }, label = "TASKS") { onNavigate("/tasks") }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // ══════════════════════════════════════════
-            // MENU GROUP 1
-            // ══════════════════════════════════════════
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = (-24).dp)
             ) {
                 Column {
                     ProfileMenuItem(
@@ -548,6 +574,20 @@ fun ProfileScreen(
                         label = "Cp/friends",
                         onClick = { onNavigate("/cp-house") }
                     )
+                    if (!tags.contains("Official center") && !tags.contains("Agency") && !tags.contains("Official")) {
+                        ProfileMenuItem(
+                            icon = { 
+                                Icon(
+                                    imageVector = Icons.Default.BusinessCenter, 
+                                    contentDescription = null,
+                                    tint = Color(0xFF6366F1),
+                                    modifier = Modifier.size(22.dp)
+                                ) 
+                            },
+                            label = "Apply for Agency/Center",
+                            onClick = { onNavigate("/agency-application") }
+                        )
+                    }
                     if (showSellerCentre) {
                         ProfileMenuItem(
                             icon = { SellerBagIcon() },
@@ -575,7 +615,6 @@ fun ProfileScreen(
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
@@ -651,7 +690,7 @@ fun ProfileScreen(
     SocialRelationsDialog(
         visible = showSocialDialog,
         currentUid = uid ?: "",
-        isSvip = false,
+        isSvip = userSvip > 0,
         initialTab = initialTabIndex,
         username = username,
         onDismissRequest = { showSocialDialog = false }
@@ -772,7 +811,7 @@ fun ProfileMenuItem(
     label: String,
     extra: String? = null,
     extraColor: Color = Color(0xFF6366F1),
-    showDivider: Boolean = true,
+    showDivider: Boolean = false,
     onClick: () -> Unit
 ) {
     Column(

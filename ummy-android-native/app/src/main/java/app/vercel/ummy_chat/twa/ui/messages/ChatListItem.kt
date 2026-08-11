@@ -3,6 +3,7 @@ package app.vercel.ummy_chat.twa.ui.messages
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -12,6 +13,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +48,7 @@ fun ChatListItem(
     currentUid: String,
     onClick: (name: String, avatar: String) -> Unit,
     onLongClick: () -> Unit,
+    onOpenRoom: (roomId: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val fs = FirebaseFirestore.getInstance()
@@ -52,6 +56,8 @@ fun ChatListItem(
     var otherAvatar by remember { mutableStateOf("") }
     var otherIsOnline by remember { mutableStateOf(false) }
     var otherLastSeen by remember { mutableStateOf<Timestamp?>(null) }
+
+    var otherCurrentRoomId by remember { mutableStateOf<String?>(null) }
 
     val otherUid = chat.participantIds.firstOrNull { it != currentUid } ?: ""
 
@@ -71,6 +77,7 @@ fun ChatListItem(
                         ?: ""
                     otherIsOnline = snapshot.getBoolean("isOnline") ?: false
                     otherLastSeen = snapshot.getTimestamp("lastSeen")
+                    otherCurrentRoomId = snapshot.getString("currentRoomId")
                 }
             }
         // Also check profile subcollection (RN stores avatar there)
@@ -93,6 +100,10 @@ fun ChatListItem(
                 (System.currentTimeMillis() - (otherLastSeen?.toDate()?.time ?: 0)) < 120000
     }
 
+    val inRoomId = remember(isOnline, otherCurrentRoomId) {
+        if (isOnline && !otherCurrentRoomId.isNullOrBlank()) otherCurrentRoomId else null
+    }
+
     val isUnread = remember(chat, currentUid) {
         chat.lastSenderId != currentUid && !chat.lastMessageReadBy.contains(currentUid)
     }
@@ -103,20 +114,26 @@ fun ChatListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
             .background(
                 when {
-                    isUnread -> Color(0xFFFFF0F5)
+                    isUnread -> Color(0xFFFDF2F8).copy(alpha = 0.6f)
                     else -> Color.White
                 }
             )
-            .then(
-                if (isPinned) Modifier.border(4.dp, Color(0xFFF472B6), RoundedCornerShape(16.dp))
-                else Modifier.border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(16.dp))
-            )
+            .drawBehind {
+                // Left border if pinned (RN border-l-4 border-l-pink-500)
+                if (isPinned) {
+                    val leftBorderWidth = 4.dp.toPx()
+                    drawLine(
+                        color = Color(0xFFEC4899),
+                        start = Offset(leftBorderWidth / 2, 0f),
+                        end = Offset(leftBorderWidth / 2, size.height),
+                        strokeWidth = leftBorderWidth
+                    )
+                }
+            }
             .combinedClickable(onClick = { onClick(otherUsername, otherAvatar) }, onLongClick = onLongClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Avatar + Online dot
@@ -130,8 +147,8 @@ fun ChatListItem(
                     .border(1.dp, Color(0xFFF1F5F9), CircleShape),
                 contentScale = ContentScale.Crop
             )
-            // Online dot
-            if (isOnline) {
+            // Online dot (only shown if online AND NOT in a room)
+            if (isOnline && inRoomId.isNullOrBlank()) {
                 Box(
                     modifier = Modifier
                         .size(14.dp)
@@ -149,7 +166,7 @@ fun ChatListItem(
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFF472B6))
+                        .background(Color(0xFFEC4899)) // bg-pink-500
                         .border(2.dp, Color.White, CircleShape)
                 )
             }
@@ -197,6 +214,24 @@ fun ChatListItem(
                 if (isPinned) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("\uD83D\uDCCC", fontSize = 10.sp)
+                }
+            }
+            if (!inRoomId.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFF6366F1)) // Indigo-500
+                        .clickable { onOpenRoom(inRoomId) }
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "In Room • Go Live ➔",
+                        color = Color.White,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Black
+                    )
                 }
             }
         }

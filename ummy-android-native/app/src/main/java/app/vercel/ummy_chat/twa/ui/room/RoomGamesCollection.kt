@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -21,14 +22,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import app.vercel.ummy_chat.twa.R
 import coil.compose.AsyncImage
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
@@ -100,126 +105,346 @@ fun GameMiniCard(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoomGamesDialog — mirrors RN room-games-dialog.tsx
+// 7 games grid: local thumbnails (carrom/ludo/chess/fruit-party/forest-party)
+// + Firestore coverUrl override + SVG fallback (roulette/teen-patti use local
+// PNG). Admin-only restriction for starting ludo/chess/carrom.
 // ─────────────────────────────────────────────────────────────────────────────
 
 data class RoomGameConfig(
     val id: String = "",
     val title: String = "",
+    val slug: String = "",
     val coverUrl: String = "",
+    val backgroundUrl: String = "",
     val cost: Int = 0
 )
 
-private val DEFAULT_ROOM_GAMES = listOf(
-    RoomGameConfig("carrom", "Carrom", "", 0),
-    RoomGameConfig("ludo", "Ludo", "", 0),
-    RoomGameConfig("chess", "Chess", "", 0),
-    RoomGameConfig("fruit-party", "Fruit Party", "", 0),
-    RoomGameConfig("forest-party", "Forest Party", "", 0),
-    RoomGameConfig("roulette", "Roulette", "", 0),
-    RoomGameConfig("teen-patti", "Teen Patti", "", 0)
+// Local 3D game thumbnails (RN GAME_THUMBNAILS equivalent)
+private val GAME_THUMBNAIL_RES = mapOf(
+    "carrom" to R.drawable.carrom,
+    "ludo" to R.drawable.ludo,
+    "chess" to R.drawable.chess,
+    "fruit-party" to R.drawable.fruit_party,
+    "forest-party" to R.drawable.forest_party
 )
+
+// Games available in the native app (matching web app)
+private val AVAILABLE_GAME_IDS = listOf(
+    "carrom", "chess", "ludo", "fruit-party",
+    "forest-party", "roulette", "teen-patti"
+)
+
+private val GAME_TITLES = mapOf(
+    "carrom" to "Carrom",
+    "chess" to "Chess",
+    "ludo" to "Ludo",
+    "fruit-party" to "Fruit Party",
+    "forest-party" to "Forest Party",
+    "roulette" to "Roulette",
+    "teen-patti" to "Teen Patti"
+)
+
+// Only owners/admins can START a fresh restricted game (still can JOIN active)
+private val RESTRICTED_GAMES_START_ONLY = listOf("ludo", "chess", "carrom")
+
+private fun gameGradientColor(id: String): Pair<Color, Color> = when (id) {
+    "carrom" -> Color(0xFFF59E0B) to Color(0xFFD97706)
+    "chess" -> Color(0xFF6366F1) to Color(0xFF4338CA)
+    "ludo" -> Color(0xFFEC4899) to Color(0xFFBE185D)
+    "fruit-party" -> Color(0xFF10B981) to Color(0xFF047857)
+    "forest-party" -> Color(0xFF22C55E) to Color(0xFF15803D)
+    "roulette" -> Color(0xFFEF4444) to Color(0xFFB91C1C)
+    "teen-patti" -> Color(0xFF8B5CF6) to Color(0xFF6D28D9)
+    else -> Color(0xFF3B82F6) to Color(0xFF1D4ED8)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoomGamesDialog(
     visible: Boolean,
-    onSelectGame: (String, String) -> Unit,
-    onDismiss: () -> Unit
+    onSelectGame: (String, String, String) -> Unit,
+    onDismiss: () -> Unit,
+    roomId: String = "",
+    canManage: Boolean = false
 ) {
     if (!visible) return
 
-    var games by remember { mutableStateOf(DEFAULT_ROOM_GAMES) }
+    val context = LocalContext.current
+    var games by remember { mutableStateOf<List<RoomGameConfig>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var selectedId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        // Base list from AVAILABLE_GAME_IDS (mirrors RN baseList)
+        val baseList = AVAILABLE_GAME_IDS.map { id ->
+            RoomGameConfig(
+                id = id,
+                title = GAME_TITLES[id] ?: id.replace('-', ' ').replaceFirstChar { it.uppercase() },
+                slug = id,
+                coverUrl = "",
+                cost = 0
+            )
+        }
+        // Merge with Firestore games config (title/coverUrl/cost override)
+        var merged = baseList
         try {
-            val db = Firebase.firestore
-            val snap = db.collection("games").get().await()
+            val snap = Firebase.firestore.collection("games").get().await()
             if (!snap.isEmpty) {
-                games = snap.documents.map { doc ->
-                    RoomGameConfig(
+                val byId = mutableMapOf<String, RoomGameConfig>()
+                val bySlug = mutableMapOf<String, RoomGameConfig>()
+                snap.documents.forEach { doc ->
+                    val cfg = RoomGameConfig(
                         id = doc.id,
-                        title = doc.getString("title") ?: doc.id.uppercase(),
+                        title = doc.getString("title") ?: "",
+                        slug = doc.getString("slug") ?: doc.id,
                         coverUrl = doc.getString("coverUrl") ?: "",
+                        backgroundUrl = doc.getString("backgroundUrl") ?: "",
                         cost = doc.getLong("cost")?.toInt() ?: 0
                     )
+                    if (cfg.id.isNotBlank()) byId[cfg.id] = cfg
+                    if (cfg.slug.isNotBlank() && cfg.slug != cfg.id) bySlug[cfg.slug] = cfg
+                }
+                merged = baseList.map { base ->
+                    val remote = byId[base.id] ?: bySlug[base.slug]
+                    if (remote != null) {
+                        base.copy(
+                            title = remote.title.ifBlank { base.title },
+                            coverUrl = remote.coverUrl.ifBlank { base.coverUrl },
+                            cost = remote.cost
+                        )
+                    } else base
                 }
             }
         } catch (_: Exception) {}
+        games = merged
         isLoading = false
     }
 
-    ModalBottomSheet(
+    // Reset selection when dialog closes
+    LaunchedEffect(visible) {
+        if (!visible) selectedId = null
+    }
+
+    var infoAlert by remember { mutableStateOf<String?>(null) }
+
+    val handleSelect: (String) -> Unit = { gameId ->
+        val game = games.find { it.id == gameId || it.slug == gameId }
+        // Block non-admins from starting a fresh restricted game (not from joining)
+        val isRestrictedSelect = RESTRICTED_GAMES_START_ONLY.contains(gameId) && !canManage
+        if (isRestrictedSelect) {
+            infoAlert = "Admin Only — Only room owner or admin can start this game."
+        } else {
+            selectedId = gameId
+            onSelectGame(gameId, game?.title ?: gameId, game?.coverUrl ?: "")
+            onDismiss()
+        }
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color(0xFF0F172A),
-        dragHandle = null,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.6f)
-                .padding(20.dp)
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null, onClick = onDismiss
+                ),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f)
+                    .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                    .background(Color(0xFF0C0C14))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {}
             ) {
-                Text("Room Games", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.6f))
-                }
-            }
+                // Handle
+                Box(
+                    modifier = Modifier
+                        .padding(top = 14.dp, bottom = 6.dp)
+                        .width(40.dp)
+                        .height(5.dp)
+                        .clip(RoundedCornerShape(99.dp))
+                        .background(Color(0x33FFFFFF))
+                        .align(Alignment.CenterHorizontally)
+                )
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-            Spacer(Modifier.height(16.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(games, key = { it.id }) { game ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.clickable {
-                            onSelectGame(game.id, game.title)
-                            onDismiss()
-                        }
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "GAMES",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp
+                        )
+                        Text(
+                            if (isLoading) "Loading..." else "${games.size} Games Available",
+                            color = Color.White.copy(alpha = 0.35f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .clickable { onDismiss() },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(Brush.linearGradient(listOf(Color(0xFF6366F1), Color(0xFF8B5CF6)))),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (game.coverUrl.isNotBlank()) {
-                                AsyncImage(
-                                    model = game.coverUrl,
-                                    contentDescription = game.title,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
+                Spacer(Modifier.height(16.dp))
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color(0xFF6366F1), modifier = Modifier.size(28.dp))
+                        Spacer(Modifier.height(12.dp))
+                        Text("Loading games...", color = Color.White.copy(alpha = 0.3f), fontSize = 12.sp)
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(4),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp)
+                    ) {
+                        items(games, key = { it.id }) { g ->
+                            val gameId = g.id.ifBlank { g.slug }
+                            val isSelected = selectedId == gameId
+                            val isRestricted = RESTRICTED_GAMES_START_ONLY.contains(gameId) && !canManage
+                            val (c1, c2) = gameGradientColor(gameId)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(64.dp)
+                                    .graphicsLayer {
+                                        scaleX = if (isSelected) 0.92f else 1f
+                                        scaleY = if (isSelected) 0.92f else 1f
+                                        alpha = if (isRestricted) 0.4f else 1f
+                                    }
+                                    .clickable { handleSelect(gameId) },
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .border(
+                                            1.5.dp,
+                                            if (isSelected) c1 else Color.White.copy(alpha = 0.1f),
+                                            RoundedCornerShape(14.dp)
+                                        )
+                                        .background(Color.White.copy(alpha = 0.05f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val localRes = GAME_THUMBNAIL_RES[gameId]
+                                    if (localRes != null && g.coverUrl.isBlank()) {
+                                        androidx.compose.foundation.Image(
+                                            painter = painterResource(localRes),
+                                            contentDescription = g.title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else if (g.coverUrl.isNotBlank()) {
+                                        AsyncImage(
+                                            model = g.coverUrl,
+                                            contentDescription = g.title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else {
+                                        // SVG fallback: use local PNGs for roulette/teen-patti
+                                        when (gameId) {
+                                            "roulette" -> androidx.compose.foundation.Image(
+                                                painter = painterResource(R.drawable.roulette),
+                                                contentDescription = g.title,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                            "teen-patti" -> androidx.compose.foundation.Image(
+                                                painter = painterResource(R.drawable.teen_patti),
+                                                contentDescription = g.title,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                            else -> Text("🎯", fontSize = 24.sp)
+                                        }
+                                    }
+                                    if (isRestricted) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(Color.Black.copy(alpha = 0.5f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Lock,
+                                                contentDescription = "Locked",
+                                                tint = Color.White.copy(alpha = 0.8f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    g.title,
+                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center
                                 )
-                            } else {
-                                Text("🎯", fontSize = 32.sp)
+                                if (g.cost > 0) {
+                                    Text("🪙 ${g.cost}", color = Color(0xFFF59E0B), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            game.title,
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1
-                        )
                     }
                 }
             }
         }
+    }
+
+    // ── Admin Only Alert ────────────────────────────────────────────────────
+    infoAlert?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { infoAlert = null },
+            title = { Text("Admin Only", fontWeight = FontWeight.Bold) },
+            text = { Text(msg) },
+            confirmButton = {
+                TextButton(onClick = { infoAlert = null }) { Text("OK") }
+            }
+        )
     }
 }
 

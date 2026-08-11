@@ -31,13 +31,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import app.vercel.ummy_chat.twa.ui.profile.UserLevelBadge
 
 // React Native level/index.tsx → Kotlin Compose (EXACT PARITY)
 
 private data class LevelItem(
     val range: String,
     val level: Int,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val type: String? = null,
+    val hasReward: Boolean = false,
+    val hasFrameId: Boolean = false
 )
 
 private val DEFAULT_BUDGET_LEVELS = listOf(
@@ -46,6 +50,21 @@ private val DEFAULT_BUDGET_LEVELS = listOf(
     LevelItem("Lv.61-70", 65), LevelItem("Lv.71-80", 75), LevelItem("Lv.81-90", 85),
     LevelItem("Lv.91-100", 95)
 )
+
+private fun parseDisplayLevel(rangeStr: String): Int {
+    val cleanStr = rangeStr.replace("\\s".toRegex(), "")
+    val regex = "\\d+".toRegex()
+    val matches = regex.findAll(cleanStr).map { it.value.toIntOrNull() ?: 0 }.toList()
+    return if (matches.isNotEmpty()) {
+        if (matches.size > 1) {
+            (matches[0] + matches[1]) / 2
+        } else {
+            matches[0]
+        }
+    } else {
+        0
+    }
+}
 
 private fun calculateLevelProgress(totalSpent: Long): Triple<Int, Int, Float> {
     val levels = listOf(
@@ -104,10 +123,19 @@ totalSpent = when (wallet) {
             .addOnSuccessListener { snap ->
                 levels = snap.documents.mapNotNull { doc ->
                     val data = doc.data ?: return@mapNotNull null
+                    val range = data["range"] as? String ?: ""
+                    val parsedLevel = if (data["level"] != null) {
+                        (data["level"] as? Number)?.toInt() ?: 0
+                    } else {
+                        parseDisplayLevel(range)
+                    }
                     LevelItem(
-                        range = data["range"] as? String ?: "",
-                        level = (data["level"] as? Number)?.toInt() ?: 0,
-                        imageUrl = data["imageUrl"] as? String ?: data["image"] as? String
+                        range = range,
+                        level = parsedLevel,
+                        imageUrl = data["imageUrl"] as? String ?: data["image"] as? String,
+                        type = data["type"] as? String,
+                        hasReward = data.containsKey("reward"),
+                        hasFrameId = data.containsKey("frameId")
                     )
                 }
                 loading = false
@@ -117,7 +145,9 @@ totalSpent = when (wallet) {
 
     val (currentLevel, remaining, progressPercent) = calculateLevelProgress(totalSpent)
     val nextLevel = currentLevel + 1
-    val budgetLevels = levels.filter { it.range.isNotBlank() }.ifEmpty { DEFAULT_BUDGET_LEVELS }
+    val budgetLevels = levels.filter { item ->
+        item.range.isNotBlank() && (item.type == "budget" || (item.type.isNullOrBlank() && !item.hasReward && !item.hasFrameId))
+    }.ifEmpty { DEFAULT_BUDGET_LEVELS }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
         // Top gradient overlay
@@ -196,7 +226,11 @@ totalSpent = when (wallet) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("WELCOME BACK", fontSize = 10.sp, color = purple200, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(username, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 0.5.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(username, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 0.5.sp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                UserLevelBadge(level = currentLevel, scale = 1.0f)
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             // Progress Bar
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -290,25 +324,7 @@ private fun BudgetGridItem(item: LevelItem, currentLevel: Int) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Level Image from Firestore or fallback
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1E293B)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!item.imageUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = item.imageUrl,
-                        contentDescription = "Level ${item.level}",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text("Lv.${item.level}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            }
+            UserLevelBadge(level = item.level, scale = 1.3f)
             Spacer(modifier = Modifier.height(6.dp))
             Box(
                 modifier = Modifier

@@ -36,39 +36,62 @@ fun RoomSeatGrid(
             .fillMaxWidth()
             .padding(horizontal = 8.dp)
     ) {
-        // ── Host seat #1 centered — RN: <View className="items-center w-full mb-1"> ──
-        val hostSeat = seats.find { it.index == 1 } ?: SeatModel(index = 1)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            SeatItem(
-                seat = hostSeat,
-                isMe = hostSeat.userId == currentUserId,
-                onClick = { onSeatClick(hostSeat) }
-            )
+        val hasTopHostSeat = maxSeats != 8
+        val seatsPerRow = if (maxSeats in listOf(6, 11, 16)) 5 else 4
+        val seatSize = when (maxSeats) {
+            16 -> 48.dp
+            13 -> 50.dp
+            else -> 60.dp
+        }
+        val boxSize = seatSize + 8.dp
+
+        if (hasTopHostSeat) {
+            // ── Host seat #1 centered ──
+            val hostSeat = seats.find { it.index == 1 } ?: SeatModel(index = 1)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 2.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                SeatItem(
+                    seat = hostSeat,
+                    isMe = hostSeat.userId == currentUserId,
+                    seatSize = seatSize,
+                    boxSize = boxSize,
+                    onClick = { onSeatClick(hostSeat) }
+                )
+            }
         }
 
-        // ── Remaining seats — RN: flex-row flex-wrap justify-between px-2 ──
-        // Each seat is width '25%' so 4 per row
-        val remainingSeats = (2..maxSeats).map { idx ->
+        // ── Remaining seats ──
+        val startingIndex = if (hasTopHostSeat) 2 else 1
+        val gridSeats = (startingIndex..maxSeats).map { idx ->
             seats.find { it.index == idx } ?: SeatModel(index = idx)
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            remainingSeats.forEach { seat ->
-                SeatItem(
-                    seat = seat,
-                    isMe = seat.userId == currentUserId,
-                    onClick = { onSeatClick(seat) }
-                )
+        gridSeats.chunked(seatsPerRow).forEach { rowSeats ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                rowSeats.forEach { seat ->
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        SeatItem(
+                            seat = seat,
+                            isMe = seat.userId == currentUserId,
+                            seatSize = seatSize,
+                            boxSize = boxSize,
+                            onClick = { onSeatClick(seat) }
+                        )
+                    }
+                }
+                // Fill empty slots in last row so SpaceBetween stays consistent
+                repeat(seatsPerRow - rowSeats.size) {
+                    Box(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
@@ -78,29 +101,25 @@ fun RoomSeatGrid(
 fun SeatItem(
     seat: SeatModel,
     isMe: Boolean,
+    seatSize: Dp = 60.dp,
+    boxSize: Dp = 68.dp,
     onClick: () -> Unit
 ) {
     val isOccupied = seat.userId != null
 
-    // RN seat sizes:
-    // Circle: width 60, height 60, borderRadius 30
-    // Label: fontSize 9, fontWeight 700, marginTop 4, maxWidth 52
-    // Mute badge: width 18, height 18, borderRadius 9
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(72.dp)
             .clickable { onClick() }
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(68.dp)
+            modifier = Modifier.size(boxSize)
         ) {
-            // Main seat circle — RN: 60x60, bg-sky-500/20 border-white/30 when empty
+            // Main seat circle
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(seatSize)
                     .clip(CircleShape)
                     .then(
                         if (isOccupied && seat.isSpeaking)
@@ -166,6 +185,15 @@ fun SeatItem(
                         modifier = Modifier.size(10.dp)
                     )
                 }
+            }
+            
+            // Emoji reaction overlay
+            if (seat.activeEmoji != null) {
+                EmojiReactionOverlay(
+                    emoji = seat.activeEmoji,
+                    visible = true,
+                    size = 32
+                )
             }
         }
 

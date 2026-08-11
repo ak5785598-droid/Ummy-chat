@@ -551,24 +551,24 @@ fun MemberRowWithActions(
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(username, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1E293B))
                     when (role) {
-                        "owner" -> Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFFACC15)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                            Text("Owner", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black)
+                        "owner" -> Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFFACC15)).padding(horizontal = 5.dp).height(14.dp), contentAlignment = Alignment.Center) {
+                            Text("OWNER", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black, modifier = Modifier.offset(y = (-3).dp))
                         }
-                        "admin" -> Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFA855F7)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                            Text("Admin", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black)
+                        "admin" -> Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color(0xFFA855F7)).padding(horizontal = 5.dp).height(14.dp), contentAlignment = Alignment.Center) {
+                            Text("ADMIN", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black, modifier = Modifier.offset(y = (-3).dp))
                         }
                     }
                 }
                 // Gender + Level
-                Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     gender?.let { g ->
-                        val (bgColor, icon) = if (g == "Female") Color(0xFFEC4899) to "♀" else Color(0xFF3B82F6) to "♂"
-                        Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(bgColor), contentAlignment = Alignment.Center) {
-                            Text(icon, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        val (bgColor, icon) = if (g == "Female") Color(0xFFEC4899) to "\u2640" else Color(0xFF3B82F6) to "\u2642"
+                        Box(modifier = Modifier.size(18.dp).clip(CircleShape).background(bgColor), contentAlignment = Alignment.Center) {
+                            Text(icon, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.offset(y = (-2).dp))
                         }
                     }
                     // Level badge

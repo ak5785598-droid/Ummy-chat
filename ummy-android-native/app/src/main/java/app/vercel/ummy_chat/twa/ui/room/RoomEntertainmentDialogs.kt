@@ -14,8 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +34,7 @@ import kotlinx.coroutines.tasks.await
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
+import app.vercel.ummy_chat.twa.ui.profile.GoldDollarIcon
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GiftBattleCanvas — mirrors RN gift-battle-canvas.tsx
@@ -167,7 +170,15 @@ fun GiftBattleCanvas(
 // 24h cooldown chest with shake+glow animation, loot pool 100–2500 coins
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val LOOT_POOL = listOf(100, 250, 500, 1000, 2500)
+private data class ChestReward(val label: String, val value: Int, val emoji: String)
+private val LOOT_POOL = listOf(
+    ChestReward("100 Coins", 100, "🪙"),
+    ChestReward("250 Coins", 250, "💰"),
+    ChestReward("500 Coins", 500, "💎"),
+    ChestReward("1000 Coins", 1000, "👑"),
+    ChestReward("2500 Coins", 2500, "🌟")
+)
+private const val COOLDOWN_MS = 24 * 60 * 60 * 1000L
 
 @Composable
 fun RoomGoldenChestDialog(
@@ -179,20 +190,23 @@ fun RoomGoldenChestDialog(
 
     val scope = rememberCoroutineScope()
     var chestState by remember { mutableStateOf("closed") } // closed/shaking/open/cooldown
-    var reward by remember { mutableIntStateOf(0) }
+    var reward by remember { mutableStateOf<ChestReward?>(null) }
     var cooldownSecs by remember { mutableIntStateOf(0) }
 
     // Check cooldown on open
     LaunchedEffect(visible) {
-        val uid = Firebase.auth.currentUser?.uid ?: return@LaunchedEffect
+        if (!visible) return@LaunchedEffect
+        val uid = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: return@LaunchedEffect
         try {
-            val doc = Firebase.firestore.collection("users").document(uid).get().await()
+            val doc = com.google.firebase.ktx.Firebase.firestore.collection("users").document(uid).get().await()
             val lastOpen = doc.getTimestamp("lastRoomChestOpen")?.toDate()?.time ?: 0L
             val elapsed = System.currentTimeMillis() - lastOpen
-            val cooldownMs = 24 * 60 * 60 * 1000L
-            if (elapsed < cooldownMs) {
-                cooldownSecs = ((cooldownMs - elapsed) / 1000).toInt()
+            if (elapsed < COOLDOWN_MS) {
+                cooldownSecs = ((COOLDOWN_MS - elapsed) / 1000).toInt()
                 chestState = "cooldown"
+            } else {
+                chestState = "closed"
+                reward = null
             }
         } catch (_: Exception) {}
     }
@@ -204,17 +218,21 @@ fun RoomGoldenChestDialog(
                 delay(1000)
                 cooldownSecs--
             }
-            if (cooldownSecs <= 0) chestState = "closed"
+            if (cooldownSecs <= 0) {
+                chestState = "closed"
+                reward = null
+            }
         }
     }
 
-    // Shake animation
+    // Animations
     val shakeAnim = remember { Animatable(0f) }
     val glowAnim = rememberInfiniteTransition(label = "glow").animateFloat(
         initialValue = 0.3f, targetValue = 0.7f,
         animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
         label = "glow"
     )
+    val flashAnim = remember { Animatable(0f) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(
@@ -224,147 +242,141 @@ fun RoomGoldenChestDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(32.dp))
                     .background(Color(0xFF1E293B))
-                    .padding(24.dp),
+                    .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Close button
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "Close",
-                            tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                Row(modifier = Modifier.fillMaxWidth().offset(x = 16.dp, y = (-16).dp), horizontalArrangement = Arrangement.End) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp).background(Color.Black.copy(alpha = 0.2f), CircleShape)) {
+                        Icon(Icons.Default.Close, null, tint = Color.White.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
                     }
                 }
 
                 Text(
                     "Golden Chest",
                     color = Color(0xFFFBBF24),
-                    fontSize = 20.sp, fontWeight = FontWeight.Black
+                    fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-
-                Spacer(Modifier.height(20.dp))
 
                 // Chest box
                 Box(
                     modifier = Modifier
                         .size(100.dp)
-                        .rotate(shakeAnim.value)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF0F172A))
+                        .graphicsLayer { translationX = shakeAnim.value }
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(if (chestState == "open") Color(0xFFFBBF24).copy(alpha = 0.3f) else Color(0xFFEAB308).copy(alpha = 0.15f))
                         .border(
                             2.dp,
-                            Color(0xFFFBBF24).copy(alpha = if (chestState == "closed") glowAnim.value else 0.5f),
-                            RoundedCornerShape(16.dp)
-                        ),
+                            if (chestState == "open") Color(0xFFFBBF24) else Color(0xFFD97706),
+                            RoundedCornerShape(24.dp)
+                        )
+                        .padding(bottom = 16.dp), // To adjust vertical center
                     contentAlignment = Alignment.Center
                 ) {
-                    if (chestState == "open") {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("💰", fontSize = 36.sp)
-                            Text("+$reward", color = Color(0xFFFBBF24),
-                                fontSize = 14.sp, fontWeight = FontWeight.Black)
-                        }
+                    if (chestState == "open" && reward != null) {
+                        Text(reward!!.emoji, fontSize = 48.sp, modifier = Modifier.offset(y = 8.dp))
                     } else {
-                        Text("📦", fontSize = 36.sp)
+                        // Using Text("🎁") since Gift icon in RN is equivalent to emoji
+                        Text("🎁", fontSize = 48.sp, modifier = Modifier.offset(y = 8.dp))
                     }
+                }
+                
+                // Flash overlay (simulating RN's flashAnim)
+                if (flashAnim.value > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(flashAnim.value)
+                            .background(Color.White)
+                    )
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 // State-based content
-                when (chestState) {
-                    "cooldown" -> {
-                        val h = cooldownSecs / 3600
-                        val m = (cooldownSecs % 3600) / 60
-                        val s = cooldownSecs % 60
+                if (chestState == "open" && reward != null) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 16.dp)) {
                         Text(
-                            "⏱ ${h}h ${m}m ${s}s",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 14.sp, fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "On Cooldown",
-                            color = Color.White.copy(alpha = 0.4f),
-                            fontSize = 12.sp
-                        )
-                    }
-                    "open" -> {
-                        Text(
-                            "+$reward Coins Won! 🎉",
+                            "+${reward!!.value}",
                             color = Color(0xFFFBBF24),
-                            fontSize = 16.sp, fontWeight = FontWeight.Black
+                            fontSize = 28.sp, fontWeight = FontWeight.Black
+                        )
+                        Text(
+                            reward!!.label,
+                            color = Color(0xFFFCD34D),
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold
                         )
                     }
-                    else -> {}
                 }
 
-                Spacer(Modifier.height(20.dp))
+                if (chestState == "cooldown") {
+                    val h = cooldownSecs / 3600
+                    val m = (cooldownSecs % 3600) / 60
+                    val s = cooldownSecs % 60
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 16.dp)) {
+                        Text(
+                            "Opens in",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        Text(
+                            "${if (h > 0) "${h}h " else ""}${m}m ${s}s",
+                            color = Color(0xFFFBBF24),
+                            fontSize = 22.sp, fontWeight = FontWeight.Black
+                        )
+                    }
+                }
 
                 // Action button
-                when (chestState) {
-                    "closed" -> {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    chestState = "shaking"
-                                    // Shake animation
-                                    listOf(12f, -12f, 8f, -8f, 5f, -5f, 0f).forEach { x ->
-                                        shakeAnim.animateTo(x, tween(80))
-                                    }
-                                    val win = LOOT_POOL.random()
-                                    reward = win
-                                    chestState = "open"
-                                    // Firestore update
-                                    try {
-                                        val uid = Firebase.auth.currentUser?.uid ?: return@launch
-                                        val db = Firebase.firestore
-                                        db.collection("users").document(uid).update(
-                                            mapOf(
-                                                "wallet.coins" to FieldValue.increment(win.toLong()),
-                                                "lastRoomChestOpen" to com.google.firebase.Timestamp.now()
-                                            )
-                                        ).await()
-                                    } catch (_: Exception) {}
+                if (chestState == "closed") {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                chestState = "shaking"
+                                // Shake animation
+                                listOf(12f, -12f, 8f, -8f, 5f, -5f, 0f).forEach { x ->
+                                    shakeAnim.animateTo(x, tween(80))
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Text("Open Chest", color = Color.Black,
-                                fontWeight = FontWeight.Black, fontSize = 15.sp)
-                        }
-                    }
-                    "shaking" -> {
-                        Button(
-                            onClick = {}, enabled = false,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Text("Opening...", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    "open" -> {
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Text("Claim & Close", color = Color.White,
-                                fontWeight = FontWeight.Black, fontSize = 15.sp)
-                        }
-                    }
-                    "cooldown" -> {
-                        Button(
-                            onClick = {}, enabled = false,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                            shape = RoundedCornerShape(14.dp)
-                        ) {
-                            Text("On Cooldown", fontWeight = FontWeight.Bold)
-                        }
+                                
+                                launch {
+                                    flashAnim.animateTo(0.6f, tween(150))
+                                    flashAnim.animateTo(0f, tween(300))
+                                }
+                                
+                                val win = LOOT_POOL.random()
+                                reward = win
+                                chestState = "open"
+                                // Firestore update
+                                try {
+                                    val uid = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: return@launch
+                                    val db = com.google.firebase.ktx.Firebase.firestore
+                                    val batch = db.batch()
+                                    val inc = com.google.firebase.firestore.FieldValue.increment(win.value.toLong())
+                                    
+                                    batch.update(
+                                        db.collection("users").document(uid),
+                                        mapOf(
+                                            "wallet.coins" to inc,
+                                            "lastRoomChestOpen" to com.google.firebase.Timestamp.now()
+                                        )
+                                    )
+                                    batch.update(
+                                        db.collection("users").document(uid).collection("profile").document(uid),
+                                        "wallet.coins", inc
+                                    )
+                                    batch.commit().await()
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Open Chest", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     }
                 }
             }
@@ -394,7 +406,6 @@ private const val SPIN_COST = 100
 fun RoomLuckySpinDialog(
     visible: Boolean,
     roomId: String,
-    userCoins: Long = 0,
     onDismiss: () -> Unit
 ) {
     if (!visible) return
@@ -411,6 +422,29 @@ fun RoomLuckySpinDialog(
         animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
         label = "glow"
     )
+
+    var userCoins by remember { mutableLongStateOf(0L) }
+
+    DisposableEffect(Unit) {
+        val uid = com.google.firebase.ktx.Firebase.auth.currentUser?.uid
+        val listener = if (uid != null) {
+            com.google.firebase.ktx.Firebase.firestore.collection("users").document(uid)
+                .collection("profile").document(uid)
+                .addSnapshotListener { snap, _ ->
+                    if (snap != null && snap.exists()) {
+                        val wallet = snap.get("wallet") as? Map<*, *>
+                        val coins = wallet?.get("coins")
+                        userCoins = when (coins) {
+                            is Number -> coins.toLong()
+                            is String -> coins.toLongOrNull() ?: 0L
+                            else -> 0L
+                        }
+                    }
+                }
+        } else null
+
+        onDispose { listener?.remove() }
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(
@@ -520,11 +554,13 @@ fun RoomLuckySpinDialog(
                                 netChange = reward.multiplier * SPIN_COST - SPIN_COST
                                 // Firestore
                                 try {
-                                    val uid = Firebase.auth.currentUser?.uid ?: return@launch
-                                    val db = Firebase.firestore
-                                    db.collection("users").document(uid).update(
-                                        "wallet.coins", FieldValue.increment(netChange.toLong())
-                                    ).await()
+                                    val uid = com.google.firebase.ktx.Firebase.auth.currentUser?.uid ?: return@launch
+                                    val db = com.google.firebase.ktx.Firebase.firestore
+                                    val batch = db.batch()
+                                    val inc = com.google.firebase.firestore.FieldValue.increment(netChange.toLong())
+                                    batch.update(db.collection("users").document(uid), "wallet.coins", inc)
+                                    batch.update(db.collection("users").document(uid).collection("profile").document(uid), "wallet.coins", inc)
+                                    batch.commit().await()
                                 } catch (_: Exception) {}
                                 spinning = false
                             }

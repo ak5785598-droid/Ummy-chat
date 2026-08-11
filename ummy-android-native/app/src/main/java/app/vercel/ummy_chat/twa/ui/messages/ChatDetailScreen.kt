@@ -572,7 +572,14 @@ fun ChatDetailScreen(
 
                 // ── Input Bar (hidden when editing or blocked) ──
                 if (!isBlocked && editingMessage == null) {
-                Surface(color = Color.White, tonalElevation = 4.dp) {
+                Surface(
+                    color = Color.White,
+                    tonalElevation = 4.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                ) {
                     Column {
                         // Emoji picker
                         AnimatedVisibility(visible = showEmojiPicker) {
@@ -598,10 +605,9 @@ fun ChatDetailScreen(
                                                     .padding(4.dp)
                                             )
                                         }
-                    }
-                }
-                } // end if (!isBlocked && editingMessage == null)
-            }
+                                    }
+                                }
+                            }
                         }
 
                         Row(
@@ -694,6 +700,7 @@ fun ChatDetailScreen(
                         }
                     }
                 }
+            }
             }
         ) { paddingValues ->
             LazyColumn(
@@ -834,7 +841,7 @@ fun MessageBubble(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Bottom
+        verticalAlignment = Alignment.Top
     ) {
         // Recipient avatar on LEFT (28dp like RN)
         if (!isMe) {

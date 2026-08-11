@@ -192,56 +192,6 @@ fun BroadcastPattiBanner(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Entry Effect Overlay — appears for 5s when someone enters
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-fun EntryEffectOverlay(effect: EntryEffect) {
-    var visible by remember(effect.username) { mutableStateOf(false) }
-    LaunchedEffect(effect.username) {
-        visible = true
-        delay(4800)
-        visible = false
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color(0xFF8B5CF6).copy(alpha = 0.85f),
-                            Color(0xFFEC4899).copy(alpha = 0.85f)
-                        )
-                    )
-                )
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = effect.avatarUrl ?: "https://picsum.photos/seed/${effect.username}/50",
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(36.dp).clip(CircleShape).background(Color.Gray)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-                Text(effect.username, color = Color.White, fontWeight = FontWeight.Black, fontSize = 13.sp)
-                Text("entered the room ✨", color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp)
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Trophy Badge — top-right
 // ─────────────────────────────────────────────────────────────────────────────
 

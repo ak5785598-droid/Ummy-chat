@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,16 +23,21 @@ import app.vercel.ummy_chat.twa.data.model.TopSupporter
 import app.vercel.ummy_chat.twa.util.CdnUtils
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
+import app.vercel.ummy_chat.twa.R
 import java.util.Calendar
 
 private const val DAILY_TARGET = 2_500_000L
 
-fun isToday(timestamp: com.google.firebase.Timestamp?): Boolean {
-    if (timestamp == null) return false
-    val cal1 = Calendar.getInstance().apply { time = timestamp.toDate() }
-    val cal2 = Calendar.getInstance()
-    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-           cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+private fun getSupporterMillis(s: TopSupporter): Long {
+    return s.updatedAt?.toDate()?.time ?: System.currentTimeMillis()
+}
+
+fun isToday(millis: Long): Boolean {
+    val d1 = Calendar.getInstance().apply { timeInMillis = millis }
+    val d2 = Calendar.getInstance()
+    return d1.get(Calendar.YEAR) == d2.get(Calendar.YEAR) &&
+           d1.get(Calendar.MONTH) == d2.get(Calendar.MONTH) &&
+           d1.get(Calendar.DAY_OF_MONTH) == d2.get(Calendar.DAY_OF_MONTH)
 }
 
 @Composable
@@ -46,7 +52,8 @@ fun RoomTrophyBadge(
     val todayTopSupporters = remember(supporters) {
         supporters
             .map { s ->
-                val amount = if (isToday(s.updatedAt)) s.dailyAmount else 0L
+                val millis = getSupporterMillis(s)
+                val amount = if (isToday(millis)) (s.dailyAmount.takeIf { it > 0 } ?: s.amount) else 0L
                 s to amount
             }
             .filter { it.second > 0 }
@@ -77,7 +84,12 @@ fun RoomTrophyBadge(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text("🏆", fontSize = 10.sp)
+            Icon(
+                painterResource(R.drawable.ic_trophy),
+                contentDescription = "Trophy",
+                tint = Color.Black,
+                modifier = Modifier.size(10.dp)
+            )
         }
 
         Spacer(Modifier.width(4.dp))
@@ -127,7 +139,7 @@ fun RoomTrophyBadge(
                     val borderColor = when (i) {
                         0 -> Color(0xFFFBBF24) // Gold
                         1 -> Color(0xFFCBD5E1) // Silver
-                        else -> Color(0xFFB45309) // Bronze
+                        else -> Color(0xFFD97706) // Amber-600 (RN border-amber-600)
                     }
                     LiveBadgeAvatar(
                         uid = sup.uid,

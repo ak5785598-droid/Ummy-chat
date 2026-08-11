@@ -179,11 +179,11 @@ fun SocialRelationsDialog(
                         1 -> SocialListScreen(type = "following", currentUid = currentUid, onNavigateProfile = onNavigateProfile)
                         2 -> SocialListScreen(type = "friends", currentUid = currentUid, onNavigateProfile = onNavigateProfile)
                         3 -> {
-                            if (isSvip) {
-                                SocialListScreen(type = "visitors", currentUid = currentUid, onNavigateProfile = onNavigateProfile)
-                            } else {
-                                SvipUpgradePrompt(onUpgrade = { })
-                            }
+                            VisitorsTabContent(
+                                currentUid = currentUid,
+                                isSvip = isSvip,
+                                onNavigateProfile = onNavigateProfile
+                            )
                         }
                     }
                 }
@@ -418,18 +418,9 @@ fun SocialUserItem(
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(99.dp),
-                    color = Color(0xFFF59E0B),
-                    modifier = Modifier.height(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                    ) {
-                        Text("Lv.${user.richLevel}", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Black)
-                    }
-                }
+                // Level Badge
+                UserLevelBadge(level = user.richLevel, scale = 0.9f)
+
 
                 Surface(
                     shape = RoundedCornerShape(99.dp),

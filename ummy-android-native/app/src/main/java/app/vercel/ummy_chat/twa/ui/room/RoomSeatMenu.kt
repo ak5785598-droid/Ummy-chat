@@ -1,168 +1,138 @@
 package app.vercel.ummy_chat.twa.ui.room
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import app.vercel.ummy_chat.twa.data.model.SeatModel
-import coil.compose.AsyncImage
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SeatActionMenu — shown on tap of any seat
-// Empty seat  → Take Seat / Lock / Invite User
-// My seat     → Leave Seat / Mute
-// Others seat → (owner/mod) Lock/Mute/Kick / (any) View Profile / Send Gift / Invite
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-fun SeatActionMenu(
-    seat: SeatModel,
-    currentUserId: String,
-    isOwnerOrMod: Boolean,
-    onDismiss: () -> Unit,
+fun RoomSeatMenu(
+    visible: Boolean,
+    onClose: () -> Unit,
+    seatIndex: Int,
+    isLocked: Boolean,
+    isSeatMuted: Boolean,
+    isOwner: Boolean,
+    isModerator: Boolean,
     onTakeSeat: () -> Unit,
-    onLeaveSeat: () -> Unit,
     onLockSeat: () -> Unit,
     onMuteSeat: () -> Unit,
-    onKickUser: () -> Unit,
-    onViewProfile: () -> Unit,
-    onSendGift: () -> Unit,
-    onSendMicInvite: () -> Unit
+    onInvite: (() -> Unit)? = null
 ) {
-    val isOccupied = seat.userId != null
-    val isMyself = seat.userId == currentUserId
-    val isLocked = seat.isLocked
+    if (!visible) return
+
+    val canManage = isOwner || isModerator
 
     Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        onDismissRequest = onClose,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
+        // RN: TouchableOpacity backdrop (flex-1 bg-black/60)
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClose
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Column(
+            // RN: View bg-white rounded-[2rem] w-full px-8
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF1E1B4B))
-                    .padding(20.dp)
+                    .padding(horizontal = 32.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {} // Consume click inside dialog
+                    )
             ) {
-                // ── Seat header ──
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF312E81)),
-                        contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(Color.White)
+                        .border(1.dp, Color(0xFFF1F5F9), RoundedCornerShape(32.dp))
+                        .padding(24.dp)
+                ) {
+                    // RN: flex-row justify-between items-center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isOccupied) {
-                            AsyncImage(
-                                model = seat.avatarUrl ?: "https://picsum.photos/seed/${seat.userId}/60",
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                        // 1. Take mic
+                        if (!isLocked || canManage) {
+                            MenuItem(
+                                label = "Take mic",
+                                icon = Icons.Default.Mic,
+                                onPress = { onTakeSeat(); onClose() }
                             )
                         } else {
-                            Text(
-                                if (isLocked) "🔒" else "🎤",
-                                fontSize = 22.sp
+                            Spacer(modifier = Modifier.width(56.dp))
+                        }
+
+                        // 2. Invite
+                        if (onInvite != null) {
+                            MenuItem(
+                                label = "Invite",
+                                icon = Icons.Default.PersonAdd,
+                                onPress = { onInvite(); onClose() }
                             )
+                        } else {
+                            Spacer(modifier = Modifier.width(56.dp))
                         }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = when {
-                                isOccupied -> seat.username ?: "User"
-                                isLocked   -> "Seat #${seat.index} (Locked)"
-                                else       -> "Seat #${seat.index} (Empty)"
-                            },
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp
-                        )
-                        if (seat.isMuted && isOccupied) {
-                            Text("🔇 Muted", color = Color(0xFFEF4444), fontSize = 11.sp)
-                        } else if (seat.isSpeaking) {
-                            Text("🟢 Speaking", color = Color(0xFF10B981), fontSize = 11.sp)
-                        }
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(20.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // ── Actions ──
-                if (isOccupied) {
-                    if (isMyself) {
-                        // My own seat
-                        SeatMenuBtn(
-                            icon = "🚪", label = "Leave Seat",
-                            color = Color(0xFFEF4444),
-                            onClick = { onLeaveSeat(); onDismiss() }
-                        )
-                    } else {
-                        // Viewing someone else's seat
-                        SeatMenuBtn("👤", "View Profile", Color(0xFF6366F1)) { onViewProfile(); onDismiss() }
-                        SeatMenuBtn("🎁", "Send Gift", Color(0xFFEC4899)) { onSendGift(); onDismiss() }
-                        SeatMenuBtn("🎙️", "Send Mic Invite", Color(0xFF06B6D4)) { onSendMicInvite(); onDismiss() }
-
-                        if (isOwnerOrMod) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.08f))
-                            Spacer(modifier = Modifier.height(8.dp))
-                            SeatMenuBtn(
-                                icon = if (seat.isMuted) "🎤" else "🔇",
-                                label = if (seat.isMuted) "Unmute Seat" else "Mute Seat",
-                                color = Color(0xFFF59E0B),
-                                onClick = { onMuteSeat(); onDismiss() }
+                        // 3. Lock/Unlock
+                        if (canManage) {
+                            MenuItem(
+                                label = if (isLocked) "Unlock" else "Lock",
+                                icon = if (isLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                                iconColor = if (isLocked) Color(0xFF8B5CF6) else Color(0xFF64748B),
+                                onPress = { onLockSeat(); onClose() }
                             )
-                            SeatMenuBtn("👟", "Kick User", Color(0xFFEF4444)) { onKickUser(); onDismiss() }
+                        } else {
+                            Spacer(modifier = Modifier.width(56.dp))
+                        }
+
+                        // 4. Mute/Unmute
+                        if (canManage) {
+                            MenuItem(
+                                label = if (isSeatMuted) "Unmute" else "Mute",
+                                icon = if (isSeatMuted) Icons.Default.Mic else Icons.Default.MicOff,
+                                iconColor = if (isSeatMuted) Color(0xFF10B981) else Color(0xFFEF4444),
+                                onPress = { onMuteSeat(); onClose() }
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.width(56.dp))
                         }
                     }
-                } else {
-                    // Empty seat
-                    if (!isLocked) {
-                        SeatMenuBtn("🎤", "Take Seat", Color(0xFF22C55E)) { onTakeSeat(); onDismiss() }
-                        SeatMenuBtn("📨", "Invite User to Mic", Color(0xFF06B6D4)) { onSendMicInvite(); onDismiss() }
-                    }
-                    if (isOwnerOrMod) {
-                        SeatMenuBtn(
-                            icon = if (isLocked) "🔓" else "🔒",
-                            label = if (isLocked) "Unlock Seat" else "Lock Seat",
-                            color = Color(0xFFF59E0B),
-                            onClick = { onLockSeat(); onDismiss() }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
-                ) {
-                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
                 }
             }
         }
@@ -170,22 +140,43 @@ fun SeatActionMenu(
 }
 
 @Composable
-fun SeatMenuBtn(
-    icon: String, label: String, color: Color,
-    onClick: () -> Unit
+private fun MenuItem(
+    label: String,
+    icon: ImageVector,
+    iconColor: Color = Color(0xFF475569),
+    onPress: () -> Unit
 ) {
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(color.copy(alpha = 0.12f))
-            .clickable { onClick() }
-            .padding(vertical = 12.dp, horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .width(56.dp)
+            .clickable(onClick = onPress),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(icon, fontSize = 18.sp)
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(label, color = color, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        // Icon circle
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFF8FAFC)) // bg-slate-50
+                .border(1.dp, Color(0xFFF1F5F9).copy(alpha = 0.5f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconColor,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF64748B), // text-slate-500
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
-    Spacer(modifier = Modifier.height(8.dp))
 }

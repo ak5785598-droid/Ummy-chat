@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -145,10 +146,10 @@ fun RealtimeRankingCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.33f)
-            .clip(RoundedCornerShape(24.dp))
+            .aspectRatio(1.4f)
+            .clip(RoundedCornerShape(16.dp))
             .background(Color(0x08FFFFFF))
-            .border(1.5.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(24.dp))
+            .border(1.5.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
             .clickable { onPress() }
     ) {
         // ── Background assets & effects ──
@@ -197,12 +198,13 @@ fun RealtimeRankingCard(
             verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 8.dp, bottom = 10.dp, start = 8.dp, end = 8.dp)
+                .padding(top = 0.dp, bottom = 2.dp, start = 8.dp, end = 8.dp)
         ) {
             // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.offset(y = (-4).dp)
             ) {
                 Icon(
                     Icons.Default.WorkspacePremium,
@@ -229,17 +231,17 @@ fun RealtimeRankingCard(
                     transitionSpec = {
                         fadeIn(tween(250)) togetherWith fadeOut(tween(250))
                     },
+                    contentAlignment = Alignment.Center,
                     label = "ModeSwitch"
                 ) { currentMode ->
                     if (currentMode == "podium") {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.Bottom
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(58.dp).padding(bottom = 2.dp),
+                            contentAlignment = Alignment.BottomCenter
                         ) {
-                            // #2 Silver
+                            // #2 Silver (Left)
                             val user2 = topUsers.getOrNull(1)
-                            Box(modifier = Modifier.size(34.dp)) {
+                            Box(modifier = Modifier.size(34.dp).offset(x = (-34).dp, y = (-2).dp).zIndex(5f)) {
                                 if (user2 != null) {
                                     AsyncImage(
                                         model = CdnUtils.toCdn(user2.avatarUrl) ?: "https://picsum.photos/100",
@@ -248,46 +250,13 @@ fun RealtimeRankingCard(
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                            .border(1.5.dp, Color(0xFFCBD5E1), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("2", color = Color(0xFFCBD5E1), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    }
+                                    Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0x0DFFFFFF)).border(1.5.dp, Color(0xFFCBD5E1), CircleShape))
                                 }
                             }
 
-                            // #1 Gold (Raised center)
-                            val user1 = topUsers.getOrNull(0)
-                            Box(modifier = Modifier.size(40.dp).offset(y = (-14).dp)) {
-                                if (user1 != null) {
-                                    AsyncImage(
-                                        model = CdnUtils.toCdn(user1.avatarUrl) ?: "https://picsum.photos/100",
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, Color(0xFFFBBF24), CircleShape),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                            .border(2.dp, Color(0xFFFBBF24), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("1", color = Color(0xFFFBBF24), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-
-                            // #3 Bronze
+                            // #3 Bronze (Right)
                             val user3 = topUsers.getOrNull(2)
-                            Box(modifier = Modifier.size(34.dp)) {
+                            Box(modifier = Modifier.size(34.dp).offset(x = 34.dp, y = (-2).dp).zIndex(5f)) {
                                 if (user3 != null) {
                                     AsyncImage(
                                         model = CdnUtils.toCdn(user3.avatarUrl) ?: "https://picsum.photos/100",
@@ -296,16 +265,22 @@ fun RealtimeRankingCard(
                                         contentScale = ContentScale.Crop
                                     )
                                 } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f))
-                                            .border(1.5.dp, Color(0xFFD97706), CircleShape),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text("3", color = Color(0xFFD97706), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    }
+                                    Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0x0DFFFFFF)).border(1.5.dp, Color(0xFFD97706), CircleShape))
+                                }
+                            }
+
+                            // #1 Gold (Center, raised)
+                            val user1 = topUsers.getOrNull(0)
+                            Box(modifier = Modifier.size(40.dp).offset(y = (-16).dp).zIndex(10f)) {
+                                if (user1 != null) {
+                                    AsyncImage(
+                                        model = CdnUtils.toCdn(user1.avatarUrl) ?: "https://picsum.photos/100",
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, Color(0xFFFBBF24), CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color(0x0DFFFFFF)).border(2.dp, Color(0xFFFBBF24), CircleShape))
                                 }
                             }
                         }
@@ -318,12 +293,12 @@ fun RealtimeRankingCard(
                         }
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            verticalArrangement = Arrangement.spacedBy((-6).dp, Alignment.CenterVertically),
+                            modifier = Modifier.fillMaxWidth().offset(y = (-6).dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(42.dp)
+                                    .size(34.dp)
                                     .clip(CircleShape)
                                     .background(Color.Black.copy(alpha = 0.3f))
                                     .border(2.dp, frameColor, CircleShape),
@@ -332,11 +307,11 @@ fun RealtimeRankingCard(
                                 AsyncImage(
                                     model = CdnUtils.toCdn(user?.avatarUrl) ?: "https://picsum.photos/100",
                                     contentDescription = null,
-                                    modifier = Modifier.size(34.dp).clip(CircleShape),
+                                    modifier = Modifier.size(28.dp).clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(0.dp))
                             Text(
                                 user?.name ?: "User",
                                 color = Color.White,
@@ -345,7 +320,7 @@ fun RealtimeRankingCard(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth(0.9f)
+                                modifier = Modifier.fillMaxWidth(0.9f).offset(y = 6.dp)
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

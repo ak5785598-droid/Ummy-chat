@@ -60,6 +60,12 @@ class NativeAgoraVoiceEngine(private val context: Context) {
         rtcEngine?.muteLocalAudioStream(isMuted)
     }
 
+    // RN use-agora-native parity: muteAllRemoteAudioStreams + adjustPlaybackSignalVolume
+    fun setSpeakerMuted(isSpeakerMuted: Boolean) {
+        rtcEngine?.muteAllRemoteAudioStreams(isSpeakerMuted)
+        rtcEngine?.adjustPlaybackSignalVolume(if (isSpeakerMuted) 0 else 100)
+    }
+
     fun leaveChannel() {
         rtcEngine?.leaveChannel()
         currentRoomId = null

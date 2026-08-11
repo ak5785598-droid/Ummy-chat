@@ -27,6 +27,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import app.vercel.ummy_chat.twa.ui.games.CarromGame
+import app.vercel.ummy_chat.twa.ui.games.ChessGame
+import app.vercel.ummy_chat.twa.ui.games.ForestPartyGame
+import app.vercel.ummy_chat.twa.ui.games.FruitPartyGame
+import app.vercel.ummy_chat.twa.ui.games.GameRoundEndData
+import app.vercel.ummy_chat.twa.ui.games.LudoGame
+import app.vercel.ummy_chat.twa.ui.games.RouletteGame
+import app.vercel.ummy_chat.twa.ui.games.TeenPattiGame
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RoomGameOverlay — mirrors RN room-game-overlay.tsx
@@ -66,7 +74,9 @@ fun RoomGameOverlay(
     gameId: String?,
     gameTitle: String = "Game",
     isAdmin: Boolean = false,
+    roomId: String? = null,
     roundResult: GameRoundResult? = null,
+    onRoundEnd: (GameRoundEndData) -> Unit = {},
     onDismiss: () -> Unit,
     onMinimize: () -> Unit = {}
 ) {
@@ -91,7 +101,7 @@ fun RoomGameOverlay(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.75f)
+                    .fillMaxHeight(0.88f)
                     .pointerInput(Unit) {
                         detectVerticalDragGestures { _, dragAmount ->
                             if (dragAmount > 80) onMinimize()
@@ -167,20 +177,67 @@ fun RoomGameOverlay(
                         .background(Brush.verticalGradient(themeGradient)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🎮", fontSize = 48.sp)
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            "$gameTitle Live Board",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black
+                    when (gameId) {
+                        "fruit-party" -> FruitPartyGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
                         )
-                        Text(
-                            "Game in progress...",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 12.sp
+                        "forest-party" -> ForestPartyGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
                         )
+                        "roulette" -> RouletteGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
+                        )
+                        "teen-patti" -> TeenPattiGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
+                        )
+                        "ludo" -> LudoGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
+                            isAdmin = isAdmin,
+                        )
+                        "carrom" -> CarromGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
+                            isAdmin = isAdmin,
+                        )
+                        "chess" -> ChessGame(
+                            onClose = onDismiss,
+                            roomId = roomId,
+                            onRoundEnd = onRoundEnd,
+                            isMuted = isMuted,
+                            isAdmin = isAdmin,
+                        )
+                        else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("🎮", fontSize = 48.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "$gameTitle Live Board",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                            Text(
+                                "Game in progress...",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp
+                            )
+                        }
                     }
 
                     // Round End Winner Podium Popup Overlay

@@ -3,9 +3,14 @@ package app.vercel.ummy_chat.twa.data.repository
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combine
 
 data class LiveRoomModel(
     val id: String = "",
@@ -19,7 +24,8 @@ data class LiveRoomModel(
     val moderatorIds: List<String> = emptyList(),
     val participantCount: Int = 0,
     val roomNumber: String = "",
-    val isPinned: Boolean = false
+    val isPinned: Boolean = false,
+    val announcement: String = ""
 )
 
 // React Native hooks/use-user-profile.ts: merged base + sub profile doc
@@ -39,23 +45,79 @@ data class FollowedRoomEntry(
 // React Native index.tsx L122-127: users/{uid}/recentVisits
 data class RecentVisitEntry(
     val roomId: String = "",
-    val visitedAt: Long = 0L
+    val visitedAt: Long = 0L,
+    val title: String = "",
+    val coverUrl: String? = null,
+    val roomNumber: String = "",
+    val ownerId: String = ""
 )
 
 class HomeRealtimeRepository {
     private val firestore = FirebaseFirestore.getInstance()
 
-    fun getLiveRoomsStream(): Flow<List<LiveRoomModel>> = callbackFlow {
-        val listener = firestore.collection("chatRooms")
-            .limit(100)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
+    private fun getRoomPresenceStream(): Flow<Map<String, Int>> = callbackFlow {
+        val ref = FirebaseDatabase.getInstance().getReference("roomPresence")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val countsMap = mutableMapOf<String, Int>()
+                val now = System.currentTimeMillis()
+                snapshot.children.forEach { roomSnapshot ->
+                    val roomId = roomSnapshot.key ?: return@forEach
+                    // Skip diagnostic nodes
+                    if (roomId.startsWith("_")) return@forEach
+                    var onlineCount = 0
+                    roomSnapshot.children.forEach { userSnapshot ->
+                        val isOnline = userSnapshot.child("isOnline").value as? Boolean == true
+                        if (!isOnline) return@forEach
+                        // lastSeen can be Long (resolved) or HashMap (server timestamp pending)
+                        val lastSeenVal = userSnapshot.child("lastSeen").value
+                        val lastSeen = when (lastSeenVal) {
+                            is Long -> lastSeenVal
+                            is Double -> lastSeenVal.toLong()
+                            else -> 0L // unresolved server timestamp or null
+                        }
+                        // Only count if lastSeen is a valid recent timestamp (not 0)
+                        if (lastSeen > 0L && (now - lastSeen) <= 30000) {
+                            onlineCount++
+                        }
+                    }
+                    if (onlineCount > 0) {
+                        countsMap[roomId] = onlineCount
+                    }
                 }
-                trySend(snapshot?.documents?.mapNotNull { doc -> docToRoom(doc) } ?: emptyList())
+                trySend(countsMap)
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
+        }
+        ref.addValueEventListener(listener)
+        // Send initial empty map so combine doesn't hang if RTDB takes a moment
+        trySend(emptyMap<String, Int>())
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    fun getLiveRoomsStream(): Flow<List<LiveRoomModel>> {
+        val firestoreStream = callbackFlow<List<LiveRoomModel>> {
+            val listener = firestore.collection("chatRooms")
+                .limit(100)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
+                        return@addSnapshotListener
+                    }
+                    trySend(snapshot?.documents?.mapNotNull { doc -> docToRoom(doc) } ?: emptyList())
+                    Unit
+                }
+            awaitClose { listener.remove() }
+        }
+
+        return firestoreStream.combine(getRoomPresenceStream()) { rooms: List<LiveRoomModel>, presenceMap: Map<String, Int> ->
+            rooms.map { room ->
+                // Map the LiveRoomModel's participantCount to the RTDB live presence count
+                room.copy(participantCount = presenceMap[room.id] ?: 0)
+            }
+        }
     }
 
     // React Native index.tsx L129-137: myRoomQuery (chatRooms where ownerId == uid limit 1)
@@ -141,7 +203,7 @@ class HomeRealtimeRepository {
                 val entries = snapshot?.documents?.mapNotNull { doc ->
                     FollowedRoomEntry(
                         roomId = doc.id,
-                        followedAt = doc.getTimestamp("followedAt")?.toDate()?.time ?: 0L
+                        followedAt = doc.getTimestamp("followedAt")?.toDate()?.time ?: System.currentTimeMillis()
                     )
                 } ?: emptyList()
                 trySend(entries)
@@ -162,7 +224,11 @@ class HomeRealtimeRepository {
                 val entries = snapshot?.documents?.mapNotNull { doc ->
                     RecentVisitEntry(
                         roomId = doc.id,
-                        visitedAt = doc.getTimestamp("visitedAt")?.toDate()?.time ?: 0L
+                        visitedAt = doc.getTimestamp("visitedAt")?.toDate()?.time ?: System.currentTimeMillis(),
+                        title = doc.getString("title") ?: "Room",
+                        coverUrl = doc.getString("coverUrl") ?: doc.getString("roomBanner"),
+                        roomNumber = doc.getString("roomNumber") ?: "",
+                        ownerId = doc.getString("ownerId") ?: ""
                     )
                 } ?: emptyList()
                 trySend(entries)
@@ -188,9 +254,10 @@ class HomeRealtimeRepository {
             isLocked = data["isLocked"] as? Boolean ?: password.isNotEmpty(),
             password = password,
             moderatorIds = moderatorIds,
-            participantCount = (data["participantCount"] as? Long)?.toInt() ?: 1,
+            participantCount = (data["participantCount"] as? Long)?.toInt() ?: 0,
             roomNumber = data["roomNumber"] as? String ?: data["roomId"] as? String ?: "",
-            isPinned = data["isPinned"] as? Boolean ?: false
+            isPinned = data["isPinned"] as? Boolean ?: false,
+            announcement = data["announcement"] as? String ?: ""
         )
     }
 }

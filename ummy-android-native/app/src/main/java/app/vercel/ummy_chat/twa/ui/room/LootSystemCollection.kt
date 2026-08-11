@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
+import app.vercel.ummy_chat.twa.ui.profile.GoldDollarIcon
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LootGate — mirrors RN loot-gate.tsx
@@ -102,7 +103,7 @@ fun LootGate(
                         .background(Color(0xFFFBBF24).copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("💰", fontSize = 48.sp)
+                    GoldDollarIcon(size = 48)
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -183,7 +184,7 @@ fun LootingRoomBanner(
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("💰", fontSize = 14.sp)
+        GoldDollarIcon(size = 14)
         Spacer(Modifier.width(6.dp))
         Text(
             "$activeLootCount LOOT BAGS ACTIVE",

@@ -51,17 +51,41 @@ fun SettingsScreen(onBack: () -> Unit) {
     fun handleLogout() {
         if (uid == null) return
         val fs = FirebaseFirestore.getInstance()
-        val batch = fs.batch()
-        val userRef = fs.collection("users").document(uid)
-        val profileRef = userRef.collection("profile").document(uid)
-        batch.update(userRef, mapOf("isOnline" to false, "currentRoomId" to null, "updatedAt" to FieldValue.serverTimestamp()))
-        batch.update(profileRef, mapOf("isOnline" to false, "currentRoomId" to null, "updatedAt" to FieldValue.serverTimestamp()))
-        batch.commit().addOnSuccessListener {
-            FirebaseAuth.getInstance().signOut()
-            val intent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        val rtdb = com.google.firebase.database.FirebaseDatabase.getInstance()
+
+        // First check if user is in a room — clean up room presence
+        fs.collection("users").document(uid).get().addOnSuccessListener { userSnap ->
+            val currentRoomId = userSnap.getString("currentRoomId")
+
+            val batch = fs.batch()
+            val userRef = fs.collection("users").document(uid)
+            val profileRef = userRef.collection("profile").document(uid)
+            batch.update(userRef, mapOf("isOnline" to false, "currentRoomId" to null, "updatedAt" to FieldValue.serverTimestamp()))
+            batch.update(profileRef, mapOf("isOnline" to false, "currentRoomId" to null, "updatedAt" to FieldValue.serverTimestamp()))
+
+            batch.commit().addOnSuccessListener {
+                // Clean up RTDB room presence + participant doc + participantCount if in a room
+                if (currentRoomId != null) {
+                    // Remove RTDB roomPresence node
+                    rtdb.getReference("roomPresence").child(currentRoomId).child(uid).removeValue()
+                    // Remove Firestore participant doc
+                    fs.collection("chatRooms").document(currentRoomId)
+                        .collection("participants").document(uid).delete()
+                    // Decrement participantCount
+                    fs.collection("chatRooms").document(currentRoomId)
+                        .update("participantCount", com.google.firebase.firestore.FieldValue.increment(-1))
+                    // Clear globalPresence onDisconnect
+                    rtdb.getReference("globalPresence/$uid").onDisconnect().cancel()
+                }
+                // Clear globalPresence
+                rtdb.getReference("globalPresence/$uid").setValue(null)
+
+                FirebaseAuth.getInstance().signOut()
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                context.startActivity(intent)
             }
-            context.startActivity(intent)
         }
     }
 

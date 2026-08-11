@@ -48,7 +48,8 @@ fun MainDashboardScreen(
     onNavigateToOfficial: () -> Unit = {},
     onNavigateToSystem: () -> Unit = {},
     onNavigateToRequests: () -> Unit = {},
-    onNavigateToTasks: () -> Unit = {}
+    onNavigateToTasks: () -> Unit = {},
+    onNavigateToAdmin: () -> Unit = {}
 ) {
     val initialNavItem = when (initialTab) {
         "discover" -> BottomNavItem.Discover
@@ -112,7 +113,9 @@ fun MainDashboardScreen(
                 },
                 onOpenOfficial = onNavigateToOfficial,
                 onOpenSystem = onNavigateToSystem,
-                onOpenRequests = onNavigateToRequests
+                onOpenRequests = onNavigateToRequests,
+                onOpenSearch = onNavigateToSearch,
+                onOpenRoom = onNavigateToRoom
             )
             is BottomNavItem.Profile -> ProfileScreen(
                 onNavigate = { route ->
@@ -122,13 +125,13 @@ fun MainDashboardScreen(
                         "/level" -> onNavigateToLevel()
                         "/store", "/my-item" -> onNavigateToStore()
                         "/bonus" -> onNavigateToBonus()
-                        "/help" -> onNavigateToHelpCenter()
+                        "/help", "/help-center" -> onNavigateToHelpCenter()
                         "/about" -> onNavigateToAbout()
-                        "/family" -> onNavigateToFamilies()
-                        "/cp-friends" -> onNavigateToCpRanking()
+                        "/family", "/families" -> onNavigateToFamilies()
+                        "/cp-friends", "/cp-house" -> onNavigateToCpRanking()
                         "/tasks" -> onNavigateToTasks()
                         "/vips" -> onNavigateToVips()
-                        "/admin" -> onNavigateToOfficial()
+                        "/admin" -> onNavigateToAdmin()
                         "/games" -> onNavigateToGames()
                         "/leaderboard" -> onNavigateToLeaderboard()
                         else -> Unit
@@ -208,7 +211,7 @@ fun MainDashboardScreen(
                                         .offset(x = 4.dp, y = (-2).dp)
                                         .size(8.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFFEF4444))
+                                        .background(Color(0xFFEC4899)) // bg-pink-500 matching
                                         .border(1.dp, Color.White, CircleShape)
                                 )
                             }

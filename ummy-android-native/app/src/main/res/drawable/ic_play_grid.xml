@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Ionicons "grid" — 4 rounded squares in 2x2, exact RN icon -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M208,60
+            H88 A28,28 0 0 0 60,88
+            V208 A28,28 0 0 0 88,236
+            H208 A28,28 0 0 0 236,208
+            V88 A28,28 0 0 0 208,60 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M424,60
+            H304 A28,28 0 0 0 276,88
+            V208 A28,28 0 0 0 304,236
+            H424 A28,28 0 0 0 452,208
+            V88 A28,28 0 0 0 424,60 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M208,300
+            H88 A28,28 0 0 0 60,328
+            V448 A28,28 0 0 0 88,476
+            H208 A28,28 0 0 0 236,448
+            V328 A28,28 0 0 0 208,300 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M424,300
+            H304 A28,28 0 0 0 276,328
+            V448 A28,28 0 0 0 304,476
+            H424 A28,28 0 0 0 452,448
+            V328 A28,28 0 0 0 424,300 Z" />
+</vector>

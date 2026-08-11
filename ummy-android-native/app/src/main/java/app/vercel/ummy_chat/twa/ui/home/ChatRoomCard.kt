@@ -131,16 +131,19 @@ fun RowScope.ChatRoomCard(
             modifier = Modifier
                 .padding(8.dp)
                 .align(Alignment.TopStart)
-                .background(Color(0x66000000), CircleShape) // bg-black/40
-                .border(1.dp, Color(0x1AFFFFFF), CircleShape) // border-white/10
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .height(15.dp)
+                .background(Color(0x66000000), RoundedCornerShape(6.dp)) // bg-black/40
+                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(6.dp)) // border-white/10
+                .padding(horizontal = 6.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "ID:$roomNumber",
                 fontSize = 7.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
-                letterSpacing = (-0.5).sp // tracking-tighter
+                letterSpacing = (-0.5).sp, // tracking-tighter
+                modifier = Modifier.offset(y = (-5).dp)
             )
         }
 
@@ -149,9 +152,10 @@ fun RowScope.ChatRoomCard(
             modifier = Modifier
                 .padding(8.dp)
                 .align(Alignment.TopEnd)
-                .background(Color(0x66000000), CircleShape)
-                .border(1.dp, Color(0x1AFFFFFF), CircleShape)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
+                .height(15.dp)
+                .background(Color(0x66000000), RoundedCornerShape(6.dp))
+                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(6.dp))
+                .padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -168,7 +172,8 @@ fun RowScope.ChatRoomCard(
                 fontSize = 7.sp,
                 fontWeight = FontWeight.Black,
                 color = Color.White,
-                letterSpacing = (-0.5).sp
+                letterSpacing = (-0.5).sp,
+                modifier = Modifier.offset(y = (-5).dp)
             )
         }
 
@@ -178,7 +183,7 @@ fun RowScope.ChatRoomCard(
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy((-4).dp)
         ) {
             Text(
                 text = roomTitle,
@@ -214,9 +219,15 @@ fun RowScope.ChatRoomCard(
                     ) {
                         Text(
                             text = "U",
-                            fontSize = 5.sp,
+                            fontSize = 6.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            style = androidx.compose.ui.text.TextStyle(
+                                platformStyle = androidx.compose.ui.text.PlatformTextStyle(
+                                    includeFontPadding = false
+                                ),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
                         )
                     }
                 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -37,12 +38,17 @@ import kotlinx.coroutines.launch
 fun RoomChatArea(
     messages: List<MessageModel>,
     announcement: String,
+    chatClearedAt: com.google.firebase.Timestamp? = null,
     currentUserId: String,
     onMsgLongPress: (MessageModel) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
     val coroutine = rememberCoroutineScope()
+    val sessionStartTime = remember { com.google.firebase.Timestamp.now() }
+
+    // Show announcements only if chatClearedAt is before session start (RN parity)
+    val showAnnouncements = chatClearedAt == null || chatClearedAt < sessionStartTime
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
@@ -63,11 +69,18 @@ fun RoomChatArea(
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // ── Announcement pinned at top ──
-            if (announcement.isNotBlank()) {
-                item(key = "announce") {
-                    AnnouncementBanner(announcement)
+            // ── System & Room Announcements pinned at top (hidden if chat cleared this session) ──
+            if (showAnnouncements) {
+                item(key = "system_announce") {
+                    SystemAnnouncementBanner("Welcome to Ummy! Any content related to porn, fraud, violence, abuse, or fake officials will be banned.")
                     Spacer(modifier = Modifier.height(6.dp))
+                }
+                
+                if (announcement.isNotBlank()) {
+                    item(key = "announce") {
+                        AnnouncementBanner(announcement)
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
                 }
             }
 
@@ -75,6 +88,7 @@ fun RoomChatArea(
             items(messages, key = { it.id }) { msg ->
                 when (msg.type) {
                     "entrance" -> EntranceBubble(msg)
+                    "system"   -> SystemBubble(msg)
                     "gift"     -> GiftChatBubble(msg)
                     "lucky-rain","loot" -> LootChatBubble(msg)
                     "mic_invite" -> MicInviteBubble(msg, currentUserId)
@@ -93,22 +107,57 @@ fun RoomChatArea(
 fun AnnouncementBanner(text: String) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color(0xFFFBBF24).copy(alpha = 0.18f))
-            .border(1.dp, Color(0xFFFBBF24).copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+            .fillMaxWidth(0.85f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF064E3B).copy(alpha = 0.5f), // Emerald 900
+                        Color(0xFF064E3B).copy(alpha = 0.05f)
+                    )
+                )
+            )
+
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("📢", fontSize = 13.sp)
-        Spacer(modifier = Modifier.width(6.dp))
+
         Text(
             text = text,
-            color = Color(0xFFFBBF24),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
+            color = Color(0xFF34D399), // Emerald 400
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 12.sp
+        )
+    }
+}
+
+// ── System Announcement banner ────────────────────────────────────────────────
+@Composable
+fun SystemAnnouncementBanner(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF312E81).copy(alpha = 0.85f), // Indigo 900
+                        Color(0xFF312E81).copy(alpha = 0.4f)
+                    )
+                )
+            )
+
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = 12.sp
         )
     }
 }
@@ -204,34 +253,49 @@ fun ImageChatBubble(
     }
 }
 
+// ── System bubble ─────────────────────────────────────────────────────────────
+// mirrors RN room-chat-area.tsx L148-152 + L299-313: black pill, maxWidth 85%
+@Composable
+fun SystemBubble(msg: MessageModel) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 32.dp, top = 4.dp, bottom = 4.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = msg.content.ifBlank { msg.text ?: "" },
+            color = Color(0xB3FFFFFF),   // rgba(255,255,255,0.7)
+            fontSize = 10.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .background(Color(0x59000000), RoundedCornerShape(12.dp)) // rgba(0,0,0,0.35)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+    }
+}
+
 // ── Entrance bubble ───────────────────────────────────────────────────────────
+// mirrors RN room-chat-area.tsx L156-164: centered amber pill, no avatar
 @Composable
 fun EntranceBubble(msg: MessageModel) {
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
+        Text(
+            text = "✨ ${msg.senderName} entered the room",
+            color = Color(0xFFFBBF24),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.35f))
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = msg.senderAvatar,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp).clip(CircleShape).background(Color.Gray),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(
-                text = "🎉 ${msg.senderName} entered the room",
-                color = Color(0xFFFBBF24),
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+                .background(Color(0x1FFBBF24), RoundedCornerShape(12.dp))   // rgba(251,191,36,0.12)
+                .border(1.dp, Color(0x33FBBF24), RoundedCornerShape(12.dp)) // rgba(251,191,36,0.2)
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+        )
     }
 }
 

@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -56,7 +58,7 @@ fun RealtimeCpCard(
     var topCpPairs by remember { mutableStateOf<List<RealtimeCpPair>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var activeIndex by remember { mutableIntStateOf(0) }
-    var mode by remember { mutableStateOf("podium") }
+    var mode by remember { mutableStateOf("carousel") }
 
     DisposableEffect(Unit) {
         val fs = FirebaseFirestore.getInstance()
@@ -83,13 +85,13 @@ fun RealtimeCpCard(
         onDispose { listener.remove() }
     }
 
-    // ── Mode Switching Logic (RN Parity: Carousel 3s each → Podium 10s → repeat) ──
+    // ── Exact RN Mode Switching Logic: 250ms fade gap is handled by AnimatedContent ──
     LaunchedEffect(topCpPairs.size) {
         if (topCpPairs.isEmpty()) return@LaunchedEffect
         while (true) {
             for (i in topCpPairs.indices) {
-                activeIndex = i
                 mode = "carousel"
+                activeIndex = i
                 delay(3000)
             }
             mode = "podium"
@@ -112,10 +114,10 @@ fun RealtimeCpCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1.33f)
-            .clip(RoundedCornerShape(24.dp))
+            .aspectRatio(1.4f)
+            .clip(RoundedCornerShape(16.dp))
             .background(Color(0x08FFFFFF))
-            .border(1.5.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(24.dp))
+            .border(1.5.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(16.dp))
             .clickable { onPress() }
     ) {
         // Background and effects
@@ -125,6 +127,7 @@ fun RealtimeCpCard(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+        // Exact React Native Glassmorphic Gradient
         Box(
             modifier = Modifier.fillMaxSize().background(
                 Brush.linearGradient(listOf(Color(0x809D174D), Color(0xA6000000)))
@@ -161,12 +164,13 @@ fun RealtimeCpCard(
             verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 8.dp, bottom = 10.dp, start = 8.dp, end = 8.dp)
+                .padding(top = 0.dp, bottom = 2.dp, start = 8.dp, end = 8.dp)
         ) {
             // Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.offset(y = (-4).dp)
             ) {
                 Icon(
                     Icons.Default.Favorite,
@@ -188,28 +192,34 @@ fun RealtimeCpCard(
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
-                    targetState = mode,
+                    targetState = Pair(mode, activeIndex), // Fade between each slide just like RN
                     transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(250)) },
+                    contentAlignment = Alignment.Center,
                     label = "ModeSwitch"
-                ) { currentMode ->
+                ) { (currentMode, currentIndex) ->
                     if (currentMode == "podium") {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.Bottom
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(58.dp).padding(bottom = 2.dp),
+                            contentAlignment = Alignment.BottomCenter
                         ) {
                             // #2 Silver
-                            LiveCpPodiumItem(topCpPairs.getOrNull(1), 24.dp, Color(0xFFCBD5E1))
-                            // #1 Gold
-                            Box(modifier = Modifier.offset(y = (-14).dp)) {
-                                LiveCpPodiumItem(topCpPairs.getOrNull(0), 32.dp, Color(0xFFFBBF24))
+                            Box(modifier = Modifier.offset(x = (-34).dp, y = (-2).dp).zIndex(5f)) {
+                                LiveCpPodiumItem(topCpPairs.getOrNull(1), 22.dp, Color(0xFFCBD5E1))
                             }
+                            
                             // #3 Bronze
-                            LiveCpPodiumItem(topCpPairs.getOrNull(2), 24.dp, Color(0xFFD97706))
+                            Box(modifier = Modifier.offset(x = 34.dp, y = (-2).dp).zIndex(5f)) {
+                                LiveCpPodiumItem(topCpPairs.getOrNull(2), 22.dp, Color(0xFFD97706))
+                            }
+
+                            // #1 Gold
+                            Box(modifier = Modifier.offset(y = (-22).dp).zIndex(10f)) {
+                                LiveCpPodiumItem(topCpPairs.getOrNull(0), 30.dp, Color(0xFFFBBF24))
+                            }
                         }
                     } else {
-                        val cp = topCpPairs.getOrNull(activeIndex)
-                        val heartEmoji = when (activeIndex) {
+                        val cp = topCpPairs.getOrNull(currentIndex)
+                        val heartEmoji = when (currentIndex) {
                             0 -> "💖"
                             1 -> "❤️"
                             else -> "💕"
@@ -219,8 +229,8 @@ fun RealtimeCpCard(
                         } else {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                                modifier = Modifier.fillMaxWidth()
+                                verticalArrangement = Arrangement.spacedBy((-4).dp, Alignment.CenterVertically),
+                                modifier = Modifier.fillMaxWidth().offset(y = (-8).dp)
                             ) {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy((-8).dp),
@@ -247,7 +257,6 @@ fun RealtimeCpCard(
                                         Text("💖", fontSize = 10.sp)
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     "Top Couple",
                                     color = Color.White,
@@ -310,8 +319,8 @@ fun LiveCpCarouselItem(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxWidth()
+        verticalArrangement = Arrangement.spacedBy((-4).dp, Alignment.CenterVertically),
+        modifier = Modifier.fillMaxWidth().offset(y = (-4).dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy((-8).dp),
@@ -319,10 +328,10 @@ fun LiveCpCarouselItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.3f))
-                    .border(2.dp, Color.White, CircleShape)
+                    .border(1.5.dp, Color.White, CircleShape)
             ) {
                 AsyncImage(
                     model = CdnUtils.toCdn(u1Avatar) ?: "https://picsum.photos/100",
@@ -333,10 +342,10 @@ fun LiveCpCarouselItem(
             }
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.3f))
-                    .border(2.dp, Color.White, CircleShape)
+                    .border(1.5.dp, Color.White, CircleShape)
             ) {
                 AsyncImage(
                     model = CdnUtils.toCdn(u2Avatar) ?: "https://picsum.photos/100",
@@ -347,7 +356,6 @@ fun LiveCpCarouselItem(
             }
         }
 
-        Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = "$u1Name & $u2Name",
             color = Color.White,
@@ -356,13 +364,18 @@ fun LiveCpCarouselItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .heightIn(max = 16.dp)
+                .clipToBounds()
         )
+        
         Text(
             text = "$heartEmoji ${NumberFormat.getInstance(java.util.Locale.US).format(cp.cpValue)}",
             color = Color(0xFFF43F5E),
             fontSize = 8.sp,
-            fontWeight = FontWeight.Black
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.offset(y = 1.dp)
         )
     }
 }

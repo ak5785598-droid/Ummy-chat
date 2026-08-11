@@ -51,6 +51,7 @@ fun RoomBanners(
     onOpenSpin: () -> Unit = {},
     onOpenChest: () -> Unit = {},
     onOpenAristocracy: () -> Unit = {},
+    onOpenWeeklyStar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val firestore = FirebaseFirestore.getInstance()
@@ -94,7 +95,7 @@ fun RoomBanners(
     val bannerImageUrl = if (customUrl != null && customUrl.isNotEmpty() && !forceLocal) customUrl else null
 
     Column(
-        modifier = modifier,
+        modifier = modifier.width(56.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Banner card with vertical slide transition
@@ -108,9 +109,9 @@ fun RoomBanners(
         ) { banner ->
             Box(
                 modifier = Modifier
-                    .width(75.dp)
-                    .aspectRatio(2f / 3f)
-                    .clip(RoundedCornerShape(16.dp))
+                    .width(56.dp)
+                    .aspectRatio(5f / 6f)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFF1E293B)) // Fallback slate bg
                     .clickable {
                         when (banner.id) {
@@ -118,6 +119,7 @@ fun RoomBanners(
                             "lucky-spin"        -> onOpenSpin()
                             "golden-chest"      -> onOpenChest()
                             "merge-aristocracy" -> onOpenAristocracy()
+                            "weekly-star"       -> onOpenWeeklyStar()
                         }
                     },
                 contentAlignment = Alignment.Center
@@ -156,21 +158,22 @@ fun RoomBanners(
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // Dot indicators
+        // Dot indicators below the banner
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             STATIC_BANNERS.forEachIndexed { i, _ ->
                 Box(
                     modifier = Modifier
-                        .size(4.dp)
+                        .size(3.dp)
                         .clip(CircleShape)
                         .background(
-                            if (i == activeIndex) Color.White.copy(alpha = 0.6f)
-                            else Color.White.copy(alpha = 0.15f)
+                            if (i == activeIndex) Color.White.copy(alpha = 0.8f)
+                            else Color.White.copy(alpha = 0.3f)
                         )
                 )
             }

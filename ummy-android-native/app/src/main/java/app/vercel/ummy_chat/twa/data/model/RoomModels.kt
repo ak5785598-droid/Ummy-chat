@@ -24,9 +24,14 @@ data class RoomModel(
     val isAIVoiceEnabled: Boolean = false,
     val levelPoints: Long = 0,
     val dailyGifts: Long = 0,
+    val totalGifts: Long = 0,
+    val visitorCount: Long = 0,
+    val uniqueVisitorCount: Long = 0,
     val currentMusicUrl: String? = null,
     val currentMusicTitle: String? = null,
-    val chatClearedAt: Timestamp? = null
+    val chatClearedAt: Timestamp? = null,
+    val stats: Map<String, Any>? = null,
+    val partners: List<Map<String, Any>>? = null
 )
 
 // ── Extended SeatModel ──────────────────────────────────────────────────────
@@ -62,8 +67,10 @@ data class MessageModel(
     val giftName: String? = null,
     val giftIcon: String? = null,
     val effectUrl: String? = null,
+    val mediaUrl: String? = null,
     val imageUrl: String? = null,
     val entryEffectType: String? = null,
+    val entryVideoUrl: String? = null,
     val isSfx: Boolean = false,
     val isBattle: Boolean = false,
     val comboCount: Int = 1,
@@ -77,8 +84,9 @@ data class MessageModel(
 data class EntryEffect(
     val username: String = "",
     val avatarUrl: String? = null,
-    val effectType: String = "slide",   // slide | fade | bounce | lion | line | dragon
-    val mediaUrl: String? = null
+    val effectType: String = "lion",    // slide | fade | bounce | lion | line | dragon
+    val mediaUrl: String? = null,
+    val videoUrl: String? = null
 )
 
 // ── GiftEvent (RTD) ─────────────────────────────────────────────────────────
@@ -144,7 +152,9 @@ data class TopSupporter(
     val uid: String = "",
     val name: String = "",
     val avatarUrl: String? = null,
+    val amount: Long = 0,
     val dailyAmount: Long = 0,
+    val weeklyAmount: Long = 0,
     val totalAmount: Long = 0,
     val updatedAt: com.google.firebase.Timestamp? = null
 )

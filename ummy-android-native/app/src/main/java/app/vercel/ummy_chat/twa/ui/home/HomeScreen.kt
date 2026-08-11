@@ -1,5 +1,8 @@
 package app.vercel.ummy_chat.twa.ui.home
 
+import androidx.activity.ComponentActivity
+import androidx.browser.customtabs.CustomTabsIntent
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -25,6 +28,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -41,12 +45,8 @@ import app.vercel.ummy_chat.twa.data.repository.UserProfileData
 import app.vercel.ummy_chat.twa.ui.components.RealtimeCpCard
 import app.vercel.ummy_chat.twa.ui.components.RealtimeFamilyCard
 import app.vercel.ummy_chat.twa.ui.components.RealtimeRankingCard
+import app.vercel.ummy_chat.twa.ui.room.RoomViewModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.firestore.FirebaseFirestore
 
 // ============================================================
 // React Native index.tsx → Kotlin Compose (EXACT PARITY)
@@ -91,35 +91,11 @@ fun HomeScreen(
     var myRooms by remember { mutableStateOf<List<LiveRoomModel>>(emptyList()) }
     var followedEntries by remember { mutableStateOf<List<FollowedRoomEntry>>(emptyList()) }
     var recentEntries by remember { mutableStateOf<List<RecentVisitEntry>>(emptyList()) }
-    var roomsWithUsersMap by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
 
-    // ── RTDB Presence Tracking (React Native L48-85) ──
-    DisposableEffect(Unit) {
-        val database = FirebaseDatabase.getInstance()
-        val presenceRef = database.getReference("roomPresence")
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val countsMap = mutableMapOf<String, Int>()
-                val now = System.currentTimeMillis()
-                snapshot.children.forEach { roomSnapshot ->
-                    val roomId = roomSnapshot.key ?: return@forEach
-                    var onlineCount = 0
-                    roomSnapshot.children.forEach { userSnapshot ->
-                        val isOnline = userSnapshot.child("isOnline").getValue(Boolean::class.java) ?: false
-                        val lastSeen = userSnapshot.child("lastSeen").getValue(Long::class.java) ?: 0L
-                        if (isOnline && (lastSeen == 0L || (now - lastSeen) <= 30000)) {
-                            onlineCount++
-                        }
-                    }
-                    if (onlineCount > 0) countsMap[roomId] = onlineCount
-                }
-                roomsWithUsersMap = countsMap
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        presenceRef.addValueEventListener(listener)
-        onDispose { presenceRef.removeEventListener(listener) }
-    }
+    val context = LocalContext.current
+    val roomVm: RoomViewModel = androidx.lifecycle.viewmodel.compose.viewModel(context as ComponentActivity)
+    val activeRoom by roomVm.room.collectAsState()
+    val activeRoomId = activeRoom?.id
 
     // ── Data Loaders ──
     LaunchedEffect(Unit) {
@@ -146,7 +122,7 @@ fun HomeScreen(
     }
 
     // ── Room Processing (React Native L162-213) ──
-    val displayRooms = remember(liveRooms, activeCategory, roomsWithUsersMap) {
+    val displayRooms = remember(liveRooms, activeCategory, activeRoomId) {
         val filtered = liveRooms.filter { room ->
             val cat = room.category.ifEmpty { "Chat" }
             val matchesCategory = activeCategory == "All" || cat.equals(activeCategory, ignoreCase = true)
@@ -157,8 +133,9 @@ fun HomeScreen(
             if (looksLikeHelp && !isOriginalHelp) return@filter false
             matchesCategory && !isDecommissioned
         }.map { room ->
-            val rtdbCount = roomsWithUsersMap[room.id] ?: 0
-            room.copy(participantCount = rtdbCount)
+            val isCurrentActive = if (room.id == activeRoomId) 1 else 0
+            // HomeRealtimeRepository already provides the RTDB count in room.participantCount
+            room.copy(participantCount = maxOf(room.participantCount, isCurrentActive))
         }.filter { room ->
             val isOriginalHelp = room.id == HELP_ROOM_ID || room.title.lowercase().trim() == "ummy help"
             val isPinned = room.isPinned
@@ -180,7 +157,17 @@ fun HomeScreen(
     val recentRoomData = remember(recentEntries, liveRooms) {
         val oneDayAgo = System.currentTimeMillis() - 86_400_000L
         recentEntries.filter { it.visitedAt > oneDayAgo }
-            .mapNotNull { entry -> liveRooms.firstOrNull { it.id == entry.roomId } }
+            .map { entry ->
+                val liveRoom = liveRooms.firstOrNull { it.id == entry.roomId }
+                liveRoom ?: LiveRoomModel(
+                    id = entry.roomId,
+                    title = entry.title,
+                    coverUrl = entry.coverUrl,
+                    roomNumber = entry.roomNumber,
+                    ownerUid = entry.ownerId,
+                    participantCount = 0
+                )
+            }
     }
 
     fun enterRoom(room: LiveRoomModel) {
@@ -213,6 +200,16 @@ fun HomeScreen(
             resolved.startsWith("/families") -> onOpenFamilies()
             resolved.startsWith("/cp-ranking") -> onOpenCpRanking()
             resolved.startsWith("/cp-house") -> onOpenCpRanking()
+            resolved.startsWith("http") -> {
+                try {
+                    val builder = CustomTabsIntent.Builder()
+                    builder.setShowTitle(true)
+                    val customTabsIntent = builder.build()
+                    customTabsIntent.launchUrl(context, Uri.parse(resolved))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
             else -> Unit // other links ignored (native equivalent not available)
         }
     }
@@ -265,7 +262,7 @@ fun HomeScreen(
                     contentPadding = PaddingValues(bottom = 96.dp)
                 ) {
                     item { 
-                        Box(modifier = Modifier.padding(horizontal = 12.dp).padding(top = 4.dp)) { 
+                        Box(modifier = Modifier.padding(horizontal = 8.dp).padding(top = 4.dp)) { 
                             BannerCarousel(onBannerClick = ::handleBannerLink, onOpenSupport = ::handleOpenSupport) 
                         } 
                     }
@@ -274,17 +271,17 @@ fun HomeScreen(
                         // Combined Cards and Category Bar (Tightened)
                         Column(modifier = Modifier.fillMaxWidth().padding(top = 0.dp)) {
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).offset(y = (-8).dp), // Adjusted nudge upwards from -10 to -8
-                                horizontalArrangement = Arrangement.spacedBy(6.dp) // Reduced gap between cards
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).offset(y = (-8).dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Box(modifier = Modifier.weight(1f).aspectRatio(1.1f)) { RealtimeRankingCard(onPress = onOpenLeaderboard) }
-                                Box(modifier = Modifier.weight(1f).aspectRatio(1.1f)) { RealtimeFamilyCard(onPress = onOpenFamilies) }
-                                Box(modifier = Modifier.weight(1f).aspectRatio(1.1f)) { RealtimeCpCard(onPress = onOpenCpRanking) }
+                                Box(modifier = Modifier.weight(1f).aspectRatio(1.4f)) { RealtimeRankingCard(onPress = onOpenLeaderboard) }
+                                Box(modifier = Modifier.weight(1f).aspectRatio(1.4f)) { RealtimeFamilyCard(onPress = onOpenFamilies) }
+                                Box(modifier = Modifier.weight(1f).aspectRatio(1.4f)) { RealtimeCpCard(onPress = onOpenCpRanking) }
                             }
                             
                             // Category Bar pushed up tight
                             LazyRow(
-                                contentPadding = PaddingValues(horizontal = 16.dp), 
+                                contentPadding = PaddingValues(horizontal = 8.dp), 
                                 horizontalArrangement = Arrangement.spacedBy(8.dp), 
                                 modifier = Modifier.offset(y = (-4).dp) // Reduced negative offset to move down
                             ) {
@@ -313,7 +310,7 @@ fun HomeScreen(
                         item { Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("NO ACTIVE ROOMS", color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp) } }
                     } else {
                         items(displayRooms.chunked(2)) { pair ->
-                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).padding(top = 2.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).padding(top = 2.dp)) {
                                 pair.forEach { room -> ChatRoomCard(room = room, onPress = { enterRoom(room) }) }
                                 if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
                             }
@@ -346,22 +343,30 @@ fun HomeScreen(
                                 
                                 // Info
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            profile?.username ?: "User",
-                                            fontWeight = FontWeight.Black,
-                                            fontSize = 18.sp,
-                                            color = Color(0xFF0F172A),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
+                                    val isRoomActive = myRooms.isNotEmpty()
+                                    val mainText = if (isRoomActive) myRooms.first().title else (profile?.username ?: "User")
+                                    val subText = if (isRoomActive) {
+                                        myRooms.first().announcement.ifBlank { "No announcement set." }
+                                    } else {
+                                        "Create a room to go live!"
                                     }
-                                    Text("ID: ${profile?.accountNumber ?: "000000"}", fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                                        GoldenCoin(size = 12.dp)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("${String.format("%.0f", profile?.coins ?: 0.0)} Coins", color = Color(0xFFD97706), fontWeight = FontWeight.Black, fontSize = 13.sp)
-                                    }
+
+                                    Text(
+                                        text = mainText,
+                                        fontWeight = FontWeight.Black,
+                                        fontSize = 18.sp,
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = subText,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF64748B),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                                 
                                 // My Room / Create Button

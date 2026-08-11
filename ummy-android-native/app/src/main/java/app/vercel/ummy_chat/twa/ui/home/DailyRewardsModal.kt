@@ -53,56 +53,7 @@ val rewardDays = listOf(
 // React Native golden-coin.tsx — ported
 @Composable
 fun GoldenCoin(size: Dp = 18.dp) {
-    Canvas(modifier = Modifier.size(size)) {
-        val s = size.toPx()
-        val c = Offset(s / 2f, s / 2f)
-
-        // Rim gradient (rimGrad): #ffe57f #ffb300 #8d6e63 #ffca28 #5d4037
-        drawCircle(
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    Color(0xFFFFE57F), Color(0xFFFFB300), Color(0xFF8D6E63),
-                    Color(0xFFFFCA28), Color(0xFF5D4037)
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(s, s)
-            ),
-            radius = s / 2f,
-            center = c
-        )
-        // Bevel (bevelGrad)
-        drawCircle(
-            brush = Brush.linearGradient(
-                colors = listOf(Color(0xFFE6A800), Color(0xFF8D6E63), Color(0xFFFFCA28), Color(0xFF7B6E42)),
-                start = Offset(0f, 0f),
-                end = Offset(s, s)
-            ),
-            radius = s * 0.42f,
-            center = c
-        )
-        // Face (faceGrad) radial: #fff9c4 #fdd835 #f57f17
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFFFF9C4), Color(0xFFFDD835), Color(0xFFF57F17)),
-                center = c,
-                radius = s / 2f
-            ),
-            radius = s * 0.36f,
-            center = c
-        )
-        // "$" symbol
-        drawContext.canvas.nativeCanvas.apply {
-            val paint = android.graphics.Paint().apply {
-                isAntiAlias = true
-                color = android.graphics.Color.parseColor("#7A4A00")
-                textAlign = android.graphics.Paint.Align.CENTER
-                textSize = s * 0.38f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            }
-            val baseline = c.y - (paint.ascent() + paint.descent()) / 2f
-            drawText("$", c.x, baseline, paint)
-        }
-    }
+    app.vercel.ummy_chat.twa.ui.profile.GoldDollarIcon(size = size.value.toInt())
 }
 
 @Composable
