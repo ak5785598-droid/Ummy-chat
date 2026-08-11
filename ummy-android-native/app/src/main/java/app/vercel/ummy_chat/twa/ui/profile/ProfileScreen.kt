@@ -180,9 +180,11 @@ fun ProfileScreen(
                 friendsCount = followingIds.count { it in fanIds }
             }
 
-        // Listen to Visitors
+        // Listen to Visitors (7-day filter)
+        val sevenDaysAgoDate = com.google.firebase.Timestamp(java.util.Date(System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000))
         val visitorsUnsub = db.collection("users").document(uid)
             .collection("profileVisitors")
+            .whereGreaterThanOrEqualTo("timestamp", sevenDaysAgoDate)
             .addSnapshotListener { snap, _ ->
                 visitorsCount = snap?.documents?.size ?: 0
             }

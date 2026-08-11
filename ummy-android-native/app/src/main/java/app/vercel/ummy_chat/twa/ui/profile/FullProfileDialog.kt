@@ -366,9 +366,11 @@ fun FullProfileDialog(
                 }
             }
 
-            // Real-time visitors count
+            // Real-time visitors count (7-day filter)
+            val sevenDaysAgoTs = com.google.firebase.Timestamp(java.util.Date(System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000))
             val visitorsRef = db.collection("users").document(targetUid)
-                .collection("visitors")
+                .collection("profileVisitors")
+                .whereGreaterThanOrEqualTo("timestamp", sevenDaysAgoTs)
             val visitorsListener = visitorsRef.addSnapshotListener { snap, _ ->
                 liveVisitorsCount = snap?.documents?.size ?: 0
             }
@@ -685,56 +687,54 @@ fun FullProfileDialog(
                 }
 
                 // ════════════════════════════════════════════════════════════════
+                // ════════════════════════════════════════════════════════════════
                 // WHITE CARD — RN line 672: marginTop:-32, px:20, borderTopRadius:24
                 // ════════════════════════════════════════════════════════════════
-                Box(modifier = Modifier.fillMaxWidth().offset(y = (-32).dp)
+                Column(modifier = Modifier.fillMaxWidth().offset(y = (-32).dp)
                     .background(ColorWhite, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .padding(top = 10.dp, bottom = 24.dp)) {
 
                     // ════════════════════════════════════════════════════════════════
                     // "IN ROOM" STATUS PILL — RN line 675-735
-                    // position: absolute, top: 14, left: 16, zIndex: 40
                     // ════════════════════════════════════════════════════════════════
-                    Box(modifier = Modifier.align(Alignment.TopStart).offset(x = 16.dp, y = 14.dp).zIndex(40f)) {
-                        if (currentRoomId != null) {
-                            // Active: gradient pill with animated equalizer bars
-                            Box(modifier = Modifier.clip(RoundedCornerShape(14.dp))
-                                .background(Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF0284C7))))
-                                .shadow(4.dp, RoundedCornerShape(14.dp), ambientColor = Color(0x590284C7))
-                                .clickable { currentRoomId?.let { onDismiss(); onNavigateToRoom(it) } }
-                                .padding(horizontal = 10.dp, vertical = 5.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    val infiniteTransition = rememberInfiniteTransition()
-                                    val bar1 by infiniteTransition.animateFloat(0.3f, 1.2f, infiniteRepeatable(tween(400), RepeatMode.Reverse))
-                                    val bar2 by infiniteTransition.animateFloat(0.4f, 1.3f, infiniteRepeatable(tween(350), RepeatMode.Reverse))
-                                    val bar3 by infiniteTransition.animateFloat(0.2f, 1.1f, infiniteRepeatable(tween(500), RepeatMode.Reverse))
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.5.dp),
-                                        modifier = Modifier.height(14.dp)) {
-                                        Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar1) * 7).dp)
-                                            .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
-                                        Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar2) * 7).dp)
-                                            .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
-                                        Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar3) * 7).dp)
-                                            .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
-                                    }
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text("In Room", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
-                                        color = ColorWhite, letterSpacing = 0.3.sp)
-                                }
-                            }
-                        } else {
-                            // Inactive: gray pill
-                            Row(modifier = Modifier.clip(RoundedCornerShape(14.dp))
-                                .background(Color(0xFFE2E8F0))
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFFCBD5E1)),
-                                    contentAlignment = Alignment.Center) {
-                                    Text("\uD83C\uDFDB\uFE0F", fontSize = 8.sp)
+                    if (currentRoomId != null) {
+                        // Active: gradient pill with animated equalizer bars
+                        Box(modifier = Modifier.offset(y = (-4).dp).clip(RoundedCornerShape(14.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFF38BDF8), Color(0xFF0284C7))))
+                            .shadow(4.dp, RoundedCornerShape(14.dp), ambientColor = Color(0x590284C7))
+                            .clickable { currentRoomId?.let { onDismiss(); onNavigateToRoom(it) } }
+                            .padding(horizontal = 10.dp, vertical = 5.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                val infiniteTransition = rememberInfiniteTransition()
+                                val bar1 by infiniteTransition.animateFloat(0.3f, 1.2f, infiniteRepeatable(tween(400), RepeatMode.Reverse))
+                                val bar2 by infiniteTransition.animateFloat(0.4f, 1.3f, infiniteRepeatable(tween(350), RepeatMode.Reverse))
+                                val bar3 by infiniteTransition.animateFloat(0.2f, 1.1f, infiniteRepeatable(tween(500), RepeatMode.Reverse))
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.5.dp),
+                                    modifier = Modifier.height(14.dp)) {
+                                    Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar1) * 7).dp)
+                                        .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
+                                    Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar2) * 7).dp)
+                                        .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
+                                    Box(modifier = Modifier.width(2.5.dp).fillMaxHeight().offset(y = ((1 - bar3) * 7).dp)
+                                        .clip(RoundedCornerShape(1.5.dp)).background(ColorWhite))
                                 }
                                 Spacer(modifier = Modifier.width(5.dp))
-                                Text("In Room", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorTextSecondary)
+                                Text("In Room", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold,
+                                    color = ColorWhite, letterSpacing = 0.3.sp)
                             }
+                        }
+                    } else {
+                        // Inactive: gray pill
+                        Row(modifier = Modifier.offset(y = (-4).dp).clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFFE2E8F0))
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(14.dp).clip(CircleShape).background(Color(0xFFCBD5E1)),
+                                    contentAlignment = Alignment.TopCenter) {
+                                    Text("\uD83C\uDFDB\uFE0F", fontSize = 8.sp, modifier = Modifier.offset(y = (-3.5).dp))
+                            }
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("In Room", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ColorTextSecondary)
                         }
                     }
 
