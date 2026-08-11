@@ -817,6 +817,42 @@ fun StoreScreen(onBack: () -> Unit) {
     }
 }
 
+private object BubbleStyleRegistry {
+    private data class BubbleStyle(val colors: List<Color>, val decorator: String)
+
+    private val styles = mapOf(
+        "heart-bubble" to BubbleStyle(listOf(Color(0xFFF472B6), Color(0xFFDB2777), Color(0xFFBE185D)), "\uD83D\uDC96"),
+        "love-bubble" to BubbleStyle(listOf(Color(0xFFF87171), Color(0xFFDC2626), Color(0xFF991B1B)), "\uD83D\uDC8C"),
+        "evil-bubble" to BubbleStyle(listOf(Color(0xFF3B0764), Color(0xFF6B21A8), Color(0xFFA855F7)), "\uD83D\uDE08"),
+        "candy-bubble" to BubbleStyle(listOf(Color(0xFFA5F3FC), Color(0xFFFBCFE8), Color(0xFFF472B6)), "\uD83C\uDF6D"),
+        "neon-cyber" to BubbleStyle(listOf(Color(0xFF020617), Color(0xFF0F172A), Color(0xFF1E1B4B)), "\u2728"),
+        "ice-crystal" to BubbleStyle(listOf(Color(0xFFE0F2FE), Color(0xFF38BDF8), Color(0xFF0369A1)), "\u2744\uFE0F"),
+        "halloween-2025" to BubbleStyle(listOf(Color(0xFF581C87), Color(0xFF3B0764), Color(0xFF090514)), "\uD83C\uDF83"),
+        "christmas-2025" to BubbleStyle(listOf(Color(0xFFB91C1C), Color(0xFF991B1B), Color(0xFF7F1D1D)), "\uD83C\uDF84"),
+        "coin-seller" to BubbleStyle(listOf(Color(0xFF047857), Color(0xFF065F46), Color(0xFF14532D)), "\uD83E\uDE99"),
+        "zodiac-2026" to BubbleStyle(listOf(Color(0xFF1E1B4B), Color(0xFF312e81), Color(0xFF4338CA)), "\uD83E\uDE90"),
+        "b-cosmic-star" to BubbleStyle(listOf(Color(0xFF1E1B4B), Color(0xFF260C44), Color(0xFF0D041E)), "\uD83E\uDE90"),
+        "b-royal-gold" to BubbleStyle(listOf(Color(0xFF3B2A09), Color(0xFF2E1F04), Color(0xFF1F1300)), "\uD83D\uDC51"),
+        "valentines-2026" to BubbleStyle(listOf(Color(0xFFF43F5E), Color(0xFFBE185D), Color(0xFF9D174D)), "\uD83C\uDF39"),
+        "ramadan-2026-s" to BubbleStyle(listOf(Color(0xFF1D4ED8), Color(0xFF1E40AF), Color(0xFF1E3A8A)), "\uD83C\uDF19"),
+        "ramadan-2026-a" to BubbleStyle(listOf(Color(0xFF047857), Color(0xFF065F46), Color(0xFF14532D)), "\uD83C\uDFDB\uFE0F"),
+        "newyear-2026" to BubbleStyle(listOf(Color(0xFF991B1B), Color(0xFF7F1D1D), Color(0xFFCA8A04)), "\u2728"),
+        "svip-dragon-bubble" to BubbleStyle(listOf(Color(0xFF7F1D1D), Color(0xFF991B1B), Color(0xFFDC2626)), "\uD83D\uDC09"),
+        "svip-lion-bubble" to BubbleStyle(listOf(Color(0xFF78350F), Color(0xFF92400E), Color(0xFFB45309)), "\uD83E\uDD81"),
+        "svip-owl-bubble" to BubbleStyle(listOf(Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF4338CA)), "\uD83E\uDD89"),
+        "svip-wolf-bubble" to BubbleStyle(listOf(Color(0xFF374151), Color(0xFF4B5563), Color(0xFF6B7280)), "\uD83D\uDC3A"),
+        "default-premium" to BubbleStyle(listOf(Color(0xFFC084FC), Color(0xFF818CF8), Color(0xFF4F46E5)), "\u2B50"),
+    )
+
+    private val defaultStyle = BubbleStyle(listOf(Color(0xFFC084FC), Color(0xFF818CF8), Color(0xFF4F46E5)), "\uD83D\uDCAC")
+
+    fun getBubbleColors(bubbleId: String): List<Color> =
+        (styles[bubbleId] ?: defaultStyle).colors
+
+    fun getDecorator(bubbleId: String): String =
+        (styles[bubbleId] ?: defaultStyle).decorator
+}
+
 @Composable
 private fun StoreItemCard(
     item: StoreItem,
@@ -848,7 +884,35 @@ private fun StoreItemCard(
                 modifier = Modifier.fillMaxWidth().height(110.dp).background(Color(0xFFF8FAFC)),
                 contentAlignment = Alignment.Center
             ) {
-                if (mediaUrl != null) {
+                if (item.type == "Bubble") {
+                    // Bubble preview — gradient chat bubble with text
+                    val bubbleColors = BubbleStyleRegistry.getBubbleColors(item.id)
+                    val decorator = BubbleStyleRegistry.getDecorator(item.id)
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Brush.linearGradient(bubbleColors))
+                                .border(1.5.dp, bubbleColors[1].copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(decorator, fontSize = 22.sp)
+                                Text(
+                                    "Hello! \uD83D\uDCAC",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                } else if (mediaUrl != null) {
                     AsyncImage(
                         model = CdnUtils.toCdn(mediaUrl),
                         contentDescription = item.name,
@@ -1022,35 +1086,67 @@ private fun PreviewPurchaseDialog(
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFF8FAFC)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (!item.imageUrl.isNullOrEmpty()) {
-                        AsyncImage(
-                            model = item.imageUrl,
-                            contentDescription = item.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
+                if (item.type == "Bubble") {
+                    // Bubble preview — gradient chat bubble matching RN layout
+                    val bubbleColors = BubbleStyleRegistry.getBubbleColors(item.id)
+                    val decorator = BubbleStyleRegistry.getDecorator(item.id)
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(160.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    Brush.linearGradient(
-                                        listOf(Color(0xFFC084FC), Color(0xFF818CF8))
-                                    )
-                                ),
+                                .padding(horizontal = 24.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Brush.linearGradient(bubbleColors))
+                                .border(2.dp, bubbleColors[1].copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                                .padding(horizontal = 28.dp, vertical = 20.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = if (item.type == "Wave") "🌊" else if (item.type == "Bubble") "💬" else "✨",
-                                fontSize = 48.sp
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(decorator, fontSize = 36.sp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "This is how your chat bubble looks! \uD83D\uDCAC\uD83D\uDD25",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFF8FAFC)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!item.imageUrl.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = item.imageUrl,
+                                contentDescription = item.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(Color(0xFFC084FC), Color(0xFF818CF8))
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (item.type == "Wave") "\uD83C\uDF0A" else "\u2728",
+                                    fontSize = 48.sp
+                                )
+                            }
                         }
                     }
                 }

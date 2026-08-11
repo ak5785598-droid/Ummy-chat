@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.BusinessCenter
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.PhotoAlbum
+import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -573,21 +576,21 @@ fun ProfileScreen(
                     )
                     if (userSvip >= 3) {
                         ProfileMenuItem(
-                            icon = { Icon(Icons.Default.MonetizationOn, null, tint=Color(0xFFFBBF24), modifier=Modifier.size(22.dp)) },
+                            icon = { Icon(Icons.Default.Star, null, tint=Color(0xFFFBBF24), modifier=Modifier.size(22.dp)) },
                             label = "Weekly SVIP Coin Rebates",
                             onClick = { /* TODO: Open Coin Claim Modal */ }
                         )
                     }
                     if (userSvip >= 4) {
                         ProfileMenuItem(
-                            icon = { Icon(Icons.Default.PhotoAlbum, null, tint=Color(0xFF818CF8), modifier=Modifier.size(22.dp)) },
+                            icon = { Icon(Icons.Default.Favorite, null, tint=Color(0xFF818CF8), modifier=Modifier.size(22.dp)) },
                             label = "Private Space Album",
                             onClick = { /* TODO: Navigate to Private Album */ }
                         )
                     }
                     if (userSvip >= 7) {
                         ProfileMenuItem(
-                            icon = { Icon(Icons.Default.SupportAgent, null, tint=Color(0xFF34D399), modifier=Modifier.size(22.dp)) },
+                            icon = { Icon(Icons.Default.Person, null, tint=Color(0xFF34D399), modifier=Modifier.size(22.dp)) },
                             label = "VIP Liaison Officer",
                             onClick = { /* TODO: Open VIP Support Chat */ }
                         )
