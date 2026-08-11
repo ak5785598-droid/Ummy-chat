@@ -72,6 +72,7 @@ fun GiftBottomSheet(
             ) {
                 items(filteredGifts) { gift ->
                     val isSelected = selectedGift?.id == gift.id
+                    val isLocked = gift.requiredSvipLevel > userSvipLevel
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
@@ -82,12 +83,16 @@ fun GiftBottomSheet(
                                 shape = RoundedCornerShape(14.dp)
                             )
                             .background(if (isSelected) Color(0xFF312E81) else Color(0xFF0F172A))
-                            .clickable { selectedGift = gift }
+                            .clickable { if (!isLocked) selectedGift = gift }
                             .padding(8.dp)
                     ) {
                         Text(gift.iconEmoji, fontSize = 32.sp)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(gift.name, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        if (isLocked) {
+                            Text("SVIP + Only", color = Color.Red, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        } else {
+                            Text(gift.name, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text("🟡", fontSize = 10.sp)
                             Text("${gift.price}", color = Color(0xFFFBBF24), fontSize = 10.sp, fontWeight = FontWeight.Black)
@@ -123,3 +128,4 @@ fun GiftBottomSheet(
         }
     }
 }
+

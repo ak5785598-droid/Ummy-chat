@@ -1,19 +1,23 @@
 package app.vercel.ummy_chat.twa.ui.store
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Error
@@ -39,6 +43,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import app.vercel.ummy_chat.twa.ui.profile.GoldDollarIcon
+import app.vercel.ummy_chat.twa.util.CdnUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -106,6 +111,7 @@ private fun getDynamicIDPrice(idString: String, duration: Int): Long {
     return if (duration == 7) basePrice else basePrice * 3
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoreScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -125,6 +131,15 @@ fun StoreScreen(onBack: () -> Unit) {
     var previewItem by remember { mutableStateOf<StoreItem?>(null) }
     var isProcessingPurchase by remember { mutableStateOf(false) }
 
+    // Gift flow state
+    var giftTargetItem by remember { mutableStateOf<StoreItem?>(null) }
+    var giftDuration by remember { mutableIntStateOf(7) }
+    var showGiftSheet by remember { mutableStateOf(false) }
+    var giftSearchQuery by remember { mutableStateOf("") }
+    var giftSearchResults by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var isSearchingGift by remember { mutableStateOf(false) }
+    var isSendingGift by remember { mutableStateOf(false) }
+
     // Custom ID check states
     var customIdInput by remember { mutableStateOf("") }
     var isCheckingId by remember { mutableStateOf(false) }
@@ -133,6 +148,14 @@ fun StoreScreen(onBack: () -> Unit) {
 
     val uid = FirebaseAuth.getInstance().currentUser?.uid
     val fs = FirebaseFirestore.getInstance()
+
+    BackHandler(enabled = previewItem != null || activeType != "Frame") {
+        if (previewItem != null) {
+            previewItem = null
+        } else if (activeType != "Frame") {
+            activeType = "Frame"
+        }
+    }
 
     // Query catalog items
     LaunchedEffect(Unit) {
@@ -303,7 +326,13 @@ fun StoreScreen(onBack: () -> Unit) {
     fun executePurchase(item: StoreItem, durationDays: Int) {
         if (uid == null || isProcessingPurchase) return
         
-        val price = if (item.type == "ID") getDynamicIDPrice(checkedId, durationDays) else if (durationDays == 7) item.price else (item.price * 3)
+        val price = if (item.type == "ID") getDynamicIDPrice(checkedId, durationDays) else when (durationDays) {
+            3 -> (item.price * 0.5).toLong()
+            7 -> item.price
+            15 -> item.price * 2
+            30 -> (item.price * 3.5).toLong()
+            else -> item.price
+        }
         if (userCoins < price) {
             Toast.makeText(context, "Insufficient Coins!", Toast.LENGTH_SHORT).show()
             return
@@ -410,81 +439,61 @@ fun StoreScreen(onBack: () -> Unit) {
             }
     }
 
-    // Inventory equip state resolver
+    // Inventory state
     val inventory = userProfileData?.get("inventory") as? Map<*, *>
     val activeFrame = inventory?.get("activeFrame") as? String
     val activeWave = inventory?.get("activeWave") as? String
     val activeBubble = inventory?.get("activeBubble") as? String
     val activeEntryEffect = inventory?.get("activeEntryEffect") as? String
-    val activeID = inventory?.get("activeID") as? String
+    @Suppress("UNCHECKED_CAST")
+    val ownedIds = (inventory?.get("ownedItems") as? List<Any?>)?.mapNotNull { it?.toString() } ?: emptyList()
 
+    fun isItemOwned(id: String): Boolean = id in ownedIds
     fun isEquipped(item: StoreItem): Boolean = when (item.type) {
         "Frame" -> activeFrame == item.id
         "Wave" -> activeWave == item.id
         "Bubble" -> activeBubble == item.id
         "Entry" -> activeEntryEffect == item.entryType
-        "ID" -> activeID == item.id
         else -> false
     }
 
-    // Toggle equipping
-    fun toggleEquipItem(item: StoreItem, equip: Boolean) {
+    fun toggleEquipItem(item: StoreItem) {
         if (uid == null) return
         val profileRef = fs.collection("users").document(uid).collection("profile").document(uid)
         val userRef = fs.collection("users").document(uid)
-        
         val field = when (item.type) {
             "Frame" -> "inventory.activeFrame"
             "Wave" -> "inventory.activeWave"
             "Bubble" -> "inventory.activeBubble"
             "Entry" -> "inventory.activeEntryEffect"
-            "ID" -> "inventory.activeID"
             else -> return
         }
-        
         val urlField = "${field}MediaUrl"
         val itemUrl = item.imageUrl ?: item.videoUrl
-        
+        val currentlyActive = isEquipped(item)
         val updateData = hashMapOf<String, Any?>()
-        if (equip) {
-            updateData[field] = item.id
-            if (itemUrl != null && item.type != "ID") {
-                updateData[urlField] = itemUrl
-            }
-            if (item.type == "Wave") {
-                updateData["activeWave"] = item.id
-            }
-            if (item.type == "Entry") {
-                updateData["inventory.activeEntryVideoUrl"] = item.videoUrl ?: item.imageUrl
-            }
-        } else {
+        if (currentlyActive) {
             updateData[field] = null
-            if (item.type != "Entry" && item.type != "ID") {
-                updateData[urlField] = null
-            }
-            if (item.type == "Wave") {
-                updateData["activeWave"] = null
-            }
-            if (item.type == "Entry") {
-                updateData["inventory.activeEntryVideoUrl"] = null
-            }
+            if (item.type != "Entry") updateData[urlField] = null
+            if (item.type == "Wave") updateData["activeWave"] = null
+            if (item.type == "Entry") updateData["inventory.activeEntryVideoUrl"] = null
+        } else {
+            updateData[field] = item.id
+            if (itemUrl != null) updateData[urlField] = itemUrl
+            if (item.type == "Wave") updateData["activeWave"] = item.id
+            if (item.type == "Entry") updateData["inventory.activeEntryVideoUrl"] = item.videoUrl ?: item.imageUrl
         }
         updateData["updatedAt"] = FieldValue.serverTimestamp()
-        
         val batch = fs.batch()
         @Suppress("UNCHECKED_CAST")
         batch.update(profileRef, updateData as Map<String, Any>)
         @Suppress("UNCHECKED_CAST")
         batch.update(userRef, updateData as Map<String, Any>)
-        
-        batch.commit()
-            .addOnSuccessListener {
-                val action = if (equip) "equipped" else "unequipped"
-                Toast.makeText(context, "${item.name} successfully $action!", Toast.LENGTH_SHORT).show()
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Operation failed: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
+        batch.commit().addOnSuccessListener {
+            Toast.makeText(context, "${if (currentlyActive) "Removed" else "Activated"} ${item.name}!", Toast.LENGTH_SHORT).show()
+        }.addOnFailureListener {
+            Toast.makeText(context, "Failed: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))) {
@@ -664,6 +673,7 @@ fun StoreScreen(onBack: () -> Unit) {
                             userCoins = userCoins,
                             isEquipped = isEquipped(item),
                             isStoreTab = activeTab == "Store",
+                            owned = isItemOwned(item.id),
                             onCardClick = {
                                 if (activeTab == "Store") {
                                     if (activeType == "ID" && (idAvailability != "available" || checkedId.isBlank())) {
@@ -673,7 +683,8 @@ fun StoreScreen(onBack: () -> Unit) {
                                     }
                                 }
                             },
-                            onEquipToggle = { toggleEquipItem(item, !isEquipped(item)) }
+                            onEquipToggle = { toggleEquipItem(item) },
+                            onRemove = if (activeTab != "Store" && isEquipped(item)) { { toggleEquipItem(item) } } else null
                         )
                     }
                 }
@@ -690,8 +701,118 @@ fun StoreScreen(onBack: () -> Unit) {
                 onDismiss = { previewItem = null },
                 onConfirmPurchase = { duration ->
                     executePurchase(item, duration)
+                },
+                onGift = { duration ->
+                    giftTargetItem = item
+                    giftDuration = duration
+                    showGiftSheet = true
+                    giftSearchQuery = ""
+                    giftSearchResults = emptyList()
                 }
             )
+        }
+
+        // Gift Recipient Sheet
+        if (showGiftSheet && giftTargetItem != null) {
+            val item = giftTargetItem!!
+            ModalBottomSheet(
+                onDismissRequest = { showGiftSheet = false },
+                containerColor = Color.White
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text("Send as Gift", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                    Text("Send \"${item.name}\" to a friend", fontSize = 13.sp, color = Color(0xFF64748B))
+
+                    OutlinedTextField(
+                        value = giftSearchQuery,
+                        onValueChange = { q ->
+                            giftSearchQuery = q
+                            if (q.length >= 2) {
+                                isSearchingGift = true
+                                fs.collection("users")
+                                    .whereGreaterThanOrEqualTo("name", q)
+                                    .whereLessThanOrEqualTo("name", q + "\uF8FF")
+                                    .limit(10)
+                                    .get()
+                                    .addOnSuccessListener { snap ->
+                                        giftSearchResults = snap.documents.mapNotNull { doc ->
+                                            val d = doc.data ?: return@mapNotNull null
+                                            if (doc.id != uid) d + mapOf("uid" to doc.id) else null
+                                        }
+                                        isSearchingGift = false
+                                    }
+                                    .addOnFailureListener { isSearchingGift = false }
+                            } else {
+                                giftSearchResults = emptyList()
+                            }
+                        },
+                        placeholder = { Text("Search by name...") },
+                        leadingIcon = { Icon(Icons.Default.Close, null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+
+                    if (isSearchingGift) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = Color(0xFF7C3AED))
+                    }
+
+                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                        items(giftSearchResults) { user ->
+                            val name = user["name"] as? String ?: "Unknown"
+                            val photoUrl = user["photoUrl"] as? String
+                            val targetUid = user["uid"] as? String ?: return@items
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        isSendingGift = true
+                                        val batch = fs.batch()
+                                        val recipientRef = fs.collection("users").document(targetUid)
+                                        val senderRef = fs.collection("users").document(uid!!)
+                                        batch.update(recipientRef, "giftsReceived", FieldValue.arrayUnion(mapOf(
+                                            "itemId" to item.id,
+                                            "itemName" to item.name,
+                                            "senderName" to (userProfileData?.get("name") as? String ?: "Someone"),
+                                            "senderId" to uid,
+                                            "durationDays" to giftDuration,
+                                            "timestamp" to FieldValue.serverTimestamp()
+                                        )))
+                                        batch.update(senderRef, "coins", FieldValue.increment(-item.price.toLong()))
+                                        batch.commit()
+                                            .addOnSuccessListener {
+                                                Toast.makeText(context, "Gift sent!", Toast.LENGTH_SHORT).show()
+                                                isSendingGift = false
+                                                showGiftSheet = false
+                                                userCoins -= item.price
+                                            }
+                                            .addOnFailureListener {
+                                                Toast.makeText(context, "Failed to send gift", Toast.LENGTH_SHORT).show()
+                                                isSendingGift = false
+                                            }
+                                    }
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF7C3AED).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                                    Text(name.first().uppercase(), fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(name, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+
+                    if (isSendingGift) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                            CircularProgressIndicator(strokeWidth = 2.dp, color = Color(0xFF7C3AED))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -702,120 +823,159 @@ private fun StoreItemCard(
     userCoins: Long,
     isEquipped: Boolean,
     isStoreTab: Boolean,
+    owned: Boolean,
     onCardClick: () -> Unit,
-    onEquipToggle: () -> Unit
+    onEquipToggle: () -> Unit,
+    onRemove: (() -> Unit)? = null
 ) {
     val canAfford = userCoins >= item.price
-    
+    val mediaUrl = item.imageUrl?.let { u -> if (u.startsWith("http")) u else null }
+
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = 1.dp,
-                color = if (isEquipped) Color(0xFF7C3AED) else Color(0xFFE2E8F0),
+                width = if (isEquipped) 2.dp else 1.dp,
+                color = if (isEquipped) Color(0xFFFBBF24) else Color(0xFFE2E8F0),
                 shape = RoundedCornerShape(16.dp)
             )
             .clickable { onCardClick() }
     ) {
         Column {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .background(Color(0xFFF8FAFC)),
+                modifier = Modifier.fillMaxWidth().height(110.dp).background(Color(0xFFF8FAFC)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!item.imageUrl.isNullOrEmpty()) {
+                if (mediaUrl != null) {
                     AsyncImage(
-                        model = item.imageUrl,
+                        model = CdnUtils.toCdn(mediaUrl),
                         contentDescription = item.name,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(Color(0xFFC084FC), Color(0xFF818CF8))
-                                )
-                            ),
+                        modifier = Modifier.fillMaxSize().background(
+                            Brush.linearGradient(listOf(Color(0xFFC084FC), Color(0xFF818CF8)))
+                        ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (item.type == "Wave") "🌊" else if (item.type == "Bubble") "💬" else "✨",
+                            text = when (item.type) {
+                                "Wave" -> "\uD83C\uDF0A"
+                                "Bubble" -> "\uD83D\uDCAC"
+                                "Entry" -> "\uD83C\uDFAC"
+                                "Frame" -> "\uD83D\uDDBC\uFE0F"
+                                "Theme" -> "\uD83C\uDFA8"
+                                "ID" -> "\uD83D\uDCDD"
+                                "Medal" -> "\uD83C\uDFC5"
+                                else -> "\u2728"
+                            },
                             fontSize = 36.sp
                         )
                     }
                 }
-                
+
                 if (isEquipped) {
                     Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF7C3AED))
-                            .padding(4.dp)
+                        modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+                            .size(20.dp).clip(CircleShape).background(Color(0xFFFBBF24))
+                            .border(1.5.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("\u25B6", fontSize = 8.sp, color = Color.Black)
+                    }
+                } else if (owned) {
+                    Box(
+                        modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+                            .size(20.dp).clip(CircleShape).background(Color(0xFF10B981))
+                            .border(1.5.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                    }
+                }
+                if (item.notForSale) {
+                    Box(
+                        modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
+                            .clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEF3C7).copy(alpha = 0.9f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("Exclusive", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF92400E))
                     }
                 }
             }
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(
-                    text = if (item.type == "ID" && item.source == "store") "Reserve Theme ID" else item.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = item.name,
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A), maxLines = 1, overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = item.type,
+                    fontSize = 9.sp, fontWeight = FontWeight.Medium, color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 if (isStoreTab) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        GoldDollarIcon(size = 12)
-                        Text(
-                            text = if (item.type == "ID") "Price Variable" else String.format("%,d", item.price),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (canAfford) Color(0xFFD97706) else Color(0xFFEF4444)
-                        )
-                    }
-                } else {
-                    if (item.type != "Medal") {
-                        Button(
-                            onClick = onEquipToggle,
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isEquipped) Color(0xFFEF4444) else Color(0xFF7C3AED)
-                            ),
-                            modifier = Modifier.fillMaxWidth().height(28.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
+                    if (item.notForSale) {
+                        Text("Not for Sale", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                            color = Color(0xFFEF4444), modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            GoldDollarIcon(size = 12)
                             Text(
-                                text = if (isEquipped) "Unequip" else "Equip",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                text = if (item.type == "ID") "Variable" else String.format("%,d", item.price),
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                color = if (canAfford) Color(0xFFD97706) else Color(0xFFEF4444)
                             )
                         }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(0xFFF1F5F9))
-                                .padding(vertical = 4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Official Medal", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                    }
+                } else {
+                    when {
+                        isEquipped && onRemove != null -> {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFFEF3C7))
+                                    .padding(horizontal = 6.dp, vertical = 3.dp)) {
+                                    Text("ACTIVE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Box(modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xFFEF4444).copy(alpha = 0.1f))
+                                    .clickable { onRemove() }.padding(horizontal = 6.dp, vertical = 3.dp)) {
+                                    Text("REMOVE", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444))
+                                }
+                            }
+                        }
+                        owned && item.type in listOf("Frame", "Wave", "Bubble", "Entry") -> {
+                            Button(
+                                onClick = onEquipToggle, shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFBBF24)),
+                                modifier = Modifier.fillMaxWidth().height(28.dp), contentPadding = PaddingValues(0.dp)
+                            ) { Text("USE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black) }
+                        }
+                        owned -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF10B981)))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("OWNED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                            }
+                            if (item.type == "Theme") {
+                                Text("Apply in Room Settings", fontSize = 8.sp, color = Color(0xFF94A3B8),
+                                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                        item.notForSale -> {
+                            Text("Not for Sale", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                                color = Color(0xFFEF4444), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                        }
+                        else -> {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                GoldDollarIcon(size = 12)
+                                Text(String.format("%,d", item.price), fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                    color = if (canAfford) Color(0xFFD97706) else Color(0xFFEF4444))
+                            }
                         }
                     }
                 }
@@ -831,10 +991,17 @@ private fun PreviewPurchaseDialog(
     userCoins: Long,
     isProcessing: Boolean,
     onDismiss: () -> Unit,
-    onConfirmPurchase: (durationDays: Int) -> Unit
+    onConfirmPurchase: (durationDays: Int) -> Unit,
+    onGift: ((durationDays: Int) -> Unit)? = null
 ) {
     var selectedDuration by remember { mutableStateOf(7) }
-    val finalPrice = if (item.type == "ID") getDynamicIDPrice(checkedId, selectedDuration) else if (selectedDuration == 7) item.price else (item.price * 3)
+    val finalPrice = if (item.type == "ID") getDynamicIDPrice(checkedId, selectedDuration) else when (selectedDuration) {
+        3 -> (item.price * 0.5).toLong()
+        7 -> item.price
+        15 -> item.price * 2
+        30 -> (item.price * 3.5).toLong()
+        else -> item.price
+    }
     val canAfford = userCoins >= finalPrice
 
     Dialog(onDismissRequest = onDismiss) {
@@ -917,12 +1084,11 @@ private fun PreviewPurchaseDialog(
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     Text("SELECT DURATION", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF94A3B8), letterSpacing = 1.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        listOf(7, 30).forEach { days ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        listOf(3, 7, 15, 30).forEach { days ->
                             val isSelected = selectedDuration == days
                             Box(
-                                modifier = Modifier
-                                    .weight(1f)
+                                modifier = Modifier.weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (isSelected) Color(0xFF7C3AED) else Color(0xFFF1F5F9))
                                     .border(1.dp, if (isSelected) Color(0xFF7C3AED) else Color(0xFFE2E8F0), RoundedCornerShape(12.dp))
@@ -932,7 +1098,7 @@ private fun PreviewPurchaseDialog(
                             ) {
                                 Text(
                                     text = "$days Days",
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSelected) Color.White else Color(0xFF475569)
                                 )
@@ -974,12 +1140,27 @@ private fun PreviewPurchaseDialog(
                     ) {
                         Text("Cancel", fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
                     }
+                    if (onGift != null && !item.notForSale) {
+                        Button(
+                            onClick = { onGift(selectedDuration) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEC4899)),
+                            enabled = !isProcessing && canAfford,
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.weight(1f).height(44.dp)
+                        ) {
+                            if (isProcessing) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            } else {
+                                Text("\uD83C\uDF81 Gift", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
                     Button(
                         onClick = { onConfirmPurchase(selectedDuration) },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
                         enabled = !isProcessing && canAfford,
                         shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f).height(44.dp)
+                        modifier = if (onGift != null && !item.notForSale) Modifier.weight(1f).height(44.dp) else Modifier.weight(1.5f).height(44.dp)
                     ) {
                         if (isProcessing) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)

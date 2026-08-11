@@ -134,7 +134,8 @@ data class GiftModel(
     val price: Int,
     val category: String = "HOT",
     val iconEmoji: String = "🎁",
-    val animationUrl: String? = null
+    val animationUrl: String? = null,
+    val requiredSvipLevel: Int = 0
 )
 
 val DEFAULT_GIFTS_LIST = listOf(
@@ -146,7 +147,8 @@ val DEFAULT_GIFTS_LIST = listOf(
     GiftModel("rocket",  "Rocket",          2000,   "LUXURY",  "🚀"),
     GiftModel("car",     "Sports Car",      5000,   "LUXURY",  "🏎️"),
     GiftModel("castle",  "Royal Castle",    25000,  "LUXURY",  "🏰"),
-    GiftModel("dragon",  "Golden Dragon",   100000, "VIP",     "🐉")
+    GiftModel("dragon",  "Golden Dragon",   100000, "VIP",     "🐉", requiredSvipLevel = 3),
+    GiftModel("unicorn", "Mythic Unicorn",  250000, "VIP",     "🦄", requiredSvipLevel = 5)
 )
 
 // ── TopSupporter ─────────────────────────────────────────────────────────────

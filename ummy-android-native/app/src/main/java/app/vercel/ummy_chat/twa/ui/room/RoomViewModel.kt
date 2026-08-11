@@ -236,6 +236,7 @@ class RoomViewModel(
         recordVisit(roomId)
         updateUserPresence(roomId)
         startGhostPurge(roomId)
+        fetchCurrentUserProfile()
 
         // Register lifecycle observer for background/foreground room presence sync
         lifecycleOwner?.lifecycle?.addObserver(object : DefaultLifecycleObserver {
@@ -1409,3 +1410,4 @@ class RoomViewModel(
         leaveRoom()
     }
 }
+
