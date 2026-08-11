@@ -11,6 +11,9 @@ import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PhotoAlbum
 import androidx.compose.material.icons.filled.SupportAgent
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
