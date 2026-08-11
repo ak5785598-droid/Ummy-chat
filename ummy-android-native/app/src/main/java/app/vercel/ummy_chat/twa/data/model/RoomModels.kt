@@ -75,7 +75,8 @@ data class MessageModel(
     val isBattle: Boolean = false,
     val comboCount: Int = 1,
     val isRead: Boolean = false,
-    val timestamp: Any? = null
+    val timestamp: Any? = null,
+    val senderSvipLevel: Int = 0
 ) {
     val displayContent: String get() = content.ifBlank { text ?: "" }
 }

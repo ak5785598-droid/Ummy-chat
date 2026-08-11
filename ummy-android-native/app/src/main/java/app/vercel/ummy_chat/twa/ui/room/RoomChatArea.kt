@@ -170,13 +170,35 @@ fun TextChatBubble(
     onLongPress: (MessageModel) -> Unit
 ) {
     val isMe = msg.senderId == currentUserId
-    val nameColor = when {
-        isMe -> Color(0xFFA78BFA)
-        else -> Color((Color(0xFF818CF8).value.toLong() + (msg.senderId.hashCode().toLong() and 0xFFFFFF)).toULong())
-    }.let {
-        // Clamp to visible color range
-        Color(0xFF818CF8)
+    val isSvip = msg.senderSvipLevel >= 2
+    
+    // Silver Greeting Card Styling
+    val bubbleBackground = if (isSvip) {
+        Brush.horizontalGradient(
+            colors = listOf(Color(0xFF1E293B).copy(alpha = 0.9f), Color(0xFF334155).copy(alpha = 0.9f))
+        )
+    } else if (isMe) {
+        Brush.horizontalGradient(
+            colors = listOf(Color(0xFF312E81).copy(alpha = 0.85f), Color(0xFF312E81).copy(alpha = 0.85f))
+        )
+    } else {
+        Brush.horizontalGradient(
+            colors = listOf(Color.Black.copy(alpha = 0.45f), Color.Black.copy(alpha = 0.45f))
+        )
     }
+
+    val shape = RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
+
+    val bubbleModifier = Modifier
+        .clip(shape)
+        .background(bubbleBackground)
+        .let {
+            if (isSvip) {
+                it.border(1.dp, Brush.linearGradient(listOf(Color(0xFFE2E8F0), Color(0xFF94A3B8))), shape)
+            } else it
+        }
+        .clickable { onLongPress(msg) }
+        .padding(horizontal = 10.dp, vertical = 6.dp)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -191,32 +213,48 @@ fun TextChatBubble(
                 .size(26.dp)
                 .clip(CircleShape)
                 .background(Color.Gray)
+                .let {
+                    if (isSvip) it.border(1.dp, Color(0xFFE2E8F0), CircleShape) else it
+                }
         )
         Spacer(modifier = Modifier.width(6.dp))
 
         // Bubble
         Column(modifier = Modifier.weight(1f)) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
-                    .background(
-                        if (isMe) Color(0xFF312E81).copy(alpha = 0.85f)
-                        else Color.Black.copy(alpha = 0.45f)
-                    )
-                    .clickable { onLongPress(msg) }
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(SpanStyle(color = Color(0xFF818CF8), fontWeight = FontWeight.Bold, fontSize = 11.sp)) {
-                            append(msg.senderName)
+            Box(modifier = bubbleModifier) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isSvip) {
+                            // Custom Micro-Badge
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Brush.horizontalGradient(listOf(Color(0xFFF59E0B), Color(0xFFFCD34D))))
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "SVIP ${msg.senderSvipLevel}",
+                                    color = Color.White,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
                         }
-                        append("  ")
-                        withStyle(SpanStyle(color = Color.White, fontSize = 12.sp)) {
-                            append(msg.displayContent)
-                        }
+                        Text(
+                            text = msg.senderName,
+                            color = if (isSvip) Color(0xFFE2E8F0) else Color(0xFF818CF8),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
                     }
-                )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = msg.displayContent,
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

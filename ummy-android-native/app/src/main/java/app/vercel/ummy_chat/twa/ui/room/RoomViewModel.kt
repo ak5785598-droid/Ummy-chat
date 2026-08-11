@@ -458,7 +458,8 @@ class RoomViewModel(
                         isSfx = data["isSfx"] as? Boolean ?: false,
                         isBattle = data["isBattle"] as? Boolean ?: false,
                         comboCount = (data["comboCount"] as? Long)?.toInt() ?: 1,
-                        timestamp = ts
+                        timestamp = ts,
+                        senderSvipLevel = (data["senderSvipLevel"] as? Number)?.toInt() ?: 0
                     )
                     // Entry effect trigger
                     if (msg.type == "entrance" && !processedIds.contains(msg.id)) {
