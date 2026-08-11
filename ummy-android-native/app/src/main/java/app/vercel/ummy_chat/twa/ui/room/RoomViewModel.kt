@@ -217,6 +217,27 @@ class RoomViewModel(
     private val _customEmojis = MutableStateFlow<List<Map<String, Any>>>(emptyList())
     val customEmojis: StateFlow<List<Map<String, Any>>> = _customEmojis.asStateFlow()
 
+    // ── Current User Profile ─────────────────────────────────────────────────
+    private val _currentUserSvipLevel = MutableStateFlow(0)
+    val currentUserSvipLevel: StateFlow<Int> = _currentUserSvipLevel.asStateFlow()
+
+    private fun fetchCurrentUserProfile() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val profileSnap = firestore.collection("users").document(uid)
+                    .collection("profile").document(uid).get().await()
+                
+                val svipLevel = (profileSnap.get("svip") as? Number)?.toInt() ?: 0
+                val officialTitle = profileSnap.getString("officialTitle")
+                val isOfficial = (officialTitle == "Official" || officialTitle == "Host")
+                _currentUserSvipLevel.value = if (isOfficial) 17 else svipLevel
+            } catch (e: Exception) {
+                _currentUserSvipLevel.value = 0
+            }
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // INIT
     // ─────────────────────────────────────────────────────────────────────────

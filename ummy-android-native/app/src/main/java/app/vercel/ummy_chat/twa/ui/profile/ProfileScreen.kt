@@ -571,6 +571,27 @@ fun ProfileScreen(
                         label = "My Item",
                         onClick = { onNavigate("/store") }
                     )
+                    if (userSvip >= 3) {
+                        ProfileMenuItem(
+                            icon = { Icon(Icons.Default.MonetizationOn, null, tint=Color(0xFFFBBF24), modifier=Modifier.size(22.dp)) },
+                            label = "Weekly SVIP Coin Rebates",
+                            onClick = { /* TODO: Open Coin Claim Modal */ }
+                        )
+                    }
+                    if (userSvip >= 4) {
+                        ProfileMenuItem(
+                            icon = { Icon(Icons.Default.PhotoAlbum, null, tint=Color(0xFF818CF8), modifier=Modifier.size(22.dp)) },
+                            label = "Private Space Album",
+                            onClick = { /* TODO: Navigate to Private Album */ }
+                        )
+                    }
+                    if (userSvip >= 7) {
+                        ProfileMenuItem(
+                            icon = { Icon(Icons.Default.SupportAgent, null, tint=Color(0xFF34D399), modifier=Modifier.size(22.dp)) },
+                            label = "VIP Liaison Officer",
+                            onClick = { /* TODO: Open VIP Support Chat */ }
+                        )
+                    }
                     ProfileMenuItem(
                         icon = { CpHeartIcon() },
                         label = "Cp/friends",

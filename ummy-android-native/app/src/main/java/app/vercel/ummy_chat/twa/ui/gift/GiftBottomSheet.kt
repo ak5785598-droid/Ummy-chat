@@ -24,6 +24,7 @@ import app.vercel.ummy_chat.twa.data.model.GiftModel
 @Composable
 fun GiftBottomSheet(
     onDismiss: () -> Unit,
+    userSvipLevel: Int,
     onSendGift: (gift: GiftModel, count: Int) -> Unit
 ) {
     var selectedCategory by remember { mutableStateOf("HOT") }
@@ -89,7 +90,7 @@ fun GiftBottomSheet(
                         Text(gift.iconEmoji, fontSize = 32.sp)
                         Spacer(modifier = Modifier.height(4.dp))
                         if (isLocked) {
-                            Text("SVIP + Only", color = Color.Red, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Text("SVIP ${gift.requiredSvipLevel}+ Only", color = Color.Red, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                         } else {
                             Text(gift.name, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }

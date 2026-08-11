@@ -54,6 +54,7 @@ fun RoomScreen(
 ) {
     val context = LocalContext.current
     val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    val currentUserSvipLevel by vm.currentUserSvipLevel.collectAsState()
 
     // ── Collect State from ViewModel ───────────────────────────────────────
     val room              by vm.room.collectAsState()
@@ -525,6 +526,7 @@ fun RoomScreen(
         if (showGiftSheet) {
             GiftBottomSheet(
                 onDismiss = { showGiftSheet = false },
+                userSvipLevel = currentUserSvipLevel,
                 onSendGift = { _, _ -> showGiftSheet = false }
             )
         }

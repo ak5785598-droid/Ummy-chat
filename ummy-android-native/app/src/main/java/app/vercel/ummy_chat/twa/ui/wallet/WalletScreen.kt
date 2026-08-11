@@ -109,6 +109,7 @@ fun WalletScreen(
     var exchangingCustom by remember { mutableStateOf(false) }
     var transactions by remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
     var loadingTx by remember { mutableStateOf(true) }
+    var userSvipLevel by remember { mutableIntStateOf(0) }
 
     // ── Listen to real-time user coins/diamonds balance ──
     DisposableEffect(uid) {
@@ -120,6 +121,9 @@ fun WalletScreen(
                     username = snapshot.getString("username") ?: "Tribe Member"
                     accountNumber = snapshot.getString("accountNumber") ?: "0000"
                     
+                    db.collection("users").document(uid).collection("profile").document(uid).get().addOnSuccessListener { pSnap ->
+                        userSvipLevel = (pSnap.get("svip") as? Number)?.toInt() ?: 0
+                    }
                     val wallet = snapshot.get("wallet") as? Map<*, *>
                     coins = (wallet?.get("coins") as? Number)?.toLong() ?: 0L
                     diamonds = (wallet?.get("diamonds") as? Number)?.toLong() ?: 0L
@@ -307,7 +311,8 @@ fun WalletScreen(
             Toast.makeText(context, "Insufficient diamonds balance.", Toast.LENGTH_SHORT).show()
         } else if (uid != null) {
             exchangingCustom = true
-            val resCoins = (reqDiamonds * CONVERSION_RATE).toLong()
+            val bonusMultiplier = if (userSvipLevel >= 6) 1.2 else 1.0
+            val resCoins = ((reqDiamonds * CONVERSION_RATE) * bonusMultiplier).toLong()
             val newDiamonds = diamonds - reqDiamonds
             val newCoins = coins + resCoins
 
@@ -998,3 +1003,4 @@ fun WalletScreen(
         }
     }
 }
+
