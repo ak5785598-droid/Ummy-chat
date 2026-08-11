@@ -67,6 +67,16 @@ fun EntryEffectPlayer(effect: EntryEffect, onComplete: () -> Unit) {
     val isVideoEffect = effect.effectType == "line" || effect.effectType == "lion" || effect.effectType == "dragon"
 
     LaunchedEffect(effect) {
+        if (effect.hasEnteringSound) {
+            try {
+                val defaultSoundUri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                val mediaPlayer = android.media.MediaPlayer.create(context, defaultSoundUri)
+                mediaPlayer?.setOnCompletionListener { mp -> mp.release() }
+                mediaPlayer?.start()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         vibrateShort(context)
     }
 

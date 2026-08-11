@@ -86,7 +86,8 @@ data class EntryEffect(
     val avatarUrl: String? = null,
     val effectType: String = "lion",    // slide | fade | bounce | lion | line | dragon
     val mediaUrl: String? = null,
-    val videoUrl: String? = null
+    val videoUrl: String? = null,
+    val hasEnteringSound: Boolean = false
 )
 
 // ── GiftEvent (RTD) ─────────────────────────────────────────────────────────
