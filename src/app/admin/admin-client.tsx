@@ -531,6 +531,19 @@ function AdminPageContent() {
     useGameBackgroundUpload();
 
   const { userProfile: currentUserProfile } = useUserProfile(user?.uid || undefined);
+
+  const getUserLevel = (tags: string[] = [], isAdmin: boolean = false, uid: string = "") => {
+    if (uid === CREATOR_ID) return 7;
+    if (tags.includes("Official") || tags.includes("Official center") || isAdmin) return 6;
+    if (tags.includes("Super Admin")) return 5;
+    if (tags.includes("Manager")) return 4;
+    if (tags.includes("Auditor")) return 3;
+    if (tags.includes("Admin")) return 2;
+    if (tags.includes("CS Leader")) return 1;
+    if (tags.includes("Customer Service")) return 0;
+    return -1;
+  };
+
   const isCreator = user?.uid === CREATOR_ID;
   const executorLevel = getUserLevel(currentUserProfile?.tags, currentUserProfile?.isAdmin, user?.uid);
   const isAuthorized = isCreator || executorLevel >= 6;
@@ -1937,18 +1950,6 @@ function AdminPageContent() {
     updateDocumentNonBlocking(userRef, updateData);
     updateDocumentNonBlocking(profileRef, updateData);
     toast({ title: "Balance Adjusted" });
-  };
-
-  const getUserLevel = (tags: string[] = [], isAdmin: boolean = false, uid: string = "") => {
-    if (uid === CREATOR_ID) return 7;
-    if (tags.includes("Official") || tags.includes("Official center") || isAdmin) return 6;
-    if (tags.includes("Super Admin")) return 5;
-    if (tags.includes("Manager")) return 4;
-    if (tags.includes("Auditor")) return 3;
-    if (tags.includes("Admin")) return 2;
-    if (tags.includes("CS Leader")) return 1;
-    if (tags.includes("Customer Service")) return 0;
-    return -1;
   };
 
   const toggleUserRole = (
