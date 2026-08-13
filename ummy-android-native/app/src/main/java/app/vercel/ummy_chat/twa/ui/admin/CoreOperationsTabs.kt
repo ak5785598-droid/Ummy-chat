@@ -1,6 +1,10 @@
 package app.vercel.ummy_chat.twa.ui.admin
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,11 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.Timestamp
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
 
@@ -229,68 +238,159 @@ fun FinancialAuditTab(userLevel: Int, onBack: () -> Unit) {
 @Composable
 fun FinancialSettingsTab(onBack: () -> Unit) {
     val db = FirebaseFirestore.getInstance()
+    val storage = FirebaseStorage.getInstance()
     val scope = rememberCoroutineScope()
-    var coin by remember { mutableStateOf("0") }
-    var gem by remember { mutableStateOf("0") }
+    val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
-    var success by remember { mutableStateOf<String?>(null) }
+    var isSaving by remember { mutableStateOf(false) }
+    var isUploading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val snap = db.collection("config").document("exchangeRate").get().await()
-            if (snap.exists()) {
-                coin = (snap.getLong("coin") ?: 0).toString()
-                gem = (snap.getLong("gem") ?: 0).toString()
+    var paymentMode by remember { mutableStateOf("manual") }
+    var upiId by remember { mutableStateOf("") }
+    var upiName by remember { mutableStateOf("") }
+    var qrUrl by remember { mutableStateOf("") }
+
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            isUploading = true
+            scope.launch {
+                try {
+                    val ref = storage.reference.child("merchant_qr/qr_${System.currentTimeMillis()}.jpg")
+                    ref.putFile(uri).await()
+                    val downloadUrl = ref.downloadUrl.await().toString()
+                    db.collection("appConfig").document("global").set(
+                        mapOf("paymentQrUrl" to downloadUrl, "updatedAt" to Timestamp.now()),
+                        com.google.firebase.firestore.SetOptions.merge()
+                    ).await()
+                    qrUrl = downloadUrl
+                    message = "QR code uploaded!"
+                } catch (e: Exception) { message = "Upload failed: ${e.message}" }
+                isUploading = false
             }
-        } catch (_: Exception) {}
-        isLoading = false
+        }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White).padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.CreditCard, null, tint = Color(0xFF22C55E), modifier = Modifier.size(28.dp))
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Financial Settings", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1E293B))
-        }
-        Spacer(modifier = Modifier.height(24.dp))
+    DisposableEffect(Unit) {
+        val listener = db.collection("appConfig").document("global")
+            .addSnapshotListener { snap, _ ->
+                if (snap != null && snap.exists()) {
+                    paymentMode = snap.getString("paymentMode") ?: "manual"
+                    upiId = snap.getString("upiId") ?: ""
+                    upiName = snap.getString("upiName") ?: ""
+                    qrUrl = snap.getString("paymentQrUrl") ?: ""
+                }
+                isLoading = false
+            }
+        onDispose { listener.remove() }
+    }
 
+    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
         if (isLoading) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF7C3AED))
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFF10B981))
             }
         } else {
-            Text("Exchange Rate Configuration", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
+                Text("Financial Settings", fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color(0xFF1E293B), modifier = Modifier.padding(bottom = 12.dp))
 
-            OutlinedTextField(
-                value = coin, onValueChange = { coin = it },
-                label = { Text("Coins Per Recharge") },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                shape = RoundedCornerShape(12.dp)
-            )
-            OutlinedTextField(
-                value = gem, onValueChange = { gem = it },
-                label = { Text("Gems Per Recharge") },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFF22C55E)).clickable {
-                scope.launch {
-                    try {
-                        db.collection("config").document("exchangeRate").set(
-                            mapOf("coin" to (coin.toLongOrNull() ?: 0), "gem" to (gem.toLongOrNull() ?: 0))
-                        ).await()
-                        success = "Exchange rates saved!"
-                    } catch (e: Exception) { success = "Error: ${e.message}" }
+                Text("PAYMENT MODE (DISPLAY ONLY)", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF94A3B8), modifier = Modifier.padding(bottom = 6.dp))
+                Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp)).background(Color(0xFFF1F5F9)).padding(horizontal = 14.dp, vertical = 12.dp)) {
+                    Text(paymentMode.uppercase(), fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF475569))
                 }
-            }.padding(16.dp), contentAlignment = Alignment.Center) {
-                Text("Save Exchange Rates", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            }
+                Spacer(modifier = Modifier.height(12.dp))
 
-            success?.let {
-                LaunchedEffect(it) { kotlinx.coroutines.delay(3000); success = null }
-                Text(it, color = if (it.startsWith("Error")) Color(0xFFEF4444) else Color(0xFF22C55E), modifier = Modifier.padding(top = 12.dp), fontWeight = FontWeight.Bold)
+                Text("UPI ID / VPA", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF94A3B8), modifier = Modifier.padding(bottom = 6.dp))
+                OutlinedTextField(value = upiId, onValueChange = { upiId = it }, placeholder = { Text("e.g. merchant@upi") }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), shape = RoundedCornerShape(10.dp), singleLine = true)
+
+                Text("MERCHANT / BUSINESS NAME", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF94A3B8), modifier = Modifier.padding(bottom = 6.dp))
+                OutlinedTextField(value = upiName, onValueChange = { upiName = it }, placeholder = { Text("e.g. Ummy Chat Official") }, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), shape = RoundedCornerShape(10.dp), singleLine = true)
+
+                // QR Code Upload Section
+                Text("MERCHANT QR CODE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF94A3B8), modifier = Modifier.padding(bottom = 6.dp))
+                if (qrUrl.isNotBlank()) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        AsyncImage(
+                            model = qrUrl, contentDescription = "QR Code",
+                            modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Remove button
+                        Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFEF4444)).clickable {
+                            scope.launch {
+                                try {
+                                    db.collection("appConfig").document("global").set(
+                                        mapOf("paymentQrUrl" to "", "updatedAt" to Timestamp.now()),
+                                        com.google.firebase.firestore.SetOptions.merge()
+                                    ).await()
+                                    qrUrl = ""
+                                    message = "QR code removed!"
+                                } catch (e: Exception) { message = "Error: ${e.message}" }
+                            }
+                        }.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Close, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("REMOVE", color = Color.White, fontWeight = FontWeight.Black, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                } else {
+                    Box(modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(12.dp)).border(2.dp, Color(0xFFCBD5E1), RoundedCornerShape(12.dp)).background(Color(0xFFF8FAFC)).clickable { pickImage.launch("image/*") }, contentAlignment = Alignment.Center) {
+                        if (isUploading) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                CircularProgressIndicator(color = Color(0xFF10B981), modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Uploading...", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                            }
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.AddPhotoAlternate, null, tint = Color(0xFF94A3B8), modifier = Modifier.size(36.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Tap to upload QR code", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
+                                Text("Choose from gallery", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                            }
+                        }
+                    }
+                }
+
+                if (qrUrl.isBlank() && !isUploading) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(10.dp)).background(Color(0xFFF8FAFC)).clickable { pickImage.launch("image/*") }.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                            Icon(Icons.Default.Upload, null, tint = Color(0xFF10B981), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("UPLOAD QR CODE", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF10B981))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Save button
+                Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFF10B981)).clickable(enabled = !isSaving) {
+                    scope.launch {
+                        isSaving = true
+                        try {
+                            db.collection("appConfig").document("global").set(
+                                mapOf("upiId" to upiId.trim(), "upiName" to upiName.trim(), "updatedAt" to Timestamp.now()),
+                                com.google.firebase.firestore.SetOptions.merge()
+                            ).await()
+                            message = "Financial parameters synchronized!"
+                        } catch (e: Exception) { message = "Error: ${e.message}" }
+                        isSaving = false
+                    }
+                }.padding(16.dp), contentAlignment = Alignment.Center) {
+                    if (isSaving) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                    else Text("SAVE FINANCIAL METRICS", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                }
+
+                message?.let {
+                    LaunchedEffect(it) { kotlinx.coroutines.delay(3000); message = null }
+                    Text(text = it, color = if (it.startsWith("Error") || it.contains("failed")) Color(0xFFEF4444) else Color(0xFF22C55E), modifier = Modifier.padding(top = 12.dp), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }

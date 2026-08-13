@@ -33,8 +33,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import app.vercel.ummy_chat.twa.ui.room.RoomViewModel
 import app.vercel.ummy_chat.twa.ui.room.RoomMiniCard
-import android.content.Intent
-import android.net.Uri
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.NavHost
@@ -64,6 +62,7 @@ import app.vercel.ummy_chat.twa.ui.theme.UmmyNativeTheme
 import app.vercel.ummy_chat.twa.ui.vips.VipStoreScreen
 import app.vercel.ummy_chat.twa.ui.wallet.WalletScreen
 import app.vercel.ummy_chat.twa.ui.components.UpdateDialog
+import app.vercel.ummy_chat.twa.util.ApkDownloader
 
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
@@ -84,6 +83,9 @@ class MainActivity : ComponentActivity() {
                 val isRoomMinimized by roomVm.isMinimized.collectAsState()
                 var updateInfo by remember { mutableStateOf<app.vercel.ummy_chat.twa.data.model.UpdateModel?>(null) }
                 var showUpdateDialog by remember { mutableStateOf(false) }
+                var isDownloading by remember { mutableStateOf(false) }
+                var downloadProgress by remember { mutableStateOf(0f) }
+                var downloadError by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(Unit) {
                     val repository = UpdateRepository()
@@ -95,13 +97,34 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (showUpdateDialog && updateInfo != null) {
+                    val apkUrl = updateInfo!!.updateUrl
                     UpdateDialog(
                         versionName = updateInfo!!.latestVersionName,
                         releaseNotes = updateInfo!!.releaseNotes,
                         forceUpdate = updateInfo!!.forceUpdate,
+                        isDownloading = isDownloading,
+                        downloadProgress = downloadProgress,
+                        downloadError = downloadError,
                         onUpdate = {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo!!.updateUrl))
-                            context.startActivity(intent)
+                            if (apkUrl.isBlank()) {
+                                updateInfo = null
+                                showUpdateDialog = false
+                            } else {
+                                downloadError = null
+                                isDownloading = true
+                                downloadProgress = 0f
+                                scope.launch {
+                                    val downloader = ApkDownloader(context)
+                                    val result = downloader.downloadAndInstall(apkUrl) { progress ->
+                                        downloadProgress = progress
+                                    }
+                                    if (result.isFailure) {
+                                        isDownloading = false
+                                        downloadProgress = 0f
+                                        downloadError = result.exceptionOrNull()?.message ?: "Download failed. Please try again."
+                                    }
+                                }
+                            }
                         },
                         onDismiss = { showUpdateDialog = false }
                     )
